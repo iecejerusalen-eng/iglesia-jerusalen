@@ -1,4 +1,3 @@
-import React from 'react';
 import { departamentos } from '../../config/departamentos';
 import type { CargoMinisterial } from '../../types/organizacion';
 

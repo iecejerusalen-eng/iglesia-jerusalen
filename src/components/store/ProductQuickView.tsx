@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '../../store/useCartStore';
-import type { Product, ProductVariant } from '../../types';
+import type { Product } from '../../types';
 import { 
   ShoppingBag, Plus, Minus,
   ChevronRight, Star, X, ChevronLeft

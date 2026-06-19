@@ -1,4 +1,4 @@
-import { Departamento } from '../types/organizacion';
+import type { Departamento } from '../types/organizacion';
 
 export const departamentos: Departamento[] = [
   {

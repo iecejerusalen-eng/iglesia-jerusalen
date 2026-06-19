@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import { useCartStore } from '../../store/useCartStore';
-import type { Product, ProductVariant } from '../../types';
-import { Search, ShoppingBag, Filter, Sparkles } from 'lucide-react';
+
+import type { Product } from '../../types';
+import { Search, Filter, Sparkles } from 'lucide-react';
 import OptimizedMedia from '../../components/common/OptimizedMedia';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import ProductQuickView from '../../components/store/ProductQuickView';
 import MagneticButton from '../../components/animations/MagneticButton';
 
@@ -104,7 +104,7 @@ const staggerContainer = {
   }
 };
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
@@ -115,9 +115,6 @@ const Store = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
-  
-  const addItem = useCartStore((state) => state.addItem);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -148,15 +145,6 @@ const Store = () => {
     }, 0);
     return () => clearTimeout(timer);
   }, []);
-
-  const handleAddToCart = (product: Product, variant: ProductVariant | null = null, quantity = 1) => {
-    addItem(product, variant, quantity);
-    const key = variant ? `${product.id}-${variant.id}` : product.id;
-    setAddedItems((prev) => ({ ...prev, [key]: true }));
-    setTimeout(() => {
-      setAddedItems((prev) => ({ ...prev, [key]: false }));
-    }, 1500);
-  };
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
