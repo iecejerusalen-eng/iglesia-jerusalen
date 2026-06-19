@@ -1,0 +1,21 @@
+{
+  "localAssets": {
+    "Fachada Iglesia Jerusalén.jpg": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147641/iglesia-jerusalen/assets/Jerusalen/Fachada%20Iglesia%20Jerusal%C3%A9n.jpg",
+    "Logo Jerusalen Cuadrado Blanco.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147642/iglesia-jerusalen/assets/Jerusalen/Logo%20Jerusalen%20Cuadrado%20Blanco.png",
+    "Logo Jerusalen Cuadrado Negro.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147644/iglesia-jerusalen/assets/Jerusalen/Logo%20Jerusalen%20Cuadrado%20Negro.png",
+    "Logo Jerusalen Horizontal Blanco.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147646/iglesia-jerusalen/assets/Jerusalen/Logo%20Jerusalen%20Horizontal%20Blanco.png",
+    "Logo Jerusalen Horizontal Negro.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147647/iglesia-jerusalen/assets/Jerusalen/Logo%20Jerusalen%20Horizontal%20Negro.png",
+    "Pastor David.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147649/iglesia-jerusalen/assets/Jerusalen/Pastor%20David.png",
+    "Pastora Corina.png": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147652/iglesia-jerusalen/assets/Jerusalen/Pastora%20Corina.png",
+    "Pastores.jpg": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147652/iglesia-jerusalen/assets/Jerusalen/Pastores.jpg",
+    "bancoguayaquil.svg": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147653/iglesia-jerusalen/assets/logos/bancoguayaquil.svg"
+  },
+  "databaseAssets": [
+    {
+      "table": "ministries",
+      "rowId": "37de37d0-899f-48e5-83a1-145cdfab7ac1",
+      "oldUrl": "https://gqtatqekfrswvplemknc.supabase.co/storage/v1/object/public/ministry-images/covers/1780803465421.jpg",
+      "newUrl": "https://res.cloudinary.com/degrlmvsq/image/upload/v1781147664/iglesia-jerusalen/ministries/fumait2x4xeho0qop0ny.jpg"
+    }
+  ]
+}

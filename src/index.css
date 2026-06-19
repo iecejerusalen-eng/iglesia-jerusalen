@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #F8FAFC;
+  --color-primary: #1E3A8A;
+  --color-accent-red: #DC2626;
+  --color-gold: #D97706;
+  --color-accent-purple: #7C3AED;
+  --color-accent-blue: #0EA5E9;
+
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  html, body {
+    @apply font-sans bg-base text-gray-800;
+  }
+}
+
+/* Premium Scrollbars Customization */
+
+/* 1. Global Custom scrollbar for WebKit browsers (Chrome, Safari, Edge, Opera) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3); /* Slate-400 tint */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox standard scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+/* 2. Premium scrollbar utility for light themed scrollable panels */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(30, 58, 138, 0.15); /* Primary-tinted */
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 58, 138, 0.3);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(30, 58, 138, 0.15) transparent;
+}
+
+/* 3. Premium scrollbar utility for dark themed scrollable panels (like Sidebar) */
+.custom-scrollbar-dark::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.custom-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Glassmorphism Utilities with Hardware Acceleration */
+@layer utilities {
+  .glass-nav {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg transform-gpu;
+  }
+  
+  .glass-card {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-white/30 dark:border-white/10 shadow-xl transform-gpu;
+  }
+  
+  .glass-panel {
+    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-2xl transform-gpu;
+  }
+}

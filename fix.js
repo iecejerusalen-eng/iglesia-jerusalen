@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('src/pages/public/About.tsx', 'utf8'); c = c.replace(/text-primary([^a-z0-9-]| \")/g, (m, p1) => { if (m.includes('dark:')) return m; return 'text-primary dark:text-white' + p1; }); fs.writeFileSync('src/pages/public/About.tsx', c);

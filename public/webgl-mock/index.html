@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivia de Escuela Dominical</title>
+  <style>
+    :root {
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+      overflow: hidden;
+    }
+    .game-container {
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      position: relative;
+    }
+    h2 {
+      margin-top: 0;
+      color: #fbbf24;
+      font-size: 24px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #fbbf24, #d97706);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .question {
+      font-size: 18px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option-btn {
+      background: #1e293b;
+      color: var(--text);
+      border: 2px solid #475569;
+      padding: 12px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    .option-btn:hover {
+      background: #334155;
+      border-color: #fbbf24;
+      transform: translateY(-2px);
+    }
+    .option-btn.correct {
+      background: #15803d;
+      border-color: #22c55e;
+      color: white;
+    }
+    .option-btn.incorrect {
+      background: #991b1b;
+      border-color: #ef4444;
+      color: white;
+    }
+    .result-screen {
+      display: none;
+    }
+    .badge-icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .btn-action {
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #0f172a;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+      transition: all 0.2s ease;
+      margin-top: 15px;
+    }
+    .btn-action:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.6);
+    }
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #fbbf24;
+      border-radius: 50%;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <div id="quiz-screen">
+      <h2 id="trivia-title">Escuela Dominical - Trivia Bíblica</h2>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+      <p class="question" id="question-text">Cargando pregunta...</p>
+      <div class="options" id="options-container">
+        <!-- Opciones dinámicas -->
+      </div>
+    </div>
+
+    <div id="result-screen" class="result-screen">
+      <div class="badge-icon">🏆</div>
+      <h2>¡Felicidades, lección completada!</h2>
+      <p style="color: var(--text-muted); margin-bottom: 25px;">
+        Has contestado todas las preguntas correctamente y has desbloqueado tu insignia de "Campeón Dominical".
+      </p>
+      <button class="btn-action" id="claim-btn">Reclamar Insignia</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        q: "¿Cuántos libros componen el Nuevo Testamento?",
+        options: ["27 libros", "39 libros", "66 libros", "12 libros"],
+        answer: 0
+      },
+      {
+        q: "¿Quién lideró al pueblo de Israel fuera de Egipto cruzando el Mar Rojo?",
+        options: ["Josué", "Moisés", "Abraham", "David"],
+        answer: 1
+      },
+      {
+        q: "¿Cuál es el primer libro de la Biblia?",
+        options: ["Apocalipsis", "Éxodo", "Génesis", "Mateo"],
+        answer: 2
+      }
+    ];
+
+    let currentIdx = 0;
+
+    function loadQuestion() {
+      if (currentIdx >= questions.length) {
+        showResults();
+        return;
+      }
+      
+      const qData = questions[currentIdx];
+      document.getElementById('question-text').textContent = qData.q;
+      document.getElementById('progress').style.width = `${(currentIdx / questions.length) * 100}%`;
+      
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+      
+      qData.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt;
+        btn.onclick = () => selectOption(idx, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectOption(selectedIdx, button) {
+      const correctIdx = questions[currentIdx].answer;
+      const buttons = document.querySelectorAll('.option-btn');
+      
+      // Disable further clicks
+      buttons.forEach(btn => btn.disabled = true);
+      
+      if (selectedIdx === correctIdx) {
+        button.classList.add('correct');
+        setTimeout(() => {
+          currentIdx++;
+          loadQuestion();
+        }, 1000);
+      } else {
+        button.classList.add('incorrect');
+        // Show correct
+        buttons[correctIdx].classList.add('correct');
+        setTimeout(() => {
+          currentIdx = 0; // Restart
+          alert("Respuesta incorrecta. ¡Inténtalo de nuevo!");
+          loadQuestion();
+        }, 1500);
+      }
+    }
+
+    function showResults() {
+      document.getElementById('progress').style.width = '100%';
+      document.getElementById('quiz-screen').style.display = 'none';
+      document.getElementById('result-screen').style.display = 'block';
+    }
+
+    document.getElementById('claim-btn').onclick = () => {
+      // Send message to parent window
+      window.parent.postMessage({ 
+        type: 'GAME_COMPLETE', 
+        badgeName: 'Campeón Dominical' 
+      }, '*');
+      alert("¡Insignia reclamada! Revisa tu perfil en la plataforma.");
+    };
+
+    loadQuestion();
+  </script>
+</body>
+</html>
