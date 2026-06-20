@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { AnimeFadeUp, AnimeFlipIn, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
 import type { Program } from '../../types';
 
