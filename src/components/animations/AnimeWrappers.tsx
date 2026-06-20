@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import anime from 'animejs';
+import anime from 'animejs/lib/anime.es.js';
 
 // ==========================================
 // 1. ANIME.JS REVEAL COMPONENT
@@ -44,8 +44,8 @@ export const AnimeReveal = ({
       translateY: 0,
       translateX: 0,
       scale: 1,
-      duration: duration * 1000,
-      delay: delay * 1000,
+      duration: duration,
+      delay: delay,
       easing: 'easeOutElastic(1, .8)'
     });
   }, [direction, distance, duration, delay, triggerId]);
@@ -114,7 +114,7 @@ export const AnimeStaggerGrid = ({
       scale: 1,
       translateY: 0,
       delay: anime.stagger(staggerDelay, { start: 100 }),
-      duration: duration * 1000,
+      duration: duration,
       easing: 'spring(1, 80, 10, 0)'
     });
   }, [staggerDelay, duration, triggerId, isVisible]);

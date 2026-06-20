@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import anime from 'animejs';
+import anime from 'animejs/lib/anime.es.js';
 
 export default function MarqueeText() {
   const phrase = "✦ SERVICIO DOMINICAL 10:00 AM ✦ ESTUDIO BÍBLICO JUEVES 7:00 PM ✦ REUNIÓN DE JÓVENES SÁBADOS ✦ ";

@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
-import anime from 'animejs';
+import anime from 'animejs/lib/anime.es.js';
 
 interface FloatingItem {
   id: number;
