@@ -49,6 +49,7 @@ import SermonDetail from './pages/public/SermonDetail';
 import ProductionBoard from './pages/admin/ProductionBoard';
 import MediaVault from './pages/admin/MediaVault';
 import InventoryManager from './pages/admin/InventoryManager';
+import AnimationCatalog from './pages/admin/AnimationCatalog';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
@@ -156,10 +157,10 @@ function App() {
             <Route path="/predicas/:id" element={<SermonDetail />} />
           </Route>
 
-          {/* Protected Routes: Dashboard */}
           <Route element={<ProtectedRoute module="dashboard" />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin" element={<DashboardHome />} />
+              <Route path="/admin/animaciones" element={<AnimationCatalog />} />
             </Route>
           </Route>
 

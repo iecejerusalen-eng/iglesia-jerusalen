@@ -19,7 +19,8 @@ import {
   Columns,
   FolderLock,
   MessageSquare,
-  Package
+  Package,
+  Sparkles
 } from 'lucide-react';
 
 export interface AdminModule {
@@ -37,6 +38,13 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Resumen',
     path: '/admin',
     icon: LayoutDashboard
+  },
+  {
+    id: 'dashboard',
+    label: 'Catálogo de Animaciones',
+    name: 'Catálogo Animaciones',
+    path: '/admin/animaciones',
+    icon: Sparkles
   },
   {
     id: 'analytics',
