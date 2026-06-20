@@ -4,8 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import type { Message } from '../../types';
 import {
@@ -369,10 +368,7 @@ export default function ChatManager() {
   };
 
   return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
+    <AnimeFadeUp
       className="space-y-6 h-[calc(100vh-140px)] flex flex-col"
     >
       <div className="flex justify-between items-center shrink-0">
@@ -886,14 +882,11 @@ export default function ChatManager() {
       </div>
 
       {/* Broadcast Modal */}
-      <AnimatePresence>
+      <>
         {isBroadcastOpen && (
           <div className="fixed inset-0 bg-black/55 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-gray-150 dark:border-white/10 p-6 shadow-xl space-y-4 flex flex-col max-h-[90vh]"
+            <AnimeFadeUp
+              className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-gray-150 dark:border-white/10 p-6 shadow-xl space-y-4 flex flex-col max-h-[90vh] animate-scale-in"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-3">
@@ -1114,10 +1107,10 @@ export default function ChatManager() {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </AnimeFadeUp>
           </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </>
+    </AnimeFadeUp>
   );
 }

@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import BlockEditor from '../../components/admin/BlockEditor';
 import { Plus, Edit2, Trash2, X, Loader2, Video, FileText, Search } from 'lucide-react';
@@ -209,12 +208,7 @@ const SermonsManager = () => {
   };
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
-      className="space-y-6 max-w-5xl"
-    >
+    <AnimeFadeUp className="space-y-6 max-w-5xl">
       <AdminHeader 
         title="Gestor de Sermones" 
         description="Publica prédicas dominicales, reflexiones pastorales y estudios de la palabra con previsualización de YouTube."
@@ -231,15 +225,10 @@ const SermonsManager = () => {
         }
       />
 
-      <AnimatePresence mode="wait">
+      <div className="relative">
         {showForm ? (
-          <motion.div 
-            key="form"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8"
-          >
+          <AnimeFadeUp key="form">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
               <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">
                 {editingSermon ? 'Editar Sermón' : 'Publicar Nuevo Sermón'}
@@ -373,15 +362,12 @@ const SermonsManager = () => {
                 )}
               </div>
             </form>
-          </motion.div>
+            </div>
+          </AnimeFadeUp>
         ) : (
           /* List View */
-          <motion.div 
-            key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
+          <AnimeFadeUp key="list">
+            <div className="space-y-4">
             {loading ? (
               <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
                 <Loader2 className="animate-spin text-primary" size={32} />
@@ -469,9 +455,10 @@ const SermonsManager = () => {
                 <p className="text-gray-400 text-sm mt-1 font-medium">Comparte las enseñanzas semanales publicando tu primer sermón.</p>
               </div>
             )}
-          </motion.div>
+            </div>
+          </AnimeFadeUp>
         )}
-      </AnimatePresence>
+      </div>
       
       {/* Media Search Modal */}
       <MediaSearchModal
@@ -485,7 +472,7 @@ const SermonsManager = () => {
         allowedTypes={['video']}
         title="Asistente de Enlace de Video"
       />
-    </motion.div>
+    </AnimeFadeUp>
   );
 };
 

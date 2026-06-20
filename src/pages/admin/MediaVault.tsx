@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
@@ -243,14 +243,10 @@ const MediaVault = () => {
       ) : (
         /* Files Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <AnimatePresence>
+          <>
             {files.map((file) => (
-              <motion.div
+              <AnimeFadeUp
                 key={file.name}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-[280px]"
               >
                 {/* Preview window */}
@@ -311,9 +307,9 @@ const MediaVault = () => {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </AnimeFadeUp>
             ))}
-          </AnimatePresence>
+          </>
 
           {files.length === 0 && (
             <div className="col-span-full text-center py-20 bg-white dark:bg-slate-900 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl">

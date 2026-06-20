@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, X, Globe } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ADMIN_MODULES } from '../../config/adminModules';
@@ -141,20 +140,13 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   );
 
   if (isMobile) {
+    if (!isOpen) return null;
     return (
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            className="fixed top-0 bottom-0 left-0 z-50 h-screen"
-          >
-            {sidebarContent}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className="fixed top-0 bottom-0 left-0 z-50 h-screen animate-slide-in-right"
+      >
+        {sidebarContent}
+      </div>
     );
   }
 

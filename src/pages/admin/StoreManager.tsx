@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import BlockEditor from '../../components/admin/BlockEditor';
 import MediaUploader from '../../components/common/MediaUploader';
@@ -475,12 +474,7 @@ const StoreManager = () => {
   };
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
-      className="space-y-6 max-w-6xl"
-    >
+    <AnimeFadeUp className="space-y-6 max-w-6xl">
       <AdminHeader 
         title="Gestor de la Tienda" 
         description="Administra los productos literarios, música y recursos, y realiza despachos y verificación de transferencias."
@@ -530,15 +524,9 @@ const StoreManager = () => {
         </div>
       )}
 
-      <AnimatePresence mode="wait">
+      <div className="relative">
         {showForm ? (
-          <motion.div 
-            key="form"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8"
-          >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8 animate-fadeUp">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-lg">
                 {editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}
@@ -678,11 +666,7 @@ const StoreManager = () => {
 
               {/* Sección Digital */}
               {productType === 'digital' && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-4 bg-purple-50/30 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-150 dark:border-purple-500/20"
-                >
+                <div className="space-y-4 bg-purple-50/30 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-150 dark:border-purple-500/20 animate-fadeUp">
                   <h4 className="font-bold text-sm text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
                     <CheckCircle2 size={16} />
                     Configuración de Recurso Digital Seguro
@@ -708,7 +692,7 @@ const StoreManager = () => {
                       />
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {/* Sección Físico: Variantes */}
@@ -870,17 +854,12 @@ const StoreManager = () => {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </div>
         ) : (
           /* Listas de Pestañas */
           <div>
             {activeTab === 'products' ? (
-              <motion.div 
-                key="list-products"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4 animate-fadeUp">
                 {loading ? (
                   <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
                     <Loader2 className="animate-spin text-primary dark:text-blue-400" size={32} />
@@ -971,15 +950,10 @@ const StoreManager = () => {
                     <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 font-medium">Comienza agregando un nuevo material de estudio o recurso.</p>
                   </div>
                 )}
-              </motion.div>
+              </div>
             ) : (
               /* Pestaña de Pedidos (Orders) */
-              <motion.div 
-                key="list-orders"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4 animate-fadeUp">
                 {ordersLoading ? (
                   <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
                     <Loader2 className="animate-spin text-primary dark:text-blue-400" size={32} />
@@ -1058,30 +1032,21 @@ const StoreManager = () => {
                     <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 font-medium">Las compras de los hermanos se reflejarán aquí de forma automática.</p>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
           </div>
         )}
-      </AnimatePresence>
+      </div>
 
       {/* Modal Detalle de Pedido (Admin) */}
-      <AnimatePresence>
-        {selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedOrder(null)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-xs"
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col"
-            >
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            onClick={() => setSelectedOrder(null)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-fadeUp"
+          />
+          
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col animate-fadeUp">
               {/* Header */}
               <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-gray-150 dark:border-white/10 flex justify-between items-center shrink-0">
                 <div>
@@ -1229,11 +1194,10 @@ const StoreManager = () => {
                   </button>
                 )}
               </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        </div>
+      )}
+    </AnimeFadeUp>
   );
 };
 

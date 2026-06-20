@@ -10,7 +10,7 @@ import {
   Search, TrendingUp, Sparkles, Settings, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useConfirmStore } from '../../store/useConfirmStore';
 
 // Types
@@ -857,8 +857,7 @@ export default function AnalyticsDashboard() {
                 }
 
                 return (
-                  <motion.div
-                    layout
+                  <AnimeFadeUp
                     key={widget.id}
                     className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-2xl p-5 shadow-xs flex flex-col justify-between group/card relative hover:border-slate-300 transition-all"
                   >
@@ -1039,7 +1038,7 @@ export default function AnalyticsDashboard() {
                         </div>
                       </div>
                     )}
-                  </motion.div>
+                  </AnimeFadeUp>
                 );
               })}
             </div>

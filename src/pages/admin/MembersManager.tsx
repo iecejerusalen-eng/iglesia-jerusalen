@@ -7,8 +7,7 @@ import { sql } from '../../config/localDb';
 import { useSyncStore } from '../../store/useSyncStore';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
   Plus, Search, User, Award, 
@@ -1009,10 +1008,7 @@ const MembersManager = () => {
   };
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
+    <AnimeFadeUp 
       className="space-y-6 max-w-5xl"
     >
       <AdminHeader 
@@ -1042,14 +1038,11 @@ const MembersManager = () => {
         }
       />
 
-      <AnimatePresence mode="wait">
+      <>
         {showForm ? (
-          <motion.div 
+          <AnimeFadeUp 
             key="form"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8 animate-scale-in"
           >
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-lg">
@@ -1351,9 +1344,8 @@ const MembersManager = () => {
                       </div>
 
                       {['Tercer Grado', 'Cuarto Grado', 'Doctorado'].includes(watch('education_level') || '') && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
+                        <div
+                          className="animate-scale-in"
                         >
                           <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Título de Tercer Grado / Carrera</label>
                           <select
@@ -1365,7 +1357,7 @@ const MembersManager = () => {
                               <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                           </select>
-                        </motion.div>
+                        </div>
                       )}
                     </div>
 
@@ -1383,10 +1375,8 @@ const MembersManager = () => {
                       </div>
 
                       {watch('is_studying') && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          className="pl-6"
+                        <div
+                          className="pl-6 animate-fadeUp"
                         >
                           <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Carrera en curso</label>
                           <select
@@ -1398,7 +1388,7 @@ const MembersManager = () => {
                               <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                           </select>
-                        </motion.div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1460,10 +1450,8 @@ const MembersManager = () => {
                   </div>
 
                   {watch('is_leader') && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="space-y-4"
+                    <div
+                      className="space-y-4 animate-fadeUp"
                     >
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Departamento / Ministerio</label>
@@ -1497,7 +1485,7 @@ const MembersManager = () => {
                           </select>
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1629,14 +1617,12 @@ const MembersManager = () => {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </AnimeFadeUp>
         ) : (
           
           /* MEMBERS LIST VIEW */
-          <motion.div 
+          <AnimeFadeUp 
             key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
             className="space-y-5"
           >
             {/* Search, Filter, Sort and Group panel */}
@@ -1801,11 +1787,11 @@ const MembersManager = () => {
                 <p className="text-gray-400 text-sm mt-1 font-medium">Prueba con otra búsqueda o agrega un nuevo registro en la base de datos.</p>
               </div>
             )}
-          </motion.div>
+          </AnimeFadeUp>
         )}
-      </AnimatePresence>
+      </>
       {/* MAP PICKER POPUP MODAL */}
-      <AnimatePresence>
+      <>
         {showMapPicker && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col h-[520px] animate-scale-in relative text-left">
@@ -1921,17 +1907,14 @@ const MembersManager = () => {
             </div>
           </div>
         )}
-      </AnimatePresence>
+      </>
 
       {/* CAREERS CRUD MODAL */}
-      <AnimatePresence>
+      <>
         {showCareersModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col h-[520px] relative text-left"
+            <div 
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col h-[520px] relative text-left animate-scale-in"
             >
               {/* Header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150 dark:border-white/10 flex-shrink-0">
@@ -2084,11 +2067,11 @@ const MembersManager = () => {
                   Cerrar
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </>
+    </AnimeFadeUp>
   );
 };
 

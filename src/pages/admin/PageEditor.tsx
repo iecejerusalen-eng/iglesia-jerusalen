@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { fadeInUp } from '../../utils/animations';
 import AdminHeader from '../../components/admin/AdminHeader';
 import BlockBuilder from '../../components/admin/BlockBuilder';
 import MediaUploader from '../../components/common/MediaUploader';
@@ -449,12 +447,7 @@ const PageEditor = () => {
   });
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
-      className="space-y-6 max-w-6xl"
-    >
+    <div className="space-y-6 max-w-6xl animate-fadeUp">
       <div className="flex justify-between items-center">
         <AdminHeader 
           title="Gestor Dinámico de Páginas" 
@@ -989,7 +982,7 @@ const PageEditor = () => {
         allowedTypes={['image']}
         title="Asistente de Búsqueda de Stock"
       />
-    </motion.div>
+    </div>
   );
 };
 

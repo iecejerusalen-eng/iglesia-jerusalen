@@ -4,9 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
   Phone, Landmark, Share2, Save, Loader2, 
@@ -224,12 +223,7 @@ const SettingsManager = () => {
   }
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
-      className="space-y-6 max-w-5xl"
-    >
+    <AnimeFadeUp className="space-y-6 max-w-5xl">
       <AdminHeader 
         title="Datos y Parámetros del Sistema" 
         description="Gestiona la información global de la iglesia, enlaces a redes sociales y las listas dinámicas de cargos, talentos y dones."
@@ -263,16 +257,13 @@ const SettingsManager = () => {
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
+      <div className="relative">
         {activeTab === 'settings' ? (
-          <motion.form 
-            key="settings-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            onSubmit={handleSubmit(onSubmit)} 
-            className="space-y-6"
-          >
+          <AnimeFadeUp key="settings-tab">
+            <form 
+              onSubmit={handleSubmit(onSubmit)} 
+              className="space-y-6"
+            >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Contact Information */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
@@ -465,15 +456,11 @@ const SettingsManager = () => {
                 {saving ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
-          </motion.form>
+            </form>
+          </AnimeFadeUp>
         ) : (
-          <motion.div 
-            key="catalogs-tab"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6"
-          >
+          <AnimeFadeUp key="catalogs-tab">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Category selection list (left sidebar) */}
             <div className="md:col-span-1 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-4 rounded-2xl shadow-xs space-y-1.5 flex flex-col">
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2 block px-2">Categorías de Catálogo</span>
@@ -596,10 +583,11 @@ const SettingsManager = () => {
                 )}
               </div>
             </div>
-          </motion.div>
+            </div>
+          </AnimeFadeUp>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+    </AnimeFadeUp>
   );
 };
 

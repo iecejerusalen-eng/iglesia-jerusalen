@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -257,14 +256,9 @@ const ProductionBoard = () => {
 
                 {/* Tickets list */}
                 <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
-                  <AnimatePresence mode="popLayout">
                     {colTickets.map((ticket) => (
-                      <motion.div
+                      <div
                         key={ticket.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
                         className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 p-4 shadow-xs hover:shadow-md transition-all space-y-3 relative group"
                       >
                         {/* Requester Ministry Tag */}
@@ -333,9 +327,8 @@ const ProductionBoard = () => {
                             </button>
                           )}
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
-                  </AnimatePresence>
 
                   {colTickets.length === 0 && (
                     <div className="text-center py-12 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-white/50 text-gray-400 text-xs">
@@ -350,16 +343,12 @@ const ProductionBoard = () => {
       )}
 
       {/* CREATE TICKET MODAL */}
-      <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setShowModal(false)}></div>
             
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6"
+            <div
+              className="relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6 animate-zoomIn"
             >
               <div className="flex justify-between items-center border-b border-gray-150 dark:border-white/10 pb-4">
                 <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -490,10 +479,9 @@ const ProductionBoard = () => {
                   </button>
                 </div>
               </form>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
 
     </div>
   );

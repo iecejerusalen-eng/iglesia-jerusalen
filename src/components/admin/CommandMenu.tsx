@@ -7,7 +7,6 @@ import {
   ShoppingBag, Map, PlusCircle, X, 
   Phone, Calendar, Award, Heart, Globe, BarChart3, Bell
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { formatWhatsAppLink } from '../../utils/whatsapp';
 
 // Custom inline CSS for cmdk to avoid imports issues
@@ -247,7 +246,7 @@ export default function CommandMenu() {
       )}
 
       {/* MEMBER DETAIL DIALOG (Opened from cmdk) */}
-      <AnimatePresence>
+      <>
         {selectedMember && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn"
@@ -360,7 +359,7 @@ export default function CommandMenu() {
             </div>
           </div>
         )}
-      </AnimatePresence>
+      </>
     </>
   );
 }

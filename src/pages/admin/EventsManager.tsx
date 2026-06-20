@@ -5,9 +5,8 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { fadeInUp } from '../../utils/animations';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
   Plus, Edit2, Trash2, Calendar, Clock, 
@@ -276,10 +275,7 @@ const EventsManager = () => {
   });
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="animate"
-      variants={fadeInUp}
+    <AnimeFadeUp 
       className="space-y-6 max-w-5xl"
     >
       <AdminHeader 
@@ -298,14 +294,11 @@ const EventsManager = () => {
         }
       />
 
-      <AnimatePresence mode="wait">
+      <>
         {showForm ? (
-          <motion.div 
+          <AnimeFadeUp 
             key="form"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8 animate-scale-in"
           >
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-lg">
@@ -520,10 +513,8 @@ const EventsManager = () => {
 
               {/* Dynamic Recurrence Options */}
               {isRecurringWatched && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-gray-50/50 p-4 border border-gray-150 dark:border-white/10 rounded-2xl space-y-4"
+                <div
+                  className="bg-gray-50/50 p-4 border border-gray-150 dark:border-white/10 rounded-2xl space-y-4 animate-fadeUp"
                 >
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Frecuencia de Recurrencia</label>
@@ -561,7 +552,7 @@ const EventsManager = () => {
                       </div>
                     </div>
                   )}
-                </motion.div>
+                </div>
               )}
 
               <div>
@@ -593,14 +584,12 @@ const EventsManager = () => {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </AnimeFadeUp>
         ) : (
           
           /* EVENTS LIST VIEW */
-          <motion.div 
+          <AnimeFadeUp 
             key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
             className="space-y-4"
           >
             {loading ? (
@@ -706,10 +695,10 @@ const EventsManager = () => {
                 <p className="text-gray-400 text-sm mt-1 font-medium">Comienza agregando un nuevo evento al calendario.</p>
               </div>
             )}
-          </motion.div>
+          </AnimeFadeUp>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </>
+    </AnimeFadeUp>
   );
 };
 
