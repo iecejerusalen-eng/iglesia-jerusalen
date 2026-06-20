@@ -3,16 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
-import { BookOpen, ChevronDown, ChevronRight, ArrowLeft, GraduationCap, Lock, FolderOpen, Video, FileText, MessageSquare, ClipboardList, HelpCircle } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, ArrowLeft, GraduationCap, Lock, FolderOpen, Video, FileText, MessageSquare, ClipboardList, HelpCircle, CheckCircle } from 'lucide-react';
 import type { LMSCourse, LMSSection, LMSActivity } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
 import LMSAssignment from '../../components/public/lms/LMSAssignment';
 import LMSForum from '../../components/public/lms/LMSForum';
 import LMSQuiz from '../../components/public/lms/LMSQuiz';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
+import { generateCourseBadgeSVG } from '../../utils/badgeGenerator';
 
 const ProgramDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { role, user } = useAuthStore();
+  const { width, height } = useWindowSize();
   const [course, setCourse] = useState<LMSCourse | null>(null);
   const [sections, setSections] = useState<LMSSection[]>([]);
   const [activities, setActivities] = useState<LMSActivity[]>([]);
@@ -20,6 +24,9 @@ const ProgramDetail = () => {
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'public' | 'teacher'>('public');
+  const [completions, setCompletions] = useState<Record<string, boolean>>({});
+  const [awardedBadge, setAwardedBadge] = useState<string | null>(null);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
 
   // Roles that can see teacher content
   const canSeeTeacherContent = role === 'admin' || role === 'pastor' || role === 'maestro';
@@ -69,6 +76,19 @@ const ProgramDetail = () => {
               setExpandedSections({ [fetchedSections[0].id]: true });
             }
           }
+          // Fetch completions
+          if (user) {
+            const { data: compData } = await supabase
+              .from('lms_activity_completions')
+              .select('activity_id')
+              .eq('student_id', user.id);
+              
+            if (compData) {
+              const compMap: Record<string, boolean> = {};
+              compData.forEach((c: any) => compMap[c.activity_id] = true);
+              setCompletions(compMap);
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching course data:', err);
@@ -76,11 +96,71 @@ const ProgramDetail = () => {
       setLoading(false);
     };
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
-  const toggleActivity = (activityId: string) => {
-    setExpandedActivity(expandedActivity === activityId ? null : activityId);
+  const markActivityAsCompleted = async (activityId: string, currentActivities = activities) => {
+    if (!user || completions[activityId] || !course) return;
+
+    setCompletions(prev => ({ ...prev, [activityId]: true }));
+    
+    try {
+      await supabase.from('lms_activity_completions').upsert({
+        student_id: user.id,
+        activity_id: activityId,
+        is_completed: true,
+        completed_at: new Date().toISOString()
+      });
+
+      // Check progress
+      const newCompletionsCount = Object.keys(completions).length + 1;
+      if (newCompletionsCount >= currentActivities.length && currentActivities.length > 0) {
+        await checkAndAwardBadge(course);
+      }
+    } catch (err) {
+      console.error("Error saving completion", err);
+    }
+  };
+
+  const checkAndAwardBadge = async (currentCourse: LMSCourse) => {
+    if (!user) return;
+    try {
+      // check if badge exists
+      const { data: existingBadge } = await supabase
+        .from('lms_student_badges')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('course_id', currentCourse.id)
+        .maybeSingle();
+        
+      if (!existingBadge) {
+        // Generate SVG
+        const svg = generateCourseBadgeSVG(currentCourse.title);
+        await supabase.from('lms_student_badges').insert({
+          student_id: user.id,
+          course_id: currentCourse.id,
+          badge_name: 'Curso Completado',
+          badge_svg: svg
+        });
+        setAwardedBadge(svg);
+        setShowBadgeModal(true);
+      }
+    } catch (err) {
+      console.error("Error checking/awarding badge", err);
+    }
+  };
+
+  const toggleActivity = async (activityId: string) => {
+    const isOpening = expandedActivity !== activityId;
+    setExpandedActivity(isOpening ? activityId : null);
     setActiveTab('public');
+    
+    if (isOpening) {
+      const act = activities.find(a => a.id === activityId);
+      if (act && act.type !== 'quiz' && act.type !== 'assignment' && act.type !== 'forum') {
+        // Auto complete for viewable resources
+        await markActivityAsCompleted(activityId, activities);
+      }
+    }
   };
 
   const toggleSection = (sectionId: string) => {
@@ -145,7 +225,12 @@ const ProgramDetail = () => {
             {getActivityIcon(activity.type)}
           </span>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{activity.title}</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-2">
+              {activity.title}
+              {completions[activity.id] && (
+                <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+              )}
+            </h3>
             {activity.teacher_content && canSeeTeacherContent && (
               <span className="text-[9px] bg-purple-100 dark:bg-purple-950/50 text-purple-750 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded mt-1 inline-block border border-purple-200 dark:border-purple-800/30">
                 + Guía del Maestro
@@ -225,9 +310,9 @@ const ProgramDetail = () => {
                       {/* Botón de Interacción si es Tarea o Foro o Quiz */}
                       {user ? (
                         <>
-                          {activity.type === 'assignment' && <LMSAssignment activity={activity} studentId={user.id} />}
+                          {activity.type === 'assignment' && <LMSAssignment activity={activity} studentId={user.id} onComplete={() => markActivityAsCompleted(activity.id)} />}
                           {activity.type === 'forum' && <LMSForum activity={activity} courseId={course.id} />}
-                          {activity.type === 'quiz' && <LMSQuiz activity={activity} />}
+                          {activity.type === 'quiz' && <LMSQuiz activity={activity} onComplete={() => markActivityAsCompleted(activity.id)} />}
                         </>
                       ) : (
                         (activity.type === 'assignment' || activity.type === 'quiz' || activity.type === 'forum') && (
@@ -296,6 +381,24 @@ const ProgramDetail = () => {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         
+        {/* Progress Bar */}
+        {user && activities.length > 0 && (
+          <div className="mb-8">
+            <div className="flex justify-between items-end mb-2">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tu progreso en el curso</h3>
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                {Math.round((Object.keys(completions).length / activities.length) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${Math.round((Object.keys(completions).length / activities.length) * 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
         {/* Bloque Cero / Presentación (PACIE) */}
         {presentationBlock && (
           <div className="mb-10 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-5 md:p-6 shadow-sm">
@@ -393,6 +496,36 @@ const ProgramDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Badge Modal */}
+      {showBadgeModal && awardedBadge && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Confetti width={width} height={height} recycle={false} numberOfPieces={500} />
+          <AnimeZoomIn className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden border border-gray-200 dark:border-white/10">
+            <div className="absolute inset-0 bg-gradient-to-b from-yellow-50/50 to-transparent dark:from-yellow-900/20 dark:to-transparent" />
+            <div className="relative z-10">
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">¡Felicidades!</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">Has completado satisfactoriamente todas las actividades del curso <strong className="text-indigo-600 dark:text-indigo-400">{course.title}</strong>.</p>
+              
+              <div className="flex justify-center mb-6">
+                <div 
+                  className="w-48 h-48 drop-shadow-xl transform transition-transform hover:scale-105"
+                  dangerouslySetInnerHTML={{ __html: awardedBadge }} 
+                />
+              </div>
+
+              <p className="text-xs text-gray-500 mb-6 italic">Esta insignia se ha añadido a tu perfil de estudiante.</p>
+
+              <button 
+                onClick={() => setShowBadgeModal(false)}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          </AnimeZoomIn>
+        </div>
+      )}
     </div>
   );
 };

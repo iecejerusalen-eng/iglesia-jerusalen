@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 interface Props {
   activity: LMSActivity;
   studentId: string;
+  onComplete?: () => void;
 }
 
-const LMSAssignment = ({ activity, studentId }: Props) => {
+const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
   const [submission, setSubmission] = useState<LMSAssignmentSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -96,6 +97,7 @@ const LMSAssignment = ({ activity, studentId }: Props) => {
 
       toast.success('Tarea entregada con éxito');
       fetchSubmission();
+      if (onComplete) onComplete();
     } catch (err: any) {
       toast.error('Error al entregar la tarea: ' + err.message);
     } finally {
