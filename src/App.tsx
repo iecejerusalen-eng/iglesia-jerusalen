@@ -52,6 +52,8 @@ import ProductionBoard from './pages/admin/ProductionBoard';
 import MediaVault from './pages/admin/MediaVault';
 import InventoryManager from './pages/admin/InventoryManager';
 import AnimationCatalog from './pages/admin/AnimationCatalog';
+import StudentDashboard from './pages/lms/StudentDashboard';
+import TeacherDashboard from './pages/lms/TeacherDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
@@ -166,6 +168,20 @@ function App() {
             </Route>
           </Route>
 
+          {/* LMS Dashboards (Public Layout but protected) */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<PublicLayout />}>
+              <Route path="/lms/estudiante" element={<StudentDashboard />} />
+              <Route path="/lms/docente" element={<TeacherDashboard />} />
+            </Route>
+            
+            <Route element={<AdminLayout />}>
+              {/* LMS Teacher Accessible Tools */}
+              <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
+              <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
+            </Route>
+          </Route>
+
           {/* Protected Routes: Production */}
           <Route element={<ProtectedRoute module="production" />}>
             <Route element={<AdminLayout />}>
@@ -241,8 +257,6 @@ function App() {
           <Route element={<ProtectedRoute module="programs" />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/lms" element={<LMSManager />} />
-              <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
-              <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
             </Route>
           </Route>
 
