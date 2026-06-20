@@ -4,7 +4,7 @@ import { supabase } from '../../config/supabase';
 import type { Product } from '../../types';
 import { Search, Filter, Sparkles } from 'lucide-react';
 import OptimizedMedia from '../../components/common/OptimizedMedia';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import ProductQuickView from '../../components/store/ProductQuickView';
 import MagneticButton from '../../components/animations/MagneticButton';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
@@ -220,16 +220,13 @@ const Store = () => {
                >
                 {/* Contenedor Imagen */}
                 <div className="relative pt-[70%] bg-gray-50 dark:bg-slate-800 overflow-hidden">
-                  <motion.div 
-                    layoutId={`product-image-${product.id}`}
-                    className="absolute inset-0 w-full h-full"
-                  >
+                  <div className="absolute inset-0 w-full h-full">
                     <OptimizedMedia
                       src={product.cover_image_url || product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                  </motion.div>
+                  </div>
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                       <span className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-semibold text-primary dark:text-white border border-gray-100 dark:border-white/10 shadow-2xs z-10">
                         {product.category}
@@ -283,14 +280,12 @@ const Store = () => {
       )}
 
       {/* Modal Detallado de Producto */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <ProductQuickView 
-            product={selectedProduct} 
-            onClose={() => setSelectedProduct(null)} 
-          />
-        )}
-      </AnimatePresence>
+      {selectedProduct && (
+        <ProductQuickView 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+        />
+      )}
     </div>
   );
 };

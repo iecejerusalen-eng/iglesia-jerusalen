@@ -3,6 +3,7 @@ import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
 import { Search, Calendar, User, Video, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -73,7 +74,8 @@ const Sermons = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-      
+      <AnimeFadeUp delay={100} duration={800}>
+        
       {/* HEADER HERO */}
       <div className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white mb-10 shadow-lg relative overflow-hidden">
         <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
@@ -108,16 +110,14 @@ const Sermons = () => {
           <RefreshCw className="animate-spin text-primary dark:text-white" size={32} />
         </div>
       ) : filteredSermons.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <AnimeStaggerGrid delay={200} staggerDelay={100} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {filteredSermons.map((sermon) => {
             const ytId = getYoutubeId(sermon.youtube_url);
             
             return (
-              <div 
-                key={sermon.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4"
-              >
-                {/* Embedded Video */}
+              <AnimeHoverCard key={sermon.id}>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4 h-full">
+                  {/* Embedded Video */}
                 {ytId && (
                   <div className="relative pt-[56.25%] rounded-xl overflow-hidden shadow-sm bg-black">
                     <iframe
@@ -178,9 +178,10 @@ const Sermons = () => {
                   </Link>
                 </div>
               </div>
+              </AnimeHoverCard>
             );
           })}
-        </div>
+        </AnimeStaggerGrid>
       ) : (
         <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
           <Video className="mx-auto text-slate-400 mb-4" size={48} />
@@ -188,6 +189,7 @@ const Sermons = () => {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Prueba con otras palabras clave.</p>
         </div>
       )}
+      </AnimeFadeUp>
     </div>
   );
 };

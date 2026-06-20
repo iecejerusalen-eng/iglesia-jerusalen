@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import type { Petition, PetitionCategory } from '../../types';
 import { Send, Clock, BookOpen, CheckCircle, Flame, Plus, HeartHandshake } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
 
 const Petitions = () => {
   const { user } = useAuthStore();
@@ -169,8 +170,8 @@ const Petitions = () => {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-slate-950 min-h-screen py-12 px-4 sm:px-6 lg:px-8 animate-fadeIn transition-colors duration-200">
-      <div className="max-w-5xl mx-auto space-y-10">
+    <div className="bg-gray-50 dark:bg-slate-950 min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+      <AnimeFadeUp delay={100} duration={800} className="max-w-5xl mx-auto space-y-10">
         
         {/* Header Section */}
         <div className="text-center space-y-4">
@@ -223,20 +224,22 @@ const Petitions = () => {
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-55 cursor-pointer text-sm"
-              >
-                {submitting ? (
-                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></span>
-                ) : (
-                  <>
-                    <Send size={16} />
-                    Enviar Petición de Oración
-                  </>
-                )}
-              </button>
+              <AnimeRubberBandHover>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-55 cursor-pointer text-sm"
+                >
+                  {submitting ? (
+                    <span className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></span>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      Enviar Petición de Oración
+                    </>
+                  )}
+                </button>
+              </AnimeRubberBandHover>
             </form>
           </div>
 
@@ -271,7 +274,7 @@ const Petitions = () => {
                 <p className="text-xs text-gray-400 max-w-xs">Escribe tu primera petición a la izquierda para que comencemos a interceder por ti.</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <AnimeStaggerGrid delay={100} staggerDelay={50} className="space-y-4">
                 {myPetitions.map((pet) => (
                   <div 
                     key={pet.id} 
@@ -301,12 +304,11 @@ const Petitions = () => {
                     </div>
                   </div>
                 ))}
-              </div>
+              </AnimeStaggerGrid>
             )}
           </div>
-
         </div>
-      </div>
+      </AnimeFadeUp>
     </div>
   );
 };

@@ -1,15 +1,51 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import logo from '../../assets/Jerusalén/solo logo colorido.svg';
+// @ts-ignore
+import * as animePkg from 'animejs';
+const anime = (animePkg as any).default || animePkg;
 
 export default function Preloader() {
   const [show, setShow] = useState(true);
+  const [isRendered, setIsRendered] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const hasSeen = sessionStorage.getItem('jerusalen_preloader_seen');
     if (hasSeen === 'true') {
-      setShow(false);
+      setIsRendered(false);
       return;
+    }
+
+    if (logoRef.current && textRef.current) {
+      anime.set([logoRef.current, textRef.current], { opacity: 0 });
+      anime.set(logoRef.current, { scale: 0.8 });
+      anime.set(textRef.current, { translateY: 10 });
+
+      anime({
+        targets: logoRef.current,
+        opacity: 1,
+        duration: 500,
+        easing: 'easeOutQuad',
+      });
+
+      anime({
+        targets: logoRef.current,
+        scale: [0.95, 1.05, 0.95],
+        duration: 1200,
+        loop: true,
+        easing: 'easeInOutQuad',
+      });
+
+      anime({
+        targets: textRef.current,
+        opacity: 0.7,
+        translateY: 0,
+        delay: 300,
+        duration: 500,
+        easing: 'easeOutQuad'
+      });
     }
 
     const timer = setTimeout(() => {
@@ -20,46 +56,40 @@ export default function Preloader() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!show && isRendered && containerRef.current) {
+      anime({
+        targets: containerRef.current,
+        translateY: '-100%',
+        duration: 800,
+        easing: 'easeInQuint',
+        complete: () => {
+          setIsRendered(false);
+        }
+      });
+    }
+  }, [show, isRendered]);
+
+  if (!isRendered) return null;
+
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ y: 0 }}
-          exit={{ 
-            y: '-100%',
-            transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] } 
-          }}
-          className="fixed inset-0 z-[100] bg-base flex flex-col items-center justify-center select-none pointer-events-auto"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: 1, 
-              scale: [0.95, 1.05, 0.95],
-            }}
-            transition={{
-              opacity: { duration: 0.5, ease: 'easeOut' },
-              scale: { 
-                repeat: Infinity, 
-                duration: 1.2, 
-                ease: 'easeInOut' 
-              }
-            }}
-            className="w-48 h-48 flex items-center justify-center"
-          >
-            <img src={logo} alt="Iglesia Jerusalén Logo" className="w-full h-full object-contain" />
-          </motion.div>
-          
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 0.7, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-xs font-bold text-primary uppercase tracking-widest mt-4"
-          >
-            Preparando tu visita...
-          </motion.span>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-[100] bg-base flex flex-col items-center justify-center select-none pointer-events-auto"
+    >
+      <div
+        ref={logoRef}
+        className="w-48 h-48 flex items-center justify-center"
+      >
+        <img src={logo} alt="Iglesia Jerusalén Logo" className="w-full h-full object-contain" />
+      </div>
+      
+      <span
+        ref={textRef}
+        className="text-xs font-bold text-primary uppercase tracking-widest mt-4"
+      >
+        Preparando tu visita...
+      </span>
+    </div>
   );
 }

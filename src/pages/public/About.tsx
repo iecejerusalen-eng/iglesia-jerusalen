@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
@@ -86,7 +86,7 @@ const About = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent"></div>
                   </div>
-                  <AnimeFadeUp 
+                  <AnimeZoomIn 
                     className="relative z-10 max-w-3xl space-y-4 text-left"
                   >
                     <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -101,7 +101,7 @@ const About = () => {
                         <BlockRenderer blocks={content_blocks} />
                       </div>
                     )}
-                  </AnimeFadeUp>
+                  </AnimeZoomIn>
                 </div>
               );
             }
@@ -117,37 +117,37 @@ const About = () => {
                       <BlockRenderer blocks={content_blocks} />
                     </div>
                   ) : (
-                    <AnimeStaggerGrid 
-                      className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch"
-                    >
-                      <div 
-                        className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left"
+                      <AnimeStaggerGrid 
+                        className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch"
                       >
-                        <div className="space-y-4">
-                          <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
-                            <Compass size={24} />
+                        <AnimeHoverCard 
+                          className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
+                        >
+                          <div className="space-y-4">
+                            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
+                              <Compass size={24} />
+                            </div>
+                            <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Misión</h2>
+                            <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
+                              Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.
+                            </p>
                           </div>
-                          <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Misión</h2>
-                          <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
-                            Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.
-                          </p>
-                        </div>
-                      </div>
+                        </AnimeHoverCard>
 
-                      <div 
-                        className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left"
-                      >
-                        <div className="space-y-4">
-                          <div className="w-12 h-12 bg-gold/10 dark:bg-gold/20 text-gold dark:text-yellow-400 rounded-xl flex items-center justify-center">
-                            <Sparkles size={24} />
+                        <AnimeHoverCard 
+                          className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
+                        >
+                          <div className="space-y-4">
+                            <div className="w-12 h-12 bg-gold/10 dark:bg-gold/20 text-gold dark:text-yellow-400 rounded-xl flex items-center justify-center">
+                              <Sparkles size={24} />
+                            </div>
+                            <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Visión</h2>
+                            <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
+                              Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras.
+                            </p>
                           </div>
-                          <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Visión</h2>
-                          <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
-                            Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras.
-                          </p>
-                        </div>
-                      </div>
-                    </AnimeStaggerGrid>
+                        </AnimeHoverCard>
+                      </AnimeStaggerGrid>
                   )}
                 </div>
               );
@@ -226,8 +226,8 @@ const About = () => {
                       <AnimeStaggerGrid 
                         className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
                       >
-                        <div 
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
+                        <AnimeHoverCard 
+                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
                         >
                           <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
                             <OptimizedMedia 
@@ -245,10 +245,10 @@ const About = () => {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </AnimeHoverCard>
 
-                        <div 
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
+                        <AnimeHoverCard 
+                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
                         >
                           <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
                             <OptimizedMedia 
@@ -266,7 +266,7 @@ const About = () => {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </AnimeHoverCard>
                       </AnimeStaggerGrid>
                     </section>
                   )}
@@ -305,8 +305,8 @@ const About = () => {
                 <AnimeStaggerGrid 
                   className="grid grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  <div 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  <AnimeHoverCard 
+                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
                   >
                     <div className="space-y-4">
                       <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center font-bold">
@@ -318,10 +318,10 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider mt-6 block">Juan 3:16</span>
-                  </div>
+                  </AnimeHoverCard>
 
-                  <div 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  <AnimeHoverCard 
+                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
                   >
                     <div className="space-y-4">
                       <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400 rounded-xl flex items-center justify-center font-bold">
@@ -333,10 +333,10 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
-                  </div>
+                  </AnimeHoverCard>
 
-                  <div 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  <AnimeHoverCard 
+                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
                   >
                     <div className="space-y-4">
                       <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold">
@@ -348,10 +348,10 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-6 block">Marcos 16:18</span>
-                  </div>
+                  </AnimeHoverCard>
 
-                  <div 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  <AnimeHoverCard 
+                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
                   >
                     <div className="space-y-4">
                       <div className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center font-bold">
@@ -363,7 +363,7 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mt-6 block">1 Tesalonicenses 4:16</span>
-                  </div>
+                  </AnimeHoverCard>
                 </AnimeStaggerGrid>
               </section>
             );

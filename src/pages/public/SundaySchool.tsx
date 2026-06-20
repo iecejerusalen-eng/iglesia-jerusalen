@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion } from 'framer-motion';
+import { AnimeFadeUp, AnimeZoomIn, AnimePulseHover } from '../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
 import {
   GraduationCap, Award, Lock, RefreshCw, Gamepad2, AlertTriangle, ShieldCheck
@@ -120,7 +120,7 @@ const SundaySchool = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/20 to-white dark:from-slate-950 dark:to-slate-950 py-12 px-4">
-      <div className="max-w-6xl mx-auto space-y-10">
+      <AnimeFadeUp delay={100} duration={800} className="max-w-6xl mx-auto space-y-10">
         
         {/* Banner */}
         <div className="bg-gradient-to-r from-amber-700 via-amber-800 to-yellow-900 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden">
@@ -143,7 +143,8 @@ const SundaySchool = () => {
           
           {/* WebGL Game Simulator Panel */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+            <AnimeZoomIn delay={200} duration={600}>
+              <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
               <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2 text-amber-400">
                   <Gamepad2 size={20} />
@@ -168,6 +169,7 @@ const SundaySchool = () => {
                 />
               </div>
             </div>
+            </AnimeZoomIn>
             
             <p className="text-xs text-gray-400 text-center italic">
               * Completa el minijuego de trivia arriba para reclamar la insignia de Escuela Dominical automáticamente.
@@ -200,15 +202,14 @@ const SundaySchool = () => {
                 {badges.map((badge) => {
                   const isUnlocked = unlockedBadgeIds.includes(badge.id);
                   return (
-                    <motion.div
-                      key={badge.id}
-                      className={`flex gap-4 p-4 rounded-xl border transition-all ${
-                        isUnlocked
-                          ? 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40 shadow-xs'
-                          : 'bg-gray-50 border-gray-150 dark:bg-slate-800/50 dark:border-white/10 opacity-70'
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                    >
+                    <AnimePulseHover key={badge.id}>
+                      <div
+                        className={`flex gap-4 p-4 rounded-xl border transition-all ${
+                          isUnlocked
+                            ? 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40 shadow-xs'
+                            : 'bg-gray-50 border-gray-150 dark:bg-slate-800/50 dark:border-white/10 opacity-70'
+                        }`}
+                      >
                       <div className="relative shrink-0">
                         <img
                           src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
@@ -241,7 +242,8 @@ const SundaySchool = () => {
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 leading-normal">{badge.description}</p>
                       </div>
-                    </motion.div>
+                    </div>
+                    </AnimePulseHover>
                   );
                 })}
 
@@ -254,7 +256,7 @@ const SundaySchool = () => {
 
         </div>
 
-      </div>
+      </AnimeFadeUp>
     </div>
   );
 };

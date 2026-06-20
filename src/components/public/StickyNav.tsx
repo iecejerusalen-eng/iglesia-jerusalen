@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { 
   Home, Info, Calendar, Users, 
   MapPin, Send, BookOpen
 } from 'lucide-react';
-import { AnimeFadeUp } from '../animations/AnimeWrappers';
+import { AnimeFadeUp, AnimePulseHover } from '../animations/AnimeWrappers';
 
 interface Section {
   id: string;
@@ -124,8 +123,7 @@ export default function StickyNav() {
 
   return (
     <AnimeFadeUp
-      delay={0.2}
-      duration={600}
+      delay={200}
       distance={50}
       className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-6 glass-nav px-3.5 py-7 rounded-full"
     >
@@ -135,52 +133,41 @@ export default function StickyNav() {
         const Icon = section.icon;
 
         return (
-          <div
+          <AnimePulseHover
             key={section.id}
-            className="relative flex items-center justify-center cursor-pointer group"
+            className="relative flex items-center justify-center cursor-pointer group bg-transparent border-none p-0 outline-none"
             onMouseEnter={() => setHoveredSection(section.id)}
             onMouseLeave={() => setHoveredSection(null)}
             onClick={() => scrollToSection(section.id)}
           >
-            <AnimatePresence>
-              {isHovered && (
-                 <motion.div
-                  initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, x: -10, scale: 1 }}
-                  exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-10 px-3 py-1.5 bg-primary dark:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-md whitespace-nowrap border border-white/10 pointer-events-none"
-                >
-                  {section.label}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div
+              className={`absolute right-10 px-3 py-1.5 bg-primary dark:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-md whitespace-nowrap border border-white/10 pointer-events-none transition-all duration-200 ${
+                isHovered ? 'opacity-100 -translate-x-2.5 scale-100' : 'opacity-0 translate-x-2.5 scale-95'
+              }`}
+            >
+              {section.label}
+            </div>
 
             <div className="relative w-8 h-8 flex items-center justify-center">
               {isActive && (
-                <motion.div
-                  layoutId="activeStickyRing"
-                  className="absolute inset-0 rounded-full border-2 border-primary dark:border-blue-500 bg-transparent shadow-xs"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                <div
+                  className="absolute inset-0 rounded-full border-2 border-primary dark:border-blue-500 bg-transparent shadow-xs transition-all duration-300"
                 />
               )}
 
-              <motion.div
-                animate={{
-                  scale: isActive ? 1.15 : isHovered ? 1.25 : 1,
-                }}
+              <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
                   isActive 
-                    ? 'bg-primary dark:bg-blue-600 text-white' 
+                    ? 'bg-primary dark:bg-blue-600 text-white scale-[1.15]' 
                     : isHovered 
-                    ? 'bg-gold text-white' 
-                    : 'bg-white dark:bg-slate-800 text-primary dark:text-gray-300 border border-slate-200/50 dark:border-white/5'
+                    ? 'bg-gold text-white scale-[1.25]' 
+                    : 'bg-white dark:bg-slate-800 text-primary dark:text-gray-300 border border-slate-200/50 dark:border-white/5 scale-100'
                 }`}
               >
                 <Icon size={12} strokeWidth={isActive || isHovered ? 3 : 2} />
-              </motion.div>
+              </div>
             </div>
-          </div>
+          </AnimePulseHover>
         );
       })}
     </AnimeFadeUp>

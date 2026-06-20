@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import OptimizedMedia from '../common/OptimizedMedia';
+import { AnimeFadeUp } from '../animations/AnimeWrappers';
 
 interface GalleryImage {
   id: string;
@@ -33,18 +33,24 @@ export const ImageGallerySection = ({
     <section className="max-w-7xl mx-auto px-4 md:px-8 py-20 space-y-12">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-4">
-        <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
-          Galería
-        </span>
+        <AnimeFadeUp>
+          <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
+            Galería
+          </span>
+        </AnimeFadeUp>
         {title && (
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
-            {title}
-          </h2>
+          <AnimeFadeUp delay={100}>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
+              {title}
+            </h2>
+          </AnimeFadeUp>
         )}
         {subtitle && (
-          <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed">
-            {subtitle}
-          </p>
+          <AnimeFadeUp delay={200}>
+            <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed">
+              {subtitle}
+            </p>
+          </AnimeFadeUp>
         )}
       </div>
 
@@ -58,7 +64,7 @@ export const ImageGallerySection = ({
           const isHovered = hoveredId === image.id;
 
           return (
-            <motion.div
+            <div
               key={image.id}
               className={`break-inside-avoid relative rounded-3xl overflow-hidden shadow-md bg-slate-950 border border-slate-200 dark:border-white/10 cursor-pointer ${getMasonryHeightClass(idx)} transition-all duration-500`}
               style={{
@@ -85,7 +91,7 @@ export const ImageGallerySection = ({
                   </p>
                 </div>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Event as DbEvent } from '../../types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fadeIn } from '../../utils/animations';
+import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock,
   Users, Layers, AlertCircle, X, CalendarDays
@@ -223,21 +222,16 @@ const Events = () => {
 
         {/* Hero Section */}
         <div className="text-center max-w-2xl mx-auto">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-serif font-bold text-4xl text-primary dark:text-white md:text-5xl"
-          >
-            Calendario de Actividades
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-slate-600 dark:text-slate-400 mt-3 text-sm font-medium"
-          >
-            Sigue de cerca todas las reuniones generales, cultos especiales y actividades de los departamentos de la Iglesia Jerusalén.
-          </motion.p>
+          <AnimeFadeUp delay={0}>
+            <h1 className="font-serif font-bold text-4xl text-primary dark:text-white md:text-5xl">
+              Calendario de Actividades
+            </h1>
+          </AnimeFadeUp>
+          <AnimeFadeUp delay={100}>
+            <p className="text-slate-600 dark:text-slate-400 mt-3 text-sm font-medium">
+              Sigue de cerca todas las reuniones generales, cultos especiales y actividades de los departamentos de la Iglesia Jerusalén.
+            </p>
+          </AnimeFadeUp>
         </div>
 
         {/* Calendar Controls */}
@@ -305,15 +299,8 @@ const Events = () => {
               </div>
             </div>
           ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${view}-${currentDate.toISOString()}`}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                variants={fadeIn}
-                className="w-full"
-              >
+            <AnimeFadeUp key={`${view}-${currentDate.toISOString()}`} delay={0} className="w-full">
+              <div className="w-full">
                 {/* 1. MONTH VIEW */}
                 {view === 'month' && (
                   <div className="space-y-2">
@@ -347,9 +334,8 @@ const Events = () => {
                                 const themeColor = event.ministries?.theme_color || '#1E3A8A';
                                 const logoUrl = getLogoUrl(event);
                                 return (
-                                  <motion.div
+                                  <div
                                     key={event.id}
-                                    layoutId={`event-container-${event.id}`}
                                     onMouseMove={(e) => handleMouseMove(e, event)}
                                     onMouseLeave={() => setHoveredEvent(null)}
                                     onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
@@ -370,8 +356,8 @@ const Events = () => {
                                     ) : (
                                       event.emoji && <span>{event.emoji}</span>
                                     )}
-                                    <motion.span layoutId={`event-title-${event.id}`} className="truncate text-white">{event.title}</motion.span>
-                                  </motion.div>
+                                    <span className="truncate text-white">{event.title}</span>
+                                  </div>
                                 );
                               })}
                               {dayEvents.length > 3 && (
@@ -416,9 +402,8 @@ const Events = () => {
                                 const themeColor = event.ministries?.theme_color || '#1E3A8A';
                                 const logoUrl = getLogoUrl(event);
                                 return (
-                                  <motion.div
+                                  <div
                                     key={event.id}
-                                    layoutId={`event-container-${event.id}`}
                                     onMouseMove={(e) => handleMouseMove(e, event)}
                                     onMouseLeave={() => setHoveredEvent(null)}
                                     onClick={() => setSelectedEvent(event)}
@@ -440,13 +425,13 @@ const Events = () => {
                                       ) : (
                                         event.emoji && <span>{event.emoji}</span>
                                       )}
-                                      <motion.span layoutId={`event-title-${event.id}`} className="truncate text-white">{event.title}</motion.span>
+                                      <span className="truncate text-white">{event.title}</span>
                                     </h4>
                                     <div className="flex items-center gap-1 text-[10px] text-white/90 font-semibold">
                                       <Clock size={10} className="text-white/80" />
                                       <span>{formatTime(event.start_time)}</span>
                                     </div>
-                                  </motion.div>
+                                  </div>
                                 );
                               })
                             ) : (
@@ -474,9 +459,8 @@ const Events = () => {
                     <div className="space-y-3">
                       {getEventsForDate(currentDate).length > 0 ? (
                         getEventsForDate(currentDate).map((event) => (
-                          <motion.div
+                          <div
                             key={event.id}
-                            layoutId={`event-container-${event.id}`}
                             onClick={() => setSelectedEvent(event)}
                             tabIndex={0}
                             role="button"
@@ -501,7 +485,7 @@ const Events = () => {
                                 ) : (
                                   event.emoji && <span className="text-xl">{event.emoji}</span>
                                 )}
-                                <motion.span layoutId={`event-title-${event.id}`}>{event.title}</motion.span>
+                                <span>{event.title}</span>
                                 {event.is_recurring && (
                                   <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                                     {event.recurrence_type}
@@ -538,7 +522,7 @@ const Events = () => {
                                 <span className="text-[10px] text-slate-600 dark:text-gray-300 block font-semibold">a {formatTime(event.end_time)}</span>
                               )}
                             </div>
-                          </motion.div>
+                          </div>
                         ))
                       ) : (
                         <div className="text-center py-20 bg-gray-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
@@ -610,84 +594,73 @@ const Events = () => {
                     })}
                   </div>
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </AnimeFadeUp>
           )}
         </div>
       </div>
 
       {/* Floating Tooltip Component */}
-      <AnimatePresence>
-        {hoveredEvent && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'fixed',
-              top: tooltipPos.y,
-              left: tooltipPos.x,
-              pointerEvents: 'none',
-              zIndex: 9999
-            }}
-            className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-lg p-4 max-w-xs space-y-2.5 backdrop-blur-md"
-          >
-            <div className="border-b border-gray-100 dark:border-white/5 pb-1.5">
-              <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Actividad</span>
-              {hoveredEvent.cover_image_url && (
-                <img src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100 dark:border-white/5" />
-              )}
-              <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mt-1.5 flex items-center gap-1.5">
-                {hoveredEvent.emoji && <span className="text-base">{hoveredEvent.emoji}</span>}
-                {hoveredEvent.title}
-              </h3>
-            </div>
+      {hoveredEvent && (
+        <div
+          style={{
+            position: 'fixed',
+            top: tooltipPos.y,
+            left: tooltipPos.x,
+            pointerEvents: 'none',
+            zIndex: 9999
+          }}
+          className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-lg p-4 max-w-xs space-y-2.5 backdrop-blur-md transition-opacity"
+        >
+          <div className="border-b border-gray-100 dark:border-white/5 pb-1.5">
+            <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Actividad</span>
+            {hoveredEvent.cover_image_url && (
+              <img src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100 dark:border-white/5" />
+            )}
+            <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mt-1.5 flex items-center gap-1.5">
+              {hoveredEvent.emoji && <span className="text-base">{hoveredEvent.emoji}</span>}
+              {hoveredEvent.title}
+            </h3>
+          </div>
 
-            <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <Clock size={11} className="text-primary dark:text-white" />
-                <span>Horario: {formatTime(hoveredEvent.start_time)} {hoveredEvent.end_time && ` - ${formatTime(hoveredEvent.end_time)}`}</span>
-              </div>
-              {hoveredEvent.ministries && (
-                <div className="flex items-center gap-1.5">
-                  <Layers size={11} className="text-primary dark:text-white" />
-                  <span>Área: {hoveredEvent.ministries.name}</span>
-                </div>
-              )}
-              {hoveredEvent.leaders_in_charge && hoveredEvent.leaders_in_charge.length > 0 && (
-                <div className="flex items-start gap-1.5">
-                  <Users size={11} className="text-primary dark:text-white mt-0.5" />
-                  <span>Encargado: {hoveredEvent.leaders_in_charge.join(', ')}</span>
-                </div>
-              )}
+          <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
+            <div className="flex items-center gap-1.5">
+              <Clock size={11} className="text-primary dark:text-white" />
+              <span>Horario: {formatTime(hoveredEvent.start_time)} {hoveredEvent.end_time && ` - ${formatTime(hoveredEvent.end_time)}`}</span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {hoveredEvent.ministries && (
+              <div className="flex items-center gap-1.5">
+                <Layers size={11} className="text-primary dark:text-white" />
+                <span>Área: {hoveredEvent.ministries.name}</span>
+              </div>
+            )}
+            {hoveredEvent.leaders_in_charge && hoveredEvent.leaders_in_charge.length > 0 && (
+              <div className="flex items-start gap-1.5">
+                <Users size={11} className="text-primary dark:text-white mt-0.5" />
+                <span>Encargado: {hoveredEvent.leaders_in_charge.join(', ')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Event Details Overlay (Modal / Drawer) */}
-      <AnimatePresence>
-        {selectedEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedEvent(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
-            />
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+          {/* Backdrop */}
+          <div
+            onClick={() => setSelectedEvent(null)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-xs cursor-pointer animate-fade-in"
+          />
 
-            {/* Modal View */}
-            {detailViewType === 'modal' ? (
-              <motion.div
-                layoutId={`event-container-${selectedEvent.id}`}
-                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+          {/* Modal View */}
+          {detailViewType === 'modal' ? (
+            <AnimeZoomIn className="relative z-10 max-w-lg w-full mx-4 max-h-[90vh]">
+              <div
                 role="dialog"
                 aria-modal="true"
                 aria-label={`Detalles de actividad: ${selectedEvent.title}`}
-                className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden z-10 border border-gray-100 dark:border-white/10 flex flex-col max-h-[90vh] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full overflow-hidden border border-gray-100 dark:border-white/10 flex flex-col max-h-[90vh] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {/* Close Button */}
                 <button
@@ -723,7 +696,7 @@ const Events = () => {
                         ) : (
                           selectedEvent.emoji && <span className="text-2xl">{selectedEvent.emoji}</span>
                         )}
-                        <motion.span layoutId={`event-title-${selectedEvent.id}`}>{selectedEvent.title}</motion.span>
+                        <span>{selectedEvent.title}</span>
                       </h2>
                     </div>
                   </div>
@@ -744,7 +717,7 @@ const Events = () => {
                       ) : (
                         selectedEvent.emoji && <span className="text-2xl">{selectedEvent.emoji}</span>
                       )}
-                      <motion.span layoutId={`event-title-${selectedEvent.id}`}>{selectedEvent.title}</motion.span>
+                      <span>{selectedEvent.title}</span>
                     </h2>
                   </div>
                 )}
@@ -792,6 +765,8 @@ const Events = () => {
                       {selectedEvent.description || 'No hay descripción detallada provista para esta actividad.'}
                     </p>
                   </div>
+                  </div>
+
                   {/* Footer Switcher */}
                   <div className="border-t border-gray-155 dark:border-white/10 p-4 bg-gray-50 dark:bg-slate-800 flex items-center justify-between text-xs text-slate-650 dark:text-gray-400 font-semibold flex-shrink-0 mt-auto">
                     <span>Presentación:</span>
@@ -813,19 +788,16 @@ const Events = () => {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </AnimeZoomIn>
             ) : (
               /* Drawer View */
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                role="dialog"
-                aria-modal="true"
-                aria-label={`Detalles de actividad: ${selectedEvent.title}`}
-                className="absolute top-0 right-0 h-full max-w-md w-full bg-white dark:bg-slate-900 shadow-2xl z-10 flex flex-col border-l border-gray-150 dark:border-white/10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
+              <AnimeFadeUp className="absolute top-0 right-0 h-full max-w-md w-full z-10">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={`Detalles de actividad: ${selectedEvent.title}`}
+                  className="h-full w-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col border-l border-gray-150 dark:border-white/10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
                 {/* Header/Banner */}
                 <div className="relative flex-shrink-0">
                   <button
@@ -947,11 +919,11 @@ const Events = () => {
                     </button>
                   </div>
                 </div>
-              </motion.div>
+                </div>
+              </AnimeFadeUp>
             )}
           </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

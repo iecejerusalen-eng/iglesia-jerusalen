@@ -65,6 +65,7 @@ export const AnimeReveal = ({
 interface AnimeStaggerGridProps {
   items?: ReactNode[]; // Deprecated but kept for compatibility
   children?: ReactNode; // Using children directly
+  delay?: number;
   staggerDelay?: number;
   duration?: number;
   className?: string;
@@ -453,3 +454,225 @@ export const AnimeFloat = ({ children, className = '', duration = 4000, y = [0, 
     </div>
   );
 };
+
+// ==========================================
+// 8. NEW ANIMATIONS (ZOOM, FLIP, BOUNCE)
+// ==========================================
+
+interface AnimeZoomInProps {
+  children: ReactNode;
+  delay?: number;
+  duration?: number;
+  className?: string;
+  once?: boolean;
+}
+
+export const AnimeZoomIn = ({ children, delay = 0, duration = 800, className = '', once = true }: AnimeZoomInProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        if (once) observer.disconnect();
+      } else if (!once) {
+        setIsVisible(false);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [once]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (isVisible && (!once || !hasAnimated.current)) {
+      anime({
+        targets: ref.current,
+        opacity: [0, 1],
+        scale: [0.3, 1],
+        duration,
+        delay,
+        easing: 'easeOutElastic(1, .8)'
+      });
+      hasAnimated.current = true;
+    } else if (!isVisible && !once) {
+      anime.set(ref.current, { opacity: 0, scale: 0.3 });
+    }
+  }, [isVisible, delay, duration, once]);
+
+  return <div ref={ref} className={className} style={{ opacity: 0 }}>{children}</div>;
+};
+
+export const AnimeFlipIn = ({ children, delay = 0, duration = 800, className = '', once = true, axis = 'Y' as 'X' | 'Y' }: AnimeZoomInProps & { axis?: 'X' | 'Y' }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        if (once) observer.disconnect();
+      } else if (!once) {
+        setIsVisible(false);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [once]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (isVisible && (!once || !hasAnimated.current)) {
+      anime({
+        targets: ref.current,
+        opacity: [0, 1],
+        rotateY: axis === 'Y' ? [90, 0] : 0,
+        rotateX: axis === 'X' ? [90, 0] : 0,
+        duration,
+        delay,
+        easing: 'easeOutBack'
+      });
+      hasAnimated.current = true;
+    } else if (!isVisible && !once) {
+      anime.set(ref.current, { opacity: 0, rotateY: axis === 'Y' ? 90 : 0, rotateX: axis === 'X' ? 90 : 0 });
+    }
+  }, [isVisible, delay, duration, once, axis]);
+
+  return <div ref={ref} className={className} style={{ opacity: 0, perspective: 1000 }}>{children}</div>;
+};
+
+export const AnimeBounceIn = ({ children, delay = 0, duration = 1000, className = '', once = true }: AnimeZoomInProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        if (once) observer.disconnect();
+      } else if (!once) {
+        setIsVisible(false);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [once]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (isVisible && (!once || !hasAnimated.current)) {
+      anime({
+        targets: ref.current,
+        opacity: [0, 1],
+        translateY: [-200, 0],
+        duration,
+        delay,
+        easing: 'easeOutBounce'
+      });
+      hasAnimated.current = true;
+    } else if (!isVisible && !once) {
+      anime.set(ref.current, { opacity: 0, translateY: -200 });
+    }
+  }, [isVisible, delay, duration, once]);
+
+  return <div ref={ref} className={className} style={{ opacity: 0 }}>{children}</div>;
+};
+
+// ==========================================
+// 9. NEW HOVER EFFECTS (PULSE, RUBBERBAND)
+// ==========================================
+
+interface AnimeButtonProps {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+}
+
+export const AnimePulseHover = ({ children, className = '', onClick, onMouseEnter, onMouseLeave, type = 'button', disabled = false }: AnimeButtonProps) => {
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handleMouseEnter = () => {
+    if (onMouseEnter) onMouseEnter();
+    if (!btnRef.current || disabled) return;
+    anime({
+      targets: btnRef.current,
+      scale: [1, 1.05, 1],
+      duration: 800,
+      loop: true,
+      easing: 'easeInOutSine'
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (onMouseLeave) onMouseLeave();
+    if (!btnRef.current || disabled) return;
+    anime.remove(btnRef.current);
+    anime({
+      targets: btnRef.current,
+      scale: 1,
+      duration: 300,
+      easing: 'easeOutQuad'
+    });
+  };
+
+  return (
+    <button
+      ref={btnRef}
+      className={className}
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      type={type}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+
+export const AnimeRubberBandHover = ({ children, className = '', onClick, onMouseEnter, onMouseLeave, type = 'button', disabled = false }: AnimeButtonProps) => {
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handleMouseEnter = () => {
+    if (onMouseEnter) onMouseEnter();
+    if (!btnRef.current || disabled) return;
+    anime.remove(btnRef.current);
+    anime({
+      targets: btnRef.current,
+      scaleX: [1, 1.25, 0.75, 1.15, 0.95, 1.05, 1],
+      scaleY: [1, 0.75, 1.25, 0.85, 1.05, 0.95, 1],
+      duration: 1000,
+      easing: 'easeOutElastic(1, .8)'
+    });
+  };
+  
+  const handleMouseLeave = () => {
+    if (onMouseLeave) onMouseLeave();
+  };
+
+  return (
+    <button
+      ref={btnRef}
+      className={className}
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      type={type}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+

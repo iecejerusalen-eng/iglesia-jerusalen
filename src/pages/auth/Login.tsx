@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 const authSchema = z.object({
   email: z.string().email('Por favor ingresa un correo válido'),
@@ -144,13 +144,9 @@ const Login = () => {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <AnimatePresence mode="popLayout">
+          <div className="overflow-hidden transition-all duration-300">
             {isRegister && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+              <AnimeFadeUp
                 className="grid grid-cols-2 gap-4"
               >
                 <div>
@@ -175,9 +171,9 @@ const Login = () => {
                     placeholder="Ej. Pérez"
                   />
                 </div>
-              </motion.div>
+              </AnimeFadeUp>
             )}
-          </AnimatePresence>
+          </div>
 
           <div>
             <label htmlFor="email" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Correo Electrónico</label>

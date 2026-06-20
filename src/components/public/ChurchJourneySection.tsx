@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import React, { useRef, useEffect } from 'react';
 import { BookOpen, Heart, Users, Globe } from 'lucide-react';
 import OptimizedMedia from '../common/OptimizedMedia';
+import { AnimeZoomIn, AnimeFadeUp } from '../animations/AnimeWrappers';
 
 interface Step {
   id: string;
@@ -49,13 +49,31 @@ const journeySteps: Step[] = [
 
 export default function ChurchJourneySection() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start center", "end center"]
-  });
+  const lineRef = useRef<HTMLDivElement>(null);
 
-  const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current || !lineRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewHeight = window.innerHeight;
+      
+      // Calculate how much of the section has been scrolled
+      const start = viewHeight / 2;
+      const end = rect.height;
+      
+      let progress = 0;
+      if (rect.top <= start) {
+        progress = (start - rect.top) / end;
+        progress = Math.max(0, Math.min(1, progress));
+      }
+      
+      lineRef.current.style.height = `${progress * 100}%`;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // init
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <section className="py-24 bg-slate-50 dark:bg-[#071330] relative overflow-hidden transition-colors duration-300" ref={containerRef}>
@@ -80,9 +98,10 @@ export default function ChurchJourneySection() {
         <div className="relative max-w-5xl mx-auto">
           {/* Animated central line */}
           <div className="absolute left-[28px] md:left-1/2 top-0 bottom-0 w-1 bg-slate-200 dark:bg-slate-800 -translate-x-1/2 rounded-full overflow-hidden">
-            <motion.div 
-              className="absolute top-0 w-full bg-gradient-to-b from-amber-500 via-amber-600 to-yellow-400"
-              style={{ height: lineHeight, transformOrigin: 'top' }}
+            <div 
+              ref={lineRef}
+              className="absolute top-0 w-full bg-gradient-to-b from-amber-500 via-amber-600 to-yellow-400 transition-all duration-100 ease-linear"
+              style={{ height: '0%', transformOrigin: 'top' }}
             />
           </div>
 
@@ -108,36 +127,27 @@ interface TimelineRowProps {
 }
 
 const TimelineRow = ({ step, isEven }: TimelineRowProps) => {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(rowRef, { once: true, margin: "-100px" });
-
   return (
-    <div ref={rowRef} className="relative flex flex-col md:flex-row items-center w-full">
+    <div className="relative flex flex-col md:flex-row items-center w-full">
       
       {/* Glowing Timeline Node */}
       <div className="absolute left-[28px] md:left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={isInView ? { 
-            scale: [0.8, 1.2, 1], 
-            opacity: 1,
-            boxShadow: "0 0 20px rgba(217, 119, 6, 0.6)"
-          } : {}}
-          transition={{ duration: 0.6, type: 'spring' }}
-          className="w-14 h-14 bg-white dark:bg-slate-900 rounded-full border-4 border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-lg dark:shadow-amber-500/10"
+        <AnimeZoomIn
+          delay={0.1}
+          duration={600}
+          className="w-14 h-14 bg-white dark:bg-slate-900 rounded-full border-4 border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-lg dark:shadow-amber-500/10 hover:shadow-[0_0_20px_rgba(217,119,6,0.6)] transition-shadow duration-300"
         >
           <div className="w-full h-full flex items-center justify-center rounded-full bg-amber-50/50 dark:bg-amber-950/20">
             {step.icon}
           </div>
-        </motion.div>
+        </AnimeZoomIn>
       </div>
 
       {/* Content Side */}
       <div className={`w-full md:w-1/2 pl-20 md:pl-0 ${isEven ? 'md:pr-24 md:text-right' : 'md:pl-24 md:order-last'}`}>
-        <motion.div
-          initial={{ opacity: 0, x: isEven ? -40 : 40, y: 15 }}
-          animate={isInView ? { opacity: 1, x: 0, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        <AnimeFadeUp
+          distance={40}
+          delay={0.2}
           className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-white/10 p-6 md:p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-blue-950/10 hover:border-amber-500/30 transition-all duration-300"
         >
           <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-xs mb-4 border border-amber-200 dark:border-amber-900/30">
@@ -149,15 +159,14 @@ const TimelineRow = ({ step, isEven }: TimelineRowProps) => {
           <p className="text-slate-600 dark:text-slate-350 leading-relaxed text-sm md:text-base font-light">
             {step.description}
           </p>
-        </motion.div>
+        </AnimeFadeUp>
       </div>
 
       {/* Image Side */}
       <div className={`w-full md:w-1/2 pl-20 md:pl-0 mt-6 md:mt-0 ${isEven ? 'md:pl-24 md:order-last' : 'md:pr-24'}`}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 20 }}
-          animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+        <AnimeFadeUp
+          distance={20}
+          delay={0.15}
           className="relative rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/25 aspect-[4/3] group border border-slate-200 dark:border-white/10"
         >
           <OptimizedMedia 
@@ -166,7 +175,7 @@ const TimelineRow = ({ step, isEven }: TimelineRowProps) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        </motion.div>
+        </AnimeFadeUp>
       </div>
 
     </div>

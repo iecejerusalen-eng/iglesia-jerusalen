@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import type { DonationCategory } from '../../types';
 import { Heart, CreditCard, Landmark, CheckCircle2, ArrowRight, HeartHandshake, HandHeart, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { staggerContainer, fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import bancoGuayaquilLogo from '../../assets/logos/bancoguayaquil.svg';
 
 const FALLBACK_CATEGORIES: DonationCategory[] = [
@@ -171,10 +170,7 @@ const Donations = () => {
         <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
           <Heart size={200} />
         </div>
-        <motion.div 
-          variants={fadeInUp}
-          initial="initial"
-          animate="animate"
+        <AnimeFadeUp 
           className="relative z-10 max-w-4xl space-y-6"
         >
           <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -191,7 +187,7 @@ const Donations = () => {
           <p className="text-gray-100 text-sm md:text-base leading-relaxed font-light">
             Lo más importante no es el dinero sino tu corazón y tu voluntad... Dios es el dueño de todo, pero te quiere a ti para por medio de ti llegar a otros.
           </p>
-        </motion.div>
+        </AnimeFadeUp>
       </div>
 
       {/* 2. SECCIÓN DE 3 PILARES (GRID IN CASUAL CASCADE) */}
@@ -201,16 +197,11 @@ const Donations = () => {
           <p className="text-gray-400 dark:text-gray-500 text-xs">Existen múltiples maneras de colaborar con la obra de Dios en la iglesia.</p>
         </div>
 
-        <motion.div 
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true, amount: 0.1 }}
+        <AnimeStaggerGrid 
           className="grid grid-cols-1 md:grid-cols-3 gap-8"
         >
           {/* Pilar 1: Dar Online */}
-          <motion.div 
-            variants={fadeInUp}
+          <AnimeFadeUp 
             className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
           >
             <div className="space-y-4">
@@ -223,11 +214,10 @@ const Donations = () => {
               </p>
             </div>
             <div className="text-gold text-xs font-bold uppercase tracking-wider mt-6">Rápido y Seguro</div>
-          </motion.div>
+          </AnimeFadeUp>
 
           {/* Pilar 2: Sé un Voluntario */}
-          <motion.div 
-            variants={fadeInUp}
+          <AnimeFadeUp 
             className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
           >
             <div className="space-y-4">
@@ -245,11 +235,10 @@ const Donations = () => {
             >
               Quiero Servir →
             </a>
-          </motion.div>
+          </AnimeFadeUp>
 
           {/* Pilar 3: Cómo puedes Ayudarnos */}
-          <motion.div 
-            variants={fadeInUp}
+          <AnimeFadeUp 
             className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow flex flex-col items-center justify-between"
           >
             <div className="space-y-4 w-full">
@@ -276,8 +265,8 @@ const Donations = () => {
                 </li>
               </ol>
             </div>
-          </motion.div>
-        </motion.div>
+          </AnimeFadeUp>
+        </AnimeStaggerGrid>
       </section>
 
       {/* 3. GRID PRINCIPAL: CUENTA BANCARIA & FORMULARIO DAR ONLINE */}

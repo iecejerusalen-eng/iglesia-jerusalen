@@ -17,7 +17,7 @@ import ChurchJourneySection from '../../components/public/ChurchJourneySection';
 import SermonVideoGallery from '../../components/public/SermonVideoGallery';
 import { useLiveModeStore } from '../../store/useLiveModeStore';
 import MagneticButton from '../../components/animations/MagneticButton';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeParallax, AnimeFloat } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeParallax, AnimeFloat, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 
 const FALLBACK_SCHEDULES: Schedule[] = [
   { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:00pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
@@ -745,13 +745,13 @@ const Home = () => {
 
                   {/* 2. STATS FRAP (FASE 3 - PTO 2) */}
                   <div className="bg-slate-50 dark:bg-slate-950 py-10 transition-colors duration-300 relative z-10">
-                    <AnimeFadeUp className="max-w-7xl mx-auto px-4 md:px-8">
+                    <AnimeZoomIn className="max-w-7xl mx-auto px-4 md:px-8">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                         <AnimatedCounter value={350} text="Familias Comprometidas" />
                         <AnimatedCounter value={18} text="Años Edificando Vidas" />
                         <AnimatedCounter value={120} text="Niños Formados en Fe" />
                       </div>
-                    </AnimeFadeUp>
+                    </AnimeZoomIn>
                   </div>
                 </div>
               );
@@ -1349,7 +1349,7 @@ const Home = () => {
       <TestimonialsSection />
 
       {/* 10. FINAL CTA BANNER (FASE 3 - PTO 10) */}
-      <AnimeFadeUp className="max-w-5xl mx-auto px-4">
+      <AnimeZoomIn className="max-w-5xl mx-auto px-4">
         <div className="relative bg-gradient-to-tr from-[#0a1c40] via-[#071330] to-slate-900 border border-slate-850 rounded-3xl p-10 md:p-14 text-center overflow-hidden shadow-2xl">
           <div className="absolute top-[-50px] left-[-50px] w-64 h-64 rounded-full bg-amber-500/5 blur-[90px] pointer-events-none" />
           <div className="absolute bottom-[-50px] right-[-50px] w-80 h-80 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
@@ -1377,7 +1377,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </AnimeFadeUp>
+      </AnimeZoomIn>
     </div>
   );
 };

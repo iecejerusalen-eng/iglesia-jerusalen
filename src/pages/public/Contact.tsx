@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '../../config/supabase';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
+import MagneticButton from '../../components/animations/MagneticButton';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -76,7 +77,7 @@ const Contact = () => {
         <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
           <Mail size={200} />
         </div>
-        <AnimeFadeUp 
+        <AnimeZoomIn 
           className="relative z-10 max-w-3xl space-y-4"
         >
           <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -86,7 +87,7 @@ const Contact = () => {
           <p className="text-gray-200 text-base md:text-lg leading-relaxed font-light">
             ¿Tienes dudas, peticiones de oración, o deseas saber más de nuestras actividades? Ponte en contacto con nosotros, estamos para servirte.
           </p>
-        </AnimeFadeUp>
+        </AnimeZoomIn>
       </div>
 
       {/* GRID PRINCIPAL (2 Columnas en Desktop) */}
@@ -103,7 +104,7 @@ const Contact = () => {
             
             <div className="grid grid-cols-1 gap-4">
               {/* Tarjeta Dirección */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs hover:shadow-sm transition-shadow">
+              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
                 <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
                   <MapPin size={20} />
                 </div>
@@ -113,10 +114,10 @@ const Contact = () => {
                     Baquerizo Moreno entre Av. Colón y Tulcán, Milagro 09D1701.
                   </p>
                 </div>
-              </div>
+              </AnimeHoverCard>
 
               {/* Tarjeta Secretaría */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs hover:shadow-sm transition-shadow">
+              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
                 <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Phone size={20} />
                 </div>
@@ -126,10 +127,10 @@ const Contact = () => {
                     +593 98 526 3122 (Hna. Marlene)
                   </p>
                 </div>
-              </div>
+              </AnimeHoverCard>
 
               {/* Tarjeta Correo */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs hover:shadow-sm transition-shadow">
+              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
                 <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Mail size={20} />
                 </div>
@@ -139,7 +140,7 @@ const Contact = () => {
                     iece_jerusalen@hotmail.com
                   </p>
                 </div>
-              </div>
+              </AnimeHoverCard>
             </div>
           </div>
 
@@ -147,43 +148,49 @@ const Contact = () => {
           <div className="pt-6 border-t border-gray-100 dark:border-white/10 space-y-4">
             <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Nuestras Redes Sociales</span>
             <div className="flex gap-4">
-              <a 
-                href="https://www.facebook.com/jerusalen.cuadrangular" 
-                target="_blank" 
-                rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-primary dark:text-white dark:hover:text-blue-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
-                title="Facebook"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
-                </svg>
-              </a>
+              <AnimeRubberBandHover>
+                <a 
+                  href="https://www.facebook.com/jerusalen.cuadrangular" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-primary dark:text-white dark:hover:text-blue-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                  title="Facebook"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
+                  </svg>
+                </a>
+              </AnimeRubberBandHover>
 
-              <a 
-                href="https://www.instagram.com/jerusalen_iece/" 
-                target="_blank" 
-                rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
-                title="Instagram"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-              </a>
+              <AnimeRubberBandHover>
+                <a 
+                  href="https://www.instagram.com/jerusalen_iece/" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                  title="Instagram"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                  </svg>
+                </a>
+              </AnimeRubberBandHover>
 
-              <a 
-                href="https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw" 
-                target="_blank" 
-                rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
-                title="YouTube"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.017 0 12 0 12s0 3.982.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.982 24 12 24 12s0-3.982-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
-              </a>
+              <AnimeRubberBandHover>
+                <a 
+                  href="https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                  title="YouTube"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.017 0 12 0 12s0 3.982.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.982 24 12 24 12s0-3.982-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              </AnimeRubberBandHover>
             </div>
           </div>
         </div>
@@ -220,12 +227,14 @@ const Contact = () => {
             <p className="text-gray-555 dark:text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
               Gracias por escribirnos. Tu mensaje ha sido enviado a la administración de la iglesia. Te responderemos al correo proporcionado lo antes posible.
             </p>
-            <button
-              onClick={() => setSuccess(false)}
-              className="mt-4 px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer border border-transparent"
-            >
-              Enviar otro mensaje
-            </button>
+            <MagneticButton>
+              <button
+                onClick={() => setSuccess(false)}
+                className="mt-4 px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer border border-transparent"
+              >
+                Enviar otro mensaje
+              </button>
+            </MagneticButton>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 space-y-6 shadow-xs">
@@ -305,18 +314,22 @@ const Contact = () => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
-            >
-              {loading ? 'Enviando...' : (
-                <>
-                  Enviar Mensaje
-                  <Send size={16} />
-                </>
-              )}
-            </button>
+            <div className="pt-2">
+              <MagneticButton>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
+                >
+                  {loading ? 'Enviando...' : (
+                    <>
+                      Enviar Mensaje
+                      <Send size={16} />
+                    </>
+                  )}
+                </button>
+              </MagneticButton>
+            </div>
           </form>
         )}
       </AnimeFadeUp>

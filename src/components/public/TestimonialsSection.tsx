@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
+import * as animePkg from 'animejs';
+const anime = (animePkg as any).default || animePkg;
 
 interface Testimonial {
   id: string;
@@ -40,8 +41,9 @@ const TESTIMONIALS: Testimonial[] = [
 
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
+  const [direction, setDirection] = useState(1); // -1 for left, 1 for right
   const [isHovered, setIsHovered] = useState(false);
+  const slideRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isHovered) return;
@@ -50,6 +52,19 @@ export default function TestimonialsSection() {
     }, 6000);
     return () => clearInterval(timer);
   }, [currentIndex, isHovered]);
+
+  useEffect(() => {
+    if (slideRef.current) {
+      anime({
+        targets: slideRef.current,
+        translateX: [direction > 0 ? 100 : -100, 0],
+        opacity: [0, 1],
+        scale: [0.95, 1],
+        easing: 'easeOutElastic(1, 0.8)',
+        duration: 800
+      });
+    }
+  }, [currentIndex, direction]);
 
   const handlePrev = () => {
     setDirection(-1);
@@ -62,34 +77,6 @@ export default function TestimonialsSection() {
   };
 
   const active = TESTIMONIALS[currentIndex];
-
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 100 : -100,
-      opacity: 0,
-      scale: 0.95
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        x: { type: 'spring' as any, stiffness: 300, damping: 30 },
-        opacity: { duration: 0.4 },
-        scale: { duration: 0.4 }
-      }
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -100 : 100,
-      opacity: 0,
-      scale: 0.95,
-      transition: {
-        x: { type: 'spring' as any, stiffness: 300, damping: 30 },
-        opacity: { duration: 0.4 },
-        scale: { duration: 0.4 }
-      }
-    })
-  };
 
   return (
     <section 
@@ -126,55 +113,48 @@ export default function TestimonialsSection() {
 
         {/* Carousel slide container */}
         <div className="w-full max-w-2xl overflow-hidden px-10 py-6">
-          <AnimatePresence initial={false} custom={direction} mode="wait">
-            <motion.div
-              key={currentIndex}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-3xl p-8 md:p-10 border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-blue-950/15 flex flex-col justify-between items-center relative text-center"
-            >
-              {/* Quote Mark background */}
-              <div className="absolute top-6 left-6 text-amber-500/10 dark:text-amber-500/5 pointer-events-none">
-                <Quote size={80} className="stroke-[3px]" />
+          <div
+            ref={slideRef}
+            className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-3xl p-8 md:p-10 border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-blue-950/15 flex flex-col justify-between items-center relative text-center"
+          >
+            {/* Quote Mark background */}
+            <div className="absolute top-6 left-6 text-amber-500/10 dark:text-amber-500/5 pointer-events-none">
+              <Quote size={80} className="stroke-[3px]" />
+            </div>
+
+            <div className="space-y-6 relative z-10 flex flex-col items-center">
+              {/* 5 Stars */}
+              <div className="flex gap-1.5 text-amber-500">
+                {Array.from({ length: active.rating }).map((_, i) => (
+                  <Star key={i} size={18} fill="currentColor" className="stroke-none" />
+                ))}
               </div>
 
-              <div className="space-y-6 relative z-10 flex flex-col items-center">
-                {/* 5 Stars */}
-                <div className="flex gap-1.5 text-amber-500">
-                  {Array.from({ length: active.rating }).map((_, i) => (
-                    <Star key={i} size={18} fill="currentColor" className="stroke-none" />
-                  ))}
+              {/* Testimony text */}
+              <p className="text-slate-700 dark:text-slate-200 text-lg md:text-xl font-serif font-light italic leading-relaxed max-w-xl">
+                "{active.text}"
+              </p>
+            </div>
+
+            {/* Avatar and Identity */}
+            <div className="flex flex-col items-center gap-2 pt-6 mt-8 border-t border-slate-250 dark:border-white/5 w-full max-w-xs relative z-10">
+              {active.avatarUrl ? (
+                <img
+                  src={active.avatarUrl}
+                  alt={active.name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 text-white flex items-center justify-center font-bold text-lg shadow-md select-none">
+                  {active.name[0]}
                 </div>
-
-                {/* Testimony text */}
-                <p className="text-slate-700 dark:text-slate-200 text-lg md:text-xl font-serif font-light italic leading-relaxed max-w-xl">
-                  "{active.text}"
-                </p>
+              )}
+              <div className="text-center">
+                <h4 className="font-bold text-sm text-slate-800 dark:text-white">{active.name}</h4>
+                <p className="text-xs text-slate-400 font-medium">{active.location}</p>
               </div>
-
-              {/* Avatar and Identity */}
-              <div className="flex flex-col items-center gap-2 pt-6 mt-8 border-t border-slate-250 dark:border-white/5 w-full max-w-xs relative z-10">
-                {active.avatarUrl ? (
-                  <img
-                    src={active.avatarUrl}
-                    alt={active.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 text-white flex items-center justify-center font-bold text-lg shadow-md select-none">
-                    {active.name[0]}
-                  </div>
-                )}
-                <div className="text-center">
-                  <h4 className="font-bold text-sm text-slate-800 dark:text-white">{active.name}</h4>
-                  <p className="text-xs text-slate-400 font-medium">{active.location}</p>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
 

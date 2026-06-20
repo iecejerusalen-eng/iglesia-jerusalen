@@ -18,7 +18,7 @@ import {
   Loader2,
   Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
@@ -278,13 +278,10 @@ const Cart = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Pasos Dinámicos */}
         <div className="lg:col-span-8">
-          <AnimatePresence mode="wait">
+          <div className="relative">
             {step === 1 && (
-              <motion.div
+              <AnimeFadeUp
                 key="step-1"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-4 shadow-2xs"
               >
                 <div className="divide-y divide-gray-100 dark:divide-white/5">
@@ -372,15 +369,12 @@ const Cart = () => {
                     <ArrowRight size={16} />
                   </button>
                 </div>
-              </motion.div>
+              </AnimeFadeUp>
             )}
 
             {step === 2 && (
-              <motion.div
+              <AnimeFadeUp
                 key="step-2"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
               >
                 <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
@@ -492,15 +486,12 @@ const Cart = () => {
                     <ArrowRight size={16} />
                   </button>
                 </div>
-              </motion.div>
+              </AnimeFadeUp>
             )}
 
             {step === 3 && (
-              <motion.div
+              <AnimeFadeUp
                 key="step-3"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
               >
                 <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
@@ -694,9 +685,9 @@ const Cart = () => {
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </AnimeFadeUp>
             )}
-          </AnimatePresence>
+          </div>
         </div>
 
         {/* Lado Derecho: Resumen de Compra Fijo */}

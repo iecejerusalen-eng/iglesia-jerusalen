@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { BookOpen, ChevronDown, ChevronRight, ArrowLeft, GraduationCap, Lock, FolderOpen } from 'lucide-react';
 import type { Program, ProgramModule, ProgramLesson } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
@@ -88,10 +88,8 @@ const ProgramDetail = () => {
 
   const renderLessonCard = (lesson: ProgramLesson, index: number) => {
     return (
-      <motion.div
+      <AnimeFadeUp
         key={lesson.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors shadow-xs"
       >
         {/* Lesson header */}
@@ -118,13 +116,9 @@ const ProgramDetail = () => {
         </button>
 
         {/* Lesson content */}
-        <AnimatePresence>
+        <div className="overflow-hidden transition-all duration-300">
           {expandedLesson === lesson.id && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+            <AnimeFadeUp
               className="overflow-hidden"
             >
               <div className="border-t border-gray-100 dark:border-white/10 bg-slate-50/20 dark:bg-slate-950/20">
@@ -170,10 +164,10 @@ const ProgramDetail = () => {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </AnimeFadeUp>
           )}
-        </AnimatePresence>
-      </motion.div>
+        </div>
+      </AnimeFadeUp>
     );
   };
 
@@ -191,7 +185,7 @@ const ProgramDetail = () => {
           <Link to="/programas" className="inline-flex items-center gap-1.5 text-indigo-300 hover:text-white text-xs font-semibold uppercase tracking-wider mb-6 transition-colors">
             <ArrowLeft size={14} /> Volver a Programas
           </Link>
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
+          <AnimeFadeUp>
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3 tracking-tight">{program.title}</h1>
             {program.description && <p className="text-indigo-200 text-sm md:text-base max-w-2xl font-light leading-relaxed">{program.description}</p>}
             <div className="flex items-center gap-4 mt-6 text-indigo-300 text-xs">
@@ -205,7 +199,7 @@ const ProgramDetail = () => {
                 </span>
               )}
             </div>
-          </motion.div>
+          </AnimeFadeUp>
         </div>
       </div>
 
@@ -252,13 +246,9 @@ const ProgramDetail = () => {
                   </button>
 
                   {/* Module Lessons list */}
-                  <AnimatePresence initial={false}>
+                  <div className="overflow-hidden transition-all duration-300">
                     {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                      <AnimeZoomIn
                         className="overflow-hidden"
                       >
                         <div className="pt-3 space-y-2.5">
@@ -268,9 +258,9 @@ const ProgramDetail = () => {
                             moduleLessons.map((lesson, index) => renderLessonCard(lesson, index))
                           )}
                         </div>
-                      </motion.div>
+                      </AnimeZoomIn>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </div>
               );
             })}

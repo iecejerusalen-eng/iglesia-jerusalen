@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { Search, Music, X, Eye, EyeOff, Filter } from 'lucide-react';
 import type { Song, SongType, SongStyle } from '../../types';
 
@@ -45,11 +45,11 @@ const SongsLibrary = () => {
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-amber-800 to-amber-900 text-white py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <AnimeFadeUp delay={0} duration={600}>
             <Music size={48} className="mx-auto mb-4 opacity-80" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Alabanzas e Himnos</h1>
             <p className="text-amber-200 text-lg max-w-xl mx-auto">Biblioteca de canciones de la Iglesia Jerusalén</p>
-          </motion.div>
+          </AnimeFadeUp>
         </div>
       </div>
 
@@ -71,29 +71,26 @@ const SongsLibrary = () => {
             </button>
           </div>
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden">
-                <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm">
-                  <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-                    className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
-                    <option value="">Todos los tipos</option>
-                    {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
-                    className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
-                    <option value="">Todos los estilos</option>
-                    {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                  {(filterType || filterStyle) && (
-                    <button onClick={() => { setFilterType(''); setFilterStyle(''); }}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer">Limpiar filtros</button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {showFilters && (
+            <AnimeFadeUp delay={0} duration={400} distance={20} className="overflow-hidden">
+              <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm">
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
+                  className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
+                  <option value="">Todos los tipos</option>
+                  {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
+                  className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
+                  <option value="">Todos los estilos</option>
+                  {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                {(filterType || filterStyle) && (
+                  <button onClick={() => { setFilterType(''); setFilterStyle(''); }}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium cursor-pointer">Limpiar filtros</button>
+                )}
+              </div>
+            </AnimeFadeUp>
+          )}
         </div>
 
         {/* Songs Grid */}
@@ -108,13 +105,10 @@ const SongsLibrary = () => {
             <p className="text-sm">Intenta con otra búsqueda o filtro</p>
           </div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((song, i) => (
-              <motion.div
+          <AnimeStaggerGrid delay={100} staggerDelay={40} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((song) => (
+              <div
                 key={song.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
                 onClick={() => setSelectedSong(song)}
                 className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-5 hover:border-amber-300 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group"
               >
@@ -136,28 +130,18 @@ const SongsLibrary = () => {
                     <span className="text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium px-2 py-0.5 rounded-full">{song.bpm} BPM</span>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </AnimeStaggerGrid>
         )}
       </div>
 
       {/* Song Detail Modal */}
-      <AnimatePresence>
-        {selectedSong && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto"
-          >
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setSelectedSong(null)}></div>
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 30, scale: 0.97 }}
-              className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-white/10 my-4"
-            >
+      {selectedSong && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setSelectedSong(null)}></div>
+          <AnimeZoomIn delay={0} duration={400} className="relative w-full max-w-3xl my-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full border border-gray-200 dark:border-white/10">
               {/* Header */}
               <div className="p-6 border-b border-gray-100 dark:border-white/10">
                 <div className="flex justify-between items-start">
@@ -296,10 +280,10 @@ const SongsLibrary = () => {
                   />
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </AnimeZoomIn>
+        </div>
+      )}
     </div>
   );
 };

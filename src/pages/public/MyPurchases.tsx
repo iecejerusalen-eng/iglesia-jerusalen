@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
-import { motion } from 'framer-motion';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { Download, AlertCircle, ShoppingBag, Calendar, CreditCard, ChevronRight, CheckCircle2, Clock, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Order, ProductDigitalAsset } from '../../types';
@@ -124,9 +124,7 @@ export default function MyPurchases() {
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
+        <AnimeFadeUp 
           className="max-w-md w-full text-center bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10"
         >
           <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 text-gold rounded-full flex items-center justify-center mx-auto mb-6">
@@ -140,7 +138,7 @@ export default function MyPurchases() {
           >
             Iniciar Sesión
           </Link>
-        </motion.div>
+        </AnimeFadeUp>
       </div>
     );
   }
@@ -232,10 +230,8 @@ export default function MyPurchases() {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <motion.div 
+              <AnimeFadeUp 
                 key={order.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 overflow-hidden"
               >
                 {/* Cabecera del pedido */}
@@ -376,7 +372,7 @@ export default function MyPurchases() {
                     <span className="text-xl font-extrabold text-primary dark:text-white">${Number(order.total).toFixed(2)}</span>
                   </div>
                 </div>
-              </motion.div>
+              </AnimeFadeUp>
             ))}
           </div>
         )}

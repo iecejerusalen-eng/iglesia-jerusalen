@@ -7,7 +7,7 @@ import {
   Search, BookOpen, Music, Calendar, MapPin, 
   Globe, Heart, ShoppingBag, Send, ArrowRight, Loader2
 } from 'lucide-react';
-import { AnimeScaleIn } from '../animations/AnimeWrappers';
+import { AnimeScaleIn, AnimeFadeUp } from '../animations/AnimeWrappers';
 
 const cmdkStyles = `
   [cmdk-root] {
@@ -236,7 +236,8 @@ export default function SearchPalette() {
 
               {/* INTENTS / ACTION SHORTCUTS */}
               {(showLocation || showSocials || showPetition || showDonation || showStore) && (
-                <Command.Group heading="Accesos Directos y Ayuda">
+                <AnimeFadeUp delay={0.1}>
+                  <Command.Group heading="Accesos Directos y Ayuda">
                   {showLocation && (
                     <Command.Item 
                       value="ubicación dirección dónde queda mapa milagro cómo llegar" 
@@ -306,11 +307,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   )}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* SONGS RESULTS */}
               {results.songs.length > 0 && (
-                <Command.Group heading="Alabanzas e Himnos">
+                <AnimeFadeUp delay={0.15}>
+                  <Command.Group heading="Alabanzas e Himnos">
                   {results.songs.map(song => (
                     <Command.Item 
                       key={song.id} 
@@ -328,11 +331,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* EVENTS RESULTS */}
               {results.events.length > 0 && (
-                <Command.Group heading="Eventos y Actividades">
+                <AnimeFadeUp delay={0.2}>
+                  <Command.Group heading="Eventos y Actividades">
                   {results.events.map(event => (
                     <Command.Item 
                       key={event.id} 
@@ -354,11 +359,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* SCHEDULES RESULTS */}
               {results.schedules.length > 0 && (
-                <Command.Group heading="Horarios de Cultos y Reuniones">
+                <AnimeFadeUp delay={0.25}>
+                  <Command.Group heading="Horarios de Cultos y Reuniones">
                   {results.schedules.map(sch => (
                     <Command.Item 
                       key={sch.id} 
@@ -378,11 +385,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* MINISTRIES RESULTS */}
               {results.ministries.length > 0 && (
-                <Command.Group heading="Ministerios y Departamentos">
+                <AnimeFadeUp delay={0.3}>
+                  <Command.Group heading="Ministerios y Departamentos">
                   {results.ministries.map(min => (
                     <Command.Item 
                       key={min.id} 
@@ -398,11 +407,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* PRODUCTS RESULTS */}
               {results.products.length > 0 && (
-                <Command.Group heading="Productos de la Tienda">
+                <AnimeFadeUp delay={0.35}>
+                  <Command.Group heading="Productos de la Tienda">
                   {results.products.map(prod => (
                     <Command.Item 
                       key={prod.id} 
@@ -420,11 +431,13 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
               )}
 
               {/* GENERAL PUBLIC PAGES */}
               {search.length === 0 && (
-                <Command.Group heading="Secciones del Sitio">
+                <AnimeFadeUp delay={0.4}>
+                  <Command.Group heading="Secciones del Sitio">
                   <Command.Item value="inicio home principal" onSelect={() => handleSelect('/')}>
                     <BookOpen size={18} className="text-slate-400" />
                     <span>Inicio</span>
@@ -442,6 +455,7 @@ export default function SearchPalette() {
                     <span>Contacto y Oficinas</span>
                   </Command.Item>
                 </Command.Group>
+                </AnimeFadeUp>
               )}
             </Command.List>
           </Command>

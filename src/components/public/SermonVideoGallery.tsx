@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Calendar, User, ArrowRight } from 'lucide-react';
 import type { Sermon } from '../../types';
-import { ScrollReveal, StaggerContainer, StaggerItem, HoverCard } from '../animations/MotionWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../animations/AnimeWrappers';
 
 interface SermonVideoGalleryProps {
   sermons: Sermon[];
@@ -46,20 +45,20 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div className="space-y-3">
-            <ScrollReveal>
+            <AnimeFadeUp>
               <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
                 {title || 'Últimas Prédicas'}
               </h2>
-            </ScrollReveal>
+            </AnimeFadeUp>
             {subtitle && (
-              <ScrollReveal delay={0.1}>
+              <AnimeFadeUp delay={100}>
                 <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xl text-left">
                   {subtitle}
                 </p>
-              </ScrollReveal>
+              </AnimeFadeUp>
             )}
           </div>
-          <ScrollReveal delay={0.2}>
+          <AnimeFadeUp delay={200}>
             <a
               href="https://youtube.com" // Update with actual channel link if available
               target="_blank"
@@ -69,20 +68,13 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
               Ver Canal de Youtube
               <ArrowRight size={16} />
             </a>
-          </ScrollReveal>
+          </AnimeFadeUp>
         </div>
 
         {/* Featured Video Player */}
-        <AnimatePresence mode="wait">
+        <div className="overflow-hidden">
           {activeSermon && (
-            <motion.div 
-              key={activeSermon.id}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.5, type: 'spring' }}
-              className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-2xl group border border-slate-200 dark:border-white/10"
-            >
+            <AnimeFadeUp key={activeSermon.id} className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-2xl group border border-slate-200 dark:border-white/10">
               <div className="aspect-video w-full relative">
                 {isPlaying && activeVideoId ? (
                   <iframe
@@ -148,20 +140,20 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                   </>
                 )}
               </div>
-            </motion.div>
+            </AnimeFadeUp>
           )}
-        </AnimatePresence>
+        </div>
 
         {/* Playlist Grid / Carousel */}
         {sermons.length > 1 && (
           <div className="space-y-6 text-left">
             <h4 className="font-serif font-bold text-xl text-slate-800 dark:text-white">Sermones Anteriores</h4>
-            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sermons.filter(s => s.id !== activeSermon?.id).map((sermon) => {
                 const videoId = getYoutubeId(sermon.youtube_url);
                 return (
-                  <StaggerItem key={sermon.id}>
-                    <HoverCard
+                  <div key={sermon.id}>
+                    <AnimeHoverCard
                       onClick={() => handlePlay(sermon)}
                       className="group cursor-pointer bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-lg dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full"
                     >
@@ -197,11 +189,11 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                           </span>
                         </div>
                       </div>
-                    </HoverCard>
-                  </StaggerItem>
+                    </AnimeHoverCard>
+                  </div>
                 );
               })}
-            </StaggerContainer>
+            </AnimeStaggerGrid>
           </div>
         )}
       </div>

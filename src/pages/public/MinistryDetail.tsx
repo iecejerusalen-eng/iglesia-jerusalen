@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Users, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
-import { fadeInUp } from '../../utils/animations';
 import BlockRenderer from '../../components/public/BlockRenderer';
-
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
+import MagneticButton from '../../components/animations/MagneticButton';
 const MinistryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const [ministry, setMinistry] = useState<any | null>(null);
@@ -145,12 +144,7 @@ const MinistryDetail = () => {
   }
 
   return (
-    <motion.div 
-      variants={fadeInUp}
-      initial="initial"
-      animate="animate"
-      className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8"
-    >
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
       {/* Botón Volver */}
       <Link 
         to="/ministerios"
@@ -162,7 +156,8 @@ const MinistryDetail = () => {
       </Link>
 
       {/* CABECERA INMERSIVA */}
-      <div className="relative rounded-3xl overflow-hidden shadow-xl text-white min-h-[300px] md:min-h-[380px] flex flex-col justify-end">
+      <AnimeZoomIn>
+        <div className="relative rounded-3xl overflow-hidden shadow-xl text-white min-h-[300px] md:min-h-[380px] flex flex-col justify-end">
         {/* Imagen de Fondo o Degradado */}
         {ministry.image_url ? (
           <>
@@ -237,11 +232,13 @@ const MinistryDetail = () => {
               </div>
             )}
           </div>
+          </div>
         </div>
-      </div>
+      </AnimeZoomIn>
 
       {/* CONTENIDO DETALLADO */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs">
+      <AnimeFadeUp>
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs">
         <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
           Sobre el Ministerio
         </h2>
@@ -254,9 +251,11 @@ const MinistryDetail = () => {
           />
         )}
       </div>
+      </AnimeFadeUp>
 
       {/* SECCIÓN DIRECTIVA */}
       {directiva && directiva.length > 0 && (
+        <AnimeFadeUp delay={100}>
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6">
           <div className="border-b border-gray-100 dark:border-slate-800 pb-4">
             <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">
@@ -294,12 +293,14 @@ const MinistryDetail = () => {
               );
             })}
           </div>
-        </div>
+          </div>
+        </AnimeFadeUp>
       )}
 
       {/* SECCIÓN MIEMBROS (Si es Cuerpo de Apoyo) */}
       {ministry.slug === 'cuerpo-de-apoyo' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6">
+        <AnimeFadeUp>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-4">
             <div>
               <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">Miembros de la Congregación</h2>
@@ -329,7 +330,7 @@ const MinistryDetail = () => {
               <p className="text-gray-400 text-sm font-medium">No se encontraron miembros con ese nombre.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <AnimeStaggerGrid className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {filteredMembers.map((member) => (
                 <div key={member.id} className="flex flex-col items-center text-center p-4 bg-gray-50/50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700 hover:shadow-md transition-all duration-300 group hover:-translate-y-0.5">
                   {/* Foto o Iniciales */}
@@ -354,13 +355,15 @@ const MinistryDetail = () => {
                   )}
                 </div>
               ))}
-            </div>
+            </AnimeStaggerGrid>
           )}
         </div>
+        </AnimeFadeUp>
       )}
 
       {/* SECCIÓN UNIRSE */}
-      <div className="bg-gray-50/40 dark:bg-slate-800/40 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+      <AnimeFadeUp>
+        <div className="bg-gray-50/40 dark:bg-slate-800/40 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="space-y-2 text-center md:text-left">
           <h3 
             style={{ color: ministry.theme_color || '#1E3A8A' }}
@@ -373,18 +376,22 @@ const MinistryDetail = () => {
             Si deseas unirte como colaborador o participar de este grupo, ¡nos encantaría recibirte!
           </p>
         </div>
-        <Link 
-          to="/contacto"
-          style={{ backgroundColor: ministry.theme_color || '#1E3A8A' }}
-          className="px-6 py-2.5 hover:opacity-95 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
-        >
-          Contactar Líder
-        </Link>
+        <MagneticButton>
+          <Link 
+            to="/contacto"
+            style={{ backgroundColor: ministry.theme_color || '#1E3A8A' }}
+            className="px-6 py-2.5 hover:opacity-95 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
+          >
+            Contactar Líder
+          </Link>
+        </MagneticButton>
       </div>
+      </AnimeFadeUp>
 
       {/* SECCIÓN IDENTIDAD VISUAL / LOGOS */}
       {logos && logos.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-850 p-8 md:p-12 shadow-xs space-y-6">
+        <AnimeFadeUp>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-850 p-8 md:p-12 shadow-xs space-y-6">
           <div>
             <h2 
               style={{ color: ministry.theme_color || '#1E3A8A' }}
@@ -397,7 +404,7 @@ const MinistryDetail = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <AnimeStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {logos.map((logo) => {
               const publicUrl = supabase.storage.from('logos').getPublicUrl(logo.storage_path).data.publicUrl;
               const isRenderable = ['png', 'svg', 'webp', 'jpg', 'jpeg'].includes(logo.format.toLowerCase());
@@ -459,15 +466,16 @@ const MinistryDetail = () => {
                     >
                       Descargar archivo
                     </a>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </AnimeStaggerGrid>
           </div>
-        </div>
+        </AnimeFadeUp>
       )}
 
-    </motion.div>
+    </div>
   );
 };
 

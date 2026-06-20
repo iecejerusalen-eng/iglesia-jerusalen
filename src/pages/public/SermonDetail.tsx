@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
+import { AnimeFadeUp, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -209,7 +210,7 @@ const SermonDetail = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-6">
-      
+      <AnimeFadeUp delay={100} duration={800} className="space-y-6">
       {/* Back button */}
       <div>
         <Link to="/predicas" className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-semibold transition-colors">
@@ -224,18 +225,20 @@ const SermonDetail = () => {
         {/* Sermon details & video */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
           {ytId && (
-            <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black shadow-lg">
-              <iframe
-                className="absolute inset-0 w-full h-full"
-                src={`https://www.youtube.com/embed/${ytId}`}
-                title={sermon.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                // @ts-expect-error credentialless is not yet in React's TS definitions but is supported by the browser
-                credentialless="true"
-              ></iframe>
-            </div>
+            <AnimeZoomIn delay={300} duration={800}>
+              <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black shadow-lg">
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src={`https://www.youtube.com/embed/${ytId}`}
+                  title={sermon.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  // @ts-expect-error credentialless is not yet in React's TS definitions but is supported by the browser
+                  credentialless="true"
+                ></iframe>
+              </div>
+            </AnimeZoomIn>
           )}
 
           <div className="space-y-4">
@@ -272,14 +275,16 @@ const SermonDetail = () => {
               <span className="font-bold text-sm text-gray-755 dark:text-gray-200 font-serif">Mis Apuntes Privados</span>
             </div>
             
-            <button
-              onClick={handleSaveNotes}
-              disabled={savingNote || !editor}
-              className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer transition-colors"
-            >
-              {savingNote ? <RefreshCw className="animate-spin" size={12} /> : <Save size={12} />}
-              Guardar
-            </button>
+            <AnimeRubberBandHover>
+              <button
+                onClick={handleSaveNotes}
+                disabled={savingNote || !editor}
+                className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer transition-colors"
+              >
+                {savingNote ? <RefreshCw className="animate-spin" size={12} /> : <Save size={12} />}
+                Guardar
+              </button>
+            </AnimeRubberBandHover>
           </div>
 
           {/* Note Pad Body */}
@@ -373,6 +378,7 @@ const SermonDetail = () => {
         </div>
 
       </div>
+      </AnimeFadeUp>
     </div>
   );
 };

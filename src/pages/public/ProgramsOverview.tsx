@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { motion } from 'framer-motion';
+import { AnimeFadeUp, AnimeFlipIn, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
 import type { Program } from '../../types';
 
@@ -23,11 +23,11 @@ const ProgramsOverview = () => {
       {/* Hero */}
       <div className="bg-gradient-to-r from-indigo-800 to-indigo-900 text-white py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <AnimeFadeUp delay={0} duration={600}>
             <GraduationCap size={48} className="mx-auto mb-4 opacity-80" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Programas de Estudio</h1>
             <p className="text-indigo-200 text-lg max-w-xl mx-auto">Planes de lectura y estudios bíblicos para crecer en la fe</p>
-          </motion.div>
+          </AnimeFadeUp>
         </div>
       </div>
 
@@ -43,16 +43,11 @@ const ProgramsOverview = () => {
             <p className="text-sm">Pronto se publicarán nuevos estudios</p>
           </div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.map((program, i) => (
-              <motion.div
-                key={program.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-              >
+          <AnimeStaggerGrid delay={100} staggerDelay={80} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.map((program) => (
+              <AnimeFlipIn key={program.id} delay={0} duration={800} axis="Y">
                 <Link to={`/programas/${program.id}`} className="block group">
-                  <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-lg transition-all">
+                  <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-lg transition-all h-full">
                     {/* Cover Image */}
                     {program.cover_image ? (
                       <img src={program.cover_image} alt={program.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -73,9 +68,9 @@ const ProgramsOverview = () => {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </AnimeFlipIn>
             ))}
-          </motion.div>
+          </AnimeStaggerGrid>
         )}
       </div>
     </div>

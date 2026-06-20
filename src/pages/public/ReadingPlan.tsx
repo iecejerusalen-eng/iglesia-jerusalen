@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { motion } from 'framer-motion';
+
 import { toast } from 'sonner';
 import {
   BookOpen, Users, Award, CheckCircle, RefreshCw, ChevronRight
@@ -230,11 +230,9 @@ const ReadingPlan = () => {
 
           <div className="space-y-2">
             <div className="h-4 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${congregationalPercentage}%` }}
-                transition={{ duration: 1 }}
-                className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+              <div
+                style={{ width: `${congregationalPercentage}%` }}
+                className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full transition-all duration-1000 ease-out"
               />
             </div>
             <div className="flex justify-between text-xs text-gray-400 font-medium">
@@ -283,11 +281,9 @@ const ReadingPlan = () => {
                 </div>
 
                 <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${personalPercentage}%` }}
-                    transition={{ duration: 0.8 }}
-                    className="h-full bg-amber-600 rounded-full"
+                  <div
+                    style={{ width: `${personalPercentage}%` }}
+                    className="h-full bg-amber-600 rounded-full transition-all duration-700 ease-out"
                   />
                 </div>
 
