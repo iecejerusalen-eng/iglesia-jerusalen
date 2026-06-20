@@ -88,6 +88,7 @@ const MinistryManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'departamento' | 'servicio'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [formTab, setFormTab] = useState<'identity' | 'banner' | 'content'>('identity');
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<MinistryFormValues>({
     resolver: zodResolver(ministrySchema),
@@ -144,6 +145,7 @@ const MinistryManager = () => {
     setIsEditingReadOnly(false);
     setEditingMinistry(null);
     setBlocks([]);
+    setFormTab('identity');
     reset({
       name: '',
       slug: '',
@@ -163,6 +165,7 @@ const MinistryManager = () => {
     const canEditThis = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
     setIsEditingReadOnly(!canEditThis);
     setEditingMinistry(min);
+    setFormTab('identity');
     
     if (min.content_blocks && Array.isArray(min.content_blocks)) {
       const normalizedBlocks = min.content_blocks.map((b: any) => ({
@@ -629,195 +632,242 @@ const MinistryManager = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmitForm)} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
-                  <input
-                    {...register('name')}
-                    type="text"
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                    placeholder="Ej. Dep. Jóvenes"
-                  />
-                  {errors.name && <p className="text-accent-red text-xs mt-1">{errors.name.message}</p>}
-                </div>
+            {/* Selector de Pestañas */}
+            <div className="flex border-b border-gray-200 dark:border-white/10 px-6 bg-gray-50/50 dark:bg-slate-950/50">
+              <button
+                type="button"
+                onClick={() => setFormTab('identity')}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  formTab === 'identity'
+                    ? 'border-primary text-primary dark:border-blue-400 dark:text-blue-400 font-extrabold'
+                    : 'border-transparent text-gray-500 hover:text-gray-750 dark:hover:text-gray-300'
+                }`}
+              >
+                <Users size={14} />
+                Identidad y Detalles
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormTab('banner')}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  formTab === 'banner'
+                    ? 'border-primary text-primary dark:border-blue-400 dark:text-blue-400 font-extrabold'
+                    : 'border-transparent text-gray-500 hover:text-gray-750 dark:hover:text-gray-300'
+                }`}
+              >
+                <ImageIcon size={14} />
+                Portada y Presentación
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormTab('content')}
+                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  formTab === 'content'
+                    ? 'border-primary text-primary dark:border-blue-400 dark:text-blue-400 font-extrabold'
+                    : 'border-transparent text-gray-500 hover:text-gray-750 dark:hover:text-gray-300'
+                }`}
+              >
+                <Settings size={14} />
+                Bloques de Contenido
+              </button>
+            </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Slug URL</label>
-                  <input
-                    {...register('slug')}
-                    type="text"
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 disabled:text-gray-400"
-                    placeholder="ej-jovenes"
-                  />
-                  {errors.slug && <p className="text-accent-red text-xs mt-1">{errors.slug.message}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-1">
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Categoría</label>
-                  <select
-                    {...register('category')}
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50"
-                  >
-                    <option value="departamento">Departamento</option>
-                    <option value="servicio">Servicio</option>
-                  </select>
-                  {errors.category && <p className="text-accent-red text-xs mt-1">{errors.category.message}</p>}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Líder o Responsable</label>
-                  <input
-                    {...register('leader_name')}
-                    type="text"
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                    placeholder="Ej. Líderes Juveniles"
-                  />
-                  {errors.leader_name && <p className="text-accent-red text-xs mt-1">{errors.leader_name.message}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Horario de Reunión</label>
-                  <input
-                    {...register('schedule')}
-                    type="text"
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                    placeholder="Ej. Sábados 7:30pm"
-                  />
-                  {errors.schedule && <p className="text-accent-red text-xs mt-1">{errors.schedule.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
-                  <input
-                    {...register('anniversary_date')}
-                    type="date"
-                    disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                  />
-                  {errors.anniversary_date && <p className="text-accent-red text-xs mt-1">{errors.anniversary_date.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Color del Tema</label>
-                  <div className="flex items-center gap-2">
+            <form onSubmit={handleSubmit(onSubmitForm)} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Pestaña: Identidad */}
+              <div className={formTab === 'identity' ? 'space-y-6 animate-fade-in' : 'hidden'}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
                     <input
-                      {...register('theme_color')}
-                      type="color"
-                      disabled={isEditingReadOnly}
-                      className="w-10 h-10 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer p-0.5 bg-white dark:bg-slate-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    />
-                    <input
+                      {...register('name')}
                       type="text"
-                      value={watch('theme_color') || '#1E3A8A'}
-                      onChange={(e) => setValue('theme_color', e.target.value)}
                       disabled={isEditingReadOnly}
-                      placeholder="#1E3A8A"
-                      className="flex-grow px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      placeholder="Ej. Dep. Jóvenes"
                     />
+                    {errors.name && <p className="text-accent-red text-xs mt-1">{errors.name.message}</p>}
                   </div>
-                  {errors.theme_color && <p className="text-accent-red text-xs mt-1">{errors.theme_color.message}</p>}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Slug URL</label>
+                    <input
+                      {...register('slug')}
+                      type="text"
+                      disabled={isEditingReadOnly}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 disabled:text-gray-400"
+                      placeholder="ej-jovenes"
+                    />
+                    {errors.slug && <p className="text-accent-red text-xs mt-1">{errors.slug.message}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Categoría</label>
+                    <select
+                      {...register('category')}
+                      disabled={isEditingReadOnly}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50"
+                    >
+                      <option value="departamento">Departamento</option>
+                      <option value="servicio">Servicio</option>
+                    </select>
+                    {errors.category && <p className="text-accent-red text-xs mt-1">{errors.category.message}</p>}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Líder o Responsable</label>
+                    <input
+                      {...register('leader_name')}
+                      type="text"
+                      disabled={isEditingReadOnly}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      placeholder="Ej. Líderes Juveniles"
+                    />
+                    {errors.leader_name && <p className="text-accent-red text-xs mt-1">{errors.leader_name.message}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Horario de Reunión</label>
+                    <input
+                      {...register('schedule')}
+                      type="text"
+                      disabled={isEditingReadOnly}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      placeholder="Ej. Sábados 7:30pm"
+                    />
+                    {errors.schedule && <p className="text-accent-red text-xs mt-1">{errors.schedule.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
+                    <input
+                      {...register('anniversary_date')}
+                      type="date"
+                      disabled={isEditingReadOnly}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    />
+                    {errors.anniversary_date && <p className="text-accent-red text-xs mt-1">{errors.anniversary_date.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Color del Tema</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        {...register('theme_color')}
+                        type="color"
+                        disabled={isEditingReadOnly}
+                        className="w-10 h-10 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer p-0.5 bg-white dark:bg-slate-900 disabled:bg-gray-55 disabled:cursor-not-allowed"
+                      />
+                      <input
+                        type="text"
+                        value={watch('theme_color') || '#1E3A8A'}
+                        onChange={(e) => setValue('theme_color', e.target.value)}
+                        disabled={isEditingReadOnly}
+                        placeholder="#1E3A8A"
+                        className="flex-grow px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      />
+                    </div>
+                    {errors.theme_color && <p className="text-accent-red text-xs mt-1">{errors.theme_color.message}</p>}
+                  </div>
                 </div>
               </div>
 
-              {/* Imagen de Portada */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Imagen de Portada (Banner)</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                  {!isEditingReadOnly ? (
-                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50">
-                      <MediaUploader
-                        folder="ministerios"
-                        allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
-                        onUploadSuccess={(url) => {
-                          setValue('image_url', url);
-                          setImagePreview(url);
-                        }}
-                        label="Subir Portada"
-                        className="w-full justify-center"
-                      />
-                      <span className="text-[10px] text-gray-400 block mt-2">JPG, PNG o WEBP</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-4 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-slate-950 text-gray-400 text-xs">
-                      Carga de archivos deshabilitada
-                    </div>
-                  )}
-
-                  {/* Preview de la imagen */}
-                  <div className="flex items-center gap-3">
-                    {imagePreview ? (
-                      <div className="relative w-24 h-24 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-55 flex-shrink-0">
-                        <img src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
-                        {!isEditingReadOnly && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setImagePreview(null);
-                              setValue('image_url', '');
-                            }}
-                            className="absolute top-1 right-1 bg-red-650 text-white rounded-full p-0.5 hover:bg-red-700 shadow-sm transition-all"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
+              {/* Pestaña: Portada y Presentación */}
+              <div className={formTab === 'banner' ? 'space-y-6 animate-fade-in' : 'hidden'}>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Imagen de Portada (Banner)</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    {!isEditingReadOnly ? (
+                      <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50">
+                        <MediaUploader
+                          folder="ministerios"
+                          allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
+                          onUploadSuccess={(url) => {
+                            setValue('image_url', url);
+                            setImagePreview(url);
+                          }}
+                          label="Subir Portada"
+                          className="w-full justify-center"
+                        />
+                        <span className="text-[10px] text-gray-400 block mt-2">JPG, PNG o WEBP</span>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-300 text-xs">
-                        Sin Imagen
+                      <div className="flex flex-col items-center justify-center p-4 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-55 dark:bg-slate-950 text-gray-400 text-xs">
+                        Carga de archivos deshabilitada
                       </div>
                     )}
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-450 font-semibold uppercase block">O escribe URL directa</span>
-                        {!isEditingReadOnly && (
-                          <button
-                            type="button"
-                            onClick={() => setIsMediaModalOpen(true)}
-                            className="text-[10px] text-primary hover:text-blue-900 font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Search size={12} />
-                            Buscar en Internet
-                          </button>
-                        )}
+
+                    {/* Preview de la imagen */}
+                    <div className="flex items-center gap-3">
+                      {imagePreview ? (
+                        <div className="relative w-24 h-24 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-55 flex-shrink-0">
+                          <img src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                          {!isEditingReadOnly && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImagePreview(null);
+                                setValue('image_url', '');
+                              }}
+                              className="absolute top-1 right-1 bg-red-650 text-white rounded-full p-0.5 hover:bg-red-700 shadow-sm transition-all"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-300 text-xs">
+                          Sin Imagen
+                        </div>
+                      )}
+                      <div className="flex-grow">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] text-gray-450 font-semibold uppercase block">O escribe URL directa</span>
+                          {!isEditingReadOnly && (
+                            <button
+                              type="button"
+                              onClick={() => setIsMediaModalOpen(true)}
+                              className="text-[10px] text-primary hover:text-blue-900 font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Search size={12} />
+                              Buscar en Internet
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          {...register('image_url')}
+                          type="url"
+                          disabled={isEditingReadOnly}
+                          className="w-full px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:bg-gray-55 disabled:text-gray-400"
+                          placeholder="https://ejemplo.com/portada.jpg"
+                        />
                       </div>
-                      <input
-                        {...register('image_url')}
-                        type="url"
-                        disabled={isEditingReadOnly}
-                        className="w-full px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-gray-400"
-                        placeholder="https://ejemplo.com/portada.jpg"
-                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Editor de Bloques */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2.5">
-                  Contenido de la Página (Bloques de Diseño)
-                </label>
-                <BlockEditor 
-                  content={JSON.stringify(blocks)} 
-                  onChange={(json) => {
-                    try {
-                      setBlocks(JSON.parse(json));
-                    } catch (e) {
-                      // ignore
-                    }
-                  }} 
-                  disabled={isEditingReadOnly}
-                />
+              {/* Pestaña: Bloques de Contenido */}
+              <div className={formTab === 'content' ? 'space-y-6 animate-fade-in' : 'hidden'}>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-2.5">
+                    Contenido de la Página (Bloques de Diseño)
+                  </label>
+                  <BlockEditor 
+                    content={JSON.stringify(blocks)} 
+                    onChange={(json) => {
+                      try {
+                        setBlocks(JSON.parse(json));
+                      } catch (e) {
+                        // ignore
+                      }
+                    }} 
+                    disabled={isEditingReadOnly}
+                  />
+                </div>
               </div>
 
               {/* Botones de Envío */}
