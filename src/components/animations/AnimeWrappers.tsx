@@ -68,6 +68,7 @@ interface AnimeStaggerGridProps {
   duration?: number;
   className?: string;
   triggerId?: number;
+  id?: string;
 }
 
 export const AnimeStaggerGrid = ({
@@ -76,7 +77,8 @@ export const AnimeStaggerGrid = ({
   staggerDelay = 100,
   duration = 800,
   className = '',
-  triggerId = 0
+  triggerId = 0,
+  id
 }: AnimeStaggerGridProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -120,7 +122,7 @@ export const AnimeStaggerGrid = ({
   }, [staggerDelay, duration, triggerId, isVisible]);
 
   return (
-    <div ref={containerRef} className={className}>
+    <div id={id} ref={containerRef} className={className}>
       {children ? children : items?.map((item, i) => (
         <div key={i}>{item}</div>
       ))}
