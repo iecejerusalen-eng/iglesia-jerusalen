@@ -46,7 +46,7 @@ export const AnimeReveal = ({
       scale: 1,
       duration: duration,
       delay: delay,
-      easing: 'easeOutElastic(1, .8)'
+      easing: 'easeOutQuart'
     });
   }, [direction, distance, duration, delay, triggerId]);
 
@@ -104,8 +104,8 @@ export const AnimeStaggerGrid = ({
     // Initial State
     anime.set(targets, {
       opacity: 0,
-      scale: 0.5,
-      translateY: 20
+      scale: 0.9,
+      translateY: 15
     });
 
     anime({
@@ -115,7 +115,7 @@ export const AnimeStaggerGrid = ({
       translateY: 0,
       delay: anime.stagger(staggerDelay, { start: 100 }),
       duration: duration,
-      easing: 'spring(1, 80, 10, 0)'
+      easing: 'easeOutCubic'
     });
   }, [staggerDelay, duration, triggerId, isVisible]);
 
@@ -217,7 +217,7 @@ export const AnimeHoverButton = ({
       targets: btnRef.current,
       scale: scaleHover,
       duration: 300,
-      easing: 'easeOutBack'
+      easing: 'easeOutCubic'
     });
   };
 
@@ -279,10 +279,10 @@ export const AnimeHoverCard = ({ children, className = '', onClick }: AnimeHover
     if (!cardRef.current) return;
     anime({
       targets: cardRef.current,
-      translateY: -8,
-      scale: 1.02,
+      translateY: -4,
+      scale: 1.01,
       duration: 400,
-      easing: 'easeOutExpo'
+      easing: 'easeOutCubic'
     });
   };
 
@@ -293,7 +293,7 @@ export const AnimeHoverCard = ({ children, className = '', onClick }: AnimeHover
       translateY: 0,
       scale: 1,
       duration: 400,
-      easing: 'easeOutExpo'
+      easing: 'easeOutCubic'
     });
   };
 
@@ -336,17 +336,17 @@ export const AnimeScaleIn = ({
           anime({
             targets: ref.current,
             opacity: [0, 1],
-            scale: [0.8, 1],
+            scale: [0.95, 1],
             duration,
             delay,
-            easing: 'easeOutElastic(1, .8)'
+            easing: 'easeOutQuart'
           });
           observer.disconnect();
         }
       },
       { threshold: 0.1 }
     );
-    anime.set(ref.current, { opacity: 0, scale: 0.8 });
+    anime.set(ref.current, { opacity: 0, scale: 0.95 });
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, [delay, duration]);
@@ -490,14 +490,14 @@ export const AnimeZoomIn = ({ children, delay = 0, duration = 800, className = '
       anime({
         targets: ref.current,
         opacity: [0, 1],
-        scale: [0.3, 1],
+        scale: [0.9, 1],
         duration,
         delay,
-        easing: 'easeOutElastic(1, .8)'
+        easing: 'easeOutQuart'
       });
       hasAnimated.current = true;
     } else if (!isVisible && !once) {
-      anime.set(ref.current, { opacity: 0, scale: 0.3 });
+      anime.set(ref.current, { opacity: 0, scale: 0.9 });
     }
   }, [isVisible, delay, duration, once]);
 
@@ -533,7 +533,7 @@ export const AnimeFlipIn = ({ children, delay = 0, duration = 800, className = '
         rotateX: axis === 'X' ? [90, 0] : 0,
         duration,
         delay,
-        easing: 'easeOutBack'
+        easing: 'easeOutQuart'
       });
       hasAnimated.current = true;
     } else if (!isVisible && !once) {
@@ -569,14 +569,14 @@ export const AnimeBounceIn = ({ children, delay = 0, duration = 1000, className 
       anime({
         targets: ref.current,
         opacity: [0, 1],
-        translateY: [-200, 0],
+        translateY: [-30, 0],
         duration,
         delay,
-        easing: 'easeOutBounce'
+        easing: 'easeOutQuart'
       });
       hasAnimated.current = true;
     } else if (!isVisible && !once) {
-      anime.set(ref.current, { opacity: 0, translateY: -200 });
+      anime.set(ref.current, { opacity: 0, translateY: -30 });
     }
   }, [isVisible, delay, duration, once]);
 
@@ -648,10 +648,10 @@ export const AnimeRubberBandHover = ({ children, className = '', onClick, onMous
     anime.remove(btnRef.current);
     anime({
       targets: btnRef.current,
-      scaleX: [1, 1.25, 0.75, 1.15, 0.95, 1.05, 1],
-      scaleY: [1, 0.75, 1.25, 0.85, 1.05, 0.95, 1],
-      duration: 1000,
-      easing: 'easeOutElastic(1, .8)'
+      scaleX: [1, 1.05, 0.95, 1.02, 0.98, 1],
+      scaleY: [1, 0.95, 1.05, 0.98, 1.02, 1],
+      duration: 800,
+      easing: 'easeOutCubic'
     });
   };
   
