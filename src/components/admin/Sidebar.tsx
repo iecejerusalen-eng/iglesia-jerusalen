@@ -104,6 +104,22 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
         <button 
           onClick={() => {
+            if (isMobile) onClose();
+            window.open('/presentacion.html', '_blank');
+          }}
+          className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 dark:hover:bg-slate-800 py-2.5 px-4 rounded-xl transition-all duration-200 w-full text-sm font-medium border border-white/5 hover:border-white/10 cursor-pointer"
+        >
+          <svg className="w-[18px] h-[18px] text-gold fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+            <polygon points="10 7 15 10 10 13 10 7" className="fill-current" />
+          </svg>
+          <span>Ver Presentación</span>
+        </button>
+
+        <button 
+          onClick={() => {
             onClose();
             navigate('/');
           }}
