@@ -299,16 +299,20 @@ export const SVGDrawReveal = ({
     return Children.map(node, (child) => {
       if (!isValidElement(child)) return child;
 
-      const type = child.type as string;
+      const type = child.type as any;
       const props = child.props as any;
 
-      if (['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(type)) {
-        return cloneElement(child, {
-          variants: pathVariants,
-          stroke: props.stroke || strokeColor,
-          strokeWidth: props.strokeWidth || strokeWidth,
-          fill: props.fill || 'none'
-        } as any);
+      if (typeof type === 'string' && ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(type)) {
+        const MotionTag = (motion as any)[type];
+        return (
+          <MotionTag
+            {...props}
+            variants={pathVariants}
+            stroke={props.stroke || strokeColor}
+            strokeWidth={props.strokeWidth || strokeWidth}
+            fill={props.fill || 'none'}
+          />
+        );
       }
 
       if (props.children) {

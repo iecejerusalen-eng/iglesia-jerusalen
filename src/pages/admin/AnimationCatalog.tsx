@@ -10,10 +10,11 @@ import {
   TextReveal, SVGDrawReveal 
 } from '../../components/animations/MotionWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
+import { AnimeReveal, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import 'animate.css';
 
 // Types of animations supported in catalog
-type AnimationType = 'scroll' | 'stagger' | 'hover' | 'magnetic' | 'text' | 'parallax' | 'svg' | 'css';
+type AnimationType = 'scroll' | 'stagger' | 'hover' | 'magnetic' | 'text' | 'parallax' | 'svg' | 'css' | 'animejs';
 
 const ANIMATE_CSS_GROUPS = [
   {
@@ -82,6 +83,52 @@ const ANIMATE_CSS_GROUPS = [
   }
 ];
 
+function AnimateCssListItem({ 
+  anim, 
+  isSelected, 
+  cssListPreviewMode, 
+  onSelect 
+}: { 
+  anim: string; 
+  isSelected: boolean; 
+  cssListPreviewMode: 'hover' | 'loop';
+  onSelect: () => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const isAnimating = isHovered || cssListPreviewMode === 'loop';
+
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`py-2 px-3 text-xs font-semibold rounded-xl border text-left flex items-center justify-between gap-1 transition-all cursor-pointer truncate ${
+        isSelected
+          ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/10'
+          : 'bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-350'
+      }`}
+    >
+      <span className="truncate flex-1">{anim}</span>
+      <span 
+        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center font-bold text-[10px] shadow-xs select-none ${
+          isSelected 
+            ? 'bg-white/20 text-white' 
+            : 'bg-amber-500/10 text-amber-500'
+        } ${
+          isAnimating 
+            ? `animate__animated animate__${anim} ${cssListPreviewMode === 'loop' ? 'animate__infinite' : ''}` 
+            : ''
+        }`}
+        style={{
+          animationDuration: '1.2s'
+        }}
+      >
+        A
+      </span>
+    </button>
+  );
+}
+
 export default function AnimationCatalog() {
   const [activeTab, setActiveTab] = useState<AnimationType>('scroll');
   const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('dark');
@@ -105,6 +152,9 @@ export default function AnimationCatalog() {
 
   // SVG Draw States
   const [svgIcon, setSvgIcon] = useState<'cross' | 'dove' | 'bible' | 'crown'>('cross');
+
+  // AnimeJS States
+  const [animejsMode, setAnimejsMode] = useState<'reveal' | 'stagger'>('reveal');
 
   // Animation settings states
   const [duration, setDuration] = useState(0.8);
@@ -130,6 +180,8 @@ export default function AnimationCatalog() {
       intervalTime = (delay + textStagger * partCount + duration) * 1000 + 2500;
     } else if (activeTab === 'svg') {
       intervalTime = (duration + delay) * 1000 + 2000;
+    } else if (activeTab === 'animejs') {
+      intervalTime = (duration + delay) * 1000 + 2500;
     }
 
     const timer = setInterval(() => {
@@ -289,6 +341,40 @@ export default function MiElementoAnimado() {
   );
 }`;
       }
+      case 'animejs': {
+        if (animejsMode === 'reveal') {
+          return `import { AnimeReveal } from '../components/animations/AnimeWrappers';
+
+export default function MiElementoAnimeJS() {
+  return (
+    <AnimeReveal
+      direction="${direction}"
+      distance={${distance}}
+      duration={${duration * 1000}}
+      delay={${delay * 1000}}
+    >
+      <div className="p-6 bg-slate-100 rounded-xl">
+        <h3 className="font-bold">¡Anime.js Reveal!</h3>
+      </div>
+    </AnimeReveal>
+  );
+}`;
+        } else {
+          return `import { AnimeStaggerGrid } from '../components/animations/AnimeWrappers';
+
+export default function MiGrillaAnimeJS() {
+  return (
+    <AnimeStaggerGrid
+      staggerDelay={${staggerChildren * 1000}}
+      duration={${duration * 1000}}
+      items={[1, 2, 3, 4].map(i => (
+        <div key={i} className="p-4 bg-slate-100 rounded-xl">Elemento {i}</div>
+      ))}
+    />
+  );
+}`;
+        }
+      }
       default:
         return '';
     }
@@ -345,7 +431,7 @@ export default function MiElementoAnimado() {
       </div>
        {/* Navigation tabs */}
       <div className="flex border-b border-slate-200 dark:border-white/10 pb-1 scroll-x overflow-x-auto gap-2">
-        {(['scroll', 'stagger', 'hover', 'magnetic', 'text', 'parallax', 'svg', 'css'] as const).map((tab) => (
+        {(['scroll', 'stagger', 'hover', 'magnetic', 'text', 'parallax', 'svg', 'css', 'animejs'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => {
@@ -366,7 +452,8 @@ export default function MiElementoAnimado() {
             {tab === 'parallax' && <Image size={14} />}
             {tab === 'svg' && <PenTool size={14} />}
             {tab === 'css' && <Code size={14} />}
-            {tab === 'scroll' ? 'Scroll Reveal' : tab === 'stagger' ? 'Stagger List' : tab === 'hover' ? 'Hover Card' : tab === 'magnetic' ? 'Magnetic Button' : tab === 'text' ? 'Text Reveal' : tab === 'parallax' ? 'Parallax Image' : tab === 'svg' ? 'Dibujo SVG' : 'Biblioteca CSS (Animate.css)'}
+            {tab === 'animejs' && <Layers size={14} />}
+            {tab === 'scroll' ? 'Scroll Reveal' : tab === 'stagger' ? 'Stagger List' : tab === 'hover' ? 'Hover Card' : tab === 'magnetic' ? 'Magnetic Button' : tab === 'text' ? 'Text Reveal' : tab === 'parallax' ? 'Parallax Image' : tab === 'svg' ? 'Dibujo SVG' : tab === 'css' ? 'Biblioteca CSS' : 'Anime.js'}
           </button>
         ))}
       </div>
@@ -580,6 +667,42 @@ export default function MiElementoAnimado() {
                       </div>
                     </div>
                   )}
+
+                  {activeTab === 'animejs' && (
+                    <div className="w-full flex items-center justify-center p-8">
+                      {animejsMode === 'reveal' ? (
+                        <AnimeReveal
+                          key={loopKey + 'reveal'}
+                          direction={direction}
+                          distance={distance}
+                          duration={duration * 1000}
+                          delay={delay * 1000}
+                        >
+                          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg text-center">
+                            <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto text-amber-500 text-xl font-bold mb-3">
+                              ✨
+                            </div>
+                            <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">Anime.js Reveal</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-450 leading-relaxed mt-2">
+                              Animación suave y fluida creada con Anime.js.
+                            </p>
+                          </div>
+                        </AnimeReveal>
+                      ) : (
+                        <AnimeStaggerGrid
+                          key={loopKey + 'stagger'}
+                          staggerDelay={staggerChildren * 1000}
+                          duration={duration * 1000}
+                          className="grid grid-cols-2 gap-4 max-w-sm w-full"
+                          items={[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 dark:border-white/10 shadow-md text-center">
+                              <span className="text-amber-500 text-lg font-bold">A{i}</span>
+                            </div>
+                          ))}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </AnimatePresence>
             </div>
@@ -646,46 +769,18 @@ export default function MiElementoAnimado() {
 
               {/* Grid of animations within the selected group with LIVE mini-previews (Fase 8 comments) */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[260px] overflow-y-auto pr-1">
-                {ANIMATE_CSS_GROUPS[selectedCssGroupIndex].animations.map((anim) => {
-                  const isSelected = selectedCssAnimation === anim;
-                  const [isHovered, setIsHovered] = useState(false);
-                  const isAnimating = isHovered || cssListPreviewMode === 'loop';
-
-                  return (
-                    <button
-                      key={anim}
-                      onClick={() => {
-                        setSelectedCssAnimation(anim);
-                        triggerReplay();
-                      }}
-                      onMouseEnter={() => setIsHovered(true)}
-                      onMouseLeave={() => setIsHovered(false)}
-                      className={`py-2 px-3 text-xs font-semibold rounded-xl border text-left flex items-center justify-between gap-1 transition-all cursor-pointer truncate ${
-                        isSelected
-                          ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/10'
-                          : 'bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-350'
-                      }`}
-                    >
-                      <span className="truncate flex-1">{anim}</span>
-                      <span 
-                        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center font-bold text-[10px] shadow-xs select-none ${
-                          isSelected 
-                            ? 'bg-white/20 text-white' 
-                            : 'bg-amber-500/10 text-amber-500'
-                        } ${
-                          isAnimating 
-                            ? `animate__animated animate__${anim} ${cssListPreviewMode === 'loop' ? 'animate__infinite' : ''}` 
-                            : ''
-                        }`}
-                        style={{
-                          animationDuration: '1.2s'
-                        }}
-                      >
-                        A
-                      </span>
-                    </button>
-                  );
-                })}
+                {ANIMATE_CSS_GROUPS[selectedCssGroupIndex].animations.map((anim) => (
+                  <AnimateCssListItem
+                    key={anim}
+                    anim={anim}
+                    isSelected={selectedCssAnimation === anim}
+                    cssListPreviewMode={cssListPreviewMode}
+                    onSelect={() => {
+                      setSelectedCssAnimation(anim);
+                      triggerReplay();
+                    }}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -731,7 +826,7 @@ export default function MiElementoAnimado() {
           </div>
 
           <div className="space-y-6">
-            {(activeTab === 'scroll' || activeTab === 'css' || activeTab === 'text' || activeTab === 'svg') && (
+            {(activeTab === 'scroll' || activeTab === 'css' || activeTab === 'text' || activeTab === 'svg' || activeTab === 'animejs') && (
               <>
                 {/* Duration Control */}
                 <div className="space-y-2">
@@ -776,7 +871,7 @@ export default function MiElementoAnimado() {
             )}
 
             {/* Conditional sub-controls */}
-            {activeTab === 'scroll' && (
+            {(activeTab === 'scroll' || activeTab === 'animejs') && (
               <>
                 {/* Distance Control */}
                 <div className="space-y-2">
@@ -852,6 +947,54 @@ export default function MiElementoAnimado() {
                     ))}
                   </div>
                 </div>
+              </>
+            )}
+
+            {activeTab === 'animejs' && (
+              <>
+                {/* AnimeJS Mode Selector */}
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-semibold text-slate-500 block">Modo Anime.js</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['reveal', 'stagger'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          setAnimejsMode(mode);
+                          triggerReplay();
+                        }}
+                        className={`py-2 text-[10px] font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                          animejsMode === mode
+                            ? 'bg-amber-500 border-amber-500 text-white shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {mode === 'reveal' ? 'Reveal Simple' : 'Stagger Grid'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {animejsMode === 'stagger' && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-500">Retraso entre hijos (Stagger)</span>
+                      <span className="text-amber-500">{staggerChildren}s</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.8"
+                      step="0.05"
+                      value={staggerChildren}
+                      onChange={(e) => {
+                        setStaggerChildren(parseFloat(e.target.value));
+                        triggerReplay();
+                      }}
+                      className="w-full accent-amber-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                )}
               </>
             )}
 
