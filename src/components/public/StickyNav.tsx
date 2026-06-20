@@ -5,6 +5,7 @@ import {
   Home, Info, Calendar, Users, 
   MapPin, Send, BookOpen
 } from 'lucide-react';
+import { AnimeFadeUp } from '../animations/AnimeWrappers';
 
 interface Section {
   id: string;
@@ -122,10 +123,10 @@ export default function StickyNav() {
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+    <AnimeFadeUp
+      delay={0.2}
+      duration={600}
+      distance={50}
       className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-6 glass-nav px-3.5 py-7 rounded-full"
     >
       {SECTIONS.map((section) => {
@@ -182,6 +183,6 @@ export default function StickyNav() {
           </div>
         );
       })}
-    </motion.div>
+    </AnimeFadeUp>
   );
 }

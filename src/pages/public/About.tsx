@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { fadeInUp, staggerContainer } from '../../utils/animations';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
@@ -87,10 +86,7 @@ const About = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent"></div>
                   </div>
-                  <motion.div 
-                    variants={fadeInUp}
-                    initial="initial"
-                    animate="animate"
+                  <AnimeFadeUp 
                     className="relative z-10 max-w-3xl space-y-4 text-left"
                   >
                     <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -105,7 +101,7 @@ const About = () => {
                         <BlockRenderer blocks={content_blocks} />
                       </div>
                     )}
-                  </motion.div>
+                  </AnimeFadeUp>
                 </div>
               );
             }
@@ -121,15 +117,10 @@ const About = () => {
                       <BlockRenderer blocks={content_blocks} />
                     </div>
                   ) : (
-                    <motion.section 
-                      variants={staggerContainer}
-                      initial="initial"
-                      whileInView="animate"
-                      viewport={{ once: true, amount: 0.2 }}
+                    <AnimeStaggerGrid 
                       className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch"
                     >
-                      <motion.div 
-                        variants={fadeInUp}
+                      <div 
                         className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left"
                       >
                         <div className="space-y-4">
@@ -141,10 +132,9 @@ const About = () => {
                             Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.
                           </p>
                         </div>
-                      </motion.div>
+                      </div>
 
-                      <motion.div 
-                        variants={fadeInUp}
+                      <div 
                         className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left"
                       >
                         <div className="space-y-4">
@@ -156,8 +146,8 @@ const About = () => {
                             Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras.
                           </p>
                         </div>
-                      </motion.div>
-                    </motion.section>
+                      </div>
+                    </AnimeStaggerGrid>
                   )}
                 </div>
               );
@@ -176,11 +166,7 @@ const About = () => {
                       <BlockRenderer blocks={content_blocks} />
                     </div>
                   ) : (
-                    <motion.section 
-                      variants={fadeInUp}
-                      initial="initial"
-                      whileInView="animate"
-                      viewport={{ once: true, amount: 0.2 }}
+                    <AnimeFadeUp 
                       className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-6 text-left"
                     >
                       <h2 className="text-3xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/10 pb-4">Nuestra Historia</h2>
@@ -204,7 +190,7 @@ const About = () => {
                           />
                         </div>
                       </div>
-                    </motion.section>
+                    </AnimeFadeUp>
                   )}
                 </div>
               );
@@ -228,28 +214,19 @@ const About = () => {
                     </section>
                   ) : (
                     <section className="space-y-8 text-left">
-                      <motion.div 
-                        variants={fadeInUp}
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true }}
+                      <AnimeFadeUp 
                         className="text-center max-w-xl mx-auto space-y-2"
                       >
                         <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">Liderazgo Pastoral</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">
                           Nuestros pastores principales llamados a guiar y cuidar espiritualmente a la congregación.
                         </p>
-                      </motion.div>
+                      </AnimeFadeUp>
 
-                      <motion.div 
-                        variants={staggerContainer}
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true, amount: 0.15 }}
+                      <AnimeStaggerGrid 
                         className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
                       >
-                        <motion.div 
-                          variants={fadeInUp}
+                        <div 
                           className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
                         >
                           <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
@@ -268,10 +245,9 @@ const About = () => {
                               </p>
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
 
-                        <motion.div 
-                          variants={fadeInUp}
+                        <div 
                           className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
                         >
                           <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
@@ -290,8 +266,8 @@ const About = () => {
                               </p>
                             </div>
                           </div>
-                        </motion.div>
-                      </motion.div>
+                        </div>
+                      </AnimeStaggerGrid>
                     </section>
                   )}
                 </div>
@@ -317,28 +293,19 @@ const About = () => {
             // 4. DECLARACIÓN DOCTRINAL (LOS 4 PUNTOS CUADRANGULARES)
             return (
               <section key={id} className="space-y-8 text-left">
-                <motion.div 
-                  variants={fadeInUp}
-                  initial="initial"
-                  whileInView="animate"
-                  viewport={{ once: true }}
+                <AnimeFadeUp 
                   className="text-center max-w-xl mx-auto space-y-2"
                 >
                   <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">{title || 'Los 4 Pilares Cuadrangulares'}</h2>
                   {subtitle && (
                     <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">{subtitle}</p>
                   )}
-                </motion.div>
+                </AnimeFadeUp>
 
-                <motion.div 
-                  variants={staggerContainer}
-                  initial="initial"
-                  whileInView="animate"
-                  viewport={{ once: true, amount: 0.15 }}
+                <AnimeStaggerGrid 
                   className="grid grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  <motion.div 
-                    variants={fadeInUp}
+                  <div 
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
                     <div className="space-y-4">
@@ -351,10 +318,9 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider mt-6 block">Juan 3:16</span>
-                  </motion.div>
+                  </div>
 
-                  <motion.div 
-                    variants={fadeInUp}
+                  <div 
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
                     <div className="space-y-4">
@@ -367,10 +333,9 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
-                  </motion.div>
+                  </div>
 
-                  <motion.div 
-                    variants={fadeInUp}
+                  <div 
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
                     <div className="space-y-4">
@@ -383,10 +348,9 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-6 block">Marcos 16:18</span>
-                  </motion.div>
+                  </div>
 
-                  <motion.div 
-                    variants={fadeInUp}
+                  <div 
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
                     <div className="space-y-4">
@@ -399,8 +363,8 @@ const About = () => {
                       </p>
                     </div>
                     <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mt-6 block">1 Tesalonicenses 4:16</span>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </AnimeStaggerGrid>
               </section>
             );
 

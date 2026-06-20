@@ -8,7 +8,6 @@ import {
   Heart, Calendar, ArrowRight, Sparkles,
   Clock, Eye, EyeOff, Music, Tv, Gift
 } from 'lucide-react';
-import { motion, useInView } from 'framer-motion';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
 import FloatingElements from '../../components/public/FloatingElements';
@@ -18,7 +17,7 @@ import ChurchJourneySection from '../../components/public/ChurchJourneySection';
 import SermonVideoGallery from '../../components/public/SermonVideoGallery';
 import { useLiveModeStore } from '../../store/useLiveModeStore';
 import MagneticButton from '../../components/animations/MagneticButton';
-import { ScrollReveal, StaggerContainer, StaggerItem, HoverCard, ParallaxImage } from '../../components/animations/MotionWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeParallax, AnimeFloat } from '../../components/animations/AnimeWrappers';
 
 const FALLBACK_SCHEDULES: Schedule[] = [
   { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:00pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
@@ -90,7 +89,22 @@ const getYoutubeId = (url: string | null) => {
 const AnimatedCounter = ({ value, suffix = "", text }: { value: number, suffix?: string, text: string }) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-10%" });
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (isInView) {
@@ -635,28 +649,26 @@ const Home = () => {
                     
                     {/* Immersive Background Particles & Glows */}
                     <div className="absolute inset-0 z-0 overflow-hidden">
-                      <ParallaxImage
+                      <AnimeParallax
                         src={fachadaImage}
                         alt="Fachada de la Iglesia Jerusalén"
                         className="filter brightness-[0.7] contrast-[1.05]"
                       />
 
-                      <motion.div
-                        animate={{
-                          x: [-30, 60, -30],
-                          y: [-15, 45, -15]
-                        }}
-                        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+                      <AnimeFloat
+                        x={[-30, 60]}
+                        y={[-15, 45]}
+                        duration={25000}
                         className="absolute top-1/4 left-1/4 w-[380px] h-[380px] rounded-full bg-blue-500/10 blur-[130px] pointer-events-none"
-                      />
-                      <motion.div
-                        animate={{
-                          x: [30, -50, 30],
-                          y: [20, -30, 20]
-                        }}
-                        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                      </AnimeFloat>
+                      <AnimeFloat
+                        x={[30, -50]}
+                        y={[20, -30]}
+                        duration={28000}
                         className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] rounded-full bg-amber-500/8 blur-[150px] pointer-events-none"
-                      />
+                      >
+                      </AnimeFloat>
 
                       <div
                         className="absolute inset-0 pointer-events-none"
@@ -666,38 +678,38 @@ const Home = () => {
                     </div>
 
                     {/* Cascading Typography Content (FASE 3 - PTO 1) */}
-                    <StaggerContainer className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center">
-                      <StaggerItem>
+                    <AnimeStaggerGrid className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center">
+                      <div>
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/10 to-amber-600/10 text-amber-500 border border-amber-500/40 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-amber-500/5 backdrop-blur-xs select-none">
                           <Sparkles size={14} className="text-amber-500 animate-spin-slow" />
                           <span>{subtitle || 'Una Casa de Restauración y Bendición'}</span>
                         </div>
-                      </StaggerItem>
+                      </div>
 
-                      <StaggerItem>
+                      <div>
                         <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.1] max-w-4xl mx-auto drop-shadow-md">
                           Bienvenido a la <br />
                           <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 font-extrabold drop-shadow-[0_4px_12px_rgba(217,119,6,0.25)]">
                             Iglesia Jerusalén
                           </span>
                         </h1>
-                      </StaggerItem>
+                      </div>
 
                       {content_blocks && content_blocks.length > 0 ? (
-                        <StaggerItem className="w-full max-w-3xl">
+                        <div className="w-full max-w-3xl">
                           <div className="text-left bg-slate-900/50 p-8 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl">
                             <BlockRenderer blocks={content_blocks} />
                           </div>
-                        </StaggerItem>
+                        </div>
                       ) : (
                         <>
-                          <StaggerItem>
+                          <div>
                             <p className="text-slate-250 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-light font-sans tracking-wide">
                               Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
                             </p>
-                          </StaggerItem>
+                          </div>
 
-                          <StaggerItem className="w-full sm:w-auto">
+                          <div className="w-full sm:w-auto">
                             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 w-full sm:w-auto">
                               <MagneticButton>
                                 <Link
@@ -718,10 +730,10 @@ const Home = () => {
                                 </a>
                               </MagneticButton>
                             </div>
-                          </StaggerItem>
+                          </div>
                         </>
                       )}
-                    </StaggerContainer>
+                    </AnimeStaggerGrid>
 
                     {/* Wave Divider */}
                     <div className="absolute bottom-0 left-0 right-0 h-16 w-full pointer-events-none z-0">
@@ -733,13 +745,13 @@ const Home = () => {
 
                   {/* 2. STATS FRAP (FASE 3 - PTO 2) */}
                   <div className="bg-slate-50 dark:bg-slate-950 py-10 transition-colors duration-300 relative z-10">
-                    <ScrollReveal className="max-w-7xl mx-auto px-4 md:px-8">
+                    <AnimeFadeUp className="max-w-7xl mx-auto px-4 md:px-8">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                         <AnimatedCounter value={350} text="Familias Comprometidas" />
                         <AnimatedCounter value={18} text="Años Edificando Vidas" />
                         <AnimatedCounter value={120} text="Niños Formados en Fe" />
                       </div>
-                    </ScrollReveal>
+                    </AnimeFadeUp>
                   </div>
                 </div>
               );
@@ -751,17 +763,17 @@ const Home = () => {
                 <div key={id} id="about" className="pb-16 md:pb-24">
                   {content_blocks && content_blocks.length > 0 ? (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
-                      <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                      <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-3">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">{title || 'Nuestra Doctrina'}</h2>
                         {subtitle && <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
-                      </ScrollReveal>
-                      <ScrollReveal delay={0.1} className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
+                      </AnimeFadeUp>
+                      <AnimeFadeUp delay={0.1} className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
                         <BlockRenderer blocks={content_blocks} />
-                      </ScrollReveal>
+                      </AnimeFadeUp>
                     </section>
                   ) : (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-12">
-                      <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                      <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-3">
                         <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
                           Verdades Centrales
                         </span>
@@ -769,12 +781,12 @@ const Home = () => {
                         <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
                           Como Iglesia del Evangelio Cuadrangular, fundamentamos nuestra fe en cuatro grandes verdades bíblicas.
                         </p>
-                      </ScrollReveal>
+                      </AnimeFadeUp>
 
-                      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <AnimeStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {/* Pilar 1: Salvador */}
-                        <StaggerItem>
-                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-red-500/30 dark:hover:shadow-red-500/5 flex flex-col justify-between h-full group">
+                        <div>
+                          <AnimeHoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-red-500/30 dark:hover:shadow-red-500/5 flex flex-col justify-between h-full group">
                             <div className="space-y-4">
                               <div className="w-12 h-12 bg-red-100 dark:bg-red-950/30 text-red-500 dark:text-red-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
                                 ✝
@@ -785,12 +797,12 @@ const Home = () => {
                               </p>
                             </div>
                             <span className="text-[10px] font-extrabold text-red-500 dark:text-red-400 uppercase tracking-wider mt-6 block text-left font-mono">Juan 3:16</span>
-                          </HoverCard>
-                        </StaggerItem>
+                          </AnimeHoverCard>
+                        </div>
 
                         {/* Pilar 2: Bautizador */}
-                        <StaggerItem>
-                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-amber-500/30 dark:hover:shadow-amber-500/5 flex flex-col justify-between h-full group">
+                        <div>
+                          <AnimeHoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-amber-500/30 dark:hover:shadow-amber-500/5 flex flex-col justify-between h-full group">
                             <div className="space-y-4">
                               <div className="w-12 h-12 bg-amber-100 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
                                 🕊
@@ -801,12 +813,12 @@ const Home = () => {
                               </p>
                             </div>
                             <span className="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 uppercase tracking-wider mt-6 block text-left font-mono">Hechos 1:8</span>
-                          </HoverCard>
-                        </StaggerItem>
+                          </AnimeHoverCard>
+                        </div>
 
                         {/* Pilar 3: Sanador */}
-                        <StaggerItem>
-                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-blue-500/30 dark:hover:shadow-blue-500/5 flex flex-col justify-between h-full group">
+                        <div>
+                          <AnimeHoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-blue-500/30 dark:hover:shadow-blue-500/5 flex flex-col justify-between h-full group">
                             <div className="space-y-4">
                               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
                                 🍷
@@ -817,12 +829,12 @@ const Home = () => {
                               </p>
                             </div>
                             <span className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 uppercase tracking-wider mt-6 block text-left font-mono">Santiago 5:14-15</span>
-                          </HoverCard>
-                        </StaggerItem>
+                          </AnimeHoverCard>
+                        </div>
 
                         {/* Pilar 4: Rey */}
-                        <StaggerItem>
-                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-purple-500/30 dark:hover:shadow-purple-500/5 flex flex-col justify-between h-full group">
+                        <div>
+                          <AnimeHoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-purple-500/30 dark:hover:shadow-purple-500/5 flex flex-col justify-between h-full group">
                             <div className="space-y-4">
                               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-950/30 text-purple-500 dark:text-purple-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
                                 👑
@@ -833,9 +845,9 @@ const Home = () => {
                               </p>
                             </div>
                             <span className="text-[10px] font-extrabold text-purple-500 dark:text-purple-400 uppercase tracking-wider mt-6 block text-left font-mono">1 Ts. 4:16</span>
-                          </HoverCard>
-                        </StaggerItem>
-                      </StaggerContainer>
+                          </AnimeHoverCard>
+                        </div>
+                      </AnimeStaggerGrid>
                     </section>
                   )}
                   {/* Timeline section inside home_welcome case */}
@@ -854,7 +866,7 @@ const Home = () => {
                 <div key={id}>
                   {content_blocks && content_blocks.length > 0 ? (
                     <section className="max-w-5xl mx-auto px-4">
-                      <ScrollReveal className="bg-gradient-to-br from-[#0c1c42] to-amber-950 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
+                      <AnimeFadeUp className="bg-gradient-to-br from-[#0c1c42] to-amber-950 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
                         <div className="absolute top-0 right-0 w-32 h-32 opacity-10 flex items-center justify-center animate-pulse pointer-events-none">
                           <Heart size={150} fill="currentColor" />
                         </div>
@@ -865,11 +877,11 @@ const Home = () => {
                           )}
                           <BlockRenderer blocks={content_blocks} />
                         </div>
-                      </ScrollReveal>
+                      </AnimeFadeUp>
                     </section>
                   ) : (
                     <section className="max-w-5xl mx-auto px-4">
-                      <ScrollReveal className="bg-gradient-to-br from-[#0a1c40] via-[#071330] to-amber-900/60 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
+                      <AnimeFadeUp className="bg-gradient-to-br from-[#0a1c40] via-[#071330] to-amber-900/60 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
                         <div className="absolute top-[-20px] right-[-20px] w-48 h-48 opacity-[0.05] flex items-center justify-center animate-pulse pointer-events-none">
                           <Heart size={180} fill="currentColor" />
                         </div>
@@ -890,7 +902,7 @@ const Home = () => {
                             </MagneticButton>
                           </div>
                         </div>
-                      </ScrollReveal>
+                      </AnimeFadeUp>
                     </section>
                   )}
                 </div>
@@ -901,14 +913,14 @@ const Home = () => {
             return (
               <section key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
                 {(title || subtitle) && (
-                  <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                  <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-3">
                     {title && <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">{title}</h2>}
                     {subtitle && <p className="text-slate-550 dark:text-slate-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
-                  </ScrollReveal>
+                  </AnimeFadeUp>
                 )}
-                <ScrollReveal className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
+                <AnimeFadeUp className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
                   <BlockRenderer blocks={content_blocks} />
-                </ScrollReveal>
+                </AnimeFadeUp>
               </section>
             );
 
@@ -934,7 +946,7 @@ const Home = () => {
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-16 relative z-10">
-                  <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
+                  <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-4">
                     <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
                       Reuniones y Servicios
                     </span>
@@ -946,7 +958,7 @@ const Home = () => {
                         {subtitle}
                       </p>
                     )}
-                  </ScrollReveal>
+                  </AnimeFadeUp>
 
                   {loadingSchedules ? (
                     <div className="flex justify-center items-center py-20">
@@ -956,14 +968,14 @@ const Home = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
 
                       {/* Left bar accent schedule cards (FASE 3 - PTO 5) */}
-                      <StaggerContainer className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <AnimeStaggerGrid className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sortedDays
                           .filter((day) => day !== 'Domingo')
                           .map((day) => {
                             const daySchedules = schedulesByDay[day];
                             return (
-                              <StaggerItem key={day}>
-                                <HoverCard
+                              <div key={day}>
+                                <AnimeHoverCard
                                   className="h-full bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all flex flex-col justify-between relative overflow-hidden pl-8"
                                 >
                                   {/* Left vertical color accent bar */}
@@ -989,17 +1001,16 @@ const Home = () => {
                                       </p>
                                     </div>
                                   </div>
-                                </HoverCard>
-                              </StaggerItem>
+                                </AnimeHoverCard>
+                              </div>
                             );
                           })}
-                      </StaggerContainer>
+                      </AnimeStaggerGrid>
 
                       {schedulesByDay['Domingo'] && (
                         <div className="lg:col-span-1">
-                          <ScrollReveal className="h-full">
-                            <motion.div
-                              whileHover={{ y: -6, scale: 1.01 }}
+                          <AnimeFadeUp className="h-full">
+                            <AnimeHoverCard
                               className="h-full bg-gradient-to-b from-[#0a1c40] to-[#071330] text-white p-8 rounded-3xl border border-slate-850 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(217,119,6,0.15)] transition-all duration-300"
                             >
                               {/* Left vertical accent on Sunday card too */}
@@ -1080,8 +1091,8 @@ const Home = () => {
                                 </div>
                               </div>
 
-                            </motion.div>
-                          </ScrollReveal>
+                            </AnimeHoverCard>
+                          </AnimeFadeUp>
                         </div>
                       )}
 
@@ -1097,20 +1108,20 @@ const Home = () => {
               <section id="events" key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 scroll-mt-24">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                   <div className="space-y-3 text-left">
-                    <ScrollReveal>
+                    <AnimeFadeUp>
                       <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
                         {title || 'Próximos Eventos'}
                       </h2>
-                    </ScrollReveal>
+                    </AnimeFadeUp>
                     {subtitle && (
-                      <ScrollReveal delay={0.1}>
+                      <AnimeFadeUp delay={0.1}>
                         <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xl text-left">
                           {subtitle}
                         </p>
-                      </ScrollReveal>
+                      </AnimeFadeUp>
                     )}
                   </div>
-                  <ScrollReveal delay={0.2}>
+                  <AnimeFadeUp delay={0.2}>
                     <Link
                       to="/eventos"
                       className="text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
@@ -1118,7 +1129,7 @@ const Home = () => {
                       Ver Calendario Completo
                       <ArrowRight size={16} />
                     </Link>
-                  </ScrollReveal>
+                  </AnimeFadeUp>
                 </div>
 
                 {loadingEvents ? (
@@ -1127,12 +1138,12 @@ const Home = () => {
                   </div>
                 ) : upcomingEvents.length > 0 ? (
                   /* Stagger events list in Ticket/Card style (FASE 3 - PTO 6) */
-                  <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {upcomingEvents.map((event) => {
                       const dateObj = formatEventDate(event.start_date);
                       return (
-                        <StaggerItem key={event.id}>
-                          <HoverCard
+                        <div key={event.id}>
+                          <AnimeHoverCard
                             className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full group relative"
                           >
                             {/* Accent line border on top */}
@@ -1198,16 +1209,16 @@ const Home = () => {
                                 </span>
                               </div>
                             </div>
-                          </HoverCard>
-                        </StaggerItem>
+                          </AnimeHoverCard>
+                        </div>
                       );
                     })}
-                  </StaggerContainer>
+                  </AnimeStaggerGrid>
                 ) : (
-                  <ScrollReveal className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 shadow-xs">
+                  <AnimeFadeUp className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 shadow-xs">
                     <Calendar className="mx-auto text-slate-300 dark:text-slate-700 mb-3 animate-pulse" size={40} />
                     <p className="text-slate-400 dark:text-slate-500 text-sm font-semibold">No hay eventos especiales programados próximamente.</p>
-                  </ScrollReveal>
+                  </AnimeFadeUp>
                 )}
               </section>
             );
@@ -1237,7 +1248,7 @@ const Home = () => {
                   <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[90px] pointer-events-none" />
 
                   <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 relative z-10">
-                    <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
+                    <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-4">
                       <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
                         Celebración Congregacional
                       </span>
@@ -1249,21 +1260,21 @@ const Home = () => {
                           {subtitle}
                         </p>
                       )}
-                    </ScrollReveal>
+                    </AnimeFadeUp>
 
-                    <ScrollReveal className="max-w-3xl mx-auto bg-gradient-to-r from-amber-500/5 via-amber-600/10 to-yellow-500/5 border border-amber-500/20 rounded-3xl p-6 text-center backdrop-blur-xs shadow-xs relative overflow-hidden">
+                    <AnimeFadeUp className="max-w-3xl mx-auto bg-gradient-to-r from-amber-500/5 via-amber-600/10 to-yellow-500/5 border border-amber-500/20 rounded-3xl p-6 text-center backdrop-blur-xs shadow-xs relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.03] flex items-center justify-center pointer-events-none">
                         <Gift size={100} className="text-amber-500" />
                       </div>
                       <p className="text-slate-800 dark:text-gray-200 font-serif font-bold text-base md:text-lg leading-relaxed italic">
                         "¡Querida familia Jerusalén, felicitamos con mucho amor a cada uno de nuestros hermanos en su cumpleaños! Oramos para que el favor de Dios, su gracia inagotable y su perfecta paz colmen sus vidas en este nuevo año. ¡Que el Señor les bendiga grandemente!"
                       </p>
-                    </ScrollReveal>
+                    </AnimeFadeUp>
 
-                    <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                       {birthdayMembers.map((member, mIdx) => (
-                        <StaggerItem key={mIdx}>
-                          <HoverCard
+                        <div key={mIdx}>
+                          <AnimeHoverCard
                             className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/10 p-6 shadow-sm dark:shadow-none hover:shadow-xl hover:border-amber-500/25 transition-all duration-300 relative flex flex-col justify-between h-full"
                           >
                             <div>
@@ -1311,10 +1322,10 @@ const Home = () => {
                                 );
                               })()}
                             </div>
-                          </HoverCard>
-                        </StaggerItem>
+                          </AnimeHoverCard>
+                        </div>
                       ))}
-                    </StaggerContainer>
+                    </AnimeStaggerGrid>
                   </div>
                 </section>
               )
@@ -1338,7 +1349,7 @@ const Home = () => {
       <TestimonialsSection />
 
       {/* 10. FINAL CTA BANNER (FASE 3 - PTO 10) */}
-      <ScrollReveal className="max-w-5xl mx-auto px-4">
+      <AnimeFadeUp className="max-w-5xl mx-auto px-4">
         <div className="relative bg-gradient-to-tr from-[#0a1c40] via-[#071330] to-slate-900 border border-slate-850 rounded-3xl p-10 md:p-14 text-center overflow-hidden shadow-2xl">
           <div className="absolute top-[-50px] left-[-50px] w-64 h-64 rounded-full bg-amber-500/5 blur-[90px] pointer-events-none" />
           <div className="absolute bottom-[-50px] right-[-50px] w-80 h-80 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
@@ -1366,7 +1377,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </ScrollReveal>
+      </AnimeFadeUp>
     </div>
   );
 };

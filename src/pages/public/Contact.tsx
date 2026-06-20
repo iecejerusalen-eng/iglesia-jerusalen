@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../config/supabase';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { staggerContainer, fadeInUp } from '../../utils/animations';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -77,10 +76,7 @@ const Contact = () => {
         <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
           <Mail size={200} />
         </div>
-        <motion.div 
-          variants={fadeInUp}
-          initial="initial"
-          animate="animate"
+        <AnimeFadeUp 
           className="relative z-10 max-w-3xl space-y-4"
         >
           <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -90,20 +86,16 @@ const Contact = () => {
           <p className="text-gray-200 text-base md:text-lg leading-relaxed font-light">
             ¿Tienes dudas, peticiones de oración, o deseas saber más de nuestras actividades? Ponte en contacto con nosotros, estamos para servirte.
           </p>
-        </motion.div>
+        </AnimeFadeUp>
       </div>
 
       {/* GRID PRINCIPAL (2 Columnas en Desktop) */}
-      <motion.div 
-        variants={staggerContainer}
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true, amount: 0.1 }}
+      <AnimeStaggerGrid 
         className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch"
       >
         
         {/* Columna Izquierda: Información de Contacto */}
-        <motion.div variants={fadeInUp} className="space-y-6 flex flex-col justify-between">
+        <div className="space-y-6 flex flex-col justify-between">
           <div className="space-y-6">
             <h2 className="text-2xl font-serif font-bold text-primary dark:text-white pb-3 border-b border-gray-100 dark:border-white/10">
               Información de Contacto
@@ -155,25 +147,23 @@ const Contact = () => {
           <div className="pt-6 border-t border-gray-100 dark:border-white/10 space-y-4">
             <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Nuestras Redes Sociales</span>
             <div className="flex gap-4">
-              <motion.a 
-                whileHover={{ y: -5 }}
+              <a 
                 href="https://www.facebook.com/jerusalen.cuadrangular" 
                 target="_blank" 
                 rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-primary dark:text-white dark:hover:text-blue-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-primary dark:text-white dark:hover:text-blue-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
                 title="Facebook"
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
                 </svg>
-              </motion.a>
+              </a>
 
-              <motion.a 
-                whileHover={{ y: -5 }}
+              <a 
                 href="https://www.instagram.com/jerusalen_iece/" 
                 target="_blank" 
                 rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
                 title="Instagram"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -181,27 +171,25 @@ const Contact = () => {
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                 </svg>
-              </motion.a>
+              </a>
 
-              <motion.a 
-                whileHover={{ y: -5 }}
+              <a 
                 href="https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw" 
                 target="_blank" 
                 rel="noreferrer" 
-                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
+                className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 transform hover:-translate-y-1" 
                 title="YouTube"
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.017 0 12 0 12s0 3.982.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.982 24 12 24 12s0-3.982-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                 </svg>
-              </motion.a>
+              </a>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Columna Derecha: Mapa de Ubicación */}
-        <motion.div 
-          variants={fadeInUp}
+        <div 
           className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-4 shadow-sm h-full min-h-[400px] flex flex-col"
         >
           <div className="flex-1 rounded-2xl overflow-hidden shadow-xs border border-gray-100 dark:border-white/5 relative h-full">
@@ -216,15 +204,11 @@ const Contact = () => {
               title="Mapa Iglesia Jerusalén"
             ></iframe>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </AnimeStaggerGrid>
 
       {/* FORMULARIO DE MENSAJE (Centrado abajo para conservar funcionalidad) */}
-      <motion.div 
-        variants={fadeInUp}
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
+      <AnimeFadeUp 
         className="max-w-3xl mx-auto pt-6"
       >
         {success ? (
@@ -335,7 +319,7 @@ const Contact = () => {
             </button>
           </form>
         )}
-      </motion.div>
+      </AnimeFadeUp>
 
     </div>
   );

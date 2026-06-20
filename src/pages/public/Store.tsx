@@ -4,9 +4,10 @@ import { supabase } from '../../config/supabase';
 import type { Product } from '../../types';
 import { Search, Filter, Sparkles } from 'lucide-react';
 import OptimizedMedia from '../../components/common/OptimizedMedia';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProductQuickView from '../../components/store/ProductQuickView';
 import MagneticButton from '../../components/animations/MagneticButton';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -94,20 +95,7 @@ const MOCK_PRODUCTS: Product[] = [
   }
 ];
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
 
-const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
 
 const Store = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -215,22 +203,21 @@ const Store = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <motion.div 
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
+        <AnimeStaggerGrid 
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {filteredProducts.map((product) => (
-              <motion.div
-                variants={fadeInUp}
+              <AnimeFadeUp
                 key={product.id}
-                onClick={() => setSelectedProduct(product)}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-all flex flex-col group h-full cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              >
+               <div
+                onClick={() => setSelectedProduct(product)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter') setSelectedProduct(product) }}
-              >
+                className="flex flex-col h-full"
+               >
                 {/* Contenedor Imagen */}
                 <div className="relative pt-[70%] bg-gray-50 dark:bg-slate-800 overflow-hidden">
                   <motion.div 
@@ -280,7 +267,8 @@ const Store = () => {
                     </MagneticButton>
                   </div>
                 </div>
-              </motion.div>
+               </div>
+              </AnimeFadeUp>
           ))}
           {filteredProducts.length === 0 && (
             <div className="col-span-full">
@@ -291,7 +279,7 @@ const Store = () => {
               </div>
             </div>
           )}
-        </motion.div>
+        </AnimeStaggerGrid>
       )}
 
       {/* Modal Detallado de Producto */}

@@ -7,6 +7,7 @@ import {
   Search, BookOpen, Music, Calendar, MapPin, 
   Globe, Heart, ShoppingBag, Send, ArrowRight, Loader2
 } from 'lucide-react';
+import { AnimeScaleIn } from '../animations/AnimeWrappers';
 
 const cmdkStyles = `
   [cmdk-root] {
@@ -202,13 +203,14 @@ export default function SearchPalette() {
         className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 dark:bg-black/85 backdrop-blur-md p-4 md:pt-[10vh] animate-fadeIn"
         onClick={close}
       >
-        <div 
-          ref={paletteRef}
-          onClick={(e) => e.stopPropagation()} 
-          className="w-full max-w-2xl"
-        >
-          <Command label="Buscador inteligente de la iglesia">
-            {/* Input Header */}
+        <AnimeScaleIn className="w-full max-w-2xl">
+          <div 
+            ref={paletteRef}
+            onClick={(e) => e.stopPropagation()} 
+            className="w-full"
+          >
+            <Command label="Buscador inteligente de la iglesia">
+              {/* Input Header */}
             <div className="flex items-center border-b border-gray-100 dark:border-slate-800 px-4">
               {loading ? (
                 <Loader2 size={20} className="text-primary dark:text-gold animate-spin shrink-0" />
@@ -443,7 +445,8 @@ export default function SearchPalette() {
               )}
             </Command.List>
           </Command>
-        </div>
+          </div>
+        </AnimeScaleIn>
       </div>
     </>
   );
