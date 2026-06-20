@@ -90,7 +90,7 @@ export default function ChurchJourneySection() {
           <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
             El Viaje de la Fe
           </h2>
-          <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+          <p className="text-slate-800 dark:text-slate-300 text-base md:text-lg leading-relaxed">
             Acompáñanos en nuestro compromiso de glorificar a Dios, edificar Su iglesia y alcanzar al mundo.
           </p>
         </div>
@@ -156,7 +156,7 @@ const TimelineRow = ({ step, isEven }: TimelineRowProps) => {
           <h3 className="text-2xl md:text-3xl font-serif font-bold text-slate-800 dark:text-slate-100 mb-3">
             {step.title}
           </h3>
-          <p className="text-slate-700 dark:text-slate-400 leading-relaxed text-sm md:text-base">
+          <p className="text-slate-800 dark:text-slate-300 leading-relaxed text-sm md:text-base font-medium">
             {step.description}
           </p>
         </AnimeFadeUp>
