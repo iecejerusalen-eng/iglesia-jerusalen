@@ -34,7 +34,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
   return (
     <section id="sermon-gallery-top" className="py-20 relative scroll-mt-20">
       {/* Background with glassmorphic accents */}
-      <div className="absolute inset-0 bg-slate-50 pointer-events-none" />
+      <div className="absolute inset-0 bg-slate-50 dark:bg-slate-950 pointer-events-none transition-colors duration-300" />
       <div className="absolute top-1/4 left-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none transform-gpu" />
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gold/10 rounded-full blur-[120px] pointer-events-none transform-gpu" />
 
@@ -46,7 +46,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-3xl md:text-4xl font-serif font-bold text-primary"
+            className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white"
             >
               {title || 'Últimas Prédicas'}
             </motion.h2>
@@ -56,7 +56,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ delay: 0.1 }}
-                className="text-gray-500 text-sm leading-relaxed max-w-xl"
+                className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed max-w-xl"
               >
                 {subtitle}
               </motion.p>
@@ -69,7 +69,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
             initial={{ opacity: 0, x: -10 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="text-primary hover:text-blue-900 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
+            className="text-primary hover:text-blue-900 dark:text-gold dark:hover:text-yellow-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
           >
             Ver Canal de Youtube
             <ArrowRight size={16} />
@@ -160,7 +160,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
         {/* Playlist Grid / Carousel */}
         {sermons.length > 1 && (
           <div className="space-y-6">
-            <h4 className="font-serif font-bold text-xl text-slate-800">Sermones Anteriores</h4>
+            <h4 className="font-serif font-bold text-xl text-slate-800 dark:text-white">Sermones Anteriores</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sermons.filter(s => s.id !== activeSermon?.id).map((sermon, index) => {
                 const videoId = getYoutubeId(sermon.youtube_url);
@@ -172,7 +172,7 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => handlePlay(sermon)}
-                    className="group cursor-pointer bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col hover:-translate-y-1"
+                    className="group cursor-pointer bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col hover:-translate-y-1"
                   >
                     <div className="aspect-video relative overflow-hidden bg-slate-800">
                       {videoId && (
@@ -190,11 +190,11 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                     </div>
                     <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                       <div>
-                        <h5 className="font-serif font-bold text-slate-800 line-clamp-2 group-hover:text-primary transition-colors">
+                        <h5 className="font-serif font-bold text-slate-800 dark:text-gray-100 line-clamp-2 group-hover:text-primary dark:group-hover:text-gold transition-colors">
                           {sermon.title}
                         </h5>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium">
                         <span className="flex items-center gap-1 line-clamp-1">
                           <User size={14} />
                           {sermon.pastor_name}

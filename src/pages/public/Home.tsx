@@ -22,11 +22,11 @@ import { useLiveModeStore } from '../../store/useLiveModeStore';
 import MagneticButton from '../../components/animations/MagneticButton';
 
 const FALLBACK_SCHEDULES: Schedule[] = [
-  { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:30pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
-  { id: '2', day: 'Miércoles', title: 'Culto de Enseñanza', time_range: '7:30pm - 9:30pm', description: 'Estudio bíblico doctrinal para toda la congregación.', order_index: 2, created_at: '' },
-  { id: '3', day: 'Jueves', title: 'Culto de Cadetes', time_range: '7:30pm - 9:30pm', description: 'Culto dinámico de adolescentes y pre-jóvenes.', order_index: 3, created_at: '' },
-  { id: '4', day: 'Viernes', title: 'Culto en Células', time_range: '7:30pm - 9:30pm', description: 'Grupos pequeños reunidos en los hogares.', order_index: 4, created_at: '' },
-  { id: '5', day: 'Sábado', title: 'Culto de Jóvenes', time_range: '7:30pm - 9:30pm', description: 'Servicio vibrante dirigido por el departamento de Jóvenes.', order_index: 5, created_at: '' },
+  { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:00pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
+  { id: '2', day: 'Miércoles', title: 'Culto de Enseñanza', time_range: '7:30pm - 9:00pm', description: 'Estudio bíblico doctrinal para toda la congregación.', order_index: 2, created_at: '' },
+  { id: '3', day: 'Jueves', title: 'Culto de Cadetes', time_range: '7:30pm - 9:00pm', description: 'Culto dinámico de adolescentes y pre-jóvenes.', order_index: 3, created_at: '' },
+  { id: '4', day: 'Viernes', title: 'Culto en Células', time_range: '7:30pm - 9:00pm', description: 'Grupos pequeños reunidos en los hogares.', order_index: 4, created_at: '' },
+  { id: '5', day: 'Sábado', title: 'Culto de Jóvenes', time_range: '7:30pm - 9:00pm', description: 'Servicio vibrante dirigido por el departamento de Jóvenes.', order_index: 5, created_at: '' },
   { id: '6', day: 'Domingo', title: '1ra Plenaria', time_range: '8:00am - 9:30am', description: 'Primer culto general de adoración.', order_index: 6, created_at: '' },
   { id: '7', day: 'Domingo', title: '2da Plenaria', time_range: '10:00am - 11:30am', description: 'Segundo culto general de adoración.', order_index: 7, created_at: '' }
 ];
@@ -303,7 +303,7 @@ const Home = () => {
         .from('sermons')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(2);
+        .limit(4);
 
       if (error) throw error;
       if (data && data.length > 0) {

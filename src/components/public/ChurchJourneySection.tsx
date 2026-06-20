@@ -26,7 +26,7 @@ const journeySteps = [
     title: 'Un Cuerpo en Cristo',
     description: 'Fomentamos relaciones profundas, discipulado mutuo y apoyo genuino entre todos los miembros de la iglesia.',
     icon: <Users size={24} className="text-primary" />,
-    image: 'https://images.unsplash.com/photo-1511632765486-a96c7530ba11?auto=format&fit=crop&q=80&w=800'
+    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'step-4',
