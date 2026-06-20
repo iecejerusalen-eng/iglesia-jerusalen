@@ -279,5 +279,21 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/inventario',
     icon: Package,
     group: 'operaciones'
+  },
+  {
+    id: 'programs',
+    label: 'Matrículas y Solicitudes',
+    name: 'Solicitudes Matrícula',
+    path: '/admin/lms/matriculas',
+    icon: Users,
+    group: 'educacion'
+  },
+  {
+    id: 'settings',
+    label: 'Gestor de Extensiones',
+    name: 'Extensiones / Plugins',
+    path: '/admin/extensiones',
+    icon: Sparkles,
+    group: 'diseno'
   }
 ];
