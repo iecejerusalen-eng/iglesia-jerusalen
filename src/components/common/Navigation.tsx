@@ -239,6 +239,20 @@ const Navigation = () => {
             </AnimatePresence>
           </li>
 
+          {/* Aula Virtual */}
+          <li>
+            <Link 
+              to="/programas" 
+              className={`transition-colors duration-300 ${
+                isTransparent
+                  ? (isPathActive('/programas') ? 'text-gold' : 'hover:text-gold text-white/90')
+                  : (isPathActive('/programas') ? 'text-accent-red' : 'hover:text-accent-red')
+              }`}
+            >
+              Aula Virtual
+            </Link>
+          </li>
+
           {/* Tienda */}
           <li>
             <Link 
@@ -483,6 +497,19 @@ const Navigation = () => {
                         )}
                       </AnimatePresence>
                     </div>
+                  </motion.li>
+
+                  {/* Aula Virtual */}
+                  <motion.li variants={fadeInUp}>
+                    <Link
+                      to="/programas"
+                      onClick={closeMenu}
+                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
+                        isPathActive('/programas') ? 'text-accent-red border-accent-red/20' : ''
+                      }`}
+                    >
+                      Aula Virtual
+                    </Link>
                   </motion.li>
 
                   {/* Tienda */}
