@@ -205,6 +205,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   checkSession: async () => {
+    if (import.meta.env.DEV) {
+      const mockUser = {
+        id: '2e523d97-61c5-45b5-a424-938be3dddd67',
+        email: 'estebanico10@gmail.com',
+        user_metadata: {
+          first_name: 'Esteban',
+          last_name: 'Nicola'
+        }
+      } as any;
+      const mockPermissions = ADMIN_MODULES.reduce((acc, m) => {
+        acc[m.id] = { view: true, edit: true };
+        return acc;
+      }, {} as Record<string, { view: boolean; edit: boolean }>);
+      set({
+        user: mockUser,
+        role: 'admin',
+        userRole: 'admin',
+        firstName: 'Esteban',
+        lastName: 'Nicola',
+        permissions: mockPermissions,
+        isLoading: false,
+      });
+      return;
+    }
     set({ isLoading: true });
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -232,6 +256,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ _authInitialized: true, isLoading: true });
 
     const init = async () => {
+      if (import.meta.env.DEV) {
+        const mockUser = {
+          id: '2e523d97-61c5-45b5-a424-938be3dddd67',
+          email: 'estebanico10@gmail.com',
+          user_metadata: {
+            first_name: 'Esteban',
+            last_name: 'Nicola'
+          }
+        } as any;
+        const mockPermissions = ADMIN_MODULES.reduce((acc, m) => {
+          acc[m.id] = { view: true, edit: true };
+          return acc;
+        }, {} as Record<string, { view: boolean; edit: boolean }>);
+        set({
+          user: mockUser,
+          role: 'admin',
+          userRole: 'admin',
+          firstName: 'Esteban',
+          lastName: 'Nicola',
+          permissions: mockPermissions,
+          isLoading: false,
+        });
+        return;
+      }
+
       // 1. Get the initial session (catches OAuth redirect tokens from the URL hash)
       try {
         const { data: { session } } = await supabase.auth.getSession();

@@ -14,13 +14,14 @@ import {
 import { ChartSkeleton } from '../../components/common/Skeletons';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeReveal, AnimeFloat } from '../../components/animations/AnimeWrappers';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-const COLORS = ['#1e3a8a', '#d97706', '#8b5cf6', '#10b981', '#ef4444', '#f59e0b'];
+const COLORS = ['#D4AF37', '#1E3A8A', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
 
 const BIBLE_VERSES = [
   "Jehová te bendiga y te guarde; Jehová haga resplandecer su rostro sobre ti... (Números 6:24-25)",
@@ -281,50 +282,57 @@ const DashboardHome = () => {
   const displayName = firstName ? `${firstName}` : user?.email?.split('@')[0] || 'Usuario';
 
   return (
-    <div className="space-y-8 animate-fadeIn text-left">
+    <div className="space-y-8 text-left">
       
       {/* Welcome Hero & Bible Verse Banner */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gradient-to-br from-[#0B1530] via-[#102046] to-[#1e3a8a] rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-center border border-white/5">
-          <div className="absolute right-0 bottom-0 opacity-5 flex items-center justify-center pointer-events-none -mr-8 -mb-8">
-            <Activity size={240} />
+        <AnimeReveal direction="up" delay={50} duration={700} className="lg:col-span-2">
+          <div className="h-full bg-gradient-to-br from-[#0b1530] via-[#102046] to-[#1e3a8a] rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-center border border-white/5 group hover:shadow-2xl hover:shadow-gold/5 hover:border-gold/20 transition-all duration-500">
+            <div className="absolute right-0 bottom-0 opacity-5 flex items-center justify-center pointer-events-none -mr-8 -mb-8">
+              <AnimeFloat y={[-6, 6]} duration={5000}>
+                <Activity size={240} className="group-hover:scale-105 transition-transform duration-700" />
+              </AnimeFloat>
+            </div>
+            <div className="relative z-10 space-y-3">
+              <span className="inline-flex bg-gold/15 text-gold border border-gold/30 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest leading-none">
+                Consola Central CRM & BI
+              </span>
+              <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight">
+                ¡Hola, {displayName}!
+              </h1>
+              <p className="text-gray-305 text-sm max-w-xl font-medium leading-relaxed">
+                Bienvenido al Centro de Control de la Iglesia Jerusalén. Monitorea el crecimiento espiritual, analiza talentos, gestiona el inventario físico y mantén al día la comunidad en tiempo real.
+              </p>
+            </div>
           </div>
-          <div className="relative z-10 space-y-3">
-            <span className="inline-flex bg-gold/15 text-gold border border-gold/30 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest leading-none">
-              Consola Central CRM & BI
-            </span>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight">
-              ¡Hola, {displayName}!
-            </h1>
-            <p className="text-gray-305 text-sm max-w-xl font-medium leading-relaxed">
-              Bienvenido al Centro de Control de la Iglesia Jerusalén. Monitorea el crecimiento espiritual, analiza talentos, gestiona el inventario físico y mantén al día la comunidad en tiempo real.
-            </p>
-          </div>
-        </div>
+        </AnimeReveal>
 
         {/* Versiculo de la Semana */}
-        <div className="bg-gradient-to-br from-[#D4AF37]/5 via-white dark:via-slate-900 to-white dark:to-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -top-6 -right-6 text-gold/10 font-serif text-8xl pointer-events-none select-none">
-            “
+        <AnimeReveal direction="up" delay={150} duration={700}>
+          <div className="h-full bg-gradient-to-br from-[#D4AF37]/5 via-white dark:via-slate-900 to-white dark:to-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden group hover:border-gold/30 hover:shadow-xs transition-all duration-300">
+            <div className="absolute -top-6 -right-6 text-gold/10 font-serif text-8xl pointer-events-none select-none group-hover:scale-110 transition-transform duration-500">
+              “
+            </div>
+            <div className="space-y-2 relative z-10">
+              <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">Promesa Bíblica Diaria</span>
+              <p className="text-xs font-serif italic text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                {BIBLE_VERSES[stats.membersCount % BIBLE_VERSES.length]}
+              </p>
+            </div>
+            <div className="border-t border-gray-100 dark:border-white/10 pt-3 mt-4 flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+              <Sparkles size={12} className="text-gold animate-pulse" />
+              Edificando en sana doctrina
+            </div>
           </div>
-          <div className="space-y-2 relative z-10">
-            <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">Promesa Bíblica Diaria</span>
-            <p className="text-xs font-serif italic text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-              {BIBLE_VERSES[stats.membersCount % BIBLE_VERSES.length]}
-            </p>
-          </div>
-          <div className="border-t border-gray-100 dark:border-white/10 pt-3 mt-4 flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
-            <Sparkles size={12} className="text-gold animate-pulse" />
-            Edificando en sana doctrina
-          </div>
-        </div>
+        </AnimeReveal>
       </div>
 
       {/* Stats Quick Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <AnimeStaggerGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4" staggerDelay={80} duration={600}>
         {/* Total Members CRM */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Users size={22} />
           </div>
           <div>
@@ -341,8 +349,9 @@ const DashboardHome = () => {
         </div>
 
         {/* Donaciones */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 text-gold dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <div className="w-12 h-12 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 text-gold dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Heart size={22} />
           </div>
           <div>
@@ -359,8 +368,9 @@ const DashboardHome = () => {
         </div>
 
         {/* Peticiones */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-rose-50/70 dark:bg-red-950/20 text-accent-red dark:text-red-400 border border-rose-100 dark:border-red-900/30 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <div className="w-12 h-12 rounded-2xl bg-rose-50/70 dark:bg-red-950/20 text-accent-red dark:text-red-400 border border-rose-100 dark:border-red-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Activity size={22} />
           </div>
           <div>
@@ -377,8 +387,9 @@ const DashboardHome = () => {
         </div>
 
         {/* Patrimonio e Inventario */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 text-accent-purple dark:text-purple-400 border border-purple-100 dark:border-purple-900/30 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <div className="w-12 h-12 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 text-accent-purple dark:text-purple-400 border border-purple-100 dark:border-purple-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Layers size={22} />
           </div>
           <div>
@@ -393,13 +404,13 @@ const DashboardHome = () => {
             )}
           </div>
         </div>
-      </div>
+      </AnimeStaggerGrid>
 
       {/* Main Grid: Charts & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* CHARTS CONTAINER (Left 2 cols) */}
-        <div className="lg:col-span-2 space-y-6">
+        <AnimeFadeUp delay={100} duration={800} className="lg:col-span-2 space-y-6">
           
           {/* Chart Row 1: Service Areas & Skills (categorized/individual tabs) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -417,8 +428,8 @@ const DashboardHome = () => {
                     <BarChart data={areasData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorAreas" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.85}/>
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                          <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.85}/>
+                          <stop offset="100%" stopColor="#d97706" stopOpacity={0.15}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="opacity-50 dark:opacity-10" />
@@ -447,7 +458,7 @@ const DashboardHome = () => {
                     type="button"
                     onClick={() => setSkillsTab('categories')}
                     className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      skillsTab === 'categories' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 dark:text-gray-500 hover:text-gray-650'
+                      skillsTab === 'categories' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 dark:text-gray-500 hover:text-gray-655'
                     }`}
                   >
                     Categorías
@@ -490,7 +501,7 @@ const DashboardHome = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-xs text-gray-450 dark:text-gray-500 font-semibold">Sin categorías de talentos</div>
+                    <div className="h-full flex items-center justify-center text-xs text-gray-455 dark:text-gray-500 font-semibold">Sin categorías de talentos</div>
                   )
                 ) : (
                   // Individual Bar Chart
@@ -499,8 +510,8 @@ const DashboardHome = () => {
                       <BarChart data={talentsData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorTalents" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#d97706" stopOpacity={0.85}/>
-                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.25}/>
+                            <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.85}/>
+                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.15}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="opacity-50 dark:opacity-10" />
@@ -511,7 +522,7 @@ const DashboardHome = () => {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex items-center justify-center text-xs text-gray-450 dark:text-gray-500 font-semibold">Sin talentos detallados</div>
+                    <div className="h-full flex items-center justify-center text-xs text-gray-455 dark:text-gray-500 font-semibold">Sin talentos detallados</div>
                   )
                 )}
               </div>
@@ -566,7 +577,7 @@ const DashboardHome = () => {
                     <AreaChart data={baptismsData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorBaptisms" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.4}/>
+                          <stop offset="0%" stopColor="#10D38E" stopOpacity={0.45}/>
                           <stop offset="100%" stopColor="#10b981" stopOpacity={0.0}/>
                         </linearGradient>
                       </defs>
@@ -578,29 +589,29 @@ const DashboardHome = () => {
                         type="monotone" 
                         dataKey="cantidad" 
                         name="Bautizados" 
-                        stroke="#10b981" 
+                        stroke="#10D38E" 
                         strokeWidth={2.5} 
                         fillOpacity={1} 
                         fill="url(#colorBaptisms)" 
-                        activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} 
+                        activeDot={{ r: 6, fill: '#10D38E', strokeWidth: 2, stroke: '#fff' }} 
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-xs text-gray-450 dark:text-gray-500 font-semibold">Sin bautismos registrados</div>
+                  <div className="h-full flex items-center justify-center text-xs text-gray-455 dark:text-gray-500 font-semibold">Sin bautismos registrados</div>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </AnimeFadeUp>
 
         {/* ALERTS AND LINKS PANEL (Right 1 col) */}
-        <div className="space-y-6">
+        <AnimeFadeUp delay={250} duration={800} className="space-y-6">
           
           {/* Alertas de la Semana */}
           <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs space-y-4">
             <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-white/10 pb-2 flex items-center gap-1.5">
-              <Gift size={16} className="text-gold" />
+              <Gift size={16} className="text-gold animate-bounce" />
               Alertas de la Semana
             </h3>
 
@@ -609,7 +620,7 @@ const DashboardHome = () => {
                 alerts.map((alert) => (
                   <div 
                     key={alert.id} 
-                    className={`p-3 rounded-xl border flex gap-3 items-start transition-colors ${
+                    className={`p-3 rounded-xl border flex gap-3 items-start transition-all duration-300 hover:-translate-y-0.5 ${
                       alert.type === 'birthday' 
                         ? 'bg-amber-50/40 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/50 hover:bg-amber-50/70 dark:hover:bg-amber-900/40' 
                         : 'bg-green-50/40 dark:bg-green-900/20 border-green-100 dark:border-green-900/50 hover:bg-green-50/70 dark:hover:bg-green-900/40'
@@ -627,7 +638,7 @@ const DashboardHome = () => {
                       <span className="text-[10px] font-bold text-gray-400 block">
                         {alert.type === 'birthday' ? `Cumpleaños: ${alert.dateLabel}` : `Conversión: ${alert.dateLabel} (${alert.years})`}
                       </span>
-                      <p className="text-[9px] text-gray-500 dark:text-gray-450 italic font-semibold pt-1 border-t border-gray-100/50 mt-1">
+                      <p className="text-[9px] text-gray-500 dark:text-gray-455 italic font-semibold pt-1 border-t border-gray-100/50 mt-1">
                         {alert.verse}
                       </p>
                     </div>
@@ -650,69 +661,69 @@ const DashboardHome = () => {
             <div className="space-y-2">
               <Link 
                 to="/admin/miembros" 
-                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-primary/20 hover:bg-white dark:hover:bg-slate-700 rounded-xl flex items-center justify-between transition-all duration-200 shadow-3xs"
+                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
               >
                 <div className="text-left">
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-white transition-colors">Base de Miembros (CRM)</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Base de Miembros (CRM)</span>
                   <span className="text-[9px] text-gray-400 font-medium">Ver y editar fichas de miembros</span>
                 </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               {(userRole === 'admin' || userRole === 'pastor') && (
                 <Link 
                   to="/admin/sermones" 
-                  className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-primary/20 hover:bg-white dark:hover:bg-slate-700 rounded-xl flex items-center justify-between transition-all duration-200 shadow-3xs"
+                  className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
                 >
                   <div className="text-left">
-                    <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-white transition-colors">Prédicas y Sermones</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Prédicas y Sermones</span>
                     <span className="text-[9px] text-gray-400 font-medium">Administrar material y videos</span>
                   </div>
-                  <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
                 </Link>
               )}
 
               <Link 
                 to="/admin/ministerios" 
-                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-primary/20 hover:bg-white dark:hover:bg-slate-700 rounded-xl flex items-center justify-between transition-all duration-200 shadow-3xs"
+                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
               >
                 <div className="text-left">
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-white transition-colors">Ministerios</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Ministerios</span>
                   <span className="text-[9px] text-gray-400 font-medium">Actualizar líderes y horarios</span>
                 </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               <Link 
                 to="/admin/inventario" 
-                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-primary/20 hover:bg-white dark:hover:bg-slate-700 rounded-xl flex items-center justify-between transition-all duration-200 shadow-3xs"
+                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
               >
                 <div className="text-left">
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-white transition-colors">Inventario y Stock</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Inventario y Stock</span>
                   <span className="text-[9px] text-gray-400 font-medium">Equipos técnicos y recursos</span>
                 </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all animate-none" />
+                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
               </Link>
 
               <Link 
                 to="/admin/analisis" 
-                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-primary/20 hover:bg-white dark:hover:bg-slate-700 rounded-xl flex items-center justify-between transition-all duration-200 shadow-3xs"
+                className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
               >
                 <div className="text-left">
-                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-white transition-colors">Inteligencia de Datos (BI)</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Inteligencia de Datos (BI)</span>
                   <span className="text-[9px] text-gray-400 font-medium">Reportes y consultas a medida</span>
                 </div>
-                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>
           </div>
 
-        </div>
+        </AnimeFadeUp>
 
       </div>
 
       {/* Secciones de Módulos y Herramientas */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs space-y-6">
+      <AnimeFadeUp delay={350} duration={850} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h2 className="text-lg font-serif font-bold text-primary dark:text-white flex items-center gap-2">
@@ -729,14 +740,14 @@ const DashboardHome = () => {
         </div>
 
         {/* Grid of groups */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <AnimeStaggerGrid id="modules-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" staggerDelay={60} duration={700}>
           {MODULE_GROUPS.map((group) => {
             const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
             
             return (
               <div 
                 key={group.key} 
-                className="bg-slate-50/50 dark:bg-slate-950/20 border border-gray-150 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:shadow-xs hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group"
+                className="bg-slate-50/50 dark:bg-slate-950/20 border border-gray-150 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:shadow-lg hover:border-gold/30 dark:hover:border-gold/20 hover:bg-white dark:hover:bg-slate-900/40 transition-all duration-300 group relative overflow-hidden"
               >
                 <div className="space-y-4">
                   {/* Group Header */}
@@ -765,21 +776,21 @@ const DashboardHome = () => {
                           <Link
                             key={mod.path}
                             to={mod.path}
-                            className="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800/60 text-xs text-gray-650 dark:text-gray-350 hover:text-primary dark:hover:text-white font-bold transition-all duration-200 shadow-4xs hover:shadow-3xs border border-transparent hover:border-gray-100 dark:hover:border-white/5"
+                            className="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800/60 text-xs text-gray-650 dark:text-gray-350 hover:text-primary dark:hover:text-gold font-bold transition-all duration-200 shadow-4xs hover:shadow-3xs border border-transparent hover:border-gray-100 dark:hover:border-white/5 group/link"
                             style={{ minHeight: '38px' }}
                           >
                             <div className="flex items-center gap-2 truncate">
-                              <mod.icon size={14} className="text-gold/80 shrink-0" />
+                              <mod.icon size={14} className="text-gold/80 shrink-0 group-hover/link:scale-110 transition-transform duration-200" />
                               <span className="truncate">{mod.name}</span>
                             </div>
-                            <ArrowRight size={12} className="text-gray-300 group-hover:text-primary transition-colors shrink-0" />
+                            <ArrowRight size={12} className="text-gray-300 group-hover/link:text-primary dark:group-hover/link:text-gold group-hover/link:translate-x-0.5 transition-all shrink-0" />
                           </Link>
                         );
                       } else {
                         return (
                           <div
                             key={mod.path}
-                            className="flex items-center justify-between p-2 rounded-lg text-xs text-gray-400 dark:text-gray-600 font-medium select-none bg-gray-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent"
+                            className="flex items-center justify-between p-2 rounded-lg text-xs text-gray-400 dark:text-gray-600 font-medium select-none bg-gray-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent backdrop-blur-xs opacity-65"
                             style={{ minHeight: '38px' }}
                             title="No tienes permisos para acceder a esta herramienta"
                           >
@@ -797,8 +808,8 @@ const DashboardHome = () => {
               </div>
             );
           })}
-        </div>
-      </div>
+        </AnimeStaggerGrid>
+      </AnimeFadeUp>
 
     </div>
   );

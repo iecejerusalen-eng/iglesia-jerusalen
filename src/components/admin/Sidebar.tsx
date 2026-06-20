@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import { LogOut, X, Globe, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { LogOut, X, Globe, ChevronRight, Search } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
@@ -19,6 +19,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const prevPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -82,7 +83,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   // Auto-expand group of active path on mount or path change
   useEffect(() => {
-    const activeItem = visibleNavItems.find(item => {
+    if (prevPathRef.current === location.pathname) return;
+    prevPathRef.current = location.pathname;
+
+    const activeItem = ADMIN_MODULES.find(item => {
       if (item.path === '/admin') {
         return location.pathname === '/admin';
       }
@@ -97,7 +101,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         return next;
       });
     }
-  }, [location.pathname, visibleNavItems]);
+  }, [location.pathname]);
 
   const toggleGroup = (groupKey: string) => {
     setExpandedGroups(prev => {
@@ -145,7 +149,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <Search size={16} className="text-gray-300 mr-2 shrink-0" />
           <input
             type="text"
-            placeholder="Buscar herramienta..."
+            placeholder="Buscar herramienta... (Ctrl + K)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs bg-transparent focus:outline-none text-white placeholder-gray-400 font-semibold"
@@ -232,17 +236,18 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     <span className="text-[9px] bg-white/10 text-gray-300 font-extrabold px-1.5 py-0.5 rounded-full select-none">
                       {group.items.length}
                     </span>
-                    {isExpanded ? (
-                      <ChevronDown size={14} className="text-gray-450 shrink-0" />
-                    ) : (
-                      <ChevronRight size={14} className="text-gray-450 shrink-0" />
-                    )}
+                    <ChevronRight 
+                      size={14} 
+                      className={`text-gray-400 shrink-0 transition-transform duration-300 ${
+                        isExpanded ? 'rotate-90 text-gold' : 'rotate-0'
+                      }`} 
+                    />
                   </div>
                 </button>
 
                 {/* Collapsible Sub-items Container */}
                 <div 
-                  className={`overflow-hidden transition-all duration-350 ease-in-out pl-4 ${
+                  className={`overflow-hidden transition-all duration-300 ease-in-out pl-4 ${
                     isExpanded 
                       ? 'max-h-[500px] opacity-100 py-1 space-y-1' 
                       : 'max-h-0 opacity-0 pointer-events-none'
@@ -257,7 +262,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         if (isMobile) onClose();
                       }}
                       className={({ isActive }) => 
-                        `flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 border-l-2 font-medium text-[11px] sm:text-xs ${
+                        `flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 border-l-2 font-medium text-[11px] sm:text-xs group ${
                           isActive 
                             ? 'bg-white/10 dark:bg-slate-900 border-gold text-white font-bold shadow-inner' 
                             : 'hover:bg-white/5 dark:hover:bg-slate-900/50 border-transparent text-gray-300 hover:text-white'
@@ -265,8 +270,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                       }
                       style={{ minHeight: '40px' }} // mobile friendly tap size
                     >
-                      <item.icon size={15} className="shrink-0 opacity-70 group-hover:opacity-100" />
-                      <span>{item.name}</span>
+                      <item.icon size={15} className="shrink-0 opacity-70 group-hover:opacity-100 group-hover:text-gold transition-colors duration-200" />
+                      <span className="group-hover:translate-x-1.5 transition-transform duration-200">{item.name}</span>
                     </NavLink>
                   ))}
                 </div>
