@@ -30,15 +30,37 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       const { data, error } = await supabase
         .from('ministry_meeting_notes')
         .select(`
-          *,
-          profiles (first_name, last_name)
+          *
         `)
         .eq('ministry_id', ministryId)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotes(data || []);
+      
+      const notesData = data || [];
+      
+      // Manually fetch profiles since foreign key might not be setup
+      if (notesData.length > 0) {
+        const userIds = [...new Set(notesData.map(n => n.created_by).filter(Boolean))];
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .in('id', userIds);
+            
+          if (profilesData) {
+            notesData.forEach(note => {
+              const profile = profilesData.find(p => p.id === note.created_by);
+              if (profile) {
+                note.profiles = profile;
+              }
+            });
+          }
+        }
+      }
+      
+      setNotes(notesData);
     } catch (err) {
       console.error('Error fetching meeting notes:', err);
     } finally {

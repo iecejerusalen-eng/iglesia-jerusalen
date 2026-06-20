@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Users, Settings, Plus, ChevronRight } from 'lucide-react';
+import { BookOpen, Users, Settings } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 
 export default function TeacherDashboard() {
-  const { user, role } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

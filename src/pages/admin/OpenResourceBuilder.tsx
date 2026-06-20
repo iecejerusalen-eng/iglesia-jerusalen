@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import type { OpenResource, OpenSection, OpenActivity } from '../../types';
-import { ArrowLeft, Plus, Settings, CheckCircle, Video, FileText, FileQuestion, Edit, Trash2, X, ChevronUp, ChevronDown, Save } from 'lucide-react';
+import { Save, Plus, ArrowLeft, Trash2, X, Video, FileText, FileQuestion, Edit, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import LMSQuizBuilder from '../../components/admin/LMSQuizBuilder';

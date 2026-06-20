@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Clock, ChevronRight, PlayCircle } from 'lucide-react';
+import { BookOpen, Award, Clock, PlayCircle } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
