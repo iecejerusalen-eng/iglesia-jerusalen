@@ -337,7 +337,6 @@ const About = () => {
             if (id === 'about_pastoral') {
               return (
                 <div key={id}>
-                <div key={id}>
                   <section className="space-y-8 text-left">
                     <AnimeFadeUp 
                       className="text-center max-w-xl mx-auto space-y-2"
@@ -400,7 +399,6 @@ const About = () => {
                         </AnimeHoverCard>
                       </AnimeStaggerGrid>
                     </section>
-                  )}
                 </div>
               );
             }
