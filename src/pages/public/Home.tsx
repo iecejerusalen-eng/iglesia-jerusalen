@@ -553,6 +553,30 @@ const Home = () => {
                         background: none;
                         padding: 0;
                       }
+                      
+                      .live-song-lyrics span.chord-node {
+                        display: inline-block;
+                        position: relative;
+                        width: 0;
+                        height: 0;
+                        overflow: visible;
+                        user-select: none;
+                      }
+                      .live-song-lyrics span.chord-node::before {
+                        content: attr(data-chord);
+                        position: absolute;
+                        bottom: 100%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        font-size: 0.7rem;
+                        font-weight: 800;
+                        color: #f87171;
+                        font-family: 'Inter', sans-serif;
+                        line-height: 1;
+                        pointer-events: none;
+                        white-space: nowrap;
+                      }
+                      .live-song-lyrics.hide-chords span.chord-node::before { display: none; }
                     `}</style>
 
                     <div className="max-w-7xl mx-auto space-y-6">

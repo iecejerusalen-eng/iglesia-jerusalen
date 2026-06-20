@@ -1,4 +1,4 @@
-import { Mark, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 
 export interface ChordOptions {
   HTMLAttributes: Record<string, any>;
@@ -8,23 +8,20 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     chord: {
       /**
-       * Set a chord annotation on the selected text
+       * Insert a chord node
        */
       setChord: (attributes: { chord: string }) => ReturnType;
-      /**
-       * Remove a chord annotation from the selected text
-       */
-      unsetChord: () => ReturnType;
-      /**
-       * Toggle a chord annotation on the selected text
-       */
-      toggleChord: (attributes: { chord: string }) => ReturnType;
     };
   }
 }
 
-export const ChordExtension = Mark.create<ChordOptions>({
+export const ChordExtension = Node.create<ChordOptions>({
   name: 'chord',
+
+  group: 'inline',
+  inline: true,
+  selectable: true,
+  atom: true,
 
   addOptions() {
     return {
@@ -37,13 +34,7 @@ export const ChordExtension = Mark.create<ChordOptions>({
       chord: {
         default: null,
         parseHTML: (element: HTMLElement) => {
-          if (!element || typeof element.getAttribute !== 'function') return null;
-          const directChord = element.getAttribute('data-chord');
-          if (directChord) return directChord;
-          if (typeof element.querySelector === 'function') {
-            return element.querySelector('rt')?.textContent || null;
-          }
-          return null;
+          return element.getAttribute('data-chord');
         },
         renderHTML: (attributes: Record<string, any>) => {
           if (!attributes.chord) return {};
@@ -56,20 +47,18 @@ export const ChordExtension = Mark.create<ChordOptions>({
   parseHTML() {
     return [
       {
-        tag: 'ruby',
-      },
-      {
-        tag: 'span[data-chord]',
+        tag: 'span[data-chord-node]',
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    // Render as a clean span tag with data-chord attribute
     return [
       'span',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: 'chord-annotation' }),
-      0,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 
+        class: 'chord-node',
+        'data-chord-node': 'true' 
+      }),
     ];
   },
 
@@ -77,20 +66,26 @@ export const ChordExtension = Mark.create<ChordOptions>({
     return {
       setChord:
         (attributes) =>
-        ({ commands }) => {
-          return commands.setMark(this.name, attributes);
-        },
-      unsetChord:
-        () =>
-        ({ commands }) => {
-          return commands.unsetMark(this.name);
-        },
-      toggleChord:
-        (attributes) =>
-        ({ commands }) => {
-          return commands.toggleMark(this.name, attributes);
+        ({ chain }) => {
+          return chain()
+            .insertContent({ type: this.name, attrs: attributes })
+            .run();
         },
     };
+  },
+
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: /\[([a-zA-Z0-9#]+)\]$/,
+        type: this.type,
+        getAttributes: (match) => {
+          return {
+            chord: match[1],
+          };
+        },
+      }),
+    ];
   },
 });
 

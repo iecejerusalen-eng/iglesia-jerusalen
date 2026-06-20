@@ -272,6 +272,36 @@ const SongsLibrary = () => {
                     background: none;
                     padding: 0;
                   }
+                  
+                  /* New Inline Node style */
+                  .song-lyrics span.chord-node {
+                    display: inline-block;
+                    position: relative;
+                    width: 0;
+                    height: 0;
+                    overflow: visible;
+                    user-select: none;
+                  }
+                  .song-lyrics span.chord-node::before {
+                    content: attr(data-chord);
+                    position: absolute;
+                    bottom: 100%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: #dc2626;
+                    font-family: 'Inter', sans-serif;
+                    line-height: 1;
+                    pointer-events: none;
+                    white-space: nowrap;
+                  }
+                  .dark .song-lyrics span.chord-node::before {
+                    color: #f87171;
+                  }
+                  .song-lyrics.hide-chords span.chord-node::before {
+                    display: none;
+                  }
                 `}</style>
                 <div className={`song-lyrics-wrapper font-${fontFamily}`}>
                   <div

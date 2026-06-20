@@ -73,8 +73,8 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
     const handleUpdate = () => {
       const dirtyHtml = editor.getHTML();
       const cleanHtml = DOMPurify.sanitize(dirtyHtml, {
-        ADD_TAGS: ['ruby', 'rt', 'span'],
-        ADD_ATTR: ['style', 'class', 'data-chord'],
+        ADD_TAGS: ['ruby', 'rt', 'span', 'chord-node'],
+        ADD_ATTR: ['style', 'class', 'data-chord', 'data-chord-node'],
       });
       onChange(cleanHtml);
     };
@@ -95,71 +95,22 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
 
   if (!editor) return null;
 
-  const getWordAtPosition = ($pos: any) => {
-    const text = $pos.parent.textContent;
-    const offset = $pos.parentOffset;
-    
-    let start = offset;
-    let end = offset;
-    
-    const isWordChar = (char: string) => char && /[^\s,.:;!?()\[\]{}]/.test(char);
-    
-    while (start > 0 && isWordChar(text[start - 1])) {
-      start--;
-    }
-    while (end < text.length && isWordChar(text[end])) {
-      end++;
-    }
-    
-    if (start === end) return null;
-    
-    const basePos = $pos.start();
-    return {
-      from: basePos + start,
-      to: basePos + end,
-    };
-  };
-
   const applyChord = (chord: string) => {
     if (!chord.trim()) return;
     
-    let chain = editor.chain();
-    
-    let targetSelection = savedSelection;
-    if (targetSelection) {
-      if (targetSelection.from === targetSelection.to) {
-        const $pos = editor.state.doc.resolve(targetSelection.from);
-        const word = getWordAtPosition($pos);
-        if (word) {
-          targetSelection = word;
-        }
-      }
+    // Al ser un Node (inline), lo insertamos directamente. 
+    // Si hay texto seleccionado, no queremos borrarlo, así que colapsamos la selección al final.
+    let chain = editor.chain().focus();
+    if (savedSelection && savedSelection.from !== savedSelection.to) {
+      chain = chain.setTextSelection(savedSelection.to);
     }
     
-    if (targetSelection && targetSelection.from !== targetSelection.to) {
-      chain = chain.setTextSelection(targetSelection).setChord({ chord: chord.trim() });
-    } else {
-      // Empty selection - insert a space character with the chord mark
-      chain = chain.insertContent({
-        type: 'text',
-        text: ' ',
-        marks: [{ type: 'chord', attrs: { chord: chord.trim() } }]
-      });
-    }
+    chain.setChord({ chord: chord.trim() }).run();
     
-    chain.focus().run();
     setShowChordPicker(false);
     setCustomChord('');
   };
 
-  const removeChord = () => {
-    let chain = editor.chain();
-    if (savedSelection) {
-      chain = chain.setTextSelection(savedSelection);
-    }
-    chain.focus().unsetChord().run();
-    setShowChordPicker(false);
-  };
 
   return (
     <div className="border border-gray-300 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm focus-within:border-gold focus-within:ring-1 focus-within:ring-gold transition-all">
@@ -188,7 +139,34 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
         .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; }
         .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; }
         
-        /* Chords styling */
+        /* New Chords styling (Inline Node) */
+        .ProseMirror span.chord-node {
+          display: inline-block;
+          position: relative;
+          width: 0;
+          height: 0;
+          overflow: visible;
+          user-select: none;
+        }
+        .ProseMirror span.chord-node::before {
+          content: attr(data-chord);
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.75rem;
+          font-weight: 800;
+          color: #dc2626;
+          font-family: 'Inter', sans-serif;
+          line-height: 1;
+          pointer-events: none;
+          white-space: nowrap;
+        }
+        .dark .ProseMirror span.chord-node::before {
+          color: #f87171;
+        }
+
+        /* Old Chords styling (Marks - Backwards Compatibility) */
         .ProseMirror span.chord-annotation,
         .ProseMirror ruby.chord-annotation {
           position: relative;
@@ -218,7 +196,7 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
           letter-spacing: 0.02em;
         }
 
-        /* Dark mode overrides */
+        /* Dark mode overrides (Old) */
         .dark .ProseMirror h2 { color: #9ca3af; }
         .dark .ProseMirror h3 { color: #d1d5db; }
         .dark .ProseMirror p { color: #f3f4f6; }
@@ -373,13 +351,9 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); setShowChordPicker(!showChordPicker); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-semibold cursor-pointer transition-all ${
-                editor.isActive('chord')
-                  ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 ring-1 ring-red-300 dark:ring-red-500/30'
-                  : 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-500/20'
-              }`}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-semibold cursor-pointer transition-all bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/30 border border-amber-200 dark:border-amber-500/20`}
               type="button"
-              title="Agregar acorde sobre el texto seleccionado"
+              title="Agregar acorde en la posición actual"
             >
               <Music size={14} />
               Acorde
@@ -388,7 +362,7 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
             {showChordPicker && (
               <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-3 z-50 w-72">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-405 uppercase tracking-wider">Seleccionar Acorde</span>
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-405 uppercase tracking-wider">Insertar Acorde</span>
                   <button onClick={() => setShowChordPicker(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer" type="button">
                     <X size={14} />
                   </button>
@@ -425,25 +399,13 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
                     className="px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded hover:bg-amber-600 disabled:opacity-40 cursor-pointer transition-colors"
                     type="button"
                   >
-                    Aplicar
+                    Insertar
                   </button>
                 </div>
 
-                {/* Remove chord */}
-                {editor.isActive('chord') && (
-                  <button
-                    onClick={(e) => { e.preventDefault(); removeChord(); }}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="w-full mt-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-450 text-xs font-semibold rounded hover:bg-red-100 dark:hover:bg-red-900/45 border border-red-200 dark:border-red-500/20 cursor-pointer transition-colors"
-                    type="button"
-                  >
-                    Quitar Acorde del Texto Seleccionado
-                  </button>
-                )}
-
-                <p className="text-[10px] text-gray-400 mt-2 leading-tight">
-                  Selecciona texto en la letra y luego elige un acorde. Se mostrará encima de la sílaba seleccionada.
-                </p>
+                <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded text-[10px] text-amber-800 dark:text-amber-400 leading-tight">
+                  <strong>💡 Tip rápido:</strong> Ahora puedes escribir directamente <strong>[G]</strong> o <strong>[Am]</strong> en la letra y se convertirá mágicamente en un acorde. ¡Para borrar un acorde insertado, simplemente usa la tecla Backspace (Borrar)!
+                </div>
               </div>
             )}
           </div>
