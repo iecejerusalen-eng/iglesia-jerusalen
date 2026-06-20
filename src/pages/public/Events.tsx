@@ -217,7 +217,7 @@ const Events = () => {
   };
 
   return (
-    <div className="py-16 bg-base dark:bg-slate-950 min-h-screen transition-colors duration-200">
+    <div className="py-16 bg-surface dark:bg-slate-950 min-h-screen transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Hero Section */}

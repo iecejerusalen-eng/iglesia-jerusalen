@@ -97,7 +97,7 @@ const Ministries = () => {
       </section>
 
       {/* INVITACION A SERVIR */}
-      <section className="max-w-4xl mx-auto bg-base/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-gray-200 dark:border-white/10 text-center space-y-6">
+      <section className="max-w-4xl mx-auto bg-surface/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-gray-200 dark:border-white/10 text-center space-y-6">
         <div className="w-12 h-12 bg-primary/10 dark:bg-blue-900/30 text-primary dark:text-blue-300 rounded-full flex items-center justify-center mx-auto">
           <Award size={24} />
         </div>

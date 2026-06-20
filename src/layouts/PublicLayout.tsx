@@ -9,7 +9,7 @@ import SearchPalette from '../components/public/SearchPalette';
 
 const PublicLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-base dark:bg-slate-950 text-gray-800 dark:text-gray-100 font-sans relative transition-colors duration-500">
+    <div className="min-h-screen flex flex-col bg-surface dark:bg-slate-950 text-gray-800 dark:text-gray-100 font-sans relative transition-colors duration-500">
       <Preloader />
       <StickyNav />
       <TopBar />

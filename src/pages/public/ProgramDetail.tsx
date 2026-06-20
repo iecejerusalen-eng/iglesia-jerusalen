@@ -70,7 +70,7 @@ const ProgramDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base dark:bg-slate-950 transition-colors">
+      <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-slate-950 transition-colors">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
       </div>
     );
@@ -78,7 +78,7 @@ const ProgramDetail = () => {
 
   if (!program) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-400 bg-base dark:bg-slate-950">
+      <div className="min-h-screen flex flex-col items-center justify-center text-gray-400 bg-surface dark:bg-slate-950">
         <BookOpen size={56} className="mb-3 opacity-30" />
         <p className="text-lg font-medium">Programa no encontrado</p>
         <Link to="/programas" className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mt-2 hover:underline">← Volver a programas</Link>

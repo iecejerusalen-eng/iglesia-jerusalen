@@ -73,7 +73,7 @@ export default function Preloader() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[100] bg-base flex flex-col items-center justify-center select-none pointer-events-auto"
+      className="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center select-none pointer-events-auto"
     >
       <div
         ref={logoRef}

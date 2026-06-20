@@ -104,7 +104,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-surface px-4 py-12">
       <div className="bg-white p-8 rounded-2xl border border-gray-150 shadow-md w-full max-w-md">
         
         {/* Auth Toggle Tabs */}

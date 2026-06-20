@@ -14,7 +14,7 @@ const ProtectedRoute = ({ allowedRoles, module, children }: ProtectedRouteProps)
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base text-primary font-medium">
+      <div className="min-h-screen flex items-center justify-center bg-surface text-primary font-medium">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mr-3"></div>
         Cargando sesión...
       </div>

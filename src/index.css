@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-base: #F8FAFC;
+  --color-surface: #F8FAFC;
   --color-primary: #1E3A8A;
   --color-accent-red: #DC2626;
   --color-gold: #D97706;
@@ -16,7 +16,7 @@
 
 @layer base {
   html, body {
-    @apply font-sans bg-base text-gray-800 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-200;
+    @apply font-sans bg-surface text-gray-800 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-200;
   }
 }
 
