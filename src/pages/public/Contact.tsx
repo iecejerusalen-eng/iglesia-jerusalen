@@ -73,7 +73,7 @@ const Contact = () => {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-16">
       
       {/* HEADER HERO */}
-      <div className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white shadow-lg relative overflow-hidden">
+      <div id="contact_hero" className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white shadow-lg relative overflow-hidden">
         <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
           <Mail size={200} />
         </div>
@@ -92,6 +92,7 @@ const Contact = () => {
 
       {/* GRID PRINCIPAL (2 Columnas en Desktop) */}
       <AnimeStaggerGrid 
+        id="contact_info"
         className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch"
       >
         
@@ -315,11 +316,11 @@ const Contact = () => {
             )}
 
             <div className="pt-2">
-              <MagneticButton>
+              <MagneticButton className="w-full lg:w-auto">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
+                  className="w-full lg:w-auto px-8 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
                 >
                   {loading ? 'Enviando...' : (
                     <>

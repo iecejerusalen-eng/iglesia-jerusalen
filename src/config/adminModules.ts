@@ -82,6 +82,13 @@ export const ADMIN_MODULES: AdminModule[] = [
     icon: GraduationCap
   },
   {
+    id: 'programs',
+    label: 'Recursos Abiertos',
+    name: 'Recursos Abiertos',
+    path: '/admin/recursos-abiertos',
+    icon: FileText
+  },
+  {
     id: 'members',
     label: 'Miembros (CRM)',
     name: 'Miembros (CRM)',

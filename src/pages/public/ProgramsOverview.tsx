@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
-import type { LMSCourse } from '../../types';
+import type { OpenResource } from '../../types';
 
 const ProgramsOverview = () => {
-  const [programs, setPrograms] = useState<LMSCourse[]>([]);
+  const [programs, setPrograms] = useState<OpenResource[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPrograms = async () => {
       const { data } = await supabase
-        .from('lms_courses')
+        .from('open_resources')
         .select('*')
         .eq('is_published', true)
         .order('created_at', { ascending: false });

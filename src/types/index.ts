@@ -515,3 +515,36 @@ export interface LMSForumPost {
   profiles?: Profile | null;
   replies?: LMSForumPost[];
 }
+
+export interface OpenResource {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  open_sections?: OpenSection[];
+}
+
+export interface OpenSection {
+  id: string;
+  resource_id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
+  created_at: string;
+  open_activities?: OpenActivity[];
+}
+
+export interface OpenActivity {
+  id: string;
+  section_id: string;
+  title: string;
+  type: string;
+  content: string | null;
+  settings: Record<string, any>;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}

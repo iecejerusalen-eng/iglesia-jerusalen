@@ -45,6 +45,8 @@ import LMSManager from './pages/admin/LMSManager';
 import CourseBuilder from './pages/admin/CourseBuilder';
 import LMSGradebook from './pages/admin/LMSGradebook';
 import ChatManager from './pages/admin/ChatManager';
+import OpenResourcesManager from './pages/admin/OpenResourcesManager';
+import OpenResourceBuilder from './pages/admin/OpenResourceBuilder';
 import SundaySchool from './pages/public/SundaySchool';
 import ReadingPlan from './pages/public/ReadingPlan';
 import SermonDetail from './pages/public/SermonDetail';
@@ -257,6 +259,8 @@ function App() {
           <Route element={<ProtectedRoute module="programs" />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/lms" element={<LMSManager />} />
+              <Route path="/admin/recursos-abiertos" element={<OpenResourcesManager />} />
+              <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
             </Route>
           </Route>
 
