@@ -138,33 +138,7 @@ const SongLyricsEditor = ({ content, onChange, disabled = false }: Props) => {
         .ProseMirror p { margin-bottom: 0.25rem; color: #1f2937; }
         .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; }
         .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; }
-        
-        /* New Chords styling (Inline Node) */
-        .ProseMirror span.chord-node {
-          display: inline-block;
-          position: relative;
-          width: 0;
-          height: 0;
-          overflow: visible;
-          user-select: none;
-        }
-        .ProseMirror span.chord-node::before {
-          content: attr(data-chord);
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: #dc2626;
-          font-family: 'Inter', sans-serif;
-          line-height: 1;
-          pointer-events: none;
-          white-space: nowrap;
-        }
-        .dark .ProseMirror span.chord-node::before {
-          color: #f87171;
-        }
+        /* Chords are now styled via ReactNodeViewRenderer (ChordNodeView.tsx) */
 
         /* Old Chords styling (Marks - Backwards Compatibility) */
         .ProseMirror span.chord-annotation,

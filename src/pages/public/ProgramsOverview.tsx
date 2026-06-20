@@ -3,15 +3,19 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
-import type { Program } from '../../types';
+import type { LMSCourse } from '../../types';
 
 const ProgramsOverview = () => {
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [programs, setPrograms] = useState<LMSCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPrograms = async () => {
-      const { data } = await supabase.from('programs').select('*').order('created_at', { ascending: false });
+      const { data } = await supabase
+        .from('lms_courses')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
       if (data) setPrograms(data);
       setLoading(false);
     };
@@ -25,8 +29,8 @@ const ProgramsOverview = () => {
         <div className="max-w-5xl mx-auto text-center">
           <AnimeFadeUp delay={0} duration={600}>
             <GraduationCap size={48} className="mx-auto mb-4 opacity-80" />
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Programas de Estudio</h1>
-            <p className="text-indigo-200 text-lg max-w-xl mx-auto">Planes de lectura y estudios bíblicos para crecer en la fe</p>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Aula Virtual</h1>
+            <p className="text-indigo-200 text-lg max-w-xl mx-auto">Programas educativos, planes de lectura y estudios bíblicos</p>
           </AnimeFadeUp>
         </div>
       </div>
@@ -39,7 +43,7 @@ const ProgramsOverview = () => {
         ) : programs.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <BookOpen size={56} className="mx-auto mb-3 opacity-20" />
-            <p className="text-lg font-medium">No hay programas disponibles</p>
+            <p className="text-lg font-medium">No hay cursos disponibles</p>
             <p className="text-sm">Pronto se publicarán nuevos estudios</p>
           </div>
         ) : (
@@ -49,8 +53,8 @@ const ProgramsOverview = () => {
                 <Link to={`/programas/${program.id}`} className="block group">
                   <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-lg transition-all h-full">
                     {/* Cover Image */}
-                    {program.cover_image ? (
-                      <img src={program.cover_image} alt={program.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {program.cover_image_url ? (
+                      <img src={program.cover_image_url} alt={program.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-44 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-950 dark:to-indigo-900/50 flex items-center justify-center">
                         <BookOpen size={48} className="text-indigo-300 dark:text-indigo-700" />
@@ -63,7 +67,7 @@ const ProgramsOverview = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-3">{program.description}</p>
                       )}
                       <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
-                        Ver programa <ArrowRight size={14} />
+                        Ir al curso <ArrowRight size={14} />
                       </div>
                     </div>
                   </div>

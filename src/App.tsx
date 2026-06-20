@@ -41,7 +41,9 @@ import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import NotificationsManager from './pages/admin/NotificationsManager';
 import PetitionsManager from './pages/admin/PetitionsManager';
 import SongsManager from './pages/admin/SongsManager';
-import ProgramsManager from './pages/admin/ProgramsManager';
+import LMSManager from './pages/admin/LMSManager';
+import CourseBuilder from './pages/admin/CourseBuilder';
+import LMSGradebook from './pages/admin/LMSGradebook';
 import ChatManager from './pages/admin/ChatManager';
 import SundaySchool from './pages/public/SundaySchool';
 import ReadingPlan from './pages/public/ReadingPlan';
@@ -238,7 +240,9 @@ function App() {
           {/* Protected Routes: Programs */}
           <Route element={<ProtectedRoute module="programs" />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin/programas" element={<ProgramsManager />} />
+              <Route path="/admin/lms" element={<LMSManager />} />
+              <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
+              <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
             </Route>
           </Route>
 

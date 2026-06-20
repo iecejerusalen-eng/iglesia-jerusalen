@@ -1,5 +1,6 @@
 import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
-
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { ChordNodeView } from '../components/admin/ChordNodeView';
 export interface ChordOptions {
   HTMLAttributes: Record<string, any>;
 }
@@ -56,10 +57,14 @@ export const ChordExtension = Node.create<ChordOptions>({
     return [
       'span',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { 
-        class: 'chord-node',
+        class: 'chord-node-wrapper',
         'data-chord-node': 'true' 
       }),
     ];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ChordNodeView);
   },
 
   addCommands() {

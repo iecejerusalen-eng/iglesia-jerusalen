@@ -11,6 +11,66 @@ import pastorDavidImg from '../../assets/Jerusalén/Pastor David.png';
 import pastoraCorinaImg from '../../assets/Jerusalén/Pastora Corina.png';
 import pastoresAgrupadosImg from '../../assets/Jerusalén/Pastores.jpg';
 
+const AnimatedFoursquareLogo = () => (
+  <div className="flex justify-center my-8 relative">
+    <div className="absolute inset-0 bg-gold/10 blur-3xl rounded-full" />
+    <svg viewBox="0 0 200 200" className="w-48 h-48 md:w-64 md:h-64 drop-shadow-2xl relative z-10">
+      <style>
+        {`
+          .foursquare-draw {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 2.5s ease-in-out forwards;
+          }
+          @keyframes draw {
+            to { stroke-dashoffset: 0; }
+          }
+          .foursquare-fade {
+            opacity: 0;
+            transform: scale(0.8) translateY(10px);
+            animation: fadeUpScale 0.8s ease-out forwards;
+          }
+          @keyframes fadeUpScale {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        `}
+      </style>
+      
+      {/* Outer shield/square */}
+      <rect x="10" y="10" width="180" height="180" rx="24" fill="none" stroke="currentColor" strokeWidth="6" className="foursquare-draw text-primary dark:text-gold" />
+      
+      {/* Inner lines */}
+      <line x1="100" y1="10" x2="100" y2="190" stroke="currentColor" strokeWidth="4" className="foursquare-draw text-primary dark:text-gold" style={{ animationDelay: '0.3s' }} />
+      <line x1="10" y1="100" x2="190" y2="100" stroke="currentColor" strokeWidth="4" className="foursquare-draw text-primary dark:text-gold" style={{ animationDelay: '0.3s' }} />
+      
+      {/* 1. Cross (Red) - Top Left */}
+      <g className="foursquare-fade text-red-500" style={{ animationDelay: '1.2s' }}>
+        <path d="M55 35 L55 75 M40 45 L70 45" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+      </g>
+      
+      {/* 2. Flame (Yellow) - Top Right */}
+      <g className="foursquare-fade text-yellow-500" style={{ animationDelay: '1.6s' }}>
+        <path d="M150 80 C 130 80 135 50 150 30 C 165 50 170 80 150 80 Z" fill="currentColor" />
+        <path d="M150 75 C 140 75 145 55 150 45 C 155 55 160 75 150 75 Z" fill="#ffffff" className="dark:fill-slate-900" />
+      </g>
+      
+      {/* 3. Cup/Droplet (Blue) - Bottom Left */}
+      <g className="foursquare-fade text-blue-500" style={{ animationDelay: '2.0s' }}>
+        <path d="M55 170 C 35 170 40 140 55 120 C 70 140 75 170 55 170 Z" fill="currentColor" />
+        <path d="M50 160 Q 45 150 55 140" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" fill="none" className="dark:stroke-slate-900" />
+      </g>
+      
+      {/* 4. Crown (Purple) - Bottom Right */}
+      <g className="foursquare-fade text-purple-500" style={{ animationDelay: '2.4s' }}>
+        <path d="M125 130 L135 165 L165 165 L175 130 L160 145 L150 115 L140 145 Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <circle cx="125" cy="125" r="4" fill="currentColor" />
+        <circle cx="150" cy="110" r="4" fill="currentColor" />
+        <circle cx="175" cy="125" r="4" fill="currentColor" />
+      </g>
+    </svg>
+  </div>
+);
+
 const DEFAULT_ABOUT_SECTIONS = [
   { id: 'about_hero', section_type: 'custom', name: 'Héroe Principal', title: 'Quiénes Somos', subtitle: 'Conoce la historia, misión, principios de fe y las personas llamadas por Dios a guiar a la Iglesia del Evangelio Cuadrangular Jerusalén.', content_blocks: [] },
   { id: 'about_vision_mission', section_type: 'custom', name: 'Misión y Visión', title: 'Misión & Visión', subtitle: 'Nuestra guía en la expansión del evangelio.', content_blocks: [] },
@@ -282,7 +342,7 @@ const About = () => {
                           className="bg-primary hover:bg-blue-900 text-white font-bold py-3.5 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"
                         >
                           <BookOpen className="w-5 h-5" />
-                          Leer Historia Completa
+                          Ver más
                         </button>
                       </div>
 
@@ -531,6 +591,8 @@ const About = () => {
             </div>
             
             <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed space-y-6 text-left">
+              <AnimatedFoursquareLogo />
+              
               <p>
                 La <strong>Iglesia Internacional del Evangelio Cuadrangular</strong>, comúnmente conocida como la Iglesia Cuadrangular, es una denominación cristiana pentecostal fundada en 1923 por la evangelista <strong>Aimee Semple McPherson</strong> mediante el establecimiento del Templo del Ángelus en Los Ángeles, California. Su nombre deriva del "Evangelio Cuadrangular", un marco teológico que representa a Jesucristo en cuatro roles: como <strong>Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que pronto vendrá</strong>. Constituida formalmente en 1927, la iglesia enfatiza el evangelismo, las curaciones milagrosas y las misiones globales, con raíces en el avivamiento pentecostal de principios del siglo XX.
               </p>

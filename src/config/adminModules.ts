@@ -76,9 +76,9 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'programs',
-    label: 'Programas (Maestro)',
-    name: 'Programas',
-    path: '/admin/programas',
+    label: 'Educación (LMS)',
+    name: 'Cursos / LMS',
+    path: '/admin/lms',
     icon: GraduationCap
   },
   {

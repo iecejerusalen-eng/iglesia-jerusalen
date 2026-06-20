@@ -434,5 +434,84 @@ export interface InventoryItem {
   inventory_categories?: { name: string } | null;
 }
 
+export interface LMSCourse {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  format: 'weekly' | 'topics';
+  grading_scale: string;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  lms_sections?: LMSSection[];
+}
 
+export interface LMSSection {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  is_presentation_block: boolean;
+  order_index: number;
+  created_at: string;
+  lms_activities?: LMSActivity[];
+}
 
+export interface LMSActivity {
+  id: string;
+  section_id: string;
+  title: string;
+  type: 'resource' | 'forum' | 'assignment' | 'quiz' | 'h5p_embed' | 'video_link' | 'document' | 'video' | 'h5p';
+  content: string | null;
+  teacher_content: string | null;
+  settings: Record<string, any>;
+  metadata?: Record<string, any> | null;
+  description?: string | null;
+  requires_completion_of: string | null;
+  weighting: number;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LMSEnrollment {
+  id: string;
+  course_id: string;
+  user_id: string;
+  role: 'student' | 'teacher' | 'admin';
+  created_at: string;
+  lms_courses?: LMSCourse;
+}
+
+export interface LMSActivityCompletion {
+  id: string;
+  activity_id: string;
+  student_id: string;
+  is_completed: boolean;
+  completed_at: string;
+}
+
+export interface LMSAssignmentSubmission {
+  id: string;
+  activity_id: string;
+  student_id: string;
+  file_url: string | null;
+  text_content: string | null;
+  grade: string | null;
+  teacher_feedback: string | null;
+  submitted_at: string;
+  graded_at: string | null;
+}
+
+export interface LMSForumPost {
+  id: string;
+  activity_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile | null;
+  replies?: LMSForumPost[];
+}
