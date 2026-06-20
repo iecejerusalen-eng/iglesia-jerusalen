@@ -116,7 +116,8 @@ export default function SearchPalette() {
     events: any[];
     ministries: any[];
     products: any[];
-  }>({ songs: [], events: [], ministries: [], products: [] });
+    schedules: any[];
+  }>({ songs: [], events: [], ministries: [], products: [], schedules: [] });
 
   const navigate = useNavigate();
   const paletteRef = useRef<HTMLDivElement>(null);
@@ -137,14 +138,14 @@ export default function SearchPalette() {
   useEffect(() => {
     if (!isOpen) {
       setSearch('');
-      setResults({ songs: [], events: [], ministries: [], products: [] });
+      setResults({ songs: [], events: [], ministries: [], products: [], schedules: [] });
     }
   }, [isOpen]);
 
   // Debounced search query
   useEffect(() => {
     if (!search.trim()) {
-      setResults({ songs: [], events: [], ministries: [], products: [] });
+      setResults({ songs: [], events: [], ministries: [], products: [], schedules: [] });
       return;
     }
 
@@ -153,18 +154,20 @@ export default function SearchPalette() {
       try {
         const q = search.trim();
 
-        const [songsRes, eventsRes, ministriesRes, productsRes] = await Promise.all([
+        const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes] = await Promise.all([
           supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
           supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('ministries').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('products').select('*').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4)
+          supabase.from('products').select('*').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,day.ilike.%${q}%,description.ilike.%${q}%`).limit(4)
         ]);
 
         setResults({
           songs: songsRes.data || [],
           events: eventsRes.data || [],
           ministries: ministriesRes.data || [],
-          products: productsRes.data || []
+          products: productsRes.data || [],
+          schedules: schedulesRes.data || []
         });
       } catch (err) {
         console.error('Error executing global search:', err);
@@ -343,6 +346,30 @@ export default function SearchPalette() {
                         <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">
                           {new Date(event.start_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                           {event.start_time && ` - ${event.start_time.slice(0, 5)}`}
+                        </span>
+                      </div>
+                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              )}
+
+              {/* SCHEDULES RESULTS */}
+              {results.schedules.length > 0 && (
+                <Command.Group heading="Horarios de Cultos y Reuniones">
+                  {results.schedules.map(sch => (
+                    <Command.Item 
+                      key={sch.id} 
+                      value={`horario culto reunion servicio dia hora ${sch.title} ${sch.day} ${sch.description || ''}`}
+                      onSelect={() => handleSelect('/#schedules')}
+                    >
+                      <Calendar size={18} className="text-amber-500 shrink-0" />
+                      <div className="flex-1 text-left truncate">
+                        <span className="font-bold text-gray-800 dark:text-slate-100 block">
+                          {sch.title}
+                        </span>
+                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">
+                          {sch.day} — {sch.time_range}
                         </span>
                       </div>
                       <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />

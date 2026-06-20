@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { 
@@ -18,63 +18,86 @@ export default function StickyNav() {
   const [activeSection, setActiveSection] = useState('');
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
-  let SECTIONS: Section[] = [];
-  if (cleanPath === '/' || cleanPath === '/inicio') {
-    SECTIONS = [
-      { id: 'hero', label: 'Inicio', icon: Home },
-      { id: 'about', label: 'Doctrina', icon: Info },
-      { id: 'schedules', label: 'Horarios', icon: Calendar },
-      { id: 'events', label: 'Eventos', icon: Users },
-      { id: 'sermons', label: 'Prédicas', icon: BookOpen },
-    ];
-  } else if (cleanPath === '/contacto') {
-    SECTIONS = [
-      { id: 'contact_hero', label: 'Contacto', icon: Send },
-      { id: 'contact_info', label: 'Ubicación', icon: MapPin },
-    ];
-  }
+  const SECTIONS = useMemo(() => {
+    let list: Section[] = [];
+    if (cleanPath === '/' || cleanPath === '/inicio') {
+      list = [
+        { id: 'hero', label: 'Inicio', icon: Home },
+        { id: 'about', label: 'Doctrina', icon: Info },
+        { id: 'schedules', label: 'Horarios', icon: Calendar },
+        { id: 'events', label: 'Eventos', icon: Users },
+        { id: 'sermons', label: 'Prédicas', icon: BookOpen },
+      ];
+    } else if (cleanPath === '/contacto') {
+      list = [
+        { id: 'contact_hero', label: 'Contacto', icon: Send },
+        { id: 'contact_info', label: 'Ubicación', icon: MapPin },
+      ];
+    }
+    return list;
+  }, [cleanPath]);
 
   useEffect(() => {
     if (SECTIONS.length > 0) {
       setActiveSection(SECTIONS[0].id);
     }
-  }, [cleanPath]);
+  }, [cleanPath, SECTIONS]);
 
   useEffect(() => {
     if (SECTIONS.length === 0) return;
 
-    const observerOptions = {
-      root: null,
-      rootMargin: '-35% 0px -35% 0px',
-      threshold: 0,
-    };
+    let observer: IntersectionObserver | null = null;
+    const observedElements = new Set<string>();
 
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
+    const setupObserver = () => {
+      const missingElements = SECTIONS.filter(s => !observedElements.has(s.id));
+      if (missingElements.length === 0) return;
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
+      if (!observer) {
+        const observerOptions = {
+          root: null,
+          rootMargin: '-35% 0px -35% 0px',
+          threshold: 0,
+        };
 
-    SECTIONS.forEach((section) => {
-      const element = document.getElementById(section.id);
-      if (element) {
-        observer.observe(element);
+        const observerCallback = (entries: IntersectionObserverEntry[]) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+            }
+          });
+        };
+
+        observer = new IntersectionObserver(observerCallback, observerOptions);
       }
-    });
 
-    return () => {
-      SECTIONS.forEach((section) => {
+      missingElements.forEach((section) => {
         const element = document.getElementById(section.id);
         if (element) {
-          observer.unobserve(element);
+          observer?.observe(element);
+          observedElements.add(section.id);
         }
       });
     };
-  }, [cleanPath, SECTIONS.length]);
+
+    // Initial setup attempt
+    setupObserver();
+
+    // Check periodically for missing elements (e.g. loaded asynchronously)
+    const intervalId = setInterval(() => {
+      setupObserver();
+      if (SECTIONS.every(s => observedElements.has(s.id))) {
+        clearInterval(intervalId);
+      }
+    }, 250);
+
+    return () => {
+      clearInterval(intervalId);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [cleanPath, SECTIONS]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);

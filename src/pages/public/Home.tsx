@@ -230,13 +230,18 @@ const Home = () => {
 
   const fetchBirthdayMembers = async () => {
     try {
-      // Try local SQLite first
-      const localData: any[] = await sql`
-        SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
-        WHERE deleted_at IS NULL AND birth_date IS NOT NULL;
-      `;
+      let data: any[] = [];
+      try {
+        // Try local SQLite first
+        const localData: any[] = await sql`
+          SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
+          WHERE deleted_at IS NULL AND birth_date IS NOT NULL;
+        `;
+        data = localData || [];
+      } catch (dbErr) {
+        console.warn('Local database query failed, trying Supabase:', dbErr);
+      }
 
-      let data = localData;
       if (!data || data.length === 0) {
         const { data: dbData, error } = await supabase
           .from('members')
@@ -270,10 +275,15 @@ const Home = () => {
   const fetchSchedules = async () => {
     setLoadingSchedules(true);
     try {
-      // Try local SQLite first
-      const localData: any[] = await sql`
-        SELECT * FROM local_schedules ORDER BY order_index ASC;
-      `;
+      let localData: any[] = [];
+      try {
+        // Try local SQLite first
+        localData = await sql`
+          SELECT * FROM local_schedules ORDER BY order_index ASC;
+        `;
+      } catch (dbErr) {
+        console.warn('Local database query failed, trying Supabase:', dbErr);
+      }
 
       if (localData && localData.length > 0) {
         setSchedules(localData);
@@ -376,7 +386,7 @@ const Home = () => {
               if (isLiveModeActive) {
                 const liveYtId = getYoutubeId(liveYoutubeUrl);
                 return (
-                  <section key={id} className="bg-slate-950 text-white py-12 px-4 md:px-8 border-b border-slate-900">
+                  <section id="hero" key={id} className="bg-slate-950 text-white py-12 px-4 md:px-8 border-b border-slate-900">
                     {/* Estilos para letras de alabanza en vivo */}
                     <style>{`
                       .live-song-lyrics-wrapper.font-mono {
@@ -1137,7 +1147,7 @@ const Home = () => {
 
           case 'system_sermons':
             return (
-              <div key={id}>
+              <div key={id} id="sermons">
                 {loadingSermons ? (
                   <div className="flex justify-center items-center py-20">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>

@@ -8,9 +8,9 @@ import { ImageGallerySection } from '../../components/public/ImageGallerySection
 
 import OptimizedMedia from '../../components/common/OptimizedMedia';
 
-const pastorDavidImg = 'https://res.cloudinary.com/degrlmvsq/image/upload/v1781147649/iglesia-jerusalen/assets/Jerusalen/Pastor%20David.png';
-const pastoraCorinaImg = 'https://res.cloudinary.com/degrlmvsq/image/upload/v1781147652/iglesia-jerusalen/assets/Jerusalen/Pastora%20Corina.png';
-const pastoresAgrupadosImg = 'https://res.cloudinary.com/degrlmvsq/image/upload/v1781147652/iglesia-jerusalen/assets/Jerusalen/Pastores.jpg';
+import pastorDavidImg from '../../assets/Jerusalén/Pastor David.png';
+import pastoraCorinaImg from '../../assets/Jerusalén/Pastora Corina.png';
+import pastoresAgrupadosImg from '../../assets/Jerusalén/Pastores.jpg';
 
 const DEFAULT_ABOUT_SECTIONS = [
   { id: 'about_hero', section_type: 'custom', name: 'Héroe Principal', title: 'Quiénes Somos', subtitle: 'Conoce la historia, misión, principios de fe y las personas llamadas por Dios a guiar a la Iglesia del Evangelio Cuadrangular Jerusalén.', content_blocks: [] },
