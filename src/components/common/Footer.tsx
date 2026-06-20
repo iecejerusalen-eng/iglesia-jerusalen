@@ -52,7 +52,7 @@ const Footer = () => {
   const quickLinks = [
     { name: 'Quiénes Somos', path: '/nosotros' },
     { name: 'Ministerios', path: '/ministerios' },
-    { name: 'Aula Virtual', path: '/programas' },
+    { name: 'Aula Virtual', path: '/aula-virtual' },
     { name: 'Prédicas Dominicales', path: '/predicas' },
     { name: 'Escuela Dominical', path: '/escuela-dominical' },
     { name: 'Plan de Lectura', path: '/plan-lectura' },

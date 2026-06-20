@@ -58,7 +58,18 @@ const Login = () => {
         if (signUpData.session) {
           toast.success('¡Registro e ingreso exitoso!');
           await checkSession();
-          navigate('/admin');
+          const params = new URLSearchParams(window.location.search);
+          const to = params.get('redirectTo');
+          if (to) {
+            navigate(to);
+          } else {
+            const resolvedRole = useAuthStore.getState().role;
+            if (resolvedRole === 'guest' || resolvedRole === 'member') {
+              navigate('/lms/estudiante');
+            } else {
+              navigate('/admin');
+            }
+          }
         } else {
           toast.success('¡Registro exitoso! Verifica tu correo para activar tu cuenta.');
           setIsRegister(false);
@@ -78,7 +89,18 @@ const Login = () => {
         setLoading(false);
       } else {
         await checkSession();
-        navigate('/admin');
+        const params = new URLSearchParams(window.location.search);
+        const to = params.get('redirectTo');
+        if (to) {
+          navigate(to);
+        } else {
+          const resolvedRole = useAuthStore.getState().role;
+          if (resolvedRole === 'guest' || resolvedRole === 'member') {
+            navigate('/lms/estudiante');
+          } else {
+            navigate('/admin');
+          }
+        }
       }
     }
   };

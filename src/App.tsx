@@ -22,6 +22,7 @@ import Events from './pages/public/Events';
 import Petitions from './pages/public/Petitions';
 import SongsLibrary from './pages/public/SongsLibrary';
 import ProgramsOverview from './pages/public/ProgramsOverview';
+import VirtualClassroomLanding from './pages/public/VirtualClassroomLanding';
 import ProgramDetail from './pages/public/ProgramDetail';
 import MyPurchases from './pages/public/MyPurchases';
 
@@ -159,6 +160,7 @@ function App() {
             <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
             <Route path="/programas" element={<ProgramsOverview />} />
             <Route path="/programas/:id" element={<ProgramDetail />} />
+            <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />
             <Route path="/mis-compras" element={<MyPurchases />} />
             <Route path="/escuela-dominical" element={<SundaySchool />} />
             <Route path="/plan-lectura" element={<ReadingPlan />} />

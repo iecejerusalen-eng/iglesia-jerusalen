@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Profile, UserRole } from '../../types';
 import { 
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
-import { ADMIN_MODULES } from '../../config/adminModules';
+import { ADMIN_MODULES, MODULE_GROUPS } from '../../config/adminModules';
 
 const ROLES: { id: UserRole; label: string }[] = [
   { id: 'guest', label: 'Invitado (Guest)' },
@@ -630,32 +630,48 @@ const UsersManager = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
-                  {ADMIN_MODULES.map((mod) => {
-                    const perm = rolePermissions[mod.id] || { view: false, edit: false };
+                  {MODULE_GROUPS.map((group) => {
+                    const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
                     return (
-                      <tr key={mod.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-3.5">
-                          <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{mod.label}</span>
-                          <span className="text-[10px] text-gray-400 block font-mono mt-0.5">Clave: {mod.id}</span>
-                        </td>
-                        <td className="px-6 py-3.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={perm.view}
-                            onChange={() => handleRolePermToggle(mod.id, 'view')}
-                            className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-6 py-3.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={perm.edit}
-                            disabled={!perm.view}
-                            onChange={() => handleRolePermToggle(mod.id, 'edit')}
-                            className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                          />
-                        </td>
-                      </tr>
+                      <Fragment key={group.key}>
+                        {/* Group Separator Row */}
+                        <tr className="bg-gray-50/80 dark:bg-slate-950/60 font-bold border-b border-gray-150 dark:border-white/10">
+                          <td colSpan={3} className="px-6 py-2.5 text-xs text-primary dark:text-gold uppercase tracking-wider font-extrabold">
+                            <div className="flex items-center gap-2">
+                              <group.icon size={14} className="text-gold" />
+                              <span>{group.label}</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {groupModules.map((mod) => {
+                          const perm = rolePermissions[mod.id] || { view: false, edit: false };
+                          return (
+                            <tr key={mod.id} className="hover:bg-gray-50/50 transition-colors">
+                              <td className="px-8 py-3.5">
+                                <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{mod.label}</span>
+                                <span className="text-[10px] text-gray-400 block font-mono mt-0.5">Clave: {mod.id}</span>
+                              </td>
+                              <td className="px-6 py-3.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={perm.view}
+                                  onChange={() => handleRolePermToggle(mod.id, 'view')}
+                                  className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-6 py-3.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={perm.edit}
+                                  disabled={!perm.view}
+                                  onChange={() => handleRolePermToggle(mod.id, 'edit')}
+                                  className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -734,31 +750,47 @@ const UsersManager = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
-                      {ADMIN_MODULES.map((mod) => {
-                        const perm = userPermissions[mod.id] || { view: false, edit: false };
+                      {MODULE_GROUPS.map((group) => {
+                        const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
                         return (
-                          <tr key={mod.id} className="hover:bg-gray-50/20 transition-colors">
-                            <td className="px-4 py-2.5 font-medium text-gray-850">
-                              {mod.label}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <input
-                                type="checkbox"
-                                checked={perm.view}
-                                onChange={() => handleUserPermToggle(mod.id, 'view')}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                              />
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <input
-                                type="checkbox"
-                                checked={perm.edit}
-                                disabled={!perm.view}
-                                onChange={() => handleUserPermToggle(mod.id, 'edit')}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                              />
-                            </td>
-                          </tr>
+                          <Fragment key={group.key}>
+                            {/* Group Separator Row */}
+                            <tr className="bg-gray-50/80 dark:bg-slate-950/60 font-bold border-b border-gray-150 dark:border-white/10">
+                              <td colSpan={3} className="px-4 py-1.5 text-[10px] text-primary dark:text-gold uppercase tracking-wider font-extrabold">
+                                <div className="flex items-center gap-1.5">
+                                  <group.icon size={12} className="text-gold" />
+                                  <span>{group.label}</span>
+                                </div>
+                              </td>
+                            </tr>
+                            {groupModules.map((mod) => {
+                              const perm = userPermissions[mod.id] || { view: false, edit: false };
+                              return (
+                                <tr key={mod.id} className="hover:bg-gray-50/20 transition-colors">
+                                  <td className="px-6 py-2 font-medium text-gray-850">
+                                    {mod.label}
+                                  </td>
+                                  <td className="px-4 py-2 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={perm.view}
+                                      onChange={() => handleUserPermToggle(mod.id, 'view')}
+                                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                    />
+                                  </td>
+                                  <td className="px-4 py-2 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={perm.edit}
+                                      disabled={!perm.view}
+                                      onChange={() => handleUserPermToggle(mod.id, 'edit')}
+                                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </Fragment>
                         );
                       })}
                     </tbody>

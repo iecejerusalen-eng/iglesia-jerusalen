@@ -89,7 +89,7 @@ const ProgramDetail = () => {
       <div className="min-h-screen flex flex-col items-center justify-center text-gray-400 bg-surface dark:bg-slate-950">
         <BookOpen size={56} className="mb-3 opacity-30" />
         <p className="text-lg font-medium">Programa no encontrado</p>
-        <Link to="/programas" className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mt-2 hover:underline">← Volver al Aula Virtual</Link>
+        <Link to="/programas" className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mt-2 hover:underline">← Volver a Programas y Estudios</Link>
       </div>
     );
   }
@@ -183,7 +183,7 @@ const ProgramDetail = () => {
         )}
         <div className="relative max-w-4xl mx-auto px-4 py-16">
           <Link to="/programas" className="inline-flex items-center gap-1.5 text-indigo-300 hover:text-white text-xs font-semibold uppercase tracking-wider mb-6 transition-colors">
-            <ArrowLeft size={14} /> Volver al Aula Virtual
+            <ArrowLeft size={14} /> Volver a Programas y Estudios
           </Link>
           <AnimeFadeUp>
             <div className="flex items-center gap-2 mb-2">

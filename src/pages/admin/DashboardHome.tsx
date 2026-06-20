@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { 
   Users, Heart, ArrowRight, Activity, 
-  Gift, Sparkles, BookOpen, Layers
+  Gift, Sparkles, BookOpen, Layers, Lock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,6 +12,8 @@ import {
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { ChartSkeleton } from '../../components/common/Skeletons';
+import { usePermissions } from '../../hooks/usePermissions';
+import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -48,6 +50,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const DashboardHome = () => {
   const { user, firstName, userRole } = useAuthStore();
+  const { hasPermission } = usePermissions();
   const [stats, setStats] = useState({
     usersCount: 0,
     sermonsCount: 0,
@@ -706,6 +709,95 @@ const DashboardHome = () => {
 
         </div>
 
+      </div>
+
+      {/* Secciones de Módulos y Herramientas */}
+      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-serif font-bold text-primary dark:text-white flex items-center gap-2">
+              <Layers className="text-gold" size={20} />
+              Módulos del Sistema
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Explora y accede directamente a todas las herramientas administrativas organizadas por categorías de servicio.
+            </p>
+          </div>
+          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-gray-400 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider self-start sm:self-auto">
+            {ADMIN_MODULES.length} Herramientas
+          </span>
+        </div>
+
+        {/* Grid of groups */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {MODULE_GROUPS.map((group) => {
+            const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
+            
+            return (
+              <div 
+                key={group.key} 
+                className="bg-slate-50/50 dark:bg-slate-950/20 border border-gray-150 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:shadow-xs hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group"
+              >
+                <div className="space-y-4">
+                  {/* Group Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 shadow-3xs flex items-center justify-center text-primary dark:text-white shrink-0 group-hover:text-gold transition-colors duration-300">
+                      <group.icon size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-serif font-bold text-xs sm:text-sm text-gray-800 dark:text-gray-100">{group.label}</h3>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{groupModules.length} items</span>
+                    </div>
+                  </div>
+
+                  {/* Group Description */}
+                  <p className="text-[11px] text-gray-450 dark:text-gray-505 leading-relaxed font-medium">
+                    {group.description}
+                  </p>
+
+                  {/* Modules List */}
+                  <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/5">
+                    {groupModules.map((mod) => {
+                      const hasAccess = hasPermission(mod.id, 'view');
+                      
+                      if (hasAccess) {
+                        return (
+                          <Link
+                            key={mod.path}
+                            to={mod.path}
+                            className="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800/60 text-xs text-gray-650 dark:text-gray-350 hover:text-primary dark:hover:text-white font-bold transition-all duration-200 shadow-4xs hover:shadow-3xs border border-transparent hover:border-gray-100 dark:hover:border-white/5"
+                            style={{ minHeight: '38px' }}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <mod.icon size={14} className="text-gold/80 shrink-0" />
+                              <span className="truncate">{mod.name}</span>
+                            </div>
+                            <ArrowRight size={12} className="text-gray-300 group-hover:text-primary transition-colors shrink-0" />
+                          </Link>
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={mod.path}
+                            className="flex items-center justify-between p-2 rounded-lg text-xs text-gray-400 dark:text-gray-600 font-medium select-none bg-gray-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent"
+                            style={{ minHeight: '38px' }}
+                            title="No tienes permisos para acceder a esta herramienta"
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <mod.icon size={14} className="opacity-40 shrink-0" />
+                              <span className="truncate">{mod.name}</span>
+                            </div>
+                            <Lock size={10} className="text-gray-350 dark:text-gray-750 shrink-0" />
+                          </div>
+                        );
+                      }
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
     </div>

@@ -29,8 +29,8 @@ const ProgramsOverview = () => {
         <div className="max-w-5xl mx-auto text-center">
           <AnimeFadeUp delay={0} duration={600}>
             <GraduationCap size={48} className="mx-auto mb-4 opacity-80" />
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Aula Virtual</h1>
-            <p className="text-indigo-200 text-lg max-w-xl mx-auto">Programas educativos, planes de lectura y estudios bíblicos</p>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3">Programas y Estudios</h1>
+            <p className="text-indigo-200 text-lg max-w-xl mx-auto">Cursos bíblicos y recursos de estudio gratuitos</p>
           </AnimeFadeUp>
         </div>
       </div>
