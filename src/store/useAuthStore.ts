@@ -21,6 +21,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setRole: (role: UserRole | null) => void;
   setUserRole: (role: UserRole | null) => void;
+  setMemberId: (memberId: string | null) => void;
   setProfileInfo: (firstName: string | null, lastName: string | null, photoUrl?: string | null) => void;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -187,6 +188,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   setRole: (role) => set({ role, userRole: role }),
   setUserRole: (userRole) => set({ userRole, role: userRole }),
+  setMemberId: (memberId) => set({ memberId }),
   setProfileInfo: (firstName, lastName, photoUrl) => set((state) => ({ 
     firstName, 
     lastName, 

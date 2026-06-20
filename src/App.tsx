@@ -4,6 +4,7 @@ import { useAuthStore } from './store/useAuthStore';
 import { Toaster } from 'sonner';
 import ScrollToTop from './components/common/ScrollToTop';
 import ConfirmDialog from './components/common/ConfirmDialog';
+import CRMRegistrationPrompt from './components/common/CRMRegistrationPrompt';
 
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -139,6 +140,7 @@ function App() {
       <ConfirmDialog />
       <BrowserRouter>
         <ScrollToTop />
+        <CRMRegistrationPrompt />
         <Routes>
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
