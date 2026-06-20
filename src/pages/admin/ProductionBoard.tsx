@@ -200,13 +200,13 @@ const ProductionBoard = () => {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-gray-800 flex items-center gap-2">
+          <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <Columns className="text-primary" />
             Logística de Producción (Kanban)
           </h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-450 text-sm">
             Control de materiales y requerimientos de producción gráfica para los ministerios de la iglesia.
           </p>
         </div>
@@ -214,7 +214,7 @@ const ProductionBoard = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchData}
-            className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400 transition-colors cursor-pointer"
             title="Refrescar datos"
           >
             <RefreshCw size={18} />
@@ -245,12 +245,12 @@ const ProductionBoard = () => {
             return (
               <div 
                 key={col.id} 
-                className={`rounded-2xl border-t-4 border border-gray-150 p-4 shadow-sm flex flex-col space-y-4 min-h-[500px] ${col.color}`}
+                className={`rounded-2xl border-t-4 border border-gray-150 dark:border-white/10 p-4 shadow-sm flex flex-col space-y-4 min-h-[500px]${col.color}`}
               >
                 {/* Column Title */}
-                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
                   <h3 className="font-bold text-sm text-gray-750">{col.name}</h3>
-                  <span className="text-xs bg-white border border-gray-200 text-gray-600 font-semibold px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 font-semibold px-2 py-0.5 rounded-full">
                     {colTickets.length}
                   </span>
                 </div>
@@ -265,7 +265,7 @@ const ProductionBoard = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-white rounded-xl border border-gray-200 p-4 shadow-xs hover:shadow-md transition-all space-y-3 relative group"
+                        className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 p-4 shadow-xs hover:shadow-md transition-all space-y-3 relative group"
                       >
                         {/* Requester Ministry Tag */}
                         {ticket.ministries && (
@@ -277,36 +277,36 @@ const ProductionBoard = () => {
                           </span>
                         )}
 
-                        <h4 className="font-bold text-gray-800 text-sm leading-snug">{ticket.title}</h4>
+                        <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug">{ticket.title}</h4>
                         {ticket.description && (
-                          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{ticket.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-450 line-clamp-2 leading-relaxed">{ticket.description}</p>
                         )}
 
                         {/* Specs badges */}
-                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100">
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md">
+                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-white/5">
+                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
                             <Layers size={10} />
                             {ticket.material_type}
                           </span>
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md">
+                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
                             <Move size={10} />
                             {ticket.dimensions}
                           </span>
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md">
+                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
                             <Hammer size={10} />
                             {ticket.machinery_required}
                           </span>
                         </div>
 
                         {/* Quick action buttons */}
-                        <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100">
+                        <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100 dark:border-white/5">
                           <div className="flex gap-1.5">
                             {canEdit && (
                               <>
                                 <button
                                   onClick={() => moveTicket(ticket, 'left')}
                                   disabled={col.id === 'backlog'}
-                                  className="p-1.5 rounded-lg border border-gray-200 hover:bg-slate-50 text-gray-500 disabled:opacity-30 cursor-pointer"
+                                  className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 disabled:opacity-30 cursor-pointer"
                                   title="Mover a la izquierda"
                                 >
                                   <ArrowLeft size={12} />
@@ -314,7 +314,7 @@ const ProductionBoard = () => {
                                 <button
                                   onClick={() => moveTicket(ticket, 'right')}
                                   disabled={col.id === 'done'}
-                                  className="p-1.5 rounded-lg border border-gray-200 hover:bg-slate-50 text-gray-500 disabled:opacity-30 cursor-pointer"
+                                  className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 disabled:opacity-30 cursor-pointer"
                                   title="Mover a la derecha"
                                 >
                                   <ArrowRight size={12} />
@@ -338,7 +338,7 @@ const ProductionBoard = () => {
                   </AnimatePresence>
 
                   {colTickets.length === 0 && (
-                    <div className="text-center py-12 border border-dashed border-gray-200 rounded-xl bg-white/50 text-gray-400 text-xs">
+                    <div className="text-center py-12 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-white/50 text-gray-400 text-xs">
                       No hay tickets
                     </div>
                   )}
@@ -359,10 +359,10 @@ const ProductionBoard = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-2xl border border-gray-200 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6"
+              className="relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6"
             >
-              <div className="flex justify-between items-center border-b border-gray-150 pb-4">
-                <h2 className="text-xl font-serif font-bold text-gray-800 flex items-center gap-2">
+              <div className="flex justify-between items-center border-b border-gray-150 dark:border-white/10 pb-4">
+                <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                   <FileText className="text-primary" />
                   Nuevo Ticket de Producción
                 </h2>
@@ -374,10 +374,10 @@ const ProductionBoard = () => {
               <form onSubmit={handleSubmit(handleCreateTicket)} className="space-y-4">
                 {/* Solicitante */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Ministerio Solicitante</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Ministerio Solicitante</label>
                   <select
                     {...register('ministry_id')}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   >
                     <option value="">Selecciona un ministerio...</option>
                     {ministries.map(min => (
@@ -389,34 +389,34 @@ const ProductionBoard = () => {
 
                 {/* Titulo */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Título del Trabajo</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Título del Trabajo</label>
                   <input
                     type="text"
                     {...register('title')}
                     placeholder="Ej: Letrero acrílico para recepción, Banner del campamento"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                   {errors.title && <p className="text-[11px] text-red-500 font-semibold">{errors.title.message}</p>}
                 </div>
 
                 {/* Descripción */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Descripción / Detalles</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Descripción / Detalles</label>
                   <textarea
                     rows={3}
                     {...register('description')}
                     placeholder="Instrucciones especiales, colores, acabados..."
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
 
                 {/* Material & Dimensiones */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Material</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Material</label>
                     <select
                       {...register('material_type')}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="madera MDF 3mm">Madera MDF 3mm</option>
                       <option value="madera MDF 6mm">Madera MDF 6mm</option>
@@ -431,12 +431,12 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Medidas</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Medidas</label>
                     <input
                       type="text"
                       {...register('dimensions')}
                       placeholder="Ej: 100x150cm"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     {errors.dimensions && <p className="text-[11px] text-red-500 font-semibold">{errors.dimensions.message}</p>}
                   </div>
@@ -445,10 +445,10 @@ const ProductionBoard = () => {
                 {/* Maquinaria & Estado */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Maquinaria Requerida</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Maquinaria Requerida</label>
                     <select
                       {...register('machinery_required')}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="corte láser">Corte Láser</option>
                       <option value="plotter de corte">Plotter de Corte</option>
@@ -460,10 +460,10 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Estado Inicial</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Estado Inicial</label>
                     <select
                       {...register('status')}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="backlog">Reserva / Backlog</option>
                       <option value="todo">Por Hacer</option>
@@ -473,11 +473,11 @@ const ProductionBoard = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-150">
+                <div className="flex justify-end gap-2 pt-4 border-t border-gray-150 dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border border-gray-200 hover:bg-gray-50 font-bold rounded-xl text-gray-600 text-sm cursor-pointer transition-colors"
+                    className="px-4 py-2 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 font-bold rounded-xl text-gray-600 dark:text-gray-400 text-sm cursor-pointer transition-colors"
                   >
                     Cancelar
                   </button>

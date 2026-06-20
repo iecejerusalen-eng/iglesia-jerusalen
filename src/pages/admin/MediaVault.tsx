@@ -182,13 +182,13 @@ const MediaVault = () => {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-gray-800 flex items-center gap-2">
+          <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <FolderLock className="text-amber-600" />
             Bóveda de Media Privada
           </h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-450 text-sm">
             Recursos gráficos de alta resolución (SVG, PNG, JPG, AI) protegidos con firmas digitales temporales.
           </p>
         </div>
@@ -196,7 +196,7 @@ const MediaVault = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchFiles}
-            className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400 transition-colors cursor-pointer"
             title="Actualizar bóveda"
           >
             <RefreshCw size={18} />
@@ -251,10 +251,10 @@ const MediaVault = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-[280px]"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-[280px]"
               >
                 {/* Preview window */}
-                <div className="h-36 bg-slate-950 flex items-center justify-center relative group overflow-hidden border-b border-gray-100">
+                <div className="h-36 bg-slate-950 flex items-center justify-center relative group overflow-hidden border-b border-gray-100 dark:border-white/5">
                   {file.previewUrl ? (
                     <img
                       src={file.previewUrl}
@@ -277,7 +277,7 @@ const MediaVault = () => {
                 {/* Details */}
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <h3 className="font-bold text-gray-800 text-sm truncate" title={file.name}>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate" title={file.name}>
                       {file.name.split('_').slice(1).join('_') || file.name}
                     </h3>
                     <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold">
@@ -291,7 +291,7 @@ const MediaVault = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-100 mt-2">
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-white/5 mt-2">
                     <button
                       onClick={() => handleDownload(file.name)}
                       className="flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 cursor-pointer"
@@ -316,9 +316,9 @@ const MediaVault = () => {
           </AnimatePresence>
 
           {files.length === 0 && (
-            <div className="col-span-full text-center py-20 bg-white border border-dashed border-gray-200 rounded-2xl">
+            <div className="col-span-full text-center py-20 bg-white dark:bg-slate-900 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl">
               <FolderLock className="mx-auto text-gray-300 mb-4" size={48} />
-              <h3 className="text-lg font-serif font-bold text-gray-700">La bóveda de media está vacía</h3>
+              <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">La bóveda de media está vacía</h3>
               <p className="text-gray-400 text-sm mt-1">Sube archivos vectoriales o de alta resolución para los ministerios.</p>
             </div>
           )}

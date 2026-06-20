@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
@@ -30,7 +30,6 @@ const Navigation = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => {
     setIsOpen(false);
   };
@@ -268,25 +267,9 @@ const Navigation = () => {
           </li>
         </ul>
 
-        {/* Acciones Derecha (ThemeToggle + Menú Móvil) */}
-        <div className="flex items-center gap-4">
-          {/* Theme Toggle Oculto en móvil si queremos, o visible siempre */}
-          <div className="hidden sm:block">
-             <ThemeToggle />
-          </div>
-
-          {/* Hamburguesa Móvil */}
-          <button
-            onClick={toggleMenu}
-            className={`md:hidden p-2 focus:outline-none focus:ring-2 rounded-lg transition-all cursor-pointer ${
-              isTransparent 
-                ? 'text-white hover:bg-white/10 focus:ring-white/20' 
-                : 'text-primary dark:text-white hover:bg-gray-100 dark:hover:bg-slate-800 focus:ring-primary/10'
-            }`}
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+        {/* Acciones Derecha (ThemeToggle) */}
+        <div className="flex items-center">
+          <ThemeToggle />
         </div>
       </div>
 
@@ -386,7 +369,7 @@ const Navigation = () => {
                               <Link
                                 to="/ministerios"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Ministerios
                               </Link>
@@ -395,7 +378,7 @@ const Navigation = () => {
                               <Link
                                 to="/eventos"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Eventos (Calendario)
                               </Link>
@@ -404,7 +387,7 @@ const Navigation = () => {
                               <Link
                                 to="/peticiones"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Peticiones
                               </Link>
@@ -443,7 +426,7 @@ const Navigation = () => {
                               <Link
                                 to="/predicas"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Prédicas
                               </Link>
@@ -452,7 +435,7 @@ const Navigation = () => {
                               <Link
                                 to="/recursos/alabanzas"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Alabanzas e Himnos
                               </Link>
@@ -461,7 +444,7 @@ const Navigation = () => {
                               <Link
                                 to="/programas"
                                 onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 hover:text-accent-red block py-1"
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Programas / Estudios
                               </Link>
@@ -501,9 +484,9 @@ const Navigation = () => {
               </div>
 
               {/* Pie de menú móvil */}
-              <div className="text-center text-xs text-gray-400 mt-auto pt-6 border-t border-gray-100 flex flex-col items-center gap-2">
+              <div className="text-center text-xs text-gray-400 mt-auto pt-6 border-t border-gray-100 dark:border-white/10 flex flex-col items-center gap-2">
                 <img src={soloLogoColorido} alt="Logo" className="h-6 w-auto opacity-75" />
-                <p className="font-medium text-slate-500">Iglesia Jerusalén</p>
+                <p className="font-medium text-slate-500 dark:text-slate-400">Iglesia Jerusalén</p>
                 <p className="mt-1">© {new Date().getFullYear()} Todos los derechos reservados.</p>
               </div>
             </motion.div>

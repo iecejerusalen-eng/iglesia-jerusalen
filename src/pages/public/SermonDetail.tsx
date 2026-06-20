@@ -242,7 +242,7 @@ const SermonDetail = () => {
             <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 leading-tight">{sermon.title}</h1>
             
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1.5 font-semibold text-gray-700">
+              <span className="flex items-center gap-1.5 font-semibold text-gray-750 dark:text-gray-300">
                 <User size={16} className="text-gray-400" />
                 {sermon.pastor_name}
               </span>
@@ -257,7 +257,7 @@ const SermonDetail = () => {
             </div>
           </div>
 
-          <div className="border-t border-gray-100 pt-6">
+          <div className="border-t border-gray-100 dark:border-white/10 pt-6">
             <BlockLessonRenderer content={sermon.content} lessonId={sermon.id} />
           </div>
         </div>
@@ -266,10 +266,10 @@ const SermonDetail = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm flex flex-col overflow-hidden lg:sticky lg:top-24 self-start">
           
           {/* Notes Header */}
-          <div className="bg-slate-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <FileText className="text-amber-600" size={18} />
-              <span className="font-bold text-sm text-gray-750 font-serif">Mis Apuntes Privados</span>
+              <span className="font-bold text-sm text-gray-755 dark:text-gray-200 font-serif">Mis Apuntes Privados</span>
             </div>
             
             <button
@@ -298,56 +298,56 @@ const SermonDetail = () => {
               editor && (
                 <div className="flex-1 flex flex-col space-y-3">
                   {/* Rich Text Toolbar */}
-                  <div className="flex flex-wrap gap-1 bg-gray-50 border border-gray-200 rounded-lg p-1.5">
+                  <div className="flex flex-wrap gap-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-1.5">
                     <button
                       onClick={() => editor.chain().focus().toggleBold().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bold') ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bold') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Negrita"
                     >
                       <Bold size={14} />
                     </button>
                     <button
                       onClick={() => editor.chain().focus().toggleItalic().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('italic') ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('italic') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Cursiva"
                     >
                       <Italic size={14} />
                     </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1 align-middle self-center"></div>
+                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
                     <button
                       onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 2 }) ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 2 }) ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Título 2"
                     >
                       <Heading2 size={14} />
                     </button>
                     <button
                       onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 3 }) ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 3 }) ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Título 3"
                     >
                       <Heading3 size={14} />
                     </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1 align-middle self-center"></div>
+                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
                     <button
                       onClick={() => editor.chain().focus().toggleBulletList().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bulletList') ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bulletList') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Lista de viñetas"
                     >
                       <List size={14} />
                     </button>
                     <button
                       onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('orderedList') ? 'bg-amber-100 text-amber-800' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200'}`}
+                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('orderedList') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
                       title="Lista numerada"
                     >
                       <ListOrdered size={14} />
                     </button>
-                    <div className="w-px h-5 bg-gray-300 mx-1 align-middle self-center"></div>
+                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
                     <button
                       onClick={() => editor.chain().focus().undo().run()}
                       disabled={!editor.can().undo()}
-                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
+                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
                       title="Deshacer"
                     >
                       <Undo size={14} />
@@ -355,7 +355,7 @@ const SermonDetail = () => {
                     <button
                       onClick={() => editor.chain().focus().redo().run()}
                       disabled={!editor.can().redo()}
-                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
+                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
                       title="Rehacer"
                     >
                       <Redo size={14} />
@@ -363,7 +363,7 @@ const SermonDetail = () => {
                   </div>
 
                   {/* Note Area */}
-                  <div className="flex-1 border border-gray-200 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-slate-900 dark:bg-slate-800 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 overflow-y-auto">
+                  <div className="flex-1 border border-gray-200 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-slate-900 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 overflow-y-auto">
                     <EditorContent editor={editor} />
                   </div>
                 </div>

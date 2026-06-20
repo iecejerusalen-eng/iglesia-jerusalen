@@ -119,7 +119,7 @@ const SundaySchool = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/20 to-white py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/20 to-white dark:from-slate-950 dark:to-slate-950 py-12 px-4">
       <div className="max-w-6xl mx-auto space-y-10">
         
         {/* Banner */}
@@ -175,14 +175,14 @@ const SundaySchool = () => {
           </div>
 
           {/* Badges sidebar */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 md:p-8 shadow-sm space-y-6">
-            <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
-              <Award className="text-amber-600" size={24} />
-              <h2 className="text-xl font-serif font-bold text-gray-800">Tus Logros e Insignias</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 border-b border-gray-100 dark:border-white/10 pb-4">
+              <Award className="text-amber-600 dark:text-amber-500" size={24} />
+              <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white">Tus Logros e Insignias</h2>
             </div>
 
             {!user && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-800">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-4 flex gap-3 text-amber-800 dark:text-amber-300">
                 <AlertTriangle className="shrink-0" size={20} />
                 <div className="text-xs space-y-1">
                   <span className="font-bold">Modo Invitado</span>
@@ -204,8 +204,8 @@ const SundaySchool = () => {
                       key={badge.id}
                       className={`flex gap-4 p-4 rounded-xl border transition-all ${
                         isUnlocked
-                          ? 'bg-amber-50/50 border-amber-200 shadow-xs'
-                          : 'bg-gray-50 border-gray-150 opacity-70'
+                          ? 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40 shadow-xs'
+                          : 'bg-gray-50 border-gray-150 dark:bg-slate-800/50 dark:border-white/10 opacity-70'
                       }`}
                       whileHover={{ scale: 1.02 }}
                     >
@@ -214,16 +214,16 @@ const SundaySchool = () => {
                           src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
                           alt={badge.name}
                           className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${
-                            isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 grayscale'
+                            isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 dark:border-slate-700 grayscale'
                           }`}
                         />
                         <div className="absolute -bottom-1 -right-1">
                           {isUnlocked ? (
-                            <div className="bg-green-600 text-white rounded-full p-0.5 border border-white">
+                            <div className="bg-green-600 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
                               <ShieldCheck size={14} />
                             </div>
                           ) : (
-                            <div className="bg-gray-400 text-white rounded-full p-0.5 border border-white">
+                            <div className="bg-gray-400 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
                               <Lock size={14} />
                             </div>
                           )}
@@ -231,10 +231,10 @@ const SundaySchool = () => {
                       </div>
 
                       <div className="space-y-1">
-                        <h3 className="font-bold text-sm text-gray-800 flex items-center gap-1.5">
+                        <h3 className="font-bold text-sm text-gray-800 dark:text-white flex items-center gap-1.5">
                           {badge.name}
                           {isUnlocked && (
-                            <span className="text-[10px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full uppercase">
+                            <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-1.5 py-0.5 rounded-full uppercase">
                               Ganado
                             </span>
                           )}

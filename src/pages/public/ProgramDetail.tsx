@@ -70,18 +70,18 @@ const ProgramDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-base dark:bg-slate-950 transition-colors">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
       </div>
     );
   }
 
   if (!program) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-400">
+      <div className="min-h-screen flex flex-col items-center justify-center text-gray-400 bg-base dark:bg-slate-950">
         <BookOpen size={56} className="mb-3 opacity-30" />
         <p className="text-lg font-medium">Programa no encontrado</p>
-        <Link to="/programas" className="text-indigo-600 text-sm font-medium mt-2 hover:underline">← Volver a programas</Link>
+        <Link to="/programas" className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mt-2 hover:underline">← Volver a programas</Link>
       </div>
     );
   }
@@ -92,20 +92,20 @@ const ProgramDetail = () => {
         key={lesson.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-slate-900 border border-gray-200 rounded-xl overflow-hidden hover:border-indigo-200 transition-colors shadow-xs"
+        className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors shadow-xs"
       >
         {/* Lesson header */}
         <button
           onClick={() => toggleLesson(lesson.id)}
-          className="w-full flex items-center gap-4 p-4 text-left cursor-pointer hover:bg-gray-50/50 transition-colors"
+          className="w-full flex items-center gap-4 p-4 text-left cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors"
         >
-          <span className="w-8 h-8 flex items-center justify-center bg-indigo-50 text-indigo-750 rounded-lg text-xs font-bold flex-shrink-0">
+          <span className="w-8 h-8 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-750 dark:text-indigo-300 rounded-lg text-xs font-bold flex-shrink-0">
             {index + 1}
           </span>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-800 text-sm">{lesson.title}</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{lesson.title}</h3>
             {lesson.teacher_content && canSeeTeacherContent && (
-              <span className="text-[9px] bg-purple-100 text-purple-750 font-bold px-1.5 py-0.5 rounded mt-1 inline-block border border-purple-200">
+              <span className="text-[9px] bg-purple-100 dark:bg-purple-950/50 text-purple-750 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded mt-1 inline-block border border-purple-200 dark:border-purple-800/30">
                 + Guía del Maestro disponible
               </span>
             )}
@@ -127,15 +127,15 @@ const ProgramDetail = () => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="border-t border-gray-100 bg-slate-50/20">
+              <div className="border-t border-gray-100 dark:border-white/10 bg-slate-50/20 dark:bg-slate-950/20">
                 {/* Tabs (only if teacher content is accessible) */}
                 {canSeeTeacherContent && lesson.teacher_content && (
-                  <div className="flex border-b border-gray-100 px-5 bg-white dark:bg-slate-900">
+                  <div className="flex border-b border-gray-100 dark:border-white/10 px-5 bg-white dark:bg-slate-900">
                     <button
                       onClick={() => setActiveTab('public')}
                       className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
                         activeTab === 'public'
-                          ? 'border-indigo-600 text-indigo-750'
+                          ? 'border-indigo-600 text-indigo-750 dark:text-indigo-400'
                           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700'
                       }`}
                     >
@@ -145,7 +145,7 @@ const ProgramDetail = () => {
                       onClick={() => setActiveTab('teacher')}
                       className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
                         activeTab === 'teacher'
-                          ? 'border-purple-600 text-purple-750'
+                          ? 'border-purple-600 text-purple-750 dark:text-purple-400'
                           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700'
                       }`}
                     >
@@ -159,11 +159,11 @@ const ProgramDetail = () => {
                   {activeTab === 'public' ? (
                     <BlockLessonRenderer content={lesson.public_content || ''} lessonId={lesson.id} />
                   ) : (
-                    <div className="bg-purple-50/40 border border-purple-150 rounded-xl p-5">
+                    <div className="bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-800/30 rounded-xl p-5">
                       <div className="flex items-center gap-2 mb-3">
-                        <GraduationCap size={18} className="text-purple-650" />
-                        <h4 className="font-semibold text-purple-800 text-sm">Manual del Maestro</h4>
-                        <span className="text-[10px] bg-purple-200 text-purple-850 px-2 py-0.5 rounded-full font-bold border border-purple-300/30">Exclusivo</span>
+                        <GraduationCap size={18} className="text-purple-650 dark:text-purple-400" />
+                        <h4 className="font-semibold text-purple-800 dark:text-purple-300 text-sm">Manual del Maestro</h4>
+                        <span className="text-[10px] bg-purple-200 dark:bg-purple-900/40 text-purple-850 dark:text-purple-200 px-2 py-0.5 rounded-full font-bold border border-purple-300/30 dark:border-purple-700/30">Exclusivo</span>
                       </div>
                       <BlockLessonRenderer content={lesson.teacher_content || ''} lessonId={lesson.id} />
                     </div>
@@ -181,7 +181,7 @@ const ProgramDetail = () => {
   const standaloneLessons = lessons.filter(l => !l.module_id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/20 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50/20 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
       {/* Hero Header */}
       <div className="relative bg-gradient-to-r from-indigo-800 to-indigo-950 text-white overflow-hidden shadow-md">
         {program.cover_image && (
@@ -212,7 +212,7 @@ const ProgramDetail = () => {
       {/* Main Lessons List */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {lessons.length === 0 ? (
-          <div className="text-center py-20 text-gray-400 bg-white dark:bg-slate-900 border border-gray-150 rounded-2xl shadow-xs">
+          <div className="text-center py-20 text-gray-400 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-xs">
             <BookOpen size={48} className="mx-auto mb-3 opacity-20" />
             <p className="font-medium text-sm">Este programa aún no tiene lecciones</p>
           </div>
@@ -224,7 +224,7 @@ const ProgramDetail = () => {
               const isExpanded = !!expandedModules[module.id];
 
               return (
-                <div key={module.id} className="bg-slate-50/50 border border-gray-150 rounded-2xl p-4 md:p-5 shadow-xs space-y-3">
+                <div key={module.id} className="bg-slate-50/50 dark:bg-slate-900/50 border border-gray-150 dark:border-white/10 rounded-2xl p-4 md:p-5 shadow-xs space-y-3">
                   {/* Module header toggle */}
                   <button
                     onClick={() => toggleModule(module.id)}
@@ -232,12 +232,12 @@ const ProgramDetail = () => {
                   >
                     <div className="space-y-1 pr-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md">
                           Volumen {modIndex + 1}
                         </span>
-                        <span className="text-xxs text-gray-400">({moduleLessons.length} lecciones)</span>
+                        <span className="text-xxs text-gray-400 dark:text-gray-500">({moduleLessons.length} lecciones)</span>
                       </div>
-                      <h2 className="text-base font-bold text-gray-800 group-hover:text-indigo-700 transition-colors">
+                      <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
                         {module.title}
                       </h2>
                       {module.description && (
@@ -246,7 +246,7 @@ const ProgramDetail = () => {
                         </p>
                       )}
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-slate-50 transition shadow-xxs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-slate-50 dark:group-hover:bg-slate-700 transition shadow-xxs flex-shrink-0">
                       {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </div>
                   </button>
@@ -293,9 +293,9 @@ const ProgramDetail = () => {
 
         {/* Teacher content info for non-authorized users */}
         {!canSeeTeacherContent && lessons.some(l => l.teacher_content) && (
-          <div className="mt-10 bg-slate-50 border border-gray-200 rounded-2xl p-6 text-center shadow-inner max-w-md mx-auto">
-            <Lock size={20} className="mx-auto mb-2 text-gray-450" />
-            <p className="text-xs text-gray-655 dark:text-gray-300 font-semibold">Guías del Maestro Protegidas</p>
+          <div className="mt-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 text-center shadow-inner max-w-md mx-auto">
+            <Lock size={20} className="mx-auto mb-2 text-gray-450 dark:text-gray-400" />
+            <p className="text-xs text-gray-700 dark:text-gray-200 font-semibold">Guías del Maestro Protegidas</p>
             <p className="text-[11px] text-gray-400 mt-0.5 leading-normal">
               Este programa incluye material exclusivo para instructores. Si tienes el rol de Maestro, Pastor o Administrador, inicia sesión para acceder.
             </p>

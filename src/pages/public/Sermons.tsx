@@ -97,7 +97,7 @@ const Sermons = () => {
           placeholder="Buscar sermón por título, contenido o pastor..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary focus-visible:outline-none transition-all text-sm bg-white dark:bg-slate-900 dark:bg-slate-800 dark:text-white"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary focus-visible:outline-none transition-all text-sm bg-white dark:bg-slate-900 dark:text-white"
         />
         <Search className="absolute left-3.5 top-3 text-slate-500 dark:text-slate-400" size={18} />
       </div>
@@ -115,7 +115,7 @@ const Sermons = () => {
             return (
               <div 
                 key={sermon.id}
-                className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4"
               >
                 {/* Embedded Video */}
                 {ytId && (
@@ -132,7 +132,7 @@ const Sermons = () => {
                 )}
 
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:text-white dark:hover:text-gold transition-colors">
+                  <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
                     <Link to={`/predicas/${sermon.id}`}>{sermon.title}</Link>
                   </h2>
                   
@@ -182,7 +182,7 @@ const Sermons = () => {
           })}
         </div>
       ) : (
-        <div className="text-center py-20 bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
           <Video className="mx-auto text-slate-400 mb-4" size={48} />
           <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white">No se encontraron prédicas</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Prueba con otras palabras clave.</p>

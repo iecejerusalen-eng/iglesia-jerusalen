@@ -82,14 +82,14 @@ const Ministries = () => {
               </p>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-400 space-y-1.5 font-medium">
+            <div className="mt-8 pt-4 border-t border-gray-100 dark:border-white/10 text-xs text-gray-400 dark:text-gray-550 space-y-1.5 font-medium">
               <div className="flex justify-between">
                 <span>Horarios:</span>
-                <span className="text-gray-700 font-bold">{min.schedule}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-bold">{min.schedule}</span>
               </div>
               <div className="flex justify-between">
                 <span>Responsable:</span>
-                <span className="text-gray-600 dark:text-gray-300">{min.leader}</span>
+                <span className="text-gray-600 dark:text-gray-350">{min.leader}</span>
               </div>
             </div>
           </div>
@@ -97,8 +97,8 @@ const Ministries = () => {
       </section>
 
       {/* INVITACION A SERVIR */}
-      <section className="max-w-4xl mx-auto bg-base/50 p-8 rounded-3xl border border-gray-200 text-center space-y-6">
-        <div className="w-12 h-12 bg-primary/10 text-primary dark:text-white rounded-full flex items-center justify-center mx-auto">
+      <section className="max-w-4xl mx-auto bg-base/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-gray-200 dark:border-white/10 text-center space-y-6">
+        <div className="w-12 h-12 bg-primary/10 dark:bg-blue-900/30 text-primary dark:text-blue-300 rounded-full flex items-center justify-center mx-auto">
           <Award size={24} />
         </div>
         <h3 className="font-serif font-bold text-2xl text-primary dark:text-white">¿Deseas Servir a Dios con tus Dones?</h3>
@@ -107,7 +107,7 @@ const Ministries = () => {
         </p>
         <a 
           href="/contacto" 
-          className="px-6 py-2.5 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
+          className="px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
         >
           Ponte en Contacto
         </a>

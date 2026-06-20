@@ -238,10 +238,10 @@ const SermonsManager = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl shadow-xs border border-gray-150 p-6 md:p-8"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8"
           >
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-              <h2 className="text-xl font-serif font-bold text-gray-800">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
+              <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">
                 {editingSermon ? 'Editar Sermón' : 'Publicar Nuevo Sermón'}
               </h2>
               <button
@@ -255,12 +255,12 @@ const SermonsManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Title */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título del Sermón</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Título del Sermón</label>
                   <input
                     type="text"
                     {...register('title')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                     placeholder="Ej. El poder de la fe en tiempos difíciles"
                   />
                   {errors.title && <p className="text-accent-red text-xs mt-1">{errors.title.message}</p>}
@@ -268,12 +268,12 @@ const SermonsManager = () => {
 
                 {/* Preacher */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Predicador / Pastor</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Predicador / Pastor</label>
                   <input
                     type="text"
                     {...register('pastor_name')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                     placeholder="Ej. Pastor Roberto Gómez"
                   />
                   {errors.pastor_name && <p className="text-accent-red text-xs mt-1">{errors.pastor_name.message}</p>}
@@ -283,12 +283,12 @@ const SermonsManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Date */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de la Prédica</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de la Prédica</label>
                   <input
                     type="date"
                     {...register('date')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                   />
                   {errors.date && <p className="text-accent-red text-xs mt-1">{errors.date.message}</p>}
                 </div>
@@ -296,7 +296,7 @@ const SermonsManager = () => {
                 {/* YouTube Link */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Video de YouTube (Enlace Opcional)</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider">Video de YouTube (Enlace Opcional)</label>
                     {!readOnly && (
                       <button
                         type="button"
@@ -312,7 +312,7 @@ const SermonsManager = () => {
                     type="url"
                     {...register('youtube_url')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                     placeholder="https://www.youtube.com/watch?v=..."
                   />
                   {errors.youtube_url && <p className="text-accent-red text-xs mt-1">{errors.youtube_url.message}</p>}
@@ -322,8 +322,8 @@ const SermonsManager = () => {
               {/* YouTube Iframe Live Preview */}
               {youtubeId && (
                 <div className="space-y-2">
-                  <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Previsualización del Video</span>
-                  <div className="aspect-video w-full max-w-md bg-black rounded-xl overflow-hidden shadow-xs border border-gray-150">
+                  <span className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider">Previsualización del Video</span>
+                  <div className="aspect-video w-full max-w-md bg-black rounded-xl overflow-hidden shadow-xs border border-gray-150 dark:border-white/10">
                     <iframe
                       src={`https://www.youtube.com/embed/${youtubeId}`}
                       title="YouTube video player"
@@ -337,7 +337,7 @@ const SermonsManager = () => {
 
               {/* Rich Text Editor for Content */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Contenido / Resumen del Mensaje</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1.5">Contenido / Resumen del Mensaje</label>
                 <Controller
                   name="content"
                   control={control}
@@ -353,11 +353,11 @@ const SermonsManager = () => {
               </div>
 
               {/* Footer controls */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2 border border-gray-250 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-5 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   {readOnly ? 'Cerrar' : 'Cancelar'}
                 </button>
@@ -383,22 +383,22 @@ const SermonsManager = () => {
             className="space-y-4"
           >
             {loading ? (
-              <div className="flex justify-center items-center py-20 bg-white rounded-2xl border border-gray-150 shadow-xs">
+              <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
                 <Loader2 className="animate-spin text-primary" size={32} />
               </div>
             ) : sermons.length > 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-150 shadow-xs overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wider border-b border-gray-150">
+                      <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-450 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
                         <th className="py-4 px-6">Sermón</th>
                         <th className="py-4 px-6">Pastor / Predicador</th>
                         <th className="py-4 px-6">Fecha de Prédica</th>
                         <th className="py-4 px-6 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm text-gray-750">
+                    <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-750">
                       {sermons.map((sermon) => (
                         <tr key={sermon.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-4 px-6">
@@ -412,12 +412,12 @@ const SermonsManager = () => {
                                   <FileText size={18} />
                                 </div>
                               )}
-                              <span className="font-bold text-gray-800 truncate max-w-xs md:max-w-sm" title={sermon.title}>
+                              <span className="font-bold text-gray-800 dark:text-gray-100 truncate max-w-xs md:max-w-sm" title={sermon.title}>
                                 {sermon.title}
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-6 text-gray-600 font-medium">
+                          <td className="py-4 px-6 text-gray-600 dark:text-gray-400 font-medium">
                             {sermon.pastor_name}
                           </td>
                           <td className="py-4 px-6 text-gray-400 text-xs font-medium">
@@ -463,9 +463,9 @@ const SermonsManager = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 shadow-xs">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 shadow-xs">
                 <FileText className="mx-auto text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-serif font-bold text-gray-700">No hay sermones publicados</h3>
+                <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No hay sermones publicados</h3>
                 <p className="text-gray-400 text-sm mt-1 font-medium">Comparte las enseñanzas semanales publicando tu primer sermón.</p>
               </div>
             )}

@@ -122,31 +122,31 @@ const Donations = () => {
   if (success) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 text-green-600 rounded-full shadow-sm">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full shadow-sm">
           <CheckCircle2 size={48} />
         </div>
-        <h1 className="text-3xl font-serif font-bold text-gray-800">¡Muchas Gracias por tu Ofrenda!</h1>
+        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white">¡Muchas Gracias por tu Ofrenda!</h1>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed text-sm">
-          Tu transacción <span className="font-mono font-bold text-primary dark:text-white">#{success}</span> por un monto de <span className="font-bold text-gray-800">${parseFloat(formData.amount).toFixed(2)}</span> ha sido procesada con éxito. Que el Señor bendiga tu generosidad.
+          Tu transacción <span className="font-mono font-bold text-primary dark:text-white">#{success}</span> por un monto de <span className="font-bold text-gray-800 dark:text-white">${parseFloat(formData.amount).toFixed(2)}</span> ha sido procesada con éxito. Que el Señor bendiga tu generosidad.
         </p>
-        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-150 text-left max-w-md mx-auto">
-          <h4 className="font-serif font-bold text-gray-700 mb-3 text-sm">Resumen de Transacción</h4>
-          <div className="space-y-2 text-xs text-gray-650">
+        <div className="bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 text-left max-w-md mx-auto">
+          <h4 className="font-serif font-bold text-gray-700 dark:text-gray-300 mb-3 text-sm">Resumen de Transacción</h4>
+          <div className="space-y-2 text-xs text-gray-650 dark:text-gray-400">
             <div className="flex justify-between">
               <span>Destino:</span>
-              <span className="font-bold text-gray-800">
+              <span className="font-bold text-gray-800 dark:text-white">
                 {categories.find(c => c.id === formData.categoryId)?.name || 'General'}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Donante:</span>
-              <span className="font-bold text-gray-800">
+              <span className="font-bold text-gray-800 dark:text-white">
                 {formData.isAnonymous ? 'Anónimo' : (formData.name || 'Anónimo')}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Método de Pago:</span>
-              <span className="font-bold text-gray-800 uppercase">{formData.paymentMethod}</span>
+              <span className="font-bold text-gray-800 dark:text-white uppercase">{formData.paymentMethod}</span>
             </div>
           </div>
         </div>
@@ -155,7 +155,7 @@ const Donations = () => {
             setSuccess(null);
             setFormData(prev => ({ ...prev, amount: '' }));
           }}
-          className="px-6 py-3 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs cursor-pointer border border-transparent"
+          className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs cursor-pointer border border-transparent"
         >
           Realizar otra Aportación
         </button>
@@ -188,7 +188,6 @@ const Donations = () => {
             "Y al ver las multitudes, tuvo compasión de ellas; porque estaban desamparadas y dispersas como ovejas que no tienen pastor. Entonces dijo a sus discípulos: A la verdad la mies es mucha, mas los obreros pocos. Rogad, pues, al Señor de la mies, que envíe obreros a su mies."
             <span className="text-gold font-bold block mt-2 text-xs font-sans not-italic">— Mateo 9:36-38</span>
           </blockquote>
-
           <p className="text-gray-100 text-sm md:text-base leading-relaxed font-light">
             Lo más importante no es el dinero sino tu corazón y tu voluntad... Dios es el dueño de todo, pero te quiere a ti para por medio de ti llegar a otros.
           </p>
@@ -199,7 +198,7 @@ const Donations = () => {
       <section className="space-y-6">
         <div className="text-center max-w-xl mx-auto space-y-2">
           <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">Formas de Apoyar</h2>
-          <p className="text-gray-400 text-xs">Existen múltiples maneras de colaborar con la obra de Dios en la iglesia.</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Existen múltiples maneras de colaborar con la obra de Dios en la iglesia.</p>
         </div>
 
         <motion.div 
@@ -212,14 +211,14 @@ const Donations = () => {
           {/* Pilar 1: Dar Online */}
           <motion.div 
             variants={fadeInUp}
-            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
           >
             <div className="space-y-4">
-              <div className="w-14 h-14 bg-amber-50 text-gold rounded-full flex items-center justify-center">
+              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center">
                 <HeartHandshake size={28} />
               </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800">Dar Online</h3>
-              <p className="text-gray-550 text-xs leading-relaxed">
+              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Dar Online</h3>
+              <p className="text-gray-550 dark:text-gray-405 text-xs leading-relaxed">
                 Puedes dar tu contribución voluntaria aquí.
               </p>
             </div>
@@ -229,14 +228,14 @@ const Donations = () => {
           {/* Pilar 2: Sé un Voluntario */}
           <motion.div 
             variants={fadeInUp}
-            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between"
           >
             <div className="space-y-4">
-              <div className="w-14 h-14 bg-amber-50 text-gold rounded-full flex items-center justify-center">
+              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center">
                 <HandHeart size={28} />
               </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800">Sé un Voluntario</h3>
-              <p className="text-gray-550 text-xs leading-relaxed">
+              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Sé un Voluntario</h3>
+              <p className="text-gray-550 dark:text-gray-405 text-xs leading-relaxed">
                 Dios quiere que cumplamos su propósito. Comunícate con nosotros.
               </p>
             </div>
@@ -251,14 +250,14 @@ const Donations = () => {
           {/* Pilar 3: Cómo puedes Ayudarnos */}
           <motion.div 
             variants={fadeInUp}
-            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 shadow-xs hover:shadow-sm transition-shadow flex flex-col items-center justify-between"
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow flex flex-col items-center justify-between"
           >
             <div className="space-y-4 w-full">
-              <div className="w-14 h-14 bg-amber-50 text-gold rounded-full flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center mx-auto">
                 <Users size={28} />
               </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800 text-center">Cómo puedes Ayudarnos</h3>
-              <ol className="text-left space-y-2 text-xs text-gray-550 font-medium pl-2">
+              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white text-center">Cómo puedes Ayudarnos</h3>
+              <ol className="text-left space-y-2 text-xs text-gray-550 dark:text-gray-405 font-medium pl-2">
                 <li className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-gold/10 text-gold flex items-center justify-center font-bold text-[10px]">1</span>
                   Con tu ayuda Servicial.
@@ -286,7 +285,7 @@ const Donations = () => {
         
         {/* Columna Izquierda: Tarjeta de Cuenta Bancaria */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-white pb-3 border-b border-gray-100">
+          <h2 className="text-2xl font-serif font-bold text-primary dark:text-white pb-3 border-b border-gray-100 dark:border-white/10">
             Transferencia Bancaria
           </h2>
 
@@ -336,17 +335,17 @@ const Donations = () => {
           </div>
 
           {/* Nota Importante (WhatsApp/Secretaría) */}
-          <div className="bg-green-50 text-green-900 border border-green-150 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div className="bg-green-50 dark:bg-green-950/20 text-green-900 dark:text-green-300 border border-green-150 dark:border-green-900/30 rounded-2xl p-6 space-y-4 shadow-xs">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-green-100 text-[#25D366] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 text-[#25D366] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.335 4.978L2 22l5.197-1.361a9.94 9.94 0 0 0 4.815 1.23c5.504 0 9.987-4.479 9.99-9.987.003-2.67-1.035-5.177-2.922-7.066A9.914 9.914 0 0 0 12.012 2zm5.799 14.15c-.254.717-1.488 1.408-2.043 1.482-.555.074-1.258.12-3.693-.884-2.937-1.21-4.834-4.2-4.981-4.395-.147-.195-1.198-1.593-1.198-3.037 0-1.445.755-2.15 1.025-2.433.27-.283.593-.353.79-.353.197 0 .394.002.567.01.18.008.422-.07.66.498.243.582.83 2.02.902 2.169.072.149.12.322.02.52-.1.198-.15.322-.297.495-.148.173-.31.385-.443.516-.148.148-.302.31-.13.606.173.297.77 1.272 1.652 2.057.882.787 1.626 1.03 1.854 1.135.228.106.362.088.497-.066.136-.155.592-.687.75-.921.159-.234.318-.198.536-.118.22.08.1.393 1.393.978.22.106.368.16.422.25.053.09.053.52-.2.124z" />
                 </svg>
               </div>
-              <div className="text-xs space-y-1">
+              <div className="text-xs space-y-1 text-gray-700 dark:text-gray-300">
                 <span className="font-bold block text-sm">Reportar Aportación</span>
-                <p className="leading-relaxed text-gray-700">
-                  Enviar captura de pantalla de la transacción con sus datos al correo <span className="font-bold">iece_jerusalen@hotmail.com</span> o a nuestra Secretaria: <span className="font-bold">Hermana Marlene +593 98 526 3122</span>.
+                <p className="leading-relaxed">
+                  Enviar captura de pantalla de la transacción con sus datos al correo <span className="font-bold text-gray-800 dark:text-white">iece_jerusalen@hotmail.com</span> o a nuestra Secretaria: <span className="font-bold text-gray-800 dark:text-white">Hermana Marlene +593 98 526 3122</span>.
                 </p>
               </div>
             </div>
@@ -363,8 +362,8 @@ const Donations = () => {
 
         {/* Columna Derecha: Formulario de Registro en Línea */}
         <div>
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 p-6 md:p-8 space-y-6 shadow-sm">
-            <h2 className="text-2xl font-serif font-bold text-gray-800 pb-2 border-b border-gray-100">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-8 space-y-6 shadow-sm">
+            <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10">
               Registrar Aportación
             </h2>
 
@@ -382,7 +381,7 @@ const Donations = () => {
                     className={`py-2 rounded-xl text-sm font-semibold transition-all border cursor-pointer ${
                       formData.amount === val.replace('$', '')
                         ? 'bg-primary text-white border-primary shadow-sm'
-                        : 'bg-white dark:bg-slate-900 border-gray-250 text-gray-650 hover:bg-gray-50'
+                        : 'bg-white dark:bg-slate-800 border-gray-250 dark:border-slate-700 text-gray-650 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     {val}
@@ -399,7 +398,7 @@ const Donations = () => {
                   step="0.01"
                   value={formData.amount}
                   onChange={handleInputChange}
-                  className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full pl-8 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-800 dark:text-white bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="0.00"
                 />
                 <span className="absolute left-3 top-3.5 text-gray-500 dark:text-gray-400 font-bold text-sm">$</span>
@@ -414,7 +413,7 @@ const Donations = () => {
               {loading ? (
                 <select
                   id="categoryId"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 animate-pulse focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-gray-50 dark:bg-slate-800 animate-pulse focus:outline-none"
                   disabled
                 >
                   <option>Cargando destinos...</option>
@@ -425,7 +424,7 @@ const Donations = () => {
                   name="categoryId"
                   value={formData.categoryId}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -467,7 +466,7 @@ const Donations = () => {
                       required={!formData.isAnonymous}
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Nombre completo"
                     />
                   </div>
@@ -481,7 +480,7 @@ const Donations = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Correo electrónico"
                     />
                   </div>
@@ -499,7 +498,7 @@ const Donations = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Correo para enviarte el comprobante"
                   />
                 </div>
@@ -507,7 +506,7 @@ const Donations = () => {
             </div>
 
             {/* Métodos de Pago */}
-            <div className="space-y-4 pt-4 border-t border-gray-100">
+            <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
               <p className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Método de Aportación
               </p>
@@ -518,7 +517,7 @@ const Donations = () => {
                   className={`py-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     formData.paymentMethod === 'tarjeta'
                       ? 'bg-primary/5 border-primary text-primary dark:text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-900 border-gray-255 text-gray-500 dark:text-gray-400 hover:bg-gray-50'
+                      : 'bg-white dark:bg-slate-800 border-gray-255 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   <CreditCard size={18} />
@@ -530,7 +529,7 @@ const Donations = () => {
                   className={`py-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     formData.paymentMethod === 'transferencia'
                       ? 'bg-primary/5 border-primary text-primary dark:text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-900 border-gray-255 text-gray-500 dark:text-gray-400 hover:bg-gray-50'
+                      : 'bg-white dark:bg-slate-800 border-gray-255 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   <Landmark size={18} />
@@ -541,8 +540,8 @@ const Donations = () => {
 
             {/* Formulario Tarjeta o Instrucción */}
             {formData.paymentMethod === 'tarjeta' ? (
-              <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-150">
-                <span className="text-xs text-gray-400 font-semibold block uppercase">Detalles de la tarjeta (Simulados)</span>
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-150 dark:border-white/10">
+                <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold block uppercase">Detalles de la tarjeta (Simulados)</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="cardName" className="sr-only">Nombre impreso</label>
@@ -554,7 +553,7 @@ const Donations = () => {
                       required={formData.paymentMethod === 'tarjeta'}
                       value={formData.cardName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                       placeholder="Nombre impreso"
                     />
                   </div>
@@ -569,7 +568,7 @@ const Donations = () => {
                       maxLength={19}
                       value={formData.cardNumber}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                       placeholder="Número de tarjeta"
                     />
                   </div>
@@ -586,7 +585,7 @@ const Donations = () => {
                       maxLength={5}
                       value={formData.cardExpiry}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                       placeholder="MM/AA"
                     />
                   </div>
@@ -601,15 +600,15 @@ const Donations = () => {
                       maxLength={3}
                       value={formData.cardCvv}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                       placeholder="CVV"
                     />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-blue-50/50 text-blue-900 rounded-xl border border-blue-100/50 text-xs leading-relaxed space-y-1">
-                <span className="font-bold block text-blue-900">Pasos para reportar la transferencia:</span>
+              <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300 rounded-xl border border-blue-100/50 dark:border-blue-900/30 text-xs leading-relaxed space-y-1">
+                <span className="font-bold block text-blue-900 dark:text-blue-300">Pasos para reportar la transferencia:</span>
                 <p>1. Transfiere el monto ingresado a la cuenta de Banco Guayaquil a la izquierda.</p>
                 <p>2. Registra tus datos arriba y presiona "Registrar Donación".</p>
                 <p>3. Envía el comprobante a nuestra Secretaria por el botón verde de WhatsApp.</p>

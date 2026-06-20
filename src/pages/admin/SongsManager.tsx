@@ -176,16 +176,16 @@ const SongsManager = () => {
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-800 flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <Music className="text-amber-600" size={28} />
             Alabanzas e Himnos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Gestiona el catálogo de canciones de la iglesia</p>
+          <p className="text-sm text-gray-500 dark:text-gray-450 mt-1">Gestiona el catálogo de canciones de la iglesia</p>
         </div>
         {!readOnly && (
           <div className="flex gap-2">
             <button onClick={() => setShowCatalogs(!showCatalogs)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-sm font-medium">
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-sm font-medium">
               <Tag size={16} /> Catálogos {showCatalogs ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             <button onClick={openCreate}
@@ -198,10 +198,10 @@ const SongsManager = () => {
 
       {/* Catalogs Panel */}
       {showCatalogs && !readOnly && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 dark:bg-slate-950 rounded-xl border border-gray-200 dark:border-white/10">
           {/* Types */}
           <div>
-            <h3 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-1"><ListMusic size={14} /> Tipos de Canción</h3>
+            <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1"><ListMusic size={14} /> Tipos de Canción</h3>
             <div className="flex gap-2 mb-2">
               <input value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addType()}
@@ -210,7 +210,7 @@ const SongsManager = () => {
             </div>
             <div className="flex flex-wrap gap-1.5">
               {songTypes.map((t) => (
-                <span key={t.id} className="inline-flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                <span key={t.id} className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 px-2 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
                   {t.name}
                   <button onClick={() => deleteType(t.id)} className="text-red-400 hover:text-red-600 cursor-pointer"><X size={12} /></button>
                 </span>
@@ -219,7 +219,7 @@ const SongsManager = () => {
           </div>
           {/* Styles */}
           <div>
-            <h3 className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-1"><StyleIcon size={14} /> Estilos de Canción</h3>
+            <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1"><StyleIcon size={14} /> Estilos de Canción</h3>
             <div className="flex gap-2 mb-2">
               <input value={newStyleName} onChange={(e) => setNewStyleName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addStyle()}
@@ -228,7 +228,7 @@ const SongsManager = () => {
             </div>
             <div className="flex flex-wrap gap-1.5">
               {songStyles.map((s) => (
-                <span key={s.id} className="inline-flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                <span key={s.id} className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 px-2 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
                   {s.name}
                   <button onClick={() => deleteStyle(s.id)} className="text-red-400 hover:text-red-600 cursor-pointer"><X size={12} /></button>
                 </span>
@@ -247,12 +247,12 @@ const SongsManager = () => {
             className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" />
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-amber-400 outline-none">
+          className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
           <option value="">Todos los tipos</option>
           {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-amber-400 outline-none">
+          className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
           <option value="">Todos los estilos</option>
           {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
@@ -270,26 +270,26 @@ const SongsManager = () => {
           <p className="text-sm">Agrega tu primera alabanza al catálogo</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-slate-950 border-b border-gray-200 dark:border-white/10">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Título</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Artista</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-600 hidden lg:table-cell">BPM</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden lg:table-cell">Tipo</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden xl:table-cell">Estilo</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-600">Acordes</th>
-                  {!readOnly && <th className="text-right px-4 py-3 font-semibold text-gray-600">Acciones</th>}
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Título</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden md:table-cell">Artista</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden lg:table-cell">BPM</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden lg:table-cell">Tipo</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden xl:table-cell">Estilo</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Acordes</th>
+                  {!readOnly && <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Acciones</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {filtered.map((song) => (
-                  <tr key={song.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-800">{song.title}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{song.artist || '—'}</td>
-                    <td className="px-4 py-3 text-center text-gray-500 hidden lg:table-cell">{song.bpm || '—'}</td>
+                  <tr key={song.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{song.title}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-450 hidden md:table-cell">{song.artist || '—'}</td>
+                    <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-450 hidden lg:table-cell">{song.bpm || '—'}</td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {song.song_types ? (
                         <span className="inline-block bg-amber-50 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">{song.song_types.name}</span>
@@ -310,10 +310,10 @@ const SongsManager = () => {
                     {!readOnly && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => openEdit(song)} className="p-1.5 rounded hover:bg-amber-50 text-gray-500 hover:text-amber-700 cursor-pointer transition-colors" title="Editar">
+                          <button onClick={() => openEdit(song)} className="p-1.5 rounded hover:bg-amber-50 text-gray-500 dark:text-gray-450 hover:text-amber-700 cursor-pointer transition-colors" title="Editar">
                             <Edit3 size={16} />
                           </button>
-                          <button onClick={() => deleteSong(song.id)} className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600 cursor-pointer transition-colors" title="Eliminar">
+                          <button onClick={() => deleteSong(song.id)} className="p-1.5 rounded hover:bg-red-50 text-gray-500 dark:text-gray-450 hover:text-red-600 cursor-pointer transition-colors" title="Eliminar">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -331,25 +331,25 @@ const SongsManager = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-xs" onClick={() => setShowForm(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl border border-gray-200 my-4">
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl border border-gray-200 dark:border-white/10 my-4">
             {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h2 className="text-xl font-serif font-bold text-gray-800">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
+              <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">
                 {editingSong ? 'Editar Canción' : 'Nueva Canción'}
               </h2>
-              <button onClick={() => setShowForm(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"><X size={20} /></button>
+              <button onClick={() => setShowForm(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 dark:text-gray-450 cursor-pointer"><X size={20} /></button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
               {/* Row 1: Title + Artist */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="song-title" className="block text-sm font-semibold text-gray-700 mb-1">Título *</label>
+                  <label htmlFor="song-title" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Título *</label>
                   <input id="song-title" {...register('title')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Grande es tu fidelidad" />
                   {errors.title && <p className="text-red-500 text-xs mt-1">{(errors.title as any).message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="song-artist" className="block text-sm font-semibold text-gray-700 mb-1">Artista</label>
+                  <label htmlFor="song-artist" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Artista</label>
                   <input id="song-artist" {...register('artist')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Thomas Chisholm" />
                 </div>
               </div>
@@ -357,34 +357,34 @@ const SongsManager = () => {
               {/* Row 2: BPM + Type + Style + Has Chords */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label htmlFor="song-bpm" className="block text-sm font-semibold text-gray-700 mb-1">BPM</label>
+                  <label htmlFor="song-bpm" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">BPM</label>
                   <input id="song-bpm" type="number" {...register('bpm')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="120" />
                 </div>
                 <div>
-                  <label htmlFor="song-type" className="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
-                  <select id="song-type" {...register('type_id')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-amber-400 outline-none">
+                  <label htmlFor="song-type" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
+                  <select id="song-type" {...register('type_id')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
                     <option value="">Seleccionar...</option>
                     {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="song-style" className="block text-sm font-semibold text-gray-700 mb-1">Estilo</label>
-                  <select id="song-style" {...register('style_id')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-amber-400 outline-none">
+                  <label htmlFor="song-style" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Estilo</label>
+                  <select id="song-style" {...register('style_id')} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
                     <option value="">Seleccionar...</option>
                     {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div className="flex items-end">
-                  <label htmlFor="song-chords" className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 w-full">
+                  <label htmlFor="song-chords" className="flex items-center gap-2 cursor-pointer bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 w-full">
                     <input id="song-chords" type="checkbox" {...register('has_chords')} className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-400" />
-                    <span className="text-sm font-medium text-gray-700">Tiene acordes</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tiene acordes</span>
                   </label>
                 </div>
               </div>
 
               {/* Lyrics Editor */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Letra de la Canción
                   <span className="ml-2 text-xs text-gray-400 font-normal">Usa H2 para secciones (Verso, Coro, Puente)</span>
                 </label>
@@ -392,8 +392,8 @@ const SongsManager = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/5">
+                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors">
                   Cancelar
                 </button>
                 <button type="submit" className="px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 cursor-pointer transition-colors shadow-md">

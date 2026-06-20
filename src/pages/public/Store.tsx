@@ -185,7 +185,7 @@ const Store = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all text-sm bg-white dark:bg-slate-900 dark:text-white"
           />
-          <Search className="absolute left-3.5 top-3 text-slate-500" size={18} />
+          <Search className="absolute left-3.5 top-3 text-slate-500 dark:text-gray-450" size={18} />
         </div>
 
         {/* Categorías */}
@@ -273,7 +273,7 @@ const Store = () => {
                     <MagneticButton>
                       <button
                         onClick={() => setSelectedProduct(product)}
-                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary hover:bg-blue-900 text-white transition-all shadow-sm shadow-blue-100 flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white transition-all shadow-sm shadow-blue-100 flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                       >
                         Ver Opciones
                       </button>

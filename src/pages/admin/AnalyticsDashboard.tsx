@@ -724,10 +724,10 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn text-slate-800">
+    <div className="space-y-6 animate-fadeIn text-slate-800 dark:text-gray-100">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
             <BarChart3 className="text-gold" />
@@ -750,7 +750,7 @@ export default function AnalyticsDashboard() {
                 setDateFilter(e.target.value as any);
                 toast.success('Filtro temporal aplicado globalmente.');
               }}
-              className="px-3.5 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold cursor-pointer shadow-xs focus:outline-none"
+              className="px-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-900 text-xs font-semibold cursor-pointer shadow-xs focus:outline-none"
             >
               <option value="all">Todos los tiempos</option>
               <option value="30days">Últimos 30 días</option>
@@ -773,7 +773,7 @@ export default function AnalyticsDashboard() {
               localStorage.setItem('church_analytics_widgets', JSON.stringify(PRESETS));
               toast.success('Paneles restablecidos a los 8 predeterminados.');
             }}
-            className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+            className="p-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
             title="Restablecer paneles predeterminados"
           >
             <RefreshCw size={14} className="text-amber-500" />
@@ -782,7 +782,7 @@ export default function AnalyticsDashboard() {
 
           <button
             onClick={loadAllDatasets}
-            className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+            className="p-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Actualizar Datos
@@ -791,7 +791,7 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200">
+      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
         <button
           onClick={() => setActiveTab('dashboard')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -828,10 +828,10 @@ export default function AnalyticsDashboard() {
       {/* Loadings */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-80 bg-white rounded-3xl animate-pulse col-span-full"></div>
-          <div className="h-64 bg-white rounded-2xl animate-pulse"></div>
-          <div className="h-64 bg-white rounded-2xl animate-pulse"></div>
-          <div className="h-64 bg-white rounded-2xl animate-pulse"></div>
+          <div className="h-80 bg-white dark:bg-slate-900 rounded-3xl animate-pulse col-span-full"></div>
+          <div className="h-64 bg-white dark:bg-slate-900 rounded-2xl animate-pulse"></div>
+          <div className="h-64 bg-white dark:bg-slate-900 rounded-2xl animate-pulse"></div>
+          <div className="h-64 bg-white dark:bg-slate-900 rounded-2xl animate-pulse"></div>
         </div>
       ) : (
         <>
@@ -860,7 +860,7 @@ export default function AnalyticsDashboard() {
                   <motion.div
                     layout
                     key={widget.id}
-                    className="bg-white border border-slate-150 rounded-2xl p-5 shadow-xs flex flex-col justify-between group/card relative hover:border-slate-300 transition-all"
+                    className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-2xl p-5 shadow-xs flex flex-col justify-between group/card relative hover:border-slate-300 transition-all"
                   >
                     {/* Widget Header */}
                     <div className="flex justify-between items-start mb-3 gap-2">
@@ -873,7 +873,7 @@ export default function AnalyticsDashboard() {
                               type="text"
                               value={editTitleText}
                               onChange={(e) => setEditTitleText(e.target.value)}
-                              className="px-2 py-0.5 border border-slate-350 rounded-lg text-xs font-serif font-bold text-gray-800 w-full focus:outline-none"
+                              className="px-2 py-0.5 border border-slate-350 rounded-lg text-xs font-serif font-bold text-gray-800 dark:text-gray-100 w-full focus:outline-none"
                               autoFocus
                             />
                             <button
@@ -892,7 +892,7 @@ export default function AnalyticsDashboard() {
                         ) : (
                           <h3 
                             onClick={() => startEditingTitle(widget)}
-                            className="font-serif font-bold text-xs md:text-sm text-slate-800 hover:text-primary cursor-pointer truncate"
+                            className="font-serif font-bold text-xs md:text-sm text-slate-800 dark:text-gray-100 hover:text-primary cursor-pointer truncate"
                             title="Haz clic para renombrar"
                           >
                             {widget.title}
@@ -907,7 +907,7 @@ export default function AnalyticsDashboard() {
                       <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover/card:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleExportWidgetCSV(widget)}
-                          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50"
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
                           title="Descargar CSV"
                         >
                           <Download size={13} />
@@ -931,7 +931,7 @@ export default function AnalyticsDashboard() {
                       ) : isKPI ? (
                         <div className="text-center space-y-2 py-4">
                           <TrendingUp size={36} className="text-gold mx-auto" />
-                          <p className="text-4xl font-extrabold text-slate-800 font-mono tracking-tight">
+                          <p className="text-4xl font-extrabold text-slate-800 dark:text-gray-100 font-mono tracking-tight">
                             {widget.targetField.includes('amount') || widget.targetField.includes('total') || widget.targetField.includes('price')
                               ? `$${kpiValue.toLocaleString('es-ES')}` 
                               : kpiValue.toLocaleString('es-ES')}
@@ -941,19 +941,19 @@ export default function AnalyticsDashboard() {
                           </p>
                         </div>
                       ) : isTable ? (
-                        <div className="overflow-y-auto max-h-[210px] border border-slate-100 rounded-xl">
+                        <div className="overflow-y-auto max-h-[210px] border border-slate-100 dark:border-white/5 rounded-xl">
                           <table className="w-full text-left text-[11px]">
-                            <thead className="bg-slate-50 border-b border-slate-100 sticky top-0">
-                              <tr className="text-gray-500 font-bold uppercase">
+                            <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-white/5 sticky top-0">
+                              <tr className="text-gray-500 dark:text-gray-450 font-bold uppercase">
                                 <th className="px-3 py-2">Eje X</th>
                                 <th className="px-3 py-2 text-right">Valor</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                               {chartData.map((d, index) => (
                                 <tr key={index} className="hover:bg-slate-50/50">
-                                  <td className="px-3 py-1.5 font-semibold text-slate-700">{d.name}</td>
-                                  <td className="px-3 py-1.5 text-right font-mono font-bold text-slate-600">
+                                  <td className="px-3 py-1.5 font-semibold text-slate-700 dark:text-gray-300">{d.name}</td>
+                                  <td className="px-3 py-1.5 text-right font-mono font-bold text-slate-600 dark:text-gray-400">
                                     {widget.targetField.includes('amount') || widget.targetField.includes('total') || widget.targetField.includes('price')
                                       ? `$${d.valor.toLocaleString('es-ES')}`
                                       : d.valor.toLocaleString('es-ES')}
@@ -1022,7 +1022,7 @@ export default function AnalyticsDashboard() {
 
                     {/* Chart Quick switcher in footer */}
                     {!isKPI && chartData.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-[10px] text-gray-400">
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-between items-center text-[10px] text-gray-400">
                         <span>Ver en otro formato:</span>
                         <div className="flex gap-1">
                           {['bar', 'line', 'area', 'pie', 'table'].map((t) => (
@@ -1117,7 +1117,7 @@ export default function AnalyticsDashboard() {
 
               {/* Dynamic Builder Preview & Add Button (If NLP triggered) */}
               {parsedNLP && (
-                <div className="lg:col-span-3 bg-white border border-amber-100 rounded-2xl p-6 shadow-xs animate-fadeIn space-y-4">
+                <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-amber-100 rounded-2xl p-6 shadow-xs animate-fadeIn space-y-4">
                   <div className="flex justify-between items-center pb-3 border-b border-amber-50">
                     <h3 className="font-serif font-bold text-amber-800 text-sm flex items-center gap-1.5">
                       <Sparkles size={16} className="text-gold animate-bounce" />
@@ -1133,24 +1133,24 @@ export default function AnalyticsDashboard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                     <div className="space-y-3">
-                      <div className="text-xs bg-slate-50 p-4 rounded-xl border border-slate-150 space-y-2">
+                      <div className="text-xs bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-150 dark:border-white/10 space-y-2">
                         <div>
                           <span className="text-slate-400 block uppercase font-bold text-[9px]">Fuente</span>
-                          <span className="font-bold text-slate-800 capitalize">{parsedNLP.source}</span>
+                          <span className="font-bold text-slate-800 dark:text-gray-100 capitalize">{parsedNLP.source}</span>
                         </div>
                         <div>
                           <span className="text-slate-400 block uppercase font-bold text-[9px]">Dimensión (Eje X)</span>
-                          <span className="font-bold text-slate-800">{getDimensionLabel(parsedNLP.dimension)}</span>
+                          <span className="font-bold text-slate-800 dark:text-gray-100">{getDimensionLabel(parsedNLP.dimension)}</span>
                         </div>
                         <div>
                           <span className="text-slate-400 block uppercase font-bold text-[9px]">Agregación (Eje Y)</span>
-                          <span className="font-bold text-slate-800 capitalize">
+                          <span className="font-bold text-slate-800 dark:text-gray-100 capitalize">
                             {parsedNLP.aggregation} {parsedNLP.targetField && `(${parsedNLP.targetField})`}
                           </span>
                         </div>
                         <div>
                           <span className="text-slate-400 block uppercase font-bold text-[9px]">Gráfico</span>
-                          <span className="font-bold text-slate-800 capitalize">{parsedNLP.chartType}</span>
+                          <span className="font-bold text-slate-800 dark:text-gray-100 capitalize">{parsedNLP.chartType}</span>
                         </div>
                       </div>
 
@@ -1164,7 +1164,7 @@ export default function AnalyticsDashboard() {
                     </div>
 
                     {/* NLP Live Chart Preview */}
-                    <div className="md:col-span-2 border border-slate-100 rounded-xl p-4 min-h-[220px] flex items-center justify-center bg-slate-50/50">
+                    <div className="md:col-span-2 border border-slate-100 dark:border-white/5 rounded-xl p-4 min-h-[220px] flex items-center justify-center bg-slate-50/50">
                       {(() => {
                         const previewData = executeQuery(parsedNLP);
                         if (previewData.length === 0) {
@@ -1174,7 +1174,7 @@ export default function AnalyticsDashboard() {
                           const val = previewData.map(d => d.valor).reduce((a, b) => a + b, 0);
                           return (
                             <div className="text-center">
-                              <p className="text-5xl font-mono font-extrabold text-slate-800">
+                              <p className="text-5xl font-mono font-extrabold text-slate-800 dark:text-gray-100">
                                 {parsedNLP.targetField.includes('amount') || parsedNLP.targetField.includes('total')
                                   ? `$${val.toLocaleString('es-ES')}` 
                                   : val.toLocaleString('es-ES')}
@@ -1185,15 +1185,15 @@ export default function AnalyticsDashboard() {
                         }
                         if (parsedNLP.chartType === 'table') {
                           return (
-                            <div className="w-full max-h-[200px] overflow-y-auto bg-white border border-slate-200 rounded-lg text-xs">
+                            <div className="w-full max-h-[200px] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs">
                               <table className="w-full text-left">
-                                <thead className="bg-slate-50 sticky top-0 font-bold">
-                                  <tr className="border-b border-slate-100 text-gray-500">
+                                <thead className="bg-slate-50 dark:bg-slate-950 sticky top-0 font-bold">
+                                  <tr className="border-b border-slate-100 dark:border-white/5 text-gray-500 dark:text-gray-450">
                                     <th className="p-2">Eje X</th>
                                     <th className="p-2 text-right">Valor</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-slate-650">
+                                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-650">
                                   {previewData.map((d, i) => (
                                     <tr key={i}>
                                       <td className="p-2 font-semibold">{d.name}</td>
@@ -1258,9 +1258,9 @@ export default function AnalyticsDashboard() {
               )}
 
               {/* Manual Report Builder Form */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="font-serif font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                  <Settings size={16} className="text-slate-500" />
+              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="font-serif font-bold text-slate-800 dark:text-gray-100 text-sm flex items-center gap-1.5">
+                  <Settings size={16} className="text-slate-500 dark:text-gray-450" />
                   Constructor Manual de Reportes
                 </h3>
 
@@ -1272,7 +1272,7 @@ export default function AnalyticsDashboard() {
                       type="text"
                       value={builderSettings.title}
                       onChange={(e) => setBuilderSettings(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-350"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:border-slate-350"
                     />
                   </div>
 
@@ -1298,7 +1298,7 @@ export default function AnalyticsDashboard() {
                           targetField: ''
                         }));
                       }}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl cursor-pointer bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl cursor-pointer bg-white dark:bg-slate-900"
                     >
                       <option value="members">Miembros (CRM)</option>
                       <option value="donations">Diezmos y Ofrendas (Finanzas)</option>
@@ -1317,7 +1317,7 @@ export default function AnalyticsDashboard() {
                     <select
                       value={builderSettings.dimension}
                       onChange={(e) => setBuilderSettings(prev => ({ ...prev, dimension: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl cursor-pointer bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl cursor-pointer bg-white dark:bg-slate-900"
                     >
                       {builderSettings.source === 'members' && (
                         <>
@@ -1392,7 +1392,7 @@ export default function AnalyticsDashboard() {
                           targetField: field || ''
                         }));
                       }}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl cursor-pointer bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl cursor-pointer bg-white dark:bg-slate-900"
                     >
                       <option value="count:">Conteo de Registros</option>
                       
@@ -1440,7 +1440,7 @@ export default function AnalyticsDashboard() {
                     <select
                       value={builderSettings.chartType}
                       onChange={(e) => setBuilderSettings(prev => ({ ...prev, chartType: e.target.value as any }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl cursor-pointer bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl cursor-pointer bg-white dark:bg-slate-900"
                     >
                       <option value="bar">Gráfico de Barras</option>
                       <option value="line">Gráfico de Líneas</option>
@@ -1462,9 +1462,9 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Manual Report Live Preview Area */}
-              <div className="lg:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 shadow-sm min-h-[350px] flex flex-col justify-between">
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-2xl p-6 shadow-sm min-h-[350px] flex flex-col justify-between">
                 <div>
-                  <h3 className="font-serif font-bold text-slate-800 text-xs md:text-sm mb-1">{builderSettings.title}</h3>
+                  <h3 className="font-serif font-bold text-slate-800 dark:text-gray-100 text-xs md:text-sm mb-1">{builderSettings.title}</h3>
                   <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Previsualización en Tiempo Real</span>
                 </div>
 
@@ -1489,15 +1489,15 @@ export default function AnalyticsDashboard() {
                     }
                     if (builderSettings.chartType === 'table') {
                       return (
-                        <div className="w-full max-h-[220px] overflow-y-auto bg-white border border-slate-200 rounded-lg text-xs">
+                        <div className="w-full max-h-[220px] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs">
                           <table className="w-full text-left">
-                            <thead className="bg-slate-50 sticky top-0 font-bold border-b border-slate-100 text-gray-500">
+                            <thead className="bg-slate-50 dark:bg-slate-950 sticky top-0 font-bold border-b border-slate-100 dark:border-white/5 text-gray-500 dark:text-gray-450">
                               <tr>
                                 <th className="p-2">Eje X</th>
                                 <th className="p-2 text-right">Valor</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-650">
+                            <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-650">
                               {data.map((d, i) => (
                                 <tr key={i}>
                                   <td className="p-2 font-semibold">{d.name}</td>
@@ -1572,16 +1572,16 @@ export default function AnalyticsDashboard() {
 
           {/* TAB 3: ORIGINAL LIST OF FORM RESPONSES */}
           {activeTab === 'forms' && (
-            <div className="bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs">
-              <div className="p-5 border-b border-gray-150">
-                <h3 className="font-serif font-bold text-gray-800 text-sm">Respuestas a Cuestionarios Enviadas</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
+              <div className="p-5 border-b border-gray-150 dark:border-white/10">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Respuestas a Cuestionarios Enviadas</h3>
                 <p className="text-gray-400 text-xs mt-0.5">Listado de participaciones en línea de miembros y visitantes de la iglesia.</p>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                    <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-xs uppercase tracking-wider">
                       <th className="px-6 py-4">Usuario</th>
                       <th className="px-6 py-4">Correo</th>
                       <th className="px-6 py-4">Cuestionario / Bloque</th>
@@ -1590,7 +1590,7 @@ export default function AnalyticsDashboard() {
                       <th className="px-6 py-4 text-center">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-650">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
                     {responses.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-10 text-center text-gray-400 font-semibold italic">
@@ -1600,13 +1600,13 @@ export default function AnalyticsDashboard() {
                     ) : (
                       responses.map((resp) => (
                         <tr key={resp.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-4 font-semibold text-gray-800">
+                          <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">
                             {resp.member_name || 'Anónimo'}
                           </td>
-                          <td className="px-6 py-4 text-gray-500 font-mono text-xs">
+                          <td className="px-6 py-4 text-gray-500 dark:text-gray-450 font-mono text-xs">
                             {resp.member_email || 'Sin correo'}
                           </td>
-                          <td className="px-6 py-4 text-xs font-semibold text-gray-650">
+                          <td className="px-6 py-4 text-xs font-semibold text-gray-650 dark:text-gray-400">
                             {getCleanBlockName(resp.block_id)}
                             <span className="text-[9px] font-normal text-slate-400 block">Pág: {resp.page_id}</span>
                           </td>
@@ -1617,7 +1617,7 @@ export default function AnalyticsDashboard() {
                                 {resp.score}/{resp.max_score}
                               </span>
                             ) : (
-                              <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold">
+                              <span className="bg-slate-100 text-slate-500 dark:text-gray-450 px-2 py-0.5 rounded text-[10px] font-bold">
                                 Form Libre
                               </span>
                             )}
@@ -1634,7 +1634,7 @@ export default function AnalyticsDashboard() {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => setSelectedResponse(resp)}
-                              className="text-primary hover:text-blue-900 hover:bg-blue-50 px-2.5 py-1.5 rounded-xl border border-slate-200 hover:border-slate-350 transition-colors inline-flex items-center gap-1 text-[11px] font-bold uppercase cursor-pointer"
+                              className="text-primary hover:text-blue-900 hover:bg-blue-50 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-350 transition-colors inline-flex items-center gap-1 text-[11px] font-bold uppercase cursor-pointer"
                             >
                               <Eye size={12} />
                               Ver Detalle
@@ -1654,7 +1654,7 @@ export default function AnalyticsDashboard() {
       {/* DETAIL MODAL (Form details check) */}
       {selectedResponse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative text-left animate-scale-in border border-slate-200 max-h-[85vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative text-left animate-scale-in border border-slate-200 dark:border-white/10 max-h-[85vh] flex flex-col">
             <button
               onClick={() => setSelectedResponse(null)}
               className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-gray-400 hover:text-gray-700 transition-colors"
@@ -1663,10 +1663,10 @@ export default function AnalyticsDashboard() {
             </button>
 
             {/* Modal Header */}
-            <div className="border-b border-gray-150 pb-4 pr-6 flex items-center gap-3">
+            <div className="border-b border-gray-150 dark:border-white/10 pb-4 pr-6 flex items-center gap-3">
               <ClipboardList className="text-gold" size={24} />
               <div>
-                <h3 className="font-serif font-bold text-gray-800 text-base md:text-lg">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base md:text-lg">
                   Respuestas de Cuestionario
                 </h3>
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
@@ -1678,12 +1678,12 @@ export default function AnalyticsDashboard() {
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto py-4 space-y-5 pr-1 custom-scrollbar">
               {/* User credentials summary */}
-              <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 flex gap-3 items-center">
+              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-white/10 rounded-xl p-3 flex gap-3 items-center">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                   <User size={16} />
                 </div>
                 <div className="text-xs">
-                  <span className="font-bold text-gray-800 block">{selectedResponse.member_name || 'Anónimo'}</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-100 block">{selectedResponse.member_name || 'Anónimo'}</span>
                   <span className="text-[10px] text-gray-400 block font-mono">{selectedResponse.member_email || 'Sin correo electrónico'}</span>
                 </div>
               </div>
@@ -1703,16 +1703,16 @@ export default function AnalyticsDashboard() {
 
               {/* Answers details */}
               <div className="space-y-4">
-                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-1">Desglose de Respuestas</span>
+                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 pb-1">Desglose de Respuestas</span>
                 
                 {Object.entries(selectedResponse.answers).map(([qId, ans], idx) => {
                   const displayAnswer = Array.isArray(ans) ? ans.join(', ') : String(ans);
                   return (
-                    <div key={qId} className="bg-white border border-gray-150 rounded-xl p-3.5 space-y-1.5">
-                      <span className="font-semibold text-xs text-gray-800 block">
+                    <div key={qId} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-3.5 space-y-1.5">
+                      <span className="font-semibold text-xs text-gray-800 dark:text-gray-100 block">
                         Pregunta {idx + 1}
                       </span>
-                      <div className="bg-slate-50 border border-slate-150 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700">
+                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-white/10 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-gray-300">
                         {displayAnswer || <span className="italic text-gray-400 font-normal">Sin respuesta</span>}
                       </div>
                     </div>
@@ -1722,7 +1722,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-gray-150 pt-4 flex justify-end">
+            <div className="border-t border-gray-150 dark:border-white/10 pt-4 flex justify-end">
               <button
                 onClick={() => setSelectedResponse(null)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer"

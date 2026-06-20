@@ -398,7 +398,7 @@ const UsersManager = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Title */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
             <Shield className="text-gold" />
@@ -411,7 +411,7 @@ const UsersManager = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-white/10">
         <button
           onClick={() => setActiveTab('users')}
           className={`px-5 py-2.5 font-medium text-sm border-b-2 transition-colors cursor-pointer ${
@@ -437,23 +437,23 @@ const UsersManager = () => {
       {activeTab === 'users' ? (
         <>
           {/* Search Bar */}
-          <div className="flex items-center gap-3 max-w-md bg-white rounded-xl border border-gray-200 px-3.5 py-2 shadow-xs">
+          <div className="flex items-center gap-3 max-w-md bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 px-3.5 py-2 shadow-xs">
             <Search className="text-gray-400" size={18} />
             <input 
               type="text" 
               placeholder="Buscar por nombre o correo..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-sm bg-transparent focus:outline-none text-gray-700"
+              className="w-full text-sm bg-transparent focus:outline-none text-gray-700 dark:text-gray-300"
             />
           </div>
 
           {/* Users Table */}
-          <div className="bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                  <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-xs uppercase tracking-wider">
                     <th className="px-6 py-4">Usuario</th>
                     <th className="px-6 py-4">Correo Electrónico</th>
                     <th className="px-6 py-4">Miembro CRM</th>
@@ -462,7 +462,7 @@ const UsersManager = () => {
                     <th className="px-6 py-4 text-center">Acciones de Seguridad</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-gray-650">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
                   {loading ? (
                     Array.from({ length: 4 }).map((_, idx) => (
                       <tr key={idx} className="animate-pulse">
@@ -483,7 +483,7 @@ const UsersManager = () => {
                   ) : (
                     filteredProfiles.map((profile) => (
                       <tr key={profile.id} className={`hover:bg-gray-50/50 transition-colors ${profile.banned ? 'bg-red-50/25' : ''}`}>
-                        <td className="px-6 py-4.5 font-semibold text-gray-800">
+                        <td className="px-6 py-4.5 font-semibold text-gray-800 dark:text-gray-100">
                           <div className="flex items-center gap-2">
                             <span>
                               {profile.first_name || profile.last_name 
@@ -498,13 +498,13 @@ const UsersManager = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4.5 text-gray-500 font-mono text-xs">
+                        <td className="px-6 py-4.5 text-gray-500 dark:text-gray-450 font-mono text-xs">
                           {profile.email || 'Sin correo registrado'}
                         </td>
                         <td className="px-6 py-4.5">
                           {profile.member ? (
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-800 text-xs sm:text-sm">
+                              <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">
                                 {profile.member.first_name} {profile.member.last_name}
                               </span>
                               <button
@@ -532,7 +532,7 @@ const UsersManager = () => {
                             value={profile.role}
                             disabled={profile.role === 'admin'}
                             onChange={(e) => handleRoleChange(profile.id, e.target.value as UserRole)}
-                            className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none capitalize shadow-xs cursor-pointer inline-block disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none capitalize shadow-xs cursor-pointer inline-block disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {ROLES.map((r) => (
                               <option key={r.id} value={r.id}>{r.label}</option>
@@ -593,7 +593,7 @@ const UsersManager = () => {
         </>
       ) : (
         /* ROLE PERMISSIONS TAB */
-        <div className="bg-white rounded-2xl border border-gray-150 p-6 shadow-xs space-y-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-base font-serif font-bold text-primary">Permisos modular por Roles</h2>
@@ -601,11 +601,11 @@ const UsersManager = () => {
             </div>
             
             <div className="flex items-center gap-3">
-              <label className="text-xs font-semibold text-gray-500">Seleccionar Rol:</label>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-450">Seleccionar Rol:</label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-xs"
+                className="px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-xs"
               >
                 {ROLES.filter(r => r.id !== 'admin').map((r) => (
                   <option key={r.id} value={r.id}>{r.label}</option>
@@ -620,22 +620,22 @@ const UsersManager = () => {
               <span className="text-xs font-medium">Cargando matriz de permisos...</span>
             </div>
           ) : (
-            <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xs">
+            <div className="border border-gray-150 dark:border-white/10 rounded-xl overflow-hidden shadow-xs">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                  <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-xs uppercase tracking-wider">
                     <th className="px-6 py-3.5">Módulo Administrativo</th>
                     <th className="px-6 py-3.5 text-center w-36">Ver (view)</th>
                     <th className="px-6 py-3.5 text-center w-36">Editar/Crear (edit)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-gray-650">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
                   {ADMIN_MODULES.map((mod) => {
                     const perm = rolePermissions[mod.id] || { view: false, edit: false };
                     return (
                       <tr key={mod.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-3.5">
-                          <span className="font-semibold text-gray-800 text-xs sm:text-sm">{mod.label}</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">{mod.label}</span>
                           <span className="text-[10px] text-gray-400 block font-mono mt-0.5">Clave: {mod.id}</span>
                         </td>
                         <td className="px-6 py-3.5 text-center">
@@ -663,8 +663,8 @@ const UsersManager = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-            <span className="text-xs text-gray-400 font-medium flex items-center gap-1.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100 max-w-lg">
+          <div className="flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-4">
+            <span className="text-xs text-gray-400 font-medium flex items-center gap-1.5 bg-gray-50 dark:bg-slate-950 p-2.5 rounded-lg border border-gray-100 dark:border-white/5 max-w-lg">
               <Info size={16} className="text-primary flex-shrink-0" />
               Al activar "Editar", se otorgará automáticamente el permiso "Ver". Al desactivar "Ver", se revocará "Editar".
             </span>
@@ -683,10 +683,10 @@ const UsersManager = () => {
       {/* USER OVERRIDE DIALOG / MODAL */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl rounded-2xl border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scaleIn">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scaleIn">
             
             {/* Modal Header */}
-            <div className="p-5 border-b border-gray-150 flex items-center justify-between bg-primary text-white">
+            <div className="p-5 border-b border-gray-150 dark:border-white/10 flex items-center justify-between bg-primary text-white">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <User size={18} />
@@ -709,9 +709,9 @@ const UsersManager = () => {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6">
               {/* Toggle override */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-150">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-950 rounded-xl border border-gray-150 dark:border-white/10">
                 <div className="space-y-0.5">
-                  <span className="text-xs sm:text-sm font-bold text-gray-800">Personalizar permisos de este usuario</span>
+                  <span className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100">Personalizar permisos de este usuario</span>
                   <p className="text-[10px] text-gray-400">Si se desactiva, el usuario usará los permisos por defecto de su rol ({selectedUser.role}).</p>
                 </div>
                 <input
@@ -724,16 +724,16 @@ const UsersManager = () => {
 
               {/* Matrix view if override is enabled */}
               {useOverride && (
-                <div className="border border-gray-150 rounded-xl overflow-hidden">
+                <div className="border border-gray-150 dark:border-white/10 rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-semibold text-[10px] sm:text-xs uppercase tracking-wider">
+                      <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-[10px] sm:text-xs uppercase tracking-wider">
                         <th className="px-4 py-2.5">Módulo</th>
                         <th className="px-4 py-2.5 text-center w-28">Ver (view)</th>
                         <th className="px-4 py-2.5 text-center w-28">Editar (edit)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-650">
+                    <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
                       {ADMIN_MODULES.map((mod) => {
                         const perm = userPermissions[mod.id] || { view: false, edit: false };
                         return (
@@ -768,10 +768,10 @@ const UsersManager = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-5 bg-gray-50 border-t border-gray-150 flex justify-end gap-3">
+            <div className="p-5 bg-gray-50 dark:bg-slate-950 border-t border-gray-150 dark:border-white/10 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-semibold text-gray-500 cursor-pointer"
+                className="px-4 py-2 hover:bg-gray-100 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-500 dark:text-gray-450 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -799,10 +799,10 @@ const UsersManager = () => {
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fadeIn">
-            <div className="bg-white w-full max-w-lg rounded-2xl border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-scaleIn text-left">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-scaleIn text-left">
               
               {/* Modal Header */}
-              <div className="p-5 border-b border-gray-150 flex items-center justify-between bg-primary text-white flex-shrink-0">
+              <div className="p-5 border-b border-gray-150 dark:border-white/10 flex items-center justify-between bg-primary text-white flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-serif font-bold text-base">
                     Vincular Cuenta a Miembro CRM
@@ -817,25 +817,25 @@ const UsersManager = () => {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 overflow-y-auto space-y-4 flex flex-col min-h-0 bg-slate-50 flex-grow">
-                <p className="text-xs text-gray-500 leading-relaxed">
+              <div className="p-6 overflow-y-auto space-y-4 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 flex-grow">
+                <p className="text-xs text-gray-500 dark:text-gray-450 leading-relaxed">
                   Asocia la cuenta de <strong>{linkingUser.email}</strong> con su ficha de miembro correspondiente del CRM. Esto unifica sus aportes, roles e historial en un solo perfil y evita datos duplicados.
                 </p>
 
                 {/* Search Bar */}
-                <div className="flex items-center gap-2 bg-white border border-gray-250 rounded-xl px-3 py-2 shadow-2xs flex-shrink-0">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-gray-250 rounded-xl px-3 py-2 shadow-2xs flex-shrink-0">
                   <Search size={16} className="text-gray-400" />
                   <input
                     type="text"
                     placeholder="Buscar miembro por nombre o DNI/Cédula..."
                     value={memberSearchQuery}
                     onChange={(e) => setMemberSearchQuery(e.target.value)}
-                    className="w-full text-xs bg-transparent focus:outline-none text-gray-700 font-semibold"
+                    className="w-full text-xs bg-transparent focus:outline-none text-gray-700 dark:text-gray-300 font-semibold"
                   />
                 </div>
 
                 {/* Members List */}
-                <div className="border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-y-auto max-h-[260px] bg-white shadow-2xs flex-grow min-h-0">
+                <div className="border border-gray-200 dark:border-white/10 rounded-xl divide-y divide-gray-100 dark:divide-white/5 overflow-y-auto max-h-[260px] bg-white dark:bg-slate-900 shadow-2xs flex-grow min-h-0">
                   {filteredList.length === 0 ? (
                     <div className="p-6 text-center text-xs text-gray-400 font-medium">
                       No se encontraron miembros registrados en el CRM.
@@ -844,7 +844,7 @@ const UsersManager = () => {
                     filteredList.map((m) => (
                       <div key={m.id} className="p-3 hover:bg-gray-50/50 flex items-center justify-between transition-colors">
                         <div>
-                          <span className="font-bold text-xs text-gray-800 block">
+                          <span className="font-bold text-xs text-gray-800 dark:text-gray-100 block">
                             {m.first_name} {m.last_name}
                           </span>
                           <span className="text-[10px] text-gray-400 font-mono font-semibold">
@@ -864,10 +864,10 @@ const UsersManager = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 bg-white border-t border-gray-150 flex justify-end flex-shrink-0">
+              <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-150 dark:border-white/10 flex justify-end flex-shrink-0">
                 <button
                   onClick={() => setLinkingUser(null)}
-                  className="px-4 py-2 hover:bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 cursor-pointer transition-colors"
+                  className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold text-gray-500 dark:text-gray-450 cursor-pointer transition-colors"
                 >
                   Cerrar
                 </button>

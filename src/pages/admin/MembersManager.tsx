@@ -890,7 +890,7 @@ const MembersManager = () => {
                       <img
                         src={member.photo_url}
                         alt={`${member.first_name} ${member.last_name}`}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-100 flex-shrink-0"
+                        className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
                       />
                     ) : (
                       <div className="w-10 h-10 bg-blue-50 text-primary rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
@@ -1016,7 +1016,7 @@ const MembersManager = () => {
               <button
                 type="button"
                 onClick={() => setShowCareersModal(true)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
                 <Award size={16} className="text-primary" />
                 Gestionar Carreras
@@ -1086,22 +1086,22 @@ const MembersManager = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombres</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombres</label>
                       <input
                         type="text"
                         {...register('first_name')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="Ej. Carlos Alfredo"
                       />
                       {errors.first_name && <p className="text-accent-red text-xs mt-1">{errors.first_name.message}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Apellidos</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Apellidos</label>
                       <input
                         type="text"
                         {...register('last_name')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="Ej. Mendoza Vera"
                       />
                       {errors.last_name && <p className="text-accent-red text-xs mt-1">{errors.last_name.message}</p>}
@@ -1110,21 +1110,21 @@ const MembersManager = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cédula / DNI</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Cédula / DNI</label>
                       <input
                         type="text"
                         {...register('dni')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="Ej. 0991234567"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Celular / Teléfono</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Celular / Teléfono</label>
                       <div className="flex gap-2">
                         <select
                           {...register('phone_country_code')}
-                          className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none w-28 shrink-0 font-semibold"
+                          className="px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none w-28 shrink-0 font-semibold"
                         >
                           {COUNTRY_CODES.map((country) => (
                             <option key={country.code} value={country.dialCode}>
@@ -1135,29 +1135,29 @@ const MembersManager = () => {
                         <input
                           type="text"
                           {...register('phone')}
-                          className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                           placeholder="Ej. 0985263122"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Nacimiento</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Nacimiento</label>
                       <input
                         type="date"
                         {...register('birth_date')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Enlace URL Foto de Perfil</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Enlace URL Foto de Perfil</label>
                     <div className="flex gap-2">
                       <input
                         type="url"
                         {...register('photo_url')}
-                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="flex-1 px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="https://ejemplo.com/fotos/miembro.jpg"
                       />
                       <label className="px-4 py-2 bg-gold/15 text-gold border border-gold/30 rounded-xl text-xs font-bold hover:bg-gold/25 transition-all flex items-center gap-1.5 cursor-pointer select-none">
@@ -1186,17 +1186,17 @@ const MembersManager = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dirección de Domicilio</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Dirección de Domicilio</label>
                       <input
                         type="text"
                         {...register('address')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="Calle, Barrio, Ciudad"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Enlace o Código de Google Maps</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Enlace o Código de Google Maps</label>
                       <input
                         type="text"
                         {...register('maps_link')}
@@ -1210,7 +1210,7 @@ const MembersManager = () => {
                             toast.success(`Coordenadas extraídas del enlace: ${coords.lat}, ${coords.lng}`);
                           }
                         }}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         placeholder="Pega link de Google Maps, iframe o coordenadas..."
                       />
                     </div>
@@ -1218,22 +1218,22 @@ const MembersManager = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Latitud</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Latitud</label>
                       <input
                         type="number"
                         step="any"
                         {...register('latitude', { valueAsNumber: true })}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
                         placeholder="Ej. -2.1391"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Longitud</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Longitud</label>
                       <input
                         type="number"
                         step="any"
                         {...register('longitude', { valueAsNumber: true })}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
                         placeholder="Ej. -79.5950"
                       />
                     </div>
@@ -1276,9 +1276,9 @@ const MembersManager = () => {
                   </div>
 
                   {/* Multi-email inputs */}
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-150 space-y-3">
+                  <div className="bg-gray-50 dark:bg-slate-950 rounded-xl p-4 border border-gray-150 dark:border-white/10 space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-650 uppercase tracking-wider">Correos Electrónicos</span>
+                      <span className="text-xs font-bold text-gray-650 dark:text-gray-400 uppercase tracking-wider">Correos Electrónicos</span>
                       <button
                         type="button"
                         onClick={() => append({ email: '' })}
@@ -1296,7 +1296,7 @@ const MembersManager = () => {
                             <input
                               type="email"
                               {...register(`emails.${idx}.email` as const)}
-                              className="w-full px-4 py-1.5 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                              className="w-full px-4 py-1.5 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                               placeholder="miembro@correo.com"
                             />
                             {errors.emails?.[idx]?.email && (
@@ -1319,18 +1319,18 @@ const MembersManager = () => {
                   </div>
 
                   {/* Educación y Estudios Académicos */}
-                  <div className="bg-slate-50/50 rounded-xl p-4 border border-gray-150 space-y-4">
-                    <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-100 pb-1 flex items-center gap-1.5">
+                  <div className="bg-slate-50/50 rounded-xl p-4 border border-gray-150 dark:border-white/10 space-y-4">
+                    <h4 className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 pb-1 flex items-center gap-1.5">
                       <Award size={14} className="text-primary" />
                       Educación y Estudios Académicos
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Nivel de Instrucción</label>
+                        <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nivel de Instrucción</label>
                         <select
                           {...register('education_level')}
-                          className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
+                          className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
                         >
                           <option value="">Selecciona nivel...</option>
                           <option value="Ninguno">Ninguno / Sin estudios</option>
@@ -1347,10 +1347,10 @@ const MembersManager = () => {
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                         >
-                          <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Título de Tercer Grado / Carrera</label>
+                          <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Título de Tercer Grado / Carrera</label>
                           <select
                             {...register('career_id')}
-                            className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
                           >
                             <option value="">Selecciona carrera...</option>
                             {careersList.map(c => (
@@ -1369,7 +1369,7 @@ const MembersManager = () => {
                           {...register('is_studying')}
                           className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
                         />
-                        <label htmlFor="is_studying" className="text-xs font-bold text-gray-650 cursor-pointer">
+                        <label htmlFor="is_studying" className="text-xs font-bold text-gray-650 dark:text-gray-400 cursor-pointer">
                           Actualmente estudiando en la Universidad / Tecnológico
                         </label>
                       </div>
@@ -1380,10 +1380,10 @@ const MembersManager = () => {
                           animate={{ opacity: 1, height: 'auto' }}
                           className="pl-6"
                         >
-                          <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Carrera en curso</label>
+                          <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Carrera en curso</label>
                           <select
                             {...register('studying_career_id')}
-                            className="w-full max-w-md px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
+                            className="w-full max-w-md px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold"
                           >
                             <option value="">Selecciona carrera que estudia...</option>
                             {careersList.map(c => (
@@ -1402,32 +1402,32 @@ const MembersManager = () => {
                 <div className="space-y-4 max-w-xl mx-auto">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Aceptación / Conversión</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Aceptación / Conversión</label>
                       <input
                         type="date"
                         {...register('conversion_date')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Bautismo en Aguas</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Bautismo en Aguas</label>
                       <input
                         type="date"
                         {...register('baptism_date')}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Registro de Aportes/Diezmos ($ USD)</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Registro de Aportes/Diezmos ($ USD)</label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       {...register('tithes_sum', { valueAsNumber: true })}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
                       placeholder="0.00"
                     />
                     {errors.tithes_sum && <p className="text-accent-red text-xs mt-1">{errors.tithes_sum.message}</p>}
@@ -1439,14 +1439,14 @@ const MembersManager = () => {
               {/* TAB 3: LIDERAZGO */}
               {activeTab === 'leadership' && (
                 <div className="space-y-4 max-w-xl mx-auto">
-                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-150 p-4 rounded-xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-950 border border-gray-150 dark:border-white/10 p-4 rounded-xl">
                     <input
                       type="checkbox"
                       id="is_leader"
                       {...register('is_leader')}
                       className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
                     />
-                    <label htmlFor="is_leader" className="text-sm font-bold text-gray-700 cursor-pointer">
+                    <label htmlFor="is_leader" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
                       ¿Este miembro desempeña un rol de liderazgo en la iglesia?
                     </label>
                   </div>
@@ -1458,10 +1458,10 @@ const MembersManager = () => {
                       className="space-y-4"
                     >
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Departamento / Ministerio</label>
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Departamento / Ministerio</label>
                         <select
                           {...register('ministry_id')}
-                          className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                          className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                         >
                           <option value="">Selecciona un departamento...</option>
                           {ministries.map(m => (
@@ -1472,10 +1472,10 @@ const MembersManager = () => {
 
                       {watch('ministry_id') && (
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Rol / Cargo</label>
+                          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Rol / Cargo</label>
                           <select
                             {...register('role_id')}
-                            className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                            className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                             onChange={(e) => {
                               const selectedId = e.target.value;
                               const roleObj = rolesList.find(r => r.id === selectedId);
@@ -1499,7 +1499,7 @@ const MembersManager = () => {
                 <div className="space-y-6">
                   {/* Service Areas */}
                   <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-gray-650 uppercase tracking-wider border-b border-gray-100 pb-1 flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-gray-650 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 pb-1 flex items-center gap-2">
                       <Layers size={14} className="text-gold" />
                       Áreas de Servicio en la Iglesia
                     </h4>
@@ -1526,7 +1526,7 @@ const MembersManager = () => {
 
                   {/* Talents */}
                   <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-gray-650 uppercase tracking-wider border-b border-gray-100 pb-1 flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-gray-650 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 pb-1 flex items-center gap-2">
                       <Award size={14} className="text-gold" />
                       Habilidades y Talentos
                     </h4>
@@ -1543,7 +1543,7 @@ const MembersManager = () => {
                         });
 
                         return Object.entries(grouped).map(([categoryName, items]) => (
-                          <div key={categoryName} className="space-y-2.5 bg-slate-50/50 rounded-xl p-3.5 border border-gray-150">
+                          <div key={categoryName} className="space-y-2.5 bg-slate-50/50 rounded-xl p-3.5 border border-gray-150 dark:border-white/10">
                             <span className="text-[11px] font-bold text-primary uppercase tracking-wider block border-b border-gray-100/50 pb-1">
                               {categoryName}
                             </span>
@@ -1575,7 +1575,7 @@ const MembersManager = () => {
 
                   {/* Spiritual Gifts */}
                   <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-gray-650 uppercase tracking-wider border-b border-gray-100 pb-1 flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-gray-650 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 pb-1 flex items-center gap-2">
                       <Heart size={14} className="text-gold" />
                       Dones Espirituales
                     </h4>
@@ -1603,11 +1603,11 @@ const MembersManager = () => {
               )}
 
               {/* Form Actions Footer */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2.5 border border-gray-250 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -1632,16 +1632,16 @@ const MembersManager = () => {
             className="space-y-5"
           >
             {/* Search, Filter, Sort and Group panel */}
-            <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-xs space-y-4">
               {/* Row 1: Search & Export */}
               <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-grow bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                <div className="flex-grow bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                   <Search className="text-gray-400" size={18} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-grow text-sm focus:outline-none text-gray-700 bg-transparent font-medium"
+                    className="flex-grow text-sm focus:outline-none text-gray-700 dark:text-gray-300 bg-transparent font-medium"
                     placeholder="Buscar por nombre, apellido, cédula o celular..."
                   />
                   {searchQuery && (
@@ -1666,14 +1666,14 @@ const MembersManager = () => {
               </div>
 
               {/* Row 2: Advanced Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-gray-100 dark:border-white/5">
                 {/* 1. Liderazgo */}
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Liderazgo</label>
                   <select
                     value={filterLeadership}
                     onChange={(e) => setFilterLeadership(e.target.value as any)}
-                    className="w-full bg-slate-50 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-750 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-750 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="all">Todos los miembros</option>
                     <option value="leaders">Solo Líderes</option>
@@ -1687,7 +1687,7 @@ const MembersManager = () => {
                   <select
                     value={filterMinistry}
                     onChange={(e) => setFilterMinistry(e.target.value)}
-                    className="w-full bg-slate-50 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="all">Todos los Ministerios</option>
                     {ministries.map((min) => (
@@ -1702,7 +1702,7 @@ const MembersManager = () => {
                   <select
                     value={filterSkill}
                     onChange={(e) => setFilterSkill(e.target.value)}
-                    className="w-full bg-slate-50 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="all">Todas las Habilidades</option>
                     <optgroup label="Áreas de Servicio">
@@ -1730,7 +1730,7 @@ const MembersManager = () => {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="w-full bg-slate-50 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                     >
                       <option value="first_name">Nombre</option>
                       <option value="last_name">Apellido</option>
@@ -1741,7 +1741,7 @@ const MembersManager = () => {
                   <button
                     type="button"
                     onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                    className="px-2 py-2 border border-gray-200 hover:bg-gray-100 text-gray-500 rounded-xl transition-all cursor-pointer flex-shrink-0 bg-slate-50 h-[34px] flex items-center justify-center font-bold text-xs"
+                    className="px-2 py-2 border border-gray-200 dark:border-white/10 hover:bg-gray-100 text-gray-500 dark:text-gray-450 rounded-xl transition-all cursor-pointer flex-shrink-0 bg-slate-50 dark:bg-slate-950 h-[34px] flex items-center justify-center font-bold text-xs"
                     title={sortDirection === 'asc' ? 'Orden Ascendente' : 'Orden Descendente'}
                   >
                     {sortDirection === 'asc' ? 'Asc ↑' : 'Desc ↓'}
@@ -1754,7 +1754,7 @@ const MembersManager = () => {
                   <select
                     value={groupBy}
                     onChange={(e) => setGroupBy(e.target.value as any)}
-                    className="w-full bg-slate-50 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="none">Sin Agrupación</option>
                     <option value="leadership">Por Liderazgo</option>
@@ -1774,8 +1774,8 @@ const MembersManager = () => {
                   {getGroupedMembers().map((group) => (
                     <div key={group.key} className="space-y-2.5">
                       <div className="flex items-center gap-2 px-1">
-                        <h4 className="font-serif font-bold text-gray-800 text-base">{group.name}</h4>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 font-bold">
+                        <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base">{group.name}</h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 dark:text-gray-400 font-bold">
                           {group.items.length} {group.items.length === 1 ? 'miembro' : 'miembros'}
                         </span>
                       </div>
@@ -1787,9 +1787,9 @@ const MembersManager = () => {
                 renderMembersTable(sortedMembers)
               )
             ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 shadow-xs">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 shadow-xs">
                 <User className="mx-auto text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-serif font-bold text-gray-700">No se encontraron miembros</h3>
+                <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No se encontraron miembros</h3>
                 <p className="text-gray-400 text-sm mt-1 font-medium">Prueba con otra búsqueda o agrega un nuevo registro en la base de datos.</p>
               </div>
             )}
@@ -1800,11 +1800,11 @@ const MembersManager = () => {
       <AnimatePresence>
         {showMapPicker && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 overflow-hidden flex flex-col h-[520px] animate-scale-in relative text-left">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col h-[520px] animate-scale-in relative text-left">
               
               {/* Modal Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150 flex-shrink-0">
-                <h3 className="font-serif font-bold text-gray-800 text-base flex items-center gap-1.5 font-serif">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150 dark:border-white/10 flex-shrink-0">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base flex items-center gap-1.5 font-serif">
                   <MapPin className="text-gold animate-bounce" size={18} />
                   Ubicar Domicilio en el Mapa
                 </h3>
@@ -1818,7 +1818,7 @@ const MembersManager = () => {
               </div>
 
               {/* Modal Body */}
-              <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0 bg-slate-50">
+              <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950">
                 
                 {/* Geocoding Search Bar */}
                 <div className="flex gap-2 flex-shrink-0">
@@ -1828,7 +1828,7 @@ const MembersManager = () => {
                     onChange={(e) => setModalSearchQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleModalSearch() }}
                     placeholder="Busca una calle, barrio o ciudad..."
-                    className="flex-1 bg-white border border-gray-250 rounded-xl px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs font-semibold"
+                    className="flex-1 bg-white dark:bg-slate-900 border border-gray-250 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs font-semibold"
                   />
                   <button
                     type="button"
@@ -1848,7 +1848,7 @@ const MembersManager = () => {
                 </div>
 
                 {/* Maplibre Map Container */}
-                <div className="flex-1 rounded-xl border border-gray-200 bg-white relative overflow-hidden shadow-2xs">
+                <div className="flex-1 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 relative overflow-hidden shadow-2xs">
                   <Map
                     ref={modalMapRef}
                     initialViewState={{
@@ -1881,22 +1881,22 @@ const MembersManager = () => {
                 </div>
 
                 {/* Info Text */}
-                <p className="text-[10px] text-gray-500 font-semibold leading-normal flex items-start gap-1 flex-shrink-0">
+                <p className="text-[10px] text-gray-500 dark:text-gray-450 font-semibold leading-normal flex items-start gap-1 flex-shrink-0">
                   <span className="text-gold">💡</span>
                   <span>Puedes escribir en el buscador, hacer clic en cualquier punto del mapa para mover el pin o arrastrar el pin rojo directamente.</span>
                 </p>
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-gray-150 flex items-center justify-between flex-shrink-0 bg-white">
-                <div className="text-[11px] text-gray-500 font-semibold font-mono">
+              <div className="px-6 py-4 border-t border-gray-150 dark:border-white/10 flex items-center justify-between flex-shrink-0 bg-white dark:bg-slate-900">
+                <div className="text-[11px] text-gray-500 dark:text-gray-450 font-semibold font-mono">
                   Coords: <span className="text-primary font-bold">{pickerCoords.lat.toFixed(6)}, {pickerCoords.lng.toFixed(6)}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setShowMapPicker(false)}
-                    className="px-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="px-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-500 dark:text-gray-450 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -1923,11 +1923,11 @@ const MembersManager = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 overflow-hidden flex flex-col h-[520px] relative text-left"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col h-[520px] relative text-left"
             >
               {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150 flex-shrink-0">
-                <h3 className="font-serif font-bold text-gray-800 text-base flex items-center gap-1.5">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150 dark:border-white/10 flex-shrink-0">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base flex items-center gap-1.5">
                   <Award className="text-primary" size={18} />
                   Catálogo de Carreras Universitarias
                 </h3>
@@ -1944,9 +1944,9 @@ const MembersManager = () => {
               </div>
 
               {/* Body */}
-              <div className="p-5 flex-grow flex flex-col min-h-0 bg-slate-50 space-y-4">
+              <div className="p-5 flex-grow flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 space-y-4">
                 {/* Form to Add Career */}
-                <div className="bg-white border border-gray-150 rounded-xl p-3 shadow-2xs">
+                <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-3 shadow-2xs">
                   <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Registrar Nueva Carrera</span>
                   <div className="flex gap-2">
                     <input
@@ -1954,7 +1954,7 @@ const MembersManager = () => {
                       value={newCareerName}
                       onChange={(e) => setNewCareerName(e.target.value)}
                       placeholder="Ej. Licenciatura en Teología"
-                      className="flex-grow bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-semibold"
+                      className="flex-grow bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-semibold"
                     />
                     <button
                       type="button"
@@ -1969,14 +1969,14 @@ const MembersManager = () => {
                 </div>
 
                 {/* Search / Filter bar */}
-                <div className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
                   <Search className="text-gray-400" size={14} />
                   <input
                     type="text"
                     value={careerSearchQuery}
                     onChange={(e) => setCareerSearchQuery(e.target.value)}
                     placeholder="Filtrar carreras..."
-                    className="flex-grow text-xs focus:outline-none text-gray-700 bg-transparent font-semibold"
+                    className="flex-grow text-xs focus:outline-none text-gray-700 dark:text-gray-300 bg-transparent font-semibold"
                   />
                   {careerSearchQuery && (
                     <button onClick={() => setCareerSearchQuery('')} className="text-gray-400 hover:text-gray-600 cursor-pointer">
@@ -1986,7 +1986,7 @@ const MembersManager = () => {
                 </div>
 
                 {/* List Container */}
-                <div className="flex-grow bg-white border border-gray-200 rounded-xl overflow-y-auto divide-y divide-gray-100 shadow-2xs max-h-[260px]">
+                <div className="flex-grow bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-y-auto divide-y divide-gray-100 dark:divide-white/5 shadow-2xs max-h-[260px]">
                   {(() => {
                     const filtered = careersList.filter(c =>
                       c.name.toLowerCase().includes(careerSearchQuery.toLowerCase())
@@ -2008,7 +2008,7 @@ const MembersManager = () => {
                               type="text"
                               value={editingCareerName}
                               onChange={(e) => setEditingCareerName(e.target.value)}
-                              className="flex-grow bg-white border border-primary rounded px-2.5 py-1 text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+                              className="flex-grow bg-white dark:bg-slate-900 border border-primary rounded px-2.5 py-1 text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
                             />
                             <button
                               type="button"
@@ -2025,7 +2025,7 @@ const MembersManager = () => {
                                 setEditingCareerId(null);
                                 setEditingCareerName('');
                               }}
-                              className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-50 cursor-pointer"
+                              className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
                               title="Cancelar"
                             >
                               <X size={14} />
@@ -2033,7 +2033,7 @@ const MembersManager = () => {
                           </div>
                         ) : (
                           <>
-                            <span className="text-xs font-semibold text-gray-700">{c.name}</span>
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{c.name}</span>
                             <div className="flex gap-1 flex-shrink-0">
                               <button
                                 type="button"
@@ -2064,7 +2064,7 @@ const MembersManager = () => {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-150 flex justify-end flex-shrink-0 bg-white">
+              <div className="px-6 py-4 border-t border-gray-150 dark:border-white/10 flex justify-end flex-shrink-0 bg-white dark:bg-slate-900">
                 <button
                   type="button"
                   onClick={() => {

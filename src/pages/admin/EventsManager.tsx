@@ -325,11 +325,11 @@ const EventsManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50/50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-150 dark:border-white/10">
                 {/* Emoji Selector */}
                 <div className="md:col-span-1 flex flex-col items-center justify-center border-r border-gray-150 dark:border-white/10 pr-6 relative">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Icono / Emoji</span>
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2">Icono / Emoji</span>
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="w-16 h-16 rounded-2xl bg-white border border-gray-255 flex items-center justify-center text-3xl shadow-xs hover:border-primary transition-all cursor-pointer"
+                    className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-gray-255 flex items-center justify-center text-3xl shadow-xs hover:border-primary transition-all cursor-pointer"
                   >
                     {selectedEmoji ? selectedEmoji : <Smile size={28} className="text-gray-400" />}
                   </button>
@@ -344,9 +344,9 @@ const EventsManager = () => {
                   )}
 
                   {showEmojiPicker && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 shadow-xl rounded-2xl overflow-hidden border border-gray-150 bg-white">
-                      <div className="flex justify-between items-center bg-gray-50 p-2 border-b">
-                        <span className="text-[10px] font-bold text-gray-550">Selecciona un Emoji</span>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 shadow-xl rounded-2xl overflow-hidden border border-gray-150 dark:border-white/10 bg-white dark:bg-slate-900">
+                      <div className="flex justify-between items-center bg-gray-50 dark:bg-slate-950 p-2 border-b">
+                        <span className="text-[10px] font-bold text-gray-550 dark:text-gray-400">Selecciona un Emoji</span>
                         <button type="button" onClick={() => setShowEmojiPicker(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
                       </div>
                       <Picker 
@@ -364,9 +364,9 @@ const EventsManager = () => {
 
                 {/* Cover Image Upload */}
                 <div className="md:col-span-2 space-y-3">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Imagen de Portada</span>
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Imagen de Portada</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50">
                       <MediaUploader
                         folder="eventos"
                         allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
@@ -381,7 +381,7 @@ const EventsManager = () => {
                     </div>
 
                     {coverImagePreview ? (
-                      <div className="relative w-28 h-20 rounded-xl border border-gray-150 overflow-hidden bg-gray-100 flex-shrink-0">
+                      <div className="relative w-28 h-20 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-100 flex-shrink-0">
                         <img src={coverImagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
                         <button
                           type="button"
@@ -395,7 +395,7 @@ const EventsManager = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-28 h-20 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 flex items-center justify-center text-gray-300 text-xs">
+                      <div className="w-28 h-20 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 flex items-center justify-center text-gray-300 text-xs">
                         Sin Imagen
                       </div>
                     )}
@@ -405,7 +405,7 @@ const EventsManager = () => {
                     <input
                       {...register('cover_image_url')}
                       type="url"
-                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="w-full px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
                       placeholder="https://ejemplo.com/portada-evento.jpg"
                     />
                   </div>
@@ -413,42 +413,42 @@ const EventsManager = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título del Evento</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Título del Evento</label>
                 <input
                   type="text"
                   {...register('title')}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Gran Vigilia de Oración"
                 />
                 {errors.title && <p className="text-accent-red text-xs mt-1">{errors.title.message}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Descripción</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Descripción</label>
                 <textarea
                   {...register('description')}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
                   placeholder="Detalles sobre el evento..."
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Inicio</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Inicio</label>
                   <input
                     type="date"
                     {...register('start_date')}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   {errors.start_date && <p className="text-accent-red text-xs mt-1">{errors.start_date.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Finalización</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Finalización</label>
                   <input
                     type="date"
                     {...register('end_date')}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   {errors.end_date && <p className="text-accent-red text-xs mt-1">{errors.end_date.message}</p>}
                 </div>
@@ -456,30 +456,30 @@ const EventsManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Hora de Inicio</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Hora de Inicio</label>
                   <input
                     type="time"
                     {...register('start_time')}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Hora de Finalización</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Hora de Finalización</label>
                   <input
                     type="time"
                     {...register('end_time')}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Área / Ministerio Responsable</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Área / Ministerio Responsable</label>
                   <select
                     {...register('ministry_id')}
                     disabled={userRole === 'leader'}
-                    className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                   >
                     <option value="">General (Ninguno)</option>
                     {ministries.map(m => (
@@ -492,26 +492,26 @@ const EventsManager = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-150 p-3.5 rounded-xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-950 border border-gray-150 dark:border-white/10 p-3.5 rounded-xl">
                     <input
                       type="checkbox"
                       id="is_recurring"
                       {...register('is_recurring')}
                       className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
                     />
-                    <label htmlFor="is_recurring" className="text-xs font-bold text-gray-700 cursor-pointer">
+                    <label htmlFor="is_recurring" className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
                       ¿Recurrente?
                     </label>
                   </div>
 
-                  <div className="flex items-center gap-3 bg-gray-50 border border-gray-150 p-3.5 rounded-xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-950 border border-gray-150 dark:border-white/10 p-3.5 rounded-xl">
                     <input
                       type="checkbox"
                       id="is_public"
                       {...register('is_public')}
                       className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
                     />
-                    <label htmlFor="is_public" className="text-xs font-bold text-gray-700 cursor-pointer">
+                    <label htmlFor="is_public" className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
                       ¿Público?
                     </label>
                   </div>
@@ -523,13 +523,13 @@ const EventsManager = () => {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-gray-50/50 p-4 border border-gray-150 rounded-2xl space-y-4"
+                  className="bg-gray-50/50 p-4 border border-gray-150 dark:border-white/10 rounded-2xl space-y-4"
                 >
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Frecuencia de Recurrencia</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Frecuencia de Recurrencia</label>
                     <select
                       {...register('recurrence_type')}
-                      className="w-full px-4 py-2 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                     >
                       <option value="diario">Diario</option>
                       <option value="semanal">Semanal</option>
@@ -539,7 +539,7 @@ const EventsManager = () => {
 
                   {recurrenceTypeWatched === 'semanal' && (
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Días de Recurrencia</label>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider">Días de Recurrencia</label>
                       <div className="flex flex-wrap gap-1.5">
                         {WEEK_DAYS.map(day => {
                           const checked = selectedDays.includes(day.id);
@@ -565,21 +565,21 @@ const EventsManager = () => {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Líderes Encargados (Separados por coma)</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Líderes Encargados (Separados por coma)</label>
                 <input
                   type="text"
                   {...register('leaders_in_charge_raw')}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Bertha Corina, David Nicola"
                 />
               </div>
 
               {/* Form Actions Footer */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2 border border-gray-250 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-5 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -629,10 +629,10 @@ const EventsManager = () => {
                                 <img
                                   src={event.cover_image_url}
                                   alt={event.title}
-                                  className="w-12 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                                  className="w-12 h-10 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-12 h-10 bg-gray-50 text-gray-300 rounded-lg border border-dashed flex items-center justify-center flex-shrink-0">
+                                <div className="w-12 h-10 bg-gray-50 dark:bg-slate-950 text-gray-300 rounded-lg border border-dashed flex items-center justify-center flex-shrink-0">
                                   <ImageIcon size={16} />
                                 </div>
                               )}
@@ -669,7 +669,7 @@ const EventsManager = () => {
                               <span className="text-gray-400 text-xs">General</span>
                             )}
                           </td>
-                          <td className="py-4 px-6 text-gray-500 font-semibold">
+                          <td className="py-4 px-6 text-gray-500 dark:text-gray-450 font-semibold">
                             {event.leaders_in_charge && event.leaders_in_charge.length > 0 ? (
                               <span className="text-xs font-semibold">{event.leaders_in_charge.join(', ')}</span>
                             ) : (
@@ -700,9 +700,9 @@ const EventsManager = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200 shadow-xs">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 shadow-xs">
                 <Calendar className="mx-auto text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-serif font-bold text-gray-700">No hay eventos programados</h3>
+                <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No hay eventos programados</h3>
                 <p className="text-gray-400 text-sm mt-1 font-medium">Comienza agregando un nuevo evento al calendario.</p>
               </div>
             )}

@@ -627,22 +627,22 @@ export default function LogosManager() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-serif font-bold text-primary">Catálogo de Logos</h1>
-        <p className="text-gray-500 text-sm">Administra la identidad visual de la iglesia y sus ministerios en un solo lugar.</p>
+        <p className="text-gray-500 dark:text-gray-450 text-sm">Administra la identidad visual de la iglesia y sus ministerios en un solo lugar.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulario de Subida (Column 1) */}
-        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-150 shadow-sm p-6 self-start space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm p-6 self-start space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-white/5">
             <Plus className="text-gold" size={20} />
-            <h2 className="font-serif font-bold text-gray-800 text-lg">Subir Nuevo Logo</h2>
+            <h2 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-lg">Subir Nuevo Logo</h2>
           </div>
 
           <form onSubmit={handleUpload} className="space-y-4">
             {/* File Input */}
             <div>
-              <label htmlFor="logo_file" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Archivo de Logo</label>
-              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer relative">
+              <label htmlFor="logo_file" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Archivo de Logo</label>
+              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer relative">
                 <input
                   id="logo_file"
                   type="file"
@@ -653,7 +653,7 @@ export default function LogosManager() {
                   disabled={uploading}
                 />
                 <Upload className="text-gray-400 mb-2" size={24} />
-                <span className="text-xs font-medium text-gray-650 text-center">
+                <span className="text-xs font-medium text-gray-650 dark:text-gray-400 text-center">
                   {selectedFile ? selectedFile.name : 'Seleccionar o arrastrar archivo'}
                 </span>
                 <span className="text-[10px] text-gray-400 mt-1 block">
@@ -664,12 +664,12 @@ export default function LogosManager() {
 
             {/* Ministry Owner */}
             <div>
-              <label htmlFor="logo_ministry" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pertenece a</label>
+              <label htmlFor="logo_ministry" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Pertenece a</label>
               <select
                 id="logo_ministry"
                 value={ministryId}
                 onChange={(e) => setMinistryId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 disabled={uploading}
               >
                 <option value="">Iglesia General (Nacional)</option>
@@ -683,12 +683,12 @@ export default function LogosManager() {
 
             {/* Variant Type */}
             <div>
-              <label htmlFor="logo_variant" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Variante / Orientación</label>
+              <label htmlFor="logo_variant" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Variante / Orientación</label>
               <select
                 id="logo_variant"
                 value={variant}
                 onChange={(e) => setVariant(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 disabled={uploading}
               >
                 <option value="cuadrado">Cuadrado (1:1)</option>
@@ -700,12 +700,12 @@ export default function LogosManager() {
 
             {/* Color Mode */}
             <div>
-              <label htmlFor="logo_color_mode" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Modo de Color</label>
+              <label htmlFor="logo_color_mode" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Modo de Color</label>
               <select
                 id="logo_color_mode"
                 value={colorMode}
                 onChange={(e) => setColorMode(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 disabled={uploading}
               >
                 <option value="color">Full Color</option>
@@ -739,10 +739,10 @@ export default function LogosManager() {
         {/* Galería / Listado (Columns 2 & 3) */}
         <div className="lg:col-span-2 space-y-4">
           {/* Barra de Filtros */}
-          <div className="bg-white rounded-2xl border border-gray-150 shadow-sm p-4 flex flex-wrap items-center gap-4 justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm p-4 flex flex-wrap items-center gap-4 justify-between">
             <div className="flex items-center gap-2">
               <Filter className="text-gray-400" size={18} />
-              <span className="text-sm font-semibold text-gray-700">Filtros:</span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtros:</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -753,7 +753,7 @@ export default function LogosManager() {
                   id="filter_ministry"
                   value={filterMinistry}
                   onChange={(e) => setFilterMinistry(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none"
+                  className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs bg-white dark:bg-slate-900 focus:outline-none"
                 >
                   <option value="all">Todos los Propietarios</option>
                   <option value="general">Iglesia General</option>
@@ -772,7 +772,7 @@ export default function LogosManager() {
                   id="filter_variant"
                   value={filterVariant}
                   onChange={(e) => setFilterVariant(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none"
+                  className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs bg-white dark:bg-slate-900 focus:outline-none"
                 >
                   <option value="all">Todas las Variantes</option>
                   <option value="cuadrado">Cuadrados</option>
@@ -786,7 +786,7 @@ export default function LogosManager() {
 
           {/* Grilla de Logos */}
           {loading ? (
-            <div className="flex justify-center items-center py-20 bg-white rounded-2xl border border-gray-150 shadow-sm">
+            <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm">
               <Loader2 className="animate-spin text-primary" size={32} />
             </div>
           ) : filteredLogos.length > 0 ? (
@@ -814,10 +814,10 @@ export default function LogosManager() {
                 return (
                   <div 
                     key={logo.id} 
-                    className="group bg-white rounded-2xl border border-gray-150 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
+                    className="group bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
                   >
                     {/* Visual Container */}
-                    <div className="h-44 bg-gray-50 flex items-center justify-center p-6 border-b border-gray-100 relative overflow-hidden">
+                    <div className="h-44 bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-6 border-b border-gray-100 dark:border-white/5 relative overflow-hidden">
                       {isRenderable ? (
                         <img 
                           src={publicUrl} 
@@ -837,7 +837,7 @@ export default function LogosManager() {
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => copyToClipboard(logo.storage_path, logo.id)}
-                          className="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                          className="bg-white dark:bg-slate-900 hover:bg-gray-100 text-gray-800 dark:text-gray-100 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold cursor-pointer"
                           title="Copiar Enlace público"
                         >
                           {copiedId === logo.id ? (
@@ -851,7 +851,7 @@ export default function LogosManager() {
                         {logo.format.toLowerCase() === 'svg' && (
                           <button
                             onClick={() => loadSvgForEditing(logo)}
-                            className="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                            className="bg-white dark:bg-slate-900 hover:bg-gray-100 text-gray-800 dark:text-gray-100 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold cursor-pointer"
                             title="Editar colores del SVG"
                           >
                             <Palette size={16} className="text-primary" />
@@ -863,7 +863,7 @@ export default function LogosManager() {
                           href={publicUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold"
+                          className="bg-white dark:bg-slate-900 hover:bg-gray-100 text-gray-800 dark:text-gray-100 p-2 rounded-xl shadow-sm transition-transform hover:scale-105 flex items-center gap-1 text-xs font-semibold"
                         >
                           <ExternalLink size={16} />
                           <span>Ver</span>
@@ -877,7 +877,7 @@ export default function LogosManager() {
                         {/* Title / Ministry Owner */}
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <FolderHeart size={14} className="text-gold flex-shrink-0" />
-                          <span className="font-serif font-bold text-gray-800 text-sm truncate">
+                          <span className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm truncate">
                             {logo.ministries?.name || 'Iglesia General'}
                           </span>
                         </div>
@@ -890,7 +890,7 @@ export default function LogosManager() {
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-100">
                             {colorModeLabels[logo.color_mode]}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-gray-100 text-gray-600">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-gray-100 text-gray-600 dark:text-gray-400">
                             {logo.format}
                           </span>
                         </div>
@@ -918,9 +918,9 @@ export default function LogosManager() {
               })}
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
               <ImageIcon className="mx-auto text-gray-300 mb-4" size={48} />
-              <h3 className="text-lg font-serif font-bold text-gray-700">No se encontraron logos</h3>
+              <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No se encontraron logos</h3>
               <p className="text-gray-400 text-sm mt-1">Sube el primer logo o ajusta los filtros de búsqueda.</p>
             </div>
           )}
@@ -930,10 +930,10 @@ export default function LogosManager() {
       {/* MODAL DEL EDITOR SVG INTELIGENTE */}
       {editingLogo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white w-full max-w-5xl rounded-3xl border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scaleIn">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scaleIn">
             
             {/* Cabecera del Modal */}
-            <div className="p-5 border-b border-gray-150 flex items-center justify-between bg-primary text-white">
+            <div className="p-5 border-b border-gray-150 dark:border-white/10 flex items-center justify-between bg-primary text-white">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Palette size={18} />
@@ -957,7 +957,7 @@ export default function LogosManager() {
 
             {/* Cuerpo del Modal */}
             {fetchingSvg ? (
-              <div className="p-20 flex flex-col items-center justify-center gap-3 text-gray-550">
+              <div className="p-20 flex flex-col items-center justify-center gap-3 text-gray-550 dark:text-gray-400">
                 <Loader2 className="animate-spin text-primary" size={36} />
                 <span className="text-xs font-semibold">Descargando código del logo SVG...</span>
               </div>
@@ -965,14 +965,14 @@ export default function LogosManager() {
               <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-5 min-h-0">
                 
                 {/* Panel Izquierdo: Previsualización con Fondo de Transparencia */}
-                <div className="lg:col-span-3 bg-gray-100 p-6 flex flex-col items-center justify-center min-h-[300px] border-r border-gray-150 relative overflow-auto">
+                <div className="lg:col-span-3 bg-gray-100 p-6 flex flex-col items-center justify-center min-h-[300px] border-r border-gray-150 dark:border-white/10 relative overflow-auto">
                   <div className="absolute top-4 left-4 bg-black/55 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded select-none z-10">
                     Vista Previa en Tiempo Real
                   </div>
                   
                   {/* Contenedor SVG con cuadrícula checkerboard */}
                   <div 
-                    className="max-w-full max-h-[40vh] lg:max-h-[55vh] aspect-square rounded-2xl border border-gray-200 shadow-inner flex items-center justify-center p-8 overflow-hidden relative"
+                    className="max-w-full max-h-[40vh] lg:max-h-[55vh] aspect-square rounded-2xl border border-gray-200 dark:border-white/10 shadow-inner flex items-center justify-center p-8 overflow-hidden relative"
                     style={{
                       backgroundImage: 'linear-gradient(45deg, #f1f5f9 25%, transparent 25%), linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f1f5f9 75%), linear-gradient(-45deg, transparent 75%, #f1f5f9 75%)',
                       backgroundSize: '16px 16px',
@@ -992,11 +992,11 @@ export default function LogosManager() {
                 </div>
 
                 {/* Panel Derecho: Controles del Editor */}
-                <div className="lg:col-span-2 p-6 overflow-y-auto space-y-6 flex flex-col justify-between h-full min-h-0 bg-slate-50">
+                <div className="lg:col-span-2 p-6 overflow-y-auto space-y-6 flex flex-col justify-between h-full min-h-0 bg-slate-50 dark:bg-slate-950">
                   <div className="space-y-5">
                     
                     {/* Selectores de Pestañas (Sólido vs Degradado) */}
-                    <div className="flex border-b border-gray-200">
+                    <div className="flex border-b border-gray-200 dark:border-white/10">
                       <button
                         type="button"
                         onClick={() => setEditorTab('solid')}
@@ -1062,13 +1062,13 @@ export default function LogosManager() {
                             ) : (
                               <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
                                 {detectedColors.map((color, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white border border-gray-150 rounded-xl shadow-2xs">
+                                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl shadow-2xs">
                                     <div className="flex items-center gap-2">
                                       <div 
-                                        className="w-5 h-5 rounded-md border border-gray-200 flex-shrink-0"
+                                        className="w-5 h-5 rounded-md border border-gray-200 dark:border-white/10 flex-shrink-0"
                                         style={{ backgroundColor: color }}
                                       />
-                                      <span className="text-xs font-mono font-semibold text-gray-600">{color}</span>
+                                      <span className="text-xs font-mono font-semibold text-gray-600 dark:text-gray-400">{color}</span>
                                     </div>
                                     <span className="text-gray-300">→</span>
                                     <div className="flex items-center gap-2">
@@ -1076,13 +1076,13 @@ export default function LogosManager() {
                                         type="color" 
                                         value={colorReplacements[color] || color}
                                         onChange={(e) => handleColorChange(color, e.target.value)}
-                                        className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0 bg-transparent"
+                                        className="w-8 h-8 rounded border border-gray-200 dark:border-white/10 cursor-pointer p-0 bg-transparent"
                                       />
                                       <input 
                                         type="text" 
                                         value={colorReplacements[color] || color}
                                         onChange={(e) => handleColorChange(color, e.target.value)}
-                                        className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-700"
+                                        className="w-20 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-700 dark:text-gray-300"
                                       />
                                     </div>
                                   </div>
@@ -1097,46 +1097,46 @@ export default function LogosManager() {
                         <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuración de Degradado</label>
                         
                         {/* Selector de Color de Inicio */}
-                        <div className="flex items-center justify-between p-3 bg-white border border-gray-150 rounded-xl shadow-2xs">
-                          <span className="text-xs font-bold text-gray-600">Color Inicial:</span>
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl shadow-2xs">
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Color Inicial:</span>
                           <div className="flex items-center gap-2">
                             <input 
                               type="color" 
                               value={gradStartColor}
                               onChange={(e) => setGradStartColor(e.target.value)}
-                              className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0 bg-transparent"
+                              className="w-8 h-8 rounded border border-gray-200 dark:border-white/10 cursor-pointer p-0 bg-transparent"
                             />
                             <input 
                               type="text" 
                               value={gradStartColor}
                               onChange={(e) => setGradStartColor(e.target.value)}
-                              className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-750 font-bold"
+                              className="w-20 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-750 font-bold"
                             />
                           </div>
                         </div>
 
                         {/* Selector de Color de Fin */}
-                        <div className="flex items-center justify-between p-3 bg-white border border-gray-150 rounded-xl shadow-2xs">
-                          <span className="text-xs font-bold text-gray-600">Color Final:</span>
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl shadow-2xs">
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Color Final:</span>
                           <div className="flex items-center gap-2">
                             <input 
                               type="color" 
                               value={gradEndColor}
                               onChange={(e) => setGradEndColor(e.target.value)}
-                              className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0 bg-transparent"
+                              className="w-8 h-8 rounded border border-gray-200 dark:border-white/10 cursor-pointer p-0 bg-transparent"
                             />
                             <input 
                               type="text" 
                               value={gradEndColor}
                               onChange={(e) => setGradEndColor(e.target.value)}
-                              className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-750 font-bold"
+                              className="w-20 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-mono uppercase focus:outline-none text-gray-750 font-bold"
                             />
                           </div>
                         </div>
 
                         {/* Slider de Ángulo */}
-                        <div className="p-3 bg-white border border-gray-150 rounded-xl shadow-2xs space-y-2">
-                          <div className="flex justify-between text-xs font-bold text-gray-600">
+                        <div className="p-3 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl shadow-2xs space-y-2">
+                          <div className="flex justify-between text-xs font-bold text-gray-600 dark:text-gray-400">
                             <span>Ángulo del Degradado:</span>
                             <span className="font-mono text-primary">{gradAngle}°</span>
                           </div>
@@ -1159,11 +1159,11 @@ export default function LogosManager() {
 
             {/* Pie del Modal */}
             {!fetchingSvg && (
-              <div className="p-5 bg-gray-50 border-t border-gray-150 flex flex-wrap justify-between items-center gap-3">
+              <div className="p-5 bg-gray-50 dark:bg-slate-950 border-t border-gray-150 dark:border-white/10 flex flex-wrap justify-between items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setEditingLogo(null)}
-                  className="px-4 py-2 hover:bg-gray-100 border border-gray-250 rounded-xl text-xs font-semibold text-gray-500 cursor-pointer"
+                  className="px-4 py-2 hover:bg-gray-100 border border-gray-250 rounded-xl text-xs font-semibold text-gray-500 dark:text-gray-450 cursor-pointer"
                   disabled={savingChanges}
                 >
                   Cerrar
@@ -1173,7 +1173,7 @@ export default function LogosManager() {
                   <button
                     type="button"
                     onClick={handleDownloadEditedSvg}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-bold rounded-xl text-xs shadow-2xs cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 font-bold rounded-xl text-xs shadow-2xs cursor-pointer transition-colors"
                     disabled={savingChanges}
                   >
                     <Download size={14} />

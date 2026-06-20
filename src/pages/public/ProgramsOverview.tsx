@@ -19,7 +19,7 @@ const ProgramsOverview = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/30 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50/30 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
       {/* Hero */}
       <div className="bg-gradient-to-r from-indigo-800 to-indigo-900 text-white py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
@@ -52,22 +52,22 @@ const ProgramsOverview = () => {
                 transition={{ delay: i * 0.08 }}
               >
                 <Link to={`/programas/${program.id}`} className="block group">
-                  <div className="bg-white dark:bg-slate-900 border border-gray-200 rounded-2xl overflow-hidden hover:border-indigo-300 hover:shadow-lg transition-all">
+                  <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-lg transition-all">
                     {/* Cover Image */}
                     {program.cover_image ? (
                       <img src={program.cover_image} alt={program.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-44 bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center">
-                        <BookOpen size={48} className="text-indigo-300" />
+                      <div className="w-full h-44 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-950 dark:to-indigo-900/50 flex items-center justify-center">
+                        <BookOpen size={48} className="text-indigo-300 dark:text-indigo-700" />
                       </div>
                     )}
 
                     <div className="p-5">
-                      <h3 className="font-serif font-bold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors line-clamp-2">{program.title}</h3>
+                      <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-450 transition-colors line-clamp-2">{program.title}</h3>
                       {program.description && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-3">{program.description}</p>
                       )}
-                      <div className="flex items-center gap-1 text-indigo-600 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
+                      <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
                         Ver programa <ArrowRight size={14} />
                       </div>
                     </div>

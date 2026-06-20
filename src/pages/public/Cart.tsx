@@ -176,11 +176,11 @@ const Cart = () => {
   if (orderCompleted) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 text-green-600 rounded-full mb-6">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full mb-6">
           <CheckCircle2 size={48} />
         </div>
-        <h1 className="text-3xl font-serif font-bold text-gray-800 mb-3">¡Pedido Recibido!</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
+        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mb-3">¡Pedido Recibido!</h1>
+        <p className="text-gray-550 dark:text-gray-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
           Gracias por tu compra. Tu orden <span className="font-mono font-bold text-primary dark:text-white">#{orderCompleted.slice(0, 8).toUpperCase()}</span> ha sido registrada exitosamente. 
           {paymentMethod === 'transfer' 
             ? ' Un administrador verificará tu comprobante y autorizará el despacho.'
@@ -189,13 +189,13 @@ const Cart = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/mis-compras"
-            className="px-6 py-3 bg-primary hover:bg-blue-900 text-white rounded-xl font-semibold shadow-md transition-all text-sm"
+            className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-semibold shadow-md transition-all text-sm"
           >
             Ver mis Compras
           </Link>
           <Link
             to="/tienda"
-            className="px-6 py-3 bg-white dark:bg-slate-900 border border-gray-250 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all text-sm"
+            className="px-6 py-3 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all text-sm"
           >
             Seguir Comprando
           </Link>
@@ -207,16 +207,16 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 text-gray-300 rounded-full mb-6">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 dark:bg-slate-800 text-gray-300 dark:text-gray-600 rounded-full mb-6">
           <ShoppingBag size={40} />
         </div>
-        <h1 className="text-2xl font-serif font-bold text-gray-800 mb-2">Tu carrito está vacío</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm">
+        <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-white mb-2">Tu carrito está vacío</h1>
+        <p className="text-gray-550 dark:text-gray-400 mb-8 text-sm">
           Aún no has agregado recursos o materiales de estudio a tu carrito.
         </p>
         <Link
           to="/tienda"
-          className="px-6 py-3 bg-primary text-white rounded-xl font-medium shadow-md hover:bg-blue-900 transition-all text-sm inline-flex items-center gap-2"
+          className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl font-medium shadow-md hover:bg-blue-900 transition-all text-sm inline-flex items-center gap-2"
         >
           Explorar Tienda
           <ArrowRight size={16} />
@@ -234,7 +234,7 @@ const Cart = () => {
       {/* Indicador de Pasos / Stepper */}
       <div className="max-w-xl mx-auto mb-10">
         <div className="flex justify-between items-center relative">
-          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-150 -translate-y-1/2 z-0" />
+          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-150 dark:bg-slate-800 -translate-y-1/2 z-0" />
           {[
             { n: 1, name: 'Carrito' },
             { n: 2, name: 'Entrega' },
@@ -247,12 +247,12 @@ const Cart = () => {
                     ? 'bg-primary text-white border-primary shadow-md' 
                     : step > s.n 
                     ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                    : 'bg-white dark:bg-slate-900 text-gray-400 border-gray-200'
+                    : 'bg-white dark:bg-slate-900 text-gray-405 border-gray-200 dark:border-slate-700'
                 }`}
               >
                 {step > s.n ? <Check size={16} /> : s.n}
               </div>
-              <span className={`text-[11px] font-bold mt-1.5 transition-colors ${step === s.n ? 'text-primary dark:text-white' : 'text-gray-400'}`}>
+              <span className={`text-[11px] font-bold mt-1.5 transition-colors ${step === s.n ? 'text-primary dark:text-white' : 'text-gray-450'}`}>
                 {s.name}
               </span>
             </div>
@@ -264,12 +264,12 @@ const Cart = () => {
         <button 
           onClick={handleBackStep} 
           disabled={step === 1}
-          className="text-primary dark:text-white hover:text-blue-900 flex items-center gap-1 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
+          className="text-primary dark:text-blue-400 dark:hover:text-blue-300 hover:text-blue-900 flex items-center gap-1 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronLeft size={16} />
           Paso anterior
         </button>
-        <h1 className="text-3xl font-serif font-bold text-gray-800 mt-3">
+        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mt-3">
           {step === 1 ? 'Revisión del Carrito' : step === 2 ? 'Datos de Contacto' : 'Detalles de Pago'}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Tienes {getTotalItems()} artículos en tu carrito.</p>
@@ -285,9 +285,9 @@ const Cart = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 space-y-4 shadow-2xs"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-4 shadow-2xs"
               >
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-100 dark:divide-white/5">
                   {items.map((item) => {
                     const price = Number(item.product.price) + (item.variant?.price_adjustment ? Number(item.variant.price_adjustment) : 0);
                     const itemKey = item.variant ? `${item.product.id}-${item.variant.id}` : item.product.id;
@@ -300,18 +300,18 @@ const Cart = () => {
                           <img
                             src={item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'}
                             alt={item.product.name}
-                            className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-2xs"
+                            className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-white/10 shadow-2xs"
                           />
                           <div>
-                            <h3 className="font-serif font-bold text-gray-800 text-sm md:text-base">
+                            <h3 className="font-serif font-bold text-gray-800 dark:text-white text-sm md:text-base">
                               {item.product.name}
                             </h3>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
-                              <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded border border-gray-150">
+                              <span className="text-[10px] text-gray-400 font-bold bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-150 dark:border-white/10">
                                 {item.product.category}
                               </span>
                               {item.variant && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                <span className="text-xs text-gray-550 dark:text-gray-400 font-medium">
                                   {item.variant.color_name ? `${item.variant.color_name} ` : ''}{item.variant.size ? `[Talla ${item.variant.size}]` : ''}
                                 </span>
                               )}
@@ -321,38 +321,38 @@ const Cart = () => {
 
                         <div className="flex items-center justify-between w-full sm:w-auto gap-6 mt-4 sm:mt-0">
                           {item.product.type !== 'digital' ? (
-                            <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50">
+                            <div className="flex items-center border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
                               <button
                                 onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity - 1)}
-                                className="px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:text-primary dark:text-white font-bold text-sm"
+                                className="px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-white font-bold text-sm"
                               >
                                 -
                               </button>
-                              <span className="px-3 py-1 text-gray-800 font-medium text-xs">
+                              <span className="px-3 py-1 text-gray-800 dark:text-white font-medium text-xs">
                                 {item.quantity}
                               </span>
                               <button
                                 onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity + 1)}
-                                className="px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:text-primary dark:text-white font-bold text-sm"
+                                className="px-2.5 py-1 text-gray-550 dark:text-gray-400 hover:text-primary dark:hover:text-white font-bold text-sm"
                               >
                                 +
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200/50">
+                            <span className="text-xs font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-2.5 py-1 rounded-md border border-purple-200/50 dark:border-purple-900/30">
                               Acceso Digital
                             </span>
                           )}
 
                           <div className="text-right flex items-center gap-4">
                             <div>
-                              <span className="text-sm font-bold text-gray-800">
+                              <span className="text-sm font-bold text-gray-800 dark:text-white">
                                 ${(price * item.quantity).toFixed(2)}
                               </span>
                             </div>
                             <button
                               onClick={() => removeItem(item.product.id, item.variant?.id)}
-                              className="text-gray-400 hover:text-accent-red p-1 rounded-lg hover:bg-red-50 transition-colors"
+                              className="text-gray-400 hover:text-accent-red p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -363,10 +363,10 @@ const Cart = () => {
                   })}
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 flex justify-end">
+                <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
                   <button
                     onClick={handleNextStep}
-                    className="px-6 py-3 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
+                    className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
                   >
                     Datos de Entrega
                     <ArrowRight size={16} />
@@ -381,16 +381,16 @@ const Cart = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 space-y-6 shadow-2xs"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
               >
-                <h2 className="text-xl font-serif font-bold text-gray-800 pb-2 border-b border-gray-100 flex items-center gap-2">
+                <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
                   <Ticket size={20} className="text-primary dark:text-white" />
                   Información del Cliente
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre Completo</label>
+                    <label htmlFor="name" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Nombre Completo</label>
                     <input
                       id="name"
                       type="text"
@@ -399,12 +399,12 @@ const Cart = () => {
                       autoComplete="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                       placeholder="Ej. Juan Pérez"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
+                    <label htmlFor="email" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
                     <input
                       id="email"
                       type="email"
@@ -413,7 +413,7 @@ const Cart = () => {
                       autoComplete="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                       placeholder="Ej. juan@correo.com"
                     />
                   </div>
@@ -421,7 +421,7 @@ const Cart = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="phone" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Teléfono</label>
+                    <label htmlFor="phone" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Teléfono</label>
                     <input
                       id="phone"
                       type="tel"
@@ -430,19 +430,19 @@ const Cart = () => {
                       autoComplete="tel"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                       placeholder="Ej. 0991234567"
                     />
                   </div>
                   <div>
-                    <label htmlFor="delivery" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Método de Entrega</label>
+                    <label htmlFor="delivery" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Método de Entrega</label>
                     <select
                       id="delivery"
                       name="delivery"
                       autoComplete="shipping"
                       value={formData.delivery}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                     >
                       <option value="pickup">Retirar en el Templo (Gratis)</option>
                       <option value="shipping">Envío a Domicilio (+$5.00)</option>
@@ -453,7 +453,7 @@ const Cart = () => {
                 {formData.delivery === 'shipping' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                     <div className="md:col-span-2">
-                      <label htmlFor="address" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Dirección de Entrega</label>
+                      <label htmlFor="address" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Dirección de Entrega</label>
                       <input
                         id="address"
                         type="text"
@@ -462,12 +462,12 @@ const Cart = () => {
                         autoComplete="street-address"
                         value={formData.address}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                         placeholder="Ej. Calle Principal 123 y Av. Intermedia"
                       />
                     </div>
                     <div>
-                      <label htmlFor="city" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ciudad</label>
+                      <label htmlFor="city" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Ciudad</label>
                       <input
                         id="city"
                         type="text"
@@ -476,17 +476,17 @@ const Cart = () => {
                         autoComplete="address-level2"
                         value={formData.city}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
+                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                         placeholder="Ej. Guayaquil"
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="pt-4 border-t border-gray-100 flex justify-end">
+                <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
                   <button
                     onClick={handleNextStep}
-                    className="px-6 py-3 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
+                    className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
                   >
                     Seleccionar Pago
                     <ArrowRight size={16} />
@@ -501,9 +501,9 @@ const Cart = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 space-y-6 shadow-2xs"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
               >
-                <h2 className="text-xl font-serif font-bold text-gray-800 pb-2 border-b border-gray-100 flex items-center gap-2">
+                <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
                   <CreditCard size={20} className="text-primary dark:text-white" />
                   Método de Pago
                 </h2>
@@ -512,56 +512,56 @@ const Cart = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => { setPaymentMethod('card'); setError(null); }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                       paymentMethod === 'card'
-                        ? 'border-primary bg-blue-50/30'
-                        : 'border-gray-250 hover:bg-slate-50'
+                        ? 'border-primary bg-blue-50/30 dark:bg-blue-950/20'
+                        : 'border-gray-250 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <CreditCard className={paymentMethod === 'card' ? 'text-primary dark:text-white' : 'text-gray-400'} size={20} />
+                      <CreditCard className={paymentMethod === 'card' ? 'text-primary dark:text-white' : 'text-gray-405'} size={20} />
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        paymentMethod === 'card' ? 'border-primary bg-primary' : 'border-gray-300'
+                        paymentMethod === 'card' ? 'border-primary bg-primary' : 'border-gray-300 dark:border-slate-600'
                       }`}>
                         {paymentMethod === 'card' && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full" />}
                       </div>
                     </div>
-                    <span className="block font-bold text-sm text-gray-800">Tarjeta de Crédito</span>
-                    <span className="text-[11px] text-gray-400">Procesamiento inmediato</span>
+                    <span className="block font-bold text-sm text-gray-800 dark:text-white">Tarjeta de Crédito</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Procesamiento inmediato</span>
                   </button>
 
                   <button
                     onClick={() => { setPaymentMethod('transfer'); setError(null); }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                       paymentMethod === 'transfer'
-                        ? 'border-primary bg-blue-50/30'
-                        : 'border-gray-250 hover:bg-slate-50'
+                        ? 'border-primary bg-blue-50/30 dark:bg-blue-950/20'
+                        : 'border-gray-250 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <Building2 className={paymentMethod === 'transfer' ? 'text-primary dark:text-white' : 'text-gray-400'} size={20} />
+                      <Building2 className={paymentMethod === 'transfer' ? 'text-primary dark:text-white' : 'text-gray-405'} size={20} />
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        paymentMethod === 'transfer' ? 'border-primary bg-primary' : 'border-gray-300'
+                        paymentMethod === 'transfer' ? 'border-primary bg-primary' : 'border-gray-300 dark:border-slate-600'
                       }`}>
                         {paymentMethod === 'transfer' && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full" />}
                       </div>
                     </div>
-                    <span className="block font-bold text-sm text-gray-800">Transferencia / Depósito</span>
-                    <span className="text-[11px] text-gray-400">Verificación manual (12-24h)</span>
+                    <span className="block font-bold text-sm text-gray-800 dark:text-white">Transferencia / Depósito</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Verificación manual (12-24h)</span>
                   </button>
                 </div>
 
                 {/* Contenido según método de pago */}
                 {paymentMethod === 'card' ? (
-                  <div className="space-y-4 pt-4 border-t border-gray-100">
-                    <p className="text-gray-400 text-xs flex items-center gap-1 bg-slate-50 p-2.5 rounded-lg">
-                      <Info size={14} className="text-primary dark:text-white shrink-0" />
+                  <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                    <p className="text-gray-450 dark:text-gray-400 text-xs flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg">
+                      <Info size={14} className="text-primary dark:text-blue-400 shrink-0" />
                       Demostración: Usa números de tarjeta ficticios para simular la compra.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="cardName" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre en Tarjeta</label>
+                        <label htmlFor="cardName" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Nombre en Tarjeta</label>
                         <input
                           id="cardName"
                           type="text"
@@ -570,12 +570,12 @@ const Cart = () => {
                           autoComplete="cc-name"
                           value={formData.cardName}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                           placeholder="Ej. JUAN PEREZ"
                         />
                       </div>
                       <div>
-                        <label htmlFor="cardNumber" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Número de Tarjeta</label>
+                        <label htmlFor="cardNumber" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Número de Tarjeta</label>
                         <input
                           id="cardNumber"
                           type="text"
@@ -585,7 +585,7 @@ const Cart = () => {
                           maxLength={19}
                           value={formData.cardNumber}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                           placeholder="4000 1234 5678 9010"
                         />
                       </div>
@@ -593,7 +593,7 @@ const Cart = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="cardExpiry" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Expiración (MM/AA)</label>
+                        <label htmlFor="cardExpiry" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Expiración (MM/AA)</label>
                         <input
                           id="cardExpiry"
                           type="text"
@@ -603,12 +603,12 @@ const Cart = () => {
                           maxLength={5}
                           value={formData.cardExpiry}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                           placeholder="12/28"
                         />
                       </div>
                       <div>
-                        <label htmlFor="cardCvv" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">CVV</label>
+                        <label htmlFor="cardCvv" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">CVV</label>
                         <input
                           id="cardCvv"
                           type="password"
@@ -618,42 +618,42 @@ const Cart = () => {
                           maxLength={3}
                           value={formData.cardCvv}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                           placeholder="123"
                         />
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4 pt-4 border-t border-gray-100">
-                    <div className="bg-slate-50 p-4 rounded-xl border border-gray-150 space-y-3">
-                      <h4 className="font-bold text-sm text-gray-800">Cuentas Bancarias de la Iglesia:</h4>
+                  <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-150 dark:border-white/10 space-y-3">
+                      <h4 className="font-bold text-sm text-gray-800 dark:text-white">Cuentas Bancarias de la Iglesia:</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100">
+                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
                           <p className="font-bold text-primary dark:text-white">Banco Pichincha</p>
                           <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Ahorros</p>
-                          <p className="font-mono font-semibold text-gray-700">#2201234567</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Iglesia Jerusalén</p>
+                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#2201234567</p>
+                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
                         </div>
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100">
+                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
                           <p className="font-bold text-primary dark:text-white">Banco Guayaquil</p>
                           <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Corriente</p>
-                          <p className="font-mono font-semibold text-gray-700">#10987654</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Iglesia Jerusalén</p>
+                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#10987654</p>
+                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
                         </div>
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100">
+                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
                           <p className="font-bold text-primary dark:text-white">Produbanco</p>
                           <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Ahorros</p>
-                          <p className="font-mono font-semibold text-gray-700">#0345678912</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Iglesia Jerusalén</p>
+                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#0345678912</p>
+                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label id="voucher-label" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Subir Foto de Comprobante</label>
+                      <label id="voucher-label" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Subir Foto de Comprobante</label>
                       <div className="flex items-center gap-4">
-                        <label htmlFor="voucherFile" className="flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-gray-250 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors relative">
+                        <label htmlFor="voucherFile" className="flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-gray-250 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors relative">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
                             {uploadingVoucher ? (
                               <>
@@ -663,7 +663,7 @@ const Cart = () => {
                             ) : voucherUrl ? (
                               <>
                                 <CheckCircle2 className="text-green-600 mb-2 animate-bounce" size={24} />
-                                <p className="text-xs font-bold text-green-700">¡Subido con éxito!</p>
+                                <p className="text-xs font-bold text-green-700 dark:text-green-400">¡Subido con éxito!</p>
                                 <p className="text-[10px] mt-0.5 text-gray-400 truncate max-w-[200px]">{voucherFile?.name}</p>
                               </>
                             ) : (
@@ -686,7 +686,7 @@ const Cart = () => {
                         </label>
                         
                         {voucherUrl && (
-                          <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 shadow-2xs relative shrink-0">
+                          <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-2xs relative shrink-0">
                             <img src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />
                           </div>
                         )}
@@ -701,8 +701,8 @@ const Cart = () => {
 
         {/* Lado Derecho: Resumen de Compra Fijo */}
         <div className="lg:col-span-4 lg:sticky lg:top-24">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 space-y-6 shadow-2xs">
-            <h2 className="text-xl font-serif font-bold text-gray-800 pb-2 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs">
+            <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10">
               Resumen del Pedido
             </h2>
 
@@ -715,18 +715,18 @@ const Cart = () => {
                 <span>Entrega ({formData.delivery === 'pickup' ? 'Retiro' : 'Envío'})</span>
                 <span>{shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 pb-3 border-b border-gray-100">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 pb-3 border-b border-gray-100 dark:border-white/10">
                 <span>Impuesto / Transacción</span>
                 <span>Gratis</span>
               </div>
-              <div className="flex justify-between text-base font-bold text-gray-800 pt-1">
+              <div className="flex justify-between text-base font-bold text-gray-800 dark:text-white pt-1">
                 <span>Total Final</span>
                 <span className="text-primary dark:text-white text-xl font-extrabold">${total.toFixed(2)}</span>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 text-accent-red p-3 rounded-xl text-xs font-semibold border border-red-200 flex items-start gap-1.5">
+              <div className="bg-red-50 dark:bg-red-950/20 text-accent-red dark:text-red-400 p-3 rounded-xl text-xs font-semibold border border-red-200 dark:border-red-900/30 flex items-start gap-1.5">
                 <AlertCircle size={14} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -736,7 +736,7 @@ const Cart = () => {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="w-full py-3.5 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                className="w-full py-3.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
               >
                 Continuar
                 <ArrowRight size={16} />
@@ -746,7 +746,7 @@ const Cart = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || uploadingVoucher}
-                className="w-full py-3.5 bg-primary hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                className="w-full py-3.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
               >
                 {loading ? (
                   <Loader2 className="animate-spin h-5 w-5" />

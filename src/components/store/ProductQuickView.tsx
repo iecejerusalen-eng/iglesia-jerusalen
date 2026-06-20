@@ -178,7 +178,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                       key={idx}
                       onClick={() => setActiveImage(imgUrl)}
                       className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                        displayImage === imgUrl ? 'border-primary scale-95 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'
+                        displayImage === imgUrl ? 'border-primary dark:border-blue-500 scale-95 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'
                       }`}
                     >
                       <img src={imgUrl} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
@@ -194,7 +194,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
               {/* Header Info */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2 pr-12">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200/50">
+                  <span className="text-sm font-bold uppercase tracking-wider text-primary dark:text-blue-300 bg-blue-50 dark:bg-blue-950/20 px-2.5 py-1 rounded-md border border-blue-200/50 dark:border-blue-900/30">
                     {product.category}
                   </span>
 
@@ -245,10 +245,10 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                               key={col.id}
                               onClick={() => setSelectedColor(col.color_name)}
                               className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 focus-visible:outline-none ${
-                                selectedColor === col.color_name
-                                  ? 'bg-blue-50 dark:bg-blue-900/30 border-primary text-primary dark:text-white shadow-sm font-bold'
-                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                              }`}
+                                  selectedColor === col.color_name
+                                    ? 'bg-blue-50 dark:bg-blue-950/30 border-primary dark:border-blue-500 text-primary dark:text-white shadow-sm font-bold'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
                             >
                               <span 
                                 className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shrink-0" 
@@ -271,10 +271,10 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                               key={size}
                               onClick={() => setSelectedSize(size)}
                               className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all focus-visible:outline-none ${
-                                selectedSize === size
-                                  ? 'bg-primary text-white border-primary shadow-xs'
-                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                              }`}
+                                  selectedSize === size
+                                    ? 'bg-primary dark:bg-blue-650 text-white border-primary dark:border-blue-650 shadow-xs font-bold'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
                             >
                               {size}
                             </button>
@@ -338,7 +338,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                             ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none border border-slate-200 dark:border-white/5'
                             : added
                             ? 'bg-green-600 text-white shadow-green-150'
-                            : 'bg-primary hover:bg-blue-900 text-white shadow-blue-150 hover:shadow-lg'
+                            : 'bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white shadow-blue-150 hover:shadow-lg'
                         }`}
                       >
                         {finalStock <= 0 ? (
@@ -377,7 +377,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                 </div>
 
                 {/* Mobile Navigation Arrows */}
-                <div className="flex justify-between items-center md:hidden pt-4 border-t border-slate-200/50">
+                <div className="flex justify-between items-center md:hidden pt-4 border-t border-slate-200/50 dark:border-white/10">
                    {onPrev ? (
                     <button onClick={onPrev} className="text-primary dark:text-white flex items-center gap-1 text-xs font-bold px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
                       <ChevronLeft size={16} /> Anterior

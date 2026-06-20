@@ -55,9 +55,9 @@ export default function MinistryDashboard() {
 
   if (!ministry) {
     return (
-      <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-150">
+      <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10">
         <ShieldAlert size={48} className="mx-auto text-red-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-800">Ministerio no encontrado</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Ministerio no encontrado</h2>
         <Link to="/admin/ministerios" className="text-primary hover:underline mt-2 inline-block">Volver</Link>
       </div>
     );
@@ -75,21 +75,21 @@ export default function MinistryDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/admin/ministerios" className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 transition-colors">
+        <Link to="/admin/ministerios" className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 transition-colors">
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-800 flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             {ministry.name}
-            {!canEdit && <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full uppercase tracking-wider font-semibold border border-gray-200">Solo Lectura</span>}
+            {!canEdit && <span className="bg-gray-100 text-gray-500 dark:text-gray-450 text-xs px-2 py-1 rounded-full uppercase tracking-wider font-semibold border border-gray-200 dark:border-white/10">Solo Lectura</span>}
           </h1>
-          <p className="text-sm text-gray-500">Panel de control del ministerio/departamento</p>
+          <p className="text-sm text-gray-500 dark:text-gray-450">Panel de control del ministerio/departamento</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-150 shadow-sm overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-gray-150 scrollbar-hide">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
+        <div className="flex overflow-x-auto border-b border-gray-150 dark:border-white/10 scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -108,8 +108,8 @@ export default function MinistryDashboard() {
 
         <div className="p-6">
           {activeTab === 'detalles' && (
-            <div className="text-gray-600">
-              <h3 className="font-bold text-lg mb-4 text-gray-800">Detalles del Ministerio</h3>
+            <div className="text-gray-600 dark:text-gray-400">
+              <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-gray-100">Detalles del Ministerio</h3>
               <p>Aquí se mostraría la vista de edición o detalles generales del ministerio.</p>
               {/* Could embed the MinistryManager form or a summary here */}
             </div>

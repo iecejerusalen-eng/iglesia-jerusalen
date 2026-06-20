@@ -4,6 +4,7 @@ import Navigation from '../components/common/Navigation';
 import Footer from '../components/common/Footer';
 import Preloader from '../components/public/Preloader';
 import StickyNav from '../components/public/StickyNav';
+import MobileBottomNav from '../components/common/MobileBottomNav';
 
 const PublicLayout = () => {
   return (
@@ -12,10 +13,11 @@ const PublicLayout = () => {
       <StickyNav />
       <TopBar />
       <Navigation />
-      <main className="flex-grow">
+      <main className="flex-grow pb-16 md:pb-0">
         <Outlet />
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

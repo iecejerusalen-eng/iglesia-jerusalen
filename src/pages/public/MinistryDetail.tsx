@@ -97,16 +97,16 @@ const MinistryDetail = () => {
   if (error || !ministry) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mx-auto">
           <AlertCircle size={32} />
         </div>
         <h2 className="font-serif font-bold text-3xl text-primary dark:text-white">Ministerio No Encontrado</h2>
-        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+        <p className="text-gray-550 dark:text-gray-400 max-w-md mx-auto">
           Lo sentimos, el ministerio que buscas no existe o ha sido modificado.
         </p>
         <Link 
           to="/ministerios"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs"
         >
           <ArrowLeft size={16} />
           Volver a Ministerios
@@ -251,10 +251,10 @@ const MinistryDetail = () => {
           {loadingMembers ? (
             <div className="text-center py-12">
               <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 font-medium">Cargando directorio de miembros...</p>
+              <p className="text-gray-550 dark:text-gray-400 text-xs mt-2 font-medium">Cargando directorio de miembros...</p>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+            <div className="text-center py-12 bg-gray-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
               <p className="text-gray-400 text-sm font-medium">No se encontraron miembros con ese nombre.</p>
             </div>
           ) : (
@@ -313,15 +313,15 @@ const MinistryDetail = () => {
 
       {/* SECCIÓN IDENTIDAD VISUAL / LOGOS */}
       {logos && logos.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 p-8 md:p-12 shadow-xs space-y-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-850 p-8 md:p-12 shadow-xs space-y-6">
           <div>
             <h2 
               style={{ color: ministry.theme_color || '#1E3A8A' }}
-              className="text-2xl font-serif font-bold border-b border-gray-100 pb-4"
+              className="text-2xl font-serif font-bold border-b border-gray-100 dark:border-slate-800 pb-4"
             >
               Nuestros Logos
             </h2>
-            <p className="text-gray-550 text-xs mt-2 font-medium">
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 font-medium">
               Recursos gráficos oficiales de {ministry.name} para comunicados, flyers y material de difusión.
             </p>
           </div>
@@ -346,8 +346,8 @@ const MinistryDetail = () => {
               };
 
               return (
-                <div key={logo.id} className="border border-gray-100 rounded-2xl overflow-hidden bg-gray-50 flex flex-col items-center justify-between p-4 group hover:shadow-md transition-shadow relative">
-                  <div className="h-32 w-full flex items-center justify-center bg-gray-100 rounded-xl p-4 overflow-hidden">
+                <div key={logo.id} className="border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-gray-50 dark:bg-slate-900/50 flex flex-col items-center justify-between p-4 group hover:shadow-md transition-shadow relative">
+                  <div className="h-32 w-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-xl p-4 overflow-hidden">
                     {isRenderable ? (
                       <img 
                         src={publicUrl} 
@@ -364,13 +364,13 @@ const MinistryDetail = () => {
 
                   <div className="mt-4 w-full space-y-2 text-center sm:text-left">
                     <div className="flex flex-wrap gap-1 justify-center sm:justify-start">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[9px] font-bold uppercase tracking-wider">
                         {variantLabels[logo.variant]}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-[9px] font-bold uppercase tracking-wider">
                         {colorModeLabels[logo.color_mode]}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 dark:text-gray-300 text-[9px] font-mono font-bold uppercase">
+                      <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[9px] font-mono font-bold uppercase">
                         {logo.format}
                       </span>
                     </div>

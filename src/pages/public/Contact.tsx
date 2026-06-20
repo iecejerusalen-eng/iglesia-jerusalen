@@ -238,7 +238,7 @@ const Contact = () => {
             </p>
             <button
               onClick={() => setSuccess(false)}
-              className="mt-4 px-6 py-2.5 bg-primary hover:bg-blue-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer border border-transparent"
+              className="mt-4 px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer border border-transparent"
             >
               Enviar otro mensaje
             </button>
@@ -249,7 +249,7 @@ const Contact = () => {
               <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-white">
                 Escríbenos tu Mensaje
               </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400">¿Tienes dudas o necesitas consejería? Déjanos tu mensaje en el buzón.</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">¿Tienes dudas o necesitas consejería? Déjanos tu mensaje en el buzón.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,7 +315,7 @@ const Contact = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 text-accent-red p-3 rounded-xl text-xs flex items-center gap-1.5 border border-red-100">
+              <div className="bg-red-50 dark:bg-red-950/20 text-accent-red dark:text-red-400 p-3 rounded-xl text-xs flex items-center gap-1.5 border border-red-100 dark:border-red-900/30">
                 <AlertCircle size={14} />
                 <span>{error}</span>
               </div>
@@ -324,7 +324,7 @@ const Contact = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-primary hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
+              className="w-full py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
             >
               {loading ? 'Enviando...' : (
                 <>

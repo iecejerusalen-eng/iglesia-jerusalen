@@ -395,7 +395,7 @@ const InventoryManager = () => {
             <Package size={28} className="text-gold" />
             Inventario de Equipos y Herramientas
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Control inteligente y estado de los bienes físicos de la congregación.</p>
+          <p className="text-gray-500 dark:text-gray-450 text-sm mt-1">Control inteligente y estado de los bienes físicos de la congregación.</p>
         </div>
         {!readOnly && (
           <div className="flex gap-2">
@@ -577,10 +577,10 @@ const InventoryManager = () => {
               return (
                 <div
                   key={item.id}
-                  className="group bg-white rounded-2xl border border-gray-150 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col"
+                  className="group bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col"
                 >
                   {/* Photo container */}
-                  <div className="h-44 bg-gray-50 flex items-center justify-center p-6 border-b border-gray-100 relative overflow-hidden">
+                  <div className="h-44 bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-6 border-b border-gray-100 dark:border-white/5 relative overflow-hidden">
                     {item.photo_url ? (
                       <img
                         src={item.photo_url}
@@ -610,7 +610,7 @@ const InventoryManager = () => {
                   </div>
 
                   {/* Details container */}
-                  <div className="p-5 flex-grow flex flex-col justify-between space-y-4 bg-white">
+                  <div className="p-5 flex-grow flex flex-col justify-between space-y-4 bg-white dark:bg-slate-900">
                     <div className="space-y-2.5">
                       {/* Category & Status row */}
                       <div className="flex justify-between items-center gap-2">
@@ -626,7 +626,7 @@ const InventoryManager = () => {
                       </div>
 
                       {/* Name */}
-                      <h3 className="font-serif font-bold text-gray-800 text-base leading-snug group-hover:text-primary transition-colors truncate">
+                      <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base leading-snug group-hover:text-primary transition-colors truncate">
                         {item.name}
                       </h3>
 
@@ -640,7 +640,7 @@ const InventoryManager = () => {
                     <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
                       <div>
                         <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">Precio Unitario</span>
-                        <span className="text-sm font-extrabold text-gray-700 font-mono">
+                        <span className="text-sm font-extrabold text-gray-700 dark:text-gray-300 font-mono">
                           S/. {item.price.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -649,7 +649,7 @@ const InventoryManager = () => {
                         {item.video_url && (
                           <button
                             onClick={() => setPlayingVideoUrl(item.video_url)}
-                            className="p-1.5 rounded-lg border border-gray-150 hover:bg-red-50 text-red-500 hover:border-red-100 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg border border-gray-150 dark:border-white/10 hover:bg-red-50 text-red-500 hover:border-red-100 transition-colors cursor-pointer"
                             title="Ver Video de Demostración"
                           >
                             <Play size={14} className="fill-red-500 text-red-500" />
@@ -661,7 +661,7 @@ const InventoryManager = () => {
                             href={item.product_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg border border-gray-150 hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
+                            className="p-1.5 rounded-lg border border-gray-150 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 transition-colors"
                             title="Ver enlace del producto"
                           >
                             <ExternalLink size={14} />
@@ -670,7 +670,7 @@ const InventoryManager = () => {
                         
                         {item.purchase_date && (
                           <div
-                            className="p-1.5 rounded-lg border border-gray-150 bg-gray-50 text-gray-400 cursor-help flex items-center justify-center"
+                            className="p-1.5 rounded-lg border border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-950 text-gray-400 cursor-help flex items-center justify-center"
                             title={`Adquirido el: ${new Date(item.purchase_date).toLocaleDateString('es-PE')}`}
                           >
                             <Calendar size={14} />
@@ -705,11 +705,11 @@ const InventoryManager = () => {
           </div>
         ) : (
           /* Table View Layout */
-          <div className="bg-white rounded-2xl border border-gray-150 shadow-2xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 text-gray-500 text-[10px] font-bold uppercase tracking-wider border-b border-gray-150">
+                  <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
                     <th className="py-4 px-6 w-16">Foto</th>
                     <th className="py-4 px-6">Artículo</th>
                     <th className="py-4 px-6">Categoría</th>
@@ -721,7 +721,7 @@ const InventoryManager = () => {
                     <th className="py-4 px-6 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                   {filteredItems.map((item) => {
                     const statusLabels = {
                       buen_estado: 'Buen Estado',
@@ -740,7 +740,7 @@ const InventoryManager = () => {
                     return (
                       <tr key={item.id} className="hover:bg-gray-55/40 transition-colors">
                         <td className="py-3 px-6">
-                          <div className="w-10 h-10 rounded-lg border border-gray-150 bg-gray-50 overflow-hidden flex items-center justify-center p-1 relative select-none">
+                          <div className="w-10 h-10 rounded-lg border border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center p-1 relative select-none">
                             {item.photo_url ? (
                               <img src={item.photo_url} alt="" className="max-w-full max-h-full object-contain" />
                             ) : (
@@ -761,7 +761,7 @@ const InventoryManager = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-6 font-semibold text-gray-500">
+                        <td className="py-3 px-6 font-semibold text-gray-500 dark:text-gray-450">
                           {item.inventory_categories?.name || 'Sin categoría'}
                         </td>
                         <td className="py-3 px-6">
@@ -769,13 +769,13 @@ const InventoryManager = () => {
                             {statusLabels[item.status]}
                           </span>
                         </td>
-                        <td className="py-3 px-6 text-center font-bold text-gray-800">
+                        <td className="py-3 px-6 text-center font-bold text-gray-800 dark:text-gray-100">
                           {item.quantity}
                         </td>
-                        <td className="py-3 px-6 text-right font-mono text-gray-600">
+                        <td className="py-3 px-6 text-right font-mono text-gray-600 dark:text-gray-400">
                           S/. {item.price.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-6 text-right font-mono font-bold text-gray-800">
+                        <td className="py-3 px-6 text-right font-mono font-bold text-gray-800 dark:text-gray-100">
                           S/. {totalValue.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="py-3 px-6 text-gray-400 text-xs font-semibold">
@@ -785,7 +785,7 @@ const InventoryManager = () => {
                           {item.video_url && (
                             <button
                               onClick={() => setPlayingVideoUrl(item.video_url)}
-                              className="p-1 rounded-lg border border-gray-150 hover:bg-red-50 text-red-500 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg border border-gray-150 dark:border-white/10 hover:bg-red-50 text-red-500 transition-colors cursor-pointer"
                               title="Reproducir Video"
                             >
                               <Play size={12} className="fill-red-500 text-red-500" />
@@ -796,7 +796,7 @@ const InventoryManager = () => {
                               href={item.product_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex p-1 rounded-lg border border-gray-150 hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
+                              className="inline-flex p-1 rounded-lg border border-gray-150 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 transition-colors"
                               title="Ver enlace"
                             >
                               <ExternalLink size={12} />
@@ -830,7 +830,7 @@ const InventoryManager = () => {
           </div>
         )
       ) : (
-        <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-200 shadow-xs">
+        <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 shadow-xs">
           <Package size={52} className="mx-auto text-gray-300 mb-4 opacity-75" />
           <h3 className="text-lg font-serif font-bold text-gray-750">No se encontraron artículos</h3>
           <p className="text-gray-400 text-sm mt-1">Intente cambiar los filtros de búsqueda o registre un nuevo artículo.</p>
@@ -841,9 +841,9 @@ const InventoryManager = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 overflow-y-auto">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setShowForm(false)} />
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-200 my-4 animate-scaleIn overflow-hidden">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-200 dark:border-white/10 my-4 animate-scaleIn overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-primary text-white">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5 bg-primary text-white">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Package size={18} />
@@ -864,12 +864,12 @@ const InventoryManager = () => {
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Nombre del Artículo *</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Nombre del Artículo *</label>
                 <input
                   type="text"
                   {...register('name')}
                   placeholder="Ej: Consola Digital Behringer X32"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
               </div>
@@ -877,10 +877,10 @@ const InventoryManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Category Selection */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Categoría *</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Categoría *</label>
                   <select
                     {...register('category_id')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   >
                     <option value="">Seleccione una categoría...</option>
                     {categories.map((cat) => (
@@ -894,10 +894,10 @@ const InventoryManager = () => {
 
                 {/* Status Selection */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Estado de Conservación *</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Estado de Conservación *</label>
                   <select
                     {...register('status')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   >
                     <option value="buen_estado">Buen Estado</option>
                     <option value="reparacion">Falta Reparación</option>
@@ -910,34 +910,34 @@ const InventoryManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Quantity */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Cantidad *</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Cantidad *</label>
                   <input
                     type="number"
                     {...register('quantity', { valueAsNumber: true })}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
                 </div>
 
                 {/* Price */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Precio Unitario (S/.) *</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Precio Unitario (S/.) *</label>
                   <input
                     type="number"
                     step="0.01"
                     {...register('price', { valueAsNumber: true })}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
                   />
                   {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
                 </div>
 
                 {/* Purchase Date */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Fecha de Adquisición</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Fecha de Adquisición</label>
                   <input
                     type="date"
                     {...register('purchase_date')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   {errors.purchase_date && <p className="text-red-500 text-xs mt-1">{errors.purchase_date.message}</p>}
                 </div>
@@ -946,24 +946,24 @@ const InventoryManager = () => {
               {/* Product Reference Link & Video Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Enlace del Producto / Referencia</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Enlace del Producto / Referencia</label>
                   <input
                     type="text"
                     {...register('product_link')}
                     placeholder="https://ejemplo.com/producto"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   {errors.product_link && <p className="text-red-500 text-xs mt-1">{errors.product_link.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Video Demostración (YouTube/Vimeo)</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Video Demostración (YouTube/Vimeo)</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       {...register('video_url')}
                       placeholder="https://www.youtube.com/watch?v=..."
-                      className="flex-grow border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="flex-grow border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -971,7 +971,7 @@ const InventoryManager = () => {
                         setMediaTargetField('video_url');
                         setIsMediaSearchOpen(true);
                       }}
-                      className="px-3.5 py-2 border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                      className="px-3.5 py-2 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white dark:bg-slate-900 transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
                     >
                       <Search size={13} />
                       Asistente
@@ -983,14 +983,14 @@ const InventoryManager = () => {
 
               {/* Photo Link & Local Upload */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Fotografía del Artículo</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Fotografía del Artículo</label>
                 <div className="flex gap-2 mb-3">
                   <input
                     type="url"
                     value={watch('photo_url') || ''}
                     onChange={(e) => setValue('photo_url', e.target.value)}
                     placeholder="URL directa de imagen de stock o presione el Asistente..."
-                    className="flex-grow border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="flex-grow border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -998,7 +998,7 @@ const InventoryManager = () => {
                       setMediaTargetField('photo_url');
                       setIsMediaSearchOpen(true);
                     }}
-                    className="px-3.5 py-2.5 border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                    className="px-3.5 py-2.5 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white dark:bg-slate-900 transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
                   >
                     <Search size={13} />
                     Asistente
@@ -1006,7 +1006,7 @@ const InventoryManager = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex-grow flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50 hover:bg-gray-55 transition-colors relative cursor-pointer">
+                  <div className="flex-grow flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50 hover:bg-gray-55 transition-colors relative cursor-pointer">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1016,12 +1016,12 @@ const InventoryManager = () => {
                       disabled={saving}
                     />
                     <ImageIcon size={18} className="text-gray-400 mb-1" />
-                    <span className="text-[10px] font-semibold text-gray-500 text-center">
+                    <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-450 text-center">
                       {selectedFile ? selectedFile.name : 'O suba / arrastre una imagen local para almacenarla en Supabase'}
                     </span>
                   </div>
                   {(selectedFile || watch('photo_url') || editingItem?.photo_url) && (
-                    <div className="w-14 h-14 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 p-1 flex items-center justify-center flex-shrink-0">
+                    <div className="w-14 h-14 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-slate-950 p-1 flex items-center justify-center flex-shrink-0">
                       <img 
                         src={selectedFile ? URL.createObjectURL(selectedFile) : (watch('photo_url') || editingItem?.photo_url || '')} 
                         alt="Miniatura" 
@@ -1034,21 +1034,21 @@ const InventoryManager = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Descripción / Notas</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wide mb-1">Descripción / Notas</label>
                 <textarea
                   rows={3}
                   {...register('description')}
                   placeholder="Detalles adicionales, marca, número de serie, ubicación en la iglesia..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-450 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
                   disabled={saving || uploading}
                 >
                   Cancelar
@@ -1080,9 +1080,9 @@ const InventoryManager = () => {
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setShowCategoryModal(false)} />
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-gray-200 my-4 animate-scaleIn overflow-hidden">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg border border-gray-200 dark:border-white/10 my-4 animate-scaleIn overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-primary text-white">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-primary text-white">
               <div className="flex items-center gap-2">
                 <Tag size={16} className="text-gold" />
                 <h3 className="text-base font-serif font-bold">Gestión de Categorías</h3>
@@ -1104,7 +1104,7 @@ const InventoryManager = () => {
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Nombre de nueva categoría..."
-                  className="flex-1 text-sm border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="flex-1 text-sm border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   onKeyDown={(e) => e.key === 'Enter' && addCategory()}
                 />
                 <button
@@ -1125,9 +1125,9 @@ const InventoryManager = () => {
                   categories.map((cat) => (
                     <div
                       key={cat.id}
-                      className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-150 rounded-xl hover:bg-white transition-colors"
+                      className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-150 dark:border-white/10 rounded-xl hover:bg-white transition-colors"
                     >
-                      <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                         <Tag size={12} className="text-gold" />
                         {cat.name}
                       </span>
@@ -1150,10 +1150,10 @@ const InventoryManager = () => {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="p-4 bg-gray-50 dark:bg-slate-950 border-t border-gray-100 dark:border-white/5 flex justify-end">
               <button
                 onClick={() => setShowCategoryModal(false)}
-                className="px-4 py-2 hover:bg-gray-150 text-gray-500 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 hover:bg-gray-150 text-gray-500 dark:text-gray-450 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cerrar
               </button>

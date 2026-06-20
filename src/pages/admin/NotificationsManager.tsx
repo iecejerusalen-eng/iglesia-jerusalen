@@ -279,7 +279,7 @@ export default function NotificationsManager() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
             <Bell className="text-gold" />
@@ -292,7 +292,7 @@ export default function NotificationsManager() {
 
         <button
           onClick={loadData}
-          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+          className="p-2 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Escanear Celebraciones
@@ -302,7 +302,7 @@ export default function NotificationsManager() {
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Birthdays */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Cumpleaños Hoy</span>
             <p className="text-xl font-extrabold text-blue-900 tracking-tight">{birthdaysToday.length}</p>
@@ -314,7 +314,7 @@ export default function NotificationsManager() {
         </div>
 
         {/* Card 2: Anniversaries */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Aniversarios Hoy</span>
             <p className="text-xl font-extrabold text-amber-600 tracking-tight">{anniversariesToday.length}</p>
@@ -326,19 +326,19 @@ export default function NotificationsManager() {
         </div>
 
         {/* Card 3: Logs */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Mensajes en Logs</span>
-            <p className="text-xl font-extrabold text-slate-700 tracking-tight">{logs.length}</p>
+            <p className="text-xl font-extrabold text-slate-700 dark:text-gray-300 tracking-tight">{logs.length}</p>
             <span className="text-[9px] text-gray-400 block font-semibold mt-0.5">Historial reciente</span>
           </div>
-          <div className="w-10 h-10 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-center text-slate-650 shrink-0">
+          <div className="w-10 h-10 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-white/10 rounded-xl flex items-center justify-center text-slate-650 shrink-0">
             <Bell size={20} />
           </div>
         </div>
 
         {/* Card 4: Session WhatsApps */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">WhatsApp Enviados</span>
             <p className="text-xl font-extrabold text-emerald-600 tracking-tight">{Object.keys(sentMemberIds).length}</p>
@@ -351,7 +351,7 @@ export default function NotificationsManager() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200">
+      <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
         <button
           onClick={() => setActiveTab('triggers')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -385,7 +385,7 @@ export default function NotificationsManager() {
       </div>
 
       {loading ? (
-        <div className="bg-white border border-gray-150 rounded-2xl p-8 flex justify-center items-center h-48 animate-pulse">
+        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-8 flex justify-center items-center h-48 animate-pulse">
           <RefreshCw className="animate-spin text-primary" size={24} />
         </div>
       ) : (
@@ -394,8 +394,8 @@ export default function NotificationsManager() {
           {activeTab === 'triggers' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Birthdays Panel */}
-              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-gray-800 text-sm border-b border-gray-100 pb-2 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-white/5 pb-2 flex items-center gap-1.5">
                   <Gift size={16} className="text-gold" />
                   Cumpleaños del Día
                 </h3>
@@ -443,8 +443,8 @@ export default function NotificationsManager() {
               </div>
 
               {/* Anniversaries Panel */}
-              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-gray-800 text-sm border-b border-gray-100 pb-2 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 shadow-xs space-y-4">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-white/5 pb-2 flex items-center gap-1.5">
                   <Award size={16} className="text-gold" />
                   Aniversarios Ministeriales del Día
                 </h3>
@@ -486,8 +486,8 @@ export default function NotificationsManager() {
           {activeTab === 'manual' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Form panel */}
-              <div className="lg:col-span-2 bg-white border border-gray-150 rounded-2xl p-6 shadow-xs space-y-6">
-                <h3 className="font-serif font-bold text-gray-800 text-base flex items-center gap-1.5 pb-2 border-b border-gray-100">
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 shadow-xs space-y-6">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base flex items-center gap-1.5 pb-2 border-b border-gray-100 dark:border-white/5">
                   <MessageSquare size={18} className="text-gold" />
                   Redactar Comunicación Grupal
                 </h3>
@@ -501,7 +501,7 @@ export default function NotificationsManager() {
                       <select
                         value={selectedTemplate}
                         onChange={(e) => handleSelectTemplate(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650"
                       >
                         <option value="">-- Usar texto personalizado / Vacío --</option>
                         {MESSAGE_TEMPLATES.map(t => (
@@ -517,7 +517,7 @@ export default function NotificationsManager() {
                       <select
                         value={recipientGroup}
                         onChange={(e) => setRecipientGroup(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650"
                       >
                         <option value="todos">Todos los Miembros de la Iglesia</option>
                         <option value="lideres">Solo Líderes de Ministerio</option>
@@ -534,7 +534,7 @@ export default function NotificationsManager() {
                       <select
                         value={selectedMinistryId}
                         onChange={(e) => setSelectedMinistryId(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none text-slate-650"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none text-slate-650"
                       >
                         <option value="">-- Elige un ministerio --</option>
                         {ministries.map(m => (
@@ -552,7 +552,7 @@ export default function NotificationsManager() {
                       type="text"
                       value={notifTitle}
                       onChange={(e) => setNotifTitle(e.target.value)}
-                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full px-3.5 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="Ej. Anuncio de Culto Especial de Oración"
                     />
                   </div>
@@ -576,14 +576,14 @@ export default function NotificationsManager() {
                       value={notifMessage}
                       onChange={(e) => setNotifMessage(e.target.value)}
                       rows={5}
-                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full px-3.5 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                       placeholder="Hola hermanos, les recordamos que..."
                     />
                   </div>
 
                   <div className="flex justify-between items-center pt-2">
                     <div className="text-[10px] font-semibold text-slate-450 uppercase">
-                      Total Destinatarios Estimados: <span className="font-bold text-slate-700">{recipientCount}</span>
+                      Total Destinatarios Estimados: <span className="font-bold text-slate-700 dark:text-gray-300">{recipientCount}</span>
                     </div>
 
                     <button
@@ -599,18 +599,18 @@ export default function NotificationsManager() {
               </div>
 
               {/* WhatsApp Mass list Helper */}
-              <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-xs space-y-4 flex flex-col max-h-[65vh]">
+              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-xs space-y-4 flex flex-col max-h-[65vh]">
                 <div>
-                  <h4 className="font-serif font-bold text-gray-800 text-sm">Directorio de Envíos WhatsApp</h4>
+                  <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Directorio de Envíos WhatsApp</h4>
                   <p className="text-gray-400 text-[10px] mt-0.5">Usa esta lista para realizar envíos manuales rápidos uno a uno con el mensaje redactado.</p>
                 </div>
 
                 {/* Progress bar */}
                 {filteredRecipients.length > 0 && (
-                  <div className="space-y-1 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-[10px] font-semibold text-gray-500">
+                  <div className="space-y-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/5 p-2.5 rounded-xl text-[10px] font-semibold text-gray-500 dark:text-gray-450">
                     <div className="flex justify-between">
                       <span>Progreso de envío (sesión):</span>
-                      <span className="font-bold text-slate-700 font-mono">
+                      <span className="font-bold text-slate-700 dark:text-gray-300 font-mono">
                         {filteredRecipients.filter(r => sentMemberIds[r.id]).length} de {filteredRecipients.filter(r => r.phone).length}
                       </span>
                     </div>
@@ -635,7 +635,7 @@ export default function NotificationsManager() {
                       placeholder="Buscar por nombre..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50/50 font-medium"
+                      className="w-full pl-8 pr-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-50/50 font-medium"
                     />
                     <Search className="absolute left-2.5 top-2.5 text-gray-400" size={12} />
                   </div>
@@ -643,7 +643,7 @@ export default function NotificationsManager() {
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value as any)}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-xl text-[10px] font-bold uppercase text-slate-500 bg-white focus:outline-none"
+                      className="w-full px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-bold uppercase text-slate-500 dark:text-gray-450 bg-white dark:bg-slate-900 focus:outline-none"
                     >
                       <option value="all">Todos</option>
                       <option value="pending">Pendientes</option>
@@ -662,9 +662,9 @@ export default function NotificationsManager() {
                     filteredRecipients.map((rec) => {
                       const isSent = sentMemberIds[rec.id];
                       return (
-                        <div key={rec.id} className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs">
+                        <div key={rec.id} className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-white/10 rounded-xl flex items-center justify-between gap-3 text-xs">
                           <div className="min-w-0">
-                            <span className="font-bold text-gray-800 block truncate">{rec.first_name} {rec.last_name}</span>
+                            <span className="font-bold text-gray-800 dark:text-gray-100 block truncate">{rec.first_name} {rec.last_name}</span>
                             <span className="text-[9px] text-gray-400 font-mono block truncate">
                               {rec.phone_country_code || '+593'} {rec.phone || 'Sin número'}
                             </span>
@@ -695,16 +695,16 @@ export default function NotificationsManager() {
 
           {/* TAB 3: LOGS */}
           {activeTab === 'logs' && (
-            <div className="bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs">
-              <div className="p-5 border-b border-gray-150">
-                <h3 className="font-serif font-bold text-gray-800 text-sm">Historial Reciente de Envíos</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
+              <div className="p-5 border-b border-gray-150 dark:border-white/10">
+                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Historial Reciente de Envíos</h3>
                 <p className="text-gray-400 text-xs mt-0.5">Registro de mensajes transmitidos por el equipo administrativo de la iglesia.</p>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                    <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-xs uppercase tracking-wider">
                       <th className="px-6 py-4">Canal</th>
                       <th className="px-6 py-4">Asunto / Título</th>
                       <th className="px-6 py-4">Mensaje</th>
@@ -713,7 +713,7 @@ export default function NotificationsManager() {
                       <th className="px-6 py-4">Fecha de Envío</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-650">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
                     {logs.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-10 text-center text-gray-400 font-semibold italic">
@@ -733,10 +733,10 @@ export default function NotificationsManager() {
                           <td className="px-6 py-4 font-semibold text-gray-850">
                             {log.title}
                           </td>
-                          <td className="px-6 py-4 text-xs max-w-xs truncate text-gray-500" title={log.message}>
+                          <td className="px-6 py-4 text-xs max-w-xs truncate text-gray-500 dark:text-gray-450" title={log.message}>
                             {log.message}
                           </td>
-                          <td className="px-6 py-4 text-xs font-semibold text-gray-650">
+                          <td className="px-6 py-4 text-xs font-semibold text-gray-650 dark:text-gray-400">
                             {log.recipient_group}
                           </td>
                           <td className="px-6 py-4">

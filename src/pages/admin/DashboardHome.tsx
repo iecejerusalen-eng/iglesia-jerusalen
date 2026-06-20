@@ -321,13 +321,13 @@ const DashboardHome = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Members CRM */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 text-primary border border-blue-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0">
             <Users size={22} />
           </div>
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Membresía CRM</span>
             {loading ? (
-              <div className="h-6 w-16 bg-slate-100 animate-pulse rounded mt-1"></div>
+              <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
             ) : (
               <div>
                 <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">{stats.membersCount}</span>
@@ -339,13 +339,13 @@ const DashboardHome = () => {
 
         {/* Donaciones */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50/70 text-gold border border-amber-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 text-gold dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 flex items-center justify-center shrink-0">
             <Heart size={22} />
           </div>
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Finanzas Totales</span>
             {loading ? (
-              <div className="h-6 w-16 bg-slate-100 animate-pulse rounded mt-1"></div>
+              <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
             ) : (
               <div>
                 <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">${stats.totalDonationsAmount.toLocaleString('es-EC', { maximumFractionDigits: 0 })}</span>
@@ -357,13 +357,13 @@ const DashboardHome = () => {
 
         {/* Peticiones */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-rose-50/70 text-accent-red border border-rose-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50/70 dark:bg-red-950/20 text-accent-red dark:text-red-400 border border-rose-100 dark:border-red-900/30 flex items-center justify-center shrink-0">
             <Activity size={22} />
           </div>
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Peticiones Oración</span>
             {loading ? (
-              <div className="h-6 w-16 bg-slate-100 animate-pulse rounded mt-1"></div>
+              <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
             ) : (
               <div>
                 <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">{stats.petitionsCount}</span>
@@ -375,17 +375,17 @@ const DashboardHome = () => {
 
         {/* Patrimonio e Inventario */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:translate-y-[-2px] hover:shadow-xs transition-all duration-300 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-50/70 text-accent-purple border border-purple-100 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 text-accent-purple dark:text-purple-400 border border-purple-100 dark:border-purple-900/30 flex items-center justify-center shrink-0">
             <Layers size={22} />
           </div>
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Activos e Inventario</span>
             {loading ? (
-              <div className="h-6 w-16 bg-slate-100 animate-pulse rounded mt-1"></div>
+              <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
             ) : (
               <div>
                 <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">{stats.inventoryCount} uds</span>
-                <span className="text-[9px] text-emerald-600 block font-bold mt-0.5">Valor estimado: ${stats.inventoryValue.toLocaleString('es-EC', { maximumFractionDigits: 0 })}</span>
+                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 block font-bold mt-0.5">Valor estimado: ${stats.inventoryValue.toLocaleString('es-EC', { maximumFractionDigits: 0 })}</span>
               </div>
             )}
           </div>
@@ -444,7 +444,7 @@ const DashboardHome = () => {
                     type="button"
                     onClick={() => setSkillsTab('categories')}
                     className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      skillsTab === 'categories' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 hover:text-gray-650'
+                      skillsTab === 'categories' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 dark:text-gray-500 hover:text-gray-650'
                     }`}
                   >
                     Categorías
@@ -453,7 +453,7 @@ const DashboardHome = () => {
                     type="button"
                     onClick={() => setSkillsTab('individual')}
                     className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      skillsTab === 'individual' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 hover:text-gray-655'
+                      skillsTab === 'individual' ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-3xs' : 'text-gray-400 dark:text-gray-500 hover:text-gray-655'
                     }`}
                   >
                     Detallado
@@ -624,7 +624,7 @@ const DashboardHome = () => {
                       <span className="text-[10px] font-bold text-gray-400 block">
                         {alert.type === 'birthday' ? `Cumpleaños: ${alert.dateLabel}` : `Conversión: ${alert.dateLabel} (${alert.years})`}
                       </span>
-                      <p className="text-[9px] text-gray-500 italic font-semibold pt-1 border-t border-gray-100/50 mt-1">
+                      <p className="text-[9px] text-gray-500 dark:text-gray-450 italic font-semibold pt-1 border-t border-gray-100/50 mt-1">
                         {alert.verse}
                       </p>
                     </div>

@@ -453,7 +453,7 @@ const StoreManager = () => {
         );
       case 'completed':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/10">
             <CheckCircle2 size={12} />
             Entregado
           </span>
@@ -467,7 +467,7 @@ const StoreManager = () => {
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-150 text-gray-700">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-150 text-gray-700 dark:text-gray-300">
             {status}
           </span>
         );
@@ -557,7 +557,7 @@ const StoreManager = () => {
                 <input
                   type="text"
                   {...register('name')}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Camiseta Oficial Iglesia Jerusalén"
                 />
                 {errors.name && <p className="text-accent-red text-xs mt-1">{errors.name.message}</p>}
@@ -571,7 +571,7 @@ const StoreManager = () => {
                     step="0.01"
                     min="0"
                     {...register('price', { valueAsNumber: true })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="0.00"
                   />
                   {errors.price && <p className="text-accent-red text-xs mt-1">{errors.price.message}</p>}
@@ -582,7 +582,7 @@ const StoreManager = () => {
                     type="number"
                     min="0"
                     {...register('stock', { valueAsNumber: true })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="10"
                   />
                   {errors.stock && <p className="text-accent-red text-xs mt-1">{errors.stock.message}</p>}
@@ -591,7 +591,7 @@ const StoreManager = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tipo de Producto</label>
                   <select
                     {...register('type')}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                   >
                     <option value="physical">Físico</option>
                     <option value="digital">Digital / Descargable</option>
@@ -602,7 +602,7 @@ const StoreManager = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría</label>
                   <select
                     {...register('category')}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                   >
                     <option value="Libros">Libros</option>
                     <option value="Música">Música</option>
@@ -632,7 +632,7 @@ const StoreManager = () => {
 
                   <div className="flex items-center gap-3">
                     {imagePreview ? (
-                      <div className="relative w-20 h-20 rounded-xl border border-gray-150 overflow-hidden bg-gray-50 flex-shrink-0">
+                      <div className="relative w-20 h-20 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-slate-950 flex-shrink-0">
                         <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                         <button
                           type="button"
@@ -646,7 +646,7 @@ const StoreManager = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-20 h-20 rounded-xl border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-gray-300 text-[10px] font-semibold flex-shrink-0">
+                      <div className="w-20 h-20 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-300 text-[10px] font-semibold flex-shrink-0">
                         Sin Imagen
                       </div>
                     )}
@@ -671,7 +671,7 @@ const StoreManager = () => {
                 <textarea
                   {...register('features')}
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Algodón premium&#10;Logo bordado&#10;Guía de lavado"
                 />
               </div>
@@ -713,7 +713,7 @@ const StoreManager = () => {
 
               {/* Sección Físico: Variantes */}
               {productType === 'physical' && (
-                <div className="space-y-3 pt-3 border-t border-gray-100">
+                <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-white/5">
                   <div className="flex justify-between items-center">
                     <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base">Variantes de Producto (Tallas, Colores)</h4>
                     <button
@@ -750,7 +750,7 @@ const StoreManager = () => {
                                   type="text"
                                   value={v.color_name}
                                   onChange={(e) => updateVariantField(idx, 'color_name', e.target.value)}
-                                  className="w-full px-2 py-1 border border-gray-200 rounded-md focus:outline-none"
+                                  className="w-full px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
                                   placeholder="Ej. Rojo"
                                 />
                               </td>
@@ -766,7 +766,7 @@ const StoreManager = () => {
                                     type="text"
                                     value={v.color_hex}
                                     onChange={(e) => updateVariantField(idx, 'color_hex', e.target.value)}
-                                    className="w-14 px-1 py-1 border border-gray-200 rounded-md uppercase text-[10px] text-center"
+                                    className="w-14 px-1 py-1 border border-gray-200 dark:border-white/10 rounded-md uppercase text-[10px] text-center"
                                     placeholder="#FF0000"
                                   />
                                 </div>
@@ -776,7 +776,7 @@ const StoreManager = () => {
                                   type="text"
                                   value={v.size}
                                   onChange={(e) => updateVariantField(idx, 'size', e.target.value)}
-                                  className="w-full px-2 py-1 border border-gray-200 rounded-md focus:outline-none"
+                                  className="w-full px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
                                   placeholder="Ej. XL"
                                 />
                               </td>
@@ -792,7 +792,7 @@ const StoreManager = () => {
                                   <img 
                                     src={v.cloudinary_image_url} 
                                     alt="Variant" 
-                                    className="w-7 h-7 rounded object-cover border border-gray-150 shadow-2xs shrink-0" 
+                                    className="w-7 h-7 rounded object-cover border border-gray-150 dark:border-white/10 shadow-2xs shrink-0" 
                                   />
                                 )}
                               </td>
@@ -801,7 +801,7 @@ const StoreManager = () => {
                                   type="number"
                                   value={v.stock}
                                   onChange={(e) => updateVariantField(idx, 'stock', Number(e.target.value))}
-                                  className="w-14 px-2 py-1 border border-gray-200 rounded-md focus:outline-none"
+                                  className="w-14 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
                                   min="0"
                                 />
                               </td>
@@ -813,7 +813,7 @@ const StoreManager = () => {
                                     step="0.01"
                                     value={v.price_adjustment}
                                     onChange={(e) => updateVariantField(idx, 'price_adjustment', Number(e.target.value))}
-                                    className="w-16 pl-4 pr-1 py-1 border border-gray-200 rounded-md focus:outline-none font-bold"
+                                    className="w-16 pl-4 pr-1 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none font-bold"
                                   />
                                 </div>
                               </td>
@@ -852,11 +852,11 @@ const StoreManager = () => {
               </div>
 
               {/* Controles del Formulario */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2 border border-gray-250 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-5 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

@@ -126,21 +126,21 @@ const Petitions = () => {
     switch (status) {
       case 'pendiente':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-slate-700">
             <Clock size={12} />
             Recibido
           </span>
         );
       case 'en_oracion':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/30 animate-pulse">
             <Flame size={12} className="text-amber-500" />
             En Oración
           </span>
         );
       case 'respondida':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-350 border border-emerald-200 dark:border-emerald-800/30">
             <CheckCircle size={12} className="text-emerald-500" />
             Respondido
           </span>
@@ -152,7 +152,7 @@ const Petitions = () => {
 
   if (!user) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 bg-gray-50">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 bg-gray-50 dark:bg-slate-950 transition-colors">
         <HeartHandshake size={64} className="text-gold mb-4 animate-bounce" />
         <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2">Peticiones de Oración</h2>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
@@ -169,7 +169,7 @@ const Petitions = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8 animate-fadeIn">
+    <div className="bg-gray-50 dark:bg-slate-950 min-h-screen py-12 px-4 sm:px-6 lg:px-8 animate-fadeIn transition-colors duration-200">
       <div className="max-w-5xl mx-auto space-y-10">
         
         {/* Header Section */}
@@ -187,7 +187,7 @@ const Petitions = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Form Column */}
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 p-6 shadow-sm space-y-6">
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-sm space-y-6">
             <div>
               <h2 className="text-lg font-serif font-bold text-primary dark:text-white flex items-center gap-2">
                 <Plus className="text-gold" size={20} />
@@ -203,7 +203,7 @@ const Petitions = () => {
                   id="categoryId"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full text-sm border border-gray-200 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700 cursor-pointer"
+                  className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -219,7 +219,7 @@ const Petitions = () => {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Describe aquí tu petición o acción de gracias..."
-                  className="w-full text-sm border border-gray-200 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-750 resize-none"
+                  className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-750 dark:text-gray-200 resize-none"
                 />
               </div>
 
@@ -253,19 +253,19 @@ const Petitions = () => {
             {loading ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 animate-pulse space-y-3 shadow-xs">
+                  <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 dark:border-white/10 animate-pulse space-y-3 shadow-xs">
                     <div className="flex justify-between">
-                      <div className="h-5 w-24 bg-gray-150 rounded"></div>
-                      <div className="h-5 w-20 bg-gray-150 rounded"></div>
+                      <div className="h-5 w-24 bg-gray-150 dark:bg-slate-800 rounded"></div>
+                      <div className="h-5 w-20 bg-gray-150 dark:bg-slate-800 rounded"></div>
                     </div>
-                    <div className="h-4 w-full bg-gray-100 rounded"></div>
-                    <div className="h-4 w-4/5 bg-gray-100 rounded"></div>
-                    <div className="h-3.5 w-32 bg-gray-100 rounded pt-2"></div>
+                    <div className="h-4 w-full bg-gray-100 dark:bg-slate-855 rounded"></div>
+                    <div className="h-4 w-4/5 bg-gray-100 dark:bg-slate-855 rounded"></div>
+                    <div className="h-3.5 w-32 bg-gray-100 dark:bg-slate-855 rounded pt-2"></div>
                   </div>
                 ))}
               </div>
             ) : myPetitions.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 border border-gray-150 rounded-2xl p-10 text-center text-gray-400 flex flex-col items-center justify-center space-y-3 shadow-xs">
+              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-10 text-center text-gray-400 flex flex-col items-center justify-center space-y-3 shadow-xs">
                 <HeartHandshake size={40} className="text-gray-300" />
                 <p className="text-sm font-medium">Aún no has registrado peticiones de oración.</p>
                 <p className="text-xs text-gray-400 max-w-xs">Escribe tu primera petición a la izquierda para que comencemos a interceder por ti.</p>
@@ -275,22 +275,22 @@ const Petitions = () => {
                 {myPetitions.map((pet) => (
                   <div 
                     key={pet.id} 
-                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
+                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/5 text-primary dark:text-white border border-primary/10 w-fit">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/5 dark:bg-primary/20 text-primary dark:text-white border border-primary/10 dark:border-primary/30 w-fit">
                           {pet.petition_categories?.name || 'Necesidades varias'}
                         </span>
                       </div>
                       {getStatusBadge(pet.status)}
                     </div>
                     
-                    <p className="text-gray-700 text-sm whitespace-pre-line leading-relaxed leading-relaxed font-medium">
+                    <p className="text-gray-700 dark:text-gray-250 text-sm whitespace-pre-line leading-relaxed font-medium">
                       {pet.content}
                     </p>
 
-                    <div className="text-gray-400 text-[10px] flex items-center justify-between border-t border-gray-50 pt-3">
+                    <div className="text-gray-400 text-[10px] flex items-center justify-between border-t border-gray-50 dark:border-white/5 pt-3">
                       <span>Enviado el {new Date(pet.created_at).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',

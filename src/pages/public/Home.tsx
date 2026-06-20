@@ -472,9 +472,9 @@ const Home = () => {
                               ></iframe>
                             ) : (
                               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 space-y-3 p-6 text-center">
-                                <Tv size={48} className="text-slate-600" />
+                                <Tv size={48} className="text-slate-600 dark:text-gray-400" />
                                 <span className="font-bold text-sm">Transmisión no iniciada</span>
-                                <p className="text-xs text-slate-500 max-w-xs">La señal en vivo comenzará pronto. Por favor espera unos momentos.</p>
+                                <p className="text-xs text-slate-500 dark:text-gray-450 max-w-xs">La señal en vivo comenzará pronto. Por favor espera unos momentos.</p>
                               </div>
                             )}
                           </div>
@@ -551,8 +551,8 @@ const Home = () => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-500 space-y-3">
-                                <Music size={32} className="text-slate-700 animate-pulse" />
+                              <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-500 dark:text-gray-450 space-y-3">
+                                <Music size={32} className="text-slate-700 dark:text-gray-300 animate-pulse" />
                                 <p className="text-xs font-semibold max-w-[200px] leading-normal">
                                   Alabanza congregacional activa. Esperando que el director de alabanza sincronice la letra...
                                 </p>
@@ -560,7 +560,7 @@ const Home = () => {
                             )}
                           </div>
 
-                          <div className="border-t border-slate-800 pt-3 mt-4 text-[10px] text-slate-500 leading-normal">
+                          <div className="border-t border-slate-800 pt-3 mt-4 text-[10px] text-slate-500 dark:text-gray-450 leading-normal">
                             * Las letras y acordes se actualizan automáticamente en tiempo real para que toda la congregación cante en unidad.
                           </div>
                         </div>
@@ -1154,7 +1154,7 @@ const Home = () => {
           case 'system_birthdays':
             return (
               birthdayMembers.length > 0 && (
-                <section key={id} className="bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-white dark:from-slate-950 dark:to-slate-900 py-20 border-y border-gray-150 dark:border-white/5 relative overflow-hidden">
+                <section key={id} className="bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 py-20 border-y border-gray-150 dark:border-white/5 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-80 h-80 bg-gold/5 rounded-full blur-[90px] pointer-events-none" />
                   <div className="absolute bottom-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[90px] pointer-events-none" />
 
@@ -1185,7 +1185,7 @@ const Home = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                       {birthdayMembers.map((member, mIdx) => (
                         <motion.div 
-                          key={mIdx}
+                           key={mIdx}
                           variants={fadeInUp}
                           initial="initial"
                           whileInView="animate"
@@ -1231,7 +1231,7 @@ const Home = () => {
                                   <p className="text-gray-600 dark:text-gray-400 text-xs italic leading-relaxed font-sans font-light">
                                     "{verse.text}"
                                   </p>
-                                  <span className="text-[9px] font-bold text-primary dark:text-white/80 dark:text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-2 block text-right font-mono">
+                                  <span className="text-[9px] font-bold text-primary dark:text-gray-400 uppercase tracking-widest mt-2 block text-right font-mono">
                                     — {verse.ref}
                                   </span>
                                 </div>

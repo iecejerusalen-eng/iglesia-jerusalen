@@ -495,7 +495,7 @@ const FinanceDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary">Gestión de Finanzas</h1>
-          <p className="text-gray-500 text-sm">Visualiza ingresos e-commerce, diezmos y administra las categorías de donación.</p>
+          <p className="text-gray-500 dark:text-gray-450 text-sm">Visualiza ingresos e-commerce, diezmos y administra las categorías de donación.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

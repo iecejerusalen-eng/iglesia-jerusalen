@@ -53,7 +53,7 @@ const About = () => {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-20 text-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div className="w-8 h-8 border-4 border-indigo-600 dark:border-indigo-450 border-t-transparent rounded-full animate-spin mx-auto"></div>
         <p className="text-gray-500 dark:text-gray-400 mt-4 text-xs font-semibold uppercase tracking-wider">Cargando...</p>
       </div>
     );
@@ -133,7 +133,7 @@ const About = () => {
                         className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left"
                       >
                         <div className="space-y-4">
-                          <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-400 rounded-xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
                             <Compass size={24} />
                           </div>
                           <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Misión</h2>
@@ -169,7 +169,7 @@ const About = () => {
                 <div key={id}>
                   {content_blocks && content_blocks.length > 0 ? (
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-4 text-left">
-                      <h2 className="text-3xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 pb-4">
+                      <h2 className="text-3xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/5 pb-4">
                         {title || 'Nuestra Historia'}
                       </h2>
                       {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm">{subtitle}</p>}
@@ -200,7 +200,7 @@ const About = () => {
                           <OptimizedMedia 
                             src={pastoresAgrupadosImg} 
                             alt="Pastores Iglesia Jerusalén"
-                            className="w-full h-72 object-cover rounded-2xl shadow-lg border border-gray-100"
+                            className="w-full h-72 object-cover rounded-2xl shadow-lg border border-gray-100 dark:border-white/5"
                           />
                         </div>
                       </div>
@@ -252,7 +252,7 @@ const About = () => {
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
                         >
-                          <div className="w-full sm:w-44 h-56 bg-gray-50 flex-shrink-0">
+                          <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
                             <OptimizedMedia 
                               src={pastorDavidImg} 
                               alt="Pastor David Nicola"
@@ -274,7 +274,7 @@ const About = () => {
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row"
                         >
-                          <div className="w-full sm:w-44 h-56 bg-gray-50 flex-shrink-0">
+                          <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
                             <OptimizedMedia 
                               src={pastoraCorinaImg} 
                               alt="Pastora Corina Miranda"

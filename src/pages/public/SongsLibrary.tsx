@@ -41,7 +41,7 @@ const SongsLibrary = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/30 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/30 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-amber-800 to-amber-900 text-white py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
@@ -61,7 +61,7 @@ const SongsLibrary = () => {
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por título o artista..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none bg-white dark:bg-slate-900 shadow-sm" />
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none bg-white dark:bg-slate-900 shadow-sm" />
             </div>
             <button onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
@@ -75,14 +75,14 @@ const SongsLibrary = () => {
             {showFilters && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden">
-                <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-200 rounded-xl shadow-sm">
+                <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm">
                   <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-amber-400 outline-none">
+                    className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
                     <option value="">Todos los tipos</option>
                     {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                   <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-amber-400 outline-none">
+                    className="border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 focus:border-amber-400 outline-none">
                     <option value="">Todos los estilos</option>
                     {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -116,24 +116,24 @@ const SongsLibrary = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => setSelectedSong(song)}
-                className="bg-white dark:bg-slate-900 border border-gray-200 rounded-xl p-5 hover:border-amber-300 hover:shadow-md transition-all cursor-pointer group"
+                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-5 hover:border-amber-300 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-gray-800 group-hover:text-amber-700 transition-colors line-clamp-2">{song.title}</h3>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-2">{song.title}</h3>
                   {song.has_chords && (
-                    <span className="text-[10px] bg-green-50 text-green-700 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-2">🎸</span>
+                    <span className="text-[10px] bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ml-2 border border-green-200/50 dark:border-green-800/30">🎸</span>
                   )}
                 </div>
                 {song.artist && <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{song.artist}</p>}
                 <div className="flex flex-wrap gap-1.5">
                   {song.song_types && (
-                    <span className="text-[10px] bg-amber-50 text-amber-700 font-medium px-2 py-0.5 rounded-full">{song.song_types.name}</span>
+                    <span className="text-[10px] bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-medium px-2 py-0.5 rounded-full border border-amber-200/50 dark:border-amber-800/30">{song.song_types.name}</span>
                   )}
                   {song.song_styles && (
-                    <span className="text-[10px] bg-blue-50 text-blue-700 font-medium px-2 py-0.5 rounded-full">{song.song_styles.name}</span>
+                    <span className="text-[10px] bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium px-2 py-0.5 rounded-full border border-blue-200/50 dark:border-blue-800/30">{song.song_styles.name}</span>
                   )}
                   {song.bpm && (
-                    <span className="text-[10px] bg-gray-100 text-gray-600 dark:text-gray-300 font-medium px-2 py-0.5 rounded-full">{song.bpm} BPM</span>
+                    <span className="text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium px-2 py-0.5 rounded-full">{song.bpm} BPM</span>
                   )}
                 </div>
               </motion.div>
@@ -156,23 +156,23 @@ const SongsLibrary = () => {
               initial={{ opacity: 0, y: 30, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 30, scale: 0.97 }}
-              className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl border border-gray-200 my-4"
+              className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-white/10 my-4"
             >
               {/* Header */}
-              <div className="p-6 border-b border-gray-100">
+              <div className="p-6 border-b border-gray-100 dark:border-white/10">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-serif font-bold text-gray-800">{selectedSong.title}</h2>
+                    <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white">{selectedSong.title}</h2>
                     {selectedSong.artist && <p className="text-gray-500 dark:text-gray-400 mt-1">{selectedSong.artist}</p>}
                     <div className="flex flex-wrap gap-2 mt-3">
                       {selectedSong.song_types && (
-                        <span className="text-xs bg-amber-50 text-amber-700 font-medium px-2.5 py-1 rounded-full">{selectedSong.song_types.name}</span>
+                        <span className="text-xs bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-medium px-2.5 py-1 rounded-full border border-amber-200/50 dark:border-amber-800/30">{selectedSong.song_types.name}</span>
                       )}
                       {selectedSong.song_styles && (
-                        <span className="text-xs bg-blue-50 text-blue-700 font-medium px-2.5 py-1 rounded-full">{selectedSong.song_styles.name}</span>
+                        <span className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium px-2.5 py-1 rounded-full border border-blue-200/50 dark:border-blue-800/30">{selectedSong.song_styles.name}</span>
                       )}
                       {selectedSong.bpm && (
-                        <span className="text-xs bg-gray-100 text-gray-600 dark:text-gray-300 font-medium px-2.5 py-1 rounded-full">♩ {selectedSong.bpm} BPM</span>
+                        <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium px-2.5 py-1 rounded-full">♩ {selectedSong.bpm} BPM</span>
                       )}
                     </div>
                   </div>
@@ -180,7 +180,7 @@ const SongsLibrary = () => {
                     <select
                       value={fontFamily}
                       onChange={(e) => setFontFamily(e.target.value as 'mono' | 'serif' | 'sans')}
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-750 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 outline-none cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       <option value="mono">Letra Mono</option>
                       <option value="serif">Letra Serif</option>
@@ -192,15 +192,15 @@ const SongsLibrary = () => {
                         onClick={() => setShowChords(!showChords)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                           showChords
-                            ? 'bg-green-50 text-green-700 border border-green-200'
-                            : 'bg-gray-100 text-gray-500 dark:text-gray-400 border border-gray-200'
+                            ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/50 dark:text-green-300 dark:border-green-800/30'
+                            : 'bg-gray-100 text-gray-500 dark:text-gray-400 border border-gray-200 dark:bg-slate-800 dark:border-slate-750'
                         }`}
                       >
                         {showChords ? <Eye size={14} /> : <EyeOff size={14} />}
                         {showChords ? 'Acordes' : 'Sin acordes'}
                       </button>
                     )}
-                    <button onClick={() => setSelectedSong(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 dark:text-gray-400 cursor-pointer">
+                    <button onClick={() => setSelectedSong(null)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-400 cursor-pointer">
                       <X size={20} />
                     </button>
                   </div>
@@ -225,9 +225,15 @@ const SongsLibrary = () => {
                     white-space: pre-wrap;
                     color: #1f2937;
                   }
+                  .dark .song-lyrics {
+                    color: #d1d5db;
+                  }
                   .song-lyrics h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.5rem; font-family: inherit; color: #111827; }
+                  .dark .song-lyrics h1 { color: #f9fafb; }
                   .song-lyrics h2 { font-size: 1.15rem; font-weight: 700; margin: 1rem 0 0.3rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-family: inherit; }
+                  .dark .song-lyrics h2 { color: #9ca3af; }
                   .song-lyrics h3 { font-size: 1rem; font-weight: 600; margin: 0.5rem 0 0.2rem; color: #9ca3af; font-style: italic; font-family: inherit; }
+                  .dark .song-lyrics h3 { color: #868e96; }
                   .song-lyrics p { margin-bottom: 0.15rem; }
                   
                   /* Native ruby style */
@@ -236,6 +242,9 @@ const SongsLibrary = () => {
                     font-weight: 700;
                     color: #dc2626;
                     font-family: 'Inter', sans-serif;
+                  }
+                  .dark .song-lyrics ruby rt {
+                    color: #f87171;
                   }
                   .song-lyrics.hide-chords ruby rt {
                     display: none;
@@ -253,6 +262,9 @@ const SongsLibrary = () => {
                     padding: 0 1px;
                     margin-top: 1.2rem;
                   }
+                  .dark .song-lyrics span.chord-annotation {
+                    background: rgba(248, 113, 113, 0.08);
+                  }
                   .song-lyrics span.chord-annotation::before {
                     content: attr(data-chord);
                     position: absolute;
@@ -264,6 +276,9 @@ const SongsLibrary = () => {
                     font-family: 'Inter', sans-serif;
                     line-height: 1;
                     pointer-events: none;
+                  }
+                  .dark .song-lyrics span.chord-annotation::before {
+                    color: #f87171;
                   }
                   .song-lyrics.hide-chords span.chord-annotation::before {
                     display: none;

@@ -67,7 +67,7 @@ const MinistriesOverview = () => {
           <p className="text-gray-500 dark:text-gray-400 mt-4 text-sm font-medium">Cargando ministerios...</p>
         </div>
       ) : ministries.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 p-8">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8">
           <Users size={48} className="mx-auto text-gray-300 dark:text-gray-600" />
           <h3 className="font-serif font-bold text-xl text-primary dark:text-white mt-4">No se encontraron ministerios</h3>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Pronto agregaremos más información sobre nuestras actividades.</p>
@@ -84,7 +84,7 @@ const MinistriesOverview = () => {
             <motion.div key={min.id} variants={fadeInUp}>
               <Link 
                 to={`/ministerios/${min.slug}`}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group h-full"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group h-full"
               >
                 <div>
                   {/* Banner de Imagen o Fallback */}
@@ -154,8 +154,8 @@ const MinistriesOverview = () => {
       )}
 
       {/* INVITACION A SERVIR */}
-      <section className="max-w-4xl mx-auto bg-base/50 p-8 rounded-3xl border border-gray-200 text-center space-y-6">
-        <div className="w-12 h-12 bg-primary/10 text-primary dark:text-white rounded-full flex items-center justify-center mx-auto">
+      <section className="max-w-4xl mx-auto bg-base/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-gray-200 dark:border-white/10 text-center space-y-6">
+        <div className="w-12 h-12 bg-primary/10 dark:bg-blue-900/30 text-primary dark:text-blue-300 rounded-full flex items-center justify-center mx-auto">
           <Award size={24} />
         </div>
         <h3 className="font-serif font-bold text-2xl text-primary dark:text-white">¿Deseas Servir a Dios con tus Dones?</h3>
@@ -164,7 +164,7 @@ const MinistriesOverview = () => {
         </p>
         <Link 
           to="/contacto" 
-          className="px-6 py-2.5 bg-primary hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
+          className="px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs inline-block"
         >
           Ponte en Contacto
         </Link>

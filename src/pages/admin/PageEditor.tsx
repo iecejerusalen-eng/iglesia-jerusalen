@@ -464,7 +464,7 @@ const PageEditor = () => {
         <button
           type="button"
           onClick={fetchPageSections}
-          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-55 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+          className="p-2 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-55 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors cursor-pointer"
           title="Recargar"
         >
           <RefreshCw size={18} />
@@ -472,7 +472,7 @@ const PageEditor = () => {
       </div>
 
       {/* Selector de Páginas (Tabs) */}
-      <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200">
+      <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
         {(Object.keys(PAGES_METADATA) as Array<'home' | 'about'>).map((pageKey) => (
           <button
             key={pageKey}
@@ -491,7 +491,7 @@ const PageEditor = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Selector de Secciones con controles de orden y borrado (Sidebar) */}
-        <div className="lg:col-span-1 bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs flex flex-col space-y-3">
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-4 rounded-2xl shadow-2xs flex flex-col space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider">
               Estructura de Secciones
@@ -567,7 +567,7 @@ const PageEditor = () => {
         </div>
 
         {/* Panel Editor de Contenido (Lado derecho) */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 p-6 rounded-2xl shadow-2xs space-y-6">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-2xs space-y-6">
           {loading ? (
             <div className="flex justify-center items-center py-24">
               <Loader2 className="animate-spin text-primary mr-2" size={24} />
@@ -578,14 +578,14 @@ const PageEditor = () => {
           ) : activeSec ? (
             <div className="space-y-6">
               {/* Header de Sección */}
-              <div className="border-b border-slate-100 pb-4 flex justify-between items-start gap-4">
+              <div className="border-b border-slate-100 dark:border-white/5 pb-4 flex justify-between items-start gap-4">
                 <div>
-                  <h3 className="font-serif font-bold text-gray-800 text-lg flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-lg flex items-center gap-2">
                     <Layout size={18} className="text-gold" />
                     Configuración de Sección: {activeSec.name}
                   </h3>
                   <p className="text-slate-450 text-xs mt-1">
-                    Tipo de Módulo: <span className="font-bold text-slate-600 capitalize">{activeSec.section_type === 'custom' ? 'Bloques Personalizados' : 'Elemento Especial del Sistema'}</span>
+                    Tipo de Módulo: <span className="font-bold text-slate-600 dark:text-gray-400 capitalize">{activeSec.section_type === 'custom' ? 'Bloques Personalizados' : 'Elemento Especial del Sistema'}</span>
                   </p>
                 </div>
 
@@ -593,7 +593,7 @@ const PageEditor = () => {
                   href={selectedPage === 'home' ? '/' : '/nosotros'} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-primary hover:text-blue-900 border border-slate-200 hover:border-slate-300 bg-slate-50/50 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+                  className="text-primary hover:text-blue-900 border border-slate-200 dark:border-white/10 hover:border-slate-300 bg-slate-50/50 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                 >
                   <Eye size={12} />
                   Ver Cambios
@@ -603,40 +603,40 @@ const PageEditor = () => {
               {/* Parámetros Básicos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">
                     Nombre del Módulo
                   </label>
                   <input
                     type="text"
                     value={activeSec.name || ''}
                     onChange={(e) => handleUpdateField('name', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Bienvenidos"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">
                     Título de Sección
                   </label>
                   <input
                     type="text"
                     value={activeSec.title || ''}
                     onChange={(e) => handleUpdateField('title', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Bienvenido a nuestra iglesia"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">
                     Subtítulo / Introducción
                   </label>
                   <input
                     type="text"
                     value={activeSec.subtitle || ''}
                     onChange={(e) => handleUpdateField('subtitle', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Conoce nuestras actividades"
                   />
                 </div>
@@ -644,13 +644,13 @@ const PageEditor = () => {
 
               {/* Imagen de Portada (Solo para Héroes) */}
               {activeSec.id.includes('hero') && (
-                <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 p-5 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
                     <ImageIcon size={18} className="text-gold" />
                     <span>Imagen de Portada de Sección Héroe</span>
                   </div>
                   <div className="flex flex-col md:flex-row gap-5 items-center">
-                    <div className="w-full md:w-48 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative group/cover">
+                    <div className="w-full md:w-48 h-28 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 relative group/cover">
                       {activeSec.cover_image_url ? (
                         <>
                           <img 
@@ -697,7 +697,7 @@ const PageEditor = () => {
                           value={activeSec.cover_image_url || ''}
                           onChange={(e) => handleUpdateField('cover_image_url', e.target.value)}
                           placeholder="https://images.unsplash.com/... o sube una a la derecha"
-                          className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -718,7 +718,7 @@ const PageEditor = () => {
 
               {/* Editor de Bloques o Mensaje de Tipo Especial */}
               {activeSec.section_type === 'custom' ? (
-                <div className="border-t border-slate-100 pt-6">
+                <div className="border-t border-slate-100 dark:border-white/5 pt-6">
                   <BlockBuilder 
                     blocks={activeSec.content_blocks || []} 
                     onChange={(updatedBlocks) => {
@@ -727,10 +727,10 @@ const PageEditor = () => {
                   />
                 </div>
               ) : activeSec.section_type === 'system_gallery' ? (
-                <div className="border-t border-slate-100 pt-6 space-y-6">
+                <div className="border-t border-slate-100 dark:border-white/5 pt-6 space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="font-serif font-bold text-gray-800 text-base">Diapositivas de la Galería</h4>
+                      <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base">Diapositivas de la Galería</h4>
                       <p className="text-slate-450 text-xs">Administra las imágenes que se mostrarán en el carrusel animado de la página.</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -756,7 +756,7 @@ const PageEditor = () => {
                           setMediaModalTarget('add_slide');
                           setIsMediaModalOpen(true);
                         }}
-                        className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all cursor-pointer text-xs font-semibold shadow-xxs"
+                        className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-300 rounded-xl transition-all cursor-pointer text-xs font-semibold shadow-xxs"
                       >
                         <Search size={14} />
                         Buscar en Internet
@@ -766,14 +766,14 @@ const PageEditor = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(!activeSec.content_blocks || activeSec.content_blocks.length === 0) ? (
-                      <div className="col-span-full text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs font-medium">
+                      <div className="col-span-full text-center py-12 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 text-slate-400 text-xs font-medium">
                         La galería está vacía. Sube imágenes utilizando el botón de arriba.
                       </div>
                     ) : (
                       (activeSec.content_blocks as any[]).map((slide, sIdx) => (
                         <div 
                           key={slide.id || sIdx}
-                          className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex gap-4 relative group/slide"
+                          className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl p-4 flex gap-4 relative group/slide"
                         >
                           <div className="w-24 h-24 rounded-xl border border-slate-250 overflow-hidden bg-slate-100 flex-shrink-0">
                             <img 
@@ -808,7 +808,7 @@ const PageEditor = () => {
                                   updated[sIdx] = { ...updated[sIdx], url: e.target.value };
                                   handleUpdateField('content_blocks', updated);
                                 }}
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div className="space-y-1">
@@ -824,7 +824,7 @@ const PageEditor = () => {
                                   handleUpdateField('content_blocks', updated);
                                 }}
                                 placeholder="Describa esta foto..."
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                           </div>
@@ -839,7 +839,7 @@ const PageEditor = () => {
                                 updated[sIdx - 1] = temp;
                                 handleUpdateField('content_blocks', updated);
                               }}
-                              className="p-1 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+                              className="p-1 hover:bg-slate-200 rounded text-slate-500 dark:text-gray-450 disabled:opacity-20 cursor-pointer"
                             >
                               <ArrowUp size={12} />
                             </button>
@@ -853,7 +853,7 @@ const PageEditor = () => {
                                 updated[sIdx + 1] = temp;
                                 handleUpdateField('content_blocks', updated);
                               }}
-                              className="p-1 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20 cursor-pointer"
+                              className="p-1 hover:bg-slate-200 rounded text-slate-500 dark:text-gray-450 disabled:opacity-20 cursor-pointer"
                             >
                               <ArrowDown size={12} />
                             </button>
@@ -875,7 +875,7 @@ const PageEditor = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-3 bg-blue-50/40 border border-blue-100 p-5 rounded-2xl text-xs text-slate-600 leading-relaxed items-start">
+                <div className="flex gap-3 bg-blue-50/40 border border-blue-100 p-5 rounded-2xl text-xs text-slate-600 dark:text-gray-400 leading-relaxed items-start">
                   <Info className="text-primary mt-0.5 flex-shrink-0" size={16} />
                   <div>
                     <span className="font-bold text-primary block mb-0.5">Sección de Sistema Activa</span>
@@ -885,7 +885,7 @@ const PageEditor = () => {
               )}
 
               {/* Guardar */}
-              <div className="flex justify-end pt-6 border-t border-slate-100">
+              <div className="flex justify-end pt-6 border-t border-slate-100 dark:border-white/5">
                 <button
                   type="button"
                   onClick={handleSaveActiveSection}
@@ -912,9 +912,9 @@ const PageEditor = () => {
       {/* Modal para Añadir Sección */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-scale-in">
-            <div className="bg-slate-50 border-b border-slate-200 py-3.5 px-6 flex justify-between items-center">
-              <h3 className="font-serif font-bold text-gray-800 text-base flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-xl border border-slate-100 dark:border-white/5 overflow-hidden animate-scale-in">
+            <div className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-white/10 py-3.5 px-6 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base flex items-center gap-1.5">
                 <Settings size={16} className="text-gold" />
                 Añadir Nueva Sección
               </h3>
@@ -929,7 +929,7 @@ const PageEditor = () => {
 
             <form onSubmit={handleAddSectionSubmit} className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-500 dark:text-gray-450 uppercase tracking-wider mb-1">
                   Nombre de la Sección
                 </label>
                 <input
@@ -937,19 +937,19 @@ const PageEditor = () => {
                   required
                   value={newSecName}
                   onChange={(e) => setNewSecName(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Pilares de Adoración"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-500 dark:text-gray-450 uppercase tracking-wider mb-1">
                   Tipo de Sección
                 </label>
                 <select
                   value={newSecType}
                   onChange={(e) => setNewSecType(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-600"
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-600 dark:text-gray-400"
                 >
                   {availableSystemTypes.map(opt => (
                     <option key={opt.value} value={opt.value}>
@@ -959,11 +959,11 @@ const PageEditor = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-slate-250 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-250 text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

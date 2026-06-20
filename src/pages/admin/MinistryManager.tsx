@@ -276,7 +276,7 @@ const MinistryManager = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary">Gestor de Ministerios</h1>
-          <p className="text-gray-500 text-sm">Administra las actividades, departamentos y servicios dinámicos de la iglesia.</p>
+          <p className="text-gray-500 dark:text-gray-450 text-sm">Administra las actividades, departamentos y servicios dinámicos de la iglesia.</p>
         </div>
         {canCreate && (
           <button
@@ -291,15 +291,15 @@ const MinistryManager = () => {
 
       {/* Lista de Ministerios */}
       {loading ? (
-        <div className="flex justify-center items-center py-20 bg-white rounded-2xl border border-gray-150 shadow-sm">
+        <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm">
           <Loader2 className="animate-spin text-primary" size={32} />
         </div>
       ) : ministries.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-150 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wider border-b border-gray-150">
+                <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-450 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
                   <th className="py-4 px-6">Detalle Ministerio</th>
                   <th className="py-4 px-6">Categoría</th>
                   <th className="py-4 px-6">Responsable</th>
@@ -307,7 +307,7 @@ const MinistryManager = () => {
                   <th className="py-4 px-6 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                 {ministries.map((min) => {
                   const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
                   
@@ -319,7 +319,7 @@ const MinistryManager = () => {
                             <img
                               src={min.image_url}
                               alt={min.name}
-                              className="w-12 h-12 rounded-lg object-cover border border-gray-100 flex-shrink-0"
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
                             />
                           ) : (
                             <div className="w-12 h-12 bg-gray-55 rounded-lg flex items-center justify-center text-gray-300 flex-shrink-0">
@@ -341,11 +341,11 @@ const MinistryManager = () => {
                           {min.category}
                         </span>
                       </td>
-                      <td className="py-4 px-6 font-semibold text-gray-650">
+                      <td className="py-4 px-6 font-semibold text-gray-650 dark:text-gray-400">
                         {min.leader_name || 'No asignado'}
                       </td>
-                      <td className="py-4 px-6 text-gray-500 truncate max-w-[200px]" title={min.schedule}>
-                        <span className="font-semibold block text-gray-700">{min.schedule || 'No especificado'}</span>
+                      <td className="py-4 px-6 text-gray-500 dark:text-gray-450 truncate max-w-[200px]" title={min.schedule}>
+                        <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
                         {min.anniversary_date && (
                           <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
                             <Gift size={12} className="inline text-amber-500" />
@@ -397,9 +397,9 @@ const MinistryManager = () => {
           </div>
         </div>
       ) : (
-        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
           <Users className="mx-auto text-gray-300 mb-4" size={48} />
-          <h3 className="text-lg font-serif font-bold text-gray-700">No hay ministerios registrados</h3>
+          <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No hay ministerios registrados</h3>
           <p className="text-gray-400 text-sm mt-1">Comienza agregando los departamentos o servicios de la iglesia.</p>
         </div>
       )}
@@ -407,9 +407,9 @@ const MinistryManager = () => {
       {/* Modal / Formulario CRUD */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-150 overflow-hidden animate-scale-in my-8">
-            <div className="bg-gray-50 border-b border-gray-150 py-4 px-6 flex justify-between items-center">
-              <h3 className="font-serif font-bold text-gray-800 text-lg">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-xl border border-gray-150 dark:border-white/10 overflow-hidden animate-scale-in my-8">
+            <div className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 py-4 px-6 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-lg">
                 {isEditingReadOnly 
                   ? 'Detalles del Ministerio' 
                   : editingMinistry 
@@ -428,24 +428,24 @@ const MinistryManager = () => {
             <form onSubmit={handleSubmit(onSubmitForm)} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
                   <input
                     {...register('name')}
                     type="text"
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
                     placeholder="Ej. Dep. Jóvenes"
                   />
                   {errors.name && <p className="text-accent-red text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Slug URL</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Slug URL</label>
                   <input
                     {...register('slug')}
                     type="text"
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 disabled:text-gray-400"
                     placeholder="ej-jovenes"
                   />
                   {errors.slug && <p className="text-accent-red text-xs mt-1">{errors.slug.message}</p>}
@@ -454,11 +454,11 @@ const MinistryManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Categoría</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Categoría</label>
                   <select
                     {...register('category')}
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50"
                   >
                     <option value="departamento">Departamento</option>
                     <option value="servicio">Servicio</option>
@@ -467,12 +467,12 @@ const MinistryManager = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Líder o Responsable</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Líder o Responsable</label>
                   <input
                     {...register('leader_name')}
                     type="text"
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
                     placeholder="Ej. Líderes Juveniles"
                   />
                   {errors.leader_name && <p className="text-accent-red text-xs mt-1">{errors.leader_name.message}</p>}
@@ -481,36 +481,36 @@ const MinistryManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Horario de Reunión</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Horario de Reunión</label>
                   <input
                     {...register('schedule')}
                     type="text"
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
                     placeholder="Ej. Sábados 7:30pm"
                   />
                   {errors.schedule && <p className="text-accent-red text-xs mt-1">{errors.schedule.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
                   <input
                     {...register('anniversary_date')}
                     type="date"
                     disabled={isEditingReadOnly}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
                   />
                   {errors.anniversary_date && <p className="text-accent-red text-xs mt-1">{errors.anniversary_date.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Color del Tema</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Color del Tema</label>
                   <div className="flex items-center gap-2">
                     <input
                       {...register('theme_color')}
                       type="color"
                       disabled={isEditingReadOnly}
-                      className="w-10 h-10 border border-gray-200 rounded-lg cursor-pointer p-0.5 bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      className="w-10 h-10 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer p-0.5 bg-white dark:bg-slate-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     />
                     <input
                       type="text"
@@ -518,7 +518,7 @@ const MinistryManager = () => {
                       onChange={(e) => setValue('theme_color', e.target.value)}
                       disabled={isEditingReadOnly}
                       placeholder="#1E3A8A"
-                      className="flex-grow px-3 py-2 border border-gray-200 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="flex-grow px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
                     />
                   </div>
                   {errors.theme_color && <p className="text-accent-red text-xs mt-1">{errors.theme_color.message}</p>}
@@ -527,10 +527,10 @@ const MinistryManager = () => {
 
               {/* Imagen de Portada */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Imagen de Portada (Banner)</label>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Imagen de Portada (Banner)</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                   {!isEditingReadOnly ? (
-                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/50">
                       <MediaUploader
                         folder="ministerios"
                         allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
@@ -544,7 +544,7 @@ const MinistryManager = () => {
                       <span className="text-[10px] text-gray-400 block mt-2">JPG, PNG o WEBP</span>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-xs">
+                    <div className="flex flex-col items-center justify-center p-4 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-slate-950 text-gray-400 text-xs">
                       Carga de archivos deshabilitada
                     </div>
                   )}
@@ -552,7 +552,7 @@ const MinistryManager = () => {
                   {/* Preview de la imagen */}
                   <div className="flex items-center gap-3">
                     {imagePreview ? (
-                      <div className="relative w-24 h-24 rounded-xl border border-gray-150 overflow-hidden bg-gray-55 flex-shrink-0">
+                      <div className="relative w-24 h-24 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-55 flex-shrink-0">
                         <img src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
                         {!isEditingReadOnly && (
                           <button
@@ -568,7 +568,7 @@ const MinistryManager = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="w-24 h-24 rounded-xl border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
+                      <div className="w-24 h-24 rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-950 flex items-center justify-center text-gray-300 text-xs">
                         Sin Imagen
                       </div>
                     )}
@@ -590,7 +590,7 @@ const MinistryManager = () => {
                         {...register('image_url')}
                         type="url"
                         disabled={isEditingReadOnly}
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-gray-400"
                         placeholder="https://ejemplo.com/portada.jpg"
                       />
                     </div>
@@ -600,7 +600,7 @@ const MinistryManager = () => {
 
               {/* Editor de Bloques */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2.5">
                   Contenido de la Página (Bloques de Diseño)
                 </label>
                 <BlockEditor 
@@ -617,11 +617,11 @@ const MinistryManager = () => {
               </div>
 
               {/* Botones de Envío */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white">
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-slate-900">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border border-gray-250 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   {isEditingReadOnly ? 'Cerrar' : 'Cancelar'}
                 </button>

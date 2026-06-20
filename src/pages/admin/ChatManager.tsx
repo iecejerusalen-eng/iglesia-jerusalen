@@ -401,16 +401,16 @@ export default function ChatManager() {
       </div>
 
       {/* Main Workspace split screen */}
-      <div className="bg-white rounded-2xl border border-gray-150 shadow-xs flex flex-1 overflow-hidden min-h-0">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-1 overflow-hidden min-h-0">
         
         {/* Left Side: Navigation / Contacts / Chats */}
         <div
-          className={`w-full md:w-80 border-r border-gray-150 flex flex-col shrink-0 ${
+          className={`w-full md:w-80 border-r border-gray-150 dark:border-white/10 flex flex-col shrink-0${
             activeChat ? 'hidden md:flex' : 'flex'
           }`}
         >
           {/* Header Search & Tabs */}
-          <div className="p-4 border-b border-gray-150 space-y-3">
+          <div className="p-4 border-b border-gray-150 dark:border-white/10 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
               <input
@@ -418,7 +418,7 @@ export default function ChatManager() {
                 placeholder={activeTab === 'chats' ? 'Buscar chats...' : 'Buscar contactos...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white transition"
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white transition"
               />
               {searchQuery && (
                 <button
@@ -473,7 +473,7 @@ export default function ChatManager() {
               ) : filteredChats.length === 0 ? (
                 <div className="text-center py-12 px-4 space-y-1">
                   <MessageSquare className="mx-auto text-gray-300" size={32} />
-                  <p className="text-xs text-gray-500 font-medium">No hay chats activos</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-450 font-medium">No hay chats activos</p>
                   <p className="text-xxs text-gray-400">Ve a Contactos para iniciar una conversación.</p>
                 </div>
               ) : (
@@ -518,7 +518,7 @@ export default function ChatManager() {
                         {/* Middle metadata */}
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="flex justify-between items-center">
-                            <h4 className="font-semibold text-xs text-gray-800 truncate">{highlightText(chatName, searchQuery)}</h4>
+                            <h4 className="font-semibold text-xs text-gray-800 dark:text-gray-100 truncate">{highlightText(chatName, searchQuery)}</h4>
                             <div className="flex items-center gap-1 shrink-0">
                               {lastMsg && (
                                 <span className="text-[10px] text-gray-400">
@@ -577,7 +577,7 @@ export default function ChatManager() {
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-12 px-4 space-y-1">
                   <Users className="mx-auto text-gray-300" size={32} />
-                  <p className="text-xs text-gray-500 font-medium">No se encontraron contactos</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-450 font-medium">No se encontraron contactos</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-50">
@@ -606,7 +606,7 @@ export default function ChatManager() {
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-0.5">
-                          <h4 className="font-semibold text-xs text-gray-800 truncate">{highlightText(contactName, searchQuery)}</h4>
+                          <h4 className="font-semibold text-xs text-gray-800 dark:text-gray-100 truncate">{highlightText(contactName, searchQuery)}</h4>
                           <div className="flex items-center gap-1.5">
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getRoleBadgeStyle(contact.role)}`}>
                               {getRoleLabel(contact.role)}
@@ -628,11 +628,11 @@ export default function ChatManager() {
           {activeChat ? (
             <>
               {/* Chat Window Header */}
-              <div className="bg-white/85 backdrop-blur-md border-b border-gray-150 p-4 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xxs">
+              <div className="bg-white/85 backdrop-blur-md border-b border-gray-150 dark:border-white/10 p-4 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xxs">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={() => setActiveChat(null)}
-                    className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 cursor-pointer"
+                    className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 dark:text-gray-450 cursor-pointer"
                   >
                     <ChevronLeft size={20} />
                   </button>
@@ -664,7 +664,7 @@ export default function ChatManager() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-serif font-bold text-sm text-gray-800 truncate">{chatName}</h3>
+                          <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{chatName}</h3>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`px-1.5 py-0 rounded text-[9px] font-bold border ${getRoleBadgeStyle(chatRole)}`}>
                               {getRoleLabel(chatRole)}
@@ -696,7 +696,7 @@ export default function ChatManager() {
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-2">
                     <Loader2 className="animate-spin text-primary" size={24} />
-                    <span className="text-xs text-gray-500">Cargando mensajes...</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-450">Cargando mensajes...</span>
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="text-center py-20 text-gray-400 space-y-2">
@@ -710,7 +710,7 @@ export default function ChatManager() {
                       <div key={dateStr} className="space-y-3.5">
                         {/* Date Separator */}
                         <div className="flex justify-center my-4">
-                          <span className="px-3 py-1 bg-slate-200/80 backdrop-blur-xs text-slate-600 rounded-full text-[9px] font-bold tracking-wider uppercase border border-slate-300/30 shadow-xxs">
+                          <span className="px-3 py-1 bg-slate-200/80 backdrop-blur-xs text-slate-600 dark:text-gray-400 rounded-full text-[9px] font-bold tracking-wider uppercase border border-slate-300/30 shadow-xxs">
                             {formatDateHeader(dateStr)}
                           </span>
                         </div>
@@ -741,7 +741,7 @@ export default function ChatManager() {
                                 </div>
 
                                 {/* Floating actions on hover */}
-                                <div className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-all duration-200 flex items-center bg-white shadow-md border border-gray-150 rounded-xl p-1 gap-1 z-10 ${
+                                <div className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-all duration-200 flex items-center bg-white dark:bg-slate-900 shadow-md border border-gray-150 dark:border-white/10 rounded-xl p-1 gap-1 z-10${
                                   isMe ? 'right-full mr-2' : 'left-full ml-2'
                                 }`}>
                                   <button
@@ -750,7 +750,7 @@ export default function ChatManager() {
                                       navigator.clipboard.writeText(msg.content);
                                       toast.success('Mensaje copiado al portapapeles.');
                                     }}
-                                    className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                                    className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 transition cursor-pointer"
                                     title="Copiar texto"
                                   >
                                     <Copy size={12} />
@@ -800,10 +800,10 @@ export default function ChatManager() {
               )}
 
               {/* Chat Input Field Area */}
-              <div className="bg-white/90 backdrop-blur-md border-t border-gray-150 p-3 shrink-0 relative z-20">
+              <div className="bg-white/90 backdrop-blur-md border-t border-gray-150 dark:border-white/10 p-3 shrink-0 relative z-20">
                 
                 {/* Popular Emojis Shortcut Bar */}
-                <div className="flex items-center gap-1.5 pb-2 border-b border-gray-100 mb-2 overflow-x-auto">
+                <div className="flex items-center gap-1.5 pb-2 border-b border-gray-100 dark:border-white/5 mb-2 overflow-x-auto">
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-655 transition shrink-0 cursor-pointer"
@@ -824,7 +824,7 @@ export default function ChatManager() {
 
                 {/* Grid Emoji Popover Overlay */}
                 {showEmojiPicker && (
-                  <div className="absolute bottom-16 left-3 bg-white border border-gray-200 rounded-xl p-3 shadow-md z-30 w-56 grid grid-cols-5 gap-2">
+                  <div className="absolute bottom-16 left-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-3 shadow-md z-30 w-56 grid grid-cols-5 gap-2">
                     {EMOJIS.map((emoji) => (
                       <button
                         key={`grid-${emoji}`}
@@ -847,7 +847,7 @@ export default function ChatManager() {
                     placeholder="Escribe un mensaje aquí... (Solo texto y emojis)"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value.slice(0, 1000))}
-                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white bg-slate-50 transition"
+                    className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white bg-slate-50 dark:bg-slate-950 transition"
                     maxLength={1000}
                     disabled={sendingMessage}
                   />
@@ -876,8 +876,8 @@ export default function ChatManager() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-3">
               <MessageSquare className="text-gray-300 animate-pulse" size={56} />
-              <h3 className="font-serif font-bold text-base text-gray-800">Mensajería en Tiempo Real</h3>
-              <p className="text-xs text-gray-500 max-w-sm">
+              <h3 className="font-serif font-bold text-base text-gray-800 dark:text-gray-100">Mensajería en Tiempo Real</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-450 max-w-sm">
                 Selecciona un chat en la lista o inicia una conversación con otro miembro para comenzar a chatear.
               </p>
             </div>
@@ -893,10 +893,10 @@ export default function ChatManager() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl max-w-lg w-full border border-gray-150 p-6 shadow-xl space-y-4 flex flex-col max-h-[90vh]"
+              className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-gray-150 dark:border-white/10 p-6 shadow-xl space-y-4 flex flex-col max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-3">
                 <h3 className="font-serif font-bold text-base text-primary flex items-center gap-2">
                   <Megaphone size={18} className="text-gold" />
                   Nueva Difusión de Mensajería
@@ -913,7 +913,7 @@ export default function ChatManager() {
               <div className="space-y-4 overflow-y-auto pr-1 flex-1">
                 {/* Segment Selector */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider">
                     Segmento de Destinatarios
                   </label>
                   
@@ -933,7 +933,7 @@ export default function ChatManager() {
                           className="text-primary focus:ring-primary/25"
                         />
                         <div className="text-left">
-                          <p className="text-xs font-semibold text-gray-800">Todos los usuarios de la Iglesia</p>
+                          <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Todos los usuarios de la Iglesia</p>
                           <p className="text-[10px] text-gray-400">Enviar mensaje privado individual a cada contacto disponible.</p>
                         </div>
                       </label>
@@ -953,7 +953,7 @@ export default function ChatManager() {
                         className="text-primary focus:ring-primary/25"
                       />
                       <div className="text-left flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800">
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
                           {role === 'admin' || role === 'pastor' || role === 'leader'
                             ? 'Por Departamento / Ministerio'
                             : `Miembros de mi departamento: ${myMinistry?.name || 'Cargando...'}`}
@@ -965,7 +965,7 @@ export default function ChatManager() {
                           <select
                             value={selectedDeptId}
                             onChange={(e) => setSelectedDeptId(e.target.value)}
-                            className="mt-2 w-full p-2 border border-gray-200 rounded-lg text-xxs focus:outline-none"
+                            className="mt-2 w-full p-2 border border-gray-200 dark:border-white/10 rounded-lg text-xxs focus:outline-none"
                           >
                             <option value="">Selecciona un departamento...</option>
                             {availableMinistries.map((min) => (
@@ -992,7 +992,7 @@ export default function ChatManager() {
                         className="text-primary focus:ring-primary/25"
                       />
                       <div className="text-left">
-                        <p className="text-xs font-semibold text-gray-800">Caballeros de la Iglesia (Hombres &gt; 30 años)</p>
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Caballeros de la Iglesia (Hombres &gt; 30 años)</p>
                         <p className="text-[10px] text-gray-400">Calculado dinámicamente mediante el CRM usando fecha de nacimiento y género.</p>
                       </div>
                     </label>
@@ -1011,7 +1011,7 @@ export default function ChatManager() {
                         className="text-primary focus:ring-primary/25"
                       />
                       <div className="text-left">
-                        <p className="text-xs font-semibold text-gray-800">Damas de la Iglesia (Mujeres)</p>
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Damas de la Iglesia (Mujeres)</p>
                         <p className="text-[10px] text-gray-400">Calculado dinámicamente usando el género registrado en el CRM.</p>
                       </div>
                     </label>
@@ -1030,7 +1030,7 @@ export default function ChatManager() {
                         className="text-primary focus:ring-primary/25"
                       />
                       <div className="text-left">
-                        <p className="text-xs font-semibold text-gray-800">Jóvenes de la Iglesia (Menores de 30 años)</p>
+                        <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Jóvenes de la Iglesia (Menores de 30 años)</p>
                         <p className="text-[10px] text-gray-400">Calculado dinámicamente mediante el CRM usando la fecha de nacimiento.</p>
                       </div>
                     </label>
@@ -1038,10 +1038,10 @@ export default function ChatManager() {
                 </div>
 
                 {/* Recipient summary badge */}
-                <div className="bg-gray-50 border border-gray-150 p-3 rounded-xl flex items-center justify-between">
+                <div className="bg-gray-50 dark:bg-slate-950 border border-gray-150 dark:border-white/10 p-3 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users size={15} className="text-gray-500" />
-                    <span className="text-xxs font-semibold text-gray-600">Destinatarios estimados:</span>
+                    <Users size={15} className="text-gray-500 dark:text-gray-450" />
+                    <span className="text-xxs font-semibold text-gray-600 dark:text-gray-400">Destinatarios estimados:</span>
                   </div>
                   <span className="px-2 py-0.5 bg-primary/10 text-primary font-bold text-xxs rounded-full">
                     {recipientsList.length} usuarios
@@ -1050,7 +1050,7 @@ export default function ChatManager() {
 
                 {/* Broadcast Message Input */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider">
                     Mensaje de Difusión
                   </label>
                   <textarea
@@ -1058,7 +1058,7 @@ export default function ChatManager() {
                     placeholder="Escribe el mensaje de difusión... (Se enviará de forma individual a cada destinatario)"
                     value={broadcastContent}
                     onChange={(e) => setBroadcastContent(e.target.value.slice(0, 1000))}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none resize-none leading-relaxed"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none resize-none leading-relaxed"
                     maxLength={1000}
                     disabled={sendingBroadcast}
                   />
@@ -1086,11 +1086,11 @@ export default function ChatManager() {
               )}
 
               {/* Modal Footer */}
-              <div className="flex gap-3 justify-end border-t border-gray-100 pt-3">
+              <div className="flex gap-3 justify-end border-t border-gray-100 dark:border-white/5 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsBroadcastOpen(false)}
-                  className="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-500 font-semibold text-xs tracking-wider uppercase rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 font-semibold text-xs tracking-wider uppercase rounded-xl transition cursor-pointer"
                   disabled={sendingBroadcast}
                 >
                   Cancelar

@@ -112,12 +112,12 @@ export default function StickyNav() {
           >
             <AnimatePresence>
               {isHovered && (
-                <motion.div
+                 <motion.div
                   initial={{ opacity: 0, x: 10, scale: 0.95 }}
                   animate={{ opacity: 1, x: -10, scale: 1 }}
                   exit={{ opacity: 0, x: 10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-10 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg shadow-md whitespace-nowrap border border-white/10 pointer-events-none"
+                  className="absolute right-10 px-3 py-1.5 bg-primary dark:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-md whitespace-nowrap border border-white/10 pointer-events-none"
                 >
                   {section.label}
                 </motion.div>
@@ -128,7 +128,7 @@ export default function StickyNav() {
               {isActive && (
                 <motion.div
                   layoutId="activeStickyRing"
-                  className="absolute inset-0 rounded-full border-2 border-primary bg-transparent shadow-xs"
+                  className="absolute inset-0 rounded-full border-2 border-primary dark:border-blue-500 bg-transparent shadow-xs"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
@@ -136,10 +136,14 @@ export default function StickyNav() {
               <motion.div
                 animate={{
                   scale: isActive ? 1.15 : isHovered ? 1.25 : 1,
-                  backgroundColor: isActive ? 'var(--color-primary)' : isHovered ? 'var(--color-gold)' : 'var(--color-base)',
-                  color: isActive ? '#ffffff' : isHovered ? '#ffffff' : 'var(--color-primary)'
                 }}
-                className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 shadow-sm`}
+                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm ${
+                  isActive 
+                    ? 'bg-primary dark:bg-blue-600 text-white' 
+                    : isHovered 
+                    ? 'bg-gold text-white' 
+                    : 'bg-white dark:bg-slate-800 text-primary dark:text-gray-300 border border-slate-200/50 dark:border-white/5'
+                }`}
               >
                 <Icon size={12} strokeWidth={isActive || isHovered ? 3 : 2} />
               </motion.div>

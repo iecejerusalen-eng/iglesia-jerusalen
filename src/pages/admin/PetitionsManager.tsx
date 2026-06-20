@@ -248,7 +248,7 @@ const PetitionsManager = () => {
     switch (status) {
       case 'pendiente':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-white/10">
             <Clock size={12} />
             Recibido
           </span>
@@ -275,7 +275,7 @@ const PetitionsManager = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
           <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
             <HeartHandshake className="text-gold" />
@@ -288,7 +288,7 @@ const PetitionsManager = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-white/10">
         <button
           onClick={() => setActiveTab('petitions')}
           className={`px-5 py-2.5 font-medium text-sm border-b-2 transition-colors cursor-pointer ${
@@ -314,9 +314,9 @@ const PetitionsManager = () => {
       {activeTab === 'petitions' ? (
         <>
           {/* Controls Panel */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white p-4 rounded-xl border border-gray-150 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-150 dark:border-white/10 shadow-xs">
             {/* Search Input */}
-            <div className="md:col-span-5 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+            <div className="md:col-span-5 flex items-center gap-2 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-slate-950">
               <label htmlFor="search_petitions" className="sr-only">Buscar peticiones</label>
               <Search className="text-gray-400" size={18} />
               <input
@@ -325,19 +325,19 @@ const PetitionsManager = () => {
                 placeholder="Buscar por hermano, correo o contenido..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-sm bg-transparent focus:outline-none text-gray-700"
+                className="w-full text-sm bg-transparent focus:outline-none text-gray-700 dark:text-gray-300"
               />
             </div>
 
             {/* Filter Status */}
-            <div className="md:col-span-3 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+            <div className="md:col-span-3 flex items-center gap-2 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-slate-950">
               <label htmlFor="filter_status" className="sr-only">Filtrar por estado</label>
               <Filter className="text-gray-400" size={16} />
               <select
                 id="filter_status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full text-xs font-semibold bg-transparent focus:outline-none text-gray-600 cursor-pointer"
+                className="w-full text-xs font-semibold bg-transparent focus:outline-none text-gray-600 dark:text-gray-400 cursor-pointer"
               >
                 <option value="all">Todos los estados</option>
                 <option value="pendiente">Recibido</option>
@@ -347,14 +347,14 @@ const PetitionsManager = () => {
             </div>
 
             {/* Filter Category */}
-            <div className="md:col-span-4 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+            <div className="md:col-span-4 flex items-center gap-2 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 bg-gray-50 dark:bg-slate-950">
               <label htmlFor="filter_category" className="sr-only">Filtrar por categoría</label>
               <Filter className="text-gray-400" size={16} />
               <select
                 id="filter_category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full text-xs font-semibold bg-transparent focus:outline-none text-gray-600 cursor-pointer"
+                className="w-full text-xs font-semibold bg-transparent focus:outline-none text-gray-600 dark:text-gray-400 cursor-pointer"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map((c) => (
@@ -368,19 +368,19 @@ const PetitionsManager = () => {
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-150 animate-pulse space-y-4 shadow-xs">
+                <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 animate-pulse space-y-4 shadow-xs">
                   <div className="flex justify-between">
                     <div className="h-5 w-48 bg-gray-100 rounded"></div>
                     <div className="h-5 w-24 bg-gray-100 rounded"></div>
                   </div>
-                  <div className="h-4 w-full bg-gray-50 rounded"></div>
-                  <div className="h-4 w-5/6 bg-gray-50 rounded"></div>
+                  <div className="h-4 w-full bg-gray-50 dark:bg-slate-950 rounded"></div>
+                  <div className="h-4 w-5/6 bg-gray-50 dark:bg-slate-950 rounded"></div>
                   <div className="h-6 w-32 bg-gray-100 rounded"></div>
                 </div>
               ))}
             </div>
           ) : filteredPetitions.length === 0 ? (
-            <div className="bg-white border border-gray-150 rounded-2xl p-12 text-center text-gray-400 flex flex-col items-center justify-center space-y-3 shadow-xs">
+            <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-12 text-center text-gray-400 flex flex-col items-center justify-center space-y-3 shadow-xs">
               <HeartHandshake size={48} className="text-gray-300 animate-pulse" />
               <p className="text-sm font-semibold">No se encontraron peticiones de oración.</p>
               <p className="text-xs text-gray-400">Prueba cambiando los términos de búsqueda o filtros.</p>
@@ -390,13 +390,13 @@ const PetitionsManager = () => {
               {filteredPetitions.map((pet) => (
                 <div
                   key={pet.id}
-                  className="bg-white rounded-2xl border border-gray-150 shadow-xs p-6 hover:shadow-md transition-all duration-200 flex flex-col gap-4"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs p-6 hover:shadow-md transition-all duration-200 flex flex-col gap-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     {/* User and Category info */}
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-gray-800 text-sm">
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
                           {pet.profiles?.first_name || pet.profiles?.last_name
                             ? `${pet.profiles?.first_name || ''} ${pet.profiles?.last_name || ''}`.trim()
                             : 'Anónimo / Sin nombre'}
@@ -427,12 +427,12 @@ const PetitionsManager = () => {
                   </div>
 
                   {/* Content */}
-                  <p className="text-gray-750 text-sm whitespace-pre-line leading-relaxed font-medium bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                  <p className="text-gray-750 text-sm whitespace-pre-line leading-relaxed font-medium bg-gray-50/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
                     {pet.content}
                   </p>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-white/5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-400 font-semibold mr-1">Marcar como:</span>
                       
@@ -498,7 +498,7 @@ const PetitionsManager = () => {
         /* CATEGORIES CRUD TAB */
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* Add Category Form */}
-          <div className="md:col-span-4 bg-white p-5 rounded-2xl border border-gray-150 shadow-xs space-y-4">
+          <div className="md:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs space-y-4">
             <div>
               <h2 className="text-base font-serif font-bold text-primary flex items-center gap-2">
                 <Plus size={18} className="text-gold" />
@@ -517,7 +517,7 @@ const PetitionsManager = () => {
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Ej: Finanzas, Salud Mental, etc."
                   disabled={readOnly || addingCategory}
-                  className="w-full text-sm border border-gray-200 rounded-xl px-3.5 py-2.5 bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700"
+                  className="w-full text-sm border border-gray-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700 dark:text-gray-300"
                 />
               </div>
               <button
@@ -531,12 +531,12 @@ const PetitionsManager = () => {
           </div>
 
           {/* List of Categories */}
-          <div className="md:col-span-8 bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs">
-            <div className="p-4 border-b border-gray-100">
+          <div className="md:col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-gray-100 dark:border-white/5">
               <h2 className="text-base font-serif font-bold text-primary">Categorías Existentes ({categories.length})</h2>
             </div>
             
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-gray-100 dark:divide-white/5">
               {categories.map((cat) => (
                 <li key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                   {editingCategory?.id === cat.id ? (
@@ -547,7 +547,7 @@ const PetitionsManager = () => {
                         type="text"
                         value={editedCategoryName}
                         onChange={(e) => setEditedCategoryName(e.target.value)}
-                        className="w-full text-sm border border-gray-200 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="w-full text-sm border border-gray-200 dark:border-white/10 rounded-xl px-3 py-1.5 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <button
                         onClick={() => handleUpdateCategory(cat)}
@@ -558,7 +558,7 @@ const PetitionsManager = () => {
                       </button>
                       <button
                         onClick={() => setEditingCategory(null)}
-                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-gray-500 dark:text-gray-450 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                         title="Cancelar"
                       >
                         <X size={16} />
@@ -568,7 +568,7 @@ const PetitionsManager = () => {
                     <>
                       <div className="flex items-center gap-2">
                         <ChevronRight className="text-gold" size={14} />
-                        <span className="font-semibold text-gray-800 text-sm">{cat.name}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{cat.name}</span>
                       </div>
                       
                       <div className="flex items-center gap-2">
@@ -578,7 +578,7 @@ const PetitionsManager = () => {
                               setEditingCategory(cat);
                               setEditedCategoryName(cat.name);
                             }}
-                            className="text-xs font-semibold text-primary hover:bg-primary/5 px-2.5 py-1.5 rounded-lg border border-gray-200 cursor-pointer"
+                            className="text-xs font-semibold text-primary hover:bg-primary/5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 cursor-pointer"
                           >
                             Editar
                           </button>
@@ -599,7 +599,7 @@ const PetitionsManager = () => {
                               </button>
                               <button
                                 onClick={() => setCategoryDeletingId(null)}
-                                className="text-[10px] text-gray-500 hover:underline px-1 cursor-pointer"
+                                className="text-[10px] text-gray-500 dark:text-gray-450 hover:underline px-1 cursor-pointer"
                               >
                                 No
                               </button>

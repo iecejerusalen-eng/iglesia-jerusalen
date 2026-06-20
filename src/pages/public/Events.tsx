@@ -218,7 +218,7 @@ const Events = () => {
   };
 
   return (
-    <div className="py-16 bg-base min-h-screen">
+    <div className="py-16 bg-base dark:bg-slate-950 min-h-screen transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Hero Section */}
@@ -234,38 +234,38 @@ const Events = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-slate-600 mt-3 text-sm font-medium"
+            className="text-slate-600 dark:text-slate-400 mt-3 text-sm font-medium"
           >
             Sigue de cerca todas las reuniones generales, cultos especiales y actividades de los departamentos de la Iglesia Jerusalén.
           </motion.p>
         </div>
 
         {/* Calendar Controls */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 border border-gray-150 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 border border-gray-150 dark:border-white/10 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <button
               onClick={handleToday}
-              className="px-4 py-2 border border-gray-250 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-slate-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-slate-700 dark:text-gray-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
               Hoy
             </button>
-            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+            <div className="flex items-center border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800">
               <button
                 onClick={handlePrev}
                 aria-label="Anterior"
-                className="p-2 hover:bg-gray-100 transition-colors text-slate-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-gray-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={handleNext}
                 aria-label="Siguiente"
-                className="p-2 hover:bg-gray-100 transition-colors text-slate-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-gray-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <ChevronRight size={16} />
               </button>
             </div>
-            <h2 className="font-serif font-bold text-lg text-slate-800 ml-2">
+            <h2 className="font-serif font-bold text-lg text-slate-800 dark:text-gray-100 ml-2">
               {view === 'month' && `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
               {view === 'week' && `Semana del ${getDaysInWeek(currentDate)[0].getDate()} de ${MONTHS[getDaysInWeek(currentDate)[0].getMonth()]}`}
               {view === 'day' && `${currentDate.getDate()} de ${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
@@ -274,7 +274,7 @@ const Events = () => {
           </div>
 
           {/* View Toggles */}
-          <div className="flex bg-gray-50 border border-gray-200 rounded-xl p-1 gap-1" role="tablist" aria-label="Vistas del calendario">
+          <div className="flex bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl p-1 gap-1" role="tablist" aria-label="Vistas del calendario">
             {(['month', 'week', 'day', 'year'] as const).map((v) => (
               <button
                 key={v}
@@ -282,8 +282,8 @@ const Events = () => {
                 role="tab"
                 aria-selected={view === v}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${view === v
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-primary dark:bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
               >
                 {v === 'month' && 'Mensual'}
@@ -296,12 +296,12 @@ const Events = () => {
         </div>
 
         {/* Calendar Grid Container with Motion transitions */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 shadow-sm overflow-hidden p-4 min-h-[500px]">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden p-4 min-h-[500px]">
           {loading ? (
             <div className="flex justify-center items-center h-[400px]">
               <div className="animate-pulse flex flex-col items-center gap-3">
                 <CalendarIcon className="text-primary dark:text-white/30 animate-bounce" size={48} />
-                <span className="text-slate-500 text-xs font-medium">Cargando actividades...</span>
+                <span className="text-slate-500 dark:text-gray-450 text-xs font-medium">Cargando actividades...</span>
               </div>
             </div>
           ) : (
@@ -317,9 +317,9 @@ const Events = () => {
                 {/* 1. MONTH VIEW */}
                 {view === 'month' && (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-7 gap-1 border-b border-gray-100 pb-2">
+                    <div className="grid grid-cols-7 gap-1 border-b border-gray-100 dark:border-white/5 pb-2">
                       {WEEKDAYS.map((day) => (
-                        <div key={day} className="text-center text-xs font-bold text-slate-500 uppercase tracking-wider py-1">
+                        <div key={day} className="text-center text-xs font-bold text-slate-500 dark:text-gray-450 uppercase tracking-wider py-1">
                           {day}
                         </div>
                       ))}
@@ -333,11 +333,13 @@ const Events = () => {
                         return (
                           <div
                             key={idx}
-                            className={`min-h-[100px] border border-gray-100 rounded-xl p-2 flex flex-col justify-between transition-colors ${isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-gray-50/50 text-gray-300'
-                              } ${isToday ? 'border-primary ring-2 ring-primary/10' : ''}`}
+                            className={`min-h-[100px] border border-gray-100 dark:border-white/5 rounded-xl p-2 flex flex-col justify-between transition-colors ${
+                              isCurrentMonth ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-gray-100' : 'bg-gray-50/50 dark:bg-slate-950/50 text-gray-300 dark:text-slate-600'
+                            } ${isToday ? 'border-primary dark:border-blue-500 ring-2 ring-primary/10 dark:ring-blue-500/20' : ''}`}
                           >
-                            <span className={`text-xs font-bold self-end ${isToday ? 'bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center' : 'text-slate-700'
-                              }`}>
+                            <span className={`text-xs font-bold self-end ${
+                              isToday ? 'bg-primary dark:bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center' : 'text-slate-700 dark:text-gray-400'
+                            }`}>
                               {day.getDate()}
                             </span>
                             <div className="mt-1 flex-grow space-y-1 overflow-y-auto max-h-[70px] custom-scrollbar">
@@ -364,16 +366,16 @@ const Events = () => {
                                     className="text-[10px] font-bold px-2 py-0.5 rounded-md truncate cursor-pointer hover:opacity-90 transition-all flex items-center gap-1.5 border border-transparent shadow-2xs focus-visible:ring-1 focus-visible:ring-white focus-visible:outline-none"
                                   >
                                     {logoUrl ? (
-                                      <img src={logoUrl} alt="" className="w-3 h-3 rounded-full object-cover bg-white dark:bg-slate-900/90" />
+                                      <img src={logoUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/90" />
                                     ) : (
                                       event.emoji && <span>{event.emoji}</span>
                                     )}
-                                    <motion.span layoutId={`event-title-${event.id}`} className="truncate">{event.title}</motion.span>
+                                    <motion.span layoutId={`event-title-${event.id}`} className="truncate text-white">{event.title}</motion.span>
                                   </motion.div>
                                 );
                               })}
                               {dayEvents.length > 3 && (
-                                <div className="text-[9px] text-slate-500 text-center font-bold">
+                                <div className="text-[9px] text-slate-500 dark:text-gray-450 text-center font-bold">
                                   +{dayEvents.length - 3} más
                                 </div>
                               )}
@@ -395,13 +397,15 @@ const Events = () => {
                       return (
                         <div
                           key={idx}
-                          className={`border rounded-xl p-3 min-h-[300px] flex flex-col gap-3 transition-colors ${isToday ? 'border-primary bg-blue-50/10' : 'border-gray-100 bg-white dark:bg-slate-900'
-                            }`}
+                          className={`border rounded-xl p-3 min-h-[300px] flex flex-col gap-3 transition-colors ${
+                            isToday ? 'border-primary dark:border-blue-500 bg-blue-50/10 dark:bg-blue-950/10' : 'border-gray-100 dark:border-white/5 bg-white dark:bg-slate-900'
+                          }`}
                         >
-                          <div className="border-b border-gray-100 pb-2 text-center">
-                            <span className="text-xs text-slate-500 font-bold block uppercase tracking-wider">{WEEKDAYS[day.getDay()]}</span>
-                            <span className={`text-lg font-serif font-bold mt-0.5 inline-block ${isToday ? 'bg-primary text-white rounded-full w-7 h-7 flex items-center justify-center mx-auto' : 'text-slate-800'
-                              }`}>
+                          <div className="border-b border-gray-100 dark:border-white/5 pb-2 text-center">
+                            <span className="text-xs text-slate-500 dark:text-gray-450 font-bold block uppercase tracking-wider">{WEEKDAYS[day.getDay()]}</span>
+                            <span className={`text-lg font-serif font-bold mt-0.5 inline-block ${
+                              isToday ? 'bg-primary dark:bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center mx-auto' : 'text-slate-800 dark:text-gray-100'
+                            }`}>
                               {day.getDate()}
                             </span>
                           </div>
@@ -436,7 +440,7 @@ const Events = () => {
                                       ) : (
                                         event.emoji && <span>{event.emoji}</span>
                                       )}
-                                      <motion.span layoutId={`event-title-${event.id}`} className="truncate">{event.title}</motion.span>
+                                      <motion.span layoutId={`event-title-${event.id}`} className="truncate text-white">{event.title}</motion.span>
                                     </h4>
                                     <div className="flex items-center gap-1 text-[10px] text-white/90 font-semibold">
                                       <Clock size={10} className="text-white/80" />
@@ -446,7 +450,7 @@ const Events = () => {
                                 );
                               })
                             ) : (
-                              <span className="text-[10px] text-slate-600 font-bold block text-center py-8">Sin eventos</span>
+                              <span className="text-[10px] text-slate-600 dark:text-gray-400 font-bold block text-center py-8">Sin eventos</span>
                             )}
                           </div>
                         </div>
@@ -458,11 +462,11 @@ const Events = () => {
                 {/* 3. DAY VIEW */}
                 {view === 'day' && (
                   <div className="max-w-3xl mx-auto space-y-4">
-                    <div className="bg-gray-50 border border-gray-150 rounded-2xl p-4 flex justify-between items-center">
-                      <span className="text-sm text-slate-600 font-bold uppercase tracking-wider">
+                    <div className="bg-gray-50 dark:bg-slate-800 border border-gray-150 dark:border-slate-700 rounded-2xl p-4 flex justify-between items-center">
+                      <span className="text-sm text-slate-600 dark:text-gray-300 font-bold uppercase tracking-wider">
                         {WEEKDAYS[currentDate.getDay()]} {currentDate.getDate()} de {MONTHS[currentDate.getMonth()]}
                       </span>
-                      <span className="text-xs bg-primary text-white px-3 py-1 rounded-full font-bold">
+                      <span className="text-xs bg-primary dark:bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
                         {getEventsForDate(currentDate).length} Actividad(es)
                       </span>
                     </div>
@@ -483,17 +487,17 @@ const Events = () => {
                                 setSelectedEvent(event);
                               }
                             }}
-                            className="bg-white dark:bg-slate-900 border border-gray-150 rounded-2xl p-5 hover:border-primary transition-colors shadow-2xs flex flex-col md:flex-row justify-between md:items-center gap-4 overflow-hidden relative cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                            className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 hover:border-primary dark:hover:border-blue-500 transition-colors shadow-2xs flex flex-col md:flex-row justify-between md:items-center gap-4 overflow-hidden relative cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                           >
                             {event.cover_image_url && (
-                              <div className="w-full md:w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                              <div className="w-full md:w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100 dark:border-white/5">
                                 <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
                               </div>
                             )}
                             <div className="space-y-2 flex-grow">
-                              <h3 className="text-lg font-serif font-bold text-slate-800 flex items-center gap-2">
+                              <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-gray-100 flex items-center gap-2">
                                 {getLogoUrl(event) ? (
-                                  <img src={getLogoUrl(event)!} alt="" className="w-5 h-5 rounded-full object-cover bg-gray-50" />
+                                  <img src={getLogoUrl(event)!} alt="" className="w-5 h-5 rounded-full object-cover bg-gray-50 dark:bg-slate-950" />
                                 ) : (
                                   event.emoji && <span className="text-xl">{event.emoji}</span>
                                 )}
@@ -504,11 +508,11 @@ const Events = () => {
                                   </span>
                                 )}
                               </h3>
-                              <p className="text-sm text-slate-600 font-medium line-clamp-2">{event.description || 'Sin descripción detallada.'}</p>
+                              <p className="text-sm text-slate-600 dark:text-gray-300 font-medium line-clamp-2">{event.description || 'Sin descripción detallada.'}</p>
 
                               <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
                                 {event.ministries && (
-                                  <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
+                                  <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-gray-400 font-semibold">
                                     <span
                                       style={{ backgroundColor: event.ministries.theme_color || '#1E3A8A', color: '#fff' }}
                                       className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
@@ -519,7 +523,7 @@ const Events = () => {
                                   </div>
                                 )}
                                 {event.leaders_in_charge && event.leaders_in_charge.length > 0 && (
-                                  <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
+                                  <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-slate-450 font-semibold">
                                     <Users size={13} className="text-gold" />
                                     <span>Líderes: {event.leaders_in_charge.join(', ')}</span>
                                   </div>
@@ -527,19 +531,19 @@ const Events = () => {
                               </div>
                             </div>
 
-                            <div className="flex-shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-3 text-center min-w-[120px] flex md:flex-col justify-center items-center gap-1">
+                            <div className="flex-shrink-0 bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-xl p-3 text-center min-w-[120px] flex md:flex-col justify-center items-center gap-1">
                               <Clock className="text-primary dark:text-white" size={16} />
                               <span className="text-xs font-bold text-primary dark:text-white block">{formatTime(event.start_time)}</span>
                               {event.end_time && (
-                                <span className="text-[10px] text-slate-600 block font-semibold">a {formatTime(event.end_time)}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-gray-300 block font-semibold">a {formatTime(event.end_time)}</span>
                               )}
                             </div>
                           </motion.div>
                         ))
                       ) : (
-                        <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-slate-200">
+                        <div className="text-center py-20 bg-gray-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                           <AlertCircle className="mx-auto text-slate-400 mb-2" size={36} />
-                          <p className="text-slate-500 text-sm font-semibold">No hay actividades programadas para este día.</p>
+                          <p className="text-slate-500 dark:text-gray-400 text-sm font-semibold">No hay actividades programadas para este día.</p>
                         </div>
                       )}
                     </div>
@@ -573,9 +577,9 @@ const Events = () => {
                             setCurrentDate(newDate);
                             setView('month');
                           }}
-                          className="border border-gray-100 rounded-xl p-3 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-primary cursor-pointer hover:shadow-xs transition-all duration-200"
+                          className="border border-gray-100 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-primary dark:hover:border-blue-500 cursor-pointer hover:shadow-xs transition-all duration-200"
                         >
-                          <h3 className="font-serif font-bold text-sm text-gray-800 text-center border-b border-gray-100 pb-1.5 hover:text-primary dark:text-white transition-colors">{monthName}</h3>
+                          <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-200 text-center border-b border-gray-100 dark:border-white/5 pb-1.5 hover:text-primary dark:hover:text-blue-400 transition-colors">{monthName}</h3>
                           <div className="grid grid-cols-7 gap-0.5 text-[9px] text-center font-bold text-slate-400">
                             {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((d, i) => (
                               <div key={i}>{d}</div>
@@ -589,10 +593,10 @@ const Events = () => {
                                 <div
                                   key={dIdx}
                                   className={`py-0.5 rounded-full ${!isCurrentMonth
-                                    ? 'text-gray-200'
+                                    ? 'text-gray-250 dark:text-gray-700'
                                     : hasEvents
-                                      ? 'bg-primary text-white font-bold'
-                                      : 'text-slate-700 hover:bg-gray-100'
+                                      ? 'bg-primary dark:bg-blue-600 text-white font-bold'
+                                      : 'text-slate-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
                                     }`}
                                   title={hasEvents ? `${getEventsForDate(day).length} eventos` : undefined}
                                 >
@@ -627,20 +631,20 @@ const Events = () => {
               pointerEvents: 'none',
               zIndex: 9999
             }}
-            className="bg-white dark:bg-slate-900 border border-gray-200 rounded-xl shadow-lg p-4 max-w-xs space-y-2.5 backdrop-blur-md"
+            className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-lg p-4 max-w-xs space-y-2.5 backdrop-blur-md"
           >
-            <div className="border-b border-gray-100 pb-1.5">
+            <div className="border-b border-gray-100 dark:border-white/5 pb-1.5">
               <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Actividad</span>
               {hoveredEvent.cover_image_url && (
-                <img src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100" />
+                <img src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100 dark:border-white/5" />
               )}
-              <h3 className="font-serif font-bold text-sm text-gray-800 mt-1.5 flex items-center gap-1.5">
+              <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mt-1.5 flex items-center gap-1.5">
                 {hoveredEvent.emoji && <span className="text-base">{hoveredEvent.emoji}</span>}
                 {hoveredEvent.title}
               </h3>
             </div>
 
-            <div className="space-y-1.5 text-[11px] text-slate-700 font-semibold">
+            <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
               <div className="flex items-center gap-1.5">
                 <Clock size={11} className="text-primary dark:text-white" />
                 <span>Horario: {formatTime(hoveredEvent.start_time)} {hoveredEvent.end_time && ` - ${formatTime(hoveredEvent.end_time)}`}</span>
@@ -683,7 +687,7 @@ const Events = () => {
                 role="dialog"
                 aria-modal="true"
                 aria-label={`Detalles de actividad: ${selectedEvent.title}`}
-                className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden z-10 border border-gray-100 flex flex-col max-h-[90vh] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden z-10 border border-gray-100 dark:border-white/10 flex flex-col max-h-[90vh] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {/* Close Button */}
                 <button
@@ -691,7 +695,7 @@ const Events = () => {
                   aria-label="Cerrar detalle de actividad"
                   className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md transition-colors z-20 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${selectedEvent.cover_image_url
                     ? 'bg-black/20 hover:bg-black/40 text-white'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-gray-300'
                     }`}
                   type="button"
                 >
@@ -747,8 +751,8 @@ const Events = () => {
 
                 {/* Content */}
                 <div className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-grow text-left">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-                    <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700 dark:text-gray-300 bg-gray-50/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-gray-100 dark:border-white/10">
+                    <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CalendarIcon size={14} className="text-gold flex-shrink-0" />
                         <span>{formatEventDateRange(selectedEvent.start_date, selectedEvent.end_date)}</span>
@@ -766,8 +770,8 @@ const Events = () => {
                       {selectedEvent.is_recurring && (
                         <div className="flex items-center gap-2">
                           <CalendarDays size={14} className="text-gold flex-shrink-0" />
-                          <span className="text-slate-800">
-                            Recurrencia: <span className="font-bold text-primary dark:text-white">{getRecurrenceText(selectedEvent)}</span>
+                          <span>
+                            Recurrencia: <span className="font-bold text-primary dark:text-blue-400">{getRecurrenceText(selectedEvent)}</span>
                           </span>
                         </div>
                       )}
@@ -775,7 +779,7 @@ const Events = () => {
                         <div className="flex items-start gap-2">
                           <Users size={14} className="text-gold mt-0.5 flex-shrink-0" />
                           <span>
-                            Encargados: <span className="font-bold text-gray-800">{selectedEvent.leaders_in_charge.join(', ')}</span>
+                            Encargados: <span className="font-bold text-gray-800 dark:text-gray-205">{selectedEvent.leaders_in_charge.join(', ')}</span>
                           </span>
                         </div>
                       )}
@@ -784,30 +788,31 @@ const Events = () => {
 
                   <div className="space-y-2">
                     <h4 className="text-xs uppercase tracking-wider text-gray-400 font-bold">Descripción de la Actividad</h4>
-                    <p className="text-gray-650 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    <p className="text-gray-650 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">
                       {selectedEvent.description || 'No hay descripción detallada provista para esta actividad.'}
                     </p>
                   </div>
                   {/* Footer Switcher */}
-                  <div className="border-t border-gray-155 p-4 bg-gray-50 flex items-center justify-between text-xs text-slate-650 font-semibold flex-shrink-0 mt-auto">
+                  <div className="border-t border-gray-155 dark:border-white/10 p-4 bg-gray-50 dark:bg-slate-800 flex items-center justify-between text-xs text-slate-650 dark:text-gray-400 font-semibold flex-shrink-0 mt-auto">
                     <span>Presentación:</span>
-                    <div className="flex bg-gray-250 p-0.5 rounded-lg">
+                    <div className="flex bg-gray-250 dark:bg-slate-900 p-0.5 rounded-lg">
                       <button
                         type="button"
                         onClick={() => setDetailViewType('modal')}
-                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'modal' ? 'bg-white dark:bg-slate-900 text-slate-850 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-800'}`}
+                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'modal' ? 'bg-white dark:bg-slate-800 text-slate-850 dark:text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
                       >
                         Modal
                       </button>
                       <button
                         type="button"
                         onClick={() => setDetailViewType('drawer')}
-                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'drawer' ? 'bg-white dark:bg-slate-900 text-slate-850 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-800'}`}
+                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'drawer' ? 'bg-white dark:bg-slate-800 text-slate-850 dark:text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'}`}
                       >
                         Lateral
                       </button>
                     </div>
-                  </div>            </div>
+                  </div>
+                </div>
               </motion.div>
             ) : (
               /* Drawer View */
@@ -819,7 +824,7 @@ const Events = () => {
                 role="dialog"
                 aria-modal="true"
                 aria-label={`Detalles de actividad: ${selectedEvent.title}`}
-                className="absolute top-0 right-0 h-full max-w-md w-full bg-white dark:bg-slate-900 shadow-2xl z-10 flex flex-col border-l border-gray-150 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="absolute top-0 right-0 h-full max-w-md w-full bg-white dark:bg-slate-900 shadow-2xl z-10 flex flex-col border-l border-gray-150 dark:border-white/10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {/* Header/Banner */}
                 <div className="relative flex-shrink-0">
@@ -828,7 +833,7 @@ const Events = () => {
                     aria-label="Cerrar detalle de actividad"
                     className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md transition-colors z-20 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${selectedEvent.cover_image_url
                       ? 'bg-black/20 hover:bg-black/40 text-white'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-gray-300'
                       }`}
                     type="button"
                   >
@@ -884,7 +889,7 @@ const Events = () => {
 
                 {/* Scrollable details */}
                 <div className="p-6 space-y-6 overflow-y-auto flex-grow custom-scrollbar">
-                  <div className="space-y-4 text-xs font-semibold text-slate-700 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                  <div className="space-y-4 text-xs font-semibold text-slate-700 dark:text-gray-300 bg-gray-50/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-gray-100 dark:border-white/10">
                     <div className="flex items-center gap-2.5">
                       <CalendarIcon size={15} className="text-gold flex-shrink-0" />
                       <span>{formatEventDateRange(selectedEvent.start_date, selectedEvent.end_date)}</span>
@@ -899,8 +904,8 @@ const Events = () => {
                     {selectedEvent.is_recurring && (
                       <div className="flex items-center gap-2.5">
                         <CalendarDays size={15} className="text-gold flex-shrink-0" />
-                        <span className="text-slate-800">
-                          Recurrencia: <span className="font-bold text-primary dark:text-white">{getRecurrenceText(selectedEvent)}</span>
+                        <span>
+                          Recurrencia: <span className="font-bold text-primary dark:text-blue-400">{getRecurrenceText(selectedEvent)}</span>
                         </span>
                       </div>
                     )}
@@ -908,7 +913,7 @@ const Events = () => {
                       <div className="flex items-start gap-2.5">
                         <Users size={15} className="text-gold mt-0.5 flex-shrink-0" />
                         <span>
-                          Encargados: <span className="font-bold text-gray-800">{selectedEvent.leaders_in_charge.join(', ')}</span>
+                          Encargados: <span className="font-bold text-gray-800 dark:text-gray-250">{selectedEvent.leaders_in_charge.join(', ')}</span>
                         </span>
                       </div>
                     )}
@@ -916,27 +921,27 @@ const Events = () => {
 
                   <div className="space-y-2">
                     <h4 className="text-xs uppercase tracking-wider text-gray-400 font-bold">Descripción de la Actividad</h4>
-                    <p className="text-gray-650 text-sm leading-relaxed whitespace-pre-line font-medium">
+                    <p className="text-gray-650 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">
                       {selectedEvent.description || 'No hay descripción detallada provista para esta actividad.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Footer Switcher */}
-                <div className="border-t border-gray-150 p-4 bg-gray-50 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 font-semibold flex-shrink-0 mt-auto">
+                <div className="border-t border-gray-150 dark:border-white/10 p-4 bg-gray-50 dark:bg-slate-800 flex items-center justify-between text-xs text-gray-50 dark:text-gray-400 font-semibold flex-shrink-0 mt-auto">
                   <span>Presentación:</span>
-                  <div className="flex bg-gray-200 p-0.5 rounded-lg">
+                  <div className="flex bg-gray-200 dark:bg-slate-900 p-0.5 rounded-lg">
                     <button
                       type="button"
                       onClick={() => setDetailViewType('modal')}
-                      className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'modal' ? 'bg-white dark:bg-slate-900 text-gray-800 shadow-xs font-bold' : 'text-gray-550 hover:text-gray-800'}`}
+                      className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'modal' ? 'bg-white dark:bg-slate-800 text-gray-800 dark:text-white shadow-xs font-bold' : 'text-gray-550 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
                     >
                       Modal
                     </button>
                     <button
                       type="button"
                       onClick={() => setDetailViewType('drawer')}
-                      className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'drawer' ? 'bg-white dark:bg-slate-900 text-gray-800 shadow-xs font-bold' : 'text-gray-550 hover:text-gray-800'}`}
+                      className={`px-3 py-1 rounded-md transition-all cursor-pointer ${(detailViewType as string) === 'drawer' ? 'bg-white dark:bg-slate-800 text-gray-800 dark:text-white shadow-xs font-bold' : 'text-gray-550 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}`}
                     >
                       Lateral
                     </button>
