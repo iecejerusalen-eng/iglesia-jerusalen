@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
-import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Dove, MapPin, X } from 'lucide-react';
+import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Wind, MapPin, X } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
@@ -235,7 +235,7 @@ const About = () => {
                                   <span><strong>Jesucristo, el Salvador:</strong> Murió en la cruz por nuestros pecados, perdonando y transformando vidas.</span>
                                 </li>
                                 <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                                  <Dove className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                                  <Wind className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                                   <span><strong>Jesucristo, el Bautizador:</strong> Llena a los creyentes con el Espíritu Santo para darles poder y servir.</span>
                                 </li>
                                 <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
