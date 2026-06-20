@@ -1630,8 +1630,11 @@ const MembersManager = () => {
               {/* Row 1: Search & Export */}
               <div className="flex flex-col md:flex-row gap-3">
                 <div className="flex-grow bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                  <label htmlFor="search-members" className="sr-only">Buscar miembros</label>
                   <Search className="text-gray-400" size={18} />
                   <input
+                    id="search-members"
+                    name="searchQuery"
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1663,8 +1666,10 @@ const MembersManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-gray-100 dark:border-white/5">
                 {/* 1. Liderazgo */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Liderazgo</label>
+                  <label htmlFor="filter-leadership" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Liderazgo</label>
                   <select
+                    id="filter-leadership"
+                    name="filterLeadership"
                     value={filterLeadership}
                     onChange={(e) => setFilterLeadership(e.target.value as any)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-750 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
@@ -1677,8 +1682,10 @@ const MembersManager = () => {
 
                 {/* 2. Ministerio */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Ministerio</label>
+                  <label htmlFor="filter-ministry" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Ministerio</label>
                   <select
+                    id="filter-ministry"
+                    name="filterMinistry"
                     value={filterMinistry}
                     onChange={(e) => setFilterMinistry(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
@@ -1692,8 +1699,10 @@ const MembersManager = () => {
 
                 {/* 3. Habilidad / Área */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Habilidad</label>
+                  <label htmlFor="filter-skill" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filtrar Habilidad</label>
                   <select
+                    id="filter-skill"
+                    name="filterSkill"
                     value={filterSkill}
                     onChange={(e) => setFilterSkill(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
@@ -1720,8 +1729,10 @@ const MembersManager = () => {
                 {/* 4. Ordenar Por */}
                 <div className="flex gap-1.5 items-end">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ordenar Por</label>
+                    <label htmlFor="sort-by" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ordenar Por</label>
                     <select
+                      id="sort-by"
+                      name="sortBy"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
@@ -1744,8 +1755,10 @@ const MembersManager = () => {
 
                 {/* 5. Agrupar Por */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Agrupar Por</label>
+                  <label htmlFor="group-by" className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Agrupar Por</label>
                   <select
+                    id="group-by"
+                    name="groupBy"
                     value={groupBy}
                     onChange={(e) => setGroupBy(e.target.value as any)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
