@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { sql } from '../../config/localDb';
+import { getDb } from '../../config/localDb';
 import { useSyncStore } from '../../store/useSyncStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -83,15 +83,14 @@ const SermonDetail = () => {
 
       // Fetch user note if authenticated
       if (user && activeSermon) {
-        // Try local SQLite first
+        // Try local IDB first
         let cachedNotes: any[] = [];
         try {
-          cachedNotes = await sql`
-            SELECT id, content FROM local_sermon_notes 
-            WHERE user_id = ${user.id} AND sermon_id = ${activeSermon.id};
-          `;
-        } catch (sqliteErr) {
-          console.warn('SQLite sermon notes fetch failed, falling back to Supabase:', sqliteErr);
+          const db = await getDb();
+          const allNotes = await db.getAll('local_sermon_notes');
+          cachedNotes = allNotes.filter(n => n.user_id === user.id && n.sermon_id === activeSermon.id);
+        } catch (idbErr) {
+          console.warn('IDB sermon notes fetch failed, falling back to Supabase:', idbErr);
         }
 
         if (cachedNotes && cachedNotes.length > 0) {

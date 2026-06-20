@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
-import { sql } from '../../config/localDb';
+import { getDb } from '../../config/localDb';
 import { useSyncStore } from '../../store/useSyncStore';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
@@ -304,13 +304,13 @@ const MembersManager = () => {
         console.warn('Could not load profiles for linkage mapping:', pe);
       }
 
-      // Try fetching from local SQLite first
+      // Try fetching from local IDB first
       let cached: any[] = [];
       try {
-        cached = await Promise.race([
-          sql`SELECT * FROM local_members WHERE deleted_at IS NULL ORDER BY last_name ASC;`,
-          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
-        ]);
+        const db = await getDb();
+        const allMembers = await db.getAll('local_members');
+        cached = allMembers.filter(m => !m.deleted_at);
+        cached.sort((a, b) => (a.last_name || '').localeCompare(b.last_name || ''));
       } catch (dbErr) {
         console.warn('Local DB failed or timed out, fallback to Supabase:', dbErr);
       }

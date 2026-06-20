@@ -6,16 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    {
-      name: 'configure-response-headers',
-      configureServer: (server) => {
-        server.middlewares.use((_req, res, next) => {
-          res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-          next();
-        });
-      },
-    },
+
     react(),
     tailwindcss(),
     VitePWA({ 
@@ -33,18 +24,7 @@ export default defineConfig({
       }
     })
   ],
-  server: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "credentialless"
-    }
-  },
-  preview: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "credentialless"
-    }
-  },
+
   build: {
     rollupOptions: {
       output: {

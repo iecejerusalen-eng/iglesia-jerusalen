@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabase';
-import { sql } from '../../config/localDb';
+import { getDb } from '../../config/localDb';
 import type { Schedule, Sermon, Event as DbEvent } from '../../types';
 import fachadaImage from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import { Link } from 'react-router-dom';
@@ -288,11 +288,9 @@ const Home = () => {
     try {
       let data: any[] = [];
       try {
-        const localData: any[] = await Promise.race([
-          sql`SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
-          WHERE deleted_at IS NULL AND birth_date IS NOT NULL;`,
-          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
-        ]);
+        const db = await getDb();
+        const allMembers = await db.getAll('local_members');
+        const localData = allMembers.filter(m => !m.deleted_at && m.birth_date);
         data = localData || [];
       } catch (dbErr) {
         console.warn('Local database query failed, trying Supabase:', dbErr);
@@ -332,10 +330,10 @@ const Home = () => {
     try {
       let localData: any[] = [];
       try {
-        localData = await Promise.race([
-          sql`SELECT * FROM local_schedules ORDER BY order_index ASC;`,
-          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
-        ]);
+        const db = await getDb();
+        const allSchedules = await db.getAll('local_schedules');
+        allSchedules.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+        localData = allSchedules;
       } catch (dbErr) {
         console.warn('Local database query failed, trying Supabase:', dbErr);
       }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../config/supabase';
-import { sql } from '../config/localDb';
+import { getDb } from '../config/localDb';
 import { resolveConflict } from '../utils/conflictResolver';
 import { toast } from 'sonner';
 
@@ -64,115 +64,111 @@ export const useSyncStore = create<SyncState>((set, get) => {
       const payloadStr = JSON.stringify(payload);
 
       try {
-        // 1. Write mutation to sync_queue SQLite table
-        await sql`
-          INSERT INTO sync_queue (id, table_name, record_id, action, payload, created_at)
-          VALUES (${id}, ${tableName}, ${recordId}, ${action}, ${payloadStr}, ${createdAt});
-        `;
+        const db = await getDb();
+        const tx = db.transaction(['sync_queue', 'local_members', 'local_schedules', 'local_sermon_notes'], 'readwrite');
+        
+        // 1. Write mutation to sync_queue
+        await tx.objectStore('sync_queue').put({
+          id,
+          table_name: tableName,
+          record_id: recordId,
+          action,
+          payload: payloadStr,
+          created_at: createdAt
+        });
 
-        // 2. Perform optimistic local update in SQLite table
+        // 2. Perform optimistic local update
         if (action === 'DELETE') {
           if (tableName === 'members') {
-            await sql`UPDATE local_members SET deleted_at = ${createdAt}, updated_at = ${createdAt}, version = version + 1 WHERE id = ${recordId}`;
+            const store = tx.objectStore('local_members');
+            const existing = await store.get(recordId);
+            if (existing) {
+              existing.deleted_at = createdAt;
+              existing.updated_at = createdAt;
+              existing.version = (existing.version || 0) + 1;
+              await store.put(existing);
+            }
           } else if (tableName === 'schedules') {
-            await sql`DELETE FROM local_schedules WHERE id = ${recordId}`;
+            await tx.objectStore('local_schedules').delete(recordId);
           } else if (tableName === 'sermon_notes') {
-            await sql`DELETE FROM local_sermon_notes WHERE id = ${recordId}`;
+            await tx.objectStore('local_sermon_notes').delete(recordId);
           }
         } else {
           // INSERT or UPDATE
           const updated_at = createdAt;
           
           if (tableName === 'members') {
+            const store = tx.objectStore('local_members');
+            const existing = await store.get(recordId);
             const m = payload;
-            await sql`
-              INSERT OR REPLACE INTO local_members (
-                id, first_name, last_name, photo_url, birth_date, conversion_date,
-                baptism_date, phone, dni, address, maps_link, is_leader, leadership_role,
-                ministry_id, role_id, latitude, longitude, deleted_at, tithes_sum,
-                created_at, updated_at, version,
-                emails, service_areas, talents, spiritual_gifts, gender,
-                education_level, career_id, is_studying, studying_career_id, phone_country_code
-              ) VALUES (
-                ${recordId}, ${m.first_name}, ${m.last_name}, ${m.photo_url || null}, ${m.birth_date || null}, ${m.conversion_date || null},
-                ${m.baptism_date || null}, ${m.phone || null}, ${m.dni || null}, ${m.address || null}, ${m.maps_link || null}, ${m.is_leader ? 1 : 0}, ${m.leadership_role || null},
-                ${m.ministry_id || null}, ${m.role_id || null}, ${m.latitude || null}, ${m.longitude || null}, ${m.deleted_at || null}, ${m.tithes_sum || 0},
-                ${m.created_at || createdAt}, ${updated_at}, COALESCE((SELECT version FROM local_members WHERE id = ${recordId}), 0) + 1,
-                ${m.emails ? JSON.stringify(m.emails) : '[]'},
-                ${m.service_areas ? JSON.stringify(m.service_areas) : '[]'},
-                ${m.talents ? JSON.stringify(m.talents) : '[]'},
-                ${m.spiritual_gifts ? JSON.stringify(m.spiritual_gifts) : '[]'},
-                ${m.gender || null},
-                ${m.education_level || null}, ${m.career_id || null}, ${m.is_studying ? 1 : 0}, ${m.studying_career_id || null}, ${m.phone_country_code || '+593'}
-              )
-              ON CONFLICT(id) DO UPDATE SET
-                first_name = excluded.first_name,
-                last_name = excluded.last_name,
-                photo_url = excluded.photo_url,
-                birth_date = excluded.birth_date,
-                conversion_date = excluded.conversion_date,
-                baptism_date = excluded.baptism_date,
-                phone = excluded.phone,
-                dni = excluded.dni,
-                address = excluded.address,
-                maps_link = excluded.maps_link,
-                is_leader = excluded.is_leader,
-                leadership_role = excluded.leadership_role,
-                ministry_id = excluded.ministry_id,
-                role_id = excluded.role_id,
-                latitude = excluded.latitude,
-                longitude = excluded.longitude,
-                deleted_at = excluded.deleted_at,
-                tithes_sum = excluded.tithes_sum,
-                updated_at = excluded.updated_at,
-                emails = excluded.emails,
-                service_areas = excluded.service_areas,
-                talents = excluded.talents,
-                spiritual_gifts = excluded.spiritual_gifts,
-                gender = excluded.gender,
-                education_level = excluded.education_level,
-                career_id = excluded.career_id,
-                is_studying = excluded.is_studying,
-                studying_career_id = excluded.studying_career_id,
-                phone_country_code = excluded.phone_country_code,
-                version = version + 1;
-            `;
+            
+            const newRecord = {
+                id: recordId,
+                first_name: m.first_name,
+                last_name: m.last_name,
+                photo_url: m.photo_url || null,
+                birth_date: m.birth_date || null,
+                conversion_date: m.conversion_date || null,
+                baptism_date: m.baptism_date || null,
+                phone: m.phone || null,
+                dni: m.dni || null,
+                address: m.address || null,
+                maps_link: m.maps_link || null,
+                is_leader: m.is_leader ? 1 : 0,
+                leadership_role: m.leadership_role || null,
+                ministry_id: m.ministry_id || null,
+                role_id: m.role_id || null,
+                latitude: m.latitude || null,
+                longitude: m.longitude || null,
+                deleted_at: m.deleted_at || null,
+                tithes_sum: m.tithes_sum || 0,
+                created_at: existing?.created_at || createdAt,
+                updated_at,
+                version: (existing?.version || 0) + 1,
+                emails: m.emails ? JSON.stringify(m.emails) : '[]',
+                service_areas: m.service_areas ? JSON.stringify(m.service_areas) : '[]',
+                talents: m.talents ? JSON.stringify(m.talents) : '[]',
+                spiritual_gifts: m.spiritual_gifts ? JSON.stringify(m.spiritual_gifts) : '[]',
+                gender: m.gender || null,
+                education_level: m.education_level || null,
+                career_id: m.career_id || null,
+                is_studying: m.is_studying ? 1 : 0,
+                studying_career_id: m.studying_career_id || null,
+                phone_country_code: m.phone_country_code || '+593'
+            };
+            await store.put(newRecord);
+
           } else if (tableName === 'schedules') {
+            const store = tx.objectStore('local_schedules');
+            const existing = await store.get(recordId);
             const s = payload;
-            await sql`
-              INSERT OR REPLACE INTO local_schedules (
-                id, day, title, time_range, description, order_index,
-                created_at, updated_at, version
-              ) VALUES (
-                ${recordId}, ${s.day}, ${s.title}, ${s.time_range}, ${s.description || null}, ${s.order_index || 0},
-                ${s.created_at || createdAt}, ${updated_at}, COALESCE((SELECT version FROM local_schedules WHERE id = ${recordId}), 0) + 1
-              )
-              ON CONFLICT(id) DO UPDATE SET
-                day = excluded.day,
-                title = excluded.title,
-                time_range = excluded.time_range,
-                description = excluded.description,
-                order_index = excluded.order_index,
-                updated_at = excluded.updated_at,
-                version = version + 1;
-            `;
+            await store.put({
+                id: recordId,
+                day: s.day,
+                title: s.title,
+                time_range: s.time_range,
+                description: s.description || null,
+                order_index: s.order_index || 0,
+                created_at: existing?.created_at || createdAt,
+                updated_at,
+                version: (existing?.version || 0) + 1
+            });
           } else if (tableName === 'sermon_notes') {
+            const store = tx.objectStore('local_sermon_notes');
+            const existing = await store.get(recordId);
             const sn = payload;
-            await sql`
-              INSERT OR REPLACE INTO local_sermon_notes (
-                id, user_id, sermon_id, content,
-                created_at, updated_at, version
-              ) VALUES (
-                ${recordId}, ${sn.user_id}, ${sn.sermon_id || null}, ${sn.content},
-                ${sn.created_at || createdAt}, ${updated_at}, COALESCE((SELECT version FROM local_sermon_notes WHERE id = ${recordId}), 0) + 1
-              )
-              ON CONFLICT(id) DO UPDATE SET
-                content = excluded.content,
-                updated_at = excluded.updated_at,
-                version = version + 1;
-            `;
+            await store.put({
+                id: recordId,
+                user_id: sn.user_id,
+                sermon_id: sn.sermon_id || null,
+                content: sn.content,
+                created_at: existing?.created_at || createdAt,
+                updated_at,
+                version: (existing?.version || 0) + 1
+            });
           }
         }
+        await tx.done;
       } catch (err) {
         console.error('Error queuing mutation locally:', err);
       }
@@ -185,10 +181,10 @@ export const useSyncStore = create<SyncState>((set, get) => {
       set({ isSyncing: true });
 
       try {
-        // Fetch all queued mutations
-        const queue: SyncQueueItem[] = await sql`
-          SELECT * FROM sync_queue ORDER BY created_at ASC;
-        `;
+        const db = await getDb();
+        // Fetch all queued mutations and sort by created_at
+        let queue: SyncQueueItem[] = await db.getAll('sync_queue');
+        queue.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
         if (queue.length === 0) {
           set({ isSyncing: false });
@@ -202,22 +198,14 @@ export const useSyncStore = create<SyncState>((set, get) => {
 
           if (item.action === 'DELETE') {
             if (item.table_name === 'members') {
-              // Perform soft delete on server
-              const { error } = await supabase
-                .from('members')
-                .update({ deleted_at: item.created_at })
-                .eq('id', item.record_id);
+              const { error } = await supabase.from('members').update({ deleted_at: item.created_at }).eq('id', item.record_id);
               if (error) throw error;
             } else {
-              // Hard delete for other tables
-              const { error } = await supabase
-                .from(item.table_name)
-                .delete()
-                .eq('id', item.record_id);
+              const { error } = await supabase.from(item.table_name).delete().eq('id', item.record_id);
               if (error) throw error;
             }
           } else {
-            // INSERT or UPDATE - Fetch remote record first to check conflicts
+            // INSERT or UPDATE
             const { data: remoteRecord, error: fetchError } = await supabase
               .from(item.table_name)
               .select('*')
@@ -226,72 +214,66 @@ export const useSyncStore = create<SyncState>((set, get) => {
 
             if (fetchError) {
               console.error(`Error checking remote conflicts for ${item.table_name}:`, fetchError);
-              continue; // Skip and process next
+              continue;
             }
 
             if (remoteRecord) {
-              // Get local record info
-              let localQuery: any[] = [];
+              let localRecord;
               if (item.table_name === 'members') {
-                localQuery = await sql`SELECT * FROM local_members WHERE id = ${item.record_id}`;
+                localRecord = await db.get('local_members', item.record_id);
               } else if (item.table_name === 'schedules') {
-                localQuery = await sql`SELECT * FROM local_schedules WHERE id = ${item.record_id}`;
+                localRecord = await db.get('local_schedules', item.record_id);
               } else if (item.table_name === 'sermon_notes') {
-                localQuery = await sql`SELECT * FROM local_sermon_notes WHERE id = ${item.record_id}`;
+                localRecord = await db.get('local_sermon_notes', item.record_id);
               }
 
-              const localRecord = localQuery[0];
-
               if (localRecord) {
-                // Apply conflict resolver
                 const conflict = resolveConflict(localRecord, remoteRecord);
 
                 if (conflict.winner === 'remote') {
-                  // Server wins: overwrite local SQLite and discard local update
                   console.log(`Conflict resolved: Server wins for ${item.table_name} id ${item.record_id}`);
                   const r = conflict.resolvedRecord;
                   
                   if (item.table_name === 'members') {
-                    await sql`
-                      UPDATE local_members SET
-                        first_name = ${r.first_name}, last_name = ${r.last_name}, photo_url = ${r.photo_url},
-                        birth_date = ${r.birth_date}, conversion_date = ${r.conversion_date}, baptism_date = ${r.baptism_date},
-                        phone = ${r.phone}, dni = ${r.dni}, address = ${r.address}, maps_link = ${r.maps_link},
-                        is_leader = ${r.is_leader ? 1 : 0}, leadership_role = ${r.leadership_role},
-                        ministry_id = ${r.ministry_id}, role_id = ${r.role_id}, latitude = ${r.latitude},
-                        longitude = ${r.longitude}, deleted_at = ${r.deleted_at}, tithes_sum = ${r.tithes_sum},
-                        updated_at = ${r.updated_at}, version = ${r.version},
-                        education_level = ${r.education_level}, career_id = ${r.career_id},
-                        is_studying = ${r.is_studying ? 1 : 0}, studying_career_id = ${r.studying_career_id},
-                        phone_country_code = ${r.phone_country_code || '+593'}
-                      WHERE id = ${item.record_id};
-                    `;
+                    await db.put('local_members', {
+                        id: item.record_id,
+                        first_name: r.first_name, last_name: r.last_name, photo_url: r.photo_url,
+                        birth_date: r.birth_date, conversion_date: r.conversion_date, baptism_date: r.baptism_date,
+                        phone: r.phone, dni: r.dni, address: r.address, maps_link: r.maps_link,
+                        is_leader: r.is_leader ? 1 : 0, leadership_role: r.leadership_role,
+                        ministry_id: r.ministry_id, role_id: r.role_id, latitude: r.latitude,
+                        longitude: r.longitude, deleted_at: r.deleted_at, tithes_sum: r.tithes_sum,
+                        updated_at: r.updated_at, version: r.version,
+                        education_level: r.education_level, career_id: r.career_id,
+                        is_studying: r.is_studying ? 1 : 0, studying_career_id: r.studying_career_id,
+                        phone_country_code: r.phone_country_code || '+593',
+                        emails: '[]', service_areas: '[]', talents: '[]', spiritual_gifts: '[]' // handled in pull
+                    });
                   } else if (item.table_name === 'schedules') {
-                    await sql`
-                      UPDATE local_schedules SET
-                        day = ${r.day}, title = ${r.title}, time_range = ${r.time_range},
-                        description = ${r.description}, order_index = ${r.order_index},
-                        updated_at = ${r.updated_at}, version = ${r.version}
-                      WHERE id = ${item.record_id};
-                    `;
+                    await db.put('local_schedules', {
+                        id: item.record_id,
+                        day: r.day, title: r.title, time_range: r.time_range,
+                        description: r.description, order_index: r.order_index,
+                        updated_at: r.updated_at, version: r.version,
+                        created_at: r.created_at
+                    });
                   } else if (item.table_name === 'sermon_notes') {
-                    await sql`
-                      UPDATE local_sermon_notes SET
-                        content = ${r.content}, updated_at = ${r.updated_at}, version = ${r.version}
-                      WHERE id = ${item.record_id};
-                    `;
+                    await db.put('local_sermon_notes', {
+                        id: item.record_id,
+                        user_id: r.user_id,
+                        sermon_id: r.sermon_id,
+                        content: r.content, updated_at: r.updated_at, version: r.version,
+                        created_at: r.created_at
+                    });
                   }
                   
-                  // Delete sync queue item and continue
-                  await sql`DELETE FROM sync_queue WHERE id = ${item.id}`;
+                  await db.delete('sync_queue', item.id);
                   continue;
                 }
               }
             }
 
             try {
-              // Local wins or remote doesn't exist: push changes to server
-              // Supabase trigger will automatically increment version and set updated_at
               let upsertPayload = { ...payload };
               let emails = null;
               let service_areas = null;
@@ -299,13 +281,7 @@ export const useSyncStore = create<SyncState>((set, get) => {
               let spiritual_gifts = null;
 
               if (item.table_name === 'members') {
-                const {
-                  emails: e,
-                  service_areas: sa,
-                  talents: t,
-                  spiritual_gifts: sg,
-                  ...rest
-                } = payload;
+                const { emails: e, service_areas: sa, talents: t, spiritual_gifts: sg, ...rest } = payload;
                 upsertPayload = rest;
                 emails = e;
                 service_areas = sa;
@@ -313,140 +289,75 @@ export const useSyncStore = create<SyncState>((set, get) => {
                 spiritual_gifts = sg;
               }
 
-              const { error: upsertError } = await supabase
-                .from(item.table_name)
-                .upsert({
-                  id: item.record_id,
-                  ...upsertPayload
-                });
+              const { error: upsertError } = await supabase.from(item.table_name).upsert({ id: item.record_id, ...upsertPayload });
+              if (upsertError) throw upsertError;
 
-              if (upsertError) {
-                throw upsertError;
-              }
-
-              // Sync relationship tables for members on server
               if (item.table_name === 'members') {
-                // 1. Sync emails
                 if (emails !== undefined && emails !== null) {
-                  const { error: delErr } = await supabase
-                    .from('member_emails')
-                    .delete()
-                    .eq('member_id', item.record_id);
+                  const { error: delErr } = await supabase.from('member_emails').delete().eq('member_id', item.record_id);
                   if (delErr) throw delErr;
 
                   const validEmails = emails.filter((x: any) => x.email && x.email.trim() !== '');
                   if (validEmails.length > 0) {
-                    const { error: insErr } = await supabase
-                      .from('member_emails')
-                      .insert(
-                        validEmails.map((x: any) => ({
-                          member_id: item.record_id,
-                          email: x.email
-                        }))
-                      );
+                    const { error: insErr } = await supabase.from('member_emails').insert(validEmails.map((x: any) => ({ member_id: item.record_id, email: x.email })));
                     if (insErr) throw insErr;
                   }
                 }
 
-                // 2. Sync service areas
                 if (service_areas !== undefined && service_areas !== null) {
-                  const { error: delErr } = await supabase
-                    .from('member_service_areas')
-                    .delete()
-                    .eq('member_id', item.record_id);
+                  const { error: delErr } = await supabase.from('member_service_areas').delete().eq('member_id', item.record_id);
                   if (delErr) throw delErr;
 
                   if (service_areas.length > 0) {
-                    const { error: insErr } = await supabase
-                      .from('member_service_areas')
-                      .insert(
-                        service_areas.map((x: any) => ({
-                          member_id: item.record_id,
-                          service_area_id: x.catalog_roles?.id || x
-                        }))
-                      );
+                    const { error: insErr } = await supabase.from('member_service_areas').insert(service_areas.map((x: any) => ({ member_id: item.record_id, service_area_id: x.catalog_roles?.id || x })));
                     if (insErr) throw insErr;
                   }
                 }
 
-                // 3. Sync talents
                 if (talents !== undefined && talents !== null) {
-                  const { error: delErr } = await supabase
-                    .from('member_talents')
-                    .delete()
-                    .eq('member_id', item.record_id);
+                  const { error: delErr } = await supabase.from('member_talents').delete().eq('member_id', item.record_id);
                   if (delErr) throw delErr;
 
                   if (talents.length > 0) {
-                    const { error: insErr } = await supabase
-                      .from('member_talents')
-                      .insert(
-                        talents.map((x: any) => ({
-                          member_id: item.record_id,
-                          talent_id: x.catalog_roles?.id || x
-                        }))
-                      );
+                    const { error: insErr } = await supabase.from('member_talents').insert(talents.map((x: any) => ({ member_id: item.record_id, talent_id: x.catalog_roles?.id || x })));
                     if (insErr) throw insErr;
                   }
                 }
 
-                // 4. Sync spiritual gifts
                 if (spiritual_gifts !== undefined && spiritual_gifts !== null) {
-                  const { error: delErr } = await supabase
-                    .from('member_spiritual_gifts')
-                    .delete()
-                    .eq('member_id', item.record_id);
+                  const { error: delErr } = await supabase.from('member_spiritual_gifts').delete().eq('member_id', item.record_id);
                   if (delErr) throw delErr;
 
                   if (spiritual_gifts.length > 0) {
-                    const { error: insErr } = await supabase
-                      .from('member_spiritual_gifts')
-                      .insert(
-                        spiritual_gifts.map((x: any) => ({
-                          member_id: item.record_id,
-                          gift_id: x.catalog_roles?.id || x
-                        }))
-                      );
+                    const { error: insErr } = await supabase.from('member_spiritual_gifts').insert(spiritual_gifts.map((x: any) => ({ member_id: item.record_id, gift_id: x.catalog_roles?.id || x })));
                     if (insErr) throw insErr;
                   }
                 }
               }
 
-              // Remove item from SQLite sync queue upon successful synchronization
-              await sql`DELETE FROM sync_queue WHERE id = ${item.id};`;
+              await db.delete('sync_queue', item.id);
 
             } catch (err: any) {
               console.error(`Sync error on table ${item.table_name} for record ${item.record_id}:`, err);
-
               const errCode = err?.code || '';
               const isPermanentDbError = typeof errCode === 'string' && (
-                errCode.startsWith('23') || // Integrity Constraint Violation (unique, foreign key, etc.)
-                errCode.startsWith('42') || // Syntax Error / Access Rule Violation (including RLS 42501)
-                errCode.startsWith('22')    // Data Exception (type errors, overflow)
+                errCode.startsWith('23') || errCode.startsWith('42') || errCode.startsWith('22')
               );
 
               if (isPermanentDbError) {
                 let errorMsg = `Error al sincronizar fila de "${item.table_name}": `;
-                if (errCode === '23505') {
-                  errorMsg += 'Cédula/DNI o dato duplicado en el servidor.';
-                } else if (errCode === '42501') {
-                  errorMsg += 'Permisos denegados (RLS) en el servidor.';
-                } else {
-                  errorMsg += err.message || 'Error de base de datos.';
-                }
+                if (errCode === '23505') errorMsg += 'Cédula/DNI o dato duplicado en el servidor.';
+                else if (errCode === '42501') errorMsg += 'Permisos denegados (RLS) en el servidor.';
+                else errorMsg += err.message || 'Error de base de datos.';
                 toast.error(errorMsg, { duration: 6000 });
-
-                // Discard the failing mutation to unblock the sync queue
-                await sql`DELETE FROM sync_queue WHERE id = ${item.id};`;
+                await db.delete('sync_queue', item.id);
               } else {
-                // Network error or temporary server issue, throw to retry later
                 throw err;
               }
             }
           }
         }
 
-        // Pull latest state from server after sync to align versions and updated_at
         await get().pullFromServer();
         toast.success('Sincronización completada exitosamente.');
       } catch (err) {
@@ -459,7 +370,8 @@ export const useSyncStore = create<SyncState>((set, get) => {
 
     pullFromServer: async () => {
       try {
-        console.log('Pulling database state from Supabase to sync local SQLite cache...');
+        console.log('Pulling database state from Supabase to sync local cache...');
+        const db = await getDb();
 
         // 1. Pull members
         const { data: members, error: mErr } = await supabase
@@ -474,78 +386,65 @@ export const useSyncStore = create<SyncState>((set, get) => {
         if (mErr) throw mErr;
 
         if (members) {
-          // Clear local table and bulk load (or single statements since SQLite in OPFS is fast)
-          await sql`DELETE FROM local_members;`;
+          const tx = db.transaction('local_members', 'readwrite');
+          await tx.objectStore('local_members').clear();
           for (const m of members) {
-            await sql`
-              INSERT OR REPLACE INTO local_members (
-                id, first_name, last_name, photo_url, birth_date, conversion_date,
-                baptism_date, phone, dni, address, maps_link, is_leader, leadership_role,
-                ministry_id, role_id, latitude, longitude, deleted_at, tithes_sum,
-                created_at, updated_at, version,
-                emails, service_areas, talents, spiritual_gifts, gender,
-                education_level, career_id, is_studying, studying_career_id, phone_country_code
-              ) VALUES (
-                ${m.id}, ${m.first_name}, ${m.last_name}, ${m.photo_url || null}, ${m.birth_date || null}, ${m.conversion_date || null},
-                ${m.baptism_date || null}, ${m.phone || null}, ${m.dni || null}, ${m.address || null}, ${m.maps_link || null}, ${m.is_leader ? 1 : 0}, ${m.leadership_role || null},
-                ${m.ministry_id || null}, ${m.role_id || null}, ${m.latitude || null}, ${m.longitude || null}, ${m.deleted_at || null}, ${m.tithes_sum || 0},
-                ${m.created_at}, ${m.updated_at}, ${m.version},
-                ${m.member_emails ? JSON.stringify(m.member_emails) : '[]'},
-                ${m.member_service_areas ? JSON.stringify(m.member_service_areas) : '[]'},
-                ${m.member_talents ? JSON.stringify(m.member_talents) : '[]'},
-                ${m.member_spiritual_gifts ? JSON.stringify(m.member_spiritual_gifts) : '[]'},
-                ${m.gender || null},
-                ${m.education_level || null}, ${m.career_id || null}, ${m.is_studying ? 1 : 0}, ${m.studying_career_id || null}, ${m.phone_country_code || '+593'}
-              );
-            `;
+            await tx.objectStore('local_members').put({
+                id: m.id, first_name: m.first_name, last_name: m.last_name, photo_url: m.photo_url || null,
+                birth_date: m.birth_date || null, conversion_date: m.conversion_date || null,
+                baptism_date: m.baptism_date || null, phone: m.phone || null, dni: m.dni || null,
+                address: m.address || null, maps_link: m.maps_link || null, is_leader: m.is_leader ? 1 : 0,
+                leadership_role: m.leadership_role || null, ministry_id: m.ministry_id || null, role_id: m.role_id || null,
+                latitude: m.latitude || null, longitude: m.longitude || null, deleted_at: m.deleted_at || null,
+                tithes_sum: m.tithes_sum || 0, created_at: m.created_at, updated_at: m.updated_at, version: m.version,
+                emails: m.member_emails ? JSON.stringify(m.member_emails) : '[]',
+                service_areas: m.member_service_areas ? JSON.stringify(m.member_service_areas) : '[]',
+                talents: m.member_talents ? JSON.stringify(m.member_talents) : '[]',
+                spiritual_gifts: m.member_spiritual_gifts ? JSON.stringify(m.member_spiritual_gifts) : '[]',
+                gender: m.gender || null, education_level: m.education_level || null, career_id: m.career_id || null,
+                is_studying: m.is_studying ? 1 : 0, studying_career_id: m.studying_career_id || null,
+                phone_country_code: m.phone_country_code || '+593'
+            });
           }
+          await tx.done;
         }
 
         // 2. Pull schedules
-        const { data: schedules, error: sErr } = await supabase
-          .from('schedules')
-          .select('*');
+        const { data: schedules, error: sErr } = await supabase.from('schedules').select('*');
         if (sErr) throw sErr;
 
         if (schedules) {
-          await sql`DELETE FROM local_schedules;`;
+          const tx = db.transaction('local_schedules', 'readwrite');
+          await tx.objectStore('local_schedules').clear();
           for (const s of schedules) {
-            await sql`
-              INSERT OR REPLACE INTO local_schedules (
-                id, day, title, time_range, description, order_index,
-                created_at, updated_at, version
-              ) VALUES (
-                ${s.id}, ${s.day}, ${s.title}, ${s.time_range}, ${s.description || null}, ${s.order_index || 0},
-                ${s.created_at}, ${s.updated_at}, ${s.version}
-              );
-            `;
+            await tx.objectStore('local_schedules').put({
+                id: s.id, day: s.day, title: s.title, time_range: s.time_range,
+                description: s.description || null, order_index: s.order_index || 0,
+                created_at: s.created_at, updated_at: s.updated_at, version: s.version
+            });
           }
+          await tx.done;
         }
 
         // 3. Pull sermon_notes
-        const { data: notes, error: nErr } = await supabase
-          .from('sermon_notes')
-          .select('*');
+        const { data: notes, error: nErr } = await supabase.from('sermon_notes').select('*');
         if (nErr) throw nErr;
 
         if (notes) {
-          await sql`DELETE FROM local_sermon_notes;`;
+          const tx = db.transaction('local_sermon_notes', 'readwrite');
+          await tx.objectStore('local_sermon_notes').clear();
           for (const n of notes) {
-            await sql`
-              INSERT OR REPLACE INTO local_sermon_notes (
-                id, user_id, sermon_id, content,
-                created_at, updated_at, version
-              ) VALUES (
-                ${n.id}, ${n.user_id}, ${n.sermon_id || null}, ${n.content},
-                ${n.created_at}, ${n.updated_at}, ${n.version}
-              );
-            `;
+            await tx.objectStore('local_sermon_notes').put({
+                id: n.id, user_id: n.user_id, sermon_id: n.sermon_id || null,
+                content: n.content, created_at: n.created_at, updated_at: n.updated_at, version: n.version
+            });
           }
+          await tx.done;
         }
 
-        console.log('Local SQLite cache fully updated with remote data.');
+        console.log('Local DB cache fully updated with remote data.');
       } catch (err) {
-        console.error('Error pulling server database data to SQLite cache:', err);
+        console.error('Error pulling server database data to local cache:', err);
       }
     }
   };
