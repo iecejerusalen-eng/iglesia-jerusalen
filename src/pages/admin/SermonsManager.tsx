@@ -260,7 +260,7 @@ const SermonsManager = () => {
                     type="text"
                     {...register('title')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none text-gray-800 dark:text-gray-100 disabled:bg-gray-50 disabled:text-gray-500 disabled:dark:bg-slate-900 disabled:dark:text-gray-550"
                     placeholder="Ej. El poder de la fe en tiempos difíciles"
                   />
                   {errors.title && <p className="text-accent-red text-xs mt-1">{errors.title.message}</p>}
@@ -273,7 +273,7 @@ const SermonsManager = () => {
                     type="text"
                     {...register('pastor_name')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none text-gray-800 dark:text-gray-100 disabled:bg-gray-50 disabled:text-gray-500 disabled:dark:bg-slate-900 disabled:dark:text-gray-550"
                     placeholder="Ej. Pastor Roberto Gómez"
                   />
                   {errors.pastor_name && <p className="text-accent-red text-xs mt-1">{errors.pastor_name.message}</p>}
@@ -288,7 +288,7 @@ const SermonsManager = () => {
                     type="date"
                     {...register('date')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none text-gray-800 dark:text-gray-100 disabled:bg-gray-50 disabled:text-gray-500 disabled:dark:bg-slate-900 disabled:dark:text-gray-550"
                   />
                   {errors.date && <p className="text-accent-red text-xs mt-1">{errors.date.message}</p>}
                 </div>
@@ -312,7 +312,7 @@ const SermonsManager = () => {
                     type="url"
                     {...register('youtube_url')}
                     disabled={readOnly}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none text-gray-800 dark:text-gray-100 disabled:bg-gray-50 disabled:text-gray-500 disabled:dark:bg-slate-900 disabled:dark:text-gray-550"
                     placeholder="https://www.youtube.com/watch?v=..."
                   />
                   {errors.youtube_url && <p className="text-accent-red text-xs mt-1">{errors.youtube_url.message}</p>}

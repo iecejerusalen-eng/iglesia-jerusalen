@@ -472,7 +472,7 @@ const PageEditor = () => {
       </div>
 
       {/* Selector de Páginas (Tabs) */}
-      <div className="flex gap-4 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
+      <div className="flex gap-4 p-1.5 bg-slate-100 dark:bg-slate-950 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
         {(Object.keys(PAGES_METADATA) as Array<'home' | 'about'>).map((pageKey) => (
           <button
             key={pageKey}
@@ -480,8 +480,8 @@ const PageEditor = () => {
             onClick={() => setSelectedPage(pageKey)}
             className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               selectedPage === pageKey
-                ? 'bg-white text-primary shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-900 text-primary dark:text-white shadow-xs'
+                : 'text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             {PAGES_METADATA[pageKey].name}
@@ -518,8 +518,8 @@ const PageEditor = () => {
                     key={sec.id}
                     className={`group/item flex items-center justify-between p-1.5 rounded-xl border transition-all ${
                       isActive 
-                        ? 'bg-blue-50/50 border-primary/30 text-primary shadow-2xs' 
-                        : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200/50'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/20 border-primary/30 dark:border-blue-500/40 text-primary dark:text-blue-400 shadow-2xs' 
+                        : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-200/50'
                     }`}
                   >
                     <button
@@ -528,7 +528,7 @@ const PageEditor = () => {
                       className="flex-grow text-left px-2.5 py-1.5 text-xs font-bold flex flex-col gap-0.5 min-w-0"
                     >
                       <span className="truncate">{sec.name}</span>
-                      <span className="text-[9px] font-normal text-slate-400">
+                      <span className="text-[9px] font-normal text-slate-400 dark:text-gray-500">
                         {isSystemComponent ? 'Módulo Especial' : 'Contenido por Bloques'}
                       </span>
                     </button>
@@ -538,7 +538,7 @@ const PageEditor = () => {
                       <button
                         disabled={idx === 0}
                         onClick={(e) => { e.stopPropagation(); handleMoveSection(sec.id, 'up'); }}
-                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-gray-250 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                         title="Subir Sección"
                       >
                         <ArrowUp size={12} />
@@ -546,14 +546,14 @@ const PageEditor = () => {
                       <button
                         disabled={idx === sections.length - 1}
                         onClick={(e) => { e.stopPropagation(); handleMoveSection(sec.id, 'down'); }}
-                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-gray-250 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                         title="Bajar Sección"
                       >
                         <ArrowDown size={12} />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteSection(sec.id); }}
-                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-colors"
                         title="Eliminar Sección"
                       >
                         <Trash2 size={12} />
@@ -610,7 +610,7 @@ const PageEditor = () => {
                     type="text"
                     value={activeSec.name || ''}
                     onChange={(e) => handleUpdateField('name', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Bienvenidos"
                   />
                 </div>
@@ -623,7 +623,7 @@ const PageEditor = () => {
                     type="text"
                     value={activeSec.title || ''}
                     onChange={(e) => handleUpdateField('title', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Bienvenido a nuestra iglesia"
                   />
                 </div>
@@ -636,7 +636,7 @@ const PageEditor = () => {
                     type="text"
                     value={activeSec.subtitle || ''}
                     onChange={(e) => handleUpdateField('subtitle', e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Conoce nuestras actividades"
                   />
                 </div>
@@ -697,7 +697,7 @@ const PageEditor = () => {
                           value={activeSec.cover_image_url || ''}
                           onChange={(e) => handleUpdateField('cover_image_url', e.target.value)}
                           placeholder="https://images.unsplash.com/... o sube una a la derecha"
-                          className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -808,7 +808,7 @@ const PageEditor = () => {
                                   updated[sIdx] = { ...updated[sIdx], url: e.target.value };
                                   handleUpdateField('content_blocks', updated);
                                 }}
-                                className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div className="space-y-1">
@@ -824,7 +824,7 @@ const PageEditor = () => {
                                   handleUpdateField('content_blocks', updated);
                                 }}
                                 placeholder="Describa esta foto..."
-                                className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                           </div>
@@ -937,7 +937,7 @@ const PageEditor = () => {
                   required
                   value={newSecName}
                   onChange={(e) => setNewSecName(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-850 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder="Ej. Pilares de Adoración"
                 />
               </div>
@@ -949,7 +949,7 @@ const PageEditor = () => {
                 <select
                   value={newSecType}
                   onChange={(e) => setNewSecType(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-600 dark:text-gray-400"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-850 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold"
                 >
                   {availableSystemTypes.map(opt => (
                     <option key={opt.value} value={opt.value}>

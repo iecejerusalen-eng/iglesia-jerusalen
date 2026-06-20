@@ -321,7 +321,7 @@ const ProgramsManager = () => {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-805 flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <GraduationCap className="text-indigo-600" size={28} />
             Programas de Estudio
           </h1>
@@ -349,35 +349,35 @@ const ProgramsManager = () => {
               <p className="text-xs font-medium">No hay programas de estudio creados</p>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {programs.map((p) => (
                 <div key={p.id}
                   onClick={() => selectProgram(p)}
                   className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                     selectedProgram?.id === p.id
-                      ? 'bg-indigo-50/50 border-indigo-300 ring-1 ring-indigo-200 shadow-xxs'
-                      : 'bg-white border-gray-150 hover:border-indigo-200 hover:bg-slate-50/50'
+                      ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-300 dark:border-indigo-500/40 ring-1 ring-indigo-200 dark:ring-indigo-500/20 shadow-xxs'
+                      : 'bg-white dark:bg-slate-900 border-gray-150 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
                   }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       {p.cover_image ? (
                         <img src={p.cover_image} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0 border border-gray-150 dark:border-white/10 shadow-xxs" />
                       ) : (
-                        <div className="w-11 h-11 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0 border border-indigo-100">
+                        <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-lg flex items-center justify-center flex-shrink-0 border border-indigo-100 dark:border-indigo-900/50">
                           <BookOpen size={18} />
                         </div>
                       )}
                       <div className="min-w-0">
                         <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">{p.title}</h3>
-                        {p.description && <p className="text-xxs text-gray-400 line-clamp-2 mt-0.5 font-light leading-normal">{p.description}</p>}
+                        {p.description && <p className="text-xxs text-gray-450 line-clamp-2 mt-0.5 font-light leading-normal">{p.description}</p>}
                       </div>
                     </div>
                     {!readOnly && (
                       <div className="flex gap-1 flex-shrink-0 ml-2">
                         <button onClick={(e) => { e.stopPropagation(); openEditProgram(p); }}
-                          className="p-1 rounded-lg hover:bg-indigo-100/50 text-gray-400 hover:text-indigo-650 cursor-pointer transition-colors"><Edit3 size={13} /></button>
+                          className="p-1 rounded-lg hover:bg-indigo-100/50 dark:hover:bg-indigo-950/30 text-gray-400 hover:text-indigo-650 cursor-pointer transition-colors"><Edit3 size={13} /></button>
                         <button onClick={(e) => { e.stopPropagation(); deleteProgram(p.id); }}
-                          className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-650 cursor-pointer transition-colors"><Trash2 size={13} /></button>
+                          className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 hover:text-red-650 cursor-pointer transition-colors"><Trash2 size={13} /></button>
                       </div>
                     )}
                   </div>
@@ -401,7 +401,7 @@ const ProgramsManager = () => {
               <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-4 md:p-5 shadow-xxs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="min-w-0">
                   <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Estudio Seleccionado</span>
-                  <h2 className="text-base font-serif font-bold text-gray-850 truncate mt-0.5">{selectedProgram.title}</h2>
+                  <h2 className="text-base font-serif font-bold text-gray-850 dark:text-gray-100 truncate mt-0.5">{selectedProgram.title}</h2>
                 </div>
                 {!readOnly && (
                   <div className="flex items-center gap-2 flex-wrap shrink-0">
@@ -431,32 +431,32 @@ const ProgramsManager = () => {
                     {modules.map((module, modIndex) => {
                       const moduleLessons = lessons.filter(l => l.module_id === module.id);
                       return (
-                        <div key={module.id} className="bg-slate-50/50 border border-gray-150 dark:border-white/10 rounded-2xl p-4 shadow-xxs space-y-3">
+                        <div key={module.id} className="bg-slate-50/50 dark:bg-slate-900/50 border border-gray-150 dark:border-white/10 rounded-2xl p-4 shadow-xxs space-y-3">
                           {/* Module Bar */}
                           <div className="flex items-start justify-between bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-3.5 shadow-xxs">
                             <div className="min-w-0 pr-4">
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                                <span className="text-[9px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900/50">
                                   Módulo {modIndex + 1}
                                 </span>
-                                <span className="text-[10px] text-gray-400">({moduleLessons.length} lecciones)</span>
+                                <span className="text-[10px] text-gray-405 dark:text-gray-400">({moduleLessons.length} lecciones)</span>
                               </div>
                               <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm mt-1">{module.title}</h3>
-                              {module.description && <p className="text-xxs text-gray-400 font-light mt-0.5 leading-normal">{module.description}</p>}
+                              {module.description && <p className="text-xxs text-gray-405 dark:text-gray-400 font-light mt-0.5 leading-normal">{module.description}</p>}
                             </div>
 
                             {!readOnly && (
                               <div className="flex items-center gap-1">
                                 <button onClick={() => moveModule(modIndex, 'up')} disabled={modIndex === 0}
-                                  className="p-1 rounded-lg hover:bg-slate-105 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowUp size={13} /></button>
+                                  className="p-1 rounded-lg hover:bg-slate-105 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowUp size={13} /></button>
                                 <button onClick={() => moveModule(modIndex, 'down')} disabled={modIndex === modules.length - 1}
-                                  className="p-1 rounded-lg hover:bg-slate-105 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowDown size={13} /></button>
+                                  className="p-1 rounded-lg hover:bg-slate-105 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowDown size={13} /></button>
                                 <button onClick={() => openEditModule(module)}
-                                  className="p-1 rounded-lg hover:bg-indigo-50 text-gray-450 hover:text-indigo-650 cursor-pointer transition-colors"><Edit3 size={13} /></button>
+                                  className="p-1 rounded-lg hover:bg-indigo-55 dark:hover:bg-indigo-950/30 text-gray-450 dark:text-gray-400 hover:text-indigo-650 cursor-pointer transition-colors"><Edit3 size={13} /></button>
                                 <button onClick={() => deleteModule(module.id)}
-                                  className="p-1 rounded-lg hover:bg-red-50 text-gray-455 hover:text-red-650 cursor-pointer transition-colors"><Trash2 size={13} /></button>
+                                  className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-455 dark:text-gray-400 hover:text-red-650 cursor-pointer transition-colors"><Trash2 size={13} /></button>
                                 <button onClick={() => openCreateLesson(module.id)}
-                                  className="ml-1 flex items-center gap-0.5 px-2 py-1 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer">
+                                  className="ml-1 flex items-center gap-0.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-105 dark:hover:bg-indigo-955/60 hover:text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer">
                                   <Plus size={10} /> Lección
                                 </button>
                               </div>
@@ -466,17 +466,17 @@ const ProgramsManager = () => {
                           {/* Lessons inside this Module */}
                           <div className="pl-4 md:pl-6 space-y-2">
                             {moduleLessons.length === 0 ? (
-                              <div className="text-center py-4 bg-white/60 border border-dashed border-gray-200 dark:border-white/10 rounded-xl">
-                                <p className="text-xxs text-gray-450 italic">Sin lecciones vinculadas a este módulo.</p>
+                              <div className="text-center py-4 bg-white/60 dark:bg-slate-950/30 border border-dashed border-gray-200 dark:border-white/10 rounded-xl">
+                                <p className="text-xxs text-gray-450 dark:text-gray-400 italic">Sin lecciones vinculadas a este módulo.</p>
                               </div>
                             ) : (
                               moduleLessons.map((lesson, index) => (
                                 <div key={lesson.id} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-3 flex items-center justify-between hover:border-indigo-150 transition-colors shadow-xxs">
                                   <div className="flex items-center gap-2.5 min-w-0 pr-4">
-                                    <span className="w-5 h-5 flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-650 rounded-md text-[10px] font-bold">{index + 1}</span>
-                                    <span className="font-medium text-gray-750 text-xs truncate">{lesson.title}</span>
+                                    <span className="w-5 h-5 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-650 dark:text-indigo-400 rounded-md text-[10px] font-bold">{index + 1}</span>
+                                    <span className="font-medium text-gray-750 dark:text-gray-200 text-xs truncate">{lesson.title}</span>
                                     {lesson.teacher_content && (
-                                      <span className="text-[9px] bg-purple-50 border border-purple-100 text-purple-700 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
+                                      <span className="text-[9px] bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/55 text-purple-700 dark:text-purple-400 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
                                     )}
                                   </div>
                                   {!readOnly && (
@@ -486,9 +486,9 @@ const ProgramsManager = () => {
                                       <button onClick={() => moveLesson(lesson.id, 'down', module.id)} disabled={index === moduleLessons.length - 1}
                                         className="p-1 rounded hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer"><ArrowDown size={12} /></button>
                                       <button onClick={() => openEditLesson(lesson)}
-                                        className="p-1 rounded hover:bg-indigo-50/50 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
+                                        className="p-1 rounded hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
                                       <button onClick={() => deleteLesson(lesson.id)}
-                                        className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-650 cursor-pointer"><Trash2 size={12} /></button>
+                                        className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-450 dark:text-gray-400 hover:text-red-655 cursor-pointer"><Trash2 size={12} /></button>
                                     </div>
                                   )}
                                 </div>
@@ -507,24 +507,24 @@ const ProgramsManager = () => {
                         </div>
                         <div className="space-y-2">
                           {standaloneLessons.map((lesson, index) => (
-                            <div key={lesson.id} className="bg-slate-50/40 border border-gray-150 dark:border-white/10 rounded-xl p-3 flex items-center justify-between hover:border-indigo-150 transition-colors shadow-xxs">
+                            <div key={lesson.id} className="bg-slate-50/40 dark:bg-slate-900/40 border border-gray-150 dark:border-white/10 rounded-xl p-3 flex items-center justify-between hover:border-indigo-150 transition-colors shadow-xxs">
                               <div className="flex items-center gap-2.5 min-w-0 pr-4">
-                                <span className="w-5 h-5 flex items-center justify-center bg-gray-100 text-gray-500 dark:text-gray-450 rounded-md text-[10px] font-bold">{index + 1}</span>
-                                <span className="font-medium text-gray-750 text-xs truncate">{lesson.title}</span>
+                                <span className="w-5 h-5 flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-450 rounded-md text-[10px] font-bold">{index + 1}</span>
+                                <span className="font-medium text-gray-750 dark:text-gray-200 text-xs truncate">{lesson.title}</span>
                                 {lesson.teacher_content && (
-                                  <span className="text-[9px] bg-purple-50 border border-purple-100 text-purple-700 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
+                                  <span className="text-[9px] bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 text-purple-700 dark:text-purple-400 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
                                 )}
                               </div>
                               {!readOnly && (
                                 <div className="flex gap-0.5">
                                   <button onClick={() => moveLesson(lesson.id, 'up', null)} disabled={index === 0}
-                                    className="p-1 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-20 cursor-pointer"><ArrowUp size={12} /></button>
+                                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer"><ArrowUp size={12} /></button>
                                   <button onClick={() => moveLesson(lesson.id, 'down', null)} disabled={index === standaloneLessons.length - 1}
-                                    className="p-1 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-20 cursor-pointer"><ArrowDown size={12} /></button>
+                                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer"><ArrowDown size={12} /></button>
                                   <button onClick={() => openEditLesson(lesson)}
-                                    className="p-1 rounded hover:bg-indigo-50/50 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
+                                    className="p-1 rounded hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
                                   <button onClick={() => deleteLesson(lesson.id)}
-                                    className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-650 cursor-pointer"><Trash2 size={12} /></button>
+                                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-450 dark:text-gray-400 hover:text-red-650 cursor-pointer"><Trash2 size={12} /></button>
                                 </div>
                               )}
                             </div>
@@ -552,12 +552,12 @@ const ProgramsManager = () => {
             <form onSubmit={programForm.handleSubmit(onSubmitProgram)} className="p-5 space-y-4">
               <div>
                 <label htmlFor="program-title" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Título *</label>
-                <input id="program-title" {...programForm.register('title')} className="w-full border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Escuela de Liderazgo" />
+                <input id="program-title" {...programForm.register('title')} className="w-full bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Escuela de Liderazgo" />
                 {programForm.formState.errors.title && <p className="text-red-500 text-xxs mt-1">{programForm.formState.errors.title.message}</p>}
               </div>
               <div>
                 <label htmlFor="program-description" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                <textarea id="program-description" {...programForm.register('description')} rows={3} className="w-full border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none resize-none" placeholder="Descripción corta del programa..." />
+                <textarea id="program-description" {...programForm.register('description')} rows={3} className="w-full bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none resize-none" placeholder="Descripción corta del programa..." />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Imagen de Portada</label>
@@ -571,11 +571,11 @@ const ProgramsManager = () => {
                     <MediaUploader folder="programas" onUploadSuccess={(url: string) => setCoverImage(url)} />
                     <span className="text-xxs text-gray-400">o</span>
                     <div className="flex-1 flex gap-1.5">
-                      <input value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="Pegar URL de imagen" className="flex-grow border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 outline-none" />
+                      <input value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="Pegar URL de imagen" className="flex-grow bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 outline-none" />
                       <button
                         type="button"
                         onClick={() => setIsMediaModalOpen(true)}
-                        className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-gray-600 dark:text-gray-400 cursor-pointer flex items-center justify-center shrink-0 border border-gray-250"
+                        className="px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-gray-600 dark:text-gray-400 cursor-pointer flex items-center justify-center shrink-0 border border-gray-250 dark:border-white/10"
                         title="Buscar en internet"
                       >
                         <Search size={14} />
@@ -585,7 +585,7 @@ const ProgramsManager = () => {
                 )}
               </div>
               <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-white/5">
-                <button type="button" onClick={() => setShowProgramForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-450 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer">Cancelar</button>
+                <button type="button" onClick={() => setShowProgramForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-450 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 cursor-pointer">Cancelar</button>
                 <button type="submit" className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer shadow-sm">{editingProgram ? 'Actualizar' : 'Crear Programa'}</button>
               </div>
             </form>
@@ -605,15 +605,15 @@ const ProgramsManager = () => {
             <form onSubmit={moduleForm.handleSubmit(onSubmitModule)} className="p-5 space-y-4">
               <div>
                 <label htmlFor="module-title" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Título del Módulo *</label>
-                <input id="module-title" {...moduleForm.register('title')} className="w-full border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Volumen 1: Fundamentos Doctrinarios" />
+                <input id="module-title" {...moduleForm.register('title')} className="w-full bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Volumen 1: Fundamentos Doctrinarios" />
                 {moduleForm.formState.errors.title && <p className="text-red-500 text-xxs mt-1">{moduleForm.formState.errors.title.message}</p>}
               </div>
               <div>
                 <label htmlFor="module-description" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                <textarea id="module-description" {...moduleForm.register('description')} rows={3} className="w-full border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none resize-none" placeholder="Resumen del contenido de este volumen..." />
+                <textarea id="module-description" {...moduleForm.register('description')} rows={3} className="w-full bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none resize-none" placeholder="Resumen del contenido de este volumen..." />
               </div>
               <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-white/5">
-                <button type="button" onClick={() => setShowModuleForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-450 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer">Cancelar</button>
+                <button type="button" onClick={() => setShowModuleForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-455 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 cursor-pointer">Cancelar</button>
                 <button type="submit" className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer shadow-sm">{editingModule ? 'Actualizar' : 'Crear Módulo'}</button>
               </div>
             </form>
@@ -634,7 +634,7 @@ const ProgramsManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="lesson-title" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Título de la Lección *</label>
-                  <input id="lesson-title" {...lessonForm.register('title')} className="w-full border border-gray-305 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Lección 1 - Dios en la Creación" />
+                  <input id="lesson-title" {...lessonForm.register('title')} className="w-full bg-white dark:bg-slate-800 border border-gray-305 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none" placeholder="Ej: Lección 1 - Dios en la Creación" />
                   {lessonForm.formState.errors.title && <p className="text-red-500 text-xxs mt-1">{lessonForm.formState.errors.title.message}</p>}
                 </div>
                 <div>
@@ -643,7 +643,7 @@ const ProgramsManager = () => {
                     id="lesson-module"
                     value={selectedModuleIdForNewLesson || ''}
                     onChange={(e) => setSelectedModuleIdForNewLesson(e.target.value || null)}
-                    className="w-full border border-gray-305 bg-white dark:bg-slate-900 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 outline-none"
+                    className="w-full border border-gray-305 dark:border-white/10 bg-white dark:bg-slate-900 text-gray-850 dark:text-gray-100 rounded-lg px-3 py-2 text-xs focus:border-indigo-400 outline-none"
                   >
                     <option value="">Lección General (Sin Módulo)</option>
                     {modules.map(mod => (
@@ -655,7 +655,7 @@ const ProgramsManager = () => {
 
               {/* Public content */}
               <div>
-                <label className="block text-xs font-semibold text-gray-750 mb-1.5 flex items-center gap-1">
+                <label className="block text-xs font-semibold text-gray-750 dark:text-gray-300 mb-1.5 flex items-center gap-1">
                   <FileText size={13} className="text-indigo-500" />
                   📖 Contenido Público (para Estudiantes)
                 </label>
@@ -663,17 +663,17 @@ const ProgramsManager = () => {
               </div>
 
               {/* Teacher content */}
-              <div className="bg-purple-50/40 border border-purple-150 rounded-xl p-4 space-y-2">
-                <label className="block text-xs font-semibold text-purple-800 flex items-center gap-1">
+              <div className="bg-purple-50/40 dark:bg-purple-950/10 border border-purple-150 dark:border-purple-900/30 rounded-xl p-4 space-y-2">
+                <label className="block text-xs font-semibold text-purple-800 dark:text-purple-400 flex items-center gap-1">
                   <GraduationCap size={14} className="text-purple-600" />
                   🎓 Guía del Maestro (Acceso Restringido)
                 </label>
-                <p className="text-xxs text-purple-600 font-light">Este material solo se mostrará a los roles autorizados (Maestro, Pastor, Admin).</p>
+                <p className="text-xxs text-purple-600 dark:text-purple-450 font-light">Este material solo se mostrará a los roles autorizados (Maestro, Pastor, Admin).</p>
                 <BlockEditor content={teacherContent} onChange={setTeacherContent} disabled={readOnly} />
               </div>
 
               <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-white/5">
-                <button type="button" onClick={() => setShowLessonForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-450 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer">Cancelar</button>
+                <button type="button" onClick={() => setShowLessonForm(false)} className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-450 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 cursor-pointer">Cancelar</button>
                 <button type="submit" className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer shadow-sm">{editingLesson ? 'Actualizar Lección' : 'Crear Lección'}</button>
               </div>
             </form>

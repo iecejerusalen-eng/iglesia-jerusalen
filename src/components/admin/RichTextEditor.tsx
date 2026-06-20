@@ -111,7 +111,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm focus-within:border-gold focus-within:ring-1 focus-within:ring-gold transition-all duration-200">
+    <div className="border border-gray-300 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-sm focus-within:border-gold focus-within:ring-1 focus-within:ring-gold transition-all duration-200">
       {/* Estilos embebidos para asegurar que el editor muestre correctamente H1-H4, listas y estilos */}
       <style>{`
         .ProseMirror {
@@ -220,16 +220,34 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
           text-decoration: line-through;
           color: #94a3b8;
         }
+
+        /* Soporte para Modo Oscuro en ProseMirror */
+        .dark .ProseMirror h1 { color: #f9fafb; }
+        .dark .ProseMirror h2 { color: #f3f4f6; }
+        .dark .ProseMirror h3 { color: #e5e7eb; }
+        .dark .ProseMirror h4 { color: #d1d5db; }
+        .dark .ProseMirror p { color: #f3f4f6; }
+        .dark .ProseMirror blockquote {
+          background-color: rgba(217, 119, 6, 0.1);
+          color: #e5e7eb;
+          border-left-color: #d97706;
+        }
+        .dark .ProseMirror ul:not([data-type="taskList"]) { color: #f3f4f6; }
+        .dark .ProseMirror ol { color: #f3f4f6; }
+        .dark .ProseMirror li { color: #f3f4f6; }
+        .dark .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+          color: #64748b;
+        }
       `}</style>
       {!disabled && (
-        <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 border-gray-200 items-center justify-between">
+        <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-white/10 items-center justify-between">
           <div className="flex flex-wrap gap-1 items-center">
             {/* Historial */}
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().undo().run(); }}
               onMouseDown={(e) => e.preventDefault()}
               disabled={!editor.can().undo()}
-              className="p-1.5 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+              className="p-1.5 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
               type="button"
               title="Deshacer"
             >
@@ -239,20 +257,20 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
               onClick={(e) => { e.preventDefault(); editor.chain().focus().redo().run(); }}
               onMouseDown={(e) => e.preventDefault()}
               disabled={!editor.can().redo()}
-              className="p-1.5 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+              className="p-1.5 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
               type="button"
               title="Rehacer"
             >
               <Redo2 size={16} />
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
+            <div className="w-px h-5 bg-gray-300 dark:bg-slate-700 mx-1"></div>
 
             {/* Encabezados y Párrafo */}
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 font-bold text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 dark:bg-slate-850 font-bold text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Título 1"
             >
@@ -261,7 +279,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 font-bold text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 dark:bg-slate-850 font-bold text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Título 2"
             >
@@ -270,7 +288,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 font-bold text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 dark:bg-slate-850 font-bold text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Título 3"
             >
@@ -279,7 +297,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 4 }).run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('heading', { level: 4 }) ? 'bg-gray-200 font-bold text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('heading', { level: 4 }) ? 'bg-gray-200 dark:bg-slate-850 font-bold text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Título 4"
             >
@@ -288,20 +306,20 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().setParagraph().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`px-2 py-1 text-xs font-semibold rounded text-gray-600 cursor-pointer ${editor.isActive('paragraph') && !editor.isActive('heading') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`px-2 py-1 text-xs font-semibold rounded cursor-pointer transition-colors ${editor.isActive('paragraph') && !editor.isActive('heading') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Texto Normal"
             >
               P
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
+            <div className="w-px h-5 bg-gray-300 dark:bg-slate-700 mx-1"></div>
 
             {/* Estilo Básico */}
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('bold') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('bold') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Negrita"
             >
@@ -310,20 +328,20 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('italic') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('italic') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Cursiva"
             >
               <Italic size={16} />
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
+            <div className="w-px h-5 bg-gray-300 dark:bg-slate-700 mx-1"></div>
 
             {/* Alineación */}
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign('left').run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Alinear a la izquierda"
             >
@@ -332,7 +350,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign('center').run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Centrar"
             >
@@ -341,7 +359,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign('right').run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Alinear a la derecha"
             >
@@ -350,20 +368,20 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign('justify').run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive({ textAlign: 'justify' }) ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Justificar"
             >
               <AlignJustify size={16} />
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
+            <div className="w-px h-5 bg-gray-300 dark:bg-slate-700 mx-1"></div>
 
             {/* Listas */}
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('bulletList') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('bulletList') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Lista con Viñetas"
             >
@@ -372,7 +390,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('orderedList') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('orderedList') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Lista Numerada"
             >
@@ -381,20 +399,20 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleTaskList().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1.5 rounded text-gray-600 cursor-pointer ${editor.isActive('taskList') ? 'bg-gray-200 text-black ring-1 ring-gray-300' : 'hover:bg-gray-200'}`}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('taskList') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
               type="button"
               title="Lista de Tareas (Checklist)"
             >
               <ListTodo size={16} />
             </button>
 
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
+            <div className="w-px h-5 bg-gray-300 dark:bg-slate-700 mx-1"></div>
 
             {/* Media */}
             <button
               onClick={(e) => { e.preventDefault(); addImageUrl(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className="p-1.5 rounded text-gray-600 hover:bg-gray-200 cursor-pointer"
+              className="p-1.5 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-800 cursor-pointer"
               type="button"
               title="Insertar Imagen por URL"
             >
@@ -403,7 +421,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); addYoutubeVideo(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className="p-1.5 rounded text-red-600 hover:bg-gray-200 cursor-pointer"
+              className="p-1.5 rounded text-red-650 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-slate-800 cursor-pointer"
               type="button"
               title="Insertar Video de YouTube"
             >
@@ -412,15 +430,15 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
           </div>
 
           {/* Grupo de Colores a la derecha */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded px-1.5 py-0.5 mt-1 sm:mt-0">
-            <Palette size={14} className="text-gray-400 mr-1" />
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded px-1.5 py-0.5 mt-1 sm:mt-0">
+            <Palette size={14} className="text-gray-400 dark:text-gray-500 mr-1" />
             <div className="flex gap-0.5">
               {PRESET_COLORS.map((color) => (
                 <button
                   key={color.value}
                   onClick={(e) => { e.preventDefault(); editor.chain().focus().setColor(color.value).run(); }}
                   onMouseDown={(e) => e.preventDefault()}
-                  className={`w-3.5 h-3.5 rounded-full border border-gray-200 transition-all hover:scale-125 cursor-pointer`}
+                  className={`w-3.5 h-3.5 rounded-full border border-gray-200 dark:border-white/5 transition-all hover:scale-125 cursor-pointer`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
                   type="button"
@@ -440,7 +458,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
             <button
               onClick={(e) => { e.preventDefault(); editor.chain().focus().unsetColor().run(); }}
               onMouseDown={(e) => e.preventDefault()}
-              className="p-0.5 rounded text-gray-400 hover:text-red-500 hover:bg-gray-100 cursor-pointer"
+              className="p-0.5 rounded text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
               type="button"
               title="Limpiar color"
             >
@@ -451,7 +469,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
       )}
 
       {/* Editor Content Area */}
-      <div className="p-4 bg-white text-gray-800">
+      <div className="p-4 bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100">
         <EditorContent editor={editor} />
       </div>
     </div>

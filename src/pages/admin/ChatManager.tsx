@@ -35,22 +35,22 @@ const EMOJIS = [
 const getRoleBadgeStyle = (role: string) => {
   switch (role) {
     case 'admin':
-      return 'bg-amber-100 text-amber-800 border-amber-250';
+      return 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-250 dark:border-amber-900/30';
     case 'pastor':
-      return 'bg-rose-100 text-rose-800 border-rose-250';
+      return 'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border-rose-250 dark:border-rose-900/30';
     case 'leader':
-      return 'bg-sky-100 text-sky-800 border-sky-250';
+      return 'bg-sky-100 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 border-sky-250 dark:border-sky-900/30';
     case 'secretary':
     case 'secretaria':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-250';
+      return 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-250 dark:border-emerald-900/30';
     case 'editor':
-      return 'bg-violet-100 text-violet-800 border-violet-250';
+      return 'bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border-violet-250 dark:border-violet-900/30';
     case 'multimedia':
-      return 'bg-indigo-100 text-indigo-800 border-indigo-250';
+      return 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-250 dark:border-indigo-900/30';
     case 'maestro':
-      return 'bg-teal-100 text-teal-800 border-teal-250';
+      return 'bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border-teal-250 dark:border-teal-900/30';
     default:
-      return 'bg-slate-100 text-slate-700 border-slate-200';
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
   }
 };
 
@@ -125,7 +125,7 @@ export default function ChatManager() {
       <span>
         {parts.map((part, i) =>
           regex.test(part) ? (
-            <mark key={i} className="bg-amber-100 text-amber-950 px-0.5 rounded font-semibold">
+            <mark key={i} className="bg-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 px-0.5 rounded font-semibold">
               {part}
             </mark>
           ) : (
@@ -395,7 +395,7 @@ export default function ChatManager() {
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white hover:bg-primary/95 font-semibold text-xs tracking-wider uppercase rounded-xl transition shadow-sm cursor-pointer"
           >
             <Megaphone size={14} />
-            Nueva Difusión
+            Difusión
           </button>
         )}
       </div>
@@ -405,7 +405,7 @@ export default function ChatManager() {
         
         {/* Left Side: Navigation / Contacts / Chats */}
         <div
-          className={`w-full md:w-80 border-r border-gray-150 dark:border-white/10 flex flex-col shrink-0${
+          className={`w-full md:w-80 border-r border-gray-150 dark:border-white/10 flex flex-col shrink-0 ${
             activeChat ? 'hidden md:flex' : 'flex'
           }`}
         >
@@ -430,7 +430,7 @@ export default function ChatManager() {
               )}
             </div>
 
-            <div className="flex bg-gray-55 p-1 rounded-xl gap-1">
+            <div className="flex bg-gray-55 dark:bg-slate-950/60 p-1 rounded-xl gap-1">
               <button
                 onClick={() => {
                   setActiveTab('chats');
@@ -438,8 +438,8 @@ export default function ChatManager() {
                 }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition cursor-pointer ${
                   activeTab === 'chats'
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white dark:bg-slate-800 text-primary dark:text-indigo-400 shadow-xs'
+                    : 'text-gray-550 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <MessageSquare size={13} />
@@ -452,8 +452,8 @@ export default function ChatManager() {
                 }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition cursor-pointer ${
                   activeTab === 'contacts'
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white dark:bg-slate-800 text-primary dark:text-indigo-400 shadow-xs'
+                    : 'text-gray-550 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Users size={13} />
@@ -477,7 +477,7 @@ export default function ChatManager() {
                   <p className="text-xxs text-gray-400">Ve a Contactos para iniciar una conversación.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 dark:divide-white/5">
                   {filteredChats.map((chat) => {
                     const otherParticipant = chat.participants?.find((p) => p.id !== user?.id);
                     const chatName = chat.is_group
@@ -498,8 +498,8 @@ export default function ChatManager() {
                         onClick={() => setActiveChat(chat)}
                         className={`w-full text-left p-3.5 flex items-start gap-3 transition cursor-pointer border-l-3 group/chat relative ${
                           isActive
-                            ? 'bg-primary/5 border-primary'
-                            : 'border-transparent hover:bg-gray-50'
+                            ? 'bg-primary/5 dark:bg-primary/10 border-primary'
+                            : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-850/50'
                         }`}
                       >
                         {/* Profile Image / Initials */}
@@ -544,7 +544,7 @@ export default function ChatManager() {
                                      }
                                    }
                                 }}
-                                className="p-1 hover:bg-rose-50 text-gray-300 hover:text-rose-600 rounded-lg transition-all ml-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/chat:opacity-100"
+                                className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/35 text-gray-300 dark:text-gray-500 hover:text-rose-600 dark:hover:text-rose-450 rounded-lg transition-all ml-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/chat:opacity-100"
                                 title="Eliminar conversación"
                               >
                                 <Trash2 size={12} />
@@ -577,10 +577,10 @@ export default function ChatManager() {
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center py-12 px-4 space-y-1">
                   <Users className="mx-auto text-gray-300" size={32} />
-                  <p className="text-xs text-gray-500 dark:text-gray-450 font-medium">No se encontraron contactos</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-455 font-medium">No se encontraron contactos</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 dark:divide-white/5">
                   {filteredContacts.map((contact) => {
                     const contactName = contact.first_name || contact.last_name
                       ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
@@ -591,7 +591,7 @@ export default function ChatManager() {
                       <button
                         key={contact.id}
                         onClick={() => handleStartConversation(contact.id)}
-                        className="w-full text-left p-3.5 flex items-center gap-3 hover:bg-gray-55 transition cursor-pointer"
+                        className="w-full text-left p-3.5 flex items-center gap-3 hover:bg-gray-55 dark:hover:bg-slate-800/40 transition cursor-pointer"
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {contact.photo_url ? (
@@ -624,15 +624,15 @@ export default function ChatManager() {
         </div>
 
         {/* Right Side: Conversation Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] relative">
+        <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] dark:from-slate-950 dark:to-slate-900 relative">
           {activeChat ? (
             <>
               {/* Chat Window Header */}
-              <div className="bg-white/85 backdrop-blur-md border-b border-gray-150 dark:border-white/10 p-4 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xxs">
+              <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-gray-150 dark:border-white/10 p-4 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xxs">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={() => setActiveChat(null)}
-                    className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 dark:text-gray-450 cursor-pointer"
+                    className="md:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-gray-450 cursor-pointer"
                   >
                     <ChevronLeft size={20} />
                   </button>
@@ -680,9 +680,9 @@ export default function ChatManager() {
               </div>
 
               {/* Warning Banner */}
-              <div className="bg-amber-50/60 backdrop-blur-xs border-b border-amber-100 p-2.5 px-4 flex items-center gap-3 shrink-0 relative z-10">
-                <ShieldAlert className="text-amber-600 shrink-0" size={16} />
-                <p className="text-[10.5px] font-medium text-amber-800 leading-normal">
+              <div className="bg-amber-50/60 dark:bg-amber-950/20 backdrop-blur-xs border-b border-amber-100 dark:border-amber-900/30 p-2.5 px-4 flex items-center gap-3 shrink-0 relative z-10">
+                <ShieldAlert className="text-amber-600 dark:text-amber-400 shrink-0" size={16} />
+                <p className="text-[10.5px] font-medium text-amber-800 dark:text-amber-300 leading-normal">
                   ⚠️ Por motivos de privacidad y almacenamiento, los mensajes de este chat solo contienen texto/emojis y se eliminarán automáticamente después de <strong>{retentionDays} días</strong>.
                 </p>
               </div>
@@ -710,7 +710,7 @@ export default function ChatManager() {
                       <div key={dateStr} className="space-y-3.5">
                         {/* Date Separator */}
                         <div className="flex justify-center my-4">
-                          <span className="px-3 py-1 bg-slate-200/80 backdrop-blur-xs text-slate-600 dark:text-gray-400 rounded-full text-[9px] font-bold tracking-wider uppercase border border-slate-300/30 shadow-xxs">
+                          <span className="px-3 py-1 bg-slate-200/80 dark:bg-slate-800/80 backdrop-blur-xs text-slate-600 dark:text-gray-400 rounded-full text-[9px] font-bold tracking-wider uppercase border border-slate-300/30 dark:border-white/5 shadow-xxs">
                             {formatDateHeader(dateStr)}
                           </span>
                         </div>
@@ -735,13 +735,13 @@ export default function ChatManager() {
                                 <div className={`rounded-2xl p-3 shadow-xs leading-relaxed relative ${
                                   isMe
                                     ? 'bg-gradient-to-br from-primary to-primary/90 text-white rounded-tr-none border border-primary/10'
-                                    : 'bg-white text-gray-800 border border-gray-150 rounded-tl-none'
+                                    : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-150 border border-gray-150 dark:border-white/5 rounded-tl-none'
                                 }`}>
                                   <p className="text-xs break-words whitespace-pre-wrap">{msg.content}</p>
                                 </div>
 
                                 {/* Floating actions on hover */}
-                                <div className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-all duration-200 flex items-center bg-white dark:bg-slate-900 shadow-md border border-gray-150 dark:border-white/10 rounded-xl p-1 gap-1 z-10${
+                                <div className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-all duration-200 flex items-center bg-white dark:bg-slate-900 shadow-md border border-gray-150 dark:border-white/10 rounded-xl p-1 gap-1 z-10 ${
                                   isMe ? 'right-full mr-2' : 'left-full ml-2'
                                 }`}>
                                   <button
@@ -750,7 +750,7 @@ export default function ChatManager() {
                                       navigator.clipboard.writeText(msg.content);
                                       toast.success('Mensaje copiado al portapapeles.');
                                     }}
-                                    className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                                    className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-gray-200 transition cursor-pointer"
                                     title="Copiar texto"
                                   >
                                     <Copy size={12} />
@@ -759,7 +759,7 @@ export default function ChatManager() {
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteMessage(msg.id)}
-                                      className="p-1.5 hover:bg-rose-50 rounded-lg text-rose-400 hover:text-rose-600 transition cursor-pointer"
+                                      className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-rose-400 dark:text-rose-355 hover:text-rose-600 dark:hover:text-rose-200 transition cursor-pointer"
                                       title="Eliminar mensaje"
                                     >
                                       <Trash2 size={12} />
@@ -800,13 +800,13 @@ export default function ChatManager() {
               )}
 
               {/* Chat Input Field Area */}
-              <div className="bg-white/90 backdrop-blur-md border-t border-gray-150 dark:border-white/10 p-3 shrink-0 relative z-20">
+              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-gray-150 dark:border-white/10 p-3 shrink-0 relative z-20">
                 
                 {/* Popular Emojis Shortcut Bar */}
                 <div className="flex items-center gap-1.5 pb-2 border-b border-gray-100 dark:border-white/5 mb-2 overflow-x-auto">
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-655 transition shrink-0 cursor-pointer"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-400 dark:text-gray-400 hover:text-gray-655 dark:hover:text-gray-200 transition shrink-0 cursor-pointer"
                     title="Insertar Emojis"
                   >
                     <Smile size={16} />
@@ -815,7 +815,7 @@ export default function ChatManager() {
                     <button
                       key={emoji}
                       onClick={() => handleEmojiClick(emoji)}
-                      className="text-xs p-1 hover:bg-gray-100 rounded transition shrink-0 cursor-pointer hover:scale-110 active:scale-90"
+                      className="text-xs p-1 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-gray-200 rounded transition shrink-0 cursor-pointer hover:scale-110 active:scale-90"
                     >
                       {emoji}
                     </button>
@@ -832,7 +832,7 @@ export default function ChatManager() {
                           handleEmojiClick(emoji);
                           setShowEmojiPicker(false);
                         }}
-                        className="text-lg p-1 hover:bg-gray-55 rounded transition cursor-pointer text-center hover:scale-110 active:scale-90"
+                        className="text-lg p-1 hover:bg-gray-55 dark:hover:bg-slate-800 rounded transition cursor-pointer text-center hover:scale-110 active:scale-90 text-gray-800 dark:text-gray-100"
                       >
                         {emoji}
                       </button>
@@ -847,7 +847,7 @@ export default function ChatManager() {
                     placeholder="Escribe un mensaje aquí... (Solo texto y emojis)"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value.slice(0, 1000))}
-                    className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white bg-slate-50 dark:bg-slate-950 transition"
+                    className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white dark:focus:bg-slate-850 bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 transition"
                     maxLength={1000}
                     disabled={sendingMessage}
                   />
@@ -922,8 +922,8 @@ export default function ChatManager() {
                     {(role === 'admin' || role === 'pastor' || role === 'leader') && (
                       <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                         broadcastTarget === 'all'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:bg-gray-50'
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                          : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                       }`}>
                         <input
                           type="radio"
@@ -934,7 +934,7 @@ export default function ChatManager() {
                         />
                         <div className="text-left">
                           <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Todos los usuarios de la Iglesia</p>
-                          <p className="text-[10px] text-gray-400">Enviar mensaje privado individual a cada contacto disponible.</p>
+                          <p className="text-[10px] text-gray-450 dark:text-gray-400">Enviar mensaje privado individual a cada contacto disponible.</p>
                         </div>
                       </label>
                     )}
@@ -942,8 +942,8 @@ export default function ChatManager() {
                     {/* Department option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                       broadcastTarget === 'department'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                        : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                     }`}>
                       <input
                         type="radio"
@@ -958,14 +958,14 @@ export default function ChatManager() {
                             ? 'Por Departamento / Ministerio'
                             : `Miembros de mi departamento: ${myMinistry?.name || 'Cargando...'}`}
                         </p>
-                        <p className="text-[10px] text-gray-400">Difusión dirigida a los miembros adscritos a este ministerio.</p>
+                        <p className="text-[10px] text-gray-455 dark:text-gray-400">Difusión dirigida a los miembros adscritos a este ministerio.</p>
                         
                         {/* Dropdown if admin/pastor selects department */}
                         {broadcastTarget === 'department' && (role === 'admin' || role === 'pastor' || role === 'leader') && (
                           <select
                             value={selectedDeptId}
                             onChange={(e) => setSelectedDeptId(e.target.value)}
-                            className="mt-2 w-full p-2 border border-gray-200 dark:border-white/10 rounded-lg text-xxs focus:outline-none"
+                            className="mt-2 w-full p-2 border border-gray-200 dark:border-white/10 rounded-lg text-xxs focus:outline-none bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100"
                           >
                             <option value="">Selecciona un departamento...</option>
                             {availableMinistries.map((min) => (
@@ -981,8 +981,8 @@ export default function ChatManager() {
                     {/* Men over 30 option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                       broadcastTarget === 'men_over_30'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                        : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                     }`}>
                       <input
                         type="radio"
@@ -993,15 +993,15 @@ export default function ChatManager() {
                       />
                       <div className="text-left">
                         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Caballeros de la Iglesia (Hombres &gt; 30 años)</p>
-                        <p className="text-[10px] text-gray-400">Calculado dinámicamente mediante el CRM usando fecha de nacimiento y género.</p>
+                        <p className="text-[10px] text-gray-455 dark:text-gray-400">Calculado dinámicamente mediante el CRM usando fecha de nacimiento y género.</p>
                       </div>
                     </label>
 
                     {/* Ladies option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                       broadcastTarget === 'ladies'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                        : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                     }`}>
                       <input
                         type="radio"
@@ -1012,15 +1012,15 @@ export default function ChatManager() {
                       />
                       <div className="text-left">
                         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Damas de la Iglesia (Mujeres)</p>
-                        <p className="text-[10px] text-gray-400">Calculado dinámicamente usando el género registrado en el CRM.</p>
+                        <p className="text-[10px] text-gray-455 dark:text-gray-400">Calculado dinámicamente usando el género registrado en el CRM.</p>
                       </div>
                     </label>
 
                     {/* Youth option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                       broadcastTarget === 'youth'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                        : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                     }`}>
                       <input
                         type="radio"
@@ -1031,7 +1031,7 @@ export default function ChatManager() {
                       />
                       <div className="text-left">
                         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">Jóvenes de la Iglesia (Menores de 30 años)</p>
-                        <p className="text-[10px] text-gray-400">Calculado dinámicamente mediante el CRM usando la fecha de nacimiento.</p>
+                        <p className="text-[10px] text-gray-455 dark:text-gray-400">Calculado dinámicamente mediante el CRM usando la fecha de nacimiento.</p>
                       </div>
                     </label>
                   </div>
@@ -1058,7 +1058,7 @@ export default function ChatManager() {
                     placeholder="Escribe el mensaje de difusión... (Se enviará de forma individual a cada destinatario)"
                     value={broadcastContent}
                     onChange={(e) => setBroadcastContent(e.target.value.slice(0, 1000))}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none resize-none leading-relaxed"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none resize-none leading-relaxed bg-white dark:bg-slate-850 text-gray-850 dark:text-gray-100"
                     maxLength={1000}
                     disabled={sendingBroadcast}
                   />

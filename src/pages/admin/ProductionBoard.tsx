@@ -42,10 +42,10 @@ interface ProductionTicket {
 }
 
 const COLUMNS = [
-  { id: 'backlog', name: 'Reserva / Backlog', color: 'border-t-slate-500 bg-slate-50/50' },
-  { id: 'todo', name: 'Por Hacer', color: 'border-t-blue-500 bg-blue-50/30' },
-  { id: 'in_progress', name: 'En Progreso', color: 'border-t-amber-500 bg-amber-50/30' },
-  { id: 'done', name: 'Completado', color: 'border-t-green-500 bg-green-50/30' }
+  { id: 'backlog', name: 'Reserva / Backlog', color: 'border-t-slate-500 bg-slate-50/50 dark:bg-slate-900/10' },
+  { id: 'todo', name: 'Por Hacer', color: 'border-t-blue-500 bg-blue-50/30 dark:bg-blue-950/10' },
+  { id: 'in_progress', name: 'En Progreso', color: 'border-t-amber-500 bg-amber-50/30 dark:bg-amber-950/10' },
+  { id: 'done', name: 'Completado', color: 'border-t-green-500 bg-green-50/30 dark:bg-green-950/10' }
 ] as const;
 
 const ProductionBoard = () => {
@@ -245,11 +245,11 @@ const ProductionBoard = () => {
             return (
               <div 
                 key={col.id} 
-                className={`rounded-2xl border-t-4 border border-gray-150 dark:border-white/10 p-4 shadow-sm flex flex-col space-y-4 min-h-[500px]${col.color}`}
+                className={`rounded-2xl border-t-4 border border-gray-150 dark:border-white/10 p-4 shadow-sm flex flex-col space-y-4 min-h-[500px] ${col.color}`}
               >
                 {/* Column Title */}
                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
-                  <h3 className="font-bold text-sm text-gray-750">{col.name}</h3>
+                  <h3 className="font-bold text-sm text-gray-750 dark:text-gray-200">{col.name}</h3>
                   <span className="text-xs bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 font-semibold px-2 py-0.5 rounded-full">
                     {colTickets.length}
                   </span>
@@ -374,10 +374,10 @@ const ProductionBoard = () => {
               <form onSubmit={handleSubmit(handleCreateTicket)} className="space-y-4">
                 {/* Solicitante */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Ministerio Solicitante</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Ministerio Solicitante</label>
                   <select
                     {...register('ministry_id')}
-                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   >
                     <option value="">Selecciona un ministerio...</option>
                     {ministries.map(min => (
@@ -389,34 +389,34 @@ const ProductionBoard = () => {
 
                 {/* Titulo */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Título del Trabajo</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Título del Trabajo</label>
                   <input
                     type="text"
                     {...register('title')}
                     placeholder="Ej: Letrero acrílico para recepción, Banner del campamento"
-                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                   {errors.title && <p className="text-[11px] text-red-500 font-semibold">{errors.title.message}</p>}
                 </div>
 
                 {/* Descripción */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Descripción / Detalles</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Descripción / Detalles</label>
                   <textarea
                     rows={3}
                     {...register('description')}
                     placeholder="Instrucciones especiales, colores, acabados..."
-                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
 
                 {/* Material & Dimensiones */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Material</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Material</label>
                     <select
                       {...register('material_type')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="madera MDF 3mm">Madera MDF 3mm</option>
                       <option value="madera MDF 6mm">Madera MDF 6mm</option>
@@ -431,12 +431,12 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Medidas</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Medidas</label>
                     <input
                       type="text"
                       {...register('dimensions')}
                       placeholder="Ej: 100x150cm"
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                     {errors.dimensions && <p className="text-[11px] text-red-500 font-semibold">{errors.dimensions.message}</p>}
                   </div>
@@ -445,10 +445,10 @@ const ProductionBoard = () => {
                 {/* Maquinaria & Estado */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Maquinaria Requerida</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Maquinaria Requerida</label>
                     <select
                       {...register('machinery_required')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="corte láser">Corte Láser</option>
                       <option value="plotter de corte">Plotter de Corte</option>
@@ -460,10 +460,10 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider block">Estado Inicial</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Estado Inicial</label>
                     <select
                       {...register('status')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="backlog">Reserva / Backlog</option>
                       <option value="todo">Por Hacer</option>

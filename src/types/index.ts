@@ -326,7 +326,8 @@ export interface Ministry {
 export interface MinistryMember {
   id: string;
   ministry_id: string;
-  member_id: string;
+  member_id: string | null;
+  member_name: string | null;
   role: string;
   created_at: string;
   members?: Member | null;

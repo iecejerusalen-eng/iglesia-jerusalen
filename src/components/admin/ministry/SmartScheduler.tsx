@@ -58,7 +58,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
       setMinistryMembers(members);
 
       if (members.length > 0) {
-        const memberIds = members.map(m => m.member_id);
+        const memberIds = members.map(m => m.member_id).filter((id): id is string => id !== null);
         const { data: availData, error: aError } = await supabase
           .from('member_availabilities')
           .select('*')
@@ -248,8 +248,8 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
           >
             <option value="all">Resumen del Ministerio (Recomendado)</option>
             <optgroup label="Editar Disponibilidad Individual">
-              {ministryMembers.map(m => (
-                <option key={m.member_id} value={m.member_id}>
+              {ministryMembers.filter(m => m.member_id).map(m => (
+                <option key={m.member_id!} value={m.member_id!}>
                   {m.members?.first_name} {m.members?.last_name} ({m.role})
                 </option>
               ))}

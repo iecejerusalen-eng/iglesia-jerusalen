@@ -707,7 +707,7 @@ const Home = () => {
             // 2. WELCOME / PILARES SECTION
             if (id === 'home_welcome') {
               return (
-                <div key={id} id="about">
+                <div key={id} id="about" className="pb-16 md:pb-24">
                   {content_blocks && content_blocks.length > 0 ? (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 animate-fadeIn">
                       <div className="text-center max-w-2xl mx-auto space-y-3">

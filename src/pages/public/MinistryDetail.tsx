@@ -14,8 +14,9 @@ const MinistryDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para la visualización de miembros en Cuerpo de Apoyo
+  // Estados para la visualización de miembros en Cuerpo de Apoyo y Directiva
   const [members, setMembers] = useState<any[]>([]);
+  const [directiva, setDirectiva] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
 
@@ -45,6 +46,34 @@ const MinistryDetail = () => {
           
           if (!logosError && logosData) {
             setLogos(logosData);
+          }
+
+          // Fetch directiva members
+          const { data: directivaData, error: directivaError } = await supabase
+            .from('ministry_members')
+            .select(`
+              id, role, member_id, member_name,
+              members (
+                id, first_name, last_name, photo_url, phone, phone_country_code
+              )
+            `)
+            .eq('ministry_id', data.id);
+          
+          if (!directivaError && directivaData) {
+            const roleOrder = [
+              'pastor', 'coordinador', 'coordinadora', 'subcoordinador', 'sub-coordinador', 'sub-coordinadora',
+              'secretaria', 'secretario', 'tesorera', 'tesorero', 'vocal', 'vocal 1', 'vocal 2', 'vocal 3'
+            ];
+            const sortedDirectiva = [...directivaData].sort((a, b) => {
+              const roleA = a.role.toLowerCase();
+              const roleB = b.role.toLowerCase();
+              const idxA = roleOrder.findIndex(r => roleA.includes(r));
+              const idxB = roleOrder.findIndex(r => roleB.includes(r));
+              const valA = idxA === -1 ? 99 : idxA;
+              const valB = idxB === -1 ? 99 : idxB;
+              return valA - valB;
+            });
+            setDirectiva(sortedDirectiva);
           }
 
           // Fetch members if it is Cuerpo de Apoyo
@@ -225,6 +254,48 @@ const MinistryDetail = () => {
           />
         )}
       </div>
+
+      {/* SECCIÓN DIRECTIVA */}
+      {directiva && directiva.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6">
+          <div className="border-b border-gray-100 dark:border-slate-800 pb-4">
+            <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">
+              Directiva y Liderazgo
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+              Equipo de líderes y servidores encargados de guiar este departamento.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {directiva.map((member) => {
+              const name = member.members ? `${member.members.first_name} ${member.members.last_name}` : member.member_name;
+              const photoUrl = member.members?.photo_url;
+              
+              return (
+                <div key={member.id} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/30 rounded-2xl border border-gray-105 dark:border-slate-800/80 hover:shadow-md transition-shadow">
+                  {/* Photo or Initials */}
+                  <div className="w-14 h-14 rounded-full overflow-hidden border border-white dark:border-slate-800 shadow-sm bg-primary/10 text-primary dark:text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{name?.[0] || 'U'}</span>
+                    )}
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">
+                      {member.role}
+                    </span>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xs truncate leading-tight">
+                      {name}
+                    </h3>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* SECCIÓN MIEMBROS (Si es Cuerpo de Apoyo) */}
       {ministry.slug === 'cuerpo-de-apoyo' && (

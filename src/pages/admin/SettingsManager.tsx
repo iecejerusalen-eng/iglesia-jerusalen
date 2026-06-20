@@ -289,46 +289,46 @@ const SettingsManager = () => {
                       type="tel"
                       autoComplete="tel"
                       {...register('phone')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="+593 98 526 3122"
                     />
                     {errors.phone && <p className="text-accent-red text-xs mt-1">{errors.phone.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                    <label htmlFor="email" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Correo Electrónico</label>
                     <input 
                       id="email"
                       type="email"
                       autoComplete="email"
                       {...register('email')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="iece_jerusalen@hotmail.com"
                     />
                     {errors.email && <p className="text-accent-red text-xs mt-1">{errors.email.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="address" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Dirección Física</label>
+                    <label htmlFor="address" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Dirección Física</label>
                     <input 
                       id="address"
                       type="text"
                       autoComplete="street-address"
                       {...register('address')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Baquerizo Moreno entre Av. Colón y Tulcán"
                     />
                     {errors.address && <p className="text-accent-red text-xs mt-1">{errors.address.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="google_maps_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">URL Google Maps (Iframe/Embed Link)</label>
+                    <label htmlFor="google_maps_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">URL Google Maps (Iframe/Embed Link)</label>
                     <input 
                       id="google_maps_url"
                       type="text"
                       autoComplete="url"
                       {...register('google_maps_url')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono text-xs"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono text-xs"
                       placeholder="https://www.google.com/maps/embed?pb=..."
                     />
                     {errors.google_maps_url && <p className="text-accent-red text-xs mt-1">{errors.google_maps_url.message}</p>}
@@ -345,52 +345,52 @@ const SettingsManager = () => {
                 
                 <div className="space-y-3">
                   <div>
-                    <label htmlFor="bank_name" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombre del Banco</label>
+                    <label htmlFor="bank_name" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Nombre del Banco</label>
                     <input 
                       id="bank_name"
                       type="text"
                       autoComplete="off"
                       {...register('bank_name')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Banco Guayaquil"
                     />
                     {errors.bank_name && <p className="text-accent-red text-xs mt-1">{errors.bank_name.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="bank_account" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Número de Cuenta</label>
+                    <label htmlFor="bank_account" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Número de Cuenta</label>
                     <input 
                       id="bank_account"
                       type="text"
                       autoComplete="off"
                       {...register('bank_account')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="15830697"
                     />
                     {errors.bank_account && <p className="text-accent-red text-xs mt-1">{errors.bank_account.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="ruc" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">RUC de la Iglesia</label>
+                    <label htmlFor="ruc" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">RUC de la Iglesia</label>
                     <input 
                       id="ruc"
                       type="text"
                       autoComplete="off"
                       {...register('ruc')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="0991437045001"
                     />
                     {errors.ruc && <p className="text-accent-red text-xs mt-1">{errors.ruc.message}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="chat_retention_days" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Días de Retención del Chat Efímero (pg_cron)</label>
+                    <label htmlFor="chat_retention_days" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Días de Retención del Chat Efímero (pg_cron)</label>
                     <input 
                       id="chat_retention_days"
                       type="number"
                       autoComplete="off"
                       {...register('chat_retention_days', { valueAsNumber: true })}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-gray-800 dark:text-gray-100"
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-gray-800 dark:text-gray-100"
                       placeholder="7"
                       min="1"
                       max="365"
@@ -410,39 +410,39 @@ const SettingsManager = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="facebook_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Facebook URL</label>
+                  <label htmlFor="facebook_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Facebook URL</label>
                   <input 
                     id="facebook_url"
                     type="url"
                     autoComplete="url"
                     {...register('facebook_url')}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="https://facebook.com/..."
                   />
                   {errors.facebook_url && <p className="text-accent-red text-xs mt-1">{errors.facebook_url.message}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="instagram_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Instagram URL</label>
+                  <label htmlFor="instagram_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Instagram URL</label>
                   <input 
                     id="instagram_url"
                     type="url"
                     autoComplete="url"
                     {...register('instagram_url')}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="https://instagram.com/..."
                   />
                   {errors.instagram_url && <p className="text-accent-red text-xs mt-1">{errors.instagram_url.message}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="youtube_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">YouTube Channel URL</label>
+                  <label htmlFor="youtube_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">YouTube Channel URL</label>
                   <input 
                     id="youtube_url"
                     type="url"
                     autoComplete="url"
                     {...register('youtube_url')}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="https://youtube.com/..."
                   />
                   {errors.youtube_url && <p className="text-accent-red text-xs mt-1">{errors.youtube_url.message}</p>}
@@ -487,8 +487,8 @@ const SettingsManager = () => {
                   }}
                   className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     selectedCategory === cat.id
-                      ? 'bg-blue-50 text-primary border border-blue-100 shadow-2xs'
-                      : 'text-gray-550 hover:bg-gray-50'
+                      ? 'bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shadow-2xs'
+                      : 'text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   {cat.label}
@@ -516,7 +516,7 @@ const SettingsManager = () => {
                   autoComplete="off"
                   value={newCatalogName}
                   onChange={(e) => setNewCatalogName(e.target.value)}
-                  className="flex-grow px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="flex-grow px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   placeholder={`Agregar nuevo a ${CATEGORIES.find(c => c.id === selectedCategory)?.label.toLowerCase()}...`}
                 />
                 <button
@@ -548,7 +548,7 @@ const SettingsManager = () => {
                               autoComplete="off"
                               value={editingCatalogName}
                               onChange={(e) => setEditingCatalogName(e.target.value)}
-                              className="flex-grow px-3 py-1 border border-gray-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold"
+                              className="flex-grow px-3 py-1 bg-white dark:bg-slate-850 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold"
                             />
                             <button
                               onClick={() => handleUpdateCatalog(item)}
@@ -567,7 +567,7 @@ const SettingsManager = () => {
                           </div>
                         ) : (
                           <>
-                            <span className="text-xs font-bold text-gray-750">{item.name}</span>
+                            <span className="text-xs font-bold text-gray-750 dark:text-gray-300">{item.name}</span>
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleStartEdit(item)}

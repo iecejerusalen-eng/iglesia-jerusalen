@@ -536,6 +536,14 @@ const MembersManager = () => {
 
     setShowForm(true);
   };
+  const toTitleCase = (str: string) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
+  };
+
   const onSubmit = async (data: MemberForm) => {
     setActionLoading(true);
     try {
@@ -552,8 +560,8 @@ const MembersManager = () => {
       }
 
       const memberPayload = {
-        first_name: data.first_name,
-        last_name: data.last_name,
+        first_name: toTitleCase(data.first_name),
+        last_name: toTitleCase(data.last_name),
         photo_url: data.photo_url || null,
         birth_date: data.birth_date || null,
         conversion_date: data.conversion_date || null,
@@ -1056,7 +1064,7 @@ const MembersManager = () => {
             </div>
 
             {/* Form Tabs */}
-            <div className="flex border-b border-gray-250 mb-6 overflow-x-auto gap-2">
+            <div className="flex border-b border-gray-250 dark:border-white/10 mb-6 overflow-x-auto gap-2">
               {[
                 { id: 'personal', label: 'Datos Personales', icon: User },
                 { id: 'spiritual', label: 'Vida Espiritual', icon: Heart },
@@ -1070,7 +1078,7 @@ const MembersManager = () => {
                   className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === t.id 
                       ? 'border-primary text-primary' 
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                      : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                   }`}
                 >
                   <t.icon size={14} />
@@ -1514,7 +1522,7 @@ const MembersManager = () => {
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                               checked 
                                 ? 'bg-primary text-white border-primary shadow-2xs' 
-                                : 'bg-white border-gray-200 text-gray-650 hover:bg-gray-50'
+                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-white/10 text-gray-650 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-750'
                             }`}
                           >
                             {area.name}
@@ -1543,8 +1551,8 @@ const MembersManager = () => {
                         });
 
                         return Object.entries(grouped).map(([categoryName, items]) => (
-                          <div key={categoryName} className="space-y-2.5 bg-slate-50/50 rounded-xl p-3.5 border border-gray-150 dark:border-white/10">
-                            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block border-b border-gray-100/50 pb-1">
+                          <div key={categoryName} className="space-y-2.5 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-3.5 border border-gray-150 dark:border-white/10">
+                            <span className="text-[11px] font-bold text-primary dark:text-indigo-400 uppercase tracking-wider block border-b border-gray-100/50 dark:border-white/5 pb-1">
                               {categoryName}
                             </span>
                             <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1559,7 +1567,7 @@ const MembersManager = () => {
                                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                                       checked 
                                         ? 'bg-primary text-white border-primary shadow-2xs' 
-                                        : 'bg-white border-gray-200 text-gray-650 hover:bg-gray-50'
+                                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-white/10 text-gray-650 dark:text-gray-305 hover:bg-gray-50 dark:hover:bg-slate-750'
                                     }`}
                                   >
                                     {displayName}
@@ -1590,7 +1598,7 @@ const MembersManager = () => {
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                               checked 
                                 ? 'bg-primary text-white border-primary shadow-2xs' 
-                                : 'bg-white border-gray-200 text-gray-650 hover:bg-gray-50'
+                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-white/10 text-gray-650 dark:text-gray-355 hover:bg-gray-50 dark:hover:bg-slate-750'
                             }`}
                           >
                             {gift.name}
@@ -1607,7 +1615,7 @@ const MembersManager = () => {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2.5 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 border border-gray-250 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

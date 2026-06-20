@@ -235,14 +235,14 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
   return (
     <div className="space-y-6">
       {!disabled && (
-        <div className="flex flex-wrap gap-2 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block w-full mb-1">
+        <div className="flex flex-wrap gap-2 p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl">
+          <span className="text-xs font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider block w-full mb-1">
             Añadir Bloque de Contenido
           </span>
           <button
             type="button"
             onClick={() => addBlock('text')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <Type size={14} className="text-slate-500" />
             Texto / Párrafo
@@ -250,7 +250,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('html')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <Code size={14} className="text-slate-500" />
             Bloque HTML / Código
@@ -258,7 +258,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('image')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <ImageIcon size={14} className="text-slate-500" />
             Imagen
@@ -266,7 +266,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('columns')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <Columns size={14} className="text-slate-500" />
             Columnas de Texto
@@ -274,7 +274,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('cta_button')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <ExternalLink size={14} className="text-slate-500" />
             Botón / Enlace
@@ -282,7 +282,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('form')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <ClipboardList size={14} className="text-slate-500" />
             Cuestionario / Trivia
@@ -290,7 +290,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('section')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <Heading size={14} className="text-slate-500" />
             Sección (Título)
@@ -298,7 +298,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('question')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <HelpCircle size={14} className="text-slate-500" />
             Pregunta Abierta
@@ -306,7 +306,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('multiple_choice')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <CheckSquare size={14} className="text-slate-500" />
             Opción Múltiple
@@ -314,7 +314,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
           <button
             type="button"
             onClick={() => addBlock('true_false')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary text-slate-700 dark:text-gray-300 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
             <CheckCircle2 size={14} className="text-slate-500" />
             V / F
@@ -324,7 +324,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
 
       <div className="space-y-4">
         {blocks.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-xs font-semibold">
+          <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl text-slate-400 dark:text-gray-450 text-xs font-semibold">
             No has agregado ningún bloque de contenido. Elige una opción arriba para comenzar.
           </div>
         ) : (
@@ -332,10 +332,10 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
             return (
               <div 
                 key={block.id} 
-                className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs relative group/block animate-scale-in"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-2xs relative group/block animate-scale-in"
               >
                 {/* Block Header Toolbar */}
-                <div className="bg-slate-50 border-b border-slate-150 px-4 py-2 flex justify-between items-center text-xs text-slate-500 font-bold uppercase tracking-wider">
+                <div className="bg-slate-50 dark:bg-slate-950 border-b border-slate-150 dark:border-white/10 px-4 py-2 flex justify-between items-center text-xs text-slate-500 font-bold uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px]">
                       {block.type === 'text' && 'Texto / Párrafo'}
@@ -357,7 +357,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         type="button"
                         disabled={index === 0}
                         onClick={() => moveBlock(index, 'up')}
-                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-gray-250 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         title="Mover Arriba"
                       >
                         <ArrowUp size={14} />
@@ -366,16 +366,16 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         type="button"
                         disabled={index === blocks.length - 1}
                         onClick={() => moveBlock(index, 'down')}
-                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-gray-250 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         title="Mover Abajo"
                       >
                         <ArrowDown size={14} />
                       </button>
-                      <div className="w-px h-4 bg-slate-200 mx-1" />
+                      <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
                       <button
                         type="button"
                         onClick={() => deleteBlock(block.id)}
-                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-colors cursor-pointer"
                         title="Eliminar Bloque"
                       >
                         <Trash2 size={14} />
@@ -411,7 +411,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         onChange={(e) => updateBlockProperty(block.id, 'htmlContent', e.target.value)}
                         disabled={disabled}
                         rows={5}
-                        className="w-full px-4 py-2 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-900 text-slate-100 placeholder-slate-600 disabled:opacity-80"
+                        className="w-full px-4 py-2 border border-slate-250 dark:border-white/10 rounded-xl font-mono text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none bg-slate-900 text-slate-100 placeholder-slate-600 disabled:opacity-80"
                         placeholder="<div>\n  <h3>Título</h3>\n  <p>Contenido...</p>\n</div>"
                       />
                     </div>
@@ -432,7 +432,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               value={block.imageUrl || ''}
                               onChange={(e) => updateBlockProperty(block.id, 'imageUrl', e.target.value)}
                               disabled={disabled}
-                              className="flex-grow px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                              className="flex-grow px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
                               placeholder="https://ejemplo.com/imagen.jpg"
                             />
                             {!disabled && (
@@ -443,7 +443,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                     setActiveBlockIdForMedia(block.id);
                                     setIsMediaModalOpen(true);
                                   }}
-                                  className="px-3 py-1.5 border border-slate-200 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                                  className="px-3 py-1.5 border border-slate-200 dark:border-white/10 hover:border-primary hover:text-primary rounded-xl text-xs font-semibold shadow-2xs bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-250 transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
                                 >
                                   <Search size={13} />
                                   Buscar
@@ -473,8 +473,8 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               onClick={() => updateBlockProperty(block.id, 'imageAlign', 'left')}
                               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                                 block.imageAlign === 'left'
-                                  ? 'bg-blue-50 border-primary text-primary'
-                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                                  ? 'bg-blue-50 dark:bg-blue-950/30 border-primary text-primary dark:text-blue-400'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                               }`}
                             >
                               <AlignLeft size={14} />
@@ -486,8 +486,8 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               onClick={() => updateBlockProperty(block.id, 'imageAlign', 'center')}
                               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                                 block.imageAlign === 'center'
-                                  ? 'bg-blue-50 border-primary text-primary'
-                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                                  ? 'bg-blue-50 dark:bg-blue-950/30 border-primary text-primary dark:text-blue-400'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                               }`}
                             >
                               <AlignCenter size={14} />
@@ -499,8 +499,8 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               onClick={() => updateBlockProperty(block.id, 'imageAlign', 'right')}
                               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                                 block.imageAlign === 'right'
-                                  ? 'bg-blue-50 border-primary text-primary'
-                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                                  ? 'bg-blue-50 dark:bg-blue-950/30 border-primary text-primary dark:text-blue-400'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                               }`}
                             >
                               <AlignRight size={14} />
@@ -542,7 +542,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                 value={block.imageCaption || ''}
                                 onChange={(e) => updateBlockProperty(block.id, 'imageCaption', e.target.value)}
                                 disabled={disabled}
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                                 placeholder="Ej: Vista del altar de nuestra iglesia..."
                               />
                             </div>
@@ -556,7 +556,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                 onChange={(e) => updateBlockProperty(block.id, 'imageText', e.target.value)}
                                 disabled={disabled}
                                 rows={4}
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                                 placeholder="Escribe el texto que acompañará a la imagen..."
                               />
                             </div>
@@ -616,7 +616,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               }}
                               disabled={disabled}
                               rows={4}
-                              className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
+                              className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
                               placeholder={`Escribe el texto de la columna ${cIdx + 1}...`}
                             />
                           </div>
@@ -637,7 +637,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           value={block.ctaText || ''}
                           onChange={(e) => updateBlockProperty(block.id, 'ctaText', e.target.value)}
                           disabled={disabled}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-450"
                           placeholder="Ej: Contáctanos"
                         />
                       </div>
@@ -651,7 +651,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           value={block.ctaUrl || ''}
                           onChange={(e) => updateBlockProperty(block.id, 'ctaUrl', e.target.value)}
                           disabled={disabled}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono text-xs disabled:bg-slate-50 disabled:text-slate-450"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono disabled:bg-slate-50 disabled:text-slate-450"
                           placeholder="Ej: /contacto o https://wa.me/..."
                         />
                       </div>
@@ -664,7 +664,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           value={block.ctaAlign || 'center'}
                           onChange={(e) => updateBlockProperty(block.id, 'ctaAlign', e.target.value)}
                           disabled={disabled}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-660 disabled:bg-slate-50 disabled:text-slate-450"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold disabled:bg-slate-50 disabled:text-slate-450"
                         >
                           <option value="left">Alineado a la Izquierda</option>
                           <option value="center">Centrado</option>
@@ -687,7 +687,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                             value={block.formTitle || ''}
                             onChange={(e) => updateBlockProperty(block.id, 'formTitle', e.target.value)}
                             disabled={disabled}
-                            className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
+                            className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                             placeholder="Ej: Cuestionario de Aprendizaje"
                           />
                         </div>
@@ -700,7 +700,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                             value={block.formType || 'regular'}
                             onChange={(e) => updateBlockProperty(block.id, 'formType', e.target.value)}
                             disabled={disabled}
-                            className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650 disabled:bg-slate-50"
+                            className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold disabled:bg-slate-50"
                           >
                             <option value="regular">Formulario Libre (Registro, Comentarios)</option>
                             <option value="trivia">Trivia / Cuestionario Evaluativo (Con Respuestas Correctas)</option>
@@ -729,7 +729,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                             <p className="text-[10px] text-slate-450 italic text-center py-4">No hay preguntas añadidas.</p>
                           ) : (
                             block.formQuestions.map((q, qIdx) => (
-                              <div key={q.id || qIdx} className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-3 relative group/question">
+                              <div key={q.id || qIdx} className="bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-white/10 rounded-xl p-4 space-y-3 relative group/question">
                                 {!disabled && (
                                   <button
                                     type="button"
@@ -751,7 +751,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                       value={q.questionText || ''}
                                       onChange={(e) => updateQuestion(block.id, q.id, { questionText: e.target.value })}
                                       disabled={disabled}
-                                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none bg-white font-semibold text-slate-700 disabled:bg-slate-50 disabled:text-slate-450"
+                                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold disabled:bg-slate-50 disabled:text-slate-450"
                                       placeholder="Escribe la pregunta..."
                                     />
                                   </div>
@@ -764,7 +764,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                       value={q.type}
                                       onChange={(e) => updateQuestion(block.id, q.id, { type: e.target.value, options: e.target.value === 'text' ? [] : ['Opción A'] })}
                                       disabled={disabled}
-                                      className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none text-slate-650 disabled:bg-slate-50"
+                                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                                     >
                                       <option value="text">Texto Libre</option>
                                       <option value="radio">Opción Múltiple (Única Selección)</option>
@@ -775,13 +775,13 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
 
                                 {/* Options list for choice questions */}
                                 {(q.type === 'radio' || q.type === 'checkbox') && (
-                                  <div className="bg-white border border-slate-150 rounded-xl p-3 space-y-2.5">
+                                  <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-xl p-3 space-y-2.5">
                                     <span className="block text-[9px] font-bold text-slate-400 uppercase">Opciones</span>
                                     
                                     <div className="space-y-1.5">
                                       {(q.options || []).map((opt, oIdx) => (
-                                        <div key={oIdx} className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-150 px-3 py-1.5 rounded-lg text-xs">
-                                          <span className="font-medium text-slate-750">{opt}</span>
+                                        <div key={oIdx} className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-white/10 px-3 py-1.5 rounded-lg text-xs">
+                                          <span className="font-medium text-slate-750 dark:text-gray-300">{opt}</span>
                                           {!disabled && (
                                             <button
                                               type="button"
@@ -798,7 +798,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
 
                                     {/* Add new option */}
                                     {!disabled && (
-                                      <div className="flex gap-2 pt-1.5 border-t border-slate-100">
+                                      <div className="flex gap-2 pt-1.5 border-t border-slate-100 dark:border-white/10">
                                         <input
                                           type="text"
                                           value={newOptionText[q.id] || ''}
@@ -809,13 +809,13 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                               addQuestionOption(block.id, q.id);
                                             }
                                           }}
-                                          className="flex-grow px-3 py-1 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                          className="flex-grow px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                           placeholder="Añadir opción..."
                                         />
                                         <button
                                           type="button"
                                           onClick={() => addQuestionOption(block.id, q.id)}
-                                          className="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                          className="px-3 py-1 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
                                         >
                                           +
                                         </button>
@@ -826,9 +826,9 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
 
                                 {/* Trivia parameters */}
                                 {block.formType === 'trivia' && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-amber-50/50 border border-amber-100 rounded-xl p-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl p-3">
                                     <div className="space-y-1">
-                                      <label className="block text-[9px] font-bold text-amber-800 uppercase flex items-center gap-1">
+                                      <label className="block text-[9px] font-bold text-amber-800 dark:text-amber-400 uppercase flex items-center gap-1">
                                         <HelpCircle size={10} />
                                         Respuesta Correcta
                                       </label>
@@ -838,7 +838,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                           value={q.correctAnswer || ''}
                                           onChange={(e) => updateQuestion(block.id, q.id, { correctAnswer: e.target.value })}
                                           disabled={disabled}
-                                          className="w-full px-3 py-1 border border-amber-200 rounded-lg text-xs bg-white focus:outline-none disabled:bg-slate-50"
+                                          className="w-full px-3 py-1 bg-white dark:bg-slate-800 border border-amber-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none disabled:bg-slate-50"
                                           placeholder="Respuesta clave/exacta..."
                                         />
                                       ) : (
@@ -846,7 +846,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                           value={q.correctAnswer || ''}
                                           onChange={(e) => updateQuestion(block.id, q.id, { correctAnswer: e.target.value })}
                                           disabled={disabled}
-                                          className="w-full px-3 py-1 border border-amber-200 rounded-lg text-xs bg-white focus:outline-none text-slate-650 disabled:bg-slate-50"
+                                          className="w-full px-3 py-1 bg-white dark:bg-slate-800 border border-amber-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none disabled:bg-slate-50"
                                         >
                                           <option value="">Selecciona la opción correcta...</option>
                                           {(q.options || []).map((opt, oIdx) => (
@@ -857,7 +857,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                     </div>
 
                                     <div className="space-y-1">
-                                      <label className="block text-[9px] font-bold text-amber-800 uppercase">
+                                      <label className="block text-[9px] font-bold text-amber-800 dark:text-amber-400 uppercase">
                                         Puntos asignados
                                       </label>
                                       <input
@@ -867,7 +867,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                         value={q.points || 5}
                                         onChange={(e) => updateQuestion(block.id, q.id, { points: parseInt(e.target.value) || 5 })}
                                         disabled={disabled}
-                                        className="w-full px-3 py-1 border border-amber-200 rounded-lg text-xs bg-white focus:outline-none disabled:bg-slate-50"
+                                        className="w-full px-3 py-1 bg-white dark:bg-slate-800 border border-amber-200 dark:border-white/10 rounded-lg text-xs text-gray-800 dark:text-gray-100 focus:outline-none disabled:bg-slate-50"
                                       />
                                     </div>
                                   </div>
@@ -883,7 +883,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                   {/* SECTION TITLE */}
                   {block.type === 'section' && (
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider">
                         Título de la Sección
                       </label>
                       <input
@@ -892,7 +892,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         onChange={(e) => updateBlockProperty(block.id, 'title', e.target.value)}
                         disabled={disabled}
                         placeholder="Título de la Sección (Ej: Introducción, Cuestionario)"
-                        className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                       />
                     </div>
                   )}
@@ -900,7 +900,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                   {/* OPEN QUESTION */}
                   {block.type === 'question' && (
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <label className="block text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider">
                         Pregunta Abierta
                       </label>
                       <input
@@ -909,7 +909,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         onChange={(e) => updateBlockProperty(block.id, 'question_text', e.target.value)}
                         disabled={disabled}
                         placeholder="Escribe la pregunta abierta aquí (ej: ¿Qué nos enseña esta parábola?)"
-                        className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
                       />
                     </div>
                   )}
@@ -918,7 +918,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                   {block.type === 'multiple_choice' && (
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <label className="block text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider">
                           Pregunta de Opción Múltiple
                         </label>
                         <input
@@ -927,13 +927,13 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           onChange={(e) => updateBlockProperty(block.id, 'question_text', e.target.value)}
                           disabled={disabled}
                           placeholder="Escribe la pregunta de opción múltiple..."
-                          className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
                         />
                       </div>
 
                       {/* Options list */}
-                      <div className="space-y-2 pl-4 border-l-2 border-slate-150">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <div className="space-y-2 pl-4 border-l-2 border-slate-150 dark:border-white/10">
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider block mb-1">
                           Opciones de Respuesta
                         </span>
                         {(block.options || []).map((option, idx) => (
@@ -953,7 +953,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                               onChange={(e) => updateBlockOptionText(block.id, block.options || [], idx, e.target.value)}
                               disabled={disabled}
                               placeholder={`Opción ${idx + 1}`}
-                              className="flex-grow px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
+                              className="flex-grow px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                             />
                             {!disabled && (
                               <button
@@ -986,7 +986,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                   {block.type === 'true_false' && (
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <label className="block text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider">
                           Afirmación de Verdadero o Falso
                         </label>
                         <input
@@ -995,16 +995,16 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           onChange={(e) => updateBlockProperty(block.id, 'question_text', e.target.value)}
                           disabled={disabled}
                           placeholder="Escribe la afirmación aquí..."
-                          className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-medium disabled:bg-slate-50"
                         />
                       </div>
 
                       <div className="flex items-center gap-4 pl-4">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-gray-450 uppercase tracking-wider">
                           Respuesta Correcta:
                         </span>
                         <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 cursor-pointer">
+                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
                             <input
                               type="radio"
                               checked={block.correct_boolean === true}
@@ -1014,7 +1014,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                             />
                             Verdadero
                           </label>
-                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 cursor-pointer">
+                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
                             <input
                               type="radio"
                               checked={block.correct_boolean === false}
