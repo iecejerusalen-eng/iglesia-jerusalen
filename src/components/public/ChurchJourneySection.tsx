@@ -153,10 +153,10 @@ const TimelineRow = ({ step, isEven }: TimelineRowProps) => {
           <span className="inline-block px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-xs mb-4 border border-amber-200 dark:border-amber-900/30">
             {step.year}
           </span>
-          <h3 className="text-2xl md:text-3xl font-serif font-bold text-slate-800 dark:text-slate-100 mb-3">
+          <h3 className="text-2xl md:text-3xl font-serif font-bold text-[#0f172a] dark:text-slate-100 mb-3">
             {step.title}
           </h3>
-          <p className="text-slate-800 dark:text-slate-300 leading-relaxed text-sm md:text-base font-medium">
+          <p className="text-[#0f172a] dark:text-slate-300 leading-relaxed text-sm md:text-base font-medium">
             {step.description}
           </p>
         </AnimeFadeUp>

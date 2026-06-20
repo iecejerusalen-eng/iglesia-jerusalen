@@ -305,9 +305,15 @@ const MembersManager = () => {
       }
 
       // Try fetching from local SQLite first
-      const cached: any[] = await sql`
-        SELECT * FROM local_members WHERE deleted_at IS NULL ORDER BY last_name ASC;
-      `;
+      let cached: any[] = [];
+      try {
+        cached = await Promise.race([
+          sql`SELECT * FROM local_members WHERE deleted_at IS NULL ORDER BY last_name ASC;`,
+          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
+        ]);
+      } catch (dbErr) {
+        console.warn('Local DB failed or timed out, fallback to Supabase:', dbErr);
+      }
 
       let loadedMembers: any[] = [];
 

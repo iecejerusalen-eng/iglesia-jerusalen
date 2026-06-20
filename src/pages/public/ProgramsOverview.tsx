@@ -43,7 +43,7 @@ const ProgramsOverview = () => {
             <p className="text-sm">Pronto se publicarán nuevos estudios</p>
           </div>
         ) : (
-          <AnimeStaggerGrid delay={100} staggerDelay={80} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {programs.map((program) => (
               <AnimeFlipIn key={program.id} delay={0} duration={800} axis="Y">
                 <Link to={`/programas/${program.id}`} className="block group">
@@ -70,7 +70,7 @@ const ProgramsOverview = () => {
                 </Link>
               </AnimeFlipIn>
             ))}
-          </AnimeStaggerGrid>
+          </div>
         )}
       </div>
     </div>
