@@ -18,7 +18,7 @@ const getYoutubeId = (url: string | null) => {
 };
 
 export default function SermonVideoGallery({ sermons, title, subtitle }: SermonVideoGalleryProps) {
-  const [activeSermon, setActiveSermon] = useState<Sermon | null>(sermons[0] || null);
+  const [activeSermon] = useState<Sermon | null>(sermons[0] || null);
   const [isPlaying, setIsPlaying] = useState(false);
   const navigate = useNavigate();
 

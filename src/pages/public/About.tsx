@@ -157,78 +157,78 @@ const About = () => {
             if (id === 'about_history') {
               return (
                 <div key={id}>
-                  {content_blocks && content_blocks.length > 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-4 text-left">
+                  {content_blocks && content_blocks.length > 0 && (
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-4 text-left mb-12">
                       <h2 className="text-3xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/5 pb-4">
                         {title || 'Nuestra Historia'}
                       </h2>
                       {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm">{subtitle}</p>}
                       <BlockRenderer blocks={content_blocks} />
                     </div>
-                  ) : (
-                    <div className="space-y-12">
-                      {/* Historia Denominacional */}
-                      <AnimeFadeUp className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-6 text-left">
-                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/10 pb-4">
-                          Historia de la Iglesia Cuadrangular
+                  )}
+                  
+                  <div className="space-y-12">
+                    {/* Historia Denominacional */}
+                    <AnimeFadeUp className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-6 text-left">
+                      <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/10 pb-4">
+                        Historia de la Iglesia Cuadrangular
+                      </h2>
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                        <div className="lg:col-span-7 space-y-5 text-gray-655 dark:text-gray-300 text-sm md:text-base leading-relaxed">
+                          <p>
+                            La <strong>Iglesia Internacional del Evangelio Cuadrangular</strong> fue fundada en 1923 por la evangelista <strong>Aimee Semple McPherson</strong>, a través del establecimiento del Templo del Ángelus en Los Ángeles, California. Constituida formalmente en 1927, la iglesia enfatiza el evangelismo, la sanidad divina y las misiones globales, cimentada en el gran avivamiento pentecostal de principios del siglo XX.
+                          </p>
+                          <p>
+                            Su nombre deriva de la visión del "Evangelio Cuadrangular", un marco teológico que representa a Jesucristo en cuatro roles inmutables: como <strong>Salvador</strong>, <strong>Bautizador con el Espíritu Santo</strong>, <strong>Sanador</strong>, y <strong>Rey que pronto vendrá</strong>. Este mensaje cristocéntrico ha sido el faro que ha guiado a la denominación.
+                          </p>
+                          <p>
+                            Desde Estados Unidos, la pasión misionera impulsó a la Iglesia Cuadrangular a alcanzar a muchas naciones. En <strong>1956</strong>, este poderoso mensaje llegó a <strong>Ecuador</strong> a través de valientes misioneros pioneros, quienes con fe y dedicación comenzaron a establecer congregaciones y obras de amor en diversas ciudades, formando así una familia nacional unida bajo el Evangelio Cuadrangular.
+                          </p>
+                        </div>
+                        <div className="lg:col-span-5 relative">
+                          <div className="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden relative shadow-lg">
+                            <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Aimee_Semple_McPherson_1920s.jpg/400px-Aimee_Semple_McPherson_1920s.jpg')] bg-cover bg-top opacity-80 mix-blend-multiply dark:mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-700" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
+                            <p className="absolute bottom-4 left-4 right-4 text-white text-xs md:text-sm font-medium drop-shadow-md text-left leading-tight">
+                              Hermana Aimee Semple McPherson, fundadora del Evangelio Cuadrangular.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </AnimeFadeUp>
+
+                    {/* Historia Local */}
+                    <AnimeFadeUp delay={100} className="bg-primary text-white rounded-3xl p-8 md:p-12 shadow-lg space-y-6 text-left relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                        <Landmark size={180} />
+                      </div>
+                      <div className="relative z-10 space-y-6">
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold border-b border-white/20 pb-4">
+                          Historia de nuestra Iglesia Local "Jerusalén"
                         </h2>
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                          <div className="lg:col-span-7 space-y-5 text-gray-655 dark:text-gray-300 text-sm md:text-base leading-relaxed">
+                          <div className="lg:col-span-7 space-y-5 text-gray-200 text-sm md:text-base leading-relaxed">
                             <p>
-                              La <strong>Iglesia Internacional del Evangelio Cuadrangular</strong> fue fundada en 1923 por la evangelista <strong>Aimee Semple McPherson</strong>, a través del establecimiento del Templo del Ángelus en Los Ángeles, California. Constituida formalmente en 1927, la iglesia enfatiza el evangelismo, la sanidad divina y las misiones globales, cimentada en el gran avivamiento pentecostal de principios del siglo XX.
+                              Siguiendo el espíritu fundacional y misionero, nació nuestra congregación local, la <strong>Iglesia Jerusalén</strong>. Fundada en la fe y bajo los mismos principios cuadrangulares, fue establecida para ser un refugio de paz, sanidad y restauración para las familias de nuestra comunidad.
                             </p>
                             <p>
-                              Su nombre deriva de la visión del "Evangelio Cuadrangular", un marco teológico que representa a Jesucristo en cuatro roles inmutables: como <strong>Salvador</strong>, <strong>Bautizador con el Espíritu Santo</strong>, <strong>Sanador</strong>, y <strong>Rey que pronto vendrá</strong>. Este mensaje cristocéntrico ha sido el faro que ha guiado a la denominación.
+                              A lo largo de los años, con la guía incondicional del Espíritu Santo y el esfuerzo de nuestros pastores y miembros de la congregación, la Iglesia Jerusalén ha crecido. Se ha convertido en un centro de discipulado, servicio constante y amor fraternal. Nos esforzamos por vivir cada día los cuatro pilares del Evangelio Cuadrangular en nuestra labor diaria.
                             </p>
                             <p>
-                              Desde Estados Unidos, la pasión misionera impulsó a la Iglesia Cuadrangular a alcanzar a muchas naciones. En <strong>1956</strong>, este poderoso mensaje llegó a <strong>Ecuador</strong> a través de valientes misioneros pioneros, quienes con fe y dedicación comenzaron a establecer congregaciones y obras de amor en diversas ciudades, formando así una familia nacional unida bajo el Evangelio Cuadrangular.
+                              Hoy en día, la Iglesia Jerusalén continúa firme y arraigada en el amor de Dios, formando nuevas generaciones llenas de santidad, con la mirada siempre puesta en expandir el reino de Dios y ser un faro de esperanza para todos.
                             </p>
                           </div>
-                          <div className="lg:col-span-5 relative">
-                            <div className="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden relative shadow-lg">
-                              <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Aimee_Semple_McPherson_1920s.jpg/400px-Aimee_Semple_McPherson_1920s.jpg')] bg-cover bg-top opacity-80 mix-blend-multiply dark:mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-700" />
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
-                              <p className="absolute bottom-4 left-4 right-4 text-white text-xs md:text-sm font-medium drop-shadow-md text-left leading-tight">
-                                Hermana Aimee Semple McPherson, fundadora del Evangelio Cuadrangular.
-                              </p>
-                            </div>
+                          <div className="lg:col-span-5">
+                            <OptimizedMedia 
+                              src={pastoresAgrupadosImg} 
+                              alt="Iglesia Jerusalén Historia"
+                              className="w-full h-72 object-cover rounded-2xl shadow-xl border border-white/10"
+                            />
                           </div>
                         </div>
-                      </AnimeFadeUp>
-
-                      {/* Historia Local */}
-                      <AnimeFadeUp delay={100} className="bg-primary text-white rounded-3xl p-8 md:p-12 shadow-lg space-y-6 text-left relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                          <Landmark size={180} />
-                        </div>
-                        <div className="relative z-10 space-y-6">
-                          <h2 className="text-3xl md:text-4xl font-serif font-bold border-b border-white/20 pb-4">
-                            Historia de nuestra Iglesia Local "Jerusalén"
-                          </h2>
-                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-                            <div className="lg:col-span-7 space-y-5 text-gray-200 text-sm md:text-base leading-relaxed">
-                              <p>
-                                Siguiendo el espíritu fundacional y misionero, nació nuestra congregación local, la <strong>Iglesia Jerusalén</strong>. Fundada en la fe y bajo los mismos principios cuadrangulares, fue establecida para ser un refugio de paz, sanidad y restauración para las familias de nuestra comunidad.
-                              </p>
-                              <p>
-                                A lo largo de los años, con la guía incondicional del Espíritu Santo y el esfuerzo de nuestros pastores y miembros de la congregación, la Iglesia Jerusalén ha crecido. Se ha convertido en un centro de discipulado, servicio constante y amor fraternal. Nos esforzamos por vivir cada día los cuatro pilares del Evangelio Cuadrangular en nuestra labor diaria.
-                              </p>
-                              <p>
-                                Hoy en día, la Iglesia Jerusalén continúa firme y arraigada en el amor de Dios, formando nuevas generaciones llenas de santidad, con la mirada siempre puesta en expandir el reino de Dios y ser un faro de esperanza para todos.
-                              </p>
-                            </div>
-                            <div className="lg:col-span-5">
-                              <OptimizedMedia 
-                                src={pastoresAgrupadosImg} 
-                                alt="Iglesia Jerusalén Historia"
-                                className="w-full h-72 object-cover rounded-2xl shadow-xl border border-white/10"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </AnimeFadeUp>
-                    </div>
-                  )}
+                      </div>
+                    </AnimeFadeUp>
+                  </div>
                 </div>
               );
             }

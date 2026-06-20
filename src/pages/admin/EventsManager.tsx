@@ -229,6 +229,13 @@ const EventsManager = () => {
         toast.success('Evento creado con éxito.');
       }
 
+      // Limpieza inteligente y automática de eventos antiguos (anteriores al año pasado) para ahorrar espacio
+      const currentYear = new Date().getFullYear();
+      const cutoffDate = `${currentYear - 1}-01-01`;
+      supabase.from('events').delete().lt('start_date', cutoffDate).then(() => {
+        console.log('Limpieza automática de eventos antiguos completada');
+      }).catch(err => console.error('Error en limpieza automática:', err));
+
       setShowForm(false);
       fetchEvents();
     } catch (err: any) {
