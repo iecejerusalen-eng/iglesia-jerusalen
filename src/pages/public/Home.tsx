@@ -288,10 +288,11 @@ const Home = () => {
     try {
       let data: any[] = [];
       try {
-        const localData: any[] = await sql`
-          SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
-          WHERE deleted_at IS NULL AND birth_date IS NOT NULL;
-        `;
+        const localData: any[] = await Promise.race([
+          sql`SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
+          WHERE deleted_at IS NULL AND birth_date IS NOT NULL;`,
+          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
+        ]);
         data = localData || [];
       } catch (dbErr) {
         console.warn('Local database query failed, trying Supabase:', dbErr);
@@ -331,9 +332,10 @@ const Home = () => {
     try {
       let localData: any[] = [];
       try {
-        localData = await sql`
-          SELECT * FROM local_schedules ORDER BY order_index ASC;
-        `;
+        localData = await Promise.race([
+          sql`SELECT * FROM local_schedules ORDER BY order_index ASC;`,
+          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Local DB timeout')), 2000))
+        ]);
       } catch (dbErr) {
         console.warn('Local database query failed, trying Supabase:', dbErr);
       }
