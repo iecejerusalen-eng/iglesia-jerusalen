@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
-import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Dove, MapPin } from 'lucide-react';
+import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Dove, MapPin, X } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
@@ -22,6 +22,7 @@ const DEFAULT_ABOUT_SECTIONS = [
 const About = () => {
   const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDynamicContent = async () => {
@@ -283,6 +284,18 @@ const About = () => {
                           </div>
                         </AnimeFadeUp>
                       </div>
+
+                      {/* Botón para ver la historia completa */}
+                      <div className="flex justify-center mt-12 pb-8">
+                        <button 
+                          onClick={() => setIsHistoryModalOpen(true)}
+                          className="bg-primary hover:bg-blue-900 text-white font-bold py-3.5 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"
+                        >
+                          <BookOpen className="w-5 h-5" />
+                          Leer Historia Completa
+                        </button>
+                      </div>
+
                     </div>
 
                     {/* Historia Local */}
@@ -517,6 +530,91 @@ const About = () => {
             return null;
         }
       })}
+
+      {/* Modal de Historia Completa */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-zoomIn">
+            <div className="flex justify-between items-center p-6 md:p-8 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary dark:text-white flex items-center gap-3">
+                <Landmark className="w-8 h-8 text-gold" />
+                Historia de la Iglesia Cuadrangular
+              </h2>
+              <button 
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors text-gray-500 hover:text-red-500"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed space-y-6 text-left">
+              <p>
+                La <strong>Iglesia Internacional del Evangelio Cuadrangular</strong>, comúnmente conocida como la Iglesia Cuadrangular, es una denominación cristiana pentecostal fundada en 1923 por la evangelista <strong>Aimee Semple McPherson</strong> mediante el establecimiento del Templo del Ángelus en Los Ángeles, California. Su nombre deriva del "Evangelio Cuadrangular", un marco teológico que representa a Jesucristo en cuatro roles: como <strong>Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que pronto vendrá</strong>. Constituida formalmente en 1927, la iglesia enfatiza el evangelismo, las curaciones milagrosas y las misiones globales, con raíces en el avivamiento pentecostal de principios del siglo XX.
+              </p>
+              
+              <div className="my-8 rounded-2xl overflow-hidden shadow-md">
+                <OptimizedMedia src="/images/history/aimee_mcpherson.png" alt="Aimee Semple McPherson" className="w-full max-h-[400px] object-cover object-top" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-8 mb-4">La declaración de fe</h3>
+              <p>
+                La denominación se inspira y adhiere al cristianismo evangélico en gran medida alineado con las asambleas pentecostales convencionales. Afirma la inspiración de la Biblia y la validez universal y la exactitud inerrante de sus narrativas, milagros y enseñanzas teológicas. Define a Dios de manera trinitaria, con el Espíritu Santo derramado sobre los creyentes para darles poder y testimonio. Afirma la divinidad de Jesucristo, su vida impecable, su muerte expiatoria en la cruz por la humanidad, su resurrección física, su ascensión al cielo, su regreso prometido y su papel final como el Juez amoroso pero justo. Enseña que los creyentes caen de manera única e ineludible bajo la gracia divina y, en última instancia, son restaurados y glorificados. Al mismo tiempo, defiende la curación de los enfermos y valora la labor y los dones del Espíritu en las vidas santificadas, al tiempo que advierte que todos se enfrentarán finalmente al juicio divino. El nombre Cuadrangular se inspiró en el libro de Ezequiel, en el que se revela el carácter de Dios mediante cuatro caras, y en Hebreos 13:8: «Jesucristo es el mismo ayer, hoy y por los siglos».
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+                <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
+                  <h4 className="font-bold text-red-600 flex items-center gap-2 mb-2"><Cross className="w-5 h-5"/> Jesucristo es el Salvador</h4>
+                  <p className="text-sm m-0">Vino a este mundo y murió en la cruz por nuestros pecados.</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
+                  <h4 className="font-bold text-yellow-500 flex items-center gap-2 mb-2"><Flame className="w-5 h-5"/> Jesucristo es el Bautizador con el Espíritu Santo</h4>
+                  <p className="text-sm m-0">Bautiza al creyente con el Espíritu Santo dando poder para testificar y vivir una vida abundante.</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
+                  <h4 className="font-bold text-blue-500 flex items-center gap-2 mb-2"><Activity className="w-5 h-5"/> Jesucristo es el Sanador</h4>
+                  <p className="text-sm m-0">Al morir por nosotros llevó nuestros dolores y enfermedades.</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
+                  <h4 className="font-bold text-purple-500 flex items-center gap-2 mb-2"><Crown className="w-5 h-5"/> Jesucristo es el Rey que Viene</h4>
+                  <p className="text-sm m-0">Regresará a la tierra como Rey de Reyes y Señor de Señores.</p>
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-8 mb-4">Historia: Aimee Semple McPherson</h3>
+              <p>
+                En 1922, Aimee Semple McPherson (1890-1944), una evangelista conocida como la "hermana Aimee", explicó por primera vez su concepto del Evangelio Cuadrangular en un sermón en Oakland, California. Se centraba en el mensaje de Cristo como Salvador, Bautizador del Espíritu Santo, Sanador y Rey venidero. Dedicó su vida a predicar este evangelio de esperanza a una generación necesitada de amor y sanidad física y espiritual.
+              </p>
+
+              <p>
+                Con gran dedicación fundó en 1923 el <strong>Templo del Ángelus</strong> en Los Ángeles, California, con un aforo de 5300 personas. Tras la apertura y con el rápido crecimiento de creyentes, comenzó la apertura de un instituto bíblico (Lighthouse of International Foursquare Evangelism) para capacitar pastores y el envío y nombramiento de ministros a varias regiones y países. En 1927 se fundó oficialmente la <em>Iglesia Internacional del Evangelio Cuadrangular</em>.
+              </p>
+              
+              <div className="my-8 rounded-2xl overflow-hidden shadow-md">
+                <OptimizedMedia src="/images/history/foursquare_expansion.png" alt="Expansión Global" className="w-full max-h-[400px] object-cover" />
+              </div>
+
+              <p>
+                En 1948, The Foursquare Gospel Church of Canada (La Iglesia del Evangelio Cuadrangular de Canadá) fue fundada por Anna D. Britton en Vancouver.
+              </p>
+
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-8 mb-4">Expansión Global</h3>
+              <p>
+                La iglesia creció inmensamente en todo el mundo. Solo en Estados Unidos y Canadá hay cerca de 1900 iglesias cuadrangulares. Al inicio del siglo XXI, la iglesia se ha diseminado, y se han organizado iglesias en una docena de países. Es pionera en la ordenación de mujeres al ministerio desde su fundación y en la labor misionera en todos los continentes.
+              </p>
+            </div>
+            
+            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end">
+              <button 
+                onClick={() => setIsHistoryModalOpen(false)}
+                className="px-6 py-2.5 bg-primary hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-all text-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

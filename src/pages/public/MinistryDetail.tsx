@@ -285,7 +285,7 @@ const MinistryDetail = () => {
                     <span className="text-[10px] font-bold text-gold uppercase tracking-wider block">
                       {member.role}
                     </span>
-                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xs truncate leading-tight">
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xs line-clamp-2 leading-tight">
                       {name}
                     </h3>
                   </div>
