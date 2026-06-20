@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import { Star, Quote } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Testimonial {
   id: string;
@@ -16,7 +17,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'María Gómez',
     location: 'Miembro desde 2020',
     rating: 5,
-    text: 'Encontrar a la Iglesia Jerusalén fue una bendición enorme para mi familia. Aquí encontré una comunidad llena de amor y apoyo espiritual.',
+    text: 'Encontrar a la Iglesia Jerusalén fue una bendición enorme para mi familia. Aquí encontré una comunidad llena de amor y apoyo espiritual real que ha guiado nuestros pasos día a día.',
     avatarUrl: ''
   },
   {
@@ -24,7 +25,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Familia Ramírez',
     location: 'Ministerio de Matrimonios',
     rating: 5,
-    text: 'Los consejos y la guía pastoral que hemos recibido han transformado nuestro hogar. Damos gracias a Dios por esta hermosa familia espiritual.',
+    text: 'Los consejos y la guía pastoral que hemos recibido han transformado nuestro hogar por completo. Damos gracias a Dios por esta hermosa familia espiritual que nos cobija y nos bendice.',
     avatarUrl: ''
   },
   {
@@ -32,76 +33,164 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'José Luis Torres',
     location: 'Ministerio de Jóvenes',
     rating: 5,
-    text: 'Los servicios de los sábados son increíbles. He podido conectar con Dios de una forma real y tener amigos con el mismo propósito.',
+    text: 'Los servicios de los sábados son increíbles. He podido conectar con Dios de una forma real y tener amigos genuinos con el mismo propósito de edificar sus vidas y servir.',
     avatarUrl: ''
   }
 ];
 
 export default function TestimonialsSection() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return;
+    const timer = setInterval(() => {
+      handleNext();
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [currentIndex, isHovered]);
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
+  };
+
+  const active = TESTIMONIALS[currentIndex];
+
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? 100 : -100,
+      opacity: 0,
+      scale: 0.95
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: {
+        x: { type: 'spring' as any, stiffness: 300, damping: 30 },
+        opacity: { duration: 0.4 },
+        scale: { duration: 0.4 }
+      }
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? -100 : 100,
+      opacity: 0,
+      scale: 0.95,
+      transition: {
+        x: { type: 'spring' as any, stiffness: 300, damping: 30 },
+        opacity: { duration: 0.4 },
+        scale: { duration: 0.4 }
+      }
+    })
+  };
+
   return (
-    <section className="max-w-7xl mx-auto px-6 py-12 space-y-12">
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.55 }}
-        className="text-center max-w-2xl mx-auto space-y-3"
-      >
-        <span className="inline-block text-[10px] font-bold text-gold uppercase tracking-widest border border-gold/25 bg-gold/5 px-4 py-1.5 rounded-full">
+    <section 
+      className="max-w-4xl mx-auto px-6 py-20 space-y-12 relative overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="text-center max-w-2xl mx-auto space-y-4">
+        <span className="inline-block text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest border border-amber-200 dark:border-amber-900/30 bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
           Testimonios
         </span>
-        <h2 className="text-3xl md:text-4xl font-bold text-primary">
+        <h2 className="text-3xl md:text-4xl font-bold font-serif text-slate-900 dark:text-white">
           Historias de Transformación
         </h2>
-        <p className="text-stone-500 text-sm md:text-base leading-relaxed">
+        <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed">
           Lo que Dios está haciendo en medio de nuestra congregación.
         </p>
-      </motion.div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {TESTIMONIALS.map((testimonial, index) => (
-          <motion.div
-            key={testimonial.id}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="glass-card rounded-3xl p-6 flex flex-col justify-between relative"
-          >
-            <div className="absolute top-6 right-6 text-primary/10">
-              <Quote size={40} className="stroke-[3px]" />
-            </div>
+      <div className="relative min-h-[340px] md:min-h-[280px] flex items-center justify-center">
+        {/* Navigation Buttons */}
+        <button
+          onClick={handlePrev}
+          className="absolute left-0 md:-left-4 z-20 p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <button
+          onClick={handleNext}
+          className="absolute right-0 md:-right-4 z-20 p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
+        >
+          <ChevronRight size={20} />
+        </button>
 
-            <div className="space-y-4 relative z-10">
-              <div className="flex gap-1 text-gold">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <Star key={i} size={16} fill="currentColor" className="stroke-none" />
-                ))}
+        {/* Carousel slide container */}
+        <div className="w-full max-w-2xl overflow-hidden px-10 py-6">
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.div
+              key={currentIndex}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-3xl p-8 md:p-10 border border-slate-200 dark:border-white/10 shadow-xl shadow-slate-200/50 dark:shadow-blue-950/15 flex flex-col justify-between items-center relative text-center"
+            >
+              {/* Quote Mark background */}
+              <div className="absolute top-6 left-6 text-amber-500/10 dark:text-amber-500/5 pointer-events-none">
+                <Quote size={80} className="stroke-[3px]" />
               </div>
 
-              <p className="text-stone-600 text-sm leading-relaxed italic">
-                "{testimonial.text}"
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-white/5 relative z-10">
-              {testimonial.avatarUrl ? (
-                <img
-                  src={testimonial.avatarUrl}
-                  alt={testimonial.name}
-                  className="w-10 h-10 rounded-full object-cover border border-primary/10"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                  {testimonial.name[0]}
+              <div className="space-y-6 relative z-10 flex flex-col items-center">
+                {/* 5 Stars */}
+                <div className="flex gap-1.5 text-amber-500">
+                  {Array.from({ length: active.rating }).map((_, i) => (
+                    <Star key={i} size={18} fill="currentColor" className="stroke-none" />
+                  ))}
                 </div>
-              )}
-              <div className="text-left">
-                <h4 className="font-bold text-xs text-primary">{testimonial.name}</h4>
-                <p className="text-[10px] text-stone-400 font-medium">{testimonial.location}</p>
+
+                {/* Testimony text */}
+                <p className="text-slate-700 dark:text-slate-200 text-lg md:text-xl font-serif font-light italic leading-relaxed max-w-xl">
+                  "{active.text}"
+                </p>
               </div>
-            </div>
-          </motion.div>
+
+              {/* Avatar and Identity */}
+              <div className="flex flex-col items-center gap-2 pt-6 mt-8 border-t border-slate-250 dark:border-white/5 w-full max-w-xs relative z-10">
+                {active.avatarUrl ? (
+                  <img
+                    src={active.avatarUrl}
+                    alt={active.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 text-white flex items-center justify-center font-bold text-lg shadow-md select-none">
+                    {active.name[0]}
+                  </div>
+                )}
+                <div className="text-center">
+                  <h4 className="font-bold text-sm text-slate-800 dark:text-white">{active.name}</h4>
+                  <p className="text-xs text-slate-400 font-medium">{active.location}</p>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Bullet Dot Indicators */}
+      <div className="flex justify-center gap-2 mt-4">
+        {TESTIMONIALS.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => {
+              setDirection(idx > currentIndex ? 1 : -1);
+              setCurrentIndex(idx);
+            }}
+            className={`h-2 rounded-full transition-all cursor-pointer ${
+              currentIndex === idx ? 'w-6 bg-amber-500' : 'w-2 bg-slate-300 dark:bg-slate-700'
+            }`}
+          />
         ))}
       </div>
     </section>

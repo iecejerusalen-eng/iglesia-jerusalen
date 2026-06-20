@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabase';
 import { sql } from '../../config/localDb';
 import type { Schedule, Sermon, Event as DbEvent } from '../../types';
@@ -8,9 +8,7 @@ import {
   Heart, Calendar, ArrowRight, Sparkles,
   Clock, Eye, EyeOff, Music, Tv, Gift
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { fadeInUp, staggerContainer } from '../../utils/animations';
-import DOMPurify from 'dompurify';
+import { motion, useInView } from 'framer-motion';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
 import FloatingElements from '../../components/public/FloatingElements';
@@ -20,6 +18,7 @@ import ChurchJourneySection from '../../components/public/ChurchJourneySection';
 import SermonVideoGallery from '../../components/public/SermonVideoGallery';
 import { useLiveModeStore } from '../../store/useLiveModeStore';
 import MagneticButton from '../../components/animations/MagneticButton';
+import { ScrollReveal, StaggerContainer, StaggerItem, HoverCard, ParallaxImage } from '../../components/animations/MotionWrappers';
 
 const FALLBACK_SCHEDULES: Schedule[] = [
   { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:00pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
@@ -83,6 +82,50 @@ const getYoutubeId = (url: string | null) => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
+};
+
+// ==========================================
+// 60FPS COUNT-UP COMPONENT (FASE 3 - PTO 2)
+// ==========================================
+const AnimatedCounter = ({ value, suffix = "", text }: { value: number, suffix?: string, text: string }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-10%" });
+
+  useEffect(() => {
+    if (isInView) {
+      const end = value;
+      const duration = 2.0; // seconds
+      const totalFrames = Math.round(duration * 60);
+      let frame = 0;
+
+      const timer = setInterval(() => {
+        frame++;
+        const progress = frame / totalFrames;
+        // Ease out quadratic interpolation
+        const current = Math.round(end * (1 - (1 - progress) * (1 - progress)));
+        setCount(current);
+
+        if (frame >= totalFrames) {
+          setCount(end);
+          clearInterval(timer);
+        }
+      }, 1000 / 60);
+
+      return () => clearInterval(timer);
+    }
+  }, [isInView, value]);
+
+  return (
+    <div ref={ref} className="flex flex-col items-center p-6 text-center space-y-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-slate-150 dark:border-white/5 shadow-xs">
+      <span className="text-4xl md:text-5xl font-extrabold font-serif text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 drop-shadow-sm">
+        +{count}{suffix}
+      </span>
+      <span className="text-slate-600 dark:text-slate-350 text-xs font-bold tracking-wider uppercase">
+        {text}
+      </span>
+    </div>
+  );
 };
 
 const Home = () => {
@@ -153,7 +196,6 @@ const Home = () => {
     }
   };
 
-  // Helper for checking if a birthday is within the next 7 days (including today)
   const isBirthdayInNext7Days = (birthDateStr: string) => {
     if (!birthDateStr) return false;
     const [, bMonth, bDay] = birthDateStr.split('-').map(Number);
@@ -170,7 +212,7 @@ const Home = () => {
 
     for (const year of yearsToCheck) {
       const bday = new Date(year, bMonth - 1, bDay);
-      bday.setHours(12, 0, 0, 0); // avoid timezone shifts
+      bday.setHours(12, 0, 0, 0);
       if (bday.getTime() >= today.getTime() && bday.getTime() <= next7Days.getTime()) {
         return true;
       }
@@ -232,7 +274,6 @@ const Home = () => {
     try {
       let data: any[] = [];
       try {
-        // Try local SQLite first
         const localData: any[] = await sql`
           SELECT id, first_name, last_name, birth_date, photo_url FROM local_members 
           WHERE deleted_at IS NULL AND birth_date IS NOT NULL;
@@ -259,7 +300,6 @@ const Home = () => {
           ageTurning: calculateAgeTurning(m.birth_date)
         }));
 
-      // Sort chronologically within the 7-day window
       const sorted = filtered.sort((a: any, b: any) => {
         const aTime = getBirthdayTimestampInWindow(a.birth_date);
         const bTime = getBirthdayTimestampInWindow(b.birth_date);
@@ -277,7 +317,6 @@ const Home = () => {
     try {
       let localData: any[] = [];
       try {
-        // Try local SQLite first
         localData = await sql`
           SELECT * FROM local_schedules ORDER BY order_index ASC;
         `;
@@ -355,7 +394,14 @@ const Home = () => {
   const formatEventDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-').map(Number);
     const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+    const formatted = date.toLocaleDateString('es-ES', options).toUpperCase();
+    // Split date to show Day and Month separately
+    const parts = formatted.split(' ');
+    return {
+      day: parts[0] || date.getDate().toString(),
+      month: parts[parts.length - 1] || 'ENE'
+    };
   };
 
   const formatTime = (timeStr: string | null) => {
@@ -375,19 +421,18 @@ const Home = () => {
   };
 
   return (
-    <div className="space-y-20 pb-20">
+    <div className="space-y-24 pb-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {sections.map((sectionData) => {
         const { id, section_type, title, subtitle, content_blocks } = sectionData;
 
         switch (section_type) {
           case 'custom':
-            // 1. HERO SECTION
+            // 1. HERO SECTION (FASE 3 - PTO 1)
             if (id === 'home_hero') {
               if (isLiveModeActive) {
                 const liveYtId = getYoutubeId(liveYoutubeUrl);
                 return (
                   <section id="hero" key={id} className="bg-slate-950 text-white py-12 px-4 md:px-8 border-b border-slate-900">
-                    {/* Estilos para letras de alabanza en vivo */}
                     <style>{`
                       .live-song-lyrics-wrapper.font-mono {
                         font-family: 'Courier New', Courier, monospace !important;
@@ -459,12 +504,12 @@ const Home = () => {
                               Culto En Vivo
                             </span>
                           </div>
-                          <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-tight">
+                          <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-tight text-white">
                             Transmisión Especial de Hoy
                           </h1>
                         </div>
 
-                        <div className="text-slate-450 text-xs">
+                        <div className="text-slate-400 text-xs">
                           ¿Quieres tomar notas personales? Dirígete a la sección de <Link to="/predicas" className="text-amber-400 font-bold hover:underline">Prédicas</Link>.
                         </div>
                       </div>
@@ -548,30 +593,30 @@ const Home = () => {
                             {activeSong ? (
                               <div className="space-y-4">
                                 <div>
-                                  <h3 className="font-serif font-bold text-lg text-slate-100">{activeSong.title}</h3>
+                                  <h3 className="font-serif font-bold text-lg text-slate-100 text-left">{activeSong.title}</h3>
                                   {activeSong.artist && (
-                                    <p className="text-xs text-slate-400 font-medium">{activeSong.artist}</p>
+                                    <p className="text-xs text-slate-450 font-medium text-left">{activeSong.artist}</p>
                                   )}
                                 </div>
 
-                                <div className={`live-song-lyrics-wrapper font-${liveSongFont} max-h-[300px] overflow-y-auto pr-1`}>
+                                <div className={`live-song-lyrics-wrapper font-${liveSongFont} max-h-[300px] overflow-y-auto pr-1 text-left`}>
                                   <div
-                                    className={`live-song-lyrics text-slate-300 ${!showLiveChords ? 'hide-chords' : ''}`}
-                                    dangerouslySetInnerHTML={{ __html: activeSong.lyrics || '<p class="text-slate-550 italic">Cargando letra...</p>' }}
+                                    className={`live-song-lyrics text-slate-350 ${!showLiveChords ? 'hide-chords' : ''}`}
+                                    dangerouslySetInnerHTML={{ __html: activeSong.lyrics || '<p class="text-slate-500 italic">Cargando letra...</p>' }}
                                   />
                                 </div>
                               </div>
                             ) : (
-                              <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-500 dark:text-gray-450 space-y-3">
-                                <Music size={32} className="text-slate-700 dark:text-gray-300 animate-pulse" />
-                                <p className="text-xs font-semibold max-w-[200px] leading-normal">
+                              <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-550 space-y-3">
+                                <Music size={32} className="text-slate-700 animate-pulse" />
+                                <p className="text-xs font-semibold max-w-[200px] leading-normal text-slate-400">
                                   Alabanza congregacional activa. Esperando que el director de alabanza sincronice la letra...
                                 </p>
                               </div>
                             )}
                           </div>
 
-                          <div className="border-t border-slate-800 pt-3 mt-4 text-[10px] text-slate-500 dark:text-gray-450 leading-normal">
+                          <div className="border-t border-slate-800 pt-3 mt-4 text-[10px] text-slate-500 leading-normal text-left">
                             * Las letras y acordes se actualizan automáticamente en tiempo real para que toda la congregación cante en unidad.
                           </div>
                         </div>
@@ -584,240 +629,218 @@ const Home = () => {
               }
 
               return (
-                <section id="hero" key={id} className="relative min-h-[95vh] flex items-center justify-center bg-[#071330] text-white overflow-hidden py-24">
-                  <FloatingElements />
-                  <div className="absolute inset-0 z-0 overflow-hidden">
-                    <motion.img
-                      initial={{ scale: 1.05 }}
-                      animate={{
-                        scale: [1.05, 1.12, 1.05],
-                        x: [0, 10, -10, 0],
-                        y: [0, -8, 8, 0]
-                      }}
-                      transition={{
-                        duration: 40,
-                        ease: 'linear',
-                        repeat: Infinity,
-                        repeatType: 'reverse'
-                      }}
-                      src={fachadaImage}
-                      alt="Fachada de la Iglesia Jerusalén"
-                      className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05]"
-                    />
+                <div key={id} className="relative">
+                  <section id="hero" className="relative min-h-[90vh] flex items-center justify-center bg-[#071330] text-white overflow-hidden py-24 transition-colors duration-300">
+                    <FloatingElements />
+                    
+                    {/* Immersive Background Particles & Glows */}
+                    <div className="absolute inset-0 z-0 overflow-hidden">
+                      <ParallaxImage
+                        src={fachadaImage}
+                        alt="Fachada de la Iglesia Jerusalén"
+                        className="filter brightness-[0.7] contrast-[1.05]"
+                      />
 
-                    <motion.div
-                      animate={{
-                        x: [-40, 80, -40],
-                        y: [-20, 60, -20]
-                      }}
-                      transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute top-1/4 left-1/5 w-[350px] h-[350px] rounded-full bg-blue-500/15 blur-[120px] pointer-events-none"
-                    />
-                    <motion.div
-                      animate={{
-                        x: [40, -60, 40],
-                        y: [30, -40, 30]
-                      }}
-                      transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute bottom-1/4 right-1/5 w-[400px] h-[400px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none"
-                    />
+                      <motion.div
+                        animate={{
+                          x: [-30, 60, -30],
+                          y: [-15, 45, -15]
+                        }}
+                        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute top-1/4 left-1/4 w-[380px] h-[380px] rounded-full bg-blue-500/10 blur-[130px] pointer-events-none"
+                      />
+                      <motion.div
+                        animate={{
+                          x: [30, -50, 30],
+                          y: [20, -30, 20]
+                        }}
+                        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] rounded-full bg-amber-500/8 blur-[150px] pointer-events-none"
+                      />
 
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ backgroundImage: 'radial-gradient(circle, transparent 20%, rgba(7, 19, 48, 0.72) 60%, rgba(7, 19, 48, 0.98) 100%)' }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#071330] via-[#071330]/65 to-transparent pointer-events-none" />
-                  </div>
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ backgroundImage: 'radial-gradient(circle, transparent 20%, rgba(7, 19, 48, 0.7) 60%, rgba(7, 19, 48, 0.98) 100%)' }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#071330] via-[#071330]/50 to-transparent pointer-events-none" />
+                    </div>
 
-                  <motion.div
-                    variants={staggerContainer}
-                    initial="initial"
-                    animate="animate"
-                    className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center"
-                  >
-                    <motion.div
-                      variants={fadeInUp}
-                      className="inline-flex items-center gap-2 bg-gradient-to-r from-gold/15 to-amber-500/15 text-gold border border-gold/45 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-gold/5 backdrop-blur-xs select-none"
-                    >
-                      <Sparkles size={14} className="text-gold animate-spin-slow" />
-                      <span>{subtitle || 'Una Casa de Restauración y Bendición'}</span>
-                    </motion.div>
+                    {/* Cascading Typography Content (FASE 3 - PTO 1) */}
+                    <StaggerContainer className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center">
+                      <StaggerItem>
+                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/10 to-amber-600/10 text-amber-500 border border-amber-500/40 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-amber-500/5 backdrop-blur-xs select-none">
+                          <Sparkles size={14} className="text-amber-500 animate-spin-slow" />
+                          <span>{subtitle || 'Una Casa de Restauración y Bendición'}</span>
+                        </div>
+                      </StaggerItem>
 
-                    <motion.h1
-                      variants={fadeInUp}
-                      className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.08] max-w-4xl mx-auto drop-shadow-md"
-                    >
-                      {title ? (
-                        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(title.replace('Iglesia Jerusalén', '<span class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-yellow-400 to-amber-500 font-extrabold drop-shadow-[0_4px_12px_rgba(217,119,6,0.25)]">Iglesia Jerusalén</span>')) }} />
+                      <StaggerItem>
+                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.1] max-w-4xl mx-auto drop-shadow-md">
+                          Bienvenido a la <br />
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 font-extrabold drop-shadow-[0_4px_12px_rgba(217,119,6,0.25)]">
+                            Iglesia Jerusalén
+                          </span>
+                        </h1>
+                      </StaggerItem>
+
+                      {content_blocks && content_blocks.length > 0 ? (
+                        <StaggerItem className="w-full max-w-3xl">
+                          <div className="text-left bg-slate-900/50 p-8 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl">
+                            <BlockRenderer blocks={content_blocks} />
+                          </div>
+                        </StaggerItem>
                       ) : (
                         <>
-                          Bienvenido a la <br />
-                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-yellow-400 to-amber-500 font-extrabold drop-shadow-[0_4px_12px_rgba(217,119,6,0.25)]">Iglesia Jerusalén</span>
+                          <StaggerItem>
+                            <p className="text-slate-250 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-light font-sans tracking-wide">
+                              Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
+                            </p>
+                          </StaggerItem>
+
+                          <StaggerItem className="w-full sm:w-auto">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 w-full sm:w-auto">
+                              <MagneticButton>
+                                <Link
+                                  to="/nosotros"
+                                  className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                  Conócenos
+                                </Link>
+                              </MagneticButton>
+                              
+                              <MagneticButton>
+                                <a
+                                  href="#schedules"
+                                  className="w-full sm:w-auto px-10 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-2xl font-bold backdrop-blur-md transition-all text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                                >
+                                  Horarios de Servicio
+                                  <ArrowRight size={16} className="text-amber-500 animate-pulse" />
+                                </a>
+                              </MagneticButton>
+                            </div>
+                          </StaggerItem>
                         </>
                       )}
-                    </motion.h1>
+                    </StaggerContainer>
 
-                    {content_blocks && content_blocks.length > 0 ? (
-                      <div className="max-w-3xl mx-auto text-left bg-black/25 p-8 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl">
-                        <BlockRenderer blocks={content_blocks} />
+                    {/* Wave Divider */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 w-full pointer-events-none z-0">
+                      <svg className="w-full h-full text-slate-50 dark:text-slate-950 fill-current" viewBox="0 0 1440 74" preserveAspectRatio="none">
+                        <path d="M0,32L120,42.7C240,53,480,75,720,74.7C960,75,1200,53,1320,42.7L1440,32L1440,74L1320,74C1200,74,960,74,720,74C480,74,240,74,120,74L0,74Z"></path>
+                      </svg>
+                    </div>
+                  </section>
+
+                  {/* 2. STATS FRAP (FASE 3 - PTO 2) */}
+                  <div className="bg-slate-50 dark:bg-slate-950 py-10 transition-colors duration-300 relative z-10">
+                    <ScrollReveal className="max-w-7xl mx-auto px-4 md:px-8">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                        <AnimatedCounter value={350} text="Familias Comprometidas" />
+                        <AnimatedCounter value={18} text="Años Edificando Vidas" />
+                        <AnimatedCounter value={120} text="Niños Formados en Fe" />
                       </div>
-                    ) : (
-                      <>
-                        <motion.p
-                          variants={fadeInUp}
-                          className="text-slate-200 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-light font-sans tracking-wide"
-                        >
-                          Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
-                        </motion.p>
-
-                        <motion.div
-                          variants={fadeInUp}
-                          className="flex flex-col sm:flex-row gap-4 justify-center pt-6 w-full sm:w-auto"
-                        >
-                          <motion.div
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <MagneticButton>
-                              <Link
-                                to="/nosotros"
-                                className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-gold/25 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
-                              >
-                                Conócenos
-                              </Link>
-                            </MagneticButton>
-                          </motion.div>
-                          <motion.div
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <MagneticButton>
-                              <a
-                                href="#schedules"
-                                className="w-full sm:w-auto px-10 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-2xl font-bold backdrop-blur-md transition-all text-sm flex items-center justify-center gap-2 shadow-md"
-                              >
-                                Horarios de Servicio
-                                <ArrowRight size={16} className="text-gold" />
-                              </a>
-                            </MagneticButton>
-                          </motion.div>
-                        </motion.div>
-                      </>
-                    )}
-                  </motion.div>
-
-                  <div className="absolute bottom-0 left-0 right-0 h-16 w-full pointer-events-none z-0">
-                    <svg className="w-full h-full text-[#F8FAFC] dark:text-slate-950 fill-current" viewBox="0 0 1440 74" preserveAspectRatio="none">
-                      <path d="M0,32L120,42.7C240,53,480,75,720,74.7C960,75,1200,53,1320,42.7L1440,32L1440,74L1320,74C1200,74,960,74,720,74C480,74,240,74,120,74L0,74Z"></path>
-                    </svg>
+                    </ScrollReveal>
                   </div>
-                </section>
+                </div>
               );
             }
 
-            // 2. WELCOME / PILARES SECTION
+            // 3. DOCTRINA / PILARES SECTION (FASE 3 - PTO 3)
             if (id === 'home_welcome') {
               return (
                 <div key={id} id="about" className="pb-16 md:pb-24">
                   {content_blocks && content_blocks.length > 0 ? (
-                    <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 animate-fadeIn">
-                      <div className="text-center max-w-2xl mx-auto space-y-3">
-                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">{title || 'Nuestra Doctrina'}</h2>
-                        {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
-                      </div>
-                      <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none">
+                    <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
+                      <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">{title || 'Nuestra Doctrina'}</h2>
+                        {subtitle && <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
+                      </ScrollReveal>
+                      <ScrollReveal delay={0.1} className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-md p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
                         <BlockRenderer blocks={content_blocks} />
-                      </div>
+                      </ScrollReveal>
                     </section>
                   ) : (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-12">
-                      <motion.div
-                        variants={fadeInUp}
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true, amount: 0.3 }}
-                        className="text-center max-w-2xl mx-auto space-y-3"
-                      >
-                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">Nuestra Doctrina</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed">
+                      <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
+                          Verdades Centrales
+                        </span>
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">Nuestra Doctrina</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
                           Como Iglesia del Evangelio Cuadrangular, fundamentamos nuestra fe en cuatro grandes verdades bíblicas.
                         </p>
-                      </motion.div>
+                      </ScrollReveal>
 
-                      <motion.div
-                        variants={staggerContainer}
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true, amount: 0.15 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-                      >
-                        <motion.div
-                          variants={fadeInUp}
-                          className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-accent-red/10 dark:bg-accent-red/20 text-accent-red dark:text-red-400 rounded-xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                              ✝
+                      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Pilar 1: Salvador */}
+                        <StaggerItem>
+                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-red-500/30 dark:hover:shadow-red-500/5 flex flex-col justify-between h-full group">
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-red-100 dark:bg-red-950/30 text-red-500 dark:text-red-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
+                                ✝
+                              </div>
+                              <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-white text-left">Jesucristo Salvador</h3>
+                              <p className="text-slate-550 dark:text-slate-350 text-xs leading-relaxed text-left">
+                                El único camino al Padre, quien dio su vida en la cruz para perdonar nuestros pecados y otorgar salvación a todo el que cree.
+                              </p>
                             </div>
-                            <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Jesucristo Salvador</h3>
-                            <p className="text-gray-500 dark:text-gray-300 text-xs leading-relaxed">
-                              El único camino al Padre, quien dio su vida en la cruz para perdonar nuestros pecados y otorgar salvación a todo el que cree.
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-bold text-accent-red dark:text-red-400 uppercase tracking-wider mt-6 block">Juan 3:16</span>
-                        </motion.div>
+                            <span className="text-[10px] font-extrabold text-red-500 dark:text-red-400 uppercase tracking-wider mt-6 block text-left font-mono">Juan 3:16</span>
+                          </HoverCard>
+                        </StaggerItem>
 
-                        <motion.div
-                          variants={fadeInUp}
-                          className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-gold/10 dark:bg-gold/20 text-gold dark:text-yellow-400 rounded-xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                              🕊
+                        {/* Pilar 2: Bautizador */}
+                        <StaggerItem>
+                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-amber-500/30 dark:hover:shadow-amber-500/5 flex flex-col justify-between h-full group">
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
+                                🕊
+                              </div>
+                              <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-white text-left">Jesucristo Bautizador</h3>
+                              <p className="text-slate-550 dark:text-slate-350 text-xs leading-relaxed text-left">
+                                El dador del Espíritu Santo, capacitándonos con poder y dones para testificar y vivir una vida de santidad activa y con propósito.
+                              </p>
                             </div>
-                            <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Jesucristo Bautizador</h3>
-                            <p className="text-gray-500 dark:text-gray-300 text-xs leading-relaxed">
-                              El dador del Espíritu Santo, capacitándonos con poder y dones para testificar y vivir una vida de santidad activa.
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-bold text-gold dark:text-yellow-400 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
-                        </motion.div>
+                            <span className="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 uppercase tracking-wider mt-6 block text-left font-mono">Hechos 1:8</span>
+                          </HoverCard>
+                        </StaggerItem>
 
-                        <motion.div
-                          variants={fadeInUp}
-                          className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-accent-blue/10 dark:bg-accent-blue/20 text-accent-blue dark:text-blue-400 rounded-xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                              🍷
+                        {/* Pilar 3: Sanador */}
+                        <StaggerItem>
+                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-blue-500/30 dark:hover:shadow-blue-500/5 flex flex-col justify-between h-full group">
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
+                                🍷
+                              </div>
+                              <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-white text-left">Jesucristo Sanador</h3>
+                              <p className="text-slate-550 dark:text-slate-350 text-xs leading-relaxed text-left">
+                                El gran médico de almas y cuerpos, quien llevó todas nuestras dolencias y continúa sanando por medio de la fe el día de hoy.
+                              </p>
                             </div>
-                            <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Jesucristo Sanador</h3>
-                            <p className="text-gray-500 dark:text-gray-300 text-xs leading-relaxed">
-                              El gran médico de almas y cuerpos, quien llevó nuestras dolencias y continúa sanando por medio de la fe hoy.
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-bold text-accent-blue dark:text-blue-400 uppercase tracking-wider mt-6 block">Santiago 5:14-15</span>
-                        </motion.div>
+                            <span className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 uppercase tracking-wider mt-6 block text-left font-mono">Santiago 5:14-15</span>
+                          </HoverCard>
+                        </StaggerItem>
 
-                        <motion.div
-                          variants={fadeInUp}
-                          className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-accent-purple/10 text-accent-purple rounded-xl flex items-center justify-center font-bold text-xl group-hover:scale-110 transition-transform">
-                              👑
+                        {/* Pilar 4: Rey */}
+                        <StaggerItem>
+                          <HoverCard className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-none hover:border-purple-500/30 dark:hover:shadow-purple-500/5 flex flex-col justify-between h-full group">
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-950/30 text-purple-500 dark:text-purple-400 rounded-2xl flex items-center justify-center font-bold text-xl group-hover:rotate-12 transition-transform duration-300">
+                                👑
+                              </div>
+                              <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-white text-left">El Rey que Viene</h3>
+                              <p className="text-slate-550 dark:text-slate-350 text-xs leading-relaxed text-left">
+                                El novio celestial que regresará con poder y gran gloria por su iglesia para reinar eternamente en victoria definitiva.
+                              </p>
                             </div>
-                            <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">El Rey que Viene</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                              El novio celestial que regresará con poder y gran gloria por su iglesia para reinar eternamente en victoria.
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-bold text-accent-purple uppercase tracking-wider mt-6 block">1 Tesalonicenses 4:16</span>
-                        </motion.div>
-                      </motion.div>
+                            <span className="text-[10px] font-extrabold text-purple-500 dark:text-purple-400 uppercase tracking-wider mt-6 block text-left font-mono">1 Ts. 4:16</span>
+                          </HoverCard>
+                        </StaggerItem>
+                      </StaggerContainer>
                     </section>
                   )}
+                  {/* Timeline section inside home_welcome case */}
                   <ChurchJourneySection />
+                  
                   <div className="mt-20 mb-10">
                     <MarqueeText />
                   </div>
@@ -825,47 +848,49 @@ const Home = () => {
               );
             }
 
-            // 7. DONATIONS CTA SECTION
+            // 9. DONACIONES CTA SECTION (FASE 3 - PTO 9)
             if (id === 'home_donations') {
               return (
                 <div key={id}>
                   {content_blocks && content_blocks.length > 0 ? (
-                    <section className="max-w-5xl mx-auto px-4 animate-fadeIn">
-                      <div className="bg-gradient-to-r from-primary to-blue-900 rounded-3xl p-8 md:p-12 text-center text-white shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 flex items-center justify-center">
-                          <Heart size={150} />
+                    <section className="max-w-5xl mx-auto px-4">
+                      <ScrollReveal className="bg-gradient-to-br from-[#0c1c42] to-amber-950 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
+                        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 flex items-center justify-center animate-pulse pointer-events-none">
+                          <Heart size={150} fill="currentColor" />
                         </div>
                         <div className="relative z-10 max-w-2xl mx-auto space-y-6">
                           <h3 className="font-serif text-3xl font-bold">{title || 'Apoya la Obra de Dios'}</h3>
                           {subtitle && (
-                            <p className="text-gray-200 text-sm leading-relaxed">{subtitle}</p>
+                            <p className="text-slate-200 text-sm leading-relaxed">{subtitle}</p>
                           )}
                           <BlockRenderer blocks={content_blocks} />
                         </div>
-                      </div>
+                      </ScrollReveal>
                     </section>
                   ) : (
                     <section className="max-w-5xl mx-auto px-4">
-                      <div className="bg-gradient-to-r from-primary to-blue-900 rounded-3xl p-8 md:p-12 text-center text-white shadow-lg relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 flex items-center justify-center">
-                          <Heart size={150} />
+                      <ScrollReveal className="bg-gradient-to-br from-[#0a1c40] via-[#071330] to-amber-900/60 text-white rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden border border-white/10">
+                        <div className="absolute top-[-20px] right-[-20px] w-48 h-48 opacity-[0.05] flex items-center justify-center animate-pulse pointer-events-none">
+                          <Heart size={180} fill="currentColor" />
                         </div>
                         <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-                          <h3 className="font-serif text-3xl font-bold">Apoya la Obra de Dios</h3>
-                          <p className="text-gray-200 text-sm leading-relaxed">
+                          <h3 className="font-serif text-3xl md:text-4xl font-bold">Apoya la Obra de Dios</h3>
+                          <p className="text-slate-200 text-sm md:text-base leading-relaxed font-light">
                             Tus diezmos, ofrendas y donaciones hacen posible que sigamos proclamando el evangelio de Cristo y ayudando a los necesitados en nuestra comunidad local y misiones globales.
                           </p>
-                          <div className="pt-2">
-                            <Link
-                              to="/donations"
-                              className="px-8 py-3.5 bg-gold hover:bg-yellow-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-sm inline-flex items-center gap-2 cursor-pointer"
-                            >
-                              Diezmos y Ofrendas en Línea
-                              <Heart size={16} fill="currentColor" />
-                            </Link>
+                          <div className="pt-4">
+                            <MagneticButton>
+                              <Link
+                                to="/donations"
+                                className="px-10 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/35 transition-all text-sm inline-flex items-center gap-2.5 cursor-pointer"
+                              >
+                                Diezmos y Ofrendas en Línea
+                                <Heart size={16} fill="currentColor" className="animate-pulse" />
+                              </Link>
+                            </MagneticButton>
                           </div>
                         </div>
-                      </div>
+                      </ScrollReveal>
                     </section>
                   )}
                 </div>
@@ -874,16 +899,16 @@ const Home = () => {
 
             // USER-ADDED GENERIC BLOCK SECTIONS
             return (
-              <section key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 animate-fadeIn">
+              <section key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
                 {(title || subtitle) && (
-                  <div className="text-center max-w-2xl mx-auto space-y-3">
-                    {title && <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">{title}</h2>}
-                    {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
-                  </div>
+                  <ScrollReveal className="text-center max-w-2xl mx-auto space-y-3">
+                    {title && <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">{title}</h2>}
+                    {subtitle && <p className="text-slate-550 dark:text-slate-400 text-sm md:text-base leading-relaxed">{subtitle}</p>}
+                  </ScrollReveal>
                 )}
-                <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none">
+                <ScrollReveal className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none">
                   <BlockRenderer blocks={content_blocks} />
-                </div>
+                </ScrollReveal>
               </section>
             );
 
@@ -904,150 +929,159 @@ const Home = () => {
             );
 
             return (
-              <section key={id} id="schedules" className="bg-slate-50 dark:bg-slate-950 py-20 border-y border-gray-200 dark:border-white/10 scroll-mt-24 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
+              <section key={id} id="schedules" className="bg-slate-50 dark:bg-slate-950 py-20 border-y border-slate-200 dark:border-white/10 scroll-mt-24 relative overflow-hidden transition-colors duration-300">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-16 relative z-10">
-                  <div className="text-center max-w-2xl mx-auto space-y-4">
-                    <span className="text-xs font-bold text-gold uppercase tracking-widest bg-gold/10 px-4 py-1.5 rounded-full">
+                  <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
                       Reuniones y Servicios
                     </span>
-                    <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary dark:text-white">
+                    <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
                       {title || 'Horarios de Reunión'}
                     </h2>
                     {subtitle && (
-                      <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+                      <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
                         {subtitle}
                       </p>
                     )}
-                  </div>
+                  </ScrollReveal>
 
                   {loadingSchedules ? (
                     <div className="flex justify-center items-center py-20">
-                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500"></div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
 
-                      <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Left bar accent schedule cards (FASE 3 - PTO 5) */}
+                      <StaggerContainer className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sortedDays
                           .filter((day) => day !== 'Domingo')
                           .map((day) => {
                             const daySchedules = schedulesByDay[day];
                             return (
-                              <motion.div
-                                key={day}
-                                whileHover={{ y: -4 }}
-                                className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-150 dark:border-white/10 shadow-2xs dark:shadow-none hover:shadow-lg transition-all duration-300 hover:border-gold/30 flex flex-col justify-between"
-                              >
-                                <div>
-                                  <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/10 pb-3 mb-4">
-                                    <span className="text-xs font-extrabold uppercase tracking-widest text-primary dark:text-white bg-primary/5 dark:bg-primary/20 px-3 py-1 rounded-md">
-                                      {day}
-                                    </span>
-                                    <span className="text-xs font-bold text-gold flex items-center gap-1.5">
-                                      <Clock size={13} />
-                                      {daySchedules[0]?.time_range}
-                                    </span>
-                                  </div>
+                              <StaggerItem key={day}>
+                                <HoverCard
+                                  className="h-full bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all flex flex-col justify-between relative overflow-hidden pl-8"
+                                >
+                                  {/* Left vertical color accent bar */}
+                                  <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-amber-500 to-amber-600" />
+                                  
+                                  <div>
+                                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-3 mb-4">
+                                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">
+                                        {day}
+                                      </span>
+                                      <span className="text-xs font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
+                                        <Clock size={13} />
+                                        {daySchedules[0]?.time_range}
+                                      </span>
+                                    </div>
 
-                                  <div className="space-y-2">
-                                    <h4 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">
-                                      {daySchedules[0]?.title}
-                                    </h4>
-                                    <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                      {daySchedules[0]?.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                      </div>
-
-                      {schedulesByDay['Domingo'] && (
-                        <div className="lg:col-span-1">
-                          <motion.div
-                            whileHover={{ y: -4 }}
-                            className="h-full bg-gradient-to-b from-primary to-[#091b42] text-white p-8 rounded-3xl border border-blue-950 shadow-xl flex flex-col justify-between relative overflow-hidden"
-                          >
-                            <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay">
-                              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                                <path d="M0 0 L50 50 L100 0 Z M0 100 L50 50 L100 100 Z" stroke="white" strokeWidth="2" fill="none" />
-                              </svg>
-                            </div>
-
-                            <div className="space-y-6 relative z-10">
-                              <div className="border-b border-white/10 pb-4 flex justify-between items-center">
-                                <span className="text-sm font-extrabold uppercase tracking-widest text-gold bg-gold/15 px-3 py-1 rounded-md border border-gold/20">
-                                  Domingo
-                                </span>
-                                <span className="text-xs font-medium text-slate-300">
-                                  Día del Señor
-                                </span>
-                              </div>
-
-                              <div className="space-y-6">
-                                {schedulesByDay['Domingo'].map((sch) => (
-                                  <div key={sch.id} className="relative pl-6 border-l-2 border-gold/30 last:border-l-transparent pb-1">
-                                    <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-gold shadow-xs shadow-gold/50" />
-
-                                    <div className="space-y-1">
-                                      <div className="flex justify-between items-center gap-2 flex-wrap">
-                                        <h5 className="font-serif font-bold text-base text-slate-100">
-                                          {sch.title}
-                                        </h5>
-                                        <span className="text-[10px] font-bold text-gold bg-gold/10 px-2 py-0.5 rounded-md border border-gold/10">
-                                          {sch.time_range}
-                                        </span>
-                                      </div>
-                                      <p className="text-slate-300 text-xs font-light leading-relaxed">
-                                        {sch.description}
+                                    <div className="space-y-2 text-left">
+                                      <h4 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-100">
+                                        {daySchedules[0]?.title}
+                                      </h4>
+                                      <p className="text-slate-550 dark:text-slate-400 text-xs leading-relaxed">
+                                        {daySchedules[0]?.description}
                                       </p>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
+                                </HoverCard>
+                              </StaggerItem>
+                            );
+                          })}
+                      </StaggerContainer>
 
-                            <div className="border-t border-white/10 pt-6 mt-8 space-y-4 relative z-10">
-                              <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
-                                <div className="text-gold mt-0.5 shrink-0 bg-gold/10 p-1.5 rounded-lg border border-gold/15">
-                                  <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path d="M12 2v12a3 3 0 0 1-3 3H8a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1a3 3 0 0 1-3-3V2Z" />
-                                    <path d="M6 2h12M12 17v5M9 22h6M4 8c1.5 0 2.5-1 3.5-1s2 1 3.5 1 2-1 3.5-1 2-1 3.5-1 2 1 3.5 1 2.5-1 3.5-1" />
-                                  </svg>
-                                </div>
-                                <div className="space-y-0.5 text-left">
-                                  <span className="text-xs font-extrabold text-gold uppercase tracking-wider block">
-                                    Santa Cena
+                      {schedulesByDay['Domingo'] && (
+                        <div className="lg:col-span-1">
+                          <ScrollReveal className="h-full">
+                            <motion.div
+                              whileHover={{ y: -6, scale: 1.01 }}
+                              className="h-full bg-gradient-to-b from-[#0a1c40] to-[#071330] text-white p-8 rounded-3xl border border-slate-850 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(217,119,6,0.15)] transition-all duration-300"
+                            >
+                              {/* Left vertical accent on Sunday card too */}
+                              <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-amber-500 to-yellow-400" />
+                              
+                              <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay">
+                                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+                                  <path d="M0 0 L50 50 L100 0 Z M0 100 L50 50 L100 100 Z" stroke="white" strokeWidth="2" fill="none" />
+                                </svg>
+                              </div>
+
+                              <div className="space-y-6 relative z-10 pl-2">
+                                <div className="border-b border-white/10 pb-4 flex justify-between items-center">
+                                  <span className="text-xs font-extrabold uppercase tracking-widest text-white bg-amber-500 px-3.5 py-1 rounded-md">
+                                    Domingo
                                   </span>
-                                  <p className="text-slate-300 text-[11px] leading-relaxed font-light">
-                                    El <span className="font-semibold text-white">primer domingo</span> de cada mes celebramos juntos en todas las plenarias.
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
-                                <div className="text-gold mt-0.5 shrink-0 bg-gold/10 p-1.5 rounded-lg border border-gold/15">
-                                  <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
-                                  </svg>
-                                </div>
-                                <div className="space-y-0.5 text-left">
-                                  <span className="text-xs font-extrabold text-gold uppercase tracking-wider block">
-                                    Culto Misionero
+                                  <span className="text-xs font-medium text-slate-350">
+                                    Día del Señor
                                   </span>
-                                  <p className="text-slate-300 text-[11px] leading-relaxed font-light">
-                                    El <span className="font-semibold text-white">tercer domingo</span> de cada mes está dedicado a apoyar misiones.
-                                  </p>
+                                </div>
+
+                                <div className="space-y-6">
+                                  {schedulesByDay['Domingo'].map((sch) => (
+                                    <div key={sch.id} className="relative pl-6 border-l-2 border-amber-500/20 last:border-l-transparent pb-1 text-left">
+                                      <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+
+                                      <div className="space-y-1">
+                                        <div className="flex justify-between items-center gap-2 flex-wrap">
+                                          <h5 className="font-serif font-bold text-base text-slate-100">
+                                            {sch.title}
+                                          </h5>
+                                          <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                            {sch.time_range}
+                                          </span>
+                                        </div>
+                                        <p className="text-slate-300 text-xs font-light leading-relaxed">
+                                          {sch.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            </div>
 
-                          </motion.div>
+                              <div className="border-t border-white/10 pt-6 mt-8 space-y-4 relative z-10 pl-2">
+                                <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
+                                  <div className="text-amber-500 mt-0.5 shrink-0 bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                                      <path d="M12 2v12a3 3 0 0 1-3 3H8a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1a3 3 0 0 1-3-3V2Z" />
+                                      <path d="M6 2h12M12 17v5M9 22h6M4 8c1.5 0 2.5-1 3.5-1s2 1 3.5 1 2-1 3.5-1 2-1 3.5-1 2 1 3.5 1 2.5-1 3.5-1" />
+                                    </svg>
+                                  </div>
+                                  <div className="space-y-0.5 text-left">
+                                    <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider block">
+                                      Santa Cena
+                                    </span>
+                                    <p className="text-slate-300 text-[11px] leading-relaxed font-light">
+                                      El <span className="font-semibold text-white">primer domingo</span> de cada mes celebramos en todas las plenarias.
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
+                                  <div className="text-amber-500 mt-0.5 shrink-0 bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="12" r="10" />
+                                      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
+                                    </svg>
+                                  </div>
+                                  <div className="space-y-0.5 text-left">
+                                    <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider block">
+                                      Culto Misionero
+                                    </span>
+                                    <p className="text-slate-300 text-[11px] leading-relaxed font-light">
+                                      El <span className="font-semibold text-white">tercer domingo</span> de cada mes está dedicado a misiones globales.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </motion.div>
+                          </ScrollReveal>
                         </div>
                       )}
 
@@ -1060,87 +1094,120 @@ const Home = () => {
 
           case 'system_events':
             return (
-              <section id="events" key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 animate-fadeIn scroll-mt-24">
+              <section id="events" key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 scroll-mt-24">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                  <div className="space-y-3">
-                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">{title || 'Próximos Eventos'}</h2>
+                  <div className="space-y-3 text-left">
+                    <ScrollReveal>
+                      <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
+                        {title || 'Próximos Eventos'}
+                      </h2>
+                    </ScrollReveal>
                     {subtitle && (
-                      <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed max-w-xl">{subtitle}</p>
+                      <ScrollReveal delay={0.1}>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xl text-left">
+                          {subtitle}
+                        </p>
+                      </ScrollReveal>
                     )}
                   </div>
-                  <Link
-                    to="/eventos"
-                    className="text-primary dark:text-white hover:text-blue-900 dark:hover:text-blue-300 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
-                  >
-                    Ver Calendario Completo
-                    <ArrowRight size={16} />
-                  </Link>
+                  <ScrollReveal delay={0.2}>
+                    <Link
+                      to="/eventos"
+                      className="text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
+                    >
+                      Ver Calendario Completo
+                      <ArrowRight size={16} />
+                    </Link>
+                  </ScrollReveal>
                 </div>
 
                 {loadingEvents ? (
                   <div className="flex justify-center items-center py-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
                   </div>
                 ) : upcomingEvents.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {upcomingEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-2xs dark:shadow-none hover:shadow-lg transition-all duration-300 flex flex-col group"
-                      >
-                        {event.cover_image_url ? (
-                          <div className="w-full h-44 overflow-hidden relative">
-                            <img
-                              src={event.cover_image_url}
-                              alt={event.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                          </div>
-                        ) : (
-                          <div className="w-full h-44 bg-gradient-to-tr from-primary to-blue-900 dark:from-slate-800 dark:to-slate-950 flex items-center justify-center text-white relative">
-                            <Calendar size={48} className="opacity-20 absolute" />
-                            <span className="text-5xl font-bold font-serif opacity-30 select-none">JERUSALÉN</span>
-                          </div>
-                        )}
+                  /* Stagger events list in Ticket/Card style (FASE 3 - PTO 6) */
+                  <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {upcomingEvents.map((event) => {
+                      const dateObj = formatEventDate(event.start_date);
+                      return (
+                        <StaggerItem key={event.id}>
+                          <HoverCard
+                            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full group relative"
+                          >
+                            {/* Accent line border on top */}
+                            <div className="w-full h-1.5 bg-gradient-to-r from-amber-500 to-amber-600" />
 
-                        <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center text-xs font-semibold">
-                              <span className="text-[10px] bg-amber-50 dark:bg-amber-950 text-gold border border-gold/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                                {event.ministries?.name || 'General'}
-                              </span>
-                              <span className="text-gray-400 capitalize">
-                                {formatEventDate(event.start_date)}
-                              </span>
+                            {event.cover_image_url ? (
+                              <div className="w-full h-44 overflow-hidden relative">
+                                <img
+                                  src={event.cover_image_url}
+                                  alt={event.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent"></div>
+                                
+                                {/* Date Ticket Badge overlay */}
+                                <div className="absolute top-4 left-4 bg-amber-500 text-white rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
+                                  <span className="text-lg leading-none font-serif">{dateObj.day}</span>
+                                  <span className="text-[9px] tracking-wider font-mono">{dateObj.month}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-full h-44 bg-gradient-to-tr from-slate-100 to-slate-200 dark:from-[#0a1c40] dark:to-slate-950 flex items-center justify-center text-slate-800 dark:text-white relative">
+                                <Calendar size={48} className="opacity-10 absolute" />
+                                <span className="text-3xl font-bold font-serif opacity-15 select-none tracking-widest">JERUSALÉN</span>
+                                
+                                {/* Date Ticket Badge overlay */}
+                                <div className="absolute top-4 left-4 bg-amber-500 text-white rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
+                                  <span className="text-lg leading-none font-serif">{dateObj.day}</span>
+                                  <span className="text-[9px] tracking-wider font-mono">{dateObj.month}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center text-[10px] font-bold">
+                                  <span className="bg-amber-100 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                    {event.ministries?.name || 'General'}
+                                  </span>
+                                  <span className="text-slate-400">
+                                    Nuevo
+                                  </span>
+                                </div>
+
+                                <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-100 line-clamp-1 flex items-center gap-1.5 text-left group-hover:text-amber-500 dark:group-hover:text-amber-500 transition-colors">
+                                  {event.emoji && <span>{event.emoji}</span>}
+                                  {event.title}
+                                </h3>
+
+                                <p className="text-slate-500 dark:text-slate-405 text-xs leading-relaxed line-clamp-2 text-left">
+                                  {event.description || 'Te invitamos a participar en esta actividad con nosotros. ¡Esperamos ser de bendición para tu vida!'}
+                                </p>
+                              </div>
+
+                              <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-350">
+                                  <Clock size={14} className="text-amber-500" />
+                                  <span>{formatTime(event.start_time)}</span>
+                                </div>
+                                <span className="text-xs font-bold text-amber-600 dark:text-amber-500 group-hover:underline flex items-center gap-1">
+                                  Ver Detalles
+                                  <ArrowRight size={12} />
+                                </span>
+                              </div>
                             </div>
-
-                            <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100 line-clamp-1 flex items-center gap-1.5 group-hover:text-primary dark:text-white dark:group-hover:text-white transition-colors">
-                              {event.emoji && <span>{event.emoji}</span>}
-                              {event.title}
-                            </h3>
-
-                            <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed line-clamp-2">
-                              {event.description || 'Te invitamos a participar en esta actividad con nosotros. ¡Esperamos ser de bendición para tu vida!'}
-                            </p>
-                          </div>
-
-                          <div className="pt-2 border-t border-gray-100 dark:border-white/10 flex items-center gap-2 text-xs font-bold text-primary dark:text-white">
-                            <Clock size={14} className="text-gold" />
-                            <span>
-                              Hora: {formatTime(event.start_time)}
-                              {event.end_time && ` a ${formatTime(event.end_time)}`}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          </HoverCard>
+                        </StaggerItem>
+                      );
+                    })}
+                  </StaggerContainer>
                 ) : (
-                  <div className="text-center py-12 bg-gray-50/50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
-                    <Calendar className="mx-auto text-gray-300 dark:text-gray-600 dark:text-gray-300 mb-3" size={40} />
-                    <p className="text-gray-400 dark:text-gray-500 dark:text-gray-400 text-sm font-semibold">No hay eventos especiales programados próximamente.</p>
-                  </div>
+                  <ScrollReveal className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 shadow-xs">
+                    <Calendar className="mx-auto text-slate-300 dark:text-slate-700 mb-3 animate-pulse" size={40} />
+                    <p className="text-slate-400 dark:text-slate-500 text-sm font-semibold">No hay eventos especiales programados próximamente.</p>
+                  </ScrollReveal>
                 )}
               </section>
             );
@@ -1150,7 +1217,7 @@ const Home = () => {
               <div key={id} id="sermons">
                 {loadingSermons ? (
                   <div className="flex justify-center items-center py-20">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
                   </div>
                 ) : (
                   <SermonVideoGallery
@@ -1165,100 +1232,95 @@ const Home = () => {
           case 'system_birthdays':
             return (
               birthdayMembers.length > 0 && (
-                <section key={id} className="bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 py-20 border-y border-gray-150 dark:border-white/5 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-80 h-80 bg-gold/5 rounded-full blur-[90px] pointer-events-none" />
-                  <div className="absolute bottom-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[90px] pointer-events-none" />
+                <section key={id} className="bg-slate-50 dark:bg-slate-950 py-20 border-y border-slate-200 dark:border-white/5 relative overflow-hidden transition-colors duration-300">
+                  <div className="absolute top-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[90px] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[90px] pointer-events-none" />
 
                   <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 relative z-10">
-                    <div className="text-center max-w-2xl mx-auto space-y-4">
-                      <span className="text-xs font-bold text-gold uppercase tracking-widest bg-gold/10 px-4 py-1.5 rounded-full">
+                    <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
                         Celebración Congregacional
                       </span>
-                      <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary dark:text-white">
+                      <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
                         {title || 'Próximos Cumpleaños'}
                       </h2>
                       {subtitle && (
-                        <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+                        <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
                           {subtitle}
                         </p>
                       )}
-                    </div>
+                    </ScrollReveal>
 
-                    <div className="max-w-3xl mx-auto bg-gradient-to-r from-blue-900/5 via-gold/5 to-blue-900/5 border border-gold/20 rounded-3xl p-6 text-center backdrop-blur-xs shadow-3xs relative overflow-hidden">
+                    <ScrollReveal className="max-w-3xl mx-auto bg-gradient-to-r from-amber-500/5 via-amber-600/10 to-yellow-500/5 border border-amber-500/20 rounded-3xl p-6 text-center backdrop-blur-xs shadow-xs relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.03] flex items-center justify-center pointer-events-none">
-                        <Gift size={100} className="text-gold" />
+                        <Gift size={100} className="text-amber-500" />
                       </div>
-                      <p className="text-primary dark:text-gray-200 font-serif font-bold text-base md:text-lg leading-relaxed italic">
+                      <p className="text-slate-800 dark:text-gray-200 font-serif font-bold text-base md:text-lg leading-relaxed italic">
                         "¡Querida familia Jerusalén, felicitamos con mucho amor a cada uno de nuestros hermanos en su cumpleaños! Oramos para que el favor de Dios, su gracia inagotable y su perfecta paz colmen sus vidas en este nuevo año. ¡Que el Señor les bendiga grandemente!"
                       </p>
-                    </div>
+                    </ScrollReveal>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                       {birthdayMembers.map((member, mIdx) => (
-                        <motion.div
-                          key={mIdx}
-                          variants={fadeInUp}
-                          initial="initial"
-                          whileInView="animate"
-                          viewport={{ once: true }}
-                          whileHover={{ y: -4 }}
-                          className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md rounded-3xl border border-gray-150 dark:border-white/10 p-6 shadow-2xs dark:shadow-none hover:shadow-xl hover:border-gold/20 transition-all duration-300 relative flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="flex items-start gap-4">
-                              {member.photo_url ? (
-                                <img
-                                  src={member.photo_url}
-                                  alt={`${member.first_name} ${member.last_name}`}
-                                  className="w-16 h-16 rounded-full object-cover border-2 border-gold shadow-md shrink-0"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gold to-amber-500 text-white flex items-center justify-center font-serif font-extrabold text-2xl border-2 border-gold shadow-md shrink-0 select-none">
-                                  {member.first_name[0]}
-                                </div>
-                              )}
+                        <StaggerItem key={mIdx}>
+                          <HoverCard
+                            className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/10 p-6 shadow-sm dark:shadow-none hover:shadow-xl hover:border-amber-500/25 transition-all duration-300 relative flex flex-col justify-between h-full"
+                          >
+                            <div>
+                              <div className="flex items-start gap-4">
+                                {member.photo_url ? (
+                                  <img
+                                    src={member.photo_url}
+                                    alt={`${member.first_name} ${member.last_name}`}
+                                    className="w-16 h-16 rounded-full object-cover border-2 border-amber-500 shadow-md shrink-0 animate-pulse-slow"
+                                  />
+                                ) : (
+                                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-500 text-white flex items-center justify-center font-serif font-extrabold text-2xl border-2 border-amber-500 shadow-md shrink-0 select-none">
+                                    {member.first_name[0]}
+                                  </div>
+                                )}
 
-                              <div className="flex-grow text-left space-y-1">
-                                <h4 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100 leading-snug">
-                                  {member.first_name} {member.last_name}
-                                </h4>
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-gold">
-                                  <Calendar size={13} />
-                                  <span>{formatBirthdayDate(member.birth_date)}</span>
-                                </div>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary dark:text-white bg-primary/5 dark:bg-primary/20 rounded-md border border-primary/10 dark:border-primary/30">
-                                  <Gift size={10} className="text-gold" />
-                                  Cumple {member.ageTurning} años
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="border-t border-gray-100 dark:border-white/10 my-4" />
-
-                            {(() => {
-                              const verse = getMemberVerse(member.id);
-                              return (
-                                <div className="flex-grow flex flex-col justify-between">
-                                  <p className="text-gray-600 dark:text-gray-400 text-xs italic leading-relaxed font-sans font-light">
-                                    "{verse.text}"
-                                  </p>
-                                  <span className="text-[9px] font-bold text-primary dark:text-gray-400 uppercase tracking-widest mt-2 block text-right font-mono">
-                                    — {verse.ref}
+                                <div className="flex-grow text-left space-y-1">
+                                  <h4 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-100 leading-snug">
+                                    {member.first_name} {member.last_name}
+                                  </h4>
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500 dark:text-amber-400">
+                                    <Calendar size={13} />
+                                    <span>{formatBirthdayDate(member.birth_date)}</span>
+                                  </div>
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-850 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
+                                    <Gift size={11} className="text-amber-500 animate-bounce" />
+                                    Cumple {member.ageTurning} años
                                   </span>
                                 </div>
-                              );
-                            })()}
-                          </div>
-                        </motion.div>
+                              </div>
+
+                              <div className="border-t border-slate-100 dark:border-white/5 my-4" />
+
+                              {(() => {
+                                const verse = getMemberVerse(member.id);
+                                return (
+                                  <div className="flex-grow flex flex-col justify-between text-left">
+                                    <p className="text-slate-600 dark:text-slate-400 text-xs italic leading-relaxed font-sans font-light">
+                                      "{verse.text}"
+                                    </p>
+                                    <span className="text-[9px] font-bold text-amber-500 dark:text-amber-450 uppercase tracking-widest mt-2 block text-right font-mono">
+                                      — {verse.ref}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </HoverCard>
+                        </StaggerItem>
                       ))}
-                    </div>
+                    </StaggerContainer>
                   </div>
                 </section>
               )
             );
 
           case 'system_gallery':
-            // GALERIA DE IMAGENES DINAMICA CON SLIDER AUTO
             return (
               <ImageGallerySection
                 key={id}
@@ -1274,6 +1336,37 @@ const Home = () => {
       })}
 
       <TestimonialsSection />
+
+      {/* 10. FINAL CTA BANNER (FASE 3 - PTO 10) */}
+      <ScrollReveal className="max-w-5xl mx-auto px-4">
+        <div className="relative bg-gradient-to-tr from-[#0a1c40] via-[#071330] to-slate-900 border border-slate-850 rounded-3xl p-10 md:p-14 text-center overflow-hidden shadow-2xl">
+          <div className="absolute top-[-50px] left-[-50px] w-64 h-64 rounded-full bg-amber-500/5 blur-[90px] pointer-events-none" />
+          <div className="absolute bottom-[-50px] right-[-50px] w-80 h-80 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+          
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6 flex flex-col items-center">
+            <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/25 px-4 py-1.5 rounded-full font-extrabold uppercase tracking-widest">
+              Te Esperamos
+            </span>
+            <h2 className="text-3xl md:text-5xl font-serif font-bold text-white leading-tight">
+              ¿Nos visitas este domingo?
+            </h2>
+            <p className="text-slate-300 text-sm md:text-base font-light leading-relaxed max-w-lg">
+              Nos encantaría conocerte y adorar juntos al Señor. Hay un lugar especial reservado para ti y toda tu familia.
+            </p>
+            <div className="pt-4">
+              <MagneticButton>
+                <Link
+                  to="/nosotros#visit"
+                  className="px-10 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Planifica tu visita
+                  <ArrowRight size={16} className="text-white" />
+                </Link>
+              </MagneticButton>
+            </div>
+          </div>
+        </div>
+      </ScrollReveal>
     </div>
   );
 };

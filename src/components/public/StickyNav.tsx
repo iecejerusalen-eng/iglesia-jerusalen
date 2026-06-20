@@ -46,56 +46,64 @@ export default function StickyNav() {
   useEffect(() => {
     if (SECTIONS.length === 0) return;
 
-    let observer: IntersectionObserver | null = null;
-    const observedElements = new Set<string>();
+    let isScrolling = false;
+    const handleScroll = () => {
+      if (isScrolling) return;
+      isScrolling = true;
+      requestAnimationFrame(() => {
+        let currentSectionId = SECTIONS[0].id;
+        let maxVisibleHeight = 0;
+        let closestToCenterId = SECTIONS[0].id;
+        let minDistanceToCenter = Infinity;
 
-    const setupObserver = () => {
-      const missingElements = SECTIONS.filter(s => !observedElements.has(s.id));
-      if (missingElements.length === 0) return;
+        SECTIONS.forEach((section) => {
+          const element = document.getElementById(section.id);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            // Calculate how much of the element is visible in the viewport
+            const visibleTop = Math.max(0, rect.top);
+            const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+            const visibleHeight = Math.max(0, visibleBottom - visibleTop);
 
-      if (!observer) {
-        const observerOptions = {
-          root: null,
-          rootMargin: '-35% 0px -35% 0px',
-          threshold: 0,
-        };
+            // Distance of the element's center to the viewport center
+            const elementCenter = rect.top + rect.height / 2;
+            const distanceToCenter = Math.abs(elementCenter - window.innerHeight / 2);
 
-        const observerCallback = (entries: IntersectionObserverEntry[]) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveSection(entry.target.id);
+            if (visibleHeight > maxVisibleHeight) {
+              maxVisibleHeight = visibleHeight;
+              currentSectionId = section.id;
             }
-          });
-        };
 
-        observer = new IntersectionObserver(observerCallback, observerOptions);
-      }
+            if (distanceToCenter < minDistanceToCenter) {
+              minDistanceToCenter = distanceToCenter;
+              closestToCenterId = section.id;
+            }
+          }
+        });
 
-      missingElements.forEach((section) => {
-        const element = document.getElementById(section.id);
-        if (element) {
-          observer?.observe(element);
-          observedElements.add(section.id);
+        // Use the section with the maximum visible height if it's significant, otherwise closest to center
+        const activeId = maxVisibleHeight > 100 ? currentSectionId : closestToCenterId;
+
+        if (activeId) {
+          setActiveSection(activeId);
         }
+        isScrolling = false;
       });
     };
 
-    // Initial setup attempt
-    setupObserver();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
 
-    // Check periodically for missing elements (e.g. loaded asynchronously)
-    const intervalId = setInterval(() => {
-      setupObserver();
-      if (SECTIONS.every(s => observedElements.has(s.id))) {
-        clearInterval(intervalId);
-      }
-    }, 250);
+    // Check periodically to ensure dynamically loaded sections are captured
+    const timeoutId = setTimeout(handleScroll, 100);
+    const intervalId = setInterval(handleScroll, 500);
 
     return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      clearTimeout(timeoutId);
       clearInterval(intervalId);
-      if (observer) {
-        observer.disconnect();
-      }
     };
   }, [cleanPath, SECTIONS]);
 
