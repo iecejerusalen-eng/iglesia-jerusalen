@@ -83,11 +83,11 @@ export default function ChurchJourneySection() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         
-        <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-          <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full border border-amber-200 dark:border-amber-900/30">
+        <div className="text-center max-w-2xl mx-auto mb-20 flex flex-col items-center">
+          <span className="inline-block text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full border border-amber-200 dark:border-amber-900/30 mb-6">
             Nuestro Propósito
           </span>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
+          <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-4">
             El Viaje de la Fe
           </h2>
           <p className="text-slate-800 dark:text-slate-300 text-base md:text-lg leading-relaxed">

@@ -156,6 +156,13 @@ const Home = () => {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [birthdayMembers, setBirthdayMembers] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    members: 350,
+    baptized: 180,
+    cells: 18,
+    kids: 120,
+    youth: 80
+  });
 
   useEffect(() => {
     const fetchActiveSong = async () => {
@@ -188,7 +195,51 @@ const Home = () => {
     fetchUpcomingEvents();
     fetchBirthdayMembers();
     fetchDynamicPageContent();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const db = await getDb();
+      let allMembers = await db.getAll('local_members');
+      allMembers = allMembers.filter(m => !m.deleted_at);
+
+      if (allMembers.length === 0) {
+        const { data, error } = await supabase.from('members').select('id, birth_date, baptism_date').is('deleted_at', null);
+        if (!error && data) allMembers = data;
+      }
+
+      const { count: cellsCount } = await supabase.from('cells').select('id', { count: 'exact', head: true });
+
+      let baptizedCount = 0;
+      let kidsCount = 0;
+      let youthCount = 0;
+
+      const currentYear = new Date().getFullYear();
+
+      allMembers.forEach(m => {
+        if (m.baptism_date) baptizedCount++;
+        if (m.birth_date) {
+          const bYear = Number(m.birth_date.split('-')[0]);
+          if (!isNaN(bYear)) {
+            const age = currentYear - bYear;
+            if (age <= 12) kidsCount++;
+            else if (age > 12 && age <= 25) youthCount++;
+          }
+        }
+      });
+
+      setStats({
+        members: allMembers.length || 350,
+        baptized: baptizedCount || 180,
+        cells: cellsCount || 18,
+        kids: kidsCount || 120,
+        youth: youthCount || 80
+      });
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+    }
+  };
 
   const fetchDynamicPageContent = async () => {
     try {
@@ -746,10 +797,12 @@ const Home = () => {
                   {/* 2. STATS FRAP (FASE 3 - PTO 2) */}
                   <div className="bg-slate-50 dark:bg-slate-950 py-10 transition-colors duration-300 relative z-10">
                     <AnimeZoomIn className="max-w-7xl mx-auto px-4 md:px-8">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                        <AnimatedCounter value={350} text="Familias Comprometidas" />
-                        <AnimatedCounter value={18} text="Años Edificando Vidas" />
-                        <AnimatedCounter value={120} text="Niños Formados en Fe" />
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+                        <AnimatedCounter value={stats.members} text="Miembros en la Familia" />
+                        <AnimatedCounter value={stats.baptized} text="Creyentes Bautizados" />
+                        <AnimatedCounter value={stats.cells} text="Grupos Familiares (Células)" />
+                        <AnimatedCounter value={stats.kids} text="Niños Formados en Fe" />
+                        <AnimatedCounter value={stats.youth} text="Jóvenes Comprometidos" />
                       </div>
                     </AnimeZoomIn>
                   </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Play, Calendar, User, ArrowRight } from 'lucide-react';
 import type { Sermon } from '../../types';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../animations/AnimeWrappers';
@@ -19,17 +20,12 @@ const getYoutubeId = (url: string | null) => {
 export default function SermonVideoGallery({ sermons, title, subtitle }: SermonVideoGalleryProps) {
   const [activeSermon, setActiveSermon] = useState<Sermon | null>(sermons[0] || null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const navigate = useNavigate();
 
   if (!sermons || sermons.length === 0) return null;
 
   const handlePlay = (sermon: Sermon) => {
-    setActiveSermon(sermon);
-    setIsPlaying(false); // reset state so they can click play on the thumbnail
-    setTimeout(() => {
-      setIsPlaying(true);
-    }, 100);
-    // Scroll to the top of the gallery smoothly
-    document.getElementById('sermon-gallery-top')?.scrollIntoView({ behavior: 'smooth' });
+    navigate(`/predicas/${sermon.id}`);
   };
 
   const activeVideoId = activeSermon ? getYoutubeId(activeSermon.youtube_url) : null;
@@ -46,9 +42,12 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div className="space-y-3">
             <AnimeFadeUp>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
-                {title || 'Últimas Prédicas'}
-              </h2>
+              <Link to="/predicas" className="group flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+                  {title || 'Últimas Prédicas'}
+                </h2>
+                <ArrowRight className="hidden sm:block text-amber-600 dark:text-amber-500 transform group-hover:translate-x-1 transition-transform" size={24} />
+              </Link>
             </AnimeFadeUp>
             {subtitle && (
               <AnimeFadeUp delay={100}>
@@ -58,7 +57,14 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
               </AnimeFadeUp>
             )}
           </div>
-          <AnimeFadeUp delay={200}>
+          <AnimeFadeUp delay={200} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Link
+              to="/predicas"
+              className="text-primary dark:text-white hover:text-amber-600 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
+            >
+              Ver Todas
+              <ArrowRight size={16} />
+            </Link>
             <a
               href="https://youtube.com" // Update with actual channel link if available
               target="_blank"
@@ -118,9 +124,11 @@ export default function SermonVideoGallery({ sermons, title, subtitle }: SermonV
                             <span className="inline-block px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-extrabold uppercase tracking-wider border border-amber-500/20">
                               Prédica Destacada
                             </span>
-                            <h3 className="text-xl md:text-3xl font-serif font-bold text-white text-left">
-                              {activeSermon.title}
-                            </h3>
+                            <Link to={`/predicas/${activeSermon.id}`} className="hover:opacity-80 transition-opacity">
+                              <h3 className="text-xl md:text-3xl font-serif font-bold text-white text-left hover:text-amber-500 transition-colors">
+                                {activeSermon.title}
+                              </h3>
+                            </Link>
                             <div className="flex flex-wrap items-center gap-4 text-slate-300 text-xs md:text-sm font-medium">
                               <span className="flex items-center gap-1.5">
                                 <User size={15} className="text-amber-500" />
