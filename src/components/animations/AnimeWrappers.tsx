@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-// @ts-ignore
-import * as animePkg from 'animejs';
-const anime = (animePkg as any).default || animePkg;
+import anime from 'animejs';
 
 // ==========================================
 // 1. ANIME.JS REVEAL COMPONENT

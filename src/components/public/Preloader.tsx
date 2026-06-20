@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import logo from '../../assets/Jerusalén/solo logo colorido.svg';
-// @ts-ignore
-import * as animePkg from 'animejs';
-const anime = (animePkg as any).default || animePkg;
+import anime from 'animejs';
 
 export default function Preloader() {
   const [show, setShow] = useState(true);

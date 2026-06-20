@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react';
-// @ts-ignore
-import * as animePkg from 'animejs';
-const anime = (animePkg as any).default || animePkg;
+import anime from 'animejs';
 
 export default function MarqueeText() {
   const phrase = "✦ SERVICIO DOMINICAL 10:00 AM ✦ ESTUDIO BÍBLICO JUEVES 7:00 PM ✦ REUNIÓN DE JÓVENES SÁBADOS ✦ ";
