@@ -5,6 +5,7 @@ import Footer from '../components/common/Footer';
 import Preloader from '../components/public/Preloader';
 import StickyNav from '../components/public/StickyNav';
 import MobileBottomNav from '../components/common/MobileBottomNav';
+import SearchPalette from '../components/public/SearchPalette';
 
 const PublicLayout = () => {
   return (
@@ -18,8 +19,10 @@ const PublicLayout = () => {
       </main>
       <Footer />
       <MobileBottomNav />
+      <SearchPalette />
     </div>
   );
 };
 
 export default PublicLayout;
+

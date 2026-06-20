@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import { slideInRight, staggerContainer, fadeInUp } from '../../utils/animations';
 import ThemeToggle from './ThemeToggle';
+import { useSearchStore } from '../../store/useSearchStore';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -267,8 +268,27 @@ const Navigation = () => {
           </li>
         </ul>
 
-        {/* Acciones Derecha (ThemeToggle) */}
-        <div className="flex items-center">
+        {/* Acciones Derecha (ThemeToggle & Search) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => useSearchStore.getState().open()}
+            className={`p-2 rounded-lg transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-1.5 cursor-pointer ${
+              isTransparent 
+                ? 'text-white hover:text-gold' 
+                : 'text-primary dark:text-gray-200 hover:text-accent-red dark:hover:text-gold'
+            }`}
+            title="Buscar (Ctrl+K)"
+            aria-label="Buscar en la web"
+          >
+            <Search size={20} />
+            <kbd className={`hidden lg:inline-flex items-center select-none rounded border px-1.5 font-mono text-[10px] font-medium transition-colors ${
+              isTransparent
+                ? 'bg-white/10 border-white/20 text-white/80'
+                : 'bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400'
+            }`}>
+              <span>Ctrl K</span>
+            </kbd>
+          </button>
           <ThemeToggle />
         </div>
       </div>
@@ -297,7 +317,17 @@ const Navigation = () => {
               <div>
                 <div className="flex justify-between items-center mb-10">
                   <span className="font-serif font-bold text-xl text-primary dark:text-white">Menú</span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        closeMenu();
+                        useSearchStore.getState().open();
+                      }}
+                      className="text-primary dark:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      aria-label="Buscar en la web"
+                    >
+                      <Search size={22} />
+                    </button>
                     <ThemeToggle />
                     <button
                       onClick={closeMenu}

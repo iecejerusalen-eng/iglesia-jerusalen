@@ -4,8 +4,8 @@ import { sql } from '../../config/localDb';
 import type { Schedule, Sermon, Event as DbEvent } from '../../types';
 import fachadaImage from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import { Link } from 'react-router-dom';
-import { 
-  Heart, Calendar, ArrowRight, Sparkles, 
+import {
+  Heart, Calendar, ArrowRight, Sparkles,
   Clock, Eye, EyeOff, Music, Tv, Gift
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -67,11 +67,13 @@ const DEFAULT_SECTIONS = [
   { id: 'home_schedules', section_type: 'system_schedules', name: 'Horarios de Reunión', title: 'Horarios de Reunión', subtitle: 'Te invitamos a acompañarnos en nuestras diversas actividades de la semana. ¡Nuestras puertas están abiertas!' },
   { id: 'home_events', section_type: 'system_events', name: 'Próximos Eventos', title: 'Próximos Eventos', subtitle: 'Entérate de las próximas actividades especiales, conferencias y reuniones planificadas en nuestra iglesia.' },
   { id: 'home_sermons', section_type: 'system_sermons', name: 'Últimas Prédicas', title: 'Últimas Prédicas', subtitle: 'Escucha y comparte los últimos mensajes y sermones dominicales de nuestros pastores.' },
-  { id: 'home_gallery', section_type: 'system_gallery', name: 'Galería de Imágenes', title: 'Nuestra Comunidad en Imágenes', subtitle: 'Momentos especiales de adoración, comunión y servicio en la Iglesia Jerusalén.', content_blocks: [
-    { id: 'slide_1', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', caption: 'Alabanza y adoración congregacional' },
-    { id: 'slide_2', url: 'https://images.unsplash.com/photo-1489641499538-be02c255c552?auto=format&fit=crop&q=80&w=1200', caption: 'Tiempo de enseñanza de la palabra de Dios' },
-    { id: 'slide_3', url: 'https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&q=80&w=1200', caption: 'Comunión fraternal de los miembros' }
-  ] },
+  {
+    id: 'home_gallery', section_type: 'system_gallery', name: 'Galería de Imágenes', title: 'Nuestra Comunidad en Imágenes', subtitle: 'Momentos especiales de adoración, comunión y servicio en la Iglesia Jerusalén.', content_blocks: [
+      { id: 'slide_1', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', caption: 'Alabanza y adoración congregacional' },
+      { id: 'slide_2', url: 'https://images.unsplash.com/photo-1489641499538-be02c255c552?auto=format&fit=crop&q=80&w=1200', caption: 'Tiempo de enseñanza de la palabra de Dios' },
+      { id: 'slide_3', url: 'https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&q=80&w=1200', caption: 'Comunión fraternal de los miembros' }
+    ]
+  },
   { id: 'home_birthdays', section_type: 'system_birthdays', name: 'Cumpleaños de la Semana', title: 'Cumpleaños de la Semana', subtitle: 'Celebramos la vida de nuestros hermanos que cumplen años en esta semana. ¡Que Dios les bendiga!' },
   { id: 'home_donations', section_type: 'custom', name: 'Llamado a Ofrendas / Donativos', title: 'Apoya la Obra de Dios', subtitle: 'Tus diezmos, ofrendas y donaciones hacen posible que sigamos proclamando el evangelio.', content_blocks: [] }
 ];
@@ -155,17 +157,17 @@ const Home = () => {
   const isBirthdayInNext7Days = (birthDateStr: string) => {
     if (!birthDateStr) return false;
     const [, bMonth, bDay] = birthDateStr.split('-').map(Number);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const next7Days = new Date(today);
     next7Days.setDate(today.getDate() + 7);
     next7Days.setHours(23, 59, 59, 999);
-    
+
     const currentYear = today.getFullYear();
     const yearsToCheck = [currentYear - 1, currentYear, currentYear + 1];
-    
+
     for (const year of yearsToCheck) {
       const bday = new Date(year, bMonth - 1, bDay);
       bday.setHours(12, 0, 0, 0); // avoid timezone shifts
@@ -173,24 +175,24 @@ const Home = () => {
         return true;
       }
     }
-    
+
     return false;
   };
 
   const calculateAgeTurning = (birthDateStr: string) => {
     if (!birthDateStr) return 0;
     const [bYear, bMonth, bDay] = birthDateStr.split('-').map(Number);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const next7Days = new Date(today);
     next7Days.setDate(today.getDate() + 7);
     next7Days.setHours(23, 59, 59, 999);
-    
+
     const currentYear = today.getFullYear();
     const yearsToCheck = [currentYear - 1, currentYear, currentYear + 1];
-    
+
     for (const year of yearsToCheck) {
       const bday = new Date(year, bMonth - 1, bDay);
       bday.setHours(12, 0, 0, 0);
@@ -198,24 +200,24 @@ const Home = () => {
         return year - bYear;
       }
     }
-    
+
     return currentYear - bYear;
   };
 
   const getBirthdayTimestampInWindow = (birthDateStr: string) => {
     if (!birthDateStr) return 0;
     const [, bMonth, bDay] = birthDateStr.split('-').map(Number);
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const next7Days = new Date(today);
     next7Days.setDate(today.getDate() + 7);
     next7Days.setHours(23, 59, 59, 999);
-    
+
     const currentYear = today.getFullYear();
     const yearsToCheck = [currentYear - 1, currentYear, currentYear + 1];
-    
+
     for (const year of yearsToCheck) {
       const bday = new Date(year, bMonth - 1, bDay);
       bday.setHours(12, 0, 0, 0);
@@ -244,7 +246,7 @@ const Home = () => {
         if (error) throw error;
         data = dbData || [];
       }
-      
+
       const filtered = data
         .filter((m: any) => isBirthdayInNext7Days(m.birth_date))
         .map((m: any) => ({
@@ -434,7 +436,7 @@ const Home = () => {
                     `}</style>
 
                     <div className="max-w-7xl mx-auto space-y-6">
-                      
+
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2 bg-red-600/10 border border-red-500/25 px-4 py-1.5 rounded-full">
@@ -458,7 +460,7 @@ const Home = () => {
                       </div>
 
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                        
+
                         <div className="lg:col-span-2 flex flex-col justify-between space-y-4">
                           <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
                             {liveYtId ? (
@@ -489,7 +491,7 @@ const Home = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <style>{`
                             @keyframes marquee {
                               0% { transform: translateX(100%); }
@@ -523,9 +525,8 @@ const Home = () => {
                                 {activeSong?.has_chords && (
                                   <button
                                     onClick={() => setShowLiveChords(!showLiveChords)}
-                                    className={`p-1 rounded cursor-pointer transition-all ${
-                                      showLiveChords ? 'bg-amber-600/20 text-amber-400 border border-amber-500/35' : 'bg-slate-800 text-slate-400 border border-slate-700'
-                                    }`}
+                                    className={`p-1 rounded cursor-pointer transition-all ${showLiveChords ? 'bg-amber-600/20 text-amber-400 border border-amber-500/35' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                      }`}
                                     title={showLiveChords ? 'Ocultar acordes' : 'Mostrar acordes'}
                                   >
                                     {showLiveChords ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -576,43 +577,43 @@ const Home = () => {
                 <section id="hero" key={id} className="relative min-h-[95vh] flex items-center justify-center bg-[#071330] text-white overflow-hidden py-24">
                   <FloatingElements />
                   <div className="absolute inset-0 z-0 overflow-hidden">
-                    <motion.img 
+                    <motion.img
                       initial={{ scale: 1.05 }}
-                      animate={{ 
+                      animate={{
                         scale: [1.05, 1.12, 1.05],
                         x: [0, 10, -10, 0],
                         y: [0, -8, 8, 0]
                       }}
-                      transition={{ 
-                        duration: 40, 
-                        ease: 'linear', 
+                      transition={{
+                        duration: 40,
+                        ease: 'linear',
                         repeat: Infinity,
                         repeatType: 'reverse'
                       }}
-                      src={fachadaImage} 
+                      src={fachadaImage}
                       alt="Fachada de la Iglesia Jerusalén"
                       className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05]"
                     />
-                    
-                    <motion.div 
-                      animate={{ 
-                        x: [-40, 80, -40], 
-                        y: [-20, 60, -20] 
+
+                    <motion.div
+                      animate={{
+                        x: [-40, 80, -40],
+                        y: [-20, 60, -20]
                       }}
                       transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
                       className="absolute top-1/4 left-1/5 w-[350px] h-[350px] rounded-full bg-blue-500/15 blur-[120px] pointer-events-none"
                     />
-                    <motion.div 
-                      animate={{ 
-                        x: [40, -60, 40], 
-                        y: [30, -40, 30] 
+                    <motion.div
+                      animate={{
+                        x: [40, -60, 40],
+                        y: [30, -40, 30]
                       }}
                       transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
                       className="absolute bottom-1/4 right-1/5 w-[400px] h-[400px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none"
                     />
 
-                    <div 
-                      className="absolute inset-0 pointer-events-none" 
+                    <div
+                      className="absolute inset-0 pointer-events-none"
                       style={{ backgroundImage: 'radial-gradient(circle, transparent 20%, rgba(7, 19, 48, 0.72) 60%, rgba(7, 19, 48, 0.98) 100%)' }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#071330] via-[#071330]/65 to-transparent pointer-events-none" />
@@ -624,15 +625,15 @@ const Home = () => {
                     animate="animate"
                     className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center"
                   >
-                    <motion.div 
+                    <motion.div
                       variants={fadeInUp}
                       className="inline-flex items-center gap-2 bg-gradient-to-r from-gold/15 to-amber-500/15 text-gold border border-gold/45 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-gold/5 backdrop-blur-xs select-none"
                     >
                       <Sparkles size={14} className="text-gold animate-spin-slow" />
                       <span>{subtitle || 'Una Casa de Restauración y Bendición'}</span>
                     </motion.div>
-                    
-                    <motion.h1 
+
+                    <motion.h1
                       variants={fadeInUp}
                       className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.08] max-w-4xl mx-auto drop-shadow-md"
                     >
@@ -652,14 +653,14 @@ const Home = () => {
                       </div>
                     ) : (
                       <>
-                        <motion.p 
+                        <motion.p
                           variants={fadeInUp}
                           className="text-slate-200 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-light font-sans tracking-wide"
                         >
-                          Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra, ministrar a las familias y servir a nuestra comunidad.
+                          Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
                         </motion.p>
 
-                        <motion.div 
+                        <motion.div
                           variants={fadeInUp}
                           className="flex flex-col sm:flex-row gap-4 justify-center pt-6 w-full sm:w-auto"
                         >
@@ -667,28 +668,28 @@ const Home = () => {
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.98 }}
                           >
-                          <MagneticButton>
-                            <Link
-                              to="/nosotros"
-                              className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-gold/25 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
-                            >
-                              Conócenos
-                            </Link>
-                          </MagneticButton>
+                            <MagneticButton>
+                              <Link
+                                to="/nosotros"
+                                className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-gold/25 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
+                              >
+                                Conócenos
+                              </Link>
+                            </MagneticButton>
                           </motion.div>
                           <motion.div
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.98 }}
                           >
-                          <MagneticButton>
-                            <a
-                              href="#schedules"
-                              className="w-full sm:w-auto px-10 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-2xl font-bold backdrop-blur-md transition-all text-sm flex items-center justify-center gap-2 shadow-md"
-                            >
-                              Horarios de Servicio
-                              <ArrowRight size={16} className="text-gold" />
-                            </a>
-                          </MagneticButton>
+                            <MagneticButton>
+                              <a
+                                href="#schedules"
+                                className="w-full sm:w-auto px-10 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-2xl font-bold backdrop-blur-md transition-all text-sm flex items-center justify-center gap-2 shadow-md"
+                              >
+                                Horarios de Servicio
+                                <ArrowRight size={16} className="text-gold" />
+                              </a>
+                            </MagneticButton>
                           </motion.div>
                         </motion.div>
                       </>
@@ -720,7 +721,7 @@ const Home = () => {
                     </section>
                   ) : (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-12">
-                      <motion.div 
+                      <motion.div
                         variants={fadeInUp}
                         initial="initial"
                         whileInView="animate"
@@ -733,14 +734,14 @@ const Home = () => {
                         </p>
                       </motion.div>
 
-                      <motion.div 
+                      <motion.div
                         variants={staggerContainer}
                         initial="initial"
                         whileInView="animate"
                         viewport={{ once: true, amount: 0.15 }}
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
                       >
-                        <motion.div 
+                        <motion.div
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
                         >
@@ -756,7 +757,7 @@ const Home = () => {
                           <span className="text-[10px] font-bold text-accent-red dark:text-red-400 uppercase tracking-wider mt-6 block">Juan 3:16</span>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
                         >
@@ -772,7 +773,7 @@ const Home = () => {
                           <span className="text-[10px] font-bold text-gold dark:text-yellow-400 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
                         >
@@ -788,7 +789,7 @@ const Home = () => {
                           <span className="text-[10px] font-bold text-accent-blue dark:text-blue-400 uppercase tracking-wider mt-6 block">Santiago 5:14-15</span>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                           variants={fadeInUp}
                           className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs dark:shadow-none hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col justify-between"
                         >
@@ -845,8 +846,8 @@ const Home = () => {
                             Tus diezmos, ofrendas y donaciones hacen posible que sigamos proclamando el evangelio de Cristo y ayudando a los necesitados en nuestra comunidad local y misiones globales.
                           </p>
                           <div className="pt-2">
-                            <Link 
-                              to="/donations" 
+                            <Link
+                              to="/donations"
                               className="px-8 py-3.5 bg-gold hover:bg-yellow-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-sm inline-flex items-center gap-2 cursor-pointer"
                             >
                               Diezmos y Ofrendas en Línea
@@ -879,7 +880,7 @@ const Home = () => {
           case 'system_schedules': {
             const DAYS_ORDER = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
             const schedulesByDay: Record<string, Schedule[]> = {};
-            
+
             schedules.forEach((sch) => {
               const day = sch.day || 'Otros';
               if (!schedulesByDay[day]) {
@@ -918,7 +919,7 @@ const Home = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                      
+
                       <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sortedDays
                           .filter((day) => day !== 'Domingo')
@@ -981,7 +982,7 @@ const Home = () => {
                                 {schedulesByDay['Domingo'].map((sch) => (
                                   <div key={sch.id} className="relative pl-6 border-l-2 border-gold/30 last:border-l-transparent pb-1">
                                     <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-gold shadow-xs shadow-gold/50" />
-                                    
+
                                     <div className="space-y-1">
                                       <div className="flex justify-between items-center gap-2 flex-wrap">
                                         <h5 className="font-serif font-bold text-base text-slate-100">
@@ -1073,15 +1074,15 @@ const Home = () => {
                 ) : upcomingEvents.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {upcomingEvents.map((event) => (
-                      <div 
+                      <div
                         key={event.id}
                         className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-2xs dark:shadow-none hover:shadow-lg transition-all duration-300 flex flex-col group"
                       >
                         {event.cover_image_url ? (
                           <div className="w-full h-44 overflow-hidden relative">
-                            <img 
-                              src={event.cover_image_url} 
-                              alt={event.title} 
+                            <img
+                              src={event.cover_image_url}
+                              alt={event.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
@@ -1108,7 +1109,7 @@ const Home = () => {
                               {event.emoji && <span>{event.emoji}</span>}
                               {event.title}
                             </h3>
-                            
+
                             <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed line-clamp-2">
                               {event.description || 'Te invitamos a participar en esta actividad con nosotros. ¡Esperamos ser de bendición para tu vida!'}
                             </p>
@@ -1142,10 +1143,10 @@ const Home = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                   </div>
                 ) : (
-                  <SermonVideoGallery 
-                    sermons={sermons} 
-                    title={title} 
-                    subtitle={subtitle} 
+                  <SermonVideoGallery
+                    sermons={sermons}
+                    title={title}
+                    subtitle={subtitle}
                   />
                 )}
               </div>
@@ -1184,8 +1185,8 @@ const Home = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                       {birthdayMembers.map((member, mIdx) => (
-                        <motion.div 
-                           key={mIdx}
+                        <motion.div
+                          key={mIdx}
                           variants={fadeInUp}
                           initial="initial"
                           whileInView="animate"
@@ -1196,9 +1197,9 @@ const Home = () => {
                           <div>
                             <div className="flex items-start gap-4">
                               {member.photo_url ? (
-                                <img 
-                                  src={member.photo_url} 
-                                  alt={`${member.first_name} ${member.last_name}`} 
+                                <img
+                                  src={member.photo_url}
+                                  alt={`${member.first_name} ${member.last_name}`}
                                   className="w-16 h-16 rounded-full object-cover border-2 border-gold shadow-md shrink-0"
                                 />
                               ) : (
@@ -1249,7 +1250,7 @@ const Home = () => {
           case 'system_gallery':
             // GALERIA DE IMAGENES DINAMICA CON SLIDER AUTO
             return (
-              <ImageGallerySection 
+              <ImageGallerySection
                 key={id}
                 title={title || ''}
                 subtitle={subtitle || ''}
