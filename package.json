@@ -25,6 +25,7 @@
     "@tiptap/react": "^3.26.0",
     "@tiptap/starter-kit": "^3.26.0",
     "@types/dompurify": "^3.0.5",
+    "animate.css": "^4.1.1",
     "cloudinary": "^2.10.0",
     "cmdk": "^1.1.1",
     "dompurify": "^3.4.8",

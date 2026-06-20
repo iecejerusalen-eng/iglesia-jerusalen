@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useRef, Children, cloneElement, isValidElement } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 // ==========================================
@@ -183,5 +183,153 @@ export const ParallaxImage = ({
         className={`w-full h-full object-cover ${className}`}
       />
     </div>
+  );
+};
+
+// ==========================================
+// 5. TEXT REVEAL COMPONENT
+// ==========================================
+interface TextRevealProps {
+  text: string;
+  mode?: 'words' | 'chars';
+  duration?: number;
+  delay?: number;
+  stagger?: number;
+  className?: string;
+}
+
+export const TextReveal = ({
+  text,
+  mode = 'words',
+  duration = 0.5,
+  delay = 0,
+  stagger = 0.08,
+  className = ''
+}: TextRevealProps) => {
+  const parts = mode === 'words' ? text.split(' ') : text.split('');
+  
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: stagger,
+        delayChildren: delay
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 12,
+      filter: 'blur(3px)'
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      transition: {
+        duration,
+        ease: [0.16, 1, 0.3, 1] as any
+      }
+    }
+  };
+
+  return (
+    <motion.span
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-10%' }}
+      className={`inline-block ${className}`}
+    >
+      {parts.map((part, index) => (
+        <motion.span
+          key={index}
+          variants={itemVariants}
+          className="inline-block"
+          style={{ marginRight: mode === 'words' ? '0.25em' : '0em' }}
+        >
+          {part === ' ' ? '\u00A0' : part}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+};
+
+// ==========================================
+// 6. SVG DRAW REVEAL COMPONENT
+// ==========================================
+interface SVGDrawRevealProps {
+  children: ReactNode;
+  duration?: number;
+  delay?: number;
+  className?: string;
+  viewBox?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+}
+
+export const SVGDrawReveal = ({
+  children,
+  duration = 1.5,
+  delay = 0,
+  className = '',
+  viewBox = '0 0 100 100',
+  strokeColor = 'currentColor',
+  strokeWidth = 2
+}: SVGDrawRevealProps) => {
+  const pathVariants = {
+    hidden: {
+      pathLength: 0,
+      opacity: 0
+    },
+    visible: {
+      pathLength: 1,
+      opacity: 1,
+      transition: {
+        pathLength: { duration, delay, ease: 'easeInOut' },
+        opacity: { duration: 0.2, delay }
+      }
+    }
+  };
+
+  // Helper function to recursively add pathVariants to svg shapes
+  const renderChildren = (node: ReactNode): ReactNode => {
+    return Children.map(node, (child) => {
+      if (!isValidElement(child)) return child;
+
+      const type = child.type as string;
+      const props = child.props as any;
+
+      if (['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(type)) {
+        return cloneElement(child, {
+          variants: pathVariants,
+          stroke: props.stroke || strokeColor,
+          strokeWidth: props.strokeWidth || strokeWidth,
+          fill: props.fill || 'none'
+        } as any);
+      }
+
+      if (props.children) {
+        return cloneElement(child, {
+          children: renderChildren(props.children)
+        } as any);
+      }
+
+      return child;
+    });
+  };
+
+  return (
+    <motion.svg
+      viewBox={viewBox}
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-10%' }}
+    >
+      {renderChildren(children)}
+    </motion.svg>
   );
 };
