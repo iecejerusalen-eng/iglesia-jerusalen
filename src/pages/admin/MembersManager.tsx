@@ -8,6 +8,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { logAuditEvent } from '../../utils/auditLogger';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
   Plus, Search, User, Award, 
@@ -610,6 +611,16 @@ const MembersManager = () => {
         memberPayload
       );
 
+      await logAuditEvent(
+        editingMember ? 'UPDATE' : 'CREATE',
+        'members',
+        memberId,
+        {
+          name: `${memberPayload.first_name} ${memberPayload.last_name}`,
+          dni: memberPayload.dni
+        }
+      );
+
       // If online, push queue to Supabase immediately
       if (syncStore.isOnline) {
         await syncStore.syncOfflineQueue();
@@ -646,6 +657,16 @@ const MembersManager = () => {
         id,
         'DELETE',
         { deleted_at: new Date().toISOString() }
+      );
+
+      const targetMember = members.find(m => m.id === id);
+      await logAuditEvent(
+        'DELETE',
+        'members',
+        id,
+        {
+          name: targetMember ? `${targetMember.first_name} ${targetMember.last_name}` : 'Unknown member'
+        }
       );
 
       if (syncStore.isOnline) {

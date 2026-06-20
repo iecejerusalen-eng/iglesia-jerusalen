@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { ADMIN_MODULES, MODULE_GROUPS } from '../../config/adminModules';
+import { logAuditEvent } from '../../utils/auditLogger';
 
 const ROLES: { id: UserRole; label: string }[] = [
   { id: 'guest', label: 'Invitado (Guest)' },
@@ -111,7 +112,14 @@ const UsersManager = () => {
 
       if (error) throw error;
 
+      const targetUser = profiles.find(p => p.id === userId);
       const linkedMember = members.find(m => m.id === memberId);
+      await logAuditEvent('UPDATE', 'profiles', userId, {
+        action_detail: 'link_crm_member',
+        member_id: memberId,
+        member_name: linkedMember ? `${linkedMember.first_name} ${linkedMember.last_name}` : 'Unknown',
+        user_email: targetUser?.email || null
+      });
 
       setProfiles(prev =>
         prev.map(p => p.id === userId ? {
@@ -146,6 +154,13 @@ const UsersManager = () => {
         .eq('id', userId);
 
       if (error) throw error;
+
+      const targetUser = profiles.find(p => p.id === userId);
+      await logAuditEvent('UPDATE', 'profiles', userId, {
+        action_detail: 'unlink_crm_member',
+        old_member_id: targetUser?.member_id || null,
+        user_email: targetUser?.email || null
+      });
 
       setProfiles(prev =>
         prev.map(p => p.id === userId ? { ...p, member_id: null, member: null } : p)
@@ -193,6 +208,13 @@ const UsersManager = () => {
         .eq('id', userId);
 
       if (error) throw error;
+
+      const targetUser = profiles.find(p => p.id === userId);
+      await logAuditEvent('ROLE_CHANGE', 'profiles', userId, {
+        target_email: targetUser?.email || null,
+        new_role: newRole,
+        old_role: targetUser?.role || null
+      });
 
       setProfiles(prev => 
         prev.map(p => p.id === userId ? { ...p, role: newRole } : p)

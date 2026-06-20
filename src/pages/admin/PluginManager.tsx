@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
+import { logAuditEvent } from '../../utils/auditLogger';
 
 interface PluginItem {
   id: string;
@@ -69,6 +70,11 @@ export default function PluginManager() {
 
       if (error) throw error;
       
+      await logAuditEvent('PLUGIN_TOGGLE', 'system_plugins', plugin.id, {
+        name: plugin.name,
+        status: nextStatus
+      });
+      
       setPlugins(prev => prev.map(p => p.id === plugin.id ? { ...p, status: nextStatus } : p));
       toast.success(`Extensión "${plugin.name}" ${nextStatus === 'active' ? 'activada' : 'desactivada'} con éxito`);
     } catch (err) {
@@ -97,6 +103,12 @@ export default function PluginManager() {
 
       if (error) throw error;
       
+      await logAuditEvent('UPDATE', 'system_plugins', selectedPlugin.id, {
+        name: selectedPlugin.name,
+        action_detail: 'save_settings',
+        settings: parsedSettings
+      });
+      
       setPlugins(prev => prev.map(p => p.id === selectedPlugin.id ? { ...p, settings: parsedSettings } : p));
       toast.success('Configuración de extensión guardada');
       setIsSettingsOpen(false);
@@ -114,6 +126,10 @@ export default function PluginManager() {
         .eq('id', pluginId);
 
       if (error) throw error;
+      
+      await logAuditEvent('DELETE', 'system_plugins', pluginId, {
+        name
+      });
       
       setPlugins(prev => prev.filter(p => p.id !== pluginId));
       toast.success(`Extensión "${name}" desinstalada correctamente`);
@@ -143,6 +159,13 @@ export default function PluginManager() {
         .select();
 
       if (error) throw error;
+      
+      if (data && data.length > 0) {
+        await logAuditEvent('CREATE', 'system_plugins', data[0].id, {
+          name: newPluginName,
+          type: newPluginType
+        });
+      }
       
       if (data) {
         setPlugins(prev => [...prev, data[0]].sort((a, b) => a.name.localeCompare(b.name)));

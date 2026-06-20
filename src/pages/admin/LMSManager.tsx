@@ -9,6 +9,7 @@ import type { LMSCourse } from '../../types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import MediaUploader from '../../components/common/MediaUploader';
 import { toast } from 'sonner';
+import { logAuditEvent } from '../../utils/auditLogger';
 
 interface CategoryItem {
   id: string;
@@ -298,6 +299,15 @@ export default function LMSManager() {
         
         toast.success('Matrícula rechazada');
       }
+
+      await logAuditEvent('ENROLLMENT_PROCESS', 'lms_enrollment_requests', request.id, {
+        course_id: request.course_id,
+        course_title: request.lms_courses?.title || 'Unknown',
+        student_id: request.user_id,
+        student_name: request.profiles ? `${request.profiles.first_name} ${request.profiles.last_name}` : 'Unknown',
+        approved: approve
+      });
+
       fetchInitialData();
     } catch (err) {
       console.error(err);
