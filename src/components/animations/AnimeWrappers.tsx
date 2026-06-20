@@ -115,7 +115,7 @@ export const AnimeStaggerGrid = ({
       translateY: 0,
       delay: anime.stagger(staggerDelay, { start: 100 }),
       duration: duration * 1000,
-      easing: 'easeOutSpring(1, 80, 10, 0)'
+      easing: 'spring(1, 80, 10, 0)'
     });
   }, [staggerDelay, duration, triggerId, isVisible]);
 
