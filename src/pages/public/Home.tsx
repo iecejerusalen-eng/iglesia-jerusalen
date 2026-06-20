@@ -1143,11 +1143,12 @@ const Home = () => {
                       const dateObj = formatEventDate(event.start_date);
                       return (
                         <div key={event.id}>
-                          <AnimeHoverCard
-                            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full group relative"
-                          >
-                            {/* Accent line border on top */}
-                            <div className="w-full h-1.5 bg-gradient-to-r from-amber-500 to-amber-600" />
+                          <Link to="/eventos" className="block h-full cursor-pointer">
+                            <AnimeHoverCard
+                              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full group relative"
+                            >
+                              {/* Accent line border on top */}
+                              <div className="w-full h-1.5 bg-gradient-to-r from-amber-500 to-amber-600" />
 
                             {event.cover_image_url ? (
                               <div className="w-full h-44 overflow-hidden relative">
@@ -1209,7 +1210,8 @@ const Home = () => {
                                 </span>
                               </div>
                             </div>
-                          </AnimeHoverCard>
+                            </AnimeHoverCard>
+                          </Link>
                         </div>
                       );
                     })}
@@ -1337,7 +1339,7 @@ const Home = () => {
                 key={id}
                 title={title || ''}
                 subtitle={subtitle || ''}
-                slides={content_blocks || []}
+                slides={(content_blocks && content_blocks.length > 0) ? content_blocks : (DEFAULT_SECTIONS.find(s => s.id === 'home_gallery')?.content_blocks || [])}
               />
             );
 
