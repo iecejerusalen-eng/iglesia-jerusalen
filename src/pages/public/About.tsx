@@ -160,16 +160,6 @@ const About = () => {
             if (id === 'about_history') {
               return (
                 <div key={id}>
-                  {content_blocks && content_blocks.length > 0 && (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs space-y-4 text-left mb-12">
-                      <h2 className="text-3xl font-serif font-bold text-primary dark:text-white border-b border-gray-100 dark:border-white/5 pb-4">
-                        {title || 'Nuestra Historia'}
-                      </h2>
-                      {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm">{subtitle}</p>}
-                      <BlockRenderer blocks={content_blocks} />
-                    </div>
-                  )}
-                  
                   <div className="space-y-16">
                     {/* Historia Denominacional - Paso a Paso */}
                     <div className="space-y-12">
@@ -347,30 +337,24 @@ const About = () => {
             if (id === 'about_pastoral') {
               return (
                 <div key={id}>
-                  {content_blocks && content_blocks.length > 0 ? (
-                    <section className="space-y-8 animate-fadeIn text-left">
-                      <div className="text-center max-w-xl mx-auto space-y-2">
-                        <h2 className="text-3xl font-serif font-bold text-primary dark:text-white font-serif">
-                          {title || 'Liderazgo Pastoral'}
-                        </h2>
-                        {subtitle && <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">{subtitle}</p>}
-                      </div>
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs">
+                <div key={id}>
+                  <section className="space-y-8 text-left">
+                    <AnimeFadeUp 
+                      className="text-center max-w-xl mx-auto space-y-2"
+                    >
+                      <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">Liderazgo Pastoral</h2>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">
+                        Nuestros pastores principales llamados a guiar y cuidar espiritualmente a la congregación.
+                      </p>
+                    </AnimeFadeUp>
+
+                    {content_blocks && content_blocks.length > 0 && (
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs mb-8">
                         <BlockRenderer blocks={content_blocks} />
                       </div>
-                    </section>
-                  ) : (
-                    <section className="space-y-8 text-left">
-                      <AnimeFadeUp 
-                        className="text-center max-w-xl mx-auto space-y-2"
-                      >
-                        <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">Liderazgo Pastoral</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">
-                          Nuestros pastores principales llamados a guiar y cuidar espiritualmente a la congregación.
-                        </p>
-                      </AnimeFadeUp>
+                    )}
 
-                      <AnimeStaggerGrid 
+                    <AnimeStaggerGrid 
                         className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
                       >
                         <AnimeHoverCard 
