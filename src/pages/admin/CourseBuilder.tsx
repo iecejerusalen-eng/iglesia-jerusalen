@@ -1,30 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import type { LMSCourse, LMSSection, LMSActivity } from '../../types';
-import { ArrowLeft, Plus, Settings, CheckCircle, Video, FileText, FileQuestion, MessageSquare, Edit, Trash2, X, ChevronUp, ChevronDown, Save } from 'lucide-react';
+import type { LMSCourse, LMSSubject, LMSModule, LMSLesson } from '../../types';
+import { 
+  ArrowLeft, Plus, CheckCircle, Video, FileText, 
+  FileQuestion, MessageSquare, Edit, Trash2, X, ChevronUp, 
+  ChevronDown, Save, BookOpen, Layers, PlayCircle, Eye, Loader2
+} from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import LMSQuizBuilder from '../../components/admin/LMSQuizBuilder';
+import { toast } from 'sonner';
 
 const CourseBuilder = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
   const [course, setCourse] = useState<LMSCourse | null>(null);
-  const [sections, setSections] = useState<LMSSection[]>([]);
-  const [activities, setActivities] = useState<LMSActivity[]>([]);
+  const [subjects, setSubjects] = useState<LMSSubject[]>([]);
+  const [modules, setModules] = useState<LMSModule[]>([]);
+  const [lessons, setLessons] = useState<LMSLesson[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Section Modal State
-  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
-  const [editingSection, setEditingSection] = useState<Partial<LMSSection> | null>(null);
-  const [savingSection, setSavingSection] = useState(false);
+  // Collapsed states
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({});
+  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
 
-  // Activity Modal State
-  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<Partial<LMSActivity> | null>(null);
-  const [savingActivity, setSavingActivity] = useState(false);
+  // Subject Modal
+  const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Partial<LMSSubject> | null>(null);
+  const [savingSubject, setSavingSubject] = useState(false);
+
+  // Module Modal
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<Partial<LMSModule> | null>(null);
+  const [savingModule, setSavingModule] = useState(false);
+
+  // Lesson Modal
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Partial<LMSLesson> | null>(null);
+  const [savingLesson, setSavingLesson] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -35,7 +50,7 @@ const CourseBuilder = () => {
   const fetchCourseData = async () => {
     setLoading(true);
     try {
-      // Fetch course
+      // 1. Fetch course
       const { data: courseData, error: courseError } = await supabase
         .from('lms_courses')
         .select('*')
@@ -45,216 +60,327 @@ const CourseBuilder = () => {
       if (courseError) throw courseError;
       setCourse(courseData);
 
-      // Fetch sections
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from('lms_sections')
+      // 2. Fetch subjects
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from('lms_subjects')
         .select('*')
         .eq('course_id', id)
         .order('order_index', { ascending: true });
         
-      if (sectionsError) throw sectionsError;
-      setSections(sectionsData || []);
+      if (subjectsError) throw subjectsError;
+      const sortedSubjects = subjectsData || [];
+      setSubjects(sortedSubjects);
 
-      // Fetch activities if we have sections
-      if (sectionsData && sectionsData.length > 0) {
-        const sectionIds = sectionsData.map(s => s.id);
-        const { data: activitiesData, error: activitiesError } = await supabase
-          .from('lms_activities')
+      // 3. Fetch modules if subjects exist
+      if (sortedSubjects.length > 0) {
+        const subjectIds = sortedSubjects.map(s => s.id);
+        const { data: modulesData, error: modulesError } = await supabase
+          .from('lms_modules')
           .select('*')
-          .in('section_id', sectionIds)
+          .in('subject_id', subjectIds)
           .order('order_index', { ascending: true });
           
-        if (activitiesError) throw activitiesError;
-        setActivities(activitiesData || []);
+        if (modulesError) throw modulesError;
+        const sortedModules = modulesData || [];
+        setModules(sortedModules);
+
+        // 4. Fetch lessons if modules exist
+        if (sortedModules.length > 0) {
+          const moduleIds = sortedModules.map(m => m.id);
+          const { data: lessonsData, error: lessonsError } = await supabase
+            .from('lms_lessons')
+            .select('*')
+            .in('module_id', moduleIds)
+            .order('order_index', { ascending: true });
+            
+          if (lessonsError) throw lessonsError;
+          setLessons(lessonsData || []);
+        } else {
+          setLessons([]);
+        }
+      } else {
+        setModules([]);
+        setLessons([]);
       }
       
     } catch (err) {
       console.error('Error fetching course data:', err);
-      alert('Error al cargar la información del curso.');
+      toast.error('Error al cargar la estructura del curso.');
       navigate('/admin/lms');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- SECTION LOGIC ---
-  const handleOpenSectionModal = (section?: LMSSection) => {
-    if (section) {
-      setEditingSection(section);
+  // --- SUBJECT LOGIC ---
+  const handleOpenSubjectModal = (subject?: LMSSubject) => {
+    if (subject) {
+      setEditingSubject(subject);
     } else {
-      setEditingSection({
+      setEditingSubject({
         course_id: id,
         title: '',
         description: '',
-        order_index: sections.length
+        order_index: subjects.length
       });
     }
-    setIsSectionModalOpen(true);
+    setIsSubjectModalOpen(true);
   };
 
-  const handleSaveSection = async (e: React.FormEvent) => {
+  const handleSaveSubject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingSection?.title || !id) return;
+    if (!editingSubject?.title || !id) return;
     
-    setSavingSection(true);
+    setSavingSubject(true);
     try {
-      if (editingSection.id) {
-        const { error } = await supabase.from('lms_sections').update({
-          title: editingSection.title,
-          description: editingSection.description,
+      if (editingSubject.id) {
+        const { error } = await supabase.from('lms_subjects').update({
+          title: editingSubject.title,
+          description: editingSubject.description,
           updated_at: new Date().toISOString()
-        }).eq('id', editingSection.id);
+        }).eq('id', editingSubject.id);
         if (error) throw error;
+        toast.success('Materia actualizada con éxito');
       } else {
-        const { error } = await supabase.from('lms_sections').insert([{
+        const { error } = await supabase.from('lms_subjects').insert([{
           course_id: id,
-          title: editingSection.title,
-          description: editingSection.description,
-          order_index: editingSection.order_index
+          title: editingSubject.title,
+          description: editingSubject.description,
+          order_index: editingSubject.order_index
         }]);
         if (error) throw error;
+        toast.success('Materia creada con éxito');
       }
       await fetchCourseData();
-      setIsSectionModalOpen(false);
-      setEditingSection(null);
+      setIsSubjectModalOpen(false);
+      setEditingSubject(null);
     } catch (err) {
-      console.error('Error saving section:', err);
-      alert('Error al guardar la sección');
+      console.error(err);
+      toast.error('Error al guardar la materia');
     } finally {
-      setSavingSection(false);
+      setSavingSubject(false);
     }
   };
 
-  const handleDeleteSection = async (sectionId: string) => {
-    if (!window.confirm('¿Eliminar esta sección? Todas sus actividades se perderán.')) return;
+  const handleDeleteSubject = async (subjectId: string) => {
+    if (!window.confirm('¿Eliminar esta materia? Se eliminarán todos sus módulos y lecciones.')) return;
     try {
-      const { error } = await supabase.from('lms_sections').delete().eq('id', sectionId);
+      const { error } = await supabase.from('lms_subjects').delete().eq('id', subjectId);
       if (error) throw error;
-      setSections(sections.filter(s => s.id !== sectionId));
+      toast.success('Materia eliminada');
+      await fetchCourseData();
     } catch (err) {
-      console.error('Error deleting section:', err);
-      alert('Error al eliminar sección');
+      console.error(err);
+      toast.error('Error al eliminar materia');
     }
   };
 
-  const moveSection = async (index: number, direction: 'up' | 'down') => {
-    if ((direction === 'up' && index === 0) || (direction === 'down' && index === sections.length - 1)) return;
-    const newSections = [...sections];
+  const moveSubject = async (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === subjects.length - 1)) return;
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const temp = newSections[index];
-    newSections[index] = newSections[targetIndex];
-    newSections[targetIndex] = temp;
-    const updatedSections = newSections.map((s, i) => ({ ...s, order_index: i }));
-    setSections(updatedSections);
+    const current = subjects[index];
+    const target = subjects[targetIndex];
+
     try {
       await Promise.all([
-        supabase.from('lms_sections').update({ order_index: targetIndex }).eq('id', temp.id),
-        supabase.from('lms_sections').update({ order_index: index }).eq('id', newSections[index].id)
+        supabase.from('lms_subjects').update({ order_index: targetIndex }).eq('id', current.id),
+        supabase.from('lms_subjects').update({ order_index: index }).eq('id', target.id)
       ]);
+      await fetchCourseData();
     } catch (err) {
-      console.error('Error updating order:', err);
+      console.error(err);
+      toast.error('Error al reordenar materias');
     }
   };
 
-  const handleOpenActivityModal = (sectionId: string, type: LMSActivity['type'] = 'document', activity?: LMSActivity) => {
-    if (activity) {
-      setEditingActivity(activity);
+  // --- MODULE LOGIC ---
+  const handleOpenModuleModal = (subjectId: string, moduleObj?: LMSModule) => {
+    if (moduleObj) {
+      setEditingModule(moduleObj);
     } else {
-      const sectionActivities = activities.filter(a => a.section_id === sectionId);
-      setEditingActivity({
-        section_id: sectionId,
+      const subjectModules = modules.filter(m => m.subject_id === subjectId);
+      setEditingModule({
+        subject_id: subjectId,
         title: '',
         description: '',
-        type: type,
-        content: '',
-        order_index: sectionActivities.length
+        order_index: subjectModules.length
       });
     }
-    setIsActivityModalOpen(true);
+    setIsModuleModalOpen(true);
   };
 
-  const handleSaveActivity = async (e: React.FormEvent) => {
+  const handleSaveModule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingActivity?.title || !editingActivity?.section_id) return;
+    if (!editingModule?.title || !editingModule?.subject_id) return;
     
-    setSavingActivity(true);
+    setSavingModule(true);
     try {
-      if (editingActivity.id) {
-        const { error } = await supabase.from('lms_activities').update({
-          title: editingActivity.title,
-          description: editingActivity.description,
-          type: editingActivity.type,
-          content: editingActivity.content,
-          metadata: editingActivity.metadata,
+      if (editingModule.id) {
+        const { error } = await supabase.from('lms_modules').update({
+          title: editingModule.title,
+          description: editingModule.description,
           updated_at: new Date().toISOString()
-        }).eq('id', editingActivity.id);
+        }).eq('id', editingModule.id);
         if (error) throw error;
+        toast.success('Módulo actualizado');
       } else {
-        const { error } = await supabase.from('lms_activities').insert([{
-          section_id: editingActivity.section_id,
-          title: editingActivity.title,
-          description: editingActivity.description,
-          type: editingActivity.type,
-          content: editingActivity.content,
-          metadata: editingActivity.metadata,
-          order_index: editingActivity.order_index
+        const { error } = await supabase.from('lms_modules').insert([{
+          subject_id: editingModule.subject_id,
+          title: editingModule.title,
+          description: editingModule.description,
+          order_index: editingModule.order_index
         }]);
         if (error) throw error;
+        toast.success('Módulo creado');
       }
       await fetchCourseData();
-      setIsActivityModalOpen(false);
-      setEditingActivity(null);
+      setIsModuleModalOpen(false);
+      setEditingModule(null);
     } catch (err) {
-      console.error('Error saving activity:', err);
-      alert('Error al guardar la actividad');
+      console.error(err);
+      toast.error('Error al guardar el módulo');
     } finally {
-      setSavingActivity(false);
+      setSavingModule(false);
     }
   };
 
-  const handleDeleteActivity = async (activityId: string) => {
-    if (!window.confirm('¿Eliminar esta actividad?')) return;
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!window.confirm('¿Eliminar este módulo? Se eliminarán todas sus lecciones.')) return;
     try {
-      const { error } = await supabase.from('lms_activities').delete().eq('id', activityId);
+      const { error } = await supabase.from('lms_modules').delete().eq('id', moduleId);
       if (error) throw error;
-      setActivities(activities.filter(a => a.id !== activityId));
+      toast.success('Módulo eliminado');
+      await fetchCourseData();
     } catch (err) {
-      console.error('Error deleting activity:', err);
-      alert('Error al eliminar actividad');
+      console.error(err);
+      toast.error('Error al eliminar módulo');
     }
   };
 
-  const moveActivity = async (sectionId: string, index: number, direction: 'up' | 'down') => {
-    const sectionActivities = activities.filter(a => a.section_id === sectionId).sort((a, b) => a.order_index - b.order_index);
-    if ((direction === 'up' && index === 0) || (direction === 'down' && index === sectionActivities.length - 1)) return;
+  const moveModule = async (subjectId: string, index: number, direction: 'up' | 'down') => {
+    const subjectModules = modules.filter(m => m.subject_id === subjectId).sort((a,b) => a.order_index - b.order_index);
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === subjectModules.length - 1)) return;
     
-    const newActivities = [...sectionActivities];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const temp = newActivities[index];
-    newActivities[index] = newActivities[targetIndex];
-    newActivities[targetIndex] = temp;
-    
-    const updatedSectionActivities = newActivities.map((a, i) => ({ ...a, order_index: i }));
-    
-    // Update local state properly
-    setActivities(prev => {
-      const others = prev.filter(a => a.section_id !== sectionId);
-      return [...others, ...updatedSectionActivities];
-    });
+    const current = subjectModules[index];
+    const target = subjectModules[targetIndex];
 
     try {
       await Promise.all([
-        supabase.from('lms_activities').update({ order_index: targetIndex }).eq('id', temp.id),
-        supabase.from('lms_activities').update({ order_index: index }).eq('id', newActivities[index].id)
+        supabase.from('lms_modules').update({ order_index: targetIndex }).eq('id', current.id),
+        supabase.from('lms_modules').update({ order_index: index }).eq('id', target.id)
       ]);
+      await fetchCourseData();
     } catch (err) {
-      console.error('Error updating activity order:', err);
+      console.error(err);
+      toast.error('Error al reordenar módulos');
     }
+  };
+
+  // --- LESSON LOGIC ---
+  const handleOpenLessonModal = (moduleId: string, type: LMSLesson['type'] = 'document', lesson?: LMSLesson) => {
+    if (lesson) {
+      setEditingLesson(lesson);
+    } else {
+      const moduleLessons = lessons.filter(l => l.module_id === moduleId);
+      setEditingLesson({
+        module_id: moduleId,
+        title: '',
+        type: type,
+        description: '',
+        content: '',
+        settings: {},
+        order_index: moduleLessons.length
+      });
+    }
+    setIsLessonModalOpen(true);
+  };
+
+  const handleSaveLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLesson?.title || !editingLesson?.module_id) return;
+    
+    setSavingLesson(true);
+    try {
+      if (editingLesson.id) {
+        const { error } = await supabase.from('lms_lessons').update({
+          title: editingLesson.title,
+          description: editingLesson.description,
+          type: editingLesson.type,
+          content: editingLesson.content,
+          settings: editingLesson.settings,
+          updated_at: new Date().toISOString()
+        }).eq('id', editingLesson.id);
+        if (error) throw error;
+        toast.success('Lección actualizada');
+      } else {
+        const { error } = await supabase.from('lms_lessons').insert([{
+          module_id: editingLesson.module_id,
+          title: editingLesson.title,
+          type: editingLesson.type,
+          description: editingLesson.description,
+          content: editingLesson.content,
+          settings: editingLesson.settings,
+          order_index: editingLesson.order_index
+        }]);
+        if (error) throw error;
+        toast.success('Lección creada');
+      }
+      await fetchCourseData();
+      setIsLessonModalOpen(false);
+      setEditingLesson(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar la lección');
+    } finally {
+      setSavingLesson(false);
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (!window.confirm('¿Eliminar esta lección?')) return;
+    try {
+      const { error } = await supabase.from('lms_lessons').delete().eq('id', lessonId);
+      if (error) throw error;
+      toast.success('Lección eliminada');
+      await fetchCourseData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al eliminar lección');
+    }
+  };
+
+  const moveLesson = async (moduleId: string, index: number, direction: 'up' | 'down') => {
+    const moduleLessons = lessons.filter(l => l.module_id === moduleId).sort((a,b) => a.order_index - b.order_index);
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === moduleLessons.length - 1)) return;
+    
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const current = moduleLessons[index];
+    const target = moduleLessons[targetIndex];
+
+    try {
+      await Promise.all([
+        supabase.from('lms_lessons').update({ order_index: targetIndex }).eq('id', current.id),
+        supabase.from('lms_lessons').update({ order_index: index }).eq('id', target.id)
+      ]);
+      await fetchCourseData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al reordenar lecciones');
+    }
+  };
+
+  const toggleSubjectCollapse = (subjectId: string) => {
+    setCollapsedSubjects(prev => ({ ...prev, [subjectId]: !prev[subjectId] }));
+  };
+
+  const toggleModuleCollapse = (moduleId: string) => {
+    setCollapsedModules(prev => ({ ...prev, [moduleId]: !prev[moduleId] }));
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
       </div>
     );
@@ -265,12 +391,12 @@ const CourseBuilder = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate('/admin/lms')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <ArrowLeft size={24} className="text-gray-500" />
             </button>
@@ -283,265 +409,361 @@ const CourseBuilder = () => {
                   {course.is_published ? 'Publicado' : 'Borrador'}
                 </span>
               </div>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">Constructor de Curso • Metodología PACIE</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Estructura del Curso • 4 Niveles (Cursos ➔ Materias ➔ Módulos ➔ Lecciones)</p>
             </div>
           </div>
           
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-lg transition-colors font-medium flex items-center gap-2">
-              <Settings size={18} />
-              Configuración
+            <button 
+              onClick={() => navigate(`/lms/curso/${course.id}`)}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-lg transition-colors font-medium flex items-center gap-2 cursor-pointer border border-transparent shadow-xs"
+            >
+              <Eye size={18} />
+              Vista Alumno
             </button>
-            <button className="px-4 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm">
+            <button 
+              onClick={() => handleOpenSubjectModal()}
+              className="px-4 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-all font-semibold flex items-center gap-2 shadow-md hover:-translate-y-0.5 cursor-pointer"
+            >
               <Plus size={18} />
-              Nueva Sección
+              Nueva Materia
             </button>
           </div>
         </div>
       </div>
 
-      {/* Builder Layout */}
+      {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content (Sections) */}
+        
+        {/* Outline Hierarchy (Col-span 3) */}
         <div className="lg:col-span-3 space-y-6">
-          {sections.length === 0 ? (
-            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 border-dashed">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Este curso está vacío</h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Comienza agregando secciones (Bloques PACIE o Temas).
+          {subjects.length === 0 ? (
+            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 border-dashed animate-fade-in shadow-xs">
+              <BookOpen className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Este curso no tiene materias creadas</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto text-sm">
+                Agrega materias y luego subdivídelas en módulos con sus lecciones y actividades correspondientes.
               </p>
               <button 
-                onClick={() => handleOpenSectionModal()}
-                className="px-6 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-colors font-medium inline-flex items-center gap-2"
+                onClick={() => handleOpenSubjectModal()}
+                className="px-6 py-2.5 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-colors font-semibold inline-flex items-center gap-2 cursor-pointer shadow-sm"
               >
                 <Plus size={20} />
-                Agregar Primera Sección
+                Agregar Primera Materia
               </button>
             </div>
           ) : (
             <div className="space-y-4">
-              {sections.map((section, index) => (
-                <AnimeFadeUp key={section.id} delay={index * 0.1}>
-                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-sm">
-                    <div className="p-4 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-white/10 flex items-center justify-between cursor-move">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center font-bold">
-                          {index + 1}
+              {subjects.map((subject, sIdx) => {
+                const isSubCollapsed = collapsedSubjects[subject.id];
+                const subjectModules = modules.filter(m => m.subject_id === subject.id);
+
+                return (
+                  <AnimeFadeUp key={subject.id} delay={sIdx * 0.05}>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-xs">
+                      {/* Materia Header */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+                        <button 
+                          onClick={() => toggleSubjectCollapse(subject.id)}
+                          className="flex items-center gap-3 text-left cursor-pointer flex-grow focus:outline-none"
+                        >
+                          <span className="w-8 h-8 bg-gold/15 text-gold dark:bg-gold/10 rounded-lg flex items-center justify-center font-bold flex-shrink-0 text-sm">
+                            M{sIdx + 1}
+                          </span>
+                          <div>
+                            <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                              {subject.title}
+                              <span className="text-xs font-normal text-gray-450 dark:text-gray-500">({subjectModules.length} módulos)</span>
+                            </h3>
+                            {subject.description && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{subject.description}</p>
+                            )}
+                          </div>
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1 border-r border-gray-200 dark:border-white/10 pr-2 mr-2">
+                            <button 
+                              onClick={() => moveSubject(sIdx, 'up')}
+                              disabled={sIdx === 0}
+                              className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors cursor-pointer"
+                              title="Subir Materia"
+                            >
+                              <ChevronUp size={18} />
+                            </button>
+                            <button 
+                              onClick={() => moveSubject(sIdx, 'down')}
+                              disabled={sIdx === subjects.length - 1}
+                              className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors cursor-pointer"
+                              title="Bajar Materia"
+                            >
+                              <ChevronDown size={18} />
+                            </button>
+                          </div>
+                          
+                          <button 
+                            onClick={() => handleOpenModuleModal(subject.id)}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-gray-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Nuevo Módulo en Materia"
+                          >
+                            <Plus size={14} />
+                            Módulo
+                          </button>
+                          <button 
+                            onClick={() => handleOpenSubjectModal(subject)}
+                            className="p-1.5 text-gray-400 hover:text-gold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                            title="Editar Materia"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteSubject(subject.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all cursor-pointer"
+                            title="Eliminar Materia"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 dark:text-white">{section.title}</h3>
-                          {section.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
+                      </div>
+
+                      {/* Módulos de Materia */}
+                      {!isSubCollapsed && (
+                        <div className="p-4 bg-slate-50/25 dark:bg-slate-900/10 space-y-4">
+                          {subjectModules.length === 0 ? (
+                            <div className="text-center py-6 text-sm text-gray-450 dark:text-gray-500 border border-dashed border-gray-200 dark:border-slate-800 rounded-xl">
+                              No hay módulos en esta materia. ¡Crea uno para organizar las lecciones!
+                            </div>
+                          ) : (
+                            subjectModules.map((moduleObj, mIdx) => {
+                              const isModCollapsed = collapsedModules[moduleObj.id];
+                              const moduleLessons = lessons.filter(l => l.module_id === moduleObj.id);
+
+                              return (
+                                <div key={moduleObj.id} className="bg-white dark:bg-slate-950 rounded-xl border border-gray-150 dark:border-white/5 overflow-hidden shadow-2xs">
+                                  {/* Módulo Header */}
+                                  <div className="p-3 bg-slate-100/50 dark:bg-slate-900/50 border-b border-gray-150 dark:border-white/5 flex items-center justify-between">
+                                    <button 
+                                      onClick={() => toggleModuleCollapse(moduleObj.id)}
+                                      className="flex items-center gap-2 text-left cursor-pointer flex-grow focus:outline-none"
+                                    >
+                                      <span className="text-blue-600 dark:text-blue-400 flex-shrink-0">
+                                        <Layers size={18} />
+                                      </span>
+                                      <div>
+                                        <h4 className="font-bold text-slate-800 dark:text-gray-200 text-sm flex items-center gap-1.5">
+                                          {moduleObj.title}
+                                          <span className="text-[10px] font-normal text-gray-400">({moduleLessons.length} lecciones)</span>
+                                        </h4>
+                                      </div>
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex gap-1 border-r border-gray-200 dark:border-white/5 pr-2 mr-2">
+                                        <button 
+                                          onClick={() => moveModule(subject.id, mIdx, 'up')}
+                                          disabled={mIdx === 0}
+                                          className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors cursor-pointer"
+                                          title="Subir Módulo"
+                                        >
+                                          <ChevronUp size={16} />
+                                        </button>
+                                        <button 
+                                          onClick={() => moveModule(subject.id, mIdx, 'down')}
+                                          disabled={mIdx === subjectModules.length - 1}
+                                          className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors cursor-pointer"
+                                          title="Bajar Módulo"
+                                        >
+                                          <ChevronDown size={16} />
+                                        </button>
+                                      </div>
+                                      <button 
+                                        onClick={() => handleOpenLessonModal(moduleObj.id, 'document')}
+                                        className="p-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                                        title="Nueva Lección en Módulo"
+                                      >
+                                        <Plus size={12} />
+                                        Lección
+                                      </button>
+                                      <button 
+                                        onClick={() => handleOpenModuleModal(subject.id, moduleObj)}
+                                        className="p-1 text-gray-400 hover:text-gold hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                                        title="Editar Módulo"
+                                      >
+                                        <Edit size={14} />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteModule(moduleObj.id)}
+                                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors cursor-pointer"
+                                        title="Eliminar Módulo"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Lecciones inside Módulo */}
+                                  {!isModCollapsed && (
+                                    <div className="p-3 bg-white dark:bg-slate-950 space-y-2">
+                                      {moduleLessons.length === 0 ? (
+                                        <div className="text-center py-4 text-xs text-gray-450 dark:text-gray-500 border border-dashed border-gray-150 dark:border-slate-800 rounded-lg">
+                                          No hay lecciones. Haz clic en "Lección" para agregar contenidos.
+                                        </div>
+                                      ) : (
+                                        moduleLessons.map((lesson, lIdx) => (
+                                          <div key={lesson.id} className="flex items-center justify-between p-2.5 bg-slate-50/50 dark:bg-slate-900/30 border border-gray-100 dark:border-white/5 rounded-xl hover:border-gold dark:hover:border-gold transition-all group">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                              <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-gray-500 group-hover:text-gold group-hover:bg-gold/10 transition-colors">
+                                                {lesson.type === 'video' || lesson.type === 'video_link' ? <Video size={16} /> : null}
+                                                {lesson.type === 'document' || lesson.type === 'resource' ? <FileText size={16} /> : null}
+                                                {lesson.type === 'quiz' ? <FileQuestion size={16} /> : null}
+                                                {lesson.type === 'forum' ? <MessageSquare size={16} /> : null}
+                                                {lesson.type === 'h5p' || lesson.type === 'h5p_embed' ? <CheckCircle size={16} /> : null}
+                                                {lesson.type === 'assignment' ? <FileText size={16} /> : null}
+                                              </div>
+                                              <div className="truncate">
+                                                <h5 className="font-semibold text-slate-800 dark:text-gray-200 text-xs truncate">{lesson.title}</h5>
+                                                <p className="text-[10px] text-gray-400 capitalize">{lesson.type === 'document' ? 'Material Lectura' : lesson.type}</p>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <div className="flex gap-0.5 border-r border-gray-250 pr-2 mr-2">
+                                                <button 
+                                                  onClick={() => moveLesson(moduleObj.id, lIdx, 'up')}
+                                                  disabled={lIdx === 0}
+                                                  className="p-1 text-gray-450 hover:text-gold disabled:opacity-30 cursor-pointer"
+                                                >
+                                                  <ChevronUp size={14} />
+                                                </button>
+                                                <button 
+                                                  onClick={() => moveLesson(moduleObj.id, lIdx, 'down')}
+                                                  disabled={lIdx === moduleLessons.length - 1}
+                                                  className="p-1 text-gray-450 hover:text-gold disabled:opacity-30 cursor-pointer"
+                                                >
+                                                  <ChevronDown size={14} />
+                                                </button>
+                                              </div>
+                                              <button 
+                                                onClick={() => handleOpenLessonModal(moduleObj.id, lesson.type, lesson)}
+                                                className="p-1 text-gray-400 hover:text-gold cursor-pointer"
+                                                title="Editar Lección"
+                                              >
+                                                <Edit size={14} />
+                                              </button>
+                                              <button 
+                                                onClick={() => handleDeleteLesson(lesson.id)}
+                                                className="p-1 text-gray-400 hover:text-red-500 cursor-pointer"
+                                                title="Eliminar Lección"
+                                              >
+                                                <Trash2 size={14} />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
                           )}
                         </div>
-                      </div>
-                      <div className="flex gap-1 border-r border-gray-200 dark:border-white/10 pr-2 mr-2">
-                        <button 
-                          onClick={() => moveSection(index, 'up')}
-                          disabled={index === 0}
-                          className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronUp size={18} />
-                        </button>
-                        <button 
-                          onClick={() => moveSection(index, 'down')}
-                          disabled={index === sections.length - 1}
-                          className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors"
-                        >
-                          <ChevronDown size={18} />
-                        </button>
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleOpenSectionModal(section)}
-                          className="p-2 text-gray-400 hover:text-gold transition-colors"
-                          title="Editar Sección"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteSection(section.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                          title="Eliminar Sección"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Activities inside section */}
-                    <div className="p-4 space-y-2">
-                      {activities.filter(a => a.section_id === section.id).length === 0 ? (
-                        <div className="text-center py-6 text-sm text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg">
-                          No hay actividades en esta sección.
-                        </div>
-                      ) : (
-                        activities.filter(a => a.section_id === section.id).sort((a,b) => a.order_index - b.order_index).map((activity, actIndex, filteredArr) => (
-                          <div key={activity.id} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-lg hover:border-gold dark:hover:border-gold transition-colors group cursor-pointer">
-                            <div className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-gray-500 dark:text-gray-400 group-hover:text-gold group-hover:bg-gold/10 transition-colors">
-                              {activity.type === 'video' && <Video size={18} />}
-                              {activity.type === 'document' && <FileText size={18} />}
-                              {activity.type === 'quiz' && <FileQuestion size={18} />}
-                              {activity.type === 'forum' && <MessageSquare size={18} />}
-                              {activity.type === 'h5p' && <CheckCircle size={18} />}
-                              {activity.type === 'assignment' && <FileText size={18} />}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-slate-900 dark:text-white text-sm">{activity.title}</h4>
-                            </div>
-                            <div className="flex gap-1 border-r border-gray-200 dark:border-white/10 pr-2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); moveActivity(section.id, actIndex, 'up'); }}
-                                disabled={actIndex === 0}
-                                className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors"
-                              >
-                                <ChevronUp size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); moveActivity(section.id, actIndex, 'down'); }}
-                                disabled={actIndex === filteredArr.length - 1}
-                                className="p-1 text-gray-400 hover:text-gold disabled:opacity-30 transition-colors"
-                              >
-                                <ChevronDown size={16} />
-                              </button>
-                            </div>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleOpenActivityModal(section.id, activity.type, activity); }}
-                                className="p-1 text-gray-400 hover:text-gold transition-colors"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteActivity(activity.id); }}
-                                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ))
                       )}
-                      
-                      <div className="pt-2">
-                        <button 
-                          onClick={() => handleOpenActivityModal(section.id, 'document')}
-                          className="text-sm font-medium text-gold hover:text-yellow-600 transition-colors flex items-center gap-1"
-                        >
-                          <Plus size={16} /> Agregar Actividad
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                </AnimeFadeUp>
-              ))}
+                  </AnimeFadeUp>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Sidebar (Tools) */}
+        {/* Sidebar Tools (Col-span 1) */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm sticky top-24">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-4">Herramientas</h3>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm sticky top-24">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-4">Herramientas LMS</h3>
             
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <button 
-                onClick={() => handleOpenSectionModal()}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-700 dark:text-gray-300 transition-colors text-left text-sm font-medium"
+                onClick={() => handleOpenSubjectModal()}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-700 dark:text-gray-300 transition-colors text-left text-xs font-semibold cursor-pointer"
               >
-                <Plus size={18} />
-                Agregar Sección
+                <Plus size={16} />
+                Agregar Materia
               </button>
-              
-              <div className="pt-4 pb-2">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Recursos PACIE</div>
+
+              <div className="pt-3 pb-1 border-t border-gray-100 dark:border-white/5">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Ayuda de Organización</div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Las materias corresponden a asignaturas globales. Dentro de cada materia, divide el contenido en módulos temáticos semanales y añade lecturas, foros, tareas o cuestionarios.
+                </p>
               </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => sections.length > 0 && handleOpenActivityModal(sections[0].id, 'video')} className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-600 dark:text-gray-400 transition-colors cursor-pointer">
-                  <Video size={20} />
-                  <span className="text-xs font-medium">Video</span>
-                </button>
-                <button onClick={() => sections.length > 0 && handleOpenActivityModal(sections[0].id, 'document')} className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-600 dark:text-gray-400 transition-colors cursor-pointer">
-                  <FileText size={20} />
-                  <span className="text-xs font-medium">Material</span>
-                </button>
-                <button onClick={() => sections.length > 0 && handleOpenActivityModal(sections[0].id, 'quiz')} className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-600 dark:text-gray-400 transition-colors cursor-pointer">
-                  <FileQuestion size={20} />
-                  <span className="text-xs font-medium">Test</span>
-                </button>
-                <button onClick={() => sections.length > 0 && handleOpenActivityModal(sections[0].id, 'forum')} className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-600 dark:text-gray-400 transition-colors cursor-pointer">
-                  <MessageSquare size={20} />
-                  <span className="text-xs font-medium">Foro</span>
-                </button>
-                <button onClick={() => sections.length > 0 && handleOpenActivityModal(sections[0].id, 'h5p')} className="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-white/10 hover:border-gold hover:text-gold dark:hover:border-gold text-slate-600 dark:text-gray-400 transition-colors cursor-pointer col-span-2">
-                  <CheckCircle size={20} />
-                  <span className="text-xs font-medium">H5P Interactivo</span>
-                </button>
+
+              <div className="mt-4 flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-150 dark:border-white/5">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-gray-200">
+                  <PlayCircle size={16} className="text-gold" />
+                  <span>Método Pedagógico</span>
+                </div>
+                <p className="text-[10px] text-gray-400 leading-relaxed">
+                  Basado en Metodología PACIE: sección de exposición, sección de rebote, sección de construcción y sección de comprobación.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section Modal */}
-      {isSectionModalOpen && editingSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10">
-              <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">
-                {editingSection.id ? 'Editar Sección' : 'Nueva Sección'}
+      {/* Subject Modal */}
+      {isSubjectModalOpen && editingSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
+              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+                {editingSubject.id ? 'Editar Materia' : 'Nueva Materia'}
               </h2>
-              <button onClick={() => setIsSectionModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors">
-                <X size={20} />
+              <button onClick={() => setIsSubjectModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
+                <X size={18} />
               </button>
             </div>
             
-            <form onSubmit={handleSaveSection} className="p-6 space-y-4">
+            <form onSubmit={handleSaveSubject} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título de la Sección *</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título de la Materia *</label>
                 <input
                   type="text"
                   required
-                  value={editingSection.title || ''}
-                  onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
-                  placeholder="Ej. Introducción, Semana 1, Unidad 1"
+                  value={editingSubject.title || ''}
+                  onChange={(e) => setEditingSubject({ ...editingSubject, title: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  placeholder="Ej. Antiguo Testamento, Historia de la Iglesia"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción Breve (Opcional)</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción Breve (Opcional)</label>
                 <textarea
-                  rows={2}
-                  value={editingSection.description || ''}
-                  onChange={(e) => setEditingSection({ ...editingSection, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
-                  placeholder="Qué se aprenderá en esta sección..."
+                  rows={3}
+                  value={editingSubject.description || ''}
+                  onChange={(e) => setEditingSubject({ ...editingSubject, description: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  placeholder="Descripción de la materia, objetivos de aprendizaje..."
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10 mt-6">
                 <button
                   type="button"
-                  onClick={() => setIsSectionModalOpen(false)}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
+                  onClick={() => setIsSubjectModalOpen(false)}
+                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={savingSection}
-                  className="px-6 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                  disabled={savingSubject}
+                  className="px-5 py-2 bg-gold hover:bg-yellow-600 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                 >
-                  {savingSection ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <>
-                      <Save size={18} />
-                      Guardar
-                    </>
-                  )}
+                  {savingSubject ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  Guardar
                 </button>
               </div>
             </form>
@@ -549,105 +771,162 @@ const CourseBuilder = () => {
         </div>
       )}
 
-      {/* Activity Modal */}
-      {isActivityModalOpen && editingActivity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-slate-900 z-10">
-              <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">
-                {editingActivity.id ? 'Editar Actividad' : 'Nueva Actividad'}
+      {/* Module Modal */}
+      {isModuleModalOpen && editingModule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
+              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+                {editingModule.id ? 'Editar Módulo' : 'Nuevo Módulo'}
               </h2>
-              <button onClick={() => setIsActivityModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors">
-                <X size={20} />
+              <button onClick={() => setIsModuleModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
+                <X size={18} />
               </button>
             </div>
             
-            <form onSubmit={handleSaveActivity} className="p-6 space-y-4">
+            <form onSubmit={handleSaveModule} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título del Módulo *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingModule.title || ''}
+                  onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  placeholder="Ej. Semana 1: Pentateuco, Unidad 2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción o Resumen</label>
+                <textarea
+                  rows={2}
+                  value={editingModule.description || ''}
+                  onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  placeholder="Contenido central que se estudiará en este módulo..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModuleModalOpen(false)}
+                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingModule}
+                  className="px-5 py-2 bg-gold hover:bg-yellow-600 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                >
+                  {savingModule ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  Guardar Módulo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lesson Modal */}
+      {isLessonModalOpen && editingLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+                {editingLesson.id ? 'Editar Lección' : 'Nueva Lección'}
+              </h2>
+              <button onClick={() => setIsLessonModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveLesson} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título de la Actividad *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título de la Lección *</label>
                   <input
                     type="text"
                     required
-                    value={editingActivity.title || ''}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
-                    placeholder="Ej. Video de Introducción, Test 1"
+                    value={editingLesson.title || ''}
+                    onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                    placeholder="Ej. Lectura Principal: Génesis 1-3"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Actividad</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tipo de Contenido</label>
                   <select
-                    value={editingActivity.type || 'document'}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, type: e.target.value as any })}
-                    className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
+                    value={editingLesson.type || 'document'}
+                    onChange={(e) => setEditingLesson({ ...editingLesson, type: e.target.value as any, content: '' })}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none cursor-pointer"
                   >
-                    <option value="document">Documento / Material (HTML)</option>
-                    <option value="video">Video</option>
-                    <option value="quiz">Cuestionario (Quiz)</option>
-                    <option value="forum">Foro de Discusión</option>
-                    <option value="h5p">Contenido Interactivo (H5P)</option>
-                    <option value="assignment">Tarea / Entrega</option>
+                    <option value="document">Material de Estudio (Texto/HTML)</option>
+                    <option value="video">Reproductor de Video (URL)</option>
+                    <option value="quiz">Cuestionario Evaluable (Quiz)</option>
+                    <option value="forum">Foro de Dudas y Debate</option>
+                    <option value="h5p">Contenido Interactivo (Embed H5P)</option>
+                    <option value="assignment">Entrega de Tarea / Proyecto</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción Breve</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción de la Actividad (Opcional)</label>
                 <textarea
                   rows={2}
-                  value={editingActivity.description || ''}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
-                  placeholder="Instrucciones breves o descripción de la actividad..."
+                  value={editingLesson.description || ''}
+                  onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  placeholder="Indica qué debe realizar el estudiante en esta lección..."
                 />
               </div>
 
-              <div className="pt-2 border-t border-gray-100 dark:border-white/10">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Contenido de la Actividad
-                </label>
+              <div className="pt-3 border-t border-gray-100 dark:border-white/5">
+                <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-2">Contenido de la Lección</label>
                 
-                {/* Editor Condicional según el Tipo */}
-                {editingActivity.type === 'document' && (
-                  <div className="bg-gray-50 dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-white/10">
+                {editingLesson.type === 'document' && (
+                  <div className="bg-gray-55 dark:bg-slate-955 p-1 rounded-xl border border-gray-200 dark:border-white/5">
                     <RichTextEditor 
-                      content={editingActivity.content || ''} 
-                      onChange={(html) => setEditingActivity({ ...editingActivity, content: html })} 
+                      content={editingLesson.content || ''} 
+                      onChange={(html) => setEditingLesson({ ...editingLesson, content: html })} 
                     />
                   </div>
                 )}
                 
-                {(editingActivity.type === 'video' || editingActivity.type === 'h5p') && (
+                {(editingLesson.type === 'video' || editingLesson.type === 'h5p') && (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {editingActivity.type === 'video' ? 'Ingresa la URL del video (YouTube, Vimeo, MP4).' : 'Ingresa la URL de inserción (Embed) de tu contenido H5P.'}
+                    <p className="text-xs text-gray-400">
+                      {editingLesson.type === 'video' ? 'Inserta la URL del video (ej. YouTube, Vimeo o MP4 directo).' : 'Inserta la URL del iframe embed del recurso H5P.'}
                     </p>
                     <input
                       type="url"
-                      value={editingActivity.content || ''}
-                      onChange={(e) => setEditingActivity({ ...editingActivity, content: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold outline-none"
+                      required
+                      value={editingLesson.content || ''}
+                      onChange={(e) => setEditingLesson({ ...editingLesson, content: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                       placeholder="https://..."
                     />
                   </div>
                 )}
                 
-                {editingActivity.type === 'quiz' && (
-                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-white/10">
+                {editingLesson.type === 'quiz' && (
+                  <div className="bg-gray-55 dark:bg-slate-955 p-4 rounded-xl border border-gray-250 dark:border-white/5">
                     <LMSQuizBuilder
-                      content={editingActivity.content || ''}
-                      onChange={(content) => setEditingActivity({ ...editingActivity, content })}
+                      content={editingLesson.content || '[]'}
+                      onChange={(jsonContent) => setEditingLesson({ ...editingLesson, content: jsonContent })}
                     />
                   </div>
                 )}
 
-                {(editingActivity.type === 'assignment' || editingActivity.type === 'forum') && (
-                  <div className="bg-gray-50 dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-white/10 text-center">
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">
-                      Esta actividad no requiere contenido extra aquí.
+                {(editingLesson.type === 'assignment' || editingLesson.type === 'forum') && (
+                  <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-xl border border-dashed border-gray-200 dark:border-white/10 text-center">
+                    <CheckCircle className="mx-auto text-gold mb-2 opacity-60" size={32} />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Este tipo de actividad se gestiona de forma interactiva en la vista del alumno (entrega de archivos / foro de mensajes).
                     </p>
-                    <CheckCircle className="mx-auto text-gold opacity-50" size={32} />
                   </div>
                 )}
               </div>
@@ -655,24 +934,18 @@ const CourseBuilder = () => {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10 mt-6">
                 <button
                   type="button"
-                  onClick={() => setIsActivityModalOpen(false)}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
+                  onClick={() => setIsLessonModalOpen(false)}
+                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={savingActivity}
-                  className="px-6 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                  disabled={savingLesson}
+                  className="px-5 py-2 bg-gold hover:bg-yellow-600 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
                 >
-                  {savingActivity ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <>
-                      <Save size={18} />
-                      Guardar Actividad
-                    </>
-                  )}
+                  {savingLesson ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  Guardar Lección
                 </button>
               </div>
             </form>

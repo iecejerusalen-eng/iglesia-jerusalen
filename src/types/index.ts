@@ -61,6 +61,8 @@ export interface Product {
   name: string;
   description: string | null;
   price: number;
+  discount_price?: number | null;
+  promo_tag?: string | null;
   image_url: string | null;
   stock: number;
   category: string;
@@ -103,6 +105,13 @@ export interface Order {
   status: OrderStatus;
   payment_method?: string;
   payment_voucher_url?: string | null;
+  refund_status?: string;
+  refunded_amount?: number;
+  refund_reason?: string | null;
+  shipping_recipient_name?: string | null;
+  shipping_phone?: string | null;
+  shipping_override_address?: string | null;
+  shipping_status_notes?: string | null;
   created_at: string;
   order_items?: OrderItem[];
 }
@@ -445,6 +454,108 @@ export interface LMSCourse {
   created_at: string;
   updated_at: string;
   lms_sections?: LMSSection[];
+  lms_subjects?: LMSSubject[];
+}
+
+export interface LMSSubject {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  lms_modules?: LMSModule[];
+}
+
+export interface LMSModule {
+  id: string;
+  subject_id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  lms_lessons?: LMSLesson[];
+}
+
+export interface LMSLesson {
+  id: string;
+  module_id: string;
+  title: string;
+  type: 'document' | 'video' | 'quiz' | 'forum' | 'h5p' | 'assignment' | 'video_link' | 'resource' | 'h5p_embed';
+  content: string | null;
+  description: string | null;
+  settings?: Record<string, any> | null;
+  metadata?: Record<string, any> | null;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LMSLessonCompletion {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  is_completed: boolean;
+  completed_at: string;
+}
+
+export interface LMSLessonSubmission {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  file_url: string | null;
+  text_content: string | null;
+  grade: string | null;
+  teacher_feedback: string | null;
+  submitted_at: string;
+  graded_at: string | null;
+}
+
+export interface LMSLessonForumPost {
+  id: string;
+  lesson_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile | null;
+  replies?: LMSLessonForumPost[];
+}
+
+export interface StoreCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface StoreSupplier {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  status: 'pending' | 'active' | 'inactive';
+  kyc_tax_id_status: 'pending' | 'approved' | 'rejected';
+  kyc_bank_status: 'pending' | 'approved' | 'rejected';
+  kyc_agreement_status: 'pending' | 'approved' | 'rejected';
+  kyc_notes: string | null;
+  created_at: string;
+}
+
+export interface StoreDispute {
+  id: string;
+  order_id: string;
+  user_id: string | null;
+  type: 'fraud_suspicion' | 'broken_item' | 'wrong_item' | 'not_received' | 'other';
+  description: string;
+  status: 'open' | 'under_investigation' | 'resolved' | 'dismissed';
+  resolution_notes: string | null;
+  created_at: string;
+  profiles?: Profile | null;
+  orders?: Order | null;
 }
 
 export interface LMSSection {

@@ -42,20 +42,28 @@ export default function StudentDashboard() {
       
       // Fetch progress for each course
       const coursesWithProgress = await Promise.all((enrollData || []).map(async (enr) => {
-        const { data: progressData } = await supabase
-          .from('lms_activity_completions')
-          .select('is_completed, lms_activities!inner(section_id, lms_sections!inner(course_id))')
-          .eq('student_id', user?.id)
-          .eq('lms_activities.lms_sections.course_id', enr.course_id);
+        // Fetch total lessons in course
+        const { data: totalLessons } = await supabase
+          .from('lms_lessons')
+          .select('id, lms_modules!inner(subject_id, lms_subjects!inner(course_id))')
+          .eq('lms_modules.lms_subjects.course_id', enr.course_id);
 
-        // Fetch total activities in course
-        const { data: totalActivities } = await supabase
-          .from('lms_activities')
-          .select('id, lms_sections!inner(course_id)')
-          .eq('lms_sections.course_id', enr.course_id);
+        const total = totalLessons?.length || 0;
 
-        const total = totalActivities?.length || 0;
-        const completed = progressData?.filter(p => p.is_completed).length || 0;
+        // Fetch completed progress
+        let completed = 0;
+        if (totalLessons && totalLessons.length > 0) {
+          const lessonIds = totalLessons.map(l => l.id);
+          const { data: progressData } = await supabase
+            .from('lms_lesson_completions')
+            .select('is_completed')
+            .eq('student_id', user?.id)
+            .in('lesson_id', lessonIds)
+            .eq('is_completed', true);
+
+          completed = progressData?.length || 0;
+        }
+
         const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
         return {
@@ -159,7 +167,7 @@ export default function StudentDashboard() {
 
                       <div className="mt-6 flex justify-end">
                         <Link 
-                          to={`/programas/${enr.course_id}`}
+                          to={`/lms/curso/${enr.course_id}`}
                           className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
                         >
                           <PlayCircle className="w-4 h-4" />

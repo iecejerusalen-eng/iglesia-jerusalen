@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import BlockEditor from '../../components/admin/BlockEditor';
 import type { LessonBlock } from '../../components/admin/BlockEditor';
-import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings, Grid, List } from 'lucide-react';
 import MediaUploader from '../../components/common/MediaUploader';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -85,6 +85,9 @@ const MinistryManager = () => {
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'departamento' | 'servicio'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<MinistryFormValues>({
     resolver: zodResolver(ministrySchema),
@@ -271,22 +274,104 @@ const MinistryManager = () => {
   const canCreate = role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit');
   const canDeleteGlobal = role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit');
 
+  const filteredMinistries = ministries.filter((min) => {
+    const matchesSearch = 
+      min.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (min.leader_name && min.leader_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (min.description && min.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = categoryFilter === 'all' || min.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary">Gestor de Ministerios</h1>
-          <p className="text-gray-500 dark:text-gray-450 text-sm">Administra las actividades, departamentos y servicios dinámicos de la iglesia.</p>
+          <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Gestor de Ministerios</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Administra las actividades, departamentos y servicios dinámicos de la iglesia.</p>
         </div>
         {canCreate && (
           <button
             onClick={handleOpenCreate}
-            className="bg-primary hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer border border-transparent"
+            className="bg-primary hover:bg-blue-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-transparent self-start sm:self-auto"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             Nuevo Ministerio
           </button>
         )}
+      </div>
+
+      {/* Controles de Búsqueda, Filtrado y Vista */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center bg-gray-50/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-xs">
+        <div className="flex flex-col sm:flex-row gap-3 flex-grow max-w-2xl">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nombre, responsable..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 dark:focus:ring-white/10 focus:outline-none"
+            />
+          </div>
+          <div className="flex rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden bg-white dark:bg-slate-950 p-0.5 self-start sm:self-auto">
+            <button
+              onClick={() => setCategoryFilter('all')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                categoryFilter === 'all'
+                  ? 'bg-primary text-white dark:bg-white/10'
+                  : 'text-gray-500 hover:text-primary dark:hover:text-white'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setCategoryFilter('departamento')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                categoryFilter === 'departamento'
+                  ? 'bg-primary text-white dark:bg-white/10'
+                  : 'text-gray-500 hover:text-primary dark:hover:text-white'
+              }`}
+            >
+              Departamentos
+            </button>
+            <button
+              onClick={() => setCategoryFilter('servicio')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                categoryFilter === 'servicio'
+                  ? 'bg-primary text-white dark:bg-white/10'
+                  : 'text-gray-500 hover:text-primary dark:hover:text-white'
+              }`}
+            >
+              Servicios
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              viewMode === 'grid'
+                ? 'bg-white dark:bg-slate-800 text-primary dark:text-white border-gray-200 dark:border-white/10 shadow-xs'
+                : 'text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-slate-800'
+            }`}
+            title="Vista Cuadrícula"
+          >
+            <Grid size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              viewMode === 'table'
+                ? 'bg-white dark:bg-slate-800 text-primary dark:text-white border-gray-200 dark:border-white/10 shadow-xs'
+                : 'text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-slate-800'
+            }`}
+            title="Vista Tabla"
+          >
+            <List size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Lista de Ministerios */}
@@ -294,113 +379,232 @@ const MinistryManager = () => {
         <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm">
           <Loader2 className="animate-spin text-primary" size={32} />
         </div>
-      ) : ministries.length > 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-450 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
-                  <th className="py-4 px-6">Detalle Ministerio</th>
-                  <th className="py-4 px-6">Categoría</th>
-                  <th className="py-4 px-6">Responsable</th>
-                  <th className="py-4 px-6">Horarios</th>
-                  <th className="py-4 px-6 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
-                {ministries.map((min) => {
-                  const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
-                  
-                  return (
-                    <tr key={min.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-4">
-                          {min.image_url ? (
-                            <img
-                              src={min.image_url}
-                              alt={min.name}
-                              className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-gray-55 rounded-lg flex items-center justify-center text-gray-300 flex-shrink-0">
-                              <ImageIcon size={20} />
+      ) : filteredMinistries.length > 0 ? (
+        viewMode === 'table' ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden animate-fade-in">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
+                    <th className="py-4 px-6">Detalle Ministerio</th>
+                    <th className="py-4 px-6">Categoría</th>
+                    <th className="py-4 px-6">Responsable</th>
+                    <th className="py-4 px-6">Horarios</th>
+                    <th className="py-4 px-6 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
+                  {filteredMinistries.map((min) => {
+                    const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+                    
+                    return (
+                      <tr key={min.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-4">
+                            {min.image_url ? (
+                              <img
+                                src={min.image_url}
+                                alt={min.name}
+                                className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-55 dark:bg-slate-800 rounded-lg flex items-center justify-center text-gray-300 flex-shrink-0">
+                                <ImageIcon size={20} />
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-bold text-gray-850 dark:text-gray-100 block">{min.name}</span>
+                              <span className="text-xs text-gray-400 font-mono block">/{min.slug}</span>
                             </div>
-                          )}
-                          <div>
-                            <span className="font-bold text-gray-850 block">{min.name}</span>
-                            <span className="text-xs text-gray-400 font-mono block">/{min.slug}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                          min.category === 'departamento' 
-                            ? 'bg-gold/15 text-gold border border-gold/25' 
-                            : 'bg-blue-50 text-blue-600 border border-blue-100'
-                        }`}>
-                          {min.category}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-semibold text-gray-650 dark:text-gray-400">
-                        {min.leader_name || 'No asignado'}
-                      </td>
-                      <td className="py-4 px-6 text-gray-500 dark:text-gray-450 truncate max-w-[200px]" title={min.schedule}>
-                        <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
-                        {min.anniversary_date && (
-                          <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
-                            <Gift size={12} className="inline text-amber-500" />
-                            <span>Aniv: {formatDate(min.anniversary_date)}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                            min.category === 'departamento' 
+                              ? 'bg-gold/15 text-gold border border-gold/25' 
+                              : 'bg-blue-50 dark:bg-blue-900/25 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
+                          }`}>
+                            {min.category}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-right space-x-2">
+                        </td>
+                        <td className="py-4 px-6 font-semibold text-gray-650 dark:text-gray-400">
+                          {min.leader_name || 'No asignado'}
+                        </td>
+                        <td className="py-4 px-6 text-gray-500 dark:text-gray-450 truncate max-w-[200px]" title={min.schedule}>
+                          <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
+                          {min.anniversary_date && (
+                            <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
+                              <Gift size={12} className="inline text-amber-500" />
+                              <span>Aniv: {formatDate(min.anniversary_date)}</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6 text-right space-x-2">
+                          {canEditThisRow ? (
+                            <button
+                              onClick={() => handleOpenEdit(min)}
+                              className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+                              title="Editar Info General"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenEdit(min)}
+                              className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+                              title="Ver Detalles"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
+                          <Link
+                            to={`/admin/ministerios/${min.id}`}
+                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+                            title="Panel del Ministerio"
+                          >
+                            <Settings size={16} />
+                          </Link>
+                          {canDeleteGlobal && (
+                            <button
+                              onClick={() => handleDelete(min.id, min.name)}
+                              disabled={actionLoading}
+                              className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer inline-flex"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* VISTA GRID/CARDS RESPONSIVE */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+            {filteredMinistries.map((min) => {
+              const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+              const accentColor = min.theme_color || '#1E3A8A';
+
+              return (
+                <div
+                  key={min.id}
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col group relative"
+                  style={{ borderTop: `4px solid ${accentColor}` }}
+                >
+                  {/* Foto de portada */}
+                  <div className="h-40 relative bg-slate-100 dark:bg-slate-950 overflow-hidden">
+                    {min.image_url ? (
+                      <img
+                        src={min.image_url}
+                        alt={min.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-700 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+                        <ImageIcon size={40} className="mb-2 opacity-50" />
+                        <span className="text-xs font-semibold tracking-wider uppercase opacity-40">Sin Imagen</span>
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-xs ${
+                        min.category === 'departamento' 
+                          ? 'bg-gold text-white' 
+                          : 'bg-blue-600 text-white'
+                      }`}>
+                        {min.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Detalle */}
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-bold text-lg text-slate-800 dark:text-gray-100 line-clamp-1 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" title={min.name}>
+                            {min.name}
+                          </h3>
+                          <span className="text-xs text-gray-400 font-mono">/{min.slug}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
+                        {min.description || 'Sin descripción detallada.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/5 text-xs text-gray-650 dark:text-gray-300">
+                      <div className="flex items-center gap-2">
+                        <Users size={14} className="text-gray-400 flex-shrink-0" />
+                        <span>Responsable: <strong className="text-gray-800 dark:text-gray-100">{min.leader_name || 'No asignado'}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Settings size={14} className="text-gray-400 flex-shrink-0" />
+                        <span className="truncate" title={min.schedule}>Reunión: <strong>{min.schedule || 'No especificado'}</strong></span>
+                      </div>
+                      {min.anniversary_date && (
+                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 font-medium">
+                          <Gift size={14} className="flex-shrink-0" />
+                          <span>Aniversario: <strong>{formatDate(min.anniversary_date)}</strong></span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5 mt-auto">
+                      <Link
+                        to={`/admin/ministerios/${min.id}`}
+                        className="text-primary dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Settings size={14} />
+                        Panel de Control
+                      </Link>
+
+                      <div className="flex items-center gap-1">
                         {canEditThisRow ? (
                           <button
                             onClick={() => handleOpenEdit(min)}
-                            className="text-gray-400 hover:text-primary p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title="Editar Info General"
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={14} />
                           </button>
                         ) : (
                           <button
                             onClick={() => handleOpenEdit(min)}
-                            className="text-gray-400 hover:text-primary p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title="Ver Detalles"
                           >
-                            <Eye size={16} />
+                            <Eye size={14} />
                           </button>
                         )}
-                        <Link
-                          to={`/admin/ministerios/${min.id}`}
-                          className="text-gray-400 hover:text-primary p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer inline-flex"
-                          title="Panel del Ministerio"
-                        >
-                          <Settings size={16} />
-                        </Link>
                         {canDeleteGlobal && (
                           <button
                             onClick={() => handleDelete(min.id, min.name)}
                             disabled={actionLoading}
-                            className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                            className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
                             title="Eliminar"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )
       ) : (
-        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
-          <Users className="mx-auto text-gray-300 mb-4" size={48} />
-          <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No hay ministerios registrados</h3>
-          <p className="text-gray-400 text-sm mt-1">Comienza agregando los departamentos o servicios de la iglesia.</p>
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-250 dark:border-white/10">
+          <Users className="mx-auto text-gray-300 mb-4 animate-bounce" size={48} />
+          <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No se encontraron ministerios</h3>
+          <p className="text-gray-450 text-sm mt-1">Prueba a ajustar tu búsqueda o crea un nuevo ministerio.</p>
         </div>
       )}
 

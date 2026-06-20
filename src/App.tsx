@@ -59,6 +59,7 @@ import InventoryManager from './pages/admin/InventoryManager';
 import AnimationCatalog from './pages/admin/AnimationCatalog';
 import StudentDashboard from './pages/lms/StudentDashboard';
 import TeacherDashboard from './pages/lms/TeacherDashboard';
+import CourseViewer from './pages/lms/CourseViewer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
@@ -187,6 +188,9 @@ function App() {
               <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
               <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
             </Route>
+
+            {/* Full-screen LMS Course Player */}
+            <Route path="/lms/curso/:id" element={<CourseViewer />} />
           </Route>
 
           {/* Protected Routes: Production */}
