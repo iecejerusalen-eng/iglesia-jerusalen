@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
+// @ts-ignore
 import * as animePkg from 'animejs';
 const anime = (animePkg as any).default || animePkg;
 
