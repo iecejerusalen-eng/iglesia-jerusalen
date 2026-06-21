@@ -14,7 +14,7 @@ const PublicLayout = () => {
       <StickyNav />
       <TopBar />
       <Navigation />
-      <main className="flex-grow pb-16 md:pb-0">
+      <main className="flex-grow pb-20 pb-safe md:pb-0">
         <Outlet />
       </main>
       <Footer />
