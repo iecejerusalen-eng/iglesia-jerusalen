@@ -16,9 +16,9 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
   const [noteDate, setNoteDate] = useState(new Date().toISOString().split('T')[0]);
   const [noteContent, setNoteContent] = useState<string>('');
 
-  const { role, user } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
-  const canEdit = role === 'admin' || role === 'leader' || (!isReadOnly('ministries') && hasPermission('ministries', 'edit'));
+  const { user } = useAuthStore();
+  const { canEditMinistry } = usePermissions();
+  const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
     fetchNotes();

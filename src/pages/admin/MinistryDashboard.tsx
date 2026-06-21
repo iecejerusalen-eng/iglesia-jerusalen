@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ArrowLeft, Users, Calendar, Clock, FileText, Settings, ShieldAlert, Loader2 } from 'lucide-react';
 import type { Ministry } from '../../types';
@@ -12,8 +11,7 @@ import MinistryCalendar from '../../components/admin/ministry/MinistryCalendar';
 
 export default function MinistryDashboard() {
   const { id } = useParams();
-  const { role, ministryId } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
+  const { canEditMinistry } = usePermissions();
 
   const [ministry, setMinistry] = useState<Ministry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,8 +40,7 @@ export default function MinistryDashboard() {
     }
   };
 
-  const isGlobalReadOnly = isReadOnly('ministries');
-  const canEdit = role === 'admin' || (role === 'leader' && id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+  const canEdit = canEditMinistry(id || '');
 
   if (loading) {
     return (

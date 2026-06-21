@@ -47,7 +47,13 @@ const getRoleBadgeStyle = (role: string) => {
     case 'multimedia':
       return 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-250 dark:border-indigo-900/30';
     case 'maestro':
+    case 'docente':
       return 'bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border-teal-250 dark:border-teal-900/30';
+    case 'estudiante':
+    case 'student':
+      return 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-250 dark:border-blue-900/30';
+    case 'musico':
+      return 'bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 border-orange-250 dark:border-orange-900/30';
     default:
       return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
   }
@@ -63,6 +69,10 @@ const getRoleLabel = (role: string) => {
     case 'editor': return 'Editor General';
     case 'multimedia': return 'Multimedia';
     case 'maestro': return 'Maestro';
+    case 'docente': return 'Docente';
+    case 'estudiante':
+    case 'student': return 'Estudiante';
+    case 'musico': return 'Músico';
     case 'apoyo': return 'Apoyo';
     default: return 'Miembro';
   }
@@ -270,6 +280,8 @@ export default function ChatManager() {
     role === 'secretary' ||
     role === 'secretaria' ||
     role === 'maestro' ||
+    role === 'docente' ||
+    role === 'musico' ||
     role === 'apoyo' ||
     hasPermission('chat', 'edit') ||
     (currentUserMember?.leadership_role || '').toLowerCase().includes('coordinador') ||

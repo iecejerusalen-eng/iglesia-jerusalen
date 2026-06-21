@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Loader2, Calendar as CalendarIcon, Edit2, Globe, Lock } from 'lucide-react';
 import type { Event as DbEvent } from '../../../types';
-import { useAuthStore } from '../../../store/useAuthStore';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 export default function MinistryCalendar({ ministryId }: { ministryId: string }) {
@@ -22,9 +21,8 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const { role } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
-  const canEdit = role === 'admin' || role === 'leader' || (!isReadOnly('ministries') && hasPermission('ministries', 'edit'));
+  const { canEditMinistry } = usePermissions();
+  const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
     fetchEvents();

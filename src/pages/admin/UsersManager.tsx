@@ -27,6 +27,11 @@ const ROLES: { id: UserRole; label: string }[] = [
   { id: 'editor', label: 'Editor General' },
   { id: 'secretary', label: 'Secretaria/o' },
   { id: 'pastor', label: 'Pastor' },
+  { id: 'maestro', label: 'Maestro / Profesor (LMS)' },
+  { id: 'docente', label: 'Docente' },
+  { id: 'student', label: 'Estudiante (LMS)' },
+  { id: 'estudiante', label: 'Estudiante' },
+  { id: 'musico', label: 'Músico' },
   { id: 'admin', label: 'Administrador (Admin)' },
 ];
 
@@ -53,9 +58,14 @@ const UsersManager = () => {
   const [userPermissions, setUserPermissions] = useState<Record<string, { view: boolean; edit: boolean }>>({});
   const [savingUserPerms, setSavingUserPerms] = useState(false);
 
+  // Ministry granular control state
+  const [ministries, setMinistries] = useState<{ id: string; name: string; category: string }[]>([]);
+  const [selectedAllowedMinistries, setSelectedAllowedMinistries] = useState<string[]>([]);
+
   useEffect(() => {
     fetchProfiles();
     fetchMembers();
+    fetchMinistries();
   }, []);
 
   useEffect(() => {
@@ -100,6 +110,19 @@ const UsersManager = () => {
       setMembers(data || []);
     } catch (err) {
       console.error('Error fetching members for select:', err);
+    }
+  };
+
+  const fetchMinistries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ministries')
+        .select('id, name, category')
+        .order('name');
+      if (error) throw error;
+      setMinistries(data || []);
+    } catch (err) {
+      console.error('Error fetching ministries for select:', err);
     }
   };
 
@@ -285,6 +308,7 @@ const UsersManager = () => {
   // Open User override modal
   const handleOpenOverrideModal = (profile: Profile) => {
     setSelectedUser(profile);
+    setSelectedAllowedMinistries(profile.allowed_ministries || []);
     const override = profile.permissions_override;
     if (override) {
       setUseOverride(true);
@@ -334,6 +358,7 @@ const UsersManager = () => {
         .from('profiles')
         .update({ 
           permissions_override: finalOverride,
+          allowed_ministries: selectedAllowedMinistries.length > 0 ? selectedAllowedMinistries : null,
           updated_at: new Date().toISOString() 
         })
         .eq('id', selectedUser.id);
@@ -342,7 +367,11 @@ const UsersManager = () => {
 
       // Update state locally
       setProfiles(prev =>
-        prev.map(p => p.id === selectedUser.id ? { ...p, permissions_override: finalOverride } : p)
+        prev.map(p => p.id === selectedUser.id ? { 
+          ...p, 
+          permissions_override: finalOverride,
+          allowed_ministries: selectedAllowedMinistries.length > 0 ? selectedAllowedMinistries : null 
+        } : p)
       );
 
       toast.success('Permisos personalizados guardados con éxito');
@@ -817,6 +846,55 @@ const UsersManager = () => {
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Control de Ministerios y Departamentos Autorizados */}
+              {selectedUser.role !== 'admin' && (
+                <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-4.5 space-y-3 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Shield className="text-gold shrink-0" size={16} />
+                    <span className="text-xs sm:text-sm font-bold text-gray-805 dark:text-gray-100">
+                      Control de Ministerios y Departamentos Autorizados
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    Selecciona cuáles ministerios o departamentos específicos este usuario puede editar.
+                  </p>
+                  
+                  {selectedUser.role === 'leader' && (
+                    <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-300 p-2 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                      ℹ️ Como <strong>Líder de Ministerio</strong>, este usuario ya tiene acceso predeterminado a su propio ministerio. Estos permisos adicionales se sumarán a su acceso.
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[160px] overflow-y-auto border border-gray-150 dark:border-white/5 rounded-xl p-3 bg-gray-50 dark:bg-slate-950">
+                    {ministries.length === 0 ? (
+                      <span className="text-[11px] text-gray-400 p-2 text-center col-span-2">No hay ministerios registrados.</span>
+                    ) : (
+                      ministries.map((min) => {
+                        const isChecked = selectedAllowedMinistries.includes(min.id);
+                        return (
+                          <label key={min.id} className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition select-none text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedAllowedMinistries(prev =>
+                                  prev.includes(min.id) ? prev.filter(id => id !== min.id) : [...prev, min.id]
+                                );
+                              }}
+                              className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer shrink-0"
+                            />
+                            <span className="truncate" title={min.name}>{min.name}</span>
+                            <span className="text-[8px] bg-slate-205 dark:bg-slate-800 text-gray-500 px-1 rounded uppercase tracking-wider shrink-0 font-bold">
+                              {min.category === 'departamento' ? 'Depto' : 'Min'}
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               )}
             </div>

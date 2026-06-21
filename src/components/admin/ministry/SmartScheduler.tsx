@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Loader2, Calendar as CalendarIcon, Save, Info } from 'lucide-react';
 import type { MinistryMember, MemberAvailability } from '../../../types';
-import { useAuthStore } from '../../../store/useAuthStore';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 const DAYS_OF_WEEK = [
@@ -31,9 +30,8 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, []);
 
-  const { role } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
-  const canEdit = role === 'admin' || role === 'leader' || (!isReadOnly('ministries') && hasPermission('ministries', 'edit'));
+  const { canEditMinistry } = usePermissions();
+  const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
     fetchData();

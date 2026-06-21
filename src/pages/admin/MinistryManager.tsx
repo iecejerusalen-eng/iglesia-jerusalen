@@ -69,8 +69,8 @@ const compileBlocksToHtml = (blocks: LessonBlock[]): string => {
 };
 
 const MinistryManager = () => {
-  const { role, ministryId } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
+  const { role } = useAuthStore();
+  const { hasPermission, isReadOnly, canEditMinistry } = usePermissions();
   const confirm = useConfirmStore((state) => state.confirm);
 
   const isGlobalReadOnly = isReadOnly('ministries');
@@ -162,7 +162,7 @@ const MinistryManager = () => {
   };
 
   const handleOpenEdit = (min: any) => {
-    const canEditThis = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+    const canEditThis = canEditMinistry(min.id);
     setIsEditingReadOnly(!canEditThis);
     setEditingMinistry(min);
     setFormTab('identity');
@@ -398,7 +398,7 @@ const MinistryManager = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
                   {filteredMinistries.map((min) => {
-                    const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+                    const canEditThisRow = canEditMinistry(min.id);
                     
                     return (
                       <tr key={min.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
@@ -489,7 +489,7 @@ const MinistryManager = () => {
           /* VISTA GRID/CARDS RESPONSIVE */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
             {filteredMinistries.map((min) => {
-              const canEditThisRow = role === 'admin' || (role === 'leader' && min.id === ministryId) || (role !== 'leader' && !isGlobalReadOnly && hasPermission('ministries', 'edit'));
+              const canEditThisRow = canEditMinistry(min.id);
               const accentColor = min.theme_color || '#1E3A8A';
 
               return (

@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'pastor' | 'editor' | 'secretary' | 'secretaria' | 'leader' | 'member' | 'guest' | 'apoyo' | 'multimedia' | 'maestro';
+export type UserRole = 'admin' | 'pastor' | 'editor' | 'secretary' | 'secretaria' | 'leader' | 'member' | 'guest' | 'apoyo' | 'multimedia' | 'maestro' | 'docente' | 'estudiante' | 'student' | 'musico';
 
 export interface Profile {
   id: string;
@@ -6,6 +6,7 @@ export interface Profile {
   last_name: string | null;
   role: UserRole;
   ministry_id?: string | null;
+  allowed_ministries?: string[] | null;
   email?: string | null;
   permissions_override?: Record<string, { view: boolean; edit: boolean }> | null;
   photo_url?: string | null;

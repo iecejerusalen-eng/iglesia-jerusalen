@@ -3,7 +3,6 @@ import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Search, Loader2 } from 'lucide-react';
 import type { MinistryMember, Member } from '../../../types';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { useAuthStore } from '../../../store/useAuthStore';
 
 const PREDEFINED_ROLES = [
   'Coordinador',
@@ -28,9 +27,8 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { role } = useAuthStore();
-  const { hasPermission, isReadOnly } = usePermissions();
-  const canEdit = role === 'admin' || role === 'leader' || (!isReadOnly('ministries') && hasPermission('ministries', 'edit'));
+  const { canEditMinistry } = usePermissions();
+  const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
     fetchData();
