@@ -13,7 +13,8 @@ import { toast } from 'sonner';
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
-  const { user, role } = useAuthStore();
+  const { user, role, roles } = useAuthStore();
+  const userRoles = roles || (role ? [role] : []);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -87,7 +88,9 @@ export default function CourseViewer() {
       setCourse(courseData);
 
       // 2. Check if student has enrollment, if not and role is student, block or ask to request enrollment
-      if (role === 'member' || role === 'guest') {
+      // 2. Check if student has enrollment, if not and user does not have lms staff/student roles, block
+      const isLMSStaffOrStudent = userRoles.some(r => !['member', 'guest'].includes(r));
+      if (!isLMSStaffOrStudent) {
         const { data: enrollment } = await supabase
           .from('lms_enrollments')
           .select('*')
@@ -176,7 +179,8 @@ export default function CourseViewer() {
             first_name,
             last_name,
             photo_url,
-            role
+            role,
+            roles
           )
         `)
         .eq('lesson_id', lessonId)
@@ -753,11 +757,15 @@ export default function CourseViewer() {
                                 <div>
                                   <span className="font-bold text-xs block text-slate-850 dark:text-gray-200">
                                     {post.profiles?.first_name} {post.profiles?.last_name}
-                                    {post.profiles?.role === 'admin' || post.profiles?.role === 'pastor' ? (
-                                      <span className="ml-1.5 bg-gold/10 text-gold border border-gold/20 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                        Maestro
-                                      </span>
-                                    ) : null}
+                                    {(() => {
+                                      const postRoles = post.profiles?.roles || (post.profiles?.role ? [post.profiles.role] : []);
+                                      const isInstructor = postRoles.some((r: any) => ['admin', 'pastor', 'maestro', 'docente'].includes(r));
+                                      return isInstructor ? (
+                                        <span className="ml-1.5 bg-gold/10 text-gold border border-gold/20 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                          Maestro
+                                        </span>
+                                      ) : null;
+                                    })()}
                                   </span>
                                   <span className="text-[10px] text-gray-400">
                                     {new Date(post.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}

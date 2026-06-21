@@ -77,18 +77,54 @@ const CRMRegistrationPrompt = () => {
 
     setIsSubmitting(true);
     try {
-      // 1. Check if member already exists with this primary email
-      const { data: existingMember } = await supabase
-        .from('members')
-        .select('id')
-        .eq('first_name', formData.firstName)
-        .eq('last_name', formData.lastName)
-        .maybeSingle(); // Alternatively search by email if we had it in members directly
+      let finalMemberId = null;
 
-      let newMemberId = existingMember?.id;
+      // 1. Search if member already exists by email in member_emails (deduplication check)
+      if (user.email) {
+        const { data: emailMatch } = await supabase
+          .from('member_emails')
+          .select('member_id')
+          .eq('email', user.email.trim())
+          .maybeSingle();
+        if (emailMatch) {
+          finalMemberId = emailMatch.member_id;
+        }
+      }
 
-      if (!newMemberId) {
-        // Create new member
+      // 2. If no email match, check by first name and last name in members table
+      if (!finalMemberId) {
+        const { data: nameMatch } = await supabase
+          .from('members')
+          .select('id')
+          .eq('first_name', formData.firstName.trim())
+          .eq('last_name', formData.lastName.trim())
+          .maybeSingle();
+        if (nameMatch) {
+          finalMemberId = nameMatch.id;
+        }
+      }
+
+      if (finalMemberId) {
+        // Option A: Member already exists — link profile FIRST to satisfy RLS update checks
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ member_id: finalMemberId })
+          .eq('id', user.id);
+
+        if (profileError) throw profileError;
+
+        // Now that the profile is linked, we are authorized to update the member row
+        const { error: updateError } = await supabase
+          .from('members')
+          .update({
+            phone: formData.phone.trim(),
+            photo_url: user.user_metadata?.avatar_url || null,
+          })
+          .eq('id', finalMemberId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Option B: Create new member
         const { data: newMember, error: insertError } = await supabase
           .from('members')
           .insert([{
@@ -103,35 +139,39 @@ const CRMRegistrationPrompt = () => {
           .single();
 
         if (insertError) throw insertError;
-        newMemberId = newMember.id;
+        finalMemberId = newMember.id;
+
+        // Link the profile to the newly created member
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ member_id: finalMemberId })
+          .eq('id', user.id);
+
+        if (profileError) throw profileError;
       }
 
-      // 2. Insert primary email into member_emails (if it's a new member or we just want to ensure it's there)
-      const emailsToInsert = [{ member_id: newMemberId, email: user.email }];
-      additionalEmails.forEach(email => {
-        if (email.trim()) {
-          emailsToInsert.push({ member_id: newMemberId, email: email.trim() });
+      // 4. Insert/upsert emails into member_emails
+      if (user.email) {
+        const emailsToInsert = [{ member_id: finalMemberId, email: user.email }];
+        additionalEmails.forEach(email => {
+          if (email.trim()) {
+            emailsToInsert.push({ member_id: finalMemberId, email: email.trim() });
+          }
+        });
+
+        // Ignore duplicates in member_emails
+        const { error: emailsError } = await supabase
+          .from('member_emails')
+          .upsert(emailsToInsert, { onConflict: 'member_id, email' });
+
+        if (emailsError) {
+          console.error('Error inserting emails:', emailsError);
         }
-      });
-
-      // Ignore duplicates in member_emails
-      const { error: emailsError } = await supabase
-        .from('member_emails')
-        .upsert(emailsToInsert, { onConflict: 'member_id, email' });
-
-      if (emailsError) console.error('Error inserting emails:', emailsError);
-
-      // 3. Link to auth profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ member_id: newMemberId })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
+      }
 
       // Success
-      toast.success('¡Fuiste correctamente Registrado!');
-      setMemberId(newMemberId);
+      toast.success('¡Te has registrado con éxito!');
+      setMemberId(finalMemberId);
       setShowModal(false);
 
     } catch (err: any) {

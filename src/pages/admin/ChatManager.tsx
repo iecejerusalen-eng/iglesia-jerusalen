@@ -91,8 +91,10 @@ const calculateAge = (birthDateStr: string | null) => {
 };
 
 export default function ChatManager() {
-  const { user, role, memberId } = useAuthStore();
+  const { user, role, roles, memberId } = useAuthStore();
   const { hasPermission } = usePermissions();
+  const userRoles = roles || (role ? [role] : []);
+  const isPrivileged = userRoles.some(r => ['admin', 'pastor', 'leader'].includes(r));
   const confirm = useConfirmStore((state) => state.confirm);
   const {
     chats,
@@ -273,16 +275,7 @@ export default function ChatManager() {
 
   // Check broadcasting capabilities
   const canBroadcast =
-    role === 'admin' ||
-    role === 'pastor' ||
-    role === 'leader' ||
-    role === 'editor' ||
-    role === 'secretary' ||
-    role === 'secretaria' ||
-    role === 'maestro' ||
-    role === 'docente' ||
-    role === 'musico' ||
-    role === 'apoyo' ||
+    userRoles.some(r => ['admin', 'pastor', 'leader', 'editor', 'secretary', 'secretaria', 'maestro', 'docente', 'musico', 'apoyo'].includes(r)) ||
     hasPermission('chat', 'edit') ||
     (currentUserMember?.leadership_role || '').toLowerCase().includes('coordinador') ||
     (currentUserMember?.leadership_role || '').toLowerCase().includes('coordinadora') ||
@@ -293,7 +286,7 @@ export default function ChatManager() {
 
   // Filter available ministries for the coordinator dropdown
   const availableMinistries = (() => {
-    if (role === 'admin' || role === 'pastor' || role === 'leader') {
+    if (isPrivileged) {
       return ministries;
     }
     // For coordinators, only show ministries they are linked to
@@ -924,7 +917,7 @@ export default function ChatManager() {
                   
                   <div className="grid grid-cols-1 gap-2">
                     {/* All Users option (only for pastor/admin/leader) */}
-                    {(role === 'admin' || role === 'pastor' || role === 'leader') && (
+                    {isPrivileged && (
                       <label className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
                         broadcastTarget === 'all'
                           ? 'border-primary bg-primary/5 dark:bg-primary/10'
@@ -959,14 +952,14 @@ export default function ChatManager() {
                       />
                       <div className="text-left flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
-                          {role === 'admin' || role === 'pastor' || role === 'leader'
+                          {isPrivileged
                             ? 'Por Departamento / Ministerio'
                             : `Miembros de mi departamento: ${myMinistry?.name || 'Cargando...'}`}
                         </p>
                         <p className="text-[10px] text-gray-455 dark:text-gray-400">Difusión dirigida a los miembros adscritos a este ministerio.</p>
                         
                         {/* Dropdown if admin/pastor selects department */}
-                        {broadcastTarget === 'department' && (role === 'admin' || role === 'pastor' || role === 'leader') && (
+                        {broadcastTarget === 'department' && isPrivileged && (
                           <select
                             value={selectedDeptId}
                             onChange={(e) => setSelectedDeptId(e.target.value)}

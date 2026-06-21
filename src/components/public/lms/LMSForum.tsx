@@ -50,7 +50,8 @@ const LMSForum = ({ activity }: Props) => {
             first_name,
             last_name,
             photo_url,
-            role
+            role,
+            roles
           )
         `)
         .eq('activity_id', activity.id)
@@ -142,11 +143,15 @@ const LMSForum = ({ activity }: Props) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">{authorName}</span>
-                {post.profiles?.role === 'maestro' || post.profiles?.role === 'pastor' || post.profiles?.role === 'admin' ? (
-                  <span className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-bold">
-                    Instructor
-                  </span>
-                ) : null}
+                {(() => {
+                  const postRoles = post.profiles?.roles || (post.profiles?.role ? [post.profiles.role] : []);
+                  const isInstructor = postRoles.some((r: any) => ['maestro', 'docente', 'pastor', 'admin'].includes(r));
+                  return isInstructor ? (
+                    <span className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-bold">
+                      Instructor
+                    </span>
+                  ) : null;
+                })()}
                 <span className="text-xs text-gray-400">
                   {new Date(post.created_at).toLocaleDateString()} {new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </span>

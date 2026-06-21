@@ -35,6 +35,32 @@ const ROLES: { id: UserRole; label: string }[] = [
   { id: 'admin', label: 'Administrador (Admin)' },
 ];
 
+const getRoleBadgeStyle = (r: UserRole) => {
+  switch (r) {
+    case 'admin':
+      return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30';
+    case 'pastor':
+      return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30';
+    case 'leader':
+      return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30';
+    case 'docente':
+    case 'maestro':
+      return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/20 dark:text-purple-300 dark:border-purple-900/30';
+    case 'musico':
+      return 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/20 dark:text-teal-300 dark:border-teal-900/30';
+    case 'apoyo':
+    case 'multimedia':
+    case 'secretary':
+    case 'secretaria':
+      return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30';
+    case 'student':
+    case 'estudiante':
+      return 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700/50';
+    default:
+      return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-slate-800/20 dark:text-gray-400 dark:border-slate-700/20';
+  }
+};
+
 const UsersManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
@@ -57,6 +83,8 @@ const UsersManager = () => {
   const [useOverride, setUseOverride] = useState(false);
   const [userPermissions, setUserPermissions] = useState<Record<string, { view: boolean; edit: boolean }>>({});
   const [savingUserPerms, setSavingUserPerms] = useState(false);
+  const [selectedUserRoles, setSelectedUserRoles] = useState<UserRole[]>([]);
+  const [selectedPrimaryRole, setSelectedPrimaryRole] = useState<UserRole>('guest');
 
   // Ministry granular control state
   const [ministries, setMinistries] = useState<{ id: string; name: string; category: string }[]>([]);
@@ -223,32 +251,6 @@ const UsersManager = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      const targetUser = profiles.find(p => p.id === userId);
-      await logAuditEvent('ROLE_CHANGE', 'profiles', userId, {
-        target_email: targetUser?.email || null,
-        new_role: newRole,
-        old_role: targetUser?.role || null
-      });
-
-      setProfiles(prev => 
-        prev.map(p => p.id === userId ? { ...p, role: newRole } : p)
-      );
-
-      toast.success('Rol de usuario actualizado con éxito');
-    } catch (err: any) {
-      console.error('Error updating user role:', err);
-      toast.error('No se pudo actualizar el rol: ' + err.message);
-    }
-  };
 
   // Role permissions saving
   const handleSaveRolePermissions = async () => {
@@ -309,6 +311,8 @@ const UsersManager = () => {
   const handleOpenOverrideModal = (profile: Profile) => {
     setSelectedUser(profile);
     setSelectedAllowedMinistries(profile.allowed_ministries || []);
+    setSelectedUserRoles(profile.roles || [profile.role]);
+    setSelectedPrimaryRole(profile.role);
     const override = profile.permissions_override;
     if (override) {
       setUseOverride(true);
@@ -352,11 +356,14 @@ const UsersManager = () => {
     setSavingUserPerms(true);
     
     const finalOverride = useOverride ? userPermissions : null;
+    const finalRoles = selectedUserRoles.length > 0 ? selectedUserRoles : [selectedPrimaryRole];
 
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ 
+          role: selectedPrimaryRole,
+          roles: finalRoles,
           permissions_override: finalOverride,
           allowed_ministries: selectedAllowedMinistries.length > 0 ? selectedAllowedMinistries : null,
           updated_at: new Date().toISOString() 
@@ -369,16 +376,18 @@ const UsersManager = () => {
       setProfiles(prev =>
         prev.map(p => p.id === selectedUser.id ? { 
           ...p, 
+          role: selectedPrimaryRole,
+          roles: finalRoles,
           permissions_override: finalOverride,
           allowed_ministries: selectedAllowedMinistries.length > 0 ? selectedAllowedMinistries : null 
         } : p)
       );
 
-      toast.success('Permisos personalizados guardados con éxito');
+      toast.success('Permisos y roles guardados con éxito');
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Error saving user override:', err);
-      toast.error('Error al guardar los permisos del usuario: ' + err.message);
+      toast.error('Error al guardar los cambios del usuario: ' + err.message);
     } finally {
       setSavingUserPerms(false);
     }
@@ -579,16 +588,19 @@ const UsersManager = () => {
                           )}
                         </td>
                         <td className="px-6 py-4.5 text-center">
-                          <select
-                            value={profile.role}
-                            disabled={profile.role === 'admin'}
-                            onChange={(e) => handleRoleChange(profile.id, e.target.value as UserRole)}
-                            className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none capitalize shadow-xs cursor-pointer inline-block disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {ROLES.map((r) => (
-                              <option key={r.id} value={r.id}>{r.label}</option>
-                            ))}
-                          </select>
+                          <div className="flex flex-wrap gap-1 justify-center max-w-[220px] mx-auto">
+                            {(profile.roles && profile.roles.length > 0 ? profile.roles : [profile.role]).map((r) => {
+                              const rLabel = ROLES.find(o => o.id === r)?.label.split(' (')[0] || r;
+                              return (
+                                <span
+                                  key={r}
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize select-none ${getRoleBadgeStyle(r)}`}
+                                >
+                                  {rLabel}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </td>
                         <td className="px-6 py-4.5 text-center">
                           <button
@@ -775,11 +787,72 @@ const UsersManager = () => {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6">
+              {/* Roles Editor Section */}
+              {selectedUser.role !== 'admin' && (
+                <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-4.5 space-y-3 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Shield className="text-gold shrink-0" size={16} />
+                    <span className="text-xs sm:text-sm font-bold text-gray-805 dark:text-gray-100">
+                      Roles Asignados al Usuario
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    Selecciona todos los roles que corresponden a este usuario. Los permisos se acumularán de forma aditiva.
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border border-gray-150 dark:border-white/5 rounded-xl p-3 bg-gray-50 dark:bg-slate-950">
+                    {ROLES.filter(r => r.id !== 'admin').map((r) => {
+                      const isChecked = selectedUserRoles.includes(r.id);
+                      return (
+                        <label key={r.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition select-none text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setSelectedUserRoles(prev => {
+                                const newRoles = prev.includes(r.id)
+                                  ? prev.filter(roleId => roleId !== r.id)
+                                  : [...prev, r.id];
+                                // Sync primary role if it gets removed from the checked list
+                                return newRoles;
+                              });
+                            }}
+                            className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer shrink-0"
+                          />
+                          <span className="truncate">{r.label.split(' (')[0]}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Selector de Rol Principal */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-white/5">
+                    <span className="text-[11px] font-bold text-gray-650 dark:text-gray-350">Rol Principal (Heredado / Principal):</span>
+                    <select
+                      value={selectedPrimaryRole}
+                      onChange={(e) => {
+                        const nextPrimary = e.target.value as UserRole;
+                        setSelectedPrimaryRole(nextPrimary);
+                        setSelectedUserRoles(prev => prev.includes(nextPrimary) ? prev : [...prev, nextPrimary]);
+                      }}
+                      className="px-3 py-1.5 border border-gray-205 dark:border-white/10 rounded-xl text-xs font-semibold bg-white dark:bg-slate-950 focus:outline-none cursor-pointer"
+                    >
+                      {(selectedUserRoles.length > 0 ? selectedUserRoles : ['guest']).map((rId) => {
+                        const rLabel = ROLES.find(o => o.id === rId)?.label.split(' (')[0] || rId;
+                        return (
+                          <option key={rId} value={rId}>{rLabel}</option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Toggle override */}
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-950 rounded-xl border border-gray-150 dark:border-white/10">
                 <div className="space-y-0.5">
-                  <span className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100">Personalizar permisos de este usuario</span>
-                  <p className="text-[10px] text-gray-400">Si se desactiva, el usuario usará los permisos por defecto de su rol ({selectedUser.role}).</p>
+                  <span className="text-xs sm:text-sm font-bold text-gray-808 dark:text-gray-100">Personalizar permisos de este usuario</span>
+                  <p className="text-[10px] text-gray-400">Si se desactiva, el usuario usará los permisos por defecto de su rol ({selectedPrimaryRole}).</p>
                 </div>
                 <input
                   type="checkbox"

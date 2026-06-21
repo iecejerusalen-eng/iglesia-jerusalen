@@ -50,7 +50,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const DashboardHome = () => {
-  const { user, firstName, userRole } = useAuthStore();
+  const { user, firstName, role, roles } = useAuthStore();
+  const userRoles = roles || (role ? [role] : []);
   const { hasPermission } = usePermissions();
   const [stats, setStats] = useState({
     usersCount: 0,
@@ -670,7 +671,7 @@ const DashboardHome = () => {
                 <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
               </Link>
 
-              {(userRole === 'admin' || userRole === 'pastor') && (
+              {(userRoles.includes('admin') || userRoles.includes('pastor')) && (
                 <Link 
                   to="/admin/sermones" 
                   className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"

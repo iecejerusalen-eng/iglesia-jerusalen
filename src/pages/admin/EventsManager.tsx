@@ -48,7 +48,8 @@ const WEEK_DAYS = [
 
 const EventsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
-  const { user, userRole } = useAuthStore();
+  const { user, role, roles } = useAuthStore();
+  const userRoles = roles || (role ? [role] : []);
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [ministries, setMinistries] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
@@ -133,7 +134,7 @@ const EventsManager = () => {
     setSelectedDays([]);
     setShowEmojiPicker(false);
     
-    const defaultMinistry = userRole === 'leader' && userProfile?.ministry_id 
+    const defaultMinistry = userRoles.includes('leader') && userProfile?.ministry_id 
       ? userProfile.ministry_id 
       : null;
 
@@ -278,7 +279,7 @@ const EventsManager = () => {
   };
 
   const visibleEvents = events.filter(e => {
-    if (userRole === 'leader' && userProfile?.ministry_id) {
+    if (userRoles.includes('leader') && userProfile?.ministry_id) {
       return e.ministry_id === userProfile.ministry_id;
     }
     return true;
@@ -481,7 +482,7 @@ const EventsManager = () => {
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Área / Ministerio Responsable</label>
                   <select
                     {...register('ministry_id')}
-                    disabled={userRole === 'leader'}
+                    disabled={userRoles.includes('leader')}
                     className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
                   >
                     <option value="">General (Ninguno)</option>
@@ -489,7 +490,7 @@ const EventsManager = () => {
                       <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
                   </select>
-                  {userRole === 'leader' && (
+                  {userRoles.includes('leader') && (
                     <span className="text-[10px] text-gray-400 mt-1 block">Tu rol restringe los eventos únicamente a tu ministerio.</span>
                   )}
                 </div>

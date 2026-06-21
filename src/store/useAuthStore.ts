@@ -9,6 +9,7 @@ interface AuthState {
   user: User | null;
   role: UserRole | null;
   userRole: UserRole | null;
+  roles: UserRole[] | null;
   firstName: string | null;
   lastName: string | null;
   photoUrl: string | null;
@@ -22,6 +23,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setRole: (role: UserRole | null) => void;
   setUserRole: (role: UserRole | null) => void;
+  setRoles: (roles: UserRole[] | null) => void;
   setMemberId: (memberId: string | null) => void;
   setProfileInfo: (firstName: string | null, lastName: string | null, photoUrl?: string | null) => void;
   logout: () => Promise<void>;
@@ -48,7 +50,7 @@ async function fetchOrCreateProfile(user: User) {
   // Try to fetch existing profile
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
+    .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
     .eq('id', userId)
     .single();
 
@@ -67,14 +69,15 @@ async function fetchOrCreateProfile(user: User) {
         last_name: lastName,
         email: userEmail,
         role: 'guest',
+        roles: ['guest'],
         banned: false
       }, { onConflict: 'id' })
-      .select('role, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
+      .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
       .single();
 
     if (insertError) {
       console.error('Error creating profile:', insertError);
-      profileData = { role: 'guest', first_name: firstName, last_name: lastName, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: userEmail, banned: false };
+      profileData = { role: 'guest', roles: ['guest'], first_name: firstName, last_name: lastName, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: userEmail, banned: false };
     } else {
       profileData = newProfile;
     }
@@ -91,7 +94,7 @@ async function fetchOrCreateProfile(user: User) {
         .from('profiles')
         .update(updates)
         .eq('id', userId)
-        .select('role, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
+        .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries')
         .single();
 
       if (!updateError && updatedProfile) {
@@ -100,7 +103,7 @@ async function fetchOrCreateProfile(user: User) {
     }
   }
 
-  const resolvedProfile = profileData || { role: 'guest', first_name: null, last_name: null, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: null, banned: false };
+  const resolvedProfile = profileData || { role: 'guest', roles: ['guest'], first_name: null, last_name: null, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: null, banned: false };
 
   // Resolve active permissions
   let permissions = resolvedProfile.permissions_override;
@@ -108,23 +111,33 @@ async function fetchOrCreateProfile(user: User) {
     // Merge user-specific overrides with defaults to support new modules seamlessly
     permissions = { ...defaultFallbackPermissions, ...permissions };
   } else {
-    const { data: rolePermData, error: roleError } = await supabase
-      .from('role_permissions')
-      .select('permissions')
-      .eq('role', resolvedProfile.role)
-      .single();
-    
-    if (!roleError && rolePermData) {
-      // Merge role-level permissions with defaults to support new modules seamlessly
-      permissions = { ...defaultFallbackPermissions, ...rolePermData.permissions };
+    const rolesToLoad = resolvedProfile.roles && resolvedProfile.roles.length > 0
+      ? resolvedProfile.roles
+      : [resolvedProfile.role];
+
+    if (rolesToLoad.includes('admin')) {
+      permissions = ADMIN_MODULES.reduce((acc, m) => {
+        acc[m.id] = { view: true, edit: true };
+        return acc;
+      }, {} as Record<string, { view: boolean; edit: boolean }>);
     } else {
-      if (resolvedProfile.role === 'admin') {
-        permissions = ADMIN_MODULES.reduce((acc, m) => {
-          acc[m.id] = { view: true, edit: true };
-          return acc;
-        }, {} as Record<string, { view: boolean; edit: boolean }>);
-      } else {
-        permissions = defaultFallbackPermissions;
+      const { data: rolePermData, error: roleError } = await supabase
+        .from('role_permissions')
+        .select('role, permissions')
+        .in('role', rolesToLoad);
+      
+      permissions = { ...defaultFallbackPermissions };
+      if (!roleError && rolePermData) {
+        for (const row of rolePermData) {
+          const rolePerms = row.permissions || {};
+          for (const modId of Object.keys(rolePerms)) {
+            if (!permissions[modId]) {
+              permissions[modId] = { view: false, edit: false };
+            }
+            permissions[modId].view = permissions[modId].view || !!rolePerms[modId]?.view;
+            permissions[modId].edit = permissions[modId].edit || !!rolePerms[modId]?.edit;
+          }
+        }
       }
     }
   }
@@ -148,6 +161,7 @@ function applyProfile(
       user,
       role: profile.role as UserRole,
       userRole: profile.role as UserRole,
+      roles: (profile.roles || [profile.role]) as UserRole[],
       firstName: profile.first_name,
       lastName: profile.last_name,
       photoUrl: profile.photo_url || user.user_metadata?.avatar_url || null,
@@ -162,6 +176,7 @@ function applyProfile(
       user,
       role: 'guest',
       userRole: 'guest',
+      roles: ['guest'],
       firstName: user.user_metadata?.first_name || null,
       lastName: user.user_metadata?.last_name || null,
       photoUrl: user.user_metadata?.avatar_url || null,
@@ -178,6 +193,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   role: null,
   userRole: null,
+  roles: null,
   firstName: null,
   lastName: null,
   photoUrl: null,
@@ -192,6 +208,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   setRole: (role) => set({ role, userRole: role }),
   setUserRole: (userRole) => set({ userRole, role: userRole }),
+  setRoles: (roles) => set({ roles }),
   setMemberId: (memberId) => set({ memberId }),
   setProfileInfo: (firstName, lastName, photoUrl) => set((state) => ({ 
     firstName, 
@@ -201,11 +218,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await supabase.auth.signOut();
-    set({ user: null, role: null, userRole: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null });
+    set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null });
   },
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null, role: null, userRole: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null });
+    set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null });
   },
 
   checkSession: async () => {
@@ -226,6 +243,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: mockUser,
         role: 'admin',
         userRole: 'admin',
+        roles: ['admin'],
         firstName: 'Esteban',
         lastName: 'Nicola',
         allowedMinistries: null,
@@ -241,17 +259,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const profile = await fetchOrCreateProfile(session.user);
         if (profile.banned) {
           await supabase.auth.signOut();
-          set({ user: null, role: null, userRole: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
+          set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
           toast.error('Tu cuenta ha sido suspendida por razones de seguridad.');
           return;
         }
         applyProfile(set, profile, session.user);
       } else {
-        set({ user: null, role: null, userRole: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
+        set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
       }
     } catch (error) {
       console.error('Error checking session:', error);
-      set({ user: null, role: null, userRole: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
+      set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
     }
   },
 
@@ -278,6 +296,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           user: mockUser,
           role: 'admin',
           userRole: 'admin',
+          roles: ['admin'],
           firstName: 'Esteban',
           lastName: 'Nicola',
           permissions: mockPermissions,
@@ -339,6 +358,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user: null,
             role: null,
             userRole: null,
+            roles: null,
             firstName: null,
             lastName: null,
             permissions: null,
