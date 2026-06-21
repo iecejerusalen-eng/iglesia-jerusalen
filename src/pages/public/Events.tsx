@@ -29,6 +29,12 @@ const Events = () => {
     fetchEvents();
   }, []);
 
+  useEffect(() => {
+    if (selectedEvent) {
+      setHoveredEvent(null);
+    }
+  }, [selectedEvent]);
+
   const getLogoUrl = (event: any) => {
     const ministry = event?.ministries;
     if (!ministry || !ministry.logos || !Array.isArray(ministry.logos) || ministry.logos.length === 0) return null;
@@ -155,6 +161,9 @@ const Events = () => {
 
   // Event tooltip hover handler
   const handleMouseMove = (e: React.MouseEvent, event: DbEvent) => {
+    if (typeof window !== 'undefined' && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     setTooltipPos({
       x: e.clientX + 15,
       y: e.clientY + 15
@@ -601,7 +610,7 @@ const Events = () => {
       </div>
 
       {/* Floating Tooltip Component */}
-      {hoveredEvent && (
+      {hoveredEvent && !selectedEvent && (
         <div
           style={{
             position: 'fixed',
