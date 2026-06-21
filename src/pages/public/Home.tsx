@@ -67,9 +67,42 @@ const DEFAULT_SECTIONS = [
   { id: 'home_sermons', section_type: 'system_sermons', name: 'Últimas Prédicas', title: 'Últimas Prédicas', subtitle: 'Escucha y comparte los últimos mensajes y sermones dominicales de nuestros pastores.' },
   {
     id: 'home_gallery', section_type: 'system_gallery', name: 'Galería de Imágenes', title: 'Nuestra Comunidad en Imágenes', subtitle: 'Momentos especiales de adoración, comunión y servicio en la Iglesia Jerusalén.', content_blocks: [
-      { id: 'slide_1', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', caption: 'Alabanza y adoración congregacional' },
-      { id: 'slide_2', url: 'https://images.unsplash.com/photo-1489641499538-be02c255c552?auto=format&fit=crop&q=80&w=1200', caption: 'Tiempo de enseñanza de la palabra de Dios' },
-      { id: 'slide_3', url: 'https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&q=80&w=1200', caption: 'Comunión fraternal de los miembros' }
+      {
+        id: 'slide_1',
+        url: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Alabanza y adoración congregacional',
+        category: 'Adoración'
+      },
+      {
+        id: 'slide_2',
+        url: 'https://images.unsplash.com/photo-1504052434569-7c9302e09150?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Tiempo de enseñanza y estudio de la Palabra',
+        category: 'Enseñanza'
+      },
+      {
+        id: 'slide_3',
+        url: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Comunión fraternal de los miembros',
+        category: 'Comunidad'
+      },
+      {
+        id: 'slide_4',
+        url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Grupos de crecimiento en hogares (Células)',
+        category: 'Comunidad'
+      },
+      {
+        id: 'slide_5',
+        url: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Escuela Dominical y formación en la fe',
+        category: 'Niños'
+      },
+      {
+        id: 'slide_6',
+        url: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=80&w=1200',
+        caption: 'Proyectos de ayuda y servicio a la comunidad',
+        category: 'Servicio'
+      }
     ]
   },
   { id: 'home_birthdays', section_type: 'system_birthdays', name: 'Cumpleaños de la Semana', title: 'Cumpleaños de la Semana', subtitle: 'Celebramos la vida de nuestros hermanos que cumplen años en esta semana. ¡Que Dios les bendiga!' },

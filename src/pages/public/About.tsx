@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
+import { ScrollReveal, StaggerContainer, StaggerItem, HoverCard } from '../../components/animations/MotionWrappers';
 import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Wind, MapPin, X } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
@@ -131,6 +131,7 @@ const About = () => {
               return (
                 <div 
                   key={id} 
+                  id={id}
                   className="relative rounded-2xl p-8 md:p-12 text-white shadow-lg overflow-hidden bg-primary min-h-[40vh] flex items-center"
                 >
                   <div className="absolute inset-0 z-0">
@@ -149,7 +150,11 @@ const About = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent"></div>
                   </div>
-                  <AnimeZoomIn 
+                  <ScrollReveal 
+                    direction="up"
+                    distance={20}
+                    duration={1.3}
+                    delay={0}
                     className="relative z-10 max-w-3xl space-y-4 text-left"
                   >
                     <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
@@ -164,7 +169,7 @@ const About = () => {
                         <BlockRenderer blocks={content_blocks} />
                       </div>
                     )}
-                  </AnimeZoomIn>
+                  </ScrollReveal>
                 </div>
               );
             }
@@ -172,7 +177,7 @@ const About = () => {
             // 2. VISION & MISSION
             if (id === 'about_vision_mission') {
               return (
-                <div key={id}>
+                <div key={id} id={id}>
                   {content_blocks && content_blocks.length > 0 ? (
                     <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs text-left">
                       {title && <h2 className="text-3xl font-serif font-bold text-primary dark:text-white mb-2">{title}</h2>}
@@ -180,37 +185,41 @@ const About = () => {
                       <BlockRenderer blocks={content_blocks} />
                     </div>
                   ) : (
-                      <AnimeStaggerGrid 
+                      <StaggerContainer 
                         className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch"
                       >
-                        <AnimeHoverCard 
-                          className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
-                              <Compass size={24} />
+                        <StaggerItem className="h-full">
+                          <HoverCard 
+                            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
+                          >
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
+                                <Compass size={24} />
+                              </div>
+                              <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Misión</h2>
+                              <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
+                                Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.
+                              </p>
                             </div>
-                            <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Misión</h2>
-                            <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
-                              Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.
-                            </p>
-                          </div>
-                        </AnimeHoverCard>
+                          </HoverCard>
+                        </StaggerItem>
 
-                        <AnimeHoverCard 
-                          className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
-                        >
-                          <div className="space-y-4">
-                            <div className="w-12 h-12 bg-gold/10 dark:bg-gold/20 text-gold dark:text-yellow-400 rounded-xl flex items-center justify-center">
-                              <Sparkles size={24} />
+                        <StaggerItem className="h-full">
+                          <HoverCard 
+                            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-col justify-between text-left h-full"
+                          >
+                            <div className="space-y-4">
+                              <div className="w-12 h-12 bg-gold/10 dark:bg-gold/20 text-gold dark:text-yellow-400 rounded-xl flex items-center justify-center">
+                                <Sparkles size={24} />
+                              </div>
+                              <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Visión</h2>
+                              <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
+                                Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras.
+                              </p>
                             </div>
-                            <h2 className="font-serif font-bold text-2xl text-primary dark:text-white">Nuestra Visión</h2>
-                            <p className="text-gray-655 dark:text-gray-300 text-sm leading-relaxed">
-                              Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras.
-                            </p>
-                          </div>
-                        </AnimeHoverCard>
-                      </AnimeStaggerGrid>
+                          </HoverCard>
+                        </StaggerItem>
+                      </StaggerContainer>
                   )}
                 </div>
               );
@@ -219,24 +228,24 @@ const About = () => {
             // 3. HISTORY
             if (id === 'about_history') {
               return (
-                <div key={id}>
+                <div key={id} id={id}>
                   <div className="space-y-16">
                     {/* Historia Denominacional - Paso a Paso */}
                     <div className="space-y-12">
                       <div className="text-center max-w-2xl mx-auto space-y-4">
-                        <AnimeFadeUp>
+                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0}>
                           <h2 className="text-3xl md:text-5xl font-serif font-bold text-primary dark:text-white">
                             Historia de la Iglesia Cuadrangular
                           </h2>
                           <p className="text-gray-500 dark:text-gray-400 mt-4">
                             Un viaje de fe, pasión y misiones que comenzó en Los Ángeles y se extendió por todo el mundo hasta llegar a nuestra congregación.
                           </p>
-                        </AnimeFadeUp>
+                        </ScrollReveal>
                       </div>
 
                       <div className="relative border-l-2 border-primary/20 ml-4 md:ml-8 space-y-12 pb-8">
                         {/* Paso 1: Fundación */}
-                        <AnimeFadeUp delay={100} className="relative pl-8 md:pl-12">
+                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.1} className="relative pl-8 md:pl-12">
                           <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-primary p-1">
                             <Cross className="w-5 h-5 text-primary" />
                           </div>
@@ -263,10 +272,10 @@ const About = () => {
                               </div>
                             </div>
                           </div>
-                        </AnimeFadeUp>
+                        </ScrollReveal>
 
                         {/* Paso 2: La Doctrina */}
-                        <AnimeFadeUp delay={200} className="relative pl-8 md:pl-12">
+                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.2} className="relative pl-8 md:pl-12">
                           <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-secondary p-1">
                             <BookOpen className="w-5 h-5 text-secondary" />
                           </div>
@@ -299,10 +308,10 @@ const About = () => {
                               </ul>
                             </div>
                           </div>
-                        </AnimeFadeUp>
+                        </ScrollReveal>
 
                         {/* Paso 3: Expansión y Ecuador */}
-                        <AnimeFadeUp delay={300} className="relative pl-8 md:pl-12">
+                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.3} className="relative pl-8 md:pl-12">
                           <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-primary p-1">
                             <Globe className="w-5 h-5 text-primary" />
                           </div>
@@ -332,7 +341,7 @@ const About = () => {
                               </div>
                             </div>
                           </div>
-                        </AnimeFadeUp>
+                        </ScrollReveal>
                       </div>
 
                       {/* Botón para ver la historia completa */}
@@ -349,7 +358,7 @@ const About = () => {
                     </div>
 
                     {/* Historia Local */}
-                    <AnimeFadeUp delay={400} className="bg-primary text-white rounded-[2.5rem] p-8 md:p-14 shadow-2xl space-y-8 text-left relative overflow-hidden group">
+                    <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.4} className="bg-primary text-white rounded-[2.5rem] p-8 md:p-14 shadow-2xl space-y-8 text-left relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-1000 ease-out">
                         <Landmark size={240} />
                       </div>
@@ -387,7 +396,7 @@ const About = () => {
                           </div>
                         </div>
                       </div>
-                    </AnimeFadeUp>
+                    </ScrollReveal>
                   </div>
                 </div>
               );
@@ -396,16 +405,20 @@ const About = () => {
             // 5. PASTORAL / LIDERAZGO
             if (id === 'about_pastoral') {
               return (
-                <div key={id}>
+                <div key={id} id={id}>
                   <section className="space-y-8 text-left">
-                    <AnimeFadeUp 
+                    <ScrollReveal 
+                      direction="up"
+                      distance={20}
+                      duration={1.3}
+                      delay={0}
                       className="text-center max-w-xl mx-auto space-y-2"
                     >
                       <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">Liderazgo Pastoral</h2>
                       <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">
                         Nuestros pastores principales llamados a guiar y cuidar espiritualmente a la congregación.
                       </p>
-                    </AnimeFadeUp>
+                    </ScrollReveal>
 
                     {content_blocks && content_blocks.length > 0 && (
                       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-8 md:p-12 shadow-xs mb-8">
@@ -413,51 +426,55 @@ const About = () => {
                       </div>
                     )}
 
-                    <AnimeStaggerGrid 
+                    <StaggerContainer 
                         className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
                       >
-                        <AnimeHoverCard 
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
-                        >
-                          <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
-                            <OptimizedMedia 
-                              src={pastorDavidImg} 
-                              alt="Pastor David Nicola"
-                              className="w-full h-full object-cover object-top"
-                            />
-                          </div>
-                          <div className="p-6 flex flex-col justify-between">
-                            <div>
-                              <span className="text-[10px] font-bold text-gold uppercase tracking-wider block mb-1">Pastor Principal</span>
-                              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Pastor David Daniel Nicola Olvera</h3>
-                              <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed mt-3">
-                                Guiando a la congregación con pasión por la Palabra de Dios y un corazón dedicado a la enseñanza y el cuidado espiritual de las familias.
-                              </p>
+                        <StaggerItem className="h-full">
+                          <HoverCard 
+                            className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
+                          >
+                            <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
+                              <OptimizedMedia 
+                                src={pastorDavidImg} 
+                                alt="Pastor David Nicola"
+                                className="w-full h-full object-cover object-top"
+                              />
                             </div>
-                          </div>
-                        </AnimeHoverCard>
+                            <div className="p-6 flex flex-col justify-between">
+                              <div>
+                                <span className="text-[10px] font-bold text-gold uppercase tracking-wider block mb-1">Pastor Principal</span>
+                                <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Pastor David Daniel Nicola Olvera</h3>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed mt-3">
+                                  Guiando a la congregación con pasión por la Palabra de Dios y un corazón dedicado a la enseñanza y el cuidado espiritual de las familias.
+                                </p>
+                              </div>
+                            </div>
+                          </HoverCard>
+                        </StaggerItem>
 
-                        <AnimeHoverCard 
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
-                        >
-                          <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
-                            <OptimizedMedia 
-                              src={pastoraCorinaImg} 
-                              alt="Pastora Corina Miranda"
-                              className="w-full h-full object-cover object-top"
-                            />
-                          </div>
-                          <div className="p-6 flex flex-col justify-between">
-                            <div>
-                              <span className="text-[10px] font-bold text-gold uppercase tracking-wider block mb-1">Pastora</span>
-                              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Pastora Bertha Corina Miranda Sánchez</h3>
-                              <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed mt-3">
-                                Dedicada a la consejería pastoral, la restauración familiar y el fortalecimiento de los ministerios internos de la iglesia.
-                              </p>
+                        <StaggerItem className="h-full">
+                          <HoverCard 
+                            className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col sm:flex-row h-full"
+                          >
+                            <div className="w-full sm:w-44 h-56 bg-gray-50 dark:bg-slate-950 flex-shrink-0">
+                              <OptimizedMedia 
+                                src={pastoraCorinaImg} 
+                                alt="Pastora Corina Miranda"
+                                className="w-full h-full object-cover object-top"
+                              />
                             </div>
-                          </div>
-                        </AnimeHoverCard>
-                      </AnimeStaggerGrid>
+                            <div className="p-6 flex flex-col justify-between">
+                              <div>
+                                <span className="text-[10px] font-bold text-gold uppercase tracking-wider block mb-1">Pastora</span>
+                                <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Pastora Bertha Corina Miranda Sánchez</h3>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed mt-3">
+                                  Dedicada a la consejería pastoral, la restauración familiar y el fortalecimiento de los ministerios internos de la iglesia.
+                                </p>
+                              </div>
+                            </div>
+                          </HoverCard>
+                        </StaggerItem>
+                      </StaggerContainer>
                     </section>
                 </div>
               );
@@ -465,7 +482,7 @@ const About = () => {
 
             // OTHER GENERIC CUSTOM SECTIONS (added by user)
             return (
-              <section key={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 animate-fadeIn text-left">
+              <section key={id} id={id} className="max-w-7xl mx-auto px-4 md:px-8 space-y-8 animate-fadeIn text-left">
                 {(title || subtitle) && (
                   <div className="text-center max-w-2xl mx-auto space-y-3">
                     {title && <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">{title}</h2>}
@@ -481,91 +498,104 @@ const About = () => {
           case 'system_about_pillars':
             // 4. DECLARACIÓN DOCTRINAL (LOS 4 PUNTOS CUADRANGULARES)
             return (
-              <section key={id} className="space-y-8 text-left">
-                <AnimeFadeUp 
+              <section key={id} id={id} className="space-y-8 text-left">
+                <ScrollReveal 
+                  direction="up"
+                  distance={20}
+                  duration={1.3}
+                  delay={0}
                   className="text-center max-w-xl mx-auto space-y-2"
                 >
                   <h2 className="text-3xl font-serif font-bold text-primary dark:text-white">{title || 'Los 4 Pilares Cuadrangulares'}</h2>
                   {subtitle && (
                     <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">{subtitle}</p>
                   )}
-                </AnimeFadeUp>
+                </ScrollReveal>
 
-                <AnimeStaggerGrid 
+                <StaggerContainer 
                   className="grid grid-cols-2 lg:grid-cols-4 gap-6"
                 >
-                  <AnimeHoverCard 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
-                  >
-                    <div className="space-y-4">
-                      <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center font-bold">
-                        <Cross size={24} className="text-red-600" />
+                  <StaggerItem className="h-full">
+                    <HoverCard 
+                      className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
+                    >
+                      <div className="space-y-4">
+                        <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center font-bold">
+                          <Cross size={24} className="text-red-600" />
+                        </div>
+                        <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Salvador</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                          Representado por el <strong>rostro de hombre</strong>. Él pagó el precio de nuestros pecados en la cruz y nos trajo redención eterna.
+                        </p>
                       </div>
-                      <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Salvador</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                        Representado por el <strong>rostro de hombre</strong>. Él pagó el precio de nuestros pecados en la cruz y nos trajo redención eterna.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider mt-6 block">Juan 3:16</span>
-                  </AnimeHoverCard>
+                      <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider mt-6 block">Juan 3:16</span>
+                    </HoverCard>
+                  </StaggerItem>
 
-                  <AnimeHoverCard 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
-                  >
-                    <div className="space-y-4">
-                      <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400 rounded-xl flex items-center justify-center font-bold">
-                        <Flame size={24} className="text-yellow-500" />
+                  <StaggerItem className="h-full">
+                    <HoverCard 
+                      className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
+                    >
+                      <div className="space-y-4">
+                        <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400 rounded-xl flex items-center justify-center font-bold">
+                          <Flame size={24} className="text-yellow-500" />
+                        </div>
+                        <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Bautizador</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                          Representado por el <strong>rostro de león</strong>. Él nos llena de poder y fuego con el Espíritu Santo para el servicio.
+                        </p>
                       </div>
-                      <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Bautizador</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                        Representado por el <strong>rostro de león</strong>. Él nos llena de poder y fuego con el Espíritu Santo para el servicio.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
-                  </AnimeHoverCard>
+                      <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wider mt-6 block">Hechos 1:8</span>
+                    </HoverCard>
+                  </StaggerItem>
 
-                  <AnimeHoverCard 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
-                  >
-                    <div className="space-y-4">
-                      <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold">
-                        <Droplet size={24} className="text-blue-600" />
+                  <StaggerItem className="h-full">
+                    <HoverCard 
+                      className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
+                    >
+                      <div className="space-y-4">
+                        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold">
+                          <Droplet size={24} className="text-blue-600" />
+                        </div>
+                        <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Sanador</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                          Representado por el <strong>rostro de buey</strong>. Él llevó nuestras enfermedades y nos provee sanidad en cuerpo, alma y espíritu.
+                        </p>
                       </div>
-                      <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Sanador</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                        Representado por el <strong>rostro de buey</strong>. Él llevó nuestras enfermedades y nos provee sanidad en cuerpo, alma y espíritu.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-6 block">Marcos 16:18</span>
-                  </AnimeHoverCard>
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-6 block">Marcos 16:18</span>
+                    </HoverCard>
+                  </StaggerItem>
 
-                  <AnimeHoverCard 
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
-                  >
-                    <div className="space-y-4">
-                      <div className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center font-bold">
-                        <Crown size={24} className="text-purple-600" />
+                  <StaggerItem className="h-full">
+                    <HoverCard 
+                      className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full"
+                    >
+                      <div className="space-y-4">
+                        <div className="w-12 h-12 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center font-bold">
+                          <Crown size={24} className="text-purple-600" />
+                        </div>
+                        <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Rey que Viene</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                          Representado por el <strong>rostro de águila</strong>. Nuestra esperanza gloriosa de que Él regresará con majestad por su pueblo.
+                        </p>
                       </div>
-                      <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-gray-100">Jesucristo, el Rey que Viene</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                        Representado por el <strong>rostro de águila</strong>. Nuestra esperanza gloriosa de que Él regresará con majestad por su pueblo.
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mt-6 block">1 Tesalonicenses 4:16</span>
-                  </AnimeHoverCard>
-                </AnimeStaggerGrid>
+                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mt-6 block">1 Tesalonicenses 4:16</span>
+                    </HoverCard>
+                  </StaggerItem>
+                </StaggerContainer>
               </section>
             );
 
           case 'system_gallery':
             // GALERIA DE DIAPOSITIVAS TAMBIÉN DISPONIBLE EN NOSOTROS
             return (
-              <ImageGallerySection 
-                key={id}
-                title={title || ''}
-                subtitle={subtitle || ''}
-                slides={content_blocks || []}
-              />
+              <div key={id} id={id}>
+                <ImageGallerySection 
+                  title={title || ''}
+                  subtitle={subtitle || ''}
+                  slides={content_blocks || []}
+                />
+              </div>
             );
 
           default:

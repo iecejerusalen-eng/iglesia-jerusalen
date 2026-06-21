@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   Home, Info, Calendar, Users, 
-  MapPin, Send, BookOpen
+  MapPin, Send, BookOpen, Compass, Flame
 } from 'lucide-react';
 import { AnimeFadeUp, AnimePulseHover } from '../animations/AnimeWrappers';
 
@@ -27,6 +27,14 @@ export default function StickyNav() {
         { id: 'schedules', label: 'Horarios', icon: Calendar },
         { id: 'events', label: 'Eventos', icon: Users },
         { id: 'sermons', label: 'Prédicas', icon: BookOpen },
+      ];
+    } else if (cleanPath === '/nosotros') {
+      list = [
+        { id: 'about_hero', label: 'Inicio', icon: Info },
+        { id: 'about_vision_mission', label: 'Misión y Visión', icon: Compass },
+        { id: 'about_history', label: 'Nuestra Historia', icon: BookOpen },
+        { id: 'about_pillars', label: 'Los 4 Pilares', icon: Flame },
+        { id: 'about_pastoral', label: 'Liderazgo', icon: Users },
       ];
     } else if (cleanPath === '/contacto') {
       list = [
