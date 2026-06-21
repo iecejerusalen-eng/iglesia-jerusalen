@@ -203,7 +203,7 @@ const Contact = () => {
           <div className="flex-1 rounded-2xl overflow-hidden shadow-xs border border-gray-100 dark:border-white/5 relative h-full">
             <iframe 
               src="https://maps.google.com/maps?q=-2.139188,-79.5949891&t=&z=17&ie=UTF8&iwloc=&output=embed"
-              className="absolute inset-0 w-full h-full border-0"
+              className="absolute inset-0 w-full h-full border-0 dark:invert-[90%] dark:hue-rotate-[180deg] dark:contrast-[85%]"
               allowFullScreen={true}
               loading="lazy"
               // @ts-expect-error credentialless is not yet in React's TS definitions but is supported by the browser
