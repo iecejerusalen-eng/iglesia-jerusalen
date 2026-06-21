@@ -146,16 +146,16 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'programs',
-    label: 'Educación (LMS)',
-    name: 'Cursos / LMS',
+    label: 'Aula Virtual (LMS)',
+    name: 'Aula Virtual (LMS)',
     path: '/admin/lms',
     icon: GraduationCap,
     group: 'educacion'
   },
   {
     id: 'programs',
-    label: 'Recursos Abiertos',
-    name: 'Recursos Abiertos',
+    label: 'Programas y Estudios',
+    name: 'Programas y Estudios',
     path: '/admin/recursos-abiertos',
     icon: FileText,
     group: 'educacion'

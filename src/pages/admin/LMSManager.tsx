@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { 
   Plus, BookOpen, Edit, 
-  Trash2, X, Save, Check, Ban, AlertCircle, FileText 
+  Trash2, X, Save, Check, Ban, AlertCircle, FileText, ArrowRight
 } from 'lucide-react';
 import type { LMSCourse } from '../../types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
@@ -31,6 +31,7 @@ interface EnrollmentRequest {
 
 export default function LMSManager() {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialTab = location.pathname.includes('matriculas') ? 'requests' : 'courses';
   const [activeTab, setActiveTab] = useState<'courses' | 'categories' | 'requests' | 'defaults'>(initialTab);
   const [courses, setCourses] = useState<LMSCourse[]>([]);
@@ -91,18 +92,41 @@ export default function LMSManager() {
         setCategories(data || []);
       } 
       else if (activeTab === 'requests') {
-        const { data, error } = await supabase
+        const { data: reqData, error: reqError } = await supabase
           .from('lms_enrollment_requests')
           .select(`
             *,
-            lms_courses(title),
-            profiles:user_id(first_name, last_name, email)
+            lms_courses(title)
           `)
           .eq('status', 'pending')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        setRequests(data || []);
+        if (reqError) throw reqError;
+
+        if (reqData && reqData.length > 0) {
+          const userIds = [...new Set(reqData.map(r => r.user_id))];
+          const { data: profData, error: profError } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', userIds);
+
+          if (profError) throw profError;
+
+          const mappedRequests = reqData.map(req => {
+            const profile = profData?.find(p => p.id === req.user_id);
+            return {
+              ...req,
+              profiles: profile ? {
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
+                email: profile.email || ''
+              } : undefined
+            };
+          });
+          setRequests(mappedRequests as any[]);
+        } else {
+          setRequests([]);
+        }
       }
       else if (activeTab === 'defaults') {
         // Mock default configuration mapping from course defaults
@@ -345,7 +369,7 @@ export default function LMSManager() {
         <div>
           <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-3">
             <BookOpen className="text-gold" size={32} />
-            Administración del Entorno Virtual (LMS)
+            Administración de Aula Virtual (LMS)
           </h1>
           <p className="text-slate-600 dark:text-gray-400 mt-1">
             Administra cursos, asigna categorías de estudio, aprueba solicitudes de alumnos y configura valores predeterminados.
@@ -370,6 +394,21 @@ export default function LMSManager() {
             Nueva Categoría
           </button>
         )}
+      </div>
+
+      {/* Quick Navigation Banner */}
+      <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+        <div className="space-y-0.5">
+          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400">¿Deseas administrar los Programas de Estudio o la Biblioteca?</p>
+          <p className="text-[11px] text-indigo-650/80 dark:text-indigo-400/80">Los estudios de libre consumo y material de descarga (PDFs) se gestionan por separado.</p>
+        </div>
+        <button 
+          onClick={() => navigate('/admin/recursos-abiertos')}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
+        >
+          Administrar Programas y Estudios
+          <ArrowRight size={14} />
+        </button>
       </div>
 
       {/* Tabs */}
@@ -431,7 +470,7 @@ export default function LMSManager() {
                     <AnimeFadeUp key={course.id} delay={index * 0.05}>
                       <div 
                         className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-md transition-shadow cursor-pointer text-left"
-                        onClick={() => window.location.href = `/admin/lms/course/${course.id}`}
+                        onClick={() => navigate(`/admin/lms/course/${course.id}`)}
                       >
                         <div className="h-40 bg-gray-200 dark:bg-slate-800 relative">
                           {course.cover_image_url ? (
@@ -461,7 +500,7 @@ export default function LMSManager() {
                             </div>
                             <div className="flex gap-1">
                               <button 
-                                onClick={(e) => { e.stopPropagation(); window.location.href = `/admin/lms/gradebook/${course.id}`; }}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/admin/lms/gradebook/${course.id}`); }}
                                 className="p-2 text-gray-500 hover:text-gold hover:bg-gold/10 rounded-lg transition-colors"
                                 title="Calificaciones (Gradebook)"
                               >

@@ -213,6 +213,16 @@ export default function ProgramsOverview() {
     });
   };
 
+  const displayCategories = [...categories];
+  const hasUncategorized = courses.some(c => !(c.lms_course_categories as any)?.name);
+  if (hasUncategorized && !displayCategories.some(cat => cat.name === 'Otros Programas')) {
+    displayCategories.push({
+      id: 'uncategorized',
+      name: 'Otros Programas',
+      description: 'Programas de estudio generales y materias adicionales.'
+    });
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/30 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
       
@@ -261,19 +271,31 @@ export default function ProgramsOverview() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xs">
               {/* Category selector chips */}
               <div className="flex flex-wrap gap-1.5">
-                {categoriesList.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategoryFilter(cat)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                      selectedCategoryFilter === cat 
-                        ? 'bg-gold text-white shadow-xs' 
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-450 hover:bg-gray-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {cat === 'Todos' ? 'Todos los Recursos' : `Para ${cat}`}
-                  </button>
-                ))}
+                {categoriesList.map(cat => {
+                  const getCategoryLabel = (c: string) => {
+                    switch (c) {
+                      case 'Todos': return 'Todos los Recursos';
+                      case 'Damas': return 'Estudios para Damas';
+                      case 'Caballeros': return 'Estudios para Caballeros';
+                      case 'Jóvenes': return 'Jóvenes / Universitarios';
+                      case 'Generales': return 'Generales / Devocionales';
+                      default: return c;
+                    }
+                  };
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategoryFilter(cat)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                        selectedCategoryFilter === cat 
+                          ? 'bg-gold text-white shadow-xs' 
+                          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-450 hover:bg-gray-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {getCategoryLabel(cat)}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Search input */}
@@ -415,7 +437,7 @@ export default function ProgramsOverview() {
               </div>
             ) : (
               <div className="space-y-16">
-                {categories.map((cat, idx) => {
+                {displayCategories.map((cat, idx) => {
                   const catCourses = coursesByCategory(cat.name);
                   if (catCourses.length === 0) return null;
 
@@ -424,7 +446,7 @@ export default function ProgramsOverview() {
                       {/* Section Header */}
                       <div className="border-l-4 border-indigo-600 pl-4 space-y-1">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
-                          Ruta Nivel {idx + 1}
+                          {cat.id === 'uncategorized' ? 'Generales / Otros' : `Ruta Nivel ${idx + 1}`}
                         </span>
                         <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
                           {cat.name}

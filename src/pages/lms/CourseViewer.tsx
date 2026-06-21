@@ -171,23 +171,39 @@ export default function CourseViewer() {
   // --- FORUM ACTIONS ---
   const fetchForumPosts = async (lessonId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: postsData, error: postsError } = await supabase
         .from('lms_lesson_forum_posts')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            photo_url,
-            role,
-            roles
-          )
-        `)
+        .select('*')
         .eq('lesson_id', lessonId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setForumPosts(data || []);
+      if (postsError) throw postsError;
+
+      let mappedPosts: any[] = [];
+      if (postsData && postsData.length > 0) {
+        const userIds = [...new Set(postsData.map(p => p.user_id))];
+        const { data: profData, error: profError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, photo_url, role, roles')
+          .in('id', userIds);
+
+        if (profError) throw profError;
+
+        mappedPosts = postsData.map(post => {
+          const profile = profData?.find(p => p.id === post.user_id);
+          return {
+            ...post,
+            profiles: profile ? {
+              first_name: profile.first_name || '',
+              last_name: profile.last_name || '',
+              photo_url: profile.photo_url || null,
+              role: profile.role,
+              roles: profile.roles || []
+            } : null
+          };
+        });
+      }
+      setForumPosts(mappedPosts);
     } catch (err) {
       console.error('Error fetching forum posts:', err);
     }

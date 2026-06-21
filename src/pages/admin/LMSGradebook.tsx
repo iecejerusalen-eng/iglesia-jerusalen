@@ -51,23 +51,40 @@ const LMSGradebook = () => {
       // Fetch submissions
       const activityIds = courseActivities?.map(a => a.id) || [];
       if (activityIds.length > 0) {
-        const { data: subs, error: subsError } = await supabase
+        const { data: subsData, error: subsError } = await supabase
           .from('lms_assignment_submissions')
-          .select(`
-            *,
-            auth_users:student_id (
-              id,
-              email
-            ),
-            profiles:student_id (
-              first_name,
-              last_name
-            )
-          `)
+          .select('*')
           .in('activity_id', activityIds);
           
         if (subsError) throw subsError;
-        setSubmissions(subs || []);
+
+        if (subsData && subsData.length > 0) {
+          const studentIds = [...new Set(subsData.map(s => s.student_id))];
+          const { data: profData, error: profError } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', studentIds);
+
+          if (profError) throw profError;
+
+          const mappedSubs = subsData.map(sub => {
+            const profile = profData?.find(p => p.id === sub.student_id);
+            return {
+              ...sub,
+              auth_users: profile ? {
+                id: profile.id,
+                email: profile.email || ''
+              } : null,
+              profiles: profile ? {
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || ''
+              } : null
+            };
+          });
+          setSubmissions(mappedSubs);
+        } else {
+          setSubmissions([]);
+        }
       }
     } catch (err) {
       console.error(err);

@@ -122,11 +122,21 @@ export default function TeacherDashboard() {
     if (!selectedCourse) return;
     try {
       // 1. Fetch Students Directory (Enrollments -> profiles -> members)
-      const { data: enrollments } = await supabase
+      const { data: enrollments, error: enrollError } = await supabase
         .from('lms_enrollments')
-        .select(`
-          user_id,
-          profiles:user_id (
+        .select('user_id')
+        .eq('course_id', selectedCourse.id)
+        .eq('role', 'student');
+
+      if (enrollError) throw enrollError;
+
+      let studentList: any[] = [];
+      if (enrollments && enrollments.length > 0) {
+        const studentIds = enrollments.map(e => e.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
             first_name,
             last_name,
             email,
@@ -137,21 +147,25 @@ export default function TeacherDashboard() {
               emergency_contact_phone,
               medical_notes
             )
-          )
-        `)
-        .eq('course_id', selectedCourse.id)
-        .eq('role', 'student');
+          `)
+          .in('id', studentIds);
 
-      const studentList = enrollments?.map((e: any) => ({
-        id: e.user_id,
-        first_name: e.profiles?.first_name || 'Estudiante',
-        last_name: e.profiles?.last_name || '',
-        email: e.profiles?.email || '',
-        phone: e.profiles?.members?.phone || 'S/N',
-        emergency_name: e.profiles?.members?.emergency_contact_name || 'S/N',
-        emergency_phone: e.profiles?.members?.emergency_contact_phone || 'S/N',
-        medical_notes: e.profiles?.members?.medical_notes || 'Ninguna'
-      })) || [];
+        if (profilesError) throw profilesError;
+
+        studentList = enrollments.map((e: any) => {
+          const profile = profilesData?.find(p => p.id === e.user_id);
+          return {
+            id: e.user_id,
+            first_name: profile?.first_name || 'Estudiante',
+            last_name: profile?.last_name || '',
+            email: profile?.email || '',
+            phone: (profile?.members as any)?.phone || 'S/N',
+            emergency_name: (profile?.members as any)?.emergency_contact_name || 'S/N',
+            emergency_phone: (profile?.members as any)?.emergency_contact_phone || 'S/N',
+            medical_notes: (profile?.members as any)?.medical_notes || 'Ninguna'
+          };
+        });
+      }
       setStudents(studentList);
 
       if (activeTab === 'students') {
@@ -215,16 +229,37 @@ export default function TeacherDashboard() {
         const activityIds = evalData?.map(a => a.id) || [];
         
         if (activityIds.length > 0) {
-          const { data: subs } = await supabase
+          const { data: subsData, error: subsError } = await supabase
             .from('lms_assignment_submissions')
-            .select(`
-              *,
-              profiles:student_id(first_name, last_name)
-            `)
+            .select('*')
             .in('activity_id', activityIds);
+
+          if (subsError) throw subsError;
+
+          let subs: any[] = [];
+          if (subsData && subsData.length > 0) {
+            const studentIds = [...new Set(subsData.map(s => s.student_id))];
+            const { data: profData, error: profError } = await supabase
+              .from('profiles')
+              .select('id, first_name, last_name')
+              .in('id', studentIds);
+
+            if (profError) throw profError;
+
+            subs = subsData.map(sub => {
+              const profile = profData?.find(p => p.id === sub.student_id);
+              return {
+                ...sub,
+                profiles: profile ? {
+                  first_name: profile.first_name || '',
+                  last_name: profile.last_name || ''
+                } : null
+              };
+            });
+          }
           
-          setSubmissions(subs || []);
-          calculateAnalytics(subs || [], studentList);
+          setSubmissions(subs);
+          calculateAnalytics(subs, studentList);
         }
       }
       else if (activeTab === 'comm') {
@@ -237,15 +272,36 @@ export default function TeacherDashboard() {
         setAnnouncements(announcementsData || []);
 
         // Fetch tutoring sessions
-        const { data: tutoringData } = await supabase
+        const { data: tutoringData, error: tutoringError } = await supabase
           .from('lms_tutoring_appointments')
-          .select(`
-            *,
-            profiles:student_id(first_name, last_name)
-          `)
+          .select('*')
           .eq('course_id', selectedCourse.id)
           .order('scheduled_at', { ascending: true });
-        setTutoring(tutoringData || []);
+
+        if (tutoringError) throw tutoringError;
+
+        let mappedTutoring: any[] = [];
+        if (tutoringData && tutoringData.length > 0) {
+          const studentIds = [...new Set(tutoringData.map(t => t.student_id))];
+          const { data: profData, error: profError } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .in('id', studentIds);
+
+          if (profError) throw profError;
+
+          mappedTutoring = tutoringData.map(t => {
+            const profile = profData?.find(p => p.id === t.student_id);
+            return {
+              ...t,
+              profiles: profile ? {
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || ''
+              } : null
+            };
+          });
+        }
+        setTutoring(mappedTutoring);
       }
       else if (activeTab === 'integrations') {
         // Sincronizaciones mock read from localStorage

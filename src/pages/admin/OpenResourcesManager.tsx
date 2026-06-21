@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { 
   Plus, BookOpen, LayoutDashboard, Edit, 
-  Trash2, X, Save, FileText, Video, Eye, Shield 
+  Trash2, X, Save, FileText, Video, Eye, Shield, ArrowRight
 } from 'lucide-react';
 import type { OpenResource, Study } from '../../types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
@@ -10,6 +11,7 @@ import MediaUploader from '../../components/common/MediaUploader';
 import { toast } from 'sonner';
 
 const OpenResourcesManager = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'open_courses' | 'studies'>('open_courses');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -230,10 +232,10 @@ const OpenResourcesManager = () => {
         <div>
           <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-3">
             <BookOpen className="text-gold" size={32} />
-            Recursos y Biblioteca de Estudios
+            Administración de Programas y Estudios
           </h1>
           <p className="text-slate-600 dark:text-gray-400 mt-1">
-            Administra los cursos abiertos sin matrícula y la biblioteca de guías/PDFs de libre descarga.
+            Administra los programas (cursos abiertos de libre consumo) y la biblioteca de estudios (guías/PDFs de descarga directa).
           </p>
         </div>
         
@@ -254,6 +256,21 @@ const OpenResourcesManager = () => {
             Nuevo Estudio
           </button>
         )}
+      </div>
+
+      {/* Quick Navigation Banner */}
+      <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+        <div className="space-y-0.5">
+          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400">¿Deseas administrar los Cursos con Matrícula del Aula Virtual?</p>
+          <p className="text-[11px] text-indigo-650/80 dark:text-indigo-400/80">Los cursos formales del Aula Virtual (que requieren inscripción, seguimiento y notas) se gestionan por separado.</p>
+        </div>
+        <button 
+          onClick={() => navigate('/admin/lms')}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
+        >
+          Ir al Aula Virtual (LMS)
+          <ArrowRight size={14} />
+        </button>
       </div>
 
       {/* Tabs Switcher */}
@@ -327,7 +344,7 @@ const OpenResourcesManager = () => {
                   <AnimeFadeUp key={resource.id} delay={index * 0.05}>
                     <div 
                       className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-md transition-shadow cursor-pointer text-left"
-                      onClick={() => window.location.href = `/admin/recursos-abiertos/${resource.id}`}
+                      onClick={() => navigate(`/admin/recursos-abiertos/${resource.id}`)}
                     >
                       <div className="h-40 bg-gray-200 dark:bg-slate-800 relative">
                         {resource.cover_image_url ? (
