@@ -39,7 +39,7 @@ const Navigation = () => {
   const isPathActive = (path: string) => location.pathname === path;
   
   const isComunidadActive = () => 
-    ['/ministerios', '/eventos', '/peticiones'].some(path => location.pathname === path);
+    ['/ministerios', '/eventos', '/peticiones', '/cumpleanos'].some(path => location.pathname === path);
 
   const isRecursosActive = () => 
     ['/predicas', '/recursos/alabanzas', '/programas'].some(path => location.pathname === path);
@@ -166,6 +166,17 @@ const Navigation = () => {
                     }`}
                   >
                     Peticiones
+                  </Link>
+                  <Link
+                    to="/cumpleanos"
+                    onClick={() => setIsComunidadHovered(false)}
+                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
+                      isTransparent 
+                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
+                    }`}
+                  >
+                    Cumpleaños 🎂
                   </Link>
                 </motion.div>
               )}
@@ -434,6 +445,15 @@ const Navigation = () => {
                                 className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Peticiones
+                              </Link>
+                            </li>
+                            <li>
+                              <Link
+                                to="/cumpleanos"
+                                onClick={closeMenu}
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
+                              >
+                                Cumpleaños 🎂
                               </Link>
                             </li>
                           </motion.ul>

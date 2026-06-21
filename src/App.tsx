@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import ScrollToTop from './components/common/ScrollToTop';
 import ConfirmDialog from './components/common/ConfirmDialog';
 import CRMRegistrationPrompt from './components/common/CRMRegistrationPrompt';
+import BirthdayCelebrationModal from './components/common/BirthdayCelebrationModal';
 
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -57,6 +58,7 @@ import ProductionBoard from './pages/admin/ProductionBoard';
 import MediaVault from './pages/admin/MediaVault';
 import InventoryManager from './pages/admin/InventoryManager';
 import AnimationCatalog from './pages/admin/AnimationCatalog';
+import Birthdays from './pages/public/Birthdays';
 import StudentDashboard from './pages/lms/StudentDashboard';
 import TeacherDashboard from './pages/lms/TeacherDashboard';
 import CourseViewer from './pages/lms/CourseViewer';
@@ -146,6 +148,7 @@ function App() {
       <BrowserRouter>
         <ScrollToTop />
         <CRMRegistrationPrompt />
+        <BirthdayCelebrationModal />
         <Routes>
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
@@ -169,6 +172,7 @@ function App() {
             <Route path="/escuela-dominical" element={<SundaySchool />} />
             <Route path="/plan-lectura" element={<ReadingPlan />} />
             <Route path="/predicas/:id" element={<SermonDetail />} />
+            <Route path="/cumpleanos" element={<Birthdays />} />
           </Route>
 
           <Route element={<ProtectedRoute module="dashboard" />}>

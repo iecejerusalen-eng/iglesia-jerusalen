@@ -21,7 +21,7 @@ CREATE POLICY "Permitir lectura de notificaciones a autenticados"
 
 -- Permitir la gestión (crear, modificar, borrar) solo al equipo administrativo/pastoral
 CREATE POLICY "Permitir gestión de notificaciones a personal autorizado"
-  ON public.notification_logs FOR INSERT, UPDATE, DELETE TO authenticated
+  ON public.notification_logs FOR ALL TO authenticated
   USING (
     exists (
       select 1 from public.profiles
