@@ -900,7 +900,7 @@ const Home = () => {
             // 3. DOCTRINA / PILARES SECTION (FASE 3 - PTO 3)
             if (id === 'home_welcome') {
               return (
-                <div key={id} id="about" className="pb-16 md:pb-24">
+                <div key={id} id="about" className="pb-0">
                   {content_blocks && content_blocks.length > 0 ? (
                     <section className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
                       <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-3">
@@ -993,7 +993,7 @@ const Home = () => {
                   {/* Timeline section inside home_welcome case */}
                   <ChurchJourneySection />
                   
-                  <div className="mt-20 mb-10">
+                  <div className="mt-16">
                     <MarqueeText />
                   </div>
                 </div>
@@ -1081,7 +1081,7 @@ const Home = () => {
             );
 
             return (
-              <section key={id} id="schedules" className="bg-slate-50 dark:bg-slate-950 py-20 border-y border-slate-200 dark:border-white/10 scroll-mt-24 relative overflow-hidden transition-colors duration-300">
+              <section key={id} id="schedules" className="bg-slate-50 dark:bg-slate-950 py-16 border-y border-slate-200 dark:border-white/10 scroll-mt-24 relative overflow-hidden transition-colors duration-300 !mt-0">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-church-gold-light/5 rounded-full blur-[100px] pointer-events-none" />
 
