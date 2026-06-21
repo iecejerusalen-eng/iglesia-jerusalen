@@ -84,12 +84,14 @@ const Petitions = () => {
       });
 
       if (limitError) {
-        toast.error('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-        setSubmitting(false);
-        return;
-      }
-
-      if (!limitData || !limitData.success) {
+        const status = limitError.context?.status;
+        if (status === 429) {
+          toast.error('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
+          setSubmitting(false);
+          return;
+        }
+        console.warn('Rate limiter check failed or not deployed, proceeding:', limitError);
+      } else if (!limitData || !limitData.success) {
         toast.error('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
         setSubmitting(false);
         return;
