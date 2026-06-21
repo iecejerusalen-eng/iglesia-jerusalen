@@ -246,6 +246,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         roles: ['admin'],
         firstName: 'Esteban',
         lastName: 'Nicola',
+        photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
         allowedMinistries: null,
         permissions: mockPermissions,
         isLoading: false,
@@ -299,6 +300,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           roles: ['admin'],
           firstName: 'Esteban',
           lastName: 'Nicola',
+          photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
           permissions: mockPermissions,
           isLoading: false,
         });

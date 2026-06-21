@@ -13,7 +13,7 @@ import {
 import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 
 const VirtualClassroomLanding = () => {
-  const { user, userRole, firstName, lastName, logout } = useAuthStore();
+  const { user, userRole, firstName, lastName, logout, photoUrl } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -55,8 +55,16 @@ const VirtualClassroomLanding = () => {
                 <GraduationCap size={200} />
               </div>
               <div className="flex items-center gap-4 text-left">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
-                  <User size={28} />
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
+                  {photoUrl ? (
+                    <img 
+                      src={photoUrl} 
+                      alt="Perfil" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <User size={28} />
+                  )}
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Sesión Activa</span>

@@ -2,7 +2,19 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 
 import type { Product } from '../../types';
-import { Search, Filter, Sparkles } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Sparkles,
+  Shirt,
+  BookOpen,
+  Laptop,
+  Tag,
+  ArrowUpDown,
+  ChevronDown,
+  X,
+  SlidersHorizontal 
+} from 'lucide-react';
 import OptimizedMedia from '../../components/common/OptimizedMedia';
 
 import ProductQuickView from '../../components/store/ProductQuickView';
@@ -97,12 +109,27 @@ const MOCK_PRODUCTS: Product[] = [
 
 
 
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'ropa':
+      return <Shirt size={14} className="shrink-0" />;
+    case 'libros':
+      return <BookOpen size={14} className="shrink-0" />;
+    case 'recursos digitales':
+    case 'digital':
+      return <Laptop size={14} className="shrink-0" />;
+    default:
+      return <Tag size={14} className="shrink-0" />;
+  }
+};
+
 const Store = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'type_asc' | 'type_desc'>('name_asc');
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -135,10 +162,37 @@ const Store = () => {
   }, []);
 
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (searchTerms.length === 0) {
+      const matchesCategory = selectedCategory === 'Todas' || product.category === selectedCategory;
+      return matchesCategory;
+    }
+    const matchesSearch = searchTerms.every(term => 
+      product.name.toLowerCase().includes(term) ||
+      (product.description?.toLowerCase().includes(term) ?? false) ||
+      product.category.toLowerCase().includes(term)
+    );
     const matchesCategory = selectedCategory === 'Todas' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price_asc':
+        return a.price - b.price;
+      case 'price_desc':
+        return b.price - a.price;
+      case 'name_asc':
+        return a.name.localeCompare(b.name);
+      case 'name_desc':
+        return b.name.localeCompare(a.name);
+      case 'type_asc':
+        return (a.type || 'physical').localeCompare(b.type || 'physical');
+      case 'type_desc':
+        return (b.type || 'physical').localeCompare(a.type || 'physical');
+      default:
+        return 0;
+    }
   });
 
   const categories = ['Todas', ...Array.from(new Set(products.map((p) => p.category)))];
@@ -161,38 +215,82 @@ const Store = () => {
         </div>
       </div>
 
-      {/* Buscador y Filtros */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
-        <div className="relative w-full md:w-96">
-          <label htmlFor="search_store" className="sr-only">Buscar recursos, libros, Biblias...</label>
-          <input
-            id="search_store"
-            type="text"
-            placeholder="Buscar recursos, libros, Biblias..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all text-sm bg-white dark:bg-slate-900 dark:text-white"
-          />
-          <Search className="absolute left-3.5 top-3 text-slate-500 dark:text-gray-450" size={18} />
+      {/* Controles de Filtros y Ordenamiento (Diseño Premium Amplio) */}
+      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 mb-8 space-y-6 shadow-2xs">
+        <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+          
+          {/* Buscador inteligente */}
+          <div className="relative flex-grow max-w-xl">
+            <input
+              id="search_store"
+              type="text"
+              placeholder="Buscar por nombre, descripción o categoría..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-10 py-3 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:focus-visible:ring-blue-600 focus-visible:border-primary transition-all text-sm bg-slate-50 dark:bg-slate-950 dark:text-white"
+            />
+            <Search className="absolute left-4 top-3.5 text-slate-500 dark:text-gray-450" size={18} />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Ordenador */}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-450 flex items-center gap-1.5">
+              <ArrowUpDown size={14} />
+              Ordenar por:
+            </span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950 text-sm font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-600 cursor-pointer"
+              >
+                <option value="name_asc">Nombre (A-Z)</option>
+                <option value="name_desc">Nombre (Z-A)</option>
+                <option value="price_asc">Precio (Menor a Mayor)</option>
+                <option value="price_desc">Precio (Mayor a Menor)</option>
+                <option value="type_asc">Tipo (Digital primero)</option>
+                <option value="type_desc">Tipo (Físico primero)</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-3.5 text-gray-450 dark:text-gray-500 pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        {/* Categorías */}
-        <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
-          <div className="flex gap-2">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${
-                    selectedCategory === category
-                      ? 'bg-primary text-white shadow-md'
-                      : 'bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+        {/* Separador y Categorías */}
+        <div className="border-t border-gray-100 dark:border-white/5 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <SlidersHorizontal size={14} className="text-primary dark:text-blue-500" />
+            <span className="text-xs font-extrabold text-slate-700 dark:text-white uppercase tracking-wider">
+              Categorías de Recursos
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            {categories.map((category) => {
+              const isActive = selectedCategory === category;
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+                    isActive
+                      ? 'bg-primary dark:bg-blue-600 text-white shadow-md shadow-blue-500/10'
+                      : 'bg-slate-50 dark:bg-slate-950 border border-gray-150 dark:border-white/5 text-slate-650 dark:text-slate-350 hover:bg-gray-100 dark:hover:bg-slate-800'
                   }`}
-              >
-                {category === 'Todas' && <Filter size={14} />}
-                {category}
-              </button>
-            ))}
+                >
+                  {category === 'Todas' ? <Filter size={14} /> : getCategoryIcon(category)}
+                  <span>{category}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -206,7 +304,7 @@ const Store = () => {
         <AnimeStaggerGrid 
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {filteredProducts.map((product) => (
+          {sortedProducts.map((product) => (
               <AnimeFadeUp
                 key={product.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-all flex flex-col group h-full cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
@@ -267,7 +365,7 @@ const Store = () => {
                </div>
               </AnimeFadeUp>
           ))}
-          {filteredProducts.length === 0 && (
+          {sortedProducts.length === 0 && (
             <div className="col-span-full">
               <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <Search size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
