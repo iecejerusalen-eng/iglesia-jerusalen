@@ -134,7 +134,8 @@ export const useSyncStore = create<SyncState>((set, get) => {
                 career_id: m.career_id || null,
                 is_studying: m.is_studying ? 1 : 0,
                 studying_career_id: m.studying_career_id || null,
-                phone_country_code: m.phone_country_code || '+593'
+                phone_country_code: m.phone_country_code || '+593',
+                dedicated_verse: m.dedicated_verse || null
             };
             await store.put(newRecord);
 
@@ -247,6 +248,7 @@ export const useSyncStore = create<SyncState>((set, get) => {
                         education_level: r.education_level, career_id: r.career_id,
                         is_studying: r.is_studying ? 1 : 0, studying_career_id: r.studying_career_id,
                         phone_country_code: r.phone_country_code || '+593',
+                        dedicated_verse: r.dedicated_verse || null,
                         emails: '[]', service_areas: '[]', talents: '[]', spiritual_gifts: '[]' // handled in pull
                     });
                   } else if (item.table_name === 'schedules') {
@@ -348,6 +350,7 @@ export const useSyncStore = create<SyncState>((set, get) => {
                 let errorMsg = `Error al sincronizar fila de "${item.table_name}": `;
                 if (errCode === '23505') errorMsg += 'Cédula/DNI o dato duplicado en el servidor.';
                 else if (errCode === '42501') errorMsg += 'Permisos denegados (RLS) en el servidor.';
+                else if (errCode === '42703') errorMsg += 'La columna "dedicated_verse" no existe en el servidor. Aplica la migración SQL.';
                 else errorMsg += err.message || 'Error de base de datos.';
                 toast.error(errorMsg, { duration: 6000 });
                 await db.delete('sync_queue', item.id);
@@ -403,7 +406,8 @@ export const useSyncStore = create<SyncState>((set, get) => {
                 spiritual_gifts: m.member_spiritual_gifts ? JSON.stringify(m.member_spiritual_gifts) : '[]',
                 gender: m.gender || null, education_level: m.education_level || null, career_id: m.career_id || null,
                 is_studying: m.is_studying ? 1 : 0, studying_career_id: m.studying_career_id || null,
-                phone_country_code: m.phone_country_code || '+593'
+                phone_country_code: m.phone_country_code || '+593',
+                dedicated_verse: m.dedicated_verse || null
             });
           }
           await tx.done;

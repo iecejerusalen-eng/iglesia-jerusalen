@@ -81,6 +81,7 @@ const memberSchema = z.object({
   career_id: z.string().nullable().optional().or(z.literal('')),
   is_studying: z.boolean().optional(),
   studying_career_id: z.string().nullable().optional().or(z.literal('')),
+  dedicated_verse: z.string().optional().nullable().or(z.literal('')),
 });
 
 type MemberForm = z.infer<typeof memberSchema>;
@@ -326,6 +327,7 @@ const MembersManager = () => {
       career_id: '',
       is_studying: false,
       studying_career_id: '',
+      dedicated_verse: '',
     }
   });
 
@@ -548,6 +550,7 @@ const MembersManager = () => {
       career_id: '',
       is_studying: false,
       studying_career_id: '',
+      dedicated_verse: '',
     });
     setShowForm(true);
   };
@@ -600,6 +603,7 @@ const MembersManager = () => {
       career_id: member.career_id || '',
       is_studying: !!member.is_studying,
       studying_career_id: member.studying_career_id || '',
+      dedicated_verse: member.dedicated_verse || '',
     });
 
     setShowForm(true);
@@ -650,6 +654,7 @@ const MembersManager = () => {
         career_id: data.career_id || null,
         is_studying: data.is_studying || false,
         studying_career_id: data.studying_career_id || null,
+        dedicated_verse: data.dedicated_verse || null,
         // Relationships:
         emails: data.emails,
         service_areas: selectedAreas.map(id => ({
@@ -1521,6 +1526,17 @@ const MembersManager = () => {
                     />
                     {errors.tithes_sum && <p className="text-accent-red text-xs mt-1">{errors.tithes_sum.message}</p>}
                     <span className="text-[10px] text-gray-400 font-medium mt-1 block">Suma histórica de diezmos registrados en el sistema de la iglesia.</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Versículo Bíblico Dedicado</label>
+                    <input
+                      type="text"
+                      {...register('dedicated_verse')}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-white dark:bg-slate-900 dark:text-white"
+                      placeholder="Ej. Juan 3:16"
+                    />
+                    <span className="text-[10px] text-gray-400 font-medium mt-1 block">Este versículo se mostrará en su cumpleaños y enlazará directamente a la Biblia.</span>
                   </div>
                 </div>
               )}

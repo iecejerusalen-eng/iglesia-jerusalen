@@ -221,6 +221,7 @@ export interface Member {
   deleted_at?: string | null;
   tithes_sum: number;
   phone_country_code?: string | null;
+  dedicated_verse?: string | null;
   created_at: string;
   member_emails?: { email: string }[];
   member_service_areas?: { catalog_roles: CatalogRole }[];

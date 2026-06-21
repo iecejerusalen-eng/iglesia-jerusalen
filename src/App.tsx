@@ -60,6 +60,7 @@ import InventoryManager from './pages/admin/InventoryManager';
 import AnimationCatalog from './pages/admin/AnimationCatalog';
 import DesignCatalog from './pages/admin/DesignCatalog';
 import Birthdays from './pages/public/Birthdays';
+import Bible from './pages/public/Bible';
 import StudentDashboard from './pages/lms/StudentDashboard';
 import TeacherDashboard from './pages/lms/TeacherDashboard';
 import CourseViewer from './pages/lms/CourseViewer';
@@ -174,6 +175,7 @@ function App() {
             <Route path="/plan-lectura" element={<ReadingPlan />} />
             <Route path="/predicas/:id" element={<SermonDetail />} />
             <Route path="/cumpleanos" element={<Birthdays />} />
+            <Route path="/recursos/biblia" element={<Bible />} />
           </Route>
 
           <Route element={<ProtectedRoute module="dashboard" />}>

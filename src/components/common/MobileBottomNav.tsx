@@ -24,7 +24,7 @@ const MobileBottomNav: React.FC = () => {
     ['/ministerios', '/eventos', '/peticiones'].some((p) => location.pathname === p);
 
   const isRecursosActive = () =>
-    ['/predicas', '/recursos/alabanzas', '/programas'].some((p) => location.pathname === p);
+    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia'].some((p) => location.pathname === p);
 
   const toggleSheet = (type: 'comunidad' | 'recursos' | 'mas') => {
     if (activeSheet === type) {
@@ -211,6 +211,21 @@ const MobileBottomNav: React.FC = () => {
               Recursos
             </h3>
             <div className="grid grid-cols-1 gap-2">
+              <Link
+                to="/recursos/biblia"
+                onClick={closeSheet}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div className="p-2 bg-amber-55 dark:bg-amber-950/30 text-amber-700 dark:text-gold rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">La Santa Biblia</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Lee y busca pasajes de las Escrituras</div>
+                </div>
+              </Link>
               <Link
                 to="/predicas"
                 onClick={closeSheet}

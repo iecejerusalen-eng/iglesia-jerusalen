@@ -1,13 +1,34 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useWindowSize } from 'react-use';
 import Confetti from 'react-confetti';
 import { 
   Gift, Calendar as CalendarIcon, Table, LayoutGrid, 
-  Search, ChevronLeft, ChevronRight, Sparkles
+  Search, ChevronLeft, ChevronRight, Sparkles, BookOpen
 } from 'lucide-react';
 import type { Member } from '../../types';
 import { toast } from 'sonner';
+import { BIBLE_BOOKS } from '../../config/bibleBooks';
+
+function getBibleLinkForVerse(verseStr: string | null | undefined): string | null {
+  if (!verseStr || typeof verseStr !== 'string') return null;
+  const match = verseStr.trim().match(/^(.+?)\s+(\d+):(\d+)$/);
+  if (!match) return null;
+  
+  const rawBook = match[1].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+  const chapter = match[2];
+  const verse = match[3];
+  
+  const matchedBook = BIBLE_BOOKS.find(b => 
+    b.id === rawBook || 
+    b.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-') === rawBook ||
+    b.abbrev.toLowerCase() === rawBook
+  );
+  
+  const bookId = matchedBook ? matchedBook.id : rawBook;
+  return `/recursos/biblia?libro=${bookId}&capitulo=${chapter}&versiculo=${verse}`;
+}
 
 interface BirthdayInfo {
   member: Member;
@@ -493,6 +514,27 @@ export default function Birthdays() {
                     </div>
                   </div>
 
+                  {/* Dedicated Verse quote box */}
+                  {item.member.dedicated_verse && (
+                    <div className="px-3 py-2 bg-amber-50/25 dark:bg-amber-950/10 border border-amber-200/10 dark:border-gold/10 rounded-2xl text-center space-y-0.5">
+                      <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">Versículo Dedicado</span>
+                      {(() => {
+                        const link = getBibleLinkForVerse(item.member.dedicated_verse);
+                        return link ? (
+                          <Link
+                            to={link}
+                            className="inline-flex items-center justify-center gap-1 text-xs text-amber-700 dark:text-gold hover:text-amber-800 dark:hover:text-yellow-400 font-serif font-semibold italic hover:underline"
+                          >
+                            <BookOpen size={11} className="text-amber-600 dark:text-gold shrink-0" />
+                            {item.member.dedicated_verse}
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-gray-650 dark:text-gray-300 font-serif italic">{item.member.dedicated_verse}</span>
+                        );
+                      })()}
+                    </div>
+                  )}
+
                   {/* Celebrate action button */}
                   <button
                     onClick={() => handleCelebrate(`${item.member.first_name} ${item.member.last_name}`)}
@@ -554,6 +596,24 @@ export default function Birthdays() {
                               <span className="text-[9px] text-gray-450 dark:text-gray-400 block truncate">
                                 {item.member.leadership_role || 'Miembro'}
                               </span>
+                              {item.member.dedicated_verse && (
+                                <div className="mt-0.5 flex items-center gap-1">
+                                  {(() => {
+                                    const link = getBibleLinkForVerse(item.member.dedicated_verse);
+                                    return link ? (
+                                      <Link
+                                        to={link}
+                                        className="inline-flex items-center gap-0.5 text-[10px] text-amber-750 hover:text-amber-800 dark:text-gold dark:hover:text-yellow-400 font-serif italic hover:underline"
+                                      >
+                                        <BookOpen size={9} className="text-amber-600 dark:text-gold shrink-0" />
+                                        {item.member.dedicated_verse}
+                                      </Link>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-605 dark:text-gray-300 font-serif italic">{item.member.dedicated_verse}</span>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
