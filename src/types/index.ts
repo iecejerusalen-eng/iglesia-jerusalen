@@ -279,6 +279,21 @@ export interface SongStyle {
   created_at: string;
 }
 
+export interface SongResourceLink {
+  id: string;
+  instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' | 'Viento' | 'Otro';
+  url: string;
+  comment: string | null;
+}
+
+export interface SongStructureBlock {
+  id: string;
+  type: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'otro';
+  label: string;
+  lyrics: string;
+  melody: string | null;
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -288,6 +303,9 @@ export interface Song {
   style_id: string | null;
   lyrics: string;
   has_chords: boolean;
+  drum_style?: string | null;
+  resource_links?: SongResourceLink[] | null;
+  structure_blocks?: SongStructureBlock[] | null;
   created_at: string;
   song_types?: SongType | null;
   song_styles?: SongStyle | null;
