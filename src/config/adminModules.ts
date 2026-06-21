@@ -113,6 +113,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'diseno'
   },
   {
+    id: 'dashboard',
+    label: 'Catálogo de Diseño',
+    name: 'Guía de Estilo / Diseño',
+    path: '/admin/diseno',
+    icon: Palette,
+    group: 'diseno'
+  },
+  {
     id: 'analytics',
     label: 'Análisis (Métricas)',
     name: 'Análisis (Métricas)',

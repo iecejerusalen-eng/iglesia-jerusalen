@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabase';
 import { getDb } from '../../config/localDb';
-import type { Schedule, Sermon, Event as DbEvent } from '../../types';
+import type { Schedule, Sermon, Event as DbEvent, Song, Member } from '../../types';
 import fachadaImage from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import { Link } from 'react-router-dom';
 import {
@@ -175,9 +175,32 @@ const AnimatedCounter = ({ value, suffix = "", text }: { value: number, suffix?:
   );
 };
 
+interface BirthdayMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+  photo_url?: string | null;
+  ageTurning: number;
+}
+
+interface PageSection {
+  id: string;
+  page?: string;
+  section?: string;
+  section_type: string;
+  name: string;
+  title: string | null;
+  subtitle: string | null;
+  content_blocks?: any;
+  order_index?: number;
+  cover_image_url?: string | null;
+  updated_at?: string;
+}
+
 const Home = () => {
   const { isLiveModeActive, liveYoutubeUrl, liveAnnouncement, activeSongId } = useLiveModeStore();
-  const [activeSong, setActiveSong] = useState<any | null>(null);
+  const [activeSong, setActiveSong] = useState<Song | null>(null);
   const [liveSongFont, setLiveSongFont] = useState<'mono' | 'serif' | 'sans'>('mono');
   const [showLiveChords, setShowLiveChords] = useState(true);
 
@@ -187,8 +210,8 @@ const Home = () => {
   const [loadingSchedules, setLoadingSchedules] = useState(true);
   const [loadingSermons, setLoadingSermons] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
-  const [birthdayMembers, setBirthdayMembers] = useState<any[]>([]);
-  const [sections, setSections] = useState<any[]>([]);
+  const [birthdayMembers, setBirthdayMembers] = useState<BirthdayMember[]>([]);
+  const [sections, setSections] = useState<PageSection[]>([]);
   const [stats, setStats] = useState({
     members: 350,
     baptized: 180,
@@ -222,14 +245,7 @@ const Home = () => {
     fetchActiveSong();
   }, [activeSongId]);
 
-  useEffect(() => {
-    fetchSchedules();
-    fetchSermons();
-    fetchUpcomingEvents();
-    fetchBirthdayMembers();
-    fetchDynamicPageContent();
-    fetchStats();
-  }, []);
+  // Carga inicial de datos (movido al final del componente para evitar TDZ en variables const)
 
   const fetchStats = async () => {
     try {
@@ -370,7 +386,7 @@ const Home = () => {
 
   const fetchBirthdayMembers = async () => {
     try {
-      let data: any[] = [];
+      let data: Partial<Member>[] = [];
       try {
         const db = await getDb();
         const allMembers = await db.getAll('local_members');
@@ -391,13 +407,17 @@ const Home = () => {
       }
 
       const filtered = data
-        .filter((m: any) => isBirthdayInNext7Days(m.birth_date))
-        .map((m: any) => ({
-          ...m,
-          ageTurning: calculateAgeTurning(m.birth_date)
+        .filter((m) => isBirthdayInNext7Days(m.birth_date!))
+        .map((m) => ({
+          id: m.id!,
+          first_name: m.first_name || '',
+          last_name: m.last_name || '',
+          birth_date: m.birth_date!,
+          photo_url: m.photo_url,
+          ageTurning: calculateAgeTurning(m.birth_date!)
         }));
 
-      const sorted = filtered.sort((a: any, b: any) => {
+      const sorted = filtered.sort((a, b) => {
         const aTime = getBirthdayTimestampInWindow(a.birth_date);
         const bTime = getBirthdayTimestampInWindow(b.birth_date);
         return aTime - bTime;
@@ -412,7 +432,7 @@ const Home = () => {
   const fetchSchedules = async () => {
     setLoadingSchedules(true);
     try {
-      let localData: any[] = [];
+      let localData: Schedule[] = [];
       try {
         const db = await getDb();
         const allSchedules = await db.getAll('local_schedules');
@@ -514,9 +534,19 @@ const Home = () => {
 
   const formatBirthdayDate = (dateStr: string | null) => {
     if (!dateStr) return '';
-    const [_, month, day] = dateStr.split('-').map(Number);
+    const [, month, day] = dateStr.split('-').map(Number);
     return `${day} de ${MONTHS[month - 1]}`;
   };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchSermons();
+    fetchUpcomingEvents();
+    fetchBirthdayMembers();
+    fetchDynamicPageContent();
+    fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-24 pb-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -691,7 +721,7 @@ const Home = () => {
                               <div className="flex items-center gap-1.5">
                                 <select
                                   value={liveSongFont}
-                                  onChange={(e) => setLiveSongFont(e.target.value as any)}
+                                  onChange={(e) => setLiveSongFont(e.target.value as 'mono' | 'serif' | 'sans')}
                                   className="bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold rounded px-1.5 py-1 outline-none cursor-pointer"
                                 >
                                   <option value="mono">Mono</option>
@@ -1053,11 +1083,11 @@ const Home = () => {
             return (
               <section key={id} id="schedules" className="bg-slate-50 dark:bg-slate-950 py-20 border-y border-slate-200 dark:border-white/10 scroll-mt-24 relative overflow-hidden transition-colors duration-300">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-church-gold-light/5 rounded-full blur-[100px] pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-16 relative z-10">
                   <AnimeFadeUp className="text-center max-w-2xl mx-auto space-y-4">
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest bg-amber-100 dark:bg-amber-950/45 px-4 py-1.5 rounded-full">
+                    <span className="text-xs font-bold text-church-gold-dark dark:text-church-gold-bright uppercase tracking-widest bg-amber-100/50 dark:bg-amber-950/20 px-4 py-1.5 rounded-full">
                       Reuniones y Servicios
                     </span>
                     <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
@@ -1072,12 +1102,10 @@ const Home = () => {
 
                   {loadingSchedules ? (
                     <div className="flex justify-center items-center py-20">
-                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500"></div>
+                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-church-gold-medium"></div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-
-                      {/* Left bar accent schedule cards (FASE 3 - PTO 5) */}
                       <AnimeStaggerGrid className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         {sortedDays
                           .filter((day) => day !== 'Domingo')
@@ -1086,18 +1114,17 @@ const Home = () => {
                             return (
                               <div key={day}>
                                 <AnimeHoverCard
-                                  className="h-full bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all flex flex-col justify-between relative overflow-hidden pl-8"
+                                  className="h-full bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-church-gold-light/5 hover:border-church-gold-light/30 transition-all flex flex-col justify-between relative overflow-hidden pl-8 animate-all"
                                 >
-                                  {/* Left vertical color accent bar */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-amber-500 to-amber-600" />
+                                  <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gold-gradient" />
                                   
                                   <div>
                                     <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-3 mb-4">
                                       <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">
                                         {day}
                                       </span>
-                                      <span className="text-xs font-bold text-amber-500 dark:text-amber-400 flex items-center gap-1.5">
-                                        <Clock size={13} />
+                                      <span className="text-xs font-bold text-church-gold-dark dark:text-church-gold-bright flex items-center gap-1.5">
+                                        <Clock size={13} className="text-church-gold-medium" />
                                         {daySchedules[0]?.time_range}
                                       </span>
                                     </div>
@@ -1121,42 +1148,39 @@ const Home = () => {
                         <div className="lg:col-span-1">
                           <AnimeFadeUp className="h-full">
                             <AnimeHoverCard
-                              className="h-full bg-gradient-to-b from-[#0a1c40] to-[#071330] text-white p-8 rounded-3xl border border-slate-850 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(217,119,6,0.15)] transition-all duration-300"
+                              className="h-full bg-gold-gradient text-slate-950 p-8 rounded-3xl border border-church-gold-bright/30 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(157,102,14,0.35)] transition-all duration-300"
                             >
-                              {/* Left vertical accent on Sunday card too */}
-                              <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gradient-to-b from-amber-500 to-yellow-400" />
-                              
-                              <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay">
+                              <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay">
                                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                                  <path d="M0 0 L50 50 L100 0 Z M0 100 L50 50 L100 100 Z" stroke="white" strokeWidth="2" fill="none" />
+                                  <path d="M0 0 L50 50 L100 0 Z M0 100 L50 50 L100 100 Z" stroke="black" strokeWidth="2" fill="none" />
                                 </svg>
                               </div>
 
-                              <div className="space-y-6 relative z-10 pl-2">
-                                <div className="border-b border-white/10 pb-4 flex justify-between items-center">
-                                  <span className="text-xs font-extrabold uppercase tracking-widest text-white bg-amber-500 px-3.5 py-1 rounded-md">
+                              <div className="space-y-6 relative z-10">
+                                <div className="border-b border-black/10 pb-4 flex justify-between items-center">
+                                  <span className="text-xs font-extrabold uppercase tracking-widest text-white bg-slate-950 px-3.5 py-1 rounded-md">
                                     Domingo
                                   </span>
-                                  <span className="text-xs font-medium text-slate-350">
+                                  <span className="text-xs font-bold text-slate-900">
                                     Día del Señor
                                   </span>
                                 </div>
 
                                 <div className="space-y-6">
                                   {schedulesByDay['Domingo'].map((sch) => (
-                                    <div key={sch.id} className="relative pl-6 border-l-2 border-amber-500/20 last:border-l-transparent pb-1 text-left">
-                                      <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+                                    <div key={sch.id} className="relative pl-6 border-l-2 border-slate-950/20 last:border-l-transparent pb-1 text-left">
+                                      <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-950 shadow-sm" />
 
                                       <div className="space-y-1">
                                         <div className="flex justify-between items-center gap-2 flex-wrap">
-                                          <h5 className="font-serif font-bold text-base text-slate-100">
+                                          <h5 className="font-serif font-bold text-base text-slate-950">
                                             {sch.title}
                                           </h5>
-                                          <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                          <span className="text-[9px] font-extrabold text-slate-950 bg-white/40 px-2 py-0.5 rounded-md border border-slate-950/20">
                                             {sch.time_range}
                                           </span>
                                         </div>
-                                        <p className="text-slate-300 text-xs font-light leading-relaxed">
+                                        <p className="text-slate-900 text-xs font-medium leading-relaxed">
                                           {sch.description}
                                         </p>
                                       </div>
@@ -1165,47 +1189,45 @@ const Home = () => {
                                 </div>
                               </div>
 
-                              <div className="border-t border-white/10 pt-6 mt-8 space-y-4 relative z-10 pl-2">
-                                <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
-                                  <div className="text-amber-500 mt-0.5 shrink-0 bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                              <div className="border-t border-black/10 pt-6 mt-8 space-y-4 relative z-10">
+                                <div className="flex items-start gap-3 bg-slate-950/5 border border-slate-950/15 p-3 rounded-2xl">
+                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-slate-950/10 p-1.5 rounded-lg border border-slate-950/20">
                                     <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                                       <path d="M12 2v12a3 3 0 0 1-3 3H8a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1a3 3 0 0 1-3-3V2Z" />
-                                      <path d="M6 2h12M12 17v5M9 22h6M4 8c1.5 0 2.5-1 3.5-1s2 1 3.5 1 2-1 3.5-1 2-1 3.5-1 2 1 3.5 1 2.5-1 3.5-1" />
+                                      <path d="M6 2h12M12 17v5M9 22h6M4 8c1.5 0 2.5-1 3.5-1s2 1 3.5 1 2-1 3.5-1 2-1 3.5-1 2-1 3.5-1 2 1 3.5 1 2.5-1 3.5-1" />
                                     </svg>
                                   </div>
                                   <div className="space-y-0.5 text-left">
-                                    <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider block">
+                                    <span className="text-xs font-extrabold text-slate-950 uppercase tracking-wider block">
                                       Santa Cena
                                     </span>
-                                    <p className="text-slate-300 text-[11px] leading-relaxed font-light">
-                                      El <span className="font-semibold text-white">primer domingo</span> de cada mes celebramos en todas las plenarias.
+                                    <p className="text-slate-900 text-[11px] leading-relaxed font-semibold">
+                                      El <span className="font-bold text-slate-950">primer domingo</span> de cada mes celebramos en todas las plenarias.
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-start gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl">
-                                  <div className="text-amber-500 mt-0.5 shrink-0 bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                                <div className="flex items-start gap-3 bg-slate-950/5 border border-slate-950/15 p-3 rounded-2xl">
+                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-slate-950/10 p-1.5 rounded-lg border border-slate-950/20">
                                     <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                                       <circle cx="12" cy="12" r="10" />
                                       <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
                                     </svg>
                                   </div>
                                   <div className="space-y-0.5 text-left">
-                                    <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider block">
+                                    <span className="text-xs font-extrabold text-slate-950 uppercase tracking-wider block">
                                       Culto Misionero
                                     </span>
-                                    <p className="text-slate-300 text-[11px] leading-relaxed font-light">
-                                      El <span className="font-semibold text-white">tercer domingo</span> de cada mes está dedicado a misiones globales.
+                                    <p className="text-slate-900 text-[11px] leading-relaxed font-semibold">
+                                      El <span className="font-bold text-slate-950">tercer domingo</span> de cada mes está dedicado a misiones globales.
                                     </p>
                                   </div>
                                 </div>
                               </div>
-
                             </AnimeHoverCard>
                           </AnimeFadeUp>
                         </div>
                       )}
-
                     </div>
                   )}
                 </div>
@@ -1345,8 +1367,8 @@ const Home = () => {
                 ) : (
                   <SermonVideoGallery
                     sermons={sermons}
-                    title={title}
-                    subtitle={subtitle}
+                    title={title || undefined}
+                    subtitle={subtitle || undefined}
                   />
                 )}
               </div>

@@ -8,6 +8,14 @@
   --color-accent-purple: #7C3AED;
   --color-accent-blue: #0EA5E9;
 
+  /* Dorado oficial de la Iglesia Jerusalén (detectado del logo) */
+  --color-church-gold-dark: #9D660E;
+  --color-church-gold-medium: #AE8333;
+  --color-church-gold-light: #C79D3F;
+  --color-church-gold-bright: #FFD679;
+  --color-church-gold-pale: #EECF92;
+  --color-church-gold: #C79D3F;
+
   --font-serif: "Playfair Display", serif;
   --font-sans: "Inter", sans-serif;
 }
@@ -136,5 +144,20 @@
 
   .dark-badge-red {
     @apply bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200/50 dark:border-red-800/30;
+  }
+
+  /* Degradados dorados de la Iglesia Jerusalén */
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%);
+  }
+
+  .text-gold-gradient {
+    background: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .border-gold-gradient {
+    border-image: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%) 1;
   }
 }

@@ -58,6 +58,7 @@ import ProductionBoard from './pages/admin/ProductionBoard';
 import MediaVault from './pages/admin/MediaVault';
 import InventoryManager from './pages/admin/InventoryManager';
 import AnimationCatalog from './pages/admin/AnimationCatalog';
+import DesignCatalog from './pages/admin/DesignCatalog';
 import Birthdays from './pages/public/Birthdays';
 import StudentDashboard from './pages/lms/StudentDashboard';
 import TeacherDashboard from './pages/lms/TeacherDashboard';
@@ -179,6 +180,7 @@ function App() {
             <Route element={<AdminLayout />}>
               <Route path="/admin" element={<DashboardHome />} />
               <Route path="/admin/animaciones" element={<AnimationCatalog />} />
+              <Route path="/admin/diseno" element={<DesignCatalog />} />
             </Route>
           </Route>
 
