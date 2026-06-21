@@ -1,17 +1,23 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import { 
-  Mail, Phone, MapPin, Clock, Heart, MessageCircle
+  Mail, Phone, MapPin, Clock, Heart, MessageCircle, ChevronDown
 } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggleSection = (sectionName: string) => {
+    setOpenSection(prev => prev === sectionName ? null : sectionName);
+  };
 
   const socialLinks = [
     { 
       name: 'Facebook', 
-      url: 'https://facebook.com', 
+      url: 'https://www.facebook.com/jerusalen.cuadrangular', 
       iconRenderer: () => (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
@@ -21,7 +27,7 @@ const Footer = () => {
     },
     { 
       name: 'Instagram', 
-      url: 'https://instagram.com', 
+      url: 'https://www.instagram.com/jerusalen_iece/', 
       iconRenderer: () => (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -33,7 +39,7 @@ const Footer = () => {
     },
     { 
       name: 'YouTube', 
-      url: 'https://youtube.com', 
+      url: 'https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw', 
       iconRenderer: () => (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.017 0 12 0 12s0 3.982.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.982 24 12 24 12s0-3.982-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -43,21 +49,26 @@ const Footer = () => {
     },
     { 
       name: 'WhatsApp', 
-      url: 'https://wa.me/593987654321', 
+      url: 'https://wa.me/593985263122', 
       iconRenderer: () => <MessageCircle size={16} />,
       color: 'hover:bg-emerald-600 hover:text-white hover:border-emerald-600'
     }
   ];
 
-  const quickLinks = [
+  const churchLinks = [
     { name: 'Quiénes Somos', path: '/nosotros' },
-    { name: 'Ministerios', path: '/ministerios' },
-    { name: 'Aula Virtual', path: '/aula-virtual' },
+    { name: 'Nuestros Ministerios', path: '/ministerios' },
     { name: 'Prédicas Dominicales', path: '/predicas' },
     { name: 'Escuela Dominical', path: '/escuela-dominical' },
+    { name: 'Diezmos y Ofrendas', path: '/donaciones' }
+  ];
+
+  const resourceLinks = [
+    { name: 'La Santa Biblia', path: '/recursos/biblia' },
+    { name: 'Alabanzas e Himnos', path: '/recursos/alabanzas' },
     { name: 'Plan de Lectura', path: '/plan-lectura' },
-    { name: 'Diezmos y Ofrendas', path: '/donaciones' },
-    { name: 'Tienda de Recursos', path: '/tienda' }
+    { name: 'Tienda de Recursos', path: '/tienda' },
+    { name: 'Aula Virtual', path: '/aula-virtual' }
   ];
 
   return (
@@ -72,9 +83,9 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           
           {/* Column 1: Church Identity */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="inline-block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-lg p-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center md:justify-start gap-3">
                 <img src={soloLogoColorido} alt="Logo" className="h-10 w-auto" />
                 <div className="text-left">
                   <span className="font-serif text-2xl font-bold text-white tracking-tight group-hover:text-gold transition-colors block leading-tight">
@@ -111,75 +122,134 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Column 2: Navigation links */}
-          <div>
-            <h4 className="font-serif font-bold text-base text-white border-b border-white/10 pb-3 mb-6 tracking-wide flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-gold rounded-full" />
-              Enlaces Rápidos
-            </h4>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 text-xs text-gray-300 font-medium">
-              {quickLinks.map((link) => (
-                <li key={link.path}>
-                  <Link 
-                    to={link.path} 
-                    className="hover:text-gold hover:translate-x-1.5 flex items-center gap-1.5 transition-all duration-200"
-                  >
-                    <span className="text-[9px] text-gold/60">➔</span>
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 3: Contact Info */}
-          <div>
-            <h4 className="font-serif font-bold text-base text-white border-b border-white/10 pb-3 mb-6 tracking-wide flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-gold rounded-full" />
-              Contacto
-            </h4>
-            <div className="space-y-4 text-xs text-gray-300 leading-relaxed font-medium">
-              <div className="flex items-start gap-3">
-                <MapPin size={16} className="text-gold shrink-0 mt-0.5" />
-                <address className="not-italic">
-                  E25 y Av. 17 de Septiembre<br />
-                  Milagro, Ecuador
-                </address>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone size={16} className="text-gold shrink-0" />
-                <a href="tel:+593987654321" className="hover:text-gold transition-colors">
-                  (123) 456-7890
-                </a>
-              </div>
-              <div className="flex items-center gap-3">
-                <Mail size={16} className="text-gold shrink-0" />
-                <a href="mailto:contacto@iglesiajerusalen.com" className="hover:text-gold transition-colors">
-                  contacto@iglesiajerusalen.com
-                </a>
-              </div>
+          {/* Column 2: Nuestra Iglesia */}
+          <div className="border-b border-white/10 md:border-b-0 pb-4 md:pb-0">
+            <button 
+              onClick={() => toggleSection('iglesia')}
+              className="w-full flex justify-between items-center text-left font-serif font-bold text-base text-white border-b border-white/10 md:border-b-0 pb-3 mb-4 md:mb-6 tracking-wide focus:outline-none md:pointer-events-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gold rounded-full" />
+                Nuestra Iglesia
+              </span>
+              <ChevronDown 
+                size={16} 
+                className={`text-gold transition-transform duration-300 md:hidden ${openSection === 'iglesia' ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`md:block transition-all duration-300 overflow-hidden ${openSection === 'iglesia' ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
+              <ul className="space-y-3 text-xs text-gray-300 font-medium pl-3.5 md:pl-0">
+                {churchLinks.map((link) => (
+                  <li key={link.path}>
+                    <Link 
+                      to={link.path} 
+                      className="hover:text-gold hover:translate-x-1.5 flex items-center gap-1.5 transition-all duration-200 py-1 md:py-0"
+                    >
+                      <span className="text-[9px] text-gold/60">➔</span>
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Column 4: Services Schedules */}
-          <div>
-            <h4 className="font-serif font-bold text-base text-white border-b border-white/10 pb-3 mb-6 tracking-wide flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-gold rounded-full" />
-              Horarios de Reunión
-            </h4>
-            <div className="space-y-3.5 text-xs text-gray-300 leading-relaxed font-medium bg-white/5 border border-white/10 p-4 rounded-2xl shadow-inner">
-              <div className="flex items-start gap-2.5">
-                <Clock size={16} className="text-gold shrink-0 mt-0.5" />
+          {/* Column 3: Recursos Bíblicos */}
+          <div className="border-b border-white/10 md:border-b-0 pb-4 md:pb-0">
+            <button 
+              onClick={() => toggleSection('recursos')}
+              className="w-full flex justify-between items-center text-left font-serif font-bold text-base text-white border-b border-white/10 md:border-b-0 pb-3 mb-4 md:mb-6 tracking-wide focus:outline-none md:pointer-events-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gold rounded-full" />
+                Recursos Bíblicos
+              </span>
+              <ChevronDown 
+                size={16} 
+                className={`text-gold transition-transform duration-300 md:hidden ${openSection === 'recursos' ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`md:block transition-all duration-300 overflow-hidden ${openSection === 'recursos' ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
+              <ul className="space-y-3 text-xs text-gray-300 font-medium pl-3.5 md:pl-0">
+                {resourceLinks.map((link) => (
+                  <li key={link.path}>
+                    <Link 
+                      to={link.path} 
+                      className="hover:text-gold hover:translate-x-1.5 flex items-center gap-1.5 transition-all duration-200 py-1 md:py-0"
+                    >
+                      <span className="text-[9px] text-gold/60">➔</span>
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Column 4: Contact & Schedules */}
+          <div className="pb-4 md:pb-0">
+            <button 
+              onClick={() => toggleSection('contacto')}
+              className="w-full flex justify-between items-center text-left font-serif font-bold text-base text-white border-b border-white/10 md:border-b-0 pb-3 mb-4 md:mb-6 tracking-wide focus:outline-none md:pointer-events-none cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gold rounded-full" />
+                Contacto y Horarios
+              </span>
+              <ChevronDown 
+                size={16} 
+                className={`text-gold transition-transform duration-300 md:hidden ${openSection === 'contacto' ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`md:block transition-all duration-300 overflow-hidden ${openSection === 'contacto' ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
+              <div className="space-y-6 pl-3.5 md:pl-0 pt-2 md:pt-0">
                 <div>
-                  <p className="font-bold text-white text-[11px] uppercase tracking-wider">Culto Dominical</p>
-                  <p className="mt-0.5 text-gray-300">Domingos 9:00 AM y 6:30 PM</p>
+                  <h5 className="hidden md:flex font-serif font-bold text-sm text-white/90 mb-3 tracking-wide items-center gap-1.5">
+                    Contacto
+                  </h5>
+                  <div className="space-y-3 text-xs text-gray-300 leading-relaxed font-medium">
+                    <div className="flex items-start gap-3">
+                      <MapPin size={16} className="text-gold shrink-0 mt-0.5" />
+                      <address className="not-italic">
+                        Baquerizo Moreno entre Av. Colón y Tulcán<br />
+                        Milagro, Ecuador
+                      </address>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone size={16} className="text-gold shrink-0" />
+                      <a href="tel:+593985263122" className="hover:text-gold transition-colors">
+                        +593 98 526 3122
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail size={16} className="text-gold shrink-0" />
+                      <a href="mailto:iece_jerusalen@hotmail.com" className="hover:text-gold transition-colors">
+                        iece_jerusalen@hotmail.com
+                      </a>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-2.5 border-t border-white/10 pt-3">
-                <Clock size={16} className="text-gold shrink-0 mt-0.5" />
+
                 <div>
-                  <p className="font-bold text-white text-[11px] uppercase tracking-wider">Células en Hogares</p>
-                  <p className="mt-0.5 text-gray-300">Sábados 7:30 PM</p>
+                  <h5 className="hidden md:flex font-serif font-bold text-sm text-white/90 mb-3 tracking-wide items-center gap-1.5">
+                    Horarios de Reunión
+                  </h5>
+                  <div className="space-y-2 text-xs text-gray-300 leading-relaxed font-medium bg-white/5 border border-white/10 p-3.5 rounded-2xl shadow-inner max-w-sm md:max-w-none">
+                    <div className="flex items-start gap-2.5">
+                      <Clock size={16} className="text-gold shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-white text-[10px] uppercase tracking-wider">Culto Dominical</p>
+                        <p className="mt-0.5 text-gray-300">Domingos 9:00 AM y 6:30 PM</p>
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 pt-2.5 mt-2.5 flex items-start gap-2.5">
+                      <Clock size={16} className="text-gold shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-white text-[10px] uppercase tracking-wider">Células en Hogares</p>
+                        <p className="mt-0.5 text-gray-300">Sábados 7:30 PM</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
