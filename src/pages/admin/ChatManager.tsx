@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { usePluginStore } from '../../store/usePluginStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import type { Message } from '../../types';
@@ -92,6 +93,7 @@ const calculateAge = (birthDateStr: string | null) => {
 
 export default function ChatManager() {
   const { user, role, roles, memberId } = useAuthStore();
+  const cleanContent = usePluginStore((state) => state.cleanContent);
   const { hasPermission } = usePermissions();
   const userRoles = roles || (role ? [role] : []);
   const isPrivileged = userRoles.some(r => ['admin', 'pastor', 'leader'].includes(r));
@@ -738,7 +740,7 @@ export default function ChatManager() {
                                     ? 'bg-gradient-to-br from-primary to-primary/90 text-white rounded-tr-none border border-primary/10'
                                     : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-150 border border-gray-150 dark:border-white/5 rounded-tl-none'
                                 }`}>
-                                  <p className="text-xs break-words whitespace-pre-wrap">{msg.content}</p>
+                                  <p className="text-xs break-words whitespace-pre-wrap">{cleanContent(msg.content)}</p>
                                 </div>
 
                                 {/* Floating actions on hover */}

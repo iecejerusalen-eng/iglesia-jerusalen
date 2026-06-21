@@ -65,6 +65,7 @@ import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
 import { useSyncStore } from './store/useSyncStore';
 import { useThemeStore } from './store/useThemeStore';
+import { usePluginStore } from './store/usePluginStore';
 
 function App() {
   useEffect(() => {
@@ -78,6 +79,7 @@ function App() {
     };
     initDb();
     useAuthStore.getState().initializeAuth();
+    usePluginStore.getState().fetchPlugins();
     
     // Initialize Theme
     const themeStore = useThemeStore.getState();

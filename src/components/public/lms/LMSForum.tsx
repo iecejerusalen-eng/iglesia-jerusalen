@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { MessageSquare, Send, User, Trash2 } from 'lucide-react';
 import type { LMSForumPost, LMSActivity } from '../../../types';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { usePluginStore } from '../../../store/usePluginStore';
 import { toast } from 'sonner';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 const LMSForum = ({ activity }: Props) => {
   const { user, photoUrl } = useAuthStore();
+  const cleanContent = usePluginStore((state) => state.cleanContent);
   const [posts, setPosts] = useState<LMSForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
@@ -164,7 +166,7 @@ const LMSForum = ({ activity }: Props) => {
               )}
             </div>
             
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-wrap">{post.content}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-wrap">{cleanContent(post.content)}</p>
             
             {!isReply && user && (
               <div className="mt-3 flex items-center gap-4">

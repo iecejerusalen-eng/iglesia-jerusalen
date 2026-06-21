@@ -7,6 +7,7 @@ import {
 import { AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
 import { logAuditEvent } from '../../utils/auditLogger';
+import { usePluginStore } from '../../store/usePluginStore';
 
 interface PluginItem {
   id: string;
@@ -76,6 +77,7 @@ export default function PluginManager() {
       });
       
       setPlugins(prev => prev.map(p => p.id === plugin.id ? { ...p, status: nextStatus } : p));
+      await usePluginStore.getState().fetchPlugins();
       toast.success(`Extensión "${plugin.name}" ${nextStatus === 'active' ? 'activada' : 'desactivada'} con éxito`);
     } catch (err) {
       console.error(err);
@@ -110,6 +112,7 @@ export default function PluginManager() {
       });
       
       setPlugins(prev => prev.map(p => p.id === selectedPlugin.id ? { ...p, settings: parsedSettings } : p));
+      await usePluginStore.getState().fetchPlugins();
       toast.success('Configuración de extensión guardada');
       setIsSettingsOpen(false);
     } catch (err) {
@@ -132,6 +135,7 @@ export default function PluginManager() {
       });
       
       setPlugins(prev => prev.filter(p => p.id !== pluginId));
+      await usePluginStore.getState().fetchPlugins();
       toast.success(`Extensión "${name}" desinstalada correctamente`);
     } catch (err) {
       console.error(err);
@@ -170,7 +174,7 @@ export default function PluginManager() {
       if (data) {
         setPlugins(prev => [...prev, data[0]].sort((a, b) => a.name.localeCompare(b.name)));
       }
-      
+      await usePluginStore.getState().fetchPlugins();
       toast.success(`Extensión "${newPluginName}" instalada en estado inactivo`);
       setIsInstallOpen(false);
       setNewPluginName('');
