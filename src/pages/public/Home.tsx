@@ -1148,39 +1148,50 @@ const Home = () => {
                         <div className="lg:col-span-1">
                           <AnimeFadeUp className="h-full">
                             <AnimeHoverCard
-                              className="h-full bg-gold-gradient text-slate-950 p-8 rounded-3xl border border-church-gold-bright/30 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(157,102,14,0.35)] transition-all duration-300"
+                              className="h-full bg-gold-gradient text-slate-950 p-8 rounded-3xl border border-church-gold-bright/35 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_25px_50px_rgba(157,102,14,0.4)] transition-all duration-500"
                             >
-                              <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay">
-                                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-                                  <path d="M0 0 L50 50 L100 0 Z M0 100 L50 50 L100 100 Z" stroke="black" strokeWidth="2" fill="none" />
-                                </svg>
+                              {/* Modern background design with glowing blobs and micro-patterns */}
+                              <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl select-none">
+                                {/* Glowing abstract blobs */}
+                                <div className="absolute -right-16 -top-16 w-48 h-48 bg-white/25 blur-3xl rounded-full animate-pulse" style={{ animationDuration: '6s' }} />
+                                <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-black/10 blur-3xl rounded-full animate-pulse" style={{ animationDuration: '8s' }} />
+                                
+                                {/* Premium fine dot grid pattern */}
+                                <div 
+                                  className="absolute inset-0 opacity-10 mix-blend-overlay"
+                                  style={{
+                                    backgroundImage: 'radial-gradient(circle, black 1px, transparent 1px)',
+                                    backgroundSize: '16px 16px'
+                                  }}
+                                />
                               </div>
 
                               <div className="space-y-6 relative z-10">
-                                <div className="border-b border-black/10 pb-4 flex justify-between items-center">
-                                  <span className="text-xs font-extrabold uppercase tracking-widest text-white bg-slate-950 px-3.5 py-1 rounded-md">
+                                <div className="border-b border-black/15 pb-4 flex justify-between items-center">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white bg-slate-950 px-3.5 py-1.5 rounded-lg shadow-sm">
                                     Domingo
                                   </span>
-                                  <span className="text-xs font-bold text-slate-900">
+                                  <span className="text-xs font-bold text-slate-900/80 font-serif italic">
                                     Día del Señor
                                   </span>
                                 </div>
 
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                   {schedulesByDay['Domingo'].map((sch) => (
-                                    <div key={sch.id} className="relative pl-6 border-l-2 border-slate-950/20 last:border-l-transparent pb-1 text-left">
-                                      <div className="absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-950 shadow-sm" />
-
-                                      <div className="space-y-1">
+                                    <div 
+                                      key={sch.id} 
+                                      className="bg-white/25 hover:bg-white/40 border border-white/20 p-4 rounded-2xl shadow-xxs hover:shadow-xs transition-all duration-300 hover:-translate-y-0.5 text-left group/item"
+                                    >
+                                      <div className="space-y-1.5">
                                         <div className="flex justify-between items-center gap-2 flex-wrap">
-                                          <h5 className="font-serif font-bold text-base text-slate-950">
+                                          <h5 className="font-serif font-black text-sm md:text-base text-slate-950">
                                             {sch.title}
                                           </h5>
-                                          <span className="text-[9px] font-extrabold text-slate-950 bg-white/40 px-2 py-0.5 rounded-md border border-slate-950/20">
+                                          <span className="text-[9px] font-extrabold text-slate-950 bg-white/40 px-2 py-0.5 rounded-md border border-slate-950/10">
                                             {sch.time_range}
                                           </span>
                                         </div>
-                                        <p className="text-slate-900 text-xs font-medium leading-relaxed">
+                                        <p className="text-slate-900/90 text-xs font-semibold leading-relaxed">
                                           {sch.description}
                                         </p>
                                       </div>
@@ -1189,27 +1200,30 @@ const Home = () => {
                                 </div>
                               </div>
 
-                              <div className="border-t border-black/10 pt-6 mt-8 space-y-4 relative z-10">
-                                <div className="flex items-start gap-3 bg-slate-950/5 border border-slate-950/15 p-3 rounded-2xl">
-                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-slate-950/10 p-1.5 rounded-lg border border-slate-950/20">
-                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                                      <path d="M12 2v12a3 3 0 0 1-3 3H8a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1a3 3 0 0 1-3-3V2Z" />
-                                      <path d="M6 2h12M12 17v5M9 22h6M4 8c1.5 0 2.5-1 3.5-1s2 1 3.5 1 2-1 3.5-1 2-1 3.5-1 2-1 3.5-1 2 1 3.5 1 2.5-1 3.5-1" />
+                              <div className="border-t border-black/15 pt-6 mt-8 space-y-4 relative z-10">
+                                <div className="flex items-start gap-3 bg-white/20 border border-white/35 p-4 rounded-2xl shadow-xxs hover:bg-white/30 transition-all duration-300">
+                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-white/30 p-2 rounded-xl border border-white/40 shadow-xxs flex items-center justify-center">
+                                    {/* Cup and bread SVG (Santa Cena) */}
+                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                      <path d="M17 2H7c0 4 3 6 5 6s5-2 5-6Z" />
+                                      <path d="M12 8v10M9 22h6" />
+                                      <circle cx="17" cy="12" r="2" className="fill-current/10" />
                                     </svg>
                                   </div>
                                   <div className="space-y-0.5 text-left">
                                     <span className="text-xs font-extrabold text-slate-950 uppercase tracking-wider block">
                                       Santa Cena
                                     </span>
-                                    <p className="text-slate-900 text-[11px] leading-relaxed font-semibold">
+                                    <p className="text-slate-900/90 text-[11px] leading-relaxed font-semibold">
                                       El <span className="font-bold text-slate-950">primer domingo</span> de cada mes celebramos en todas las plenarias.
                                     </p>
                                   </div>
                                 </div>
 
-                                <div className="flex items-start gap-3 bg-slate-950/5 border border-slate-950/15 p-3 rounded-2xl">
-                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-slate-950/10 p-1.5 rounded-lg border border-slate-950/20">
-                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                                <div className="flex items-start gap-3 bg-white/20 border border-white/35 p-4 rounded-2xl shadow-xxs hover:bg-white/30 transition-all duration-300">
+                                  <div className="text-slate-950 mt-0.5 shrink-0 bg-white/30 p-2 rounded-xl border border-white/40 shadow-xxs flex items-center justify-center">
+                                    {/* Globe SVG (Misiones) */}
+                                    <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                       <circle cx="12" cy="12" r="10" />
                                       <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
                                     </svg>
@@ -1218,7 +1232,7 @@ const Home = () => {
                                     <span className="text-xs font-extrabold text-slate-950 uppercase tracking-wider block">
                                       Culto Misionero
                                     </span>
-                                    <p className="text-slate-900 text-[11px] leading-relaxed font-semibold">
+                                    <p className="text-slate-900/90 text-[11px] leading-relaxed font-semibold">
                                       El <span className="font-bold text-slate-950">tercer domingo</span> de cada mes está dedicado a misiones globales.
                                     </p>
                                   </div>
