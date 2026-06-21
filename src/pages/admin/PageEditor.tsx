@@ -228,7 +228,17 @@ const PageEditor = () => {
   }, [selectedPage]);
 
   useEffect(() => {
-    fetchPageSections();
+    let isMounted = true;
+    const init = async () => {
+      await Promise.resolve();
+      if (isMounted) {
+        fetchPageSections();
+      }
+    };
+    init();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchPageSections]);
 
   const handleUpdateField = useCallback(<K extends keyof DBPageSection>(
@@ -238,7 +248,7 @@ const PageEditor = () => {
     setSections(prev => prev.map(s => {
       if (s.id !== selectedSection) return s;
       const updatedValue = typeof value === 'function' 
-        ? (value as Function)(s[key]) 
+        ? (value as (prev: DBPageSection[K]) => DBPageSection[K])(s[key]) 
         : value;
       return { ...s, [key]: updatedValue };
     }));
@@ -731,7 +741,7 @@ const PageEditor = () => {
                   href={selectedPage === 'home' ? '/' : '/nosotros'} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-primary hover:text-blue-900 border border-slate-200 dark:border-white/10 hover:border-slate-300 bg-slate-50/50 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+                  className="text-primary dark:text-church-gold-bright hover:text-blue-900 dark:hover:text-white border border-slate-200 dark:border-white/10 hover:border-slate-300 bg-slate-50/50 dark:bg-slate-800/50 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                 >
                   <Eye size={12} />
                   Ver Cambios
@@ -1225,10 +1235,10 @@ const PageEditor = () => {
                   </div>
                 );
               })() : (
-                <div className="flex gap-3 bg-blue-50/40 border border-blue-100 p-5 rounded-2xl text-xs text-slate-600 dark:text-gray-400 leading-relaxed items-start">
-                  <Info className="text-primary mt-0.5 flex-shrink-0" size={16} />
+                <div className="flex gap-3 bg-blue-50/40 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 p-5 rounded-2xl text-xs text-slate-600 dark:text-gray-400 leading-relaxed items-start">
+                  <Info className="text-primary dark:text-church-gold-bright mt-0.5 flex-shrink-0" size={16} />
                   <div>
-                    <span className="font-bold text-primary block mb-0.5">Sección de Sistema Activa</span>
+                    <span className="font-bold text-primary dark:text-church-gold-bright block mb-0.5">Sección de Sistema Activa</span>
                     Esta sección renderiza dinámicamente un módulo preestablecido de la aplicación (como la cuadrícula de eventos, horarios, cumpleaños o prédicas) utilizando las configuraciones guardadas en sus respectivos gestores. Puedes reordenar y nombrar este módulo, pero no requiere bloques de texto manuales.
                   </div>
                 </div>

@@ -132,7 +132,7 @@ export default function ChatManager() {
   // Helper to highlight matching text in contacts search
   const highlightText = (text: string, highlight: string) => {
     if (!highlight.trim()) return <span>{text}</span>;
-    const regex = new RegExp(`(${highlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+    const regex = new RegExp(`(${highlight.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
     return (
       <span>
@@ -188,8 +188,8 @@ export default function ChatManager() {
     try {
       await deleteMessage(messageId);
       toast.success('Mensaje eliminado.');
-    } catch (err: any) {
-      toast.error('No se pudo eliminar el mensaje: ' + err.message);
+    } catch (err) {
+      toast.error('No se pudo eliminar el mensaje: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -232,14 +232,14 @@ export default function ChatManager() {
     return () => {
       unsubscribeFromRealtime();
     };
-  }, []);
+  }, [fetchChats, fetchContacts, fetchRetentionDays, subscribeToRealtime, unsubscribeFromRealtime]);
 
   // Scroll to bottom on active chat change or if user is near bottom
   useEffect(() => {
     if (messagesEndRef.current && !showScrollDown) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, loadingMessages, activeChat]);
+  }, [messages, loadingMessages, activeChat, showScrollDown]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -250,8 +250,8 @@ export default function ChatManager() {
       await sendMessage(activeChat.id, messageInput.trim());
       setMessageInput('');
       setShowEmojiPicker(false);
-    } catch (err: any) {
-      toast.error('Error al enviar el mensaje: ' + err.message);
+    } catch (err) {
+      toast.error('Error al enviar el mensaje: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSendingMessage(false);
     }
@@ -261,8 +261,8 @@ export default function ChatManager() {
     try {
       await startChatWith(contactId);
       setActiveTab('chats');
-    } catch (err: any) {
-      toast.error('No se pudo iniciar la conversación: ' + err.message);
+    } catch (err) {
+      toast.error('No se pudo iniciar la conversación: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -367,8 +367,8 @@ export default function ChatManager() {
       toast.success('Mensaje de difusión enviado con éxito.');
       setIsBroadcastOpen(false);
       setBroadcastContent('');
-    } catch (err: any) {
-      toast.error('Error al enviar difusión: ' + err.message);
+    } catch (err) {
+      toast.error('Error al enviar difusión: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSendingBroadcast(false);
     }
@@ -470,7 +470,7 @@ export default function ChatManager() {
             {activeTab === 'chats' ? (
               loadingChats ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                  <Loader2 className="animate-spin text-primary" size={20} />
+                  <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={20} />
                   <span className="text-xxs text-gray-400">Cargando chats...</span>
                 </div>
               ) : filteredChats.length === 0 ? (
@@ -506,7 +506,7 @@ export default function ChatManager() {
                         }`}
                       >
                         {/* Profile Image / Initials */}
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
                             <img
                               src={otherParticipant.photo_url}
@@ -542,8 +542,8 @@ export default function ChatManager() {
                                      try {
                                        await deleteChat(chat.id);
                                        toast.success('Conversación eliminada.');
-                                     } catch (err: any) {
-                                       toast.error('No se pudo eliminar la conversación: ' + err.message);
+                                     } catch (err) {
+                                       toast.error('No se pudo eliminar la conversación: ' + (err instanceof Error ? err.message : String(err)));
                                      }
                                    }
                                 }}
@@ -574,7 +574,7 @@ export default function ChatManager() {
             ) : (
               loadingContacts ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                  <Loader2 className="animate-spin text-primary" size={20} />
+                  <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={20} />
                   <span className="text-xxs text-gray-400">Cargando contactos...</span>
                 </div>
               ) : filteredContacts.length === 0 ? (
@@ -596,7 +596,7 @@ export default function ChatManager() {
                         onClick={() => handleStartConversation(contact.id)}
                         className="w-full text-left p-3.5 flex items-center gap-3 hover:bg-gray-55 dark:hover:bg-slate-800/40 transition cursor-pointer"
                       >
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {contact.photo_url ? (
                             <img
                               src={contact.photo_url}
@@ -655,7 +655,7 @@ export default function ChatManager() {
 
                     return (
                       <>
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
                             <img
                               src={otherParticipant.photo_url}
@@ -698,7 +698,7 @@ export default function ChatManager() {
               >
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-2">
-                    <Loader2 className="animate-spin text-primary" size={24} />
+                    <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={24} />
                     <span className="text-xs text-gray-500 dark:text-gray-450">Cargando mensajes...</span>
                   </div>
                 ) : messages.length === 0 ? (
@@ -778,7 +778,7 @@ export default function ChatManager() {
                                 <span>
                                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                {isMe && <CheckCheck size={10} className="text-primary/70" />}
+                                {isMe && <CheckCheck size={10} className="text-primary/70 dark:text-church-gold-bright/70" />}
                               </div>
                             </div>
                           );
@@ -897,7 +897,7 @@ export default function ChatManager() {
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-3">
-                <h3 className="font-serif font-bold text-base text-primary flex items-center gap-2">
+                <h3 className="font-serif font-bold text-base text-primary dark:text-church-gold-bright flex items-center gap-2">
                   <Megaphone size={18} className="text-gold" />
                   Nueva Difusión de Mensajería
                 </h3>
@@ -1043,7 +1043,7 @@ export default function ChatManager() {
                     <Users size={15} className="text-gray-500 dark:text-gray-450" />
                     <span className="text-xxs font-semibold text-gray-600 dark:text-gray-400">Destinatarios estimados:</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-primary/10 text-primary font-bold text-xxs rounded-full">
+                  <span className="px-2 py-0.5 bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright font-bold text-xxs rounded-full">
                     {recipientsList.length} usuarios
                   </span>
                 </div>
@@ -1071,14 +1071,14 @@ export default function ChatManager() {
 
               {/* Progress Bar (If sending) */}
               {sendingBroadcast && (
-                <div className="space-y-1 bg-primary/5 p-3 rounded-xl border border-primary/10">
-                  <div className="flex justify-between text-xxs font-semibold text-primary">
+                <div className="space-y-1 bg-primary/5 dark:bg-blue-950/20 p-3 rounded-xl border border-primary/10 dark:border-blue-900/30">
+                  <div className="flex justify-between text-xxs font-semibold text-primary dark:text-church-gold-bright">
                     <span>Enviando difusión en masa...</span>
                     <span>{broadcastProgress.sent} de {broadcastProgress.total}</span>
                   </div>
                   <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-primary h-full transition-all duration-300"
+                      className="bg-primary dark:bg-church-gold h-full transition-all duration-300"
                       style={{ width: `${(broadcastProgress.sent / broadcastProgress.total) * 100}%` }}
                     ></div>
                   </div>

@@ -21,7 +21,7 @@ interface FormResponseData {
   user_id: string | null;
   member_name: string | null;
   member_email: string | null;
-  answers: Record<string, any>;
+  answers: Record<string, unknown>;
   score: number | null;
   max_score: number | null;
   created_at: string;
@@ -132,14 +132,14 @@ export default function AnalyticsDashboard() {
   
   // Datasets loaded from Supabase
   const [datasets, setDatasets] = useState<{
-    members: any[];
-    donations: any[];
-    inventory: any[];
-    formResponses: any[];
-    petitions: any[];
-    orders: any[];
-    songs: any[];
-    events: any[];
+    members: Record<string, unknown>[];
+    donations: Record<string, unknown>[];
+    inventory: Record<string, unknown>[];
+    formResponses: Record<string, unknown>[];
+    petitions: Record<string, unknown>[];
+    orders: Record<string, unknown>[];
+    songs: Record<string, unknown>[];
+    events: Record<string, unknown>[];
   }>({
     members: [],
     donations: [],
@@ -154,8 +154,32 @@ export default function AnalyticsDashboard() {
   // Global filters
   const [dateFilter, setDateFilter] = useState<'all' | '30days' | '90days' | 'thisyear'>('all');
 
-  // Custom Widgets State
-  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [widgets, setWidgets] = useState<Widget[]>(() => {
+    const saved = localStorage.getItem('church_analytics_widgets');
+    if (saved) {
+      try {
+        const currentWidgets = JSON.parse(saved);
+        const missingPresets = PRESETS.filter(preset => 
+          !currentWidgets.some((w: Widget) => 
+            w.source === preset.source && 
+            w.dimension === preset.dimension && 
+            w.aggregation === preset.aggregation && 
+            w.targetField === preset.targetField
+          )
+        );
+        if (missingPresets.length > 0) {
+          const merged = [...currentWidgets, ...missingPresets];
+          localStorage.setItem('church_analytics_widgets', JSON.stringify(merged));
+          return merged;
+        }
+        return currentWidgets;
+      } catch {
+        return PRESETS;
+      }
+    }
+    localStorage.setItem('church_analytics_widgets', JSON.stringify(PRESETS));
+    return PRESETS;
+  });
 
   // Report Builder State
   const [builderSettings, setBuilderSettings] = useState<Omit<Widget, 'id'>>({
@@ -178,45 +202,18 @@ export default function AnalyticsDashboard() {
 
   // Load dashboard widgets and server data
   useEffect(() => {
-    // Load Saved Widgets
-    const saved = localStorage.getItem('church_analytics_widgets');
-    if (saved) {
-      try {
-        const currentWidgets = JSON.parse(saved);
-        // Find presets that aren't in the current saved widgets by comparing source + dimension + aggregation + targetField
-        const missingPresets = PRESETS.filter(preset => 
-          !currentWidgets.some((w: Widget) => 
-            w.source === preset.source && 
-            w.dimension === preset.dimension && 
-            w.aggregation === preset.aggregation && 
-            w.targetField === preset.targetField
-          )
-        );
-        
-        if (missingPresets.length > 0) {
-          const merged = [...currentWidgets, ...missingPresets];
-          setWidgets(merged);
-          localStorage.setItem('church_analytics_widgets', JSON.stringify(merged));
-        } else {
-          setWidgets(currentWidgets);
-        }
-      } catch (e) {
-        setWidgets(PRESETS);
-      }
-    } else {
-      setWidgets(PRESETS);
-      localStorage.setItem('church_analytics_widgets', JSON.stringify(PRESETS));
-    }
-
     loadAllDatasets();
   }, []);
 
-  const loadAllDatasets = async () => {
+  async function loadAllDatasets() {
     setLoading(true);
     try {
-      const fetchTable = async (tableName: string, select = '*') => {
+      const fetchTable = async (tableName: string, select = '*'): Promise<Record<string, unknown>[]> => {
         try {
-          const { data, error } = await supabase.from(tableName).select(select);
+          const { data, error } = (await supabase.from(tableName).select(select)) as unknown as {
+            data: Record<string, unknown>[] | null;
+            error: unknown;
+          };
           if (error) {
             console.warn(`Error loading table ${tableName}:`, error);
             return [];
@@ -260,9 +257,9 @@ export default function AnalyticsDashboard() {
       });
 
       // Maintain backward compat responses list for the forms list tab
-      setResponses(formResponsesData as any);
+      setResponses(formResponsesData as unknown as FormResponseData[]);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading analytics datasets:', err);
       toast.error('Error al conectar con la base de datos de análisis');
     } finally {
@@ -293,7 +290,7 @@ export default function AnalyticsDashboard() {
   };
 
   // Helper to filter data by global date filter
-  const filterByDate = (items: any[], dateField: string) => {
+  const filterByDate = (items: Record<string, unknown>[], dateField: string) => {
     if (dateFilter === 'all') return items;
     const now = new Date();
     let cutoff = new Date();
@@ -305,13 +302,13 @@ export default function AnalyticsDashboard() {
     return items.filter(item => {
       const dateVal = item[dateField];
       if (!dateVal) return false;
-      return new Date(dateVal) >= cutoff;
+      return new Date(dateVal as string) >= cutoff;
     });
   };
 
   // BI Engine: Group and aggregate data dynamically
   const executeQuery = (widget: Omit<Widget, 'id'>) => {
-    let rawData: any[] = [];
+    let rawData: Record<string, unknown>[] = [];
     let dateField = 'created_at';
 
     if (widget.source === 'members') {
@@ -343,33 +340,32 @@ export default function AnalyticsDashboard() {
     // Apply global date filter
     rawData = filterByDate(rawData, dateField);
 
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, Record<string, unknown>[]> = {};
 
     rawData.forEach(item => {
       let key = 'General';
 
       if (widget.dimension === 'gender') {
-        key = item.gender || 'Sin especificar';
+        key = (item.gender as string) || 'Sin especificar';
       } else if (widget.dimension === 'leadership_role') {
-        key = item.leadership_role || 'Miembro General';
+        key = (item.leadership_role as string) || 'Miembro General';
       } else if (widget.dimension === 'status') {
-        key = cleanLabel(item.status || 'Sin estado');
+        key = cleanLabel((item.status as string) || 'Sin estado');
       } else if (widget.dimension === 'payment_method') {
-        key = item.payment_method || 'Otros';
+        key = (item.payment_method as string) || 'Otros';
       } else if (widget.dimension === 'category') {
-        // Fallbacks for categories on various models
-        key = item.category_name_backup || item.category || item.inventory_categories?.name || item.petition_categories?.name || 'General';
+        key = (item.category_name_backup || item.category || (item.inventory_categories as any)?.name || (item.petition_categories as any)?.name || 'General') as string;
       } else if (widget.dimension === 'artist') {
-        key = item.artist || 'Tradicional / Himno';
+        key = (item.artist as string) || 'Tradicional / Himno';
       } else if (widget.dimension === 'recurrence') {
         key = item.is_recurring ? 'Recurrente' : 'Único';
       } else if (widget.dimension === 'recurrence_type') {
-        key = item.is_recurring ? (item.recurrence_type || 'Periódico') : 'No recurrente';
+        key = item.is_recurring ? ((item.recurrence_type as string) || 'Periódico') : 'No recurrente';
       } else if (widget.dimension === 'block_id') {
-        key = getCleanBlockName(item.block_id || '');
+        key = getCleanBlockName((item.block_id as string) || '');
       } else if (widget.dimension === 'score_range') {
-        const score = item.score;
-        const max = item.max_score || 10;
+        const score = item.score as number;
+        const max = (item.max_score as number) || 10;
         if (score === null || score === undefined) key = 'Sin puntaje';
         else {
           const pct = (score / max) * 100;
@@ -379,7 +375,7 @@ export default function AnalyticsDashboard() {
         }
       } else if (widget.dimension === 'age_group') {
         if (item.birth_date) {
-          const age = new Date().getFullYear() - new Date(item.birth_date).getFullYear();
+          const age = new Date().getFullYear() - new Date(item.birth_date as string).getFullYear();
           if (age < 12) key = 'Niños (<12)';
           else if (age <= 25) key = 'Jóvenes (12-25)';
           else if (age <= 50) key = 'Adultos (26-50)';
@@ -394,7 +390,7 @@ export default function AnalyticsDashboard() {
         else if (bpm <= 110) key = 'Moderado (80-110 BPM)';
         else key = 'Rápido (>110 BPM)';
       } else if (widget.dimension === 'month') {
-        const dateStr = item.created_at || item.purchase_date || item.start_date;
+        const dateStr = (item.created_at || item.purchase_date || item.start_date) as string;
         if (dateStr) {
           const d = new Date(dateStr);
           const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -469,7 +465,7 @@ export default function AnalyticsDashboard() {
     const query = searchQuery.toLowerCase().trim();
 
     // Default configuration
-    let parsed: Omit<Widget, 'id'> = {
+    const parsed: Omit<Widget, 'id'> = {
       title: 'Miembros por Género',
       source: 'members',
       dimension: 'gender',
@@ -729,7 +725,7 @@ export default function AnalyticsDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2">
             <BarChart3 className="text-gold" />
             Consola Inteligente de Analíticas (BI)
           </h1>
@@ -747,7 +743,7 @@ export default function AnalyticsDashboard() {
               aria-label="Filtro de fecha global"
               value={dateFilter}
               onChange={(e) => {
-                setDateFilter(e.target.value as any);
+                setDateFilter(e.target.value as 'all' | '30days' | '90days' | 'thisyear');
                 toast.success('Filtro temporal aplicado globalmente.');
               }}
               className="px-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-900 text-xs font-semibold cursor-pointer shadow-xs focus:outline-none"
@@ -891,7 +887,7 @@ export default function AnalyticsDashboard() {
                         ) : (
                           <h3 
                             onClick={() => startEditingTitle(widget)}
-                            className="font-serif font-bold text-xs md:text-sm text-slate-800 dark:text-gray-100 hover:text-primary cursor-pointer truncate"
+                            className="font-serif font-bold text-xs md:text-sm text-slate-800 dark:text-gray-100 hover:text-primary dark:hover:text-church-gold-bright cursor-pointer truncate"
                             title="Haz clic para renombrar"
                           >
                             {widget.title}
@@ -1027,7 +1023,7 @@ export default function AnalyticsDashboard() {
                           {['bar', 'line', 'area', 'pie', 'table'].map((t) => (
                             <button
                               key={t}
-                              onClick={() => handleSwitchWidgetChartType(widget.id, t as any)}
+                              onClick={() => handleSwitchWidgetChartType(widget.id, t as Widget['chartType'])}
                               className={`px-1.5 py-0.5 rounded capitalize ${
                                 widget.chartType === t ? 'bg-primary text-white font-bold' : 'hover:bg-slate-100 hover:text-slate-700'
                               }`}
@@ -1387,7 +1383,7 @@ export default function AnalyticsDashboard() {
                         const [agg, field] = e.target.value.split(':');
                         setBuilderSettings(prev => ({
                           ...prev,
-                          aggregation: agg as any,
+                          aggregation: agg as Widget['aggregation'],
                           targetField: field || ''
                         }));
                       }}
@@ -1438,7 +1434,7 @@ export default function AnalyticsDashboard() {
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de Visualización</label>
                     <select
                       value={builderSettings.chartType}
-                      onChange={(e) => setBuilderSettings(prev => ({ ...prev, chartType: e.target.value as any }))}
+                      onChange={(e) => setBuilderSettings(prev => ({ ...prev, chartType: e.target.value as Widget['chartType'] }))}
                       className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl cursor-pointer bg-white dark:bg-slate-900"
                     >
                       <option value="bar">Gráfico de Barras</option>
@@ -1633,7 +1629,7 @@ export default function AnalyticsDashboard() {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => setSelectedResponse(resp)}
-                              className="text-primary hover:text-blue-900 hover:bg-blue-50 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-350 transition-colors inline-flex items-center gap-1 text-[11px] font-bold uppercase cursor-pointer"
+                              className="text-primary dark:text-church-gold-bright hover:text-blue-900 dark:hover:text-white hover:bg-blue-50 dark:hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-350 transition-colors inline-flex items-center gap-1 text-[11px] font-bold uppercase cursor-pointer"
                             >
                               <Eye size={12} />
                               Ver Detalle
@@ -1678,7 +1674,7 @@ export default function AnalyticsDashboard() {
             <div className="flex-1 overflow-y-auto py-4 space-y-5 pr-1 custom-scrollbar">
               {/* User credentials summary */}
               <div className="bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-white/10 rounded-xl p-3 flex gap-3 items-center">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center">
                   <User size={16} />
                 </div>
                 <div className="text-xs">

@@ -777,21 +777,21 @@ const StoreManager = () => {
     switch (status) {
       case 'pending_payment':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30">
             <Clock size={12} />
             Esperando Pago
           </span>
         );
       case 'paid':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/30">
             <CheckCircle2 size={12} />
             Pagado
           </span>
         );
       case 'ready_for_pickup':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-church-gold-bright border border-blue-200 dark:border-blue-900/30">
             <Truck size={12} />
             Listo para Retirar
           </span>
@@ -805,7 +805,7 @@ const StoreManager = () => {
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/30">
             <AlertCircle size={12} />
             Cancelado
           </span>
@@ -1370,7 +1370,7 @@ const StoreManager = () => {
                             <td className="py-4 px-6 capitalize">
                               {order.payment_method === 'transfer' ? 'Transferencia' : 'Tarjeta'}
                             </td>
-                            <td className="py-4 px-6 font-bold text-primary dark:text-blue-400">
+                            <td className="py-4 px-6 font-bold text-primary dark:text-church-gold-bright">
                               ${Number(order.total).toFixed(2)}
                             </td>
                             <td className="py-4 px-6">
@@ -1508,7 +1508,7 @@ const StoreManager = () => {
                               <span className="font-bold block">{disp.profiles ? `${disp.profiles.first_name} ${disp.profiles.last_name}` : 'Anónimo'}</span>
                               <span className="text-[10px] text-gray-400 block">{disp.profiles?.email}</span>
                             </td>
-                            <td className="py-4 px-6 font-mono font-bold text-primary dark:text-blue-400">
+                            <td className="py-4 px-6 font-mono font-bold text-primary dark:text-church-gold-bright">
                               {disp.orders ? `#${disp.orders.id.slice(0, 8).toUpperCase()}` : 'No enlazado'}
                             </td>
                             <td className="py-4 px-6">
@@ -1660,7 +1660,7 @@ const StoreManager = () => {
                 {/* Shipping status notes overrides */}
                 {(selectedOrder.shipping_override_address || selectedOrder.shipping_status_notes) && (
                   <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-200 dark:border-blue-900/30 space-y-1.5">
-                    <span className="font-bold text-blue-700 dark:text-blue-400 text-xs block uppercase">Sobrescritura de Datos de Entrega</span>
+                    <span className="font-bold text-blue-700 dark:text-church-gold-bright text-xs block uppercase">Sobrescritura de Datos de Entrega</span>
                     {selectedOrder.shipping_recipient_name && (
                       <p className="text-[11px]">Destinatario: <strong>{selectedOrder.shipping_recipient_name}</strong></p>
                     )}
@@ -1684,7 +1684,7 @@ const StoreManager = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider text-right">Total Pedido</span>
-                    <span className="text-xl font-extrabold text-primary dark:text-blue-400 block mt-0.5">${Number(selectedOrder.total).toFixed(2)}</span>
+                    <span className="text-xl font-extrabold text-primary dark:text-church-gold-bright block mt-0.5">${Number(selectedOrder.total).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -1709,7 +1709,7 @@ const StoreManager = () => {
                   <div className="space-y-2">
                     <h4 className="font-bold text-xs text-gray-850 dark:text-white flex items-center justify-between">
                       <span>Comprobante de Pago Subido:</span>
-                      <a href={selectedOrder.payment_voucher_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-gold flex items-center gap-1">
+                      <a href={selectedOrder.payment_voucher_url} target="_blank" rel="noopener noreferrer" className="text-primary dark:text-church-gold-bright hover:text-gold flex items-center gap-1">
                         <Download size={12} /> Ver Completo
                       </a>
                     </h4>

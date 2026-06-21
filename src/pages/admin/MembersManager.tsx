@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ import type {
 } from '../../types';
 import { TableSkeleton } from '../../components/common/Skeletons';
 import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre';
+import type { MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { COUNTRY_CODES, formatWhatsAppLink } from '../../utils/whatsapp';
 
@@ -84,9 +85,56 @@ const memberSchema = z.object({
 
 type MemberForm = z.infer<typeof memberSchema>;
 
+interface MinistryData {
+  id: string;
+  name: string;
+}
+
+interface MemberWithRelations extends DbMember {
+  member_emails?: Array<{ email: string }>;
+  member_service_areas?: Array<{ catalog_roles: CatalogRole }>;
+  member_talents?: Array<{ catalog_roles: CatalogRole }>;
+  member_spiritual_gifts?: Array<{ catalog_roles: CatalogRole }>;
+  ministries?: { id: string; name: string } | null;
+  catalog_roles?: CatalogRole | null;
+  careers?: { id: string; name: string } | null;
+  studying_careers?: { id: string; name: string } | null;
+  profiles?: Array<{ id: string; email: string; role: string }>;
+}
+
+interface LocalMemberRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  birth_date?: string | null;
+  conversion_date?: string | null;
+  baptism_date?: string | null;
+  phone?: string | null;
+  phone_country_code?: string | null;
+  dni?: string | null;
+  address?: string | null;
+  maps_link?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  is_leader: number;
+  leadership_role?: string | null;
+  ministry_id?: string | null;
+  role_id?: string | null;
+  tithes_sum?: number;
+  education_level?: string | null;
+  career_id?: string | null;
+  is_studying: number;
+  studying_career_id?: string | null;
+  deleted_at?: string | null;
+  emails?: string;
+  service_areas?: string;
+  talents?: string;
+  spiritual_gifts?: string;
+}
+
 const MembersManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
-  const [members, setMembers] = useState<DbMember[]>([]);
+  const [members, setMembers] = useState<MemberWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -147,7 +195,7 @@ const MembersManager = () => {
   const [pickerCoords, setPickerCoords] = useState({ lat: CHURCH_COORDS.lat, lng: CHURCH_COORDS.lng });
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [modalGeocoding, setModalGeocoding] = useState(false);
-  const modalMapRef = useRef<any>(null);
+  const modalMapRef = useRef<MapRef | null>(null);
 
   const handleOpenMapPicker = () => {
     const formLat = watch('latitude');
@@ -235,7 +283,7 @@ const MembersManager = () => {
     }
   };
 
-  const handleMapClick = (e: any) => {
+  const handleMapClick = (e: { lngLat: { lat: number; lng: number } }) => {
     setPickerCoords({ lat: e.lngLat.lat, lng: e.lngLat.lng });
   };
 
@@ -244,7 +292,7 @@ const MembersManager = () => {
   const [talents, setTalents] = useState<CatalogRole[]>([]);
   const [spiritualGifts, setSpiritualGifts] = useState<CatalogRole[]>([]);
   const [rolesList, setRolesList] = useState<CatalogRole[]>([]);
-  const [ministries, setMinistries] = useState<any[]>([]);
+  const [ministries, setMinistries] = useState<MinistryData[]>([]);
   const [careersList, setCareersList] = useState<Career[]>([]);
 
   // Selected relationships state
@@ -286,37 +334,52 @@ const MembersManager = () => {
     name: 'emails'
   });
 
-  useEffect(() => {
-    fetchMembers();
-    fetchLookups();
-  }, []);
+  const fetchLookups = useCallback(async () => {
+    try {
+      const [catalogRes, ministriesRes, careersRes] = await Promise.all([
+        supabase.from('catalog_roles').select('*').order('name'),
+        supabase.from('ministries').select('id, name').order('name'),
+        supabase.from('careers').select('*').order('name'),
+      ]);
 
-  const fetchMembers = async () => {
+      const catalogData: CatalogRole[] = catalogRes.data || [];
+      setServiceAreas(catalogData.filter(x => x.category === 'Área de Servicios'));
+      setTalents(catalogData.filter(x => x.category === 'Talentos'));
+      setSpiritualGifts(catalogData.filter(x => x.category === 'Dones'));
+      setRolesList(catalogData.filter(x => x.category === 'Roles'));
+      setMinistries(ministriesRes.data || []);
+      setCareersList(careersRes.data || []);
+    } catch (err) {
+      console.error('Error fetching lookup lists:', err);
+    }
+  }, [setServiceAreas, setTalents, setSpiritualGifts, setRolesList, setMinistries, setCareersList]);
+
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch user profiles first to map linked accounts
-      let profilesList: any[] = [];
+      let profilesList: Array<{ id: string; member_id: string; email: string; role: string }> = [];
       try {
         const { data: pData } = await supabase
           .from('profiles')
           .select('id, member_id, email, role');
-        profilesList = pData || [];
+        profilesList = (pData || []) as Array<{ id: string; member_id: string; email: string; role: string }>;
       } catch (pe) {
         console.warn('Could not load profiles for linkage mapping:', pe);
       }
 
       // Try fetching from local IDB first
-      let cached: any[] = [];
+      let cached: LocalMemberRow[] = [];
       try {
         const db = await getDb();
         const allMembers = await db.getAll('local_members');
-        cached = allMembers.filter(m => !m.deleted_at);
+        cached = (allMembers || []).filter(m => !m.deleted_at) as unknown as LocalMemberRow[];
         cached.sort((a, b) => (a.last_name || '').localeCompare(b.last_name || ''));
       } catch (dbErr) {
         console.warn('Local DB failed or timed out, fallback to Supabase:', dbErr);
       }
 
-      let loadedMembers: any[] = [];
+      let loadedMembers: MemberWithRelations[] = [];
 
       if (cached && cached.length > 0) {
         // Map SQLite attributes back to type model
@@ -328,7 +391,7 @@ const MembersManager = () => {
           member_service_areas: m.service_areas ? JSON.parse(m.service_areas) : [],
           member_talents: m.talents ? JSON.parse(m.talents) : [],
           member_spiritual_gifts: m.spiritual_gifts ? JSON.parse(m.spiritual_gifts) : []
-        }));
+        })) as unknown as MemberWithRelations[];
       } else {
         // Fetch from Supabase
         const { data, error } = await supabase
@@ -348,7 +411,7 @@ const MembersManager = () => {
           .order('last_name', { ascending: true });
 
         if (error) throw error;
-        loadedMembers = data || [];
+        loadedMembers = (data || []) as unknown as MemberWithRelations[];
       }
 
       // Map profiles onto loaded members
@@ -358,33 +421,29 @@ const MembersManager = () => {
       }));
 
       setMembers(finalMembers);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error fetching members:', err);
-      toast.error('Error al cargar miembros: ' + err.message);
+      toast.error('Error al cargar miembros: ' + errorMsg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setMembers]);
 
-  const fetchLookups = async () => {
-    try {
-      const [catalogRes, ministriesRes, careersRes] = await Promise.all([
-        supabase.from('catalog_roles').select('*').order('name'),
-        supabase.from('ministries').select('id, name').order('name'),
-        supabase.from('careers').select('*').order('name'),
-      ]);
-
-      const catalogData: CatalogRole[] = catalogRes.data || [];
-      setServiceAreas(catalogData.filter(x => x.category === 'Área de Servicios'));
-      setTalents(catalogData.filter(x => x.category === 'Talentos'));
-      setSpiritualGifts(catalogData.filter(x => x.category === 'Dones'));
-      setRolesList(catalogData.filter(x => x.category === 'Roles'));
-      setMinistries(ministriesRes.data || []);
-      setCareersList(careersRes.data || []);
-    } catch (err) {
-      console.error('Error fetching lookup lists:', err);
-    }
-  };
+  useEffect(() => {
+    let isMounted = true;
+    const init = async () => {
+      await Promise.resolve();
+      if (isMounted) {
+        fetchMembers();
+        fetchLookups();
+      }
+    };
+    init();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchMembers, fetchLookups]);
 
   const handleAddCareer = async () => {
     if (!newCareerName.trim()) return;
@@ -398,9 +457,10 @@ const MembersManager = () => {
       toast.success('Carrera agregada exitosamente.');
       setNewCareerName('');
       fetchLookups();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Nombre duplicado o sin conexión.';
       console.error(err);
-      toast.error('Error al agregar carrera: ' + (err.message || 'Nombre duplicado o sin conexión.'));
+      toast.error('Error al agregar carrera: ' + errorMsg);
     } finally {
       setSavingCareer(false);
     }
@@ -420,9 +480,10 @@ const MembersManager = () => {
       setEditingCareerId(null);
       setEditingCareerName('');
       fetchLookups();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error(err);
-      toast.error('Error al actualizar carrera: ' + err.message);
+      toast.error('Error al actualizar carrera: ' + errorMsg);
     } finally {
       setSavingCareer(false);
     }
@@ -448,9 +509,10 @@ const MembersManager = () => {
       if (error) throw error;
       toast.success('Carrera eliminada exitosamente.');
       fetchLookups();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error(err);
-      toast.error('Error al eliminar carrera: ' + err.message);
+      toast.error('Error al eliminar carrera: ' + errorMsg);
     } finally {
       setSavingCareer(false);
     }
@@ -490,24 +552,24 @@ const MembersManager = () => {
     setShowForm(true);
   };
 
-  const handleOpenEdit = (member: any) => {
+  const handleOpenEdit = (member: MemberWithRelations) => {
     setEditingMember(member);
     setActiveTab('personal');
 
     // Extract emails
     const formattedEmails = member.member_emails && member.member_emails.length > 0
-      ? member.member_emails.map((e: any) => ({ email: e.email }))
+      ? member.member_emails.map((e) => ({ email: e.email }))
       : [{ email: '' }];
 
     // Map checked IDs
     const areas = member.member_service_areas 
-      ? member.member_service_areas.map((a: any) => a.catalog_roles.id) 
+      ? member.member_service_areas.map((a) => a.catalog_roles?.id || '') 
       : [];
     const tlnts = member.member_talents 
-      ? member.member_talents.map((t: any) => t.catalog_roles.id) 
+      ? member.member_talents.map((t) => t.catalog_roles?.id || '') 
       : [];
     const gfts = member.member_spiritual_gifts 
-      ? member.member_spiritual_gifts.map((g: any) => g.catalog_roles.id) 
+      ? member.member_spiritual_gifts.map((g) => g.catalog_roles?.id || '') 
       : [];
 
     setSelectedAreas(areas);
@@ -629,9 +691,10 @@ const MembersManager = () => {
       toast.success(editingMember ? 'Miembro guardado (cola local).' : 'Miembro registrado (cola local).');
       setShowForm(false);
       fetchMembers();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error saving member:', err);
-      toast.error('No se pudo guardar el registro: ' + err.message);
+      toast.error('No se pudo guardar el registro: ' + errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -675,9 +738,10 @@ const MembersManager = () => {
 
       toast.success('Miembro eliminado (borrado lógico local).');
       fetchMembers();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error deleting member:', err);
-      toast.error('No se pudo eliminar al miembro: ' + err.message);
+      toast.error('No se pudo eliminar al miembro: ' + errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -724,7 +788,7 @@ const MembersManager = () => {
     ];
 
     const rows = filteredMembers.map(m => {
-      const emails = m.member_emails ? m.member_emails.map((e: any) => e.email).join('; ') : '';
+      const emails = m.member_emails ? m.member_emails.map(e => e.email).join('; ') : '';
       const isLeader = m.is_leader ? 'Sí' : 'No';
       const ministry = m.ministries ? m.ministries.name : '';
       return [
@@ -782,9 +846,9 @@ const MembersManager = () => {
     
     // Skill/Area/Talent/Gift filter
     if (filterSkill !== 'all') {
-      const hasArea = member.member_service_areas?.some((a: any) => a.catalog_roles?.id === filterSkill);
-      const hasTalent = member.member_talents?.some((t: any) => t.catalog_roles?.id === filterSkill);
-      const hasGift = member.member_spiritual_gifts?.some((g: any) => g.catalog_roles?.id === filterSkill);
+      const hasArea = member.member_service_areas?.some(a => a.catalog_roles?.id === filterSkill);
+      const hasTalent = member.member_talents?.some(t => t.catalog_roles?.id === filterSkill);
+      const hasGift = member.member_spiritual_gifts?.some(g => g.catalog_roles?.id === filterSkill);
       if (!hasArea && !hasTalent && !hasGift) return false;
     }
     
@@ -813,7 +877,7 @@ const MembersManager = () => {
   interface GroupedData {
     key: string;
     name: string;
-    items: DbMember[];
+    items: MemberWithRelations[];
   }
 
   const getGroupedMembers = (): GroupedData[] => {
@@ -821,7 +885,7 @@ const MembersManager = () => {
       return [];
     }
 
-    const groupsMap: Record<string, DbMember[]> = {};
+    const groupsMap: Record<string, MemberWithRelations[]> = {};
 
     if (groupBy === 'leadership') {
       groupsMap['Líderes'] = [];
@@ -851,7 +915,7 @@ const MembersManager = () => {
           }
           groupsMap[key].push(m);
         } else {
-          areas.forEach((a: any) => {
+          areas.forEach(a => {
             const key = a.catalog_roles?.name || 'Área Desconocida';
             if (!groupsMap[key]) {
               groupsMap[key] = [];
@@ -902,7 +966,7 @@ const MembersManager = () => {
       .filter(g => g.items.length > 0);
   };
 
-  const renderMembersTable = (list: DbMember[]) => {
+  const renderMembersTable = (list: MemberWithRelations[]) => {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -927,7 +991,7 @@ const MembersManager = () => {
                         className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 bg-blue-50 text-primary rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
                         {member.first_name[0]}{member.last_name[0]}
                       </div>
                     )}
@@ -937,7 +1001,7 @@ const MembersManager = () => {
                         {member.profiles && member.profiles.length > 0 && (
                           <span 
                             className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 cursor-help"
-                            title={`Usuario vinculado: ${member.profiles.map((p: any) => p.email).join(', ')} (${member.profiles.map((p: any) => p.role).join(', ')})`}
+                            title={`Usuario vinculado: ${member.profiles.map(p => p.email).join(', ')} (${member.profiles.map(p => p.role).join(', ')})`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                             Vinculado
@@ -946,11 +1010,11 @@ const MembersManager = () => {
                       </div>
                       <span className="text-xs text-gray-400 block font-semibold">
                         {member.member_emails && member.member_emails.length > 0 
-                          ? member.member_emails.map((me: any) => me.email).join(', ') 
+                          ? member.member_emails.map(me => me.email).join(', ') 
                           : 'Sin correo'}
                       </span>
                       {member.education_level && member.education_level !== 'Ninguno' && (
-                        <span className="text-[10px] text-primary font-bold bg-blue-50/50 border border-blue-100 px-1.5 py-0.5 rounded mt-1 inline-block w-max leading-none">
+                        <span className="text-[10px] text-primary dark:text-church-gold-bright font-bold bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 px-1.5 py-0.5 rounded mt-1 inline-block w-max leading-none">
                           🎓 {member.education_level}
                           {careersList.find(c => c.id === member.career_id)?.name ? `: ${careersList.find(c => c.id === member.career_id)?.name}` : ''}
                           {member.is_studying && (
@@ -998,8 +1062,8 @@ const MembersManager = () => {
                   <td className="py-4 px-6">
                     <div className="flex flex-wrap gap-1 max-w-[200px]">
                       {member.member_service_areas && member.member_service_areas.length > 0 ? (
-                        member.member_service_areas.map((a: any, i: number) => (
-                          <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-primary border border-blue-100">
+                        member.member_service_areas.map((a, i: number) => (
+                          <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright border border-blue-100 dark:border-blue-900/30">
                             {a.catalog_roles?.name || 'Área'}
                           </span>
                         ))
@@ -1094,7 +1158,7 @@ const MembersManager = () => {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setActiveTab(t.id as any)}
+                  onClick={() => setActiveTab(t.id as 'personal' | 'spiritual' | 'leadership' | 'skills')}
                   className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === t.id 
                       ? 'border-primary text-primary' 
@@ -1310,7 +1374,7 @@ const MembersManager = () => {
                       <button
                         type="button"
                         onClick={() => append({ email: '' })}
-                        className="text-[11px] text-primary font-bold hover:underline cursor-pointer flex items-center gap-1"
+                        className="text-[11px] text-primary dark:text-church-gold-bright font-bold hover:underline cursor-pointer flex items-center gap-1"
                       >
                         <Plus size={12} />
                         Agregar correo
@@ -1567,7 +1631,7 @@ const MembersManager = () => {
 
                         return Object.entries(grouped).map(([categoryName, items]) => (
                           <div key={categoryName} className="space-y-2.5 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-3.5 border border-gray-150 dark:border-white/10">
-                            <span className="text-[11px] font-bold text-primary dark:text-indigo-400 uppercase tracking-wider block border-b border-gray-100/50 dark:border-white/5 pb-1">
+                            <span className="text-[11px] font-bold text-primary dark:text-church-gold-bright uppercase tracking-wider block border-b border-gray-100/50 dark:border-white/5 pb-1">
                               {categoryName}
                             </span>
                             <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1698,7 +1762,7 @@ const MembersManager = () => {
                     id="filter-leadership"
                     name="filterLeadership"
                     value={filterLeadership}
-                    onChange={(e) => setFilterLeadership(e.target.value as any)}
+                    onChange={(e) => setFilterLeadership(e.target.value as 'all' | 'leaders' | 'regulars')}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-750 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="all">Todos los miembros</option>
@@ -1761,7 +1825,7 @@ const MembersManager = () => {
                       id="sort-by"
                       name="sortBy"
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
+                      onChange={(e) => setSortBy(e.target.value as 'first_name' | 'last_name' | 'birth_date' | 'tithes_sum')}
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                     >
                       <option value="first_name">Nombre</option>
@@ -1787,7 +1851,7 @@ const MembersManager = () => {
                     id="group-by"
                     name="groupBy"
                     value={groupBy}
-                    onChange={(e) => setGroupBy(e.target.value as any)}
+                    onChange={(e) => setGroupBy(e.target.value as 'none' | 'leadership' | 'ministry' | 'service_area' | 'birth_month')}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                   >
                     <option value="none">Sin Agrupación</option>
@@ -1923,8 +1987,8 @@ const MembersManager = () => {
 
               {/* Modal Footer */}
               <div className="px-6 py-4 border-t border-gray-150 dark:border-white/10 flex items-center justify-between flex-shrink-0 bg-white dark:bg-slate-900">
-                <div className="text-[11px] text-gray-500 dark:text-gray-450 font-semibold font-mono">
-                  Coords: <span className="text-primary font-bold">{pickerCoords.lat.toFixed(6)}, {pickerCoords.lng.toFixed(6)}</span>
+                <div className="text-[11px] text-gray-500 dark:text-gray-455 font-semibold font-mono">
+                  Coords: <span className="text-primary dark:text-church-gold-bright font-bold">{pickerCoords.lat.toFixed(6)}, {pickerCoords.lng.toFixed(6)}</span>
                 </div>
                 <div className="flex gap-2">
                   <button

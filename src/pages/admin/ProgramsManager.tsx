@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -77,16 +77,14 @@ const ProgramsManager = () => {
     defaultValues: { title: '' },
   });
 
-  useEffect(() => { fetchPrograms(); }, []);
-
-  const fetchPrograms = async () => {
+  const fetchPrograms = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from('programs').select('*').order('created_at', { ascending: false });
     if (data) setPrograms(data);
     setLoading(false);
-  };
+  }, []);
 
-  const fetchModulesAndLessons = async (programId: string) => {
+  const fetchModulesAndLessons = useCallback(async (programId: string) => {
     try {
       const [modulesRes, lessonsRes] = await Promise.all([
         supabase.from('program_modules').select('*').eq('program_id', programId).order('order'),
@@ -101,7 +99,11 @@ const ProgramsManager = () => {
       if (data) setLessons(data);
       setModules([]);
     }
-  };
+  }, []);
+
+  useEffect(() => { 
+    fetchPrograms(); 
+  }, [fetchPrograms]);
 
   const selectProgram = (program: Program) => {
     setSelectedProgram(program);
@@ -322,7 +324,7 @@ const ProgramsManager = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <GraduationCap className="text-indigo-600" size={28} />
+            <GraduationCap className="text-indigo-600 dark:text-church-gold-bright" size={28} />
             Programas de Estudio
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-450 mt-1">Administra la estructura curricular: Planes, Módulos y Lecciones bíblicas.</p>
@@ -341,7 +343,7 @@ const ProgramsManager = () => {
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Estudios / Programas</h2>
           {loading ? (
             <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-indigo-600"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-indigo-600 dark:border-church-gold-bright"></div>
             </div>
           ) : programs.length === 0 ? (
             <div className="text-center py-12 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl text-gray-400">
@@ -400,7 +402,7 @@ const ProgramsManager = () => {
               {/* Program Workspace Header */}
               <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-4 md:p-5 shadow-xxs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="min-w-0">
-                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Estudio Seleccionado</span>
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-church-gold-bright uppercase tracking-widest">Estudio Seleccionado</span>
                   <h2 className="text-base font-serif font-bold text-gray-850 dark:text-gray-100 truncate mt-0.5">{selectedProgram.title}</h2>
                 </div>
                 {!readOnly && (
@@ -656,7 +658,7 @@ const ProgramsManager = () => {
               {/* Public content */}
               <div>
                 <label className="block text-xs font-semibold text-gray-750 dark:text-gray-300 mb-1.5 flex items-center gap-1">
-                  <FileText size={13} className="text-indigo-500" />
+                  <FileText size={13} className="text-indigo-500 dark:text-indigo-400" />
                   📖 Contenido Público (para Estudiantes)
                 </label>
                 <BlockEditor content={publicContent} onChange={setPublicContent} disabled={readOnly} />

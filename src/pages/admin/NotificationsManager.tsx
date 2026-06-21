@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -50,6 +50,16 @@ const MESSAGE_TEMPLATES = [
   }
 ];
 
+interface ProfileData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string | null;
+  member_id: string | null;
+  ministry_id: string | null;
+  email: string | null;
+}
+
 export default function NotificationsManager() {
   const [activeTab, setActiveTab] = useState<'triggers' | 'manual' | 'logs'>('triggers');
   const [loading, setLoading] = useState(true);
@@ -57,7 +67,7 @@ export default function NotificationsManager() {
   const [members, setMembers] = useState<Member[]>([]);
   const [ministries, setMinistries] = useState<MinistryData[]>([]);
   const [logs, setLogs] = useState<NotificationLog[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<ProfileData[]>([]);
 
   // Auth & Chat Stores
   const { user } = useAuthStore();
@@ -86,43 +96,7 @@ export default function NotificationsManager() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'sent' | 'no-phone'>('all');
   const [sentMemberIds, setSentMemberIds] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    loadData();
-    fetchContacts(); // Ensure contacts are in store
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [membersRes, ministriesRes, logsRes, profilesRes] = await Promise.all([
-        supabase.from('members').select('*').is('deleted_at', null),
-        supabase.from('ministries').select('id, name, anniversary_date'),
-        supabase.from('notification_logs').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('id, first_name, last_name, role, member_id, ministry_id')
-      ]);
-
-      const fetchedMembers = membersRes.data || [];
-      const fetchedMinistries = ministriesRes.data || [];
-      const fetchedLogs = logsRes.data || [];
-      const fetchedProfiles = profilesRes.data || [];
-
-      setMembers(fetchedMembers);
-      setMinistries(fetchedMinistries);
-      setLogs(fetchedLogs);
-      setProfiles(fetchedProfiles);
-
-      // Perform Daily Scan
-      scanCelebrants(fetchedMembers, fetchedMinistries);
-
-    } catch (err: any) {
-      console.error('Error fetching notifications data:', err);
-      toast.error('Error al cargar datos: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const scanCelebrants = (membersList: Member[], ministriesList: MinistryData[]) => {
+  const scanCelebrants = useCallback((membersList: Member[], ministriesList: MinistryData[]) => {
     const today = new Date();
     const currentDay = today.getDate();
     const currentMonth = today.getMonth() + 1; // 1-indexed
@@ -143,7 +117,44 @@ export default function NotificationsManager() {
 
     setBirthdaysToday(bdays);
     setAnniversariesToday(annivs);
-  };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [membersRes, ministriesRes, logsRes, profilesRes] = await Promise.all([
+        supabase.from('members').select('*').is('deleted_at', null),
+        supabase.from('ministries').select('id, name, anniversary_date'),
+        supabase.from('notification_logs').select('*').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('id, first_name, last_name, role, member_id, ministry_id')
+      ]);
+
+      const fetchedMembers = membersRes.data || [];
+      const fetchedMinistries = ministriesRes.data || [];
+      const fetchedLogs = logsRes.data || [];
+      const fetchedProfiles: ProfileData[] = (profilesRes.data || []) as unknown as ProfileData[];
+
+      setMembers(fetchedMembers);
+      setMinistries(fetchedMinistries);
+      setLogs(fetchedLogs);
+      setProfiles(fetchedProfiles);
+
+      // Perform Daily Scan
+      scanCelebrants(fetchedMembers, fetchedMinistries);
+
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('Error fetching notifications data:', err);
+      toast.error('Error al cargar datos: ' + errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [scanCelebrants]);
+
+  useEffect(() => {
+    loadData();
+    fetchContacts(); // Ensure contacts are in store
+  }, [loadData, fetchContacts]);
 
   const logNotification = async (
     type: 'whatsapp' | 'push', 
@@ -223,7 +234,7 @@ export default function NotificationsManager() {
       // Direct Chat Broadcast (if not scheduled)
       if (deliveryMethod === 'direct_chat' && !isScheduled) {
         // Filter profiles
-        let targetProfiles: any[] = [];
+        let targetProfiles: ProfileData[] = [];
         if (recipientGroup === 'todos') {
           targetProfiles = profiles.filter(p => p.id !== user?.id);
         } else if (recipientGroup === 'lideres') {
@@ -272,9 +283,10 @@ export default function NotificationsManager() {
       setIsScheduled(false);
       setScheduledDate('');
       setBroadcastProgress(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error sending manual message:', err);
-      toast.error('Error al enviar: ' + err.message);
+      toast.error('Error al enviar: ' + errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -293,8 +305,9 @@ export default function NotificationsManager() {
       
       setLogs(prev => prev.map(l => l.id === logId ? data : l));
       toast.success('Aviso publicado de inmediato.');
-    } catch (err: any) {
-      toast.error('Error al publicar aviso: ' + err.message);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      toast.error('Error al publicar aviso: ' + errorMsg);
     }
   };
 
@@ -309,8 +322,9 @@ export default function NotificationsManager() {
 
       setLogs(prev => prev.filter(l => l.id !== logId));
       toast.success('Envío programado cancelado y eliminado.');
-    } catch (err: any) {
-      toast.error('Error al cancelar envío: ' + err.message);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      toast.error('Error al cancelar envío: ' + errorMsg);
     }
   };
 
@@ -426,10 +440,10 @@ export default function NotificationsManager() {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Cumpleaños Hoy</span>
-            <p className="text-xl font-extrabold text-blue-900 dark:text-blue-400 tracking-tight">{birthdaysToday.length}</p>
+            <p className="text-xl font-extrabold text-blue-900 dark:text-church-gold-bright tracking-tight">{birthdaysToday.length}</p>
             <span className="text-[9px] text-gray-400 block font-semibold mt-0.5">Miembros festejados</span>
           </div>
-          <div className="w-10 h-10 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex items-center justify-center text-blue-900 dark:text-blue-400 shrink-0">
+          <div className="w-10 h-10 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex items-center justify-center text-blue-900 dark:text-church-gold-bright shrink-0">
             <Gift size={20} />
           </div>
         </div>
@@ -511,7 +525,7 @@ export default function NotificationsManager() {
 
       {loading ? (
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-8 flex justify-center items-center h-48 animate-pulse">
-          <RefreshCw className="animate-spin text-primary" size={24} />
+          <RefreshCw className="animate-spin text-primary dark:text-church-gold-bright" size={24} />
         </div>
       ) : (
         <>
@@ -642,7 +656,7 @@ export default function NotificationsManager() {
                       </label>
                       <select
                         value={deliveryMethod}
-                        onChange={(e) => setDeliveryMethod(e.target.value as any)}
+                        onChange={(e) => setDeliveryMethod(e.target.value as 'billboard' | 'direct_chat')}
                         className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650 dark:text-white"
                       >
                         <option value="billboard">Cartelera de Avisos (In-App)</option>
@@ -656,7 +670,7 @@ export default function NotificationsManager() {
                       </label>
                       <select
                         value={notifCategory}
-                        onChange={(e) => setNotifCategory(e.target.value as any)}
+                        onChange={(e) => setNotifCategory(e.target.value as 'general' | 'cumpleanos' | 'aniversario' | 'reunion' | 'evento')}
                         className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold text-slate-650 dark:text-white"
                       >
                         <option value="general">📢 General</option>
@@ -780,13 +794,13 @@ export default function NotificationsManager() {
                   {/* Broadcast Progress Bar */}
                   {broadcastProgress && (
                     <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl space-y-2 animate-pulse">
-                      <div className="flex justify-between text-[10px] font-bold text-blue-900 dark:text-blue-300">
+                      <div className="flex justify-between text-[10px] font-bold text-blue-900 dark:text-church-gold-bright">
                         <span>Enviando mensajes de chat individuales...</span>
                         <span>{broadcastProgress.sent} de {broadcastProgress.total} ({Math.round((broadcastProgress.sent / broadcastProgress.total) * 100)}%)</span>
                       </div>
                       <div className="w-full bg-blue-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div 
-                          className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                          className="bg-blue-600 dark:bg-church-gold h-full rounded-full transition-all duration-300"
                           style={{ width: `${(broadcastProgress.sent / broadcastProgress.total) * 100}%` }}
                         ></div>
                       </div>
@@ -857,8 +871,8 @@ export default function NotificationsManager() {
                   <div className="flex gap-2">
                     <select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as any)}
-                      className="w-full px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-bold uppercase text-slate-500 dark:text-gray-400 bg-white dark:bg-slate-900 focus:outline-none"
+                      onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'sent' | 'no-phone')}
+                      className="w-full px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl text-[10px] font-bold uppercase text-slate-500 dark:text-gray-450 bg-white dark:bg-slate-900 focus:outline-none"
                     >
                       <option value="all">Todos</option>
                       <option value="pending">Pendientes</option>

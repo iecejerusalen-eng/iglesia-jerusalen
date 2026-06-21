@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Donation, DonationCategory } from '../../types';
 import { 
@@ -14,12 +14,24 @@ import {
 import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/common/Skeletons';
 import { toast } from 'sonner';
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipItem {
+  color?: string;
+  name?: string;
+  value: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: CustomTooltipItem[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900 border border-slate-800 text-white px-3.5 py-2 rounded-xl shadow-xl text-xs font-semibold">
         <p className="font-serif font-bold text-gold mb-1">{label}</p>
-        {payload.map((item: any, idx: number) => (
+        {payload.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 mt-0.5">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color || '#D4AF37' }}></div>
             <span className="text-gray-300 capitalize">{item.name === 'diezmos' ? 'Diezmos' : item.name === 'ofrendas' ? 'Ofrendas' : item.name === 'tienda' ? 'Ventas Tienda' : item.name}:</span>
@@ -32,6 +44,67 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+interface OrderItem {
+  id: string;
+  product_id: string;
+  quantity: number | string;
+  price: number | string;
+  products?: {
+    name: string;
+    image_url: string | null;
+  } | null;
+}
+
+interface Order {
+  id: string;
+  status: string;
+  total: number | string;
+  payment_method?: string | null;
+  created_at: string;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  order_items?: OrderItem[] | null;
+}
+
+interface FilteredTransaction {
+  id: string;
+  type: 'donation' | 'order';
+  name: string;
+  email?: string | null;
+  amount: number;
+  category: string;
+  paymentMethod?: string | null;
+  status: 'completed' | 'pending' | 'failed';
+  date: string;
+}
+
+interface TopProduct {
+  name: string;
+  quantity: number;
+  revenue: number;
+  imageUrl: string | null;
+}
+
+interface PaymentSharePoint {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface ChartDataPoint {
+  label: string;
+  diezmos: number;
+  ofrendas: number;
+  tienda: number;
+  total: number;
+}
+
+interface ParticipationPoint {
+  name: string;
+  value: number;
+  color: string;
+}
+
 const FinanceDashboard = () => {
   const [activeTab, setActiveTab] = useState<'metrics' | 'categories'>('metrics');
   const [loading, setLoading] = useState(true);
@@ -39,16 +112,16 @@ const FinanceDashboard = () => {
 
   // Master lists
   const [allDonations, setAllDonations] = useState<Donation[]>([]);
-  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [categories, setCategories] = useState<DonationCategory[]>([]);
 
   // Filter and Derived statistics
   const [dateFilter, setDateFilter] = useState<'30days' | '90days' | 'year' | 'all'>('all');
-  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [paymentMethodsShare, setPaymentMethodsShare] = useState<any[]>([]);
-  const [participationData, setParticipationData] = useState<any[]>([]);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<FilteredTransaction[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [paymentMethodsShare, setPaymentMethodsShare] = useState<PaymentSharePoint[]>([]);
+  const [participationData, setParticipationData] = useState<ParticipationPoint[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
   const [stats, setStats] = useState({
     totalIncome: 0,
@@ -71,28 +144,7 @@ const FinanceDashboard = () => {
     is_active: true
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [donationsRes, _, ordersRes] = await Promise.all([
-        fetchDonations(),
-        fetchCategories(),
-        fetchOrders()
-      ]);
-      computeStatsAndChart(donationsRes, ordersRes, dateFilter);
-    } catch (err: any) {
-      console.error('Error loading finance data:', err);
-      toast.error('Error al cargar datos financieros: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('donation_categories')
       .select('*')
@@ -101,9 +153,9 @@ const FinanceDashboard = () => {
     if (error) throw error;
     setCategories(data || []);
     return data || [];
-  };
+  }, []);
 
-  const fetchDonations = async () => {
+  const fetchDonations = useCallback(async () => {
     const { data, error } = await supabase
       .from('donations')
       .select('*')
@@ -112,9 +164,9 @@ const FinanceDashboard = () => {
     if (error) throw error;
     setAllDonations(data || []);
     return data || [];
-  };
+  }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -130,11 +182,11 @@ const FinanceDashboard = () => {
     if (error) throw error;
     setAllOrders(data || []);
     return data || [];
-  };
+  }, []);
 
-  const computeStatsAndChart = (
+  const computeStatsAndChart = useCallback((
     donationsList: Donation[],
-    ordersList: any[],
+    ordersList: Order[],
     filter: '30days' | '90days' | 'year' | 'all'
   ) => {
     const today = new Date();
@@ -309,7 +361,7 @@ const FinanceDashboard = () => {
       if (!isPaid) return;
 
       if (o.order_items) {
-        o.order_items.forEach((item: any) => {
+        o.order_items.forEach((item) => {
           if (!item.products) return;
           const pId = item.product_id;
           const qty = Number(item.quantity || 0);
@@ -331,7 +383,7 @@ const FinanceDashboard = () => {
     setTopProducts(sortedProducts);
 
     // 7. Unified Transactions History
-    const combinedTx = [
+    const combinedTx: FilteredTransaction[] = [
       ...filteredDonations.map(d => ({
         id: d.id,
         type: 'donation' as const,
@@ -340,7 +392,7 @@ const FinanceDashboard = () => {
         amount: Number(d.amount),
         category: d.category_name_backup || 'General',
         paymentMethod: d.payment_method,
-        status: d.status === 'completed' ? 'completed' : d.status === 'pending' ? 'pending' : 'failed',
+        status: d.status === 'completed' ? ('completed' as const) : d.status === 'pending' ? ('pending' as const) : ('failed' as const),
         date: d.created_at
       })),
       ...filteredOrders.map(o => {
@@ -353,14 +405,36 @@ const FinanceDashboard = () => {
           amount: Number(o.total),
           category: 'Tienda',
           paymentMethod: o.payment_method || 'card',
-          status: isPaid ? 'completed' : o.status === 'cancelled' ? 'failed' : 'pending',
+          status: isPaid ? ('completed' as const) : o.status === 'cancelled' ? ('failed' as const) : ('pending' as const),
           date: o.created_at
         };
       })
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     setFilteredTransactions(combinedTx);
-  };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [donationsRes, , ordersRes] = await Promise.all([
+        fetchDonations(),
+        fetchCategories(),
+        fetchOrders()
+      ]);
+      computeStatsAndChart(donationsRes, ordersRes, dateFilter);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('Error loading finance data:', err);
+      toast.error('Error al cargar datos financieros: ' + errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchDonations, fetchCategories, fetchOrders, computeStatsAndChart, dateFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDateFilterChange = (val: '30days' | '90days' | 'year' | 'all') => {
     setDateFilter(val);
@@ -420,9 +494,10 @@ const FinanceDashboard = () => {
 
       setShowCategoryForm(false);
       await fetchCategories();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error saving category:', err);
-      toast.error('Error al guardar la categoría: ' + err.message);
+      toast.error('Error al guardar la categoría: ' + errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -438,9 +513,10 @@ const FinanceDashboard = () => {
       if (error) throw error;
       toast.success(`Categoría ${!cat.is_active ? 'activada' : 'desactivada'} correctamente.`);
       await fetchCategories();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error toggling active status:', err);
-      toast.error('Error al cambiar estado: ' + err.message);
+      toast.error('Error al cambiar estado: ' + errorMsg);
     }
   };
 
@@ -494,7 +570,7 @@ const FinanceDashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary">Gestión de Finanzas</h1>
+          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright">Gestión de Finanzas</h1>
           <p className="text-gray-500 dark:text-gray-450 text-sm">Visualiza ingresos e-commerce, diezmos y administra las categorías de donación.</p>
         </div>
 
@@ -504,7 +580,7 @@ const FinanceDashboard = () => {
             <div className="relative">
               <select
                 value={dateFilter}
-                onChange={(e) => handleDateFilterChange(e.target.value as any)}
+                onChange={(e) => handleDateFilterChange(e.target.value as '30days' | '90days' | 'year' | 'all')}
                 className="bg-white dark:bg-slate-800 border border-gray-150 dark:border-white/10 rounded-xl px-3.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
               >
                 <option value="30days">Últimos 30 días</option>
@@ -563,7 +639,7 @@ const FinanceDashboard = () => {
                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Ingreso Total</span>
                 <p className="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">${stats.totalIncome.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
                 <div className="text-[9px] text-gray-400 dark:text-gray-500 font-bold mt-1 flex items-center gap-1.5">
-                  <span className="text-primary dark:text-blue-400">Donaciones: {stats.totalIncome > 0 ? ((stats.donationsTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
+                  <span className="text-primary dark:text-church-gold-bright">Donaciones: {stats.totalIncome > 0 ? ((stats.donationsTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
                   <span className="text-emerald-600 dark:text-emerald-400">Tienda: {stats.totalIncome > 0 ? ((stats.storeTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
                 </div>
               </div>
@@ -576,10 +652,10 @@ const FinanceDashboard = () => {
             <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all duration-300 flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Donaciones Recibidas</span>
-                <p className="text-2xl font-extrabold text-primary dark:text-blue-400 tracking-tight">${stats.donationsTotal.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-extrabold text-primary dark:text-church-gold-bright tracking-tight">${stats.donationsTotal.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
                 <span className="text-[9px] text-gray-400 dark:text-gray-500 block font-semibold mt-1">Recibos: {stats.donationsCount} | Prom: ${stats.donationsAvg.toFixed(0)}</span>
               </div>
-              <div className="w-12 h-12 bg-blue-50/70 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-500/20 rounded-xl flex items-center justify-center text-primary dark:text-blue-400 shrink-0">
+              <div className="w-12 h-12 bg-blue-50/70 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex items-center justify-center text-primary dark:text-church-gold-bright shrink-0">
                 <Heart size={22} />
               </div>
             </div>
@@ -668,7 +744,7 @@ const FinanceDashboard = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value: any) => `$${value.toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
+                        <Tooltip formatter={(value: unknown) => `$${Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -714,7 +790,7 @@ const FinanceDashboard = () => {
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                         <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748b', fontWeight: 'bold' }} width={80} />
-                        <Tooltip formatter={(value: any) => `${value} unidades`} />
+                        <Tooltip formatter={(value: unknown) => `${value} unidades`} />
                         <Bar dataKey="quantity" fill="#10B981" name="Unidades" radius={[0, 4, 4, 0]} barSize={12} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -774,7 +850,7 @@ const FinanceDashboard = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any) => `${value} transacciones`} />
+                      <Tooltip formatter={(value: unknown) => `${value} transacciones`} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -802,7 +878,7 @@ const FinanceDashboard = () => {
             <div className="py-4 px-6 border-b border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="text-left">
                 <h3 className="font-serif font-bold text-gray-800 dark:text-white text-base flex items-center gap-1.5">
-                  <FileText size={18} className="text-primary dark:text-blue-400" />
+                  <FileText size={18} className="text-primary dark:text-church-gold-bright" />
                   Libro Diario de Transacciones Recientes
                 </h3>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5">Donaciones y ventas registradas en Supabase.</p>

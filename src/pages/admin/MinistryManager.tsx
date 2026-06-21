@@ -528,7 +528,7 @@ const MinistryManager = () => {
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-bold text-lg text-slate-800 dark:text-gray-100 line-clamp-1 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" title={min.name}>
+                          <h3 className="font-bold text-lg text-slate-800 dark:text-gray-100 line-clamp-1 group-hover:text-primary dark:group-hover:text-church-gold-bright transition-colors" title={min.name}>
                             {min.name}
                           </h3>
                           <span className="text-xs text-gray-400 font-mono">/{min.slug}</span>
@@ -561,7 +561,7 @@ const MinistryManager = () => {
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5 mt-auto">
                       <Link
                         to={`/admin/ministerios/${min.id}`}
-                        className="text-primary dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                        className="text-primary dark:text-church-gold-bright hover:text-blue-900 dark:hover:text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <Settings size={14} />
                         Panel de Control

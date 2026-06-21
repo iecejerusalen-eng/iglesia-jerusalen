@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { 
@@ -31,12 +31,24 @@ const BIBLE_VERSES = [
   "Gracia y paz os sean multiplicadas, en el conocimiento de Dios y de nuestro Señor Jesús. (2 Pedro 1:2)"
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipItem {
+  color?: string;
+  name?: string;
+  value?: string | number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: CustomTooltipItem[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-900 border border-slate-800 text-white px-3.5 py-2 rounded-xl shadow-xl text-xs font-semibold">
         <p className="font-serif font-bold text-gold mb-1">{label}</p>
-        {payload.map((item: any, idx: number) => (
+        {payload.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 mt-0.5">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color || '#D4AF37' }}></div>
             <span className="text-gray-300 capitalize">{item.name === 'cantidad' ? 'Cantidad' : item.name === 'miembros' ? 'Miembros' : item.name}:</span>
@@ -47,6 +59,108 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
   }
   return null;
+};
+
+interface WeeklyAlert {
+  id: string;
+  name: string;
+  type: 'birthday' | 'faith';
+  dateLabel: string;
+  years?: string;
+  verse: string;
+}
+
+interface AgeDataPoint {
+  range: string;
+  cantidad: number;
+}
+
+interface AreaDataPoint {
+  name: string;
+  miembros: number;
+}
+
+interface TalentDataPoint {
+  name: string;
+  value: number;
+}
+
+interface TalentCategoryDataPoint {
+  name: string;
+  value: number;
+}
+
+interface BaptismDataPoint {
+  year: string;
+  cantidad: number;
+}
+
+interface DashboardMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  birth_date?: string | null;
+  conversion_date?: string | null;
+  baptism_date?: string | null;
+  is_leader?: boolean;
+  member_service_areas?: Array<{
+    catalog_roles?: {
+      name: string;
+    } | null;
+  }> | null;
+  member_talents?: Array<{
+    catalog_roles?: {
+      name: string;
+    } | null;
+  }> | null;
+}
+
+const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
+  const today = new Date();
+  const list: WeeklyAlert[] = [];
+
+  membersList.forEach(m => {
+    if (m.birth_date) {
+      const birth = new Date(m.birth_date);
+      const bDayThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+      
+      // Calculate difference in days
+      const diffTime = bDayThisYear.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= -1 && diffDays <= 7) {
+        list.push({
+          id: `${m.id}-bday`,
+          name: `${m.first_name} ${m.last_name}`,
+          type: 'birthday',
+          dateLabel: `${birth.getDate()} de ${MONTHS[birth.getMonth()]}`,
+          verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
+        });
+      }
+    }
+
+    if (m.conversion_date) {
+      const conv = new Date(m.conversion_date);
+      const cDayThisYear = new Date(today.getFullYear(), conv.getMonth(), conv.getDate());
+      
+      const diffTime = cDayThisYear.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= -1 && diffDays <= 7) {
+        const years = today.getFullYear() - conv.getFullYear();
+        list.push({
+          id: `${m.id}-faith`,
+          name: `${m.first_name} ${m.last_name}`,
+          type: 'faith',
+          dateLabel: `${conv.getDate()} de ${MONTHS[conv.getMonth()]}`,
+          years: years > 0 ? `${years} años de fe` : 'Aniversario',
+          verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
+        });
+      }
+    }
+  });
+
+  return list;
 };
 
 const DashboardHome = () => {
@@ -65,141 +179,20 @@ const DashboardHome = () => {
     pendingPetitions: 0,
     ministriesCount: 0,
   });
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<WeeklyAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Chart Data States
-  const [ageData, setAgeData] = useState<any[]>([]);
-  const [areasData, setAreasData] = useState<any[]>([]);
-  const [talentsData, setTalentsData] = useState<any[]>([]);
-  const [talentCategoriesData, setTalentCategoriesData] = useState<any[]>([]);
-  const [baptismsData, setBaptismsData] = useState<any[]>([]);
+  const [ageData, setAgeData] = useState<AgeDataPoint[]>([]);
+  const [areasData, setAreasData] = useState<AreaDataPoint[]>([]);
+  const [talentsData, setTalentsData] = useState<TalentDataPoint[]>([]);
+  const [talentCategoriesData, setTalentCategoriesData] = useState<TalentCategoryDataPoint[]>([]);
+  const [baptismsData, setBaptismsData] = useState<BaptismDataPoint[]>([]);
 
   // Active chart tab for skills card
   const [skillsTab, setSkillsTab] = useState<'individual' | 'categories'>('categories');
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch counts
-      const [
-        profilesRes,
-        sermonsRes,
-        donationsRes,
-        membersRes,
-        inventoryRes,
-        petitionsRes,
-        ministriesRes
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('sermons').select('*', { count: 'exact', head: true }),
-        supabase.from('donations').select('amount'),
-        supabase.from('members')
-        .select(`
-          *,
-          member_emails(email),
-          member_service_areas(catalog_roles(name)),
-          member_talents(catalog_roles(name)),
-          member_spiritual_gifts(catalog_roles(name))
-        `),
-        supabase.from('inventory_items').select('price, quantity'),
-        supabase.from('petitions').select('status'),
-        supabase.from('ministries').select('*', { count: 'exact', head: true })
-      ]);
-
-      const donations = donationsRes.data || [];
-      const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
-      const members = membersRes.data || [];
-      const leadersCount = members.filter(m => m.is_leader).length;
-
-      const inventory = inventoryRes.data || [];
-      const inventoryCount = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      const inventoryValue = inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-
-      const petitions = petitionsRes.data || [];
-      const petitionsCount = petitions.length;
-      const pendingPetitions = petitions.filter(p => p.status === 'pendiente').length;
-
-      setStats({
-        usersCount: profilesRes.count || 0,
-        sermonsCount: sermonsRes.count || 0,
-        totalDonationsAmount: totalAmount,
-        membersCount: members.length,
-        leadersCount,
-        inventoryCount,
-        inventoryValue,
-        petitionsCount,
-        pendingPetitions,
-        ministriesCount: ministriesRes.count || 0,
-      });
-
-      // 2. Process Weekly Alerts (Birthdays and Conversion anniversaries)
-      const weeklyAlerts = getWeeklyAlerts(members);
-      setAlerts(weeklyAlerts);
-
-      // 3. Process Chart Data
-      processChartData(members);
-
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getWeeklyAlerts = (membersList: any[]) => {
-    const today = new Date();
-    const list: any[] = [];
-
-    membersList.forEach(m => {
-      if (m.birth_date) {
-        const birth = new Date(m.birth_date);
-        const bDayThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-        
-        // Calculate difference in days
-        const diffTime = bDayThisYear.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays >= -1 && diffDays <= 7) {
-          list.push({
-            id: `${m.id}-bday`,
-            name: `${m.first_name} ${m.last_name}`,
-            type: 'birthday',
-            dateLabel: `${birth.getDate()} de ${MONTHS[birth.getMonth()]}`,
-            verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
-          });
-        }
-      }
-
-      if (m.conversion_date) {
-        const conv = new Date(m.conversion_date);
-        const cDayThisYear = new Date(today.getFullYear(), conv.getMonth(), conv.getDate());
-        
-        const diffTime = cDayThisYear.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays >= -1 && diffDays <= 7) {
-          const years = today.getFullYear() - conv.getFullYear();
-          list.push({
-            id: `${m.id}-faith`,
-            name: `${m.first_name} ${m.last_name}`,
-            type: 'faith',
-            dateLabel: `${conv.getDate()} de ${MONTHS[conv.getMonth()]}`,
-            years: years > 0 ? `${years} años de fe` : 'Aniversario',
-            verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
-          });
-        }
-      }
-    });
-
-    return list;
-  };
-
-  const processChartData = (membersList: any[]) => {
+  const processChartData = useCallback((membersList: DashboardMember[]) => {
     const today = new Date();
     const ages: number[] = [];
     const areaCounts: { [key: string]: number } = {};
@@ -217,7 +210,7 @@ const DashboardHome = () => {
 
       // 2. Service areas tally
       if (m.member_service_areas) {
-        m.member_service_areas.forEach((sa: any) => {
+        m.member_service_areas.forEach((sa) => {
           if (sa.catalog_roles) {
             const name = sa.catalog_roles.name;
             areaCounts[name] = (areaCounts[name] || 0) + 1;
@@ -227,7 +220,7 @@ const DashboardHome = () => {
 
       // 3. Talents tally (detailed and grouped by category)
       if (m.member_talents) {
-        m.member_talents.forEach((t: any) => {
+        m.member_talents.forEach((t) => {
           if (t.catalog_roles) {
             const name = t.catalog_roles.name;
             // Extract clean name
@@ -278,7 +271,80 @@ const DashboardHome = () => {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([year, count]) => ({ year, cantidad: count }));
     setBaptismsData(sortedBaptisms);
-  };
+  }, []);
+
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch counts
+      const [
+        profilesRes,
+        sermonsRes,
+        donationsRes,
+        membersRes,
+        inventoryRes,
+        petitionsRes,
+        ministriesRes
+      ] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('sermons').select('*', { count: 'exact', head: true }),
+        supabase.from('donations').select('amount'),
+        supabase.from('members')
+        .select(`
+          *,
+          member_emails(email),
+          member_service_areas(catalog_roles(name)),
+          member_talents(catalog_roles(name)),
+          member_spiritual_gifts(catalog_roles(name))
+        `),
+        supabase.from('inventory_items').select('price, quantity'),
+        supabase.from('petitions').select('status'),
+        supabase.from('ministries').select('*', { count: 'exact', head: true })
+      ]);
+
+      const donations = donationsRes.data || [];
+      const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const members: DashboardMember[] = (membersRes.data || []) as unknown as DashboardMember[];
+      const leadersCount = members.filter(m => m.is_leader).length;
+
+      const inventory = inventoryRes.data || [];
+      const inventoryCount = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const inventoryValue = inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+      const petitions = petitionsRes.data || [];
+      const petitionsCount = petitions.length;
+      const pendingPetitions = petitions.filter(p => p.status === 'pendiente').length;
+
+      setStats({
+        usersCount: profilesRes.count || 0,
+        sermonsCount: sermonsRes.count || 0,
+        totalDonationsAmount: totalAmount,
+        membersCount: members.length,
+        leadersCount,
+        inventoryCount,
+        inventoryValue,
+        petitionsCount,
+        pendingPetitions,
+        ministriesCount: ministriesRes.count || 0,
+      });
+
+      // 2. Process Weekly Alerts (Birthdays and Conversion anniversaries)
+      const weeklyAlerts = getWeeklyAlerts(members);
+      setAlerts(weeklyAlerts);
+
+      // 3. Process Chart Data
+      processChartData(members);
+
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [processChartData]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const displayName = firstName ? `${firstName}` : user?.email?.split('@')[0] || 'Usuario';
 
@@ -333,7 +399,7 @@ const DashboardHome = () => {
         {/* Total Members CRM */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Users size={22} />
           </div>
           <div>

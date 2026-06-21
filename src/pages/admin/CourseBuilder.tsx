@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import type { LMSCourse, LMSSubject, LMSModule, LMSLesson } from '../../types';
@@ -41,13 +41,7 @@ const CourseBuilder = () => {
   const [editingLesson, setEditingLesson] = useState<Partial<LMSLesson> | null>(null);
   const [savingLesson, setSavingLesson] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchCourseData();
-    }
-  }, [id]);
-
-  const fetchCourseData = async () => {
+  const fetchCourseData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch course
@@ -110,7 +104,13 @@ const CourseBuilder = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (id) {
+      fetchCourseData();
+    }
+  }, [id, fetchCourseData]);
 
   // --- SUBJECT LOGIC ---
   const handleOpenSubjectModal = (subject?: LMSSubject) => {
@@ -546,7 +546,7 @@ const CourseBuilder = () => {
                                       onClick={() => toggleModuleCollapse(moduleObj.id)}
                                       className="flex items-center gap-2 text-left cursor-pointer flex-grow focus:outline-none"
                                     >
-                                      <span className="text-blue-600 dark:text-blue-400 flex-shrink-0">
+                                      <span className="text-blue-600 dark:text-church-gold-bright flex-shrink-0">
                                         <Layers size={18} />
                                       </span>
                                       <div>
@@ -860,7 +860,7 @@ const CourseBuilder = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tipo de Contenido</label>
                   <select
                     value={editingLesson.type || 'document'}
-                    onChange={(e) => setEditingLesson({ ...editingLesson, type: e.target.value as any, content: '' })}
+                    onChange={(e) => setEditingLesson({ ...editingLesson, type: e.target.value as LMSLesson['type'], content: '' })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none cursor-pointer"
                   >
                     <option value="document">Material de Estudio (Texto/HTML)</option>

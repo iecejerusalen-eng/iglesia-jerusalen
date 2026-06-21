@@ -277,7 +277,7 @@ const PetitionsManager = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2">
             <HeartHandshake className="text-gold" />
             Gestión de Peticiones de Oración
           </h1>
@@ -500,7 +500,7 @@ const PetitionsManager = () => {
           {/* Add Category Form */}
           <div className="md:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs space-y-4">
             <div>
-              <h2 className="text-base font-serif font-bold text-primary flex items-center gap-2">
+              <h2 className="text-base font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2">
                 <Plus size={18} className="text-gold" />
                 Nueva Categoría
               </h2>
@@ -533,7 +533,7 @@ const PetitionsManager = () => {
           {/* List of Categories */}
           <div className="md:col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
             <div className="p-4 border-b border-gray-100 dark:border-white/5">
-              <h2 className="text-base font-serif font-bold text-primary">Categorías Existentes ({categories.length})</h2>
+              <h2 className="text-base font-serif font-bold text-primary dark:text-church-gold-bright">Categorías Existentes ({categories.length})</h2>
             </div>
             
             <ul className="divide-y divide-gray-100 dark:divide-white/5">

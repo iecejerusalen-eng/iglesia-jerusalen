@@ -391,7 +391,7 @@ const InventoryManager = () => {
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2.5">
+          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2.5">
             <Package size={28} className="text-gold" />
             Inventario de Equipos y Herramientas
           </h1>
@@ -626,7 +626,7 @@ const InventoryManager = () => {
                       </div>
 
                       {/* Name */}
-                      <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base leading-snug group-hover:text-primary transition-colors truncate">
+                      <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-base leading-snug group-hover:text-primary dark:group-hover:text-church-gold-bright transition-colors truncate">
                         {item.name}
                       </h3>
 

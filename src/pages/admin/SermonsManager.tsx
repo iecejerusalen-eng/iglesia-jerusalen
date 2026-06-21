@@ -370,7 +370,7 @@ const SermonsManager = () => {
             <div className="space-y-4">
             {loading ? (
               <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
-                <Loader2 className="animate-spin text-primary" size={32} />
+                <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={32} />
               </div>
             ) : sermons.length > 0 ? (
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs overflow-hidden">
@@ -394,7 +394,7 @@ const SermonsManager = () => {
                                   <Video size={18} />
                                 </div>
                               ) : (
-                                <div className="w-10 h-10 bg-blue-50 text-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright rounded-lg flex items-center justify-center flex-shrink-0">
                                   <FileText size={18} />
                                 </div>
                               )}

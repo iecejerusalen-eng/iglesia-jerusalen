@@ -267,7 +267,7 @@ const SettingsManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Contact Information */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-lg text-primary flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                   <Phone size={18} className="text-gold" />
                   Información de Contacto
                 </h3>
@@ -329,7 +329,7 @@ const SettingsManager = () => {
 
               {/* Card 2: Financial Details */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-lg text-primary flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                   <Landmark size={18} className="text-gold" />
                   Cuentas y Finanzas
                 </h3>
@@ -394,7 +394,7 @@ const SettingsManager = () => {
 
             {/* Card 3: Social Media Links */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-              <h3 className="font-serif font-bold text-lg text-primary flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                 <Share2 size={18} className="text-gold" />
                 Redes Sociales
               </h3>

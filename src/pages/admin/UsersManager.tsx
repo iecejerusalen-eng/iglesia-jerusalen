@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Profile, UserRole } from '../../types';
 import { 
@@ -90,19 +90,7 @@ const UsersManager = () => {
   const [ministries, setMinistries] = useState<{ id: string; name: string; category: string }[]>([]);
   const [selectedAllowedMinistries, setSelectedAllowedMinistries] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchProfiles();
-    fetchMembers();
-    fetchMinistries();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'roles') {
-      fetchRolePermissions(selectedRole);
-    }
-  }, [activeTab, selectedRole]);
-
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -119,15 +107,15 @@ const UsersManager = () => {
 
       if (error) throw error;
       setProfiles(data || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching profiles:', err);
-      toast.error('Error al cargar los usuarios: ' + err.message);
+      toast.error('Error al cargar los usuarios: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('members')
@@ -139,9 +127,9 @@ const UsersManager = () => {
     } catch (err) {
       console.error('Error fetching members for select:', err);
     }
-  };
+  }, []);
 
-  const fetchMinistries = async () => {
+  const fetchMinistries = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('ministries')
@@ -152,7 +140,46 @@ const UsersManager = () => {
     } catch (err) {
       console.error('Error fetching ministries for select:', err);
     }
-  };
+  }, []);
+
+  const fetchRolePermissions = useCallback(async (role: UserRole) => {
+    setLoadingRolePerms(true);
+    try {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('permissions')
+        .eq('role', role)
+        .single();
+
+      if (error) {
+        // If it doesn't exist, start with empty permissions
+        const empty: Record<string, { view: boolean; edit: boolean }> = {};
+        ADMIN_MODULES.forEach(m => {
+          empty[m.id] = { view: false, edit: false };
+        });
+        setRolePermissions(empty);
+      } else {
+        setRolePermissions(data.permissions || {});
+      }
+    } catch (err) {
+      console.error('Error fetching role permissions:', err);
+      toast.error('Error al cargar los permisos del rol');
+    } finally {
+      setLoadingRolePerms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProfiles();
+    fetchMembers();
+    fetchMinistries();
+  }, [fetchProfiles, fetchMembers, fetchMinistries]);
+
+  useEffect(() => {
+    if (activeTab === 'roles') {
+      fetchRolePermissions(selectedRole);
+    }
+  }, [activeTab, selectedRole, fetchRolePermissions]);
 
   const handleLinkMember = async (userId: string, memberId: string) => {
     try {
@@ -183,9 +210,9 @@ const UsersManager = () => {
       toast.success('Cuenta vinculada con éxito al miembro del CRM.');
       setLinkingUser(null);
       setMemberSearchQuery('');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error linking member:', err);
-      toast.error('No se pudo vincular la cuenta: ' + err.message);
+      toast.error('No se pudo vincular la cuenta: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -218,39 +245,11 @@ const UsersManager = () => {
       );
 
       toast.success('Cuenta desvinculada con éxito.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error unlinking member:', err);
-      toast.error('No se pudo desvincular la cuenta: ' + err.message);
+      toast.error('No se pudo desvincular la cuenta: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
-
-  const fetchRolePermissions = async (role: UserRole) => {
-    setLoadingRolePerms(true);
-    try {
-      const { data, error } = await supabase
-        .from('role_permissions')
-        .select('permissions')
-        .eq('role', role)
-        .single();
-
-      if (error) {
-        // If it doesn't exist, start with empty permissions
-        const empty: Record<string, { view: boolean; edit: boolean }> = {};
-        ADMIN_MODULES.forEach(m => {
-          empty[m.id] = { view: false, edit: false };
-        });
-        setRolePermissions(empty);
-      } else {
-        setRolePermissions(data.permissions || {});
-      }
-    } catch (err: any) {
-      console.error('Error fetching role permissions:', err);
-      toast.error('Error al cargar los permisos del rol');
-    } finally {
-      setLoadingRolePerms(false);
-    }
-  };
-
 
   // Role permissions saving
   const handleSaveRolePermissions = async () => {
@@ -271,9 +270,9 @@ const UsersManager = () => {
 
       if (error) throw error;
       toast.success(`Permisos para el rol ${selectedRole} guardados con éxito`);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error saving role permissions:', err);
-      toast.error('Error al guardar los permisos: ' + err.message);
+      toast.error('Error al guardar los permisos: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoadingRolePerms(false);
     }
@@ -385,9 +384,9 @@ const UsersManager = () => {
 
       toast.success('Permisos y roles guardados con éxito');
       setSelectedUser(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error saving user override:', err);
-      toast.error('Error al guardar los cambios del usuario: ' + err.message);
+      toast.error('Error al guardar los cambios del usuario: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSavingUserPerms(false);
     }
@@ -418,9 +417,9 @@ const UsersManager = () => {
       );
 
       toast.success(`Usuario ${nextBanned ? 'suspendido' : 'activado'} exitosamente.`);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error toggling user ban:', err);
-      toast.error('Error al cambiar estado de suspensión: ' + err.message);
+      toast.error('Error al cambiar estado de suspensión: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -441,9 +440,9 @@ const UsersManager = () => {
 
       setProfiles(prev => prev.filter(p => p.id !== profile.id));
       toast.success('Usuario eliminado permanentemente.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error deleting user:', err);
-      toast.error('Error al eliminar usuario: ' + err.message);
+      toast.error('Error al eliminar usuario: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -460,7 +459,7 @@ const UsersManager = () => {
       {/* Title */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
+          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2">
             <Shield className="text-gold" />
             Gestión de Usuarios y Roles (RBAC)
           </h1>
@@ -659,7 +658,7 @@ const UsersManager = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-base font-serif font-bold text-primary">Permisos modular por Roles</h2>
+              <h2 className="text-base font-serif font-bold text-primary dark:text-church-gold-bright">Permisos modular por Roles</h2>
               <p className="text-xs text-gray-400">Selecciona un rol para configurar los permisos de lectura y escritura predeterminados.</p>
             </div>
             
@@ -744,7 +743,7 @@ const UsersManager = () => {
 
           <div className="flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-4">
             <span className="text-xs text-gray-400 font-medium flex items-center gap-1.5 bg-gray-50 dark:bg-slate-950 p-2.5 rounded-lg border border-gray-100 dark:border-white/5 max-w-lg">
-              <Info size={16} className="text-primary flex-shrink-0" />
+              <Info size={16} className="text-primary dark:text-church-gold-bright flex-shrink-0" />
               Al activar "Editar", se otorgará automáticamente el permiso "Ver". Al desactivar "Ver", se revocará "Editar".
             </span>
             <button
