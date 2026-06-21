@@ -431,13 +431,13 @@ const MobileBottomNav: React.FC = () => {
               onClick={closeSheet}
               className="fixed inset-0 bg-black/40 dark:bg-black/60 z-30 md:hidden backdrop-blur-sm"
             />
-            {/* Sheet */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed bottom-14 left-0 right-0 z-35 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-white/10 rounded-t-2xl px-5 pt-6 pb-8 md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] max-w-lg mx-auto"
+              className="fixed left-0 right-0 z-35 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-white/10 rounded-t-2xl px-5 pt-6 pb-8 md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] max-w-lg mx-auto"
+              style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
             >
               {/* Drag Handle */}
               <div className="w-12 h-1 bg-gray-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />

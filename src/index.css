@@ -109,6 +109,23 @@
 
 /* Glassmorphism Utilities with Hardware Acceleration */
 @layer utilities {
+  /* Safe Area Utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+  .bottom-safe {
+    bottom: env(safe-area-inset-bottom);
+  }
+
   .glass-nav {
     @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg transform-gpu;
   }
