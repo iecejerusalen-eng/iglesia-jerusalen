@@ -4,6 +4,7 @@ import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Gl
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
+import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 
 import OptimizedMedia from '../../components/common/OptimizedMedia';
 
@@ -76,6 +77,7 @@ const DEFAULT_ABOUT_SECTIONS = [
   { id: 'about_vision_mission', section_type: 'custom', name: 'Misión y Visión', title: 'Misión & Visión', subtitle: 'Nuestra guía en la expansión del evangelio.', content_blocks: [] },
   { id: 'about_history', section_type: 'custom', name: 'Nuestra Historia', title: 'Nuestra Historia', subtitle: 'La trayectoria y cimientos de la congregación.', content_blocks: [] },
   { id: 'about_pillars', section_type: 'system_about_pillars', name: 'Los 4 Pilares Cuadrangulares', title: 'Los 4 Pilares Cuadrangulares', subtitle: 'Fundamentados firmemente en el mensaje bíblico de la verdad eterna.' },
+  { id: 'about_principles', section_type: 'system_about_principles', name: 'Principios de Fe', title: 'Principios de Fe', subtitle: 'Doctrinas fundamentales de la Iglesia del Evangelio Cuadrangular.' },
   { id: 'about_pastoral', section_type: 'custom', name: 'Liderazgo Pastoral', title: 'Liderazgo Pastoral', subtitle: 'Nuestros pastores principales llamados a guiar y cuidar espiritualmente a la congregación.', content_blocks: [] }
 ];
 
@@ -583,6 +585,13 @@ const About = () => {
                     </HoverCard>
                   </StaggerItem>
                 </StaggerContainer>
+              </section>
+            );
+
+          case 'system_about_principles':
+            return (
+              <section key={id} id={id} className="max-w-7xl mx-auto px-4 md:px-8 py-4">
+                <PrinciplesOfFaith />
               </section>
             );
 
