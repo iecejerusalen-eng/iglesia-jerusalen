@@ -475,10 +475,16 @@ export interface LMSCourse {
   format: 'weekly' | 'topics';
   grading_scale: string;
   is_published: boolean;
+  capacity?: number;
+  start_date?: string;
+  duration?: string;
+  schedule?: string;
+  category_id?: string;
   created_at: string;
   updated_at: string;
   lms_sections?: LMSSection[];
   lms_subjects?: LMSSubject[];
+  lms_course_categories?: { name: string } | null;
 }
 
 export interface LMSSubject {
@@ -683,3 +689,18 @@ export interface OpenActivity {
   created_at: string;
   updated_at: string;
 }
+
+export interface Study {
+  id: string;
+  title: string;
+  description: string | null;
+  category: 'Damas' | 'Caballeros' | 'Jóvenes' | 'Generales';
+  cover_image_url: string | null;
+  pdf_url: string | null;
+  video_url: string | null;
+  read_now_url: string | null;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+

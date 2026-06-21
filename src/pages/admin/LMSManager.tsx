@@ -126,7 +126,10 @@ export default function LMSManager() {
   // ==========================================
   const handleOpenCourseModal = (course?: LMSCourse) => {
     if (course) {
-      setEditingCourse(course);
+      setEditingCourse({
+        ...course,
+        start_date: course.start_date ? course.start_date.substring(0, 10) : ''
+      });
     } else {
       setEditingCourse({
         title: '',
@@ -135,7 +138,11 @@ export default function LMSManager() {
         grading_scale: '10/10',
         is_published: false,
         cover_image_url: '',
-        category_id: ''
+        category_id: '',
+        capacity: 0,
+        start_date: '',
+        duration: '',
+        schedule: ''
       });
     }
     setIsCourseModalOpen(true);
@@ -155,6 +162,10 @@ export default function LMSManager() {
         is_published: editingCourse.is_published,
         cover_image_url: editingCourse.cover_image_url,
         category_id: editingCourse.category_id || null,
+        capacity: editingCourse.capacity || 0,
+        start_date: editingCourse.start_date || null,
+        duration: editingCourse.duration || null,
+        schedule: editingCourse.schedule || null,
         updated_at: new Date().toISOString()
       };
 
@@ -704,6 +715,48 @@ export default function LMSManager() {
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Inicio</label>
+                  <input
+                    type="date"
+                    value={editingCourse.start_date || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, start_date: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duración (semanas, meses, etc.)</label>
+                  <input
+                    type="text"
+                    value={editingCourse.duration || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, duration: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-55 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+                    placeholder="Ej. 8 Semanas"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horario</label>
+                  <input
+                    type="text"
+                    value={editingCourse.schedule || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, schedule: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-55 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+                    placeholder="Ej. Sábados 19:00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cupo Máximo (0 para libre)</label>
+                  <input
+                    type="number"
+                    value={editingCourse.capacity || 0}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, capacity: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 bg-gray-55 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+                  />
                 </div>
 
                 <div>
