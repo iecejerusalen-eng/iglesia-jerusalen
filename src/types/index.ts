@@ -254,6 +254,10 @@ export interface NotificationLog {
   recipient_group: string;
   status: 'enviado' | 'fallido' | 'programado';
   created_at: string;
+  category?: 'general' | 'cumpleanos' | 'aniversario' | 'reunion' | 'evento' | null;
+  scheduled_at?: string | null;
+  sender_id?: string | null;
+  target_ministry_id?: string | null;
 }
 
 export interface CloudinaryAsset {

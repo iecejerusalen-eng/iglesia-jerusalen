@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { supabase } from '../../config/supabase';
 import {
   Bell,
   MessageSquare,
@@ -9,7 +10,12 @@ import {
   Smile,
   ShieldAlert,
   Loader2,
-  CheckCheck
+  CheckCheck,
+  Award,
+  Calendar,
+  Volume2,
+  Gift,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Chat } from '../../types';
@@ -28,7 +34,7 @@ const getRoleLabel = (role: string) => {
 };
 
 export default function NotificationTray() {
-  const { user } = useAuthStore();
+  const { user, role, ministryId } = useAuthStore();
   const {
     chats,
     activeChat,
@@ -44,20 +50,35 @@ export default function NotificationTray() {
   } = useChatStore();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chats' | 'announcements'>('chats');
   const [replyText, setReplyText] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
   const [sending, setSending] = useState(false);
+  
+  // Announcements local state
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   
   // Local state for read timestamps
   const [readTimes, setReadTimes] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load read times from localStorage
+  // Load read times and dismissed announcements from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('jerusalen_chat_read_times');
-    if (stored) {
+    const storedRead = localStorage.getItem('jerusalen_chat_read_times');
+    if (storedRead) {
       try {
-        setReadTimes(JSON.parse(stored));
+        setReadTimes(JSON.parse(storedRead));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const storedDismissed = localStorage.getItem('jerusalen_dismissed_announcements');
+    if (storedDismissed) {
+      try {
+        setDismissedIds(JSON.parse(storedDismissed));
       } catch (e) {
         console.error(e);
       }
@@ -75,6 +96,13 @@ export default function NotificationTray() {
     };
   }, [user]);
 
+  // Fetch announcements when tray is opened or when activeTab changes to announcements
+  useEffect(() => {
+    if (isOpen && activeTab === 'announcements') {
+      fetchAnnouncements();
+    }
+  }, [isOpen, activeTab]);
+
   // Scroll active chat modal to bottom
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -84,11 +112,36 @@ export default function NotificationTray() {
 
   if (!user) return null;
 
+  const fetchAnnouncements = async () => {
+    setLoadingAnnouncements(true);
+    try {
+      const { data, error } = await supabase
+        .from('notification_logs')
+        .select('*')
+        .eq('type', 'push')
+        .eq('status', 'enviado')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (err) {
+      console.error('Error fetching announcements:', err);
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  };
+
+  const handleDismissAnnouncement = (id: string) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    localStorage.setItem('jerusalen_dismissed_announcements', JSON.stringify(updated));
+    toast.success('Aviso archivado.');
+  };
+
   // Calculate unread chats count
   const unreadChats = chats.filter((chat) => {
     const lastMsg = chat.last_message;
     if (!lastMsg) return false;
-    // If sent by me, it's not unread
     if (lastMsg.sender_id === user.id) return false;
     
     const lastRead = readTimes[chat.id];
@@ -97,10 +150,39 @@ export default function NotificationTray() {
     return new Date(lastMsg.created_at).getTime() > new Date(lastRead).getTime();
   });
 
-  const unreadCount = unreadChats.length;
+  const unreadChatsCount = unreadChats.length;
+
+  // Process & filter announcements
+  const activeAnnouncements = announcements.filter(ann => !dismissedIds.includes(ann.id));
+  
+  const visibleAnnouncements = activeAnnouncements.filter(ann => {
+    // Safety check for scheduled releases in future
+    if (ann.scheduled_at && new Date(ann.scheduled_at).getTime() > Date.now()) {
+      return false;
+    }
+
+    const group = ann.recipient_group;
+    if (!group) return true;
+
+    if (group === 'Todos los Miembros' || group === 'todos') {
+      return true;
+    }
+
+    if (group === 'Líderes de Ministerios' || group === 'lideres') {
+      return ['admin', 'pastor', 'secretary', 'secretaria', 'editor', 'leader'].includes(role || '');
+    }
+
+    if (group.startsWith('Miembros del Ministerio:') && ann.target_ministry_id) {
+      return ministryId === ann.target_ministry_id;
+    }
+
+    return true;
+  });
+
+  const unreadAnnouncementsCount = visibleAnnouncements.length;
+  const totalUnreadCount = unreadChatsCount + unreadAnnouncementsCount;
 
   const handleOpenChat = (chat: Chat) => {
-    // Set active chat
     setActiveChat(chat);
     
     // Mark as read
@@ -120,7 +202,6 @@ export default function NotificationTray() {
       setReplyText('');
       setShowEmojis(false);
       
-      // Update read time for this chat to now since we just replied
       const nowISO = new Date().toISOString();
       const updatedReadTimes = { ...readTimes, [activeChat.id]: nowISO };
       setReadTimes(updatedReadTimes);
@@ -129,6 +210,42 @@ export default function NotificationTray() {
       toast.error('No se pudo enviar la respuesta: ' + err.message);
     } finally {
       setSending(false);
+    }
+  };
+
+  // Helper for rendering category icons and colors
+  const getAnnouncementStyles = (category: string) => {
+    switch (category) {
+      case 'cumpleanos':
+        return {
+          icon: <Gift className="text-pink-600 dark:text-pink-400" size={16} />,
+          bgColor: 'bg-pink-50/70 border-pink-100 dark:bg-pink-950/10 dark:border-pink-900/30',
+          badgeText: 'Cumpleaños'
+        };
+      case 'aniversario':
+        return {
+          icon: <Award className="text-amber-600 dark:text-amber-400" size={16} />,
+          bgColor: 'bg-amber-50/70 border-amber-100 dark:bg-amber-950/10 dark:border-amber-900/30',
+          badgeText: 'Aniversario'
+        };
+      case 'reunion':
+        return {
+          icon: <Calendar className="text-blue-600 dark:text-blue-400" size={16} />,
+          bgColor: 'bg-blue-50/70 border-blue-100 dark:bg-blue-950/10 dark:border-blue-900/30',
+          badgeText: 'Reunión'
+        };
+      case 'evento':
+        return {
+          icon: <Calendar className="text-purple-600 dark:text-purple-400" size={16} />,
+          bgColor: 'bg-purple-50/70 border-purple-100 dark:bg-purple-950/10 dark:border-purple-900/30',
+          badgeText: 'Evento Especial'
+        };
+      default:
+        return {
+          icon: <Volume2 className="text-primary dark:text-gold" size={16} />,
+          bgColor: 'bg-indigo-50/50 border-indigo-100 dark:bg-slate-900 dark:border-slate-800/80',
+          badgeText: 'Anuncio'
+        };
     }
   };
 
@@ -141,12 +258,12 @@ export default function NotificationTray() {
           setIsOpen(true);
         }}
         className="relative p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition text-gray-650 hover:text-primary dark:text-white dark:hover:text-gold cursor-pointer"
-        title="Bandeja de Mensajes"
+        title="Bandeja de Mensajes y Avisos"
       >
         <Bell size={18} />
-        {unreadCount > 0 && (
+        {totalUnreadCount > 0 && (
           <span className="absolute top-0 right-0 bg-accent-red text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-slate-900 animate-pulse">
-            {unreadCount}
+            {totalUnreadCount}
           </span>
         )}
       </button>
@@ -169,9 +286,9 @@ export default function NotificationTray() {
           {/* Drawer Header */}
           <div className="p-4 border-b border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-950">
             <div className="flex items-center gap-2">
-              <MessageSquare className="text-primary dark:text-gold" size={18} />
+              <Bell className="text-primary dark:text-gold" size={18} />
               <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-white">
-                Mensajes y Avisos
+                Notificaciones de la Iglesia
               </h3>
             </div>
             <button
@@ -182,91 +299,203 @@ export default function NotificationTray() {
             </button>
           </div>
 
-          {/* Drawer Body - List of conversations */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingChats ? (
-              <div className="flex flex-col items-center justify-center py-20 space-y-2">
-                <Loader2 className="animate-spin text-primary" size={24} />
-                <span className="text-xs text-gray-400">Buscando mensajes...</span>
-              </div>
-            ) : chats.length === 0 ? (
-              <div className="text-center py-16 px-6 space-y-3">
-                <Bell className="mx-auto text-gray-300 dark:text-slate-700" size={38} />
-                <p className="text-xs font-semibold text-gray-700 dark:text-slate-350">
-                  Sin mensajes todavía
-                </p>
-                <p className="text-xxs text-gray-400 leading-relaxed max-w-[220px] mx-auto">
-                  Aquí recibirás avisos, difusiones y mensajes directos enviados por los pastores y administradores de la iglesia.
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100 dark:divide-slate-800/60">
-                {chats.map((chat) => {
-                  const otherParticipant = chat.participants?.find((p) => p.id !== user.id);
-                  const chatName = chat.is_group
-                    ? (chat.name || 'Grupo de la Iglesia')
-                    : `${otherParticipant?.first_name || ''} ${otherParticipant?.last_name || 'Líder'}`;
-                  const senderRole = otherParticipant?.role || 'leader';
-                  
-                  const initials = chatName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                  const lastMsg = chat.last_message;
-                  
-                  // Calculate unread flag
-                  const isUnread = lastMsg && lastMsg.sender_id !== user.id && (
-                    !readTimes[chat.id] || new Date(lastMsg.created_at).getTime() > new Date(readTimes[chat.id]).getTime()
-                  );
+          {/* Double-Tab Menu */}
+          <div className="flex border-b border-gray-100 dark:border-slate-800/80 bg-gray-50/50 dark:bg-slate-950/20 p-1">
+            <button
+              onClick={() => setActiveTab('chats')}
+              className={`flex-1 py-2 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 rounded-xl cursor-pointer ${
+                activeTab === 'chats'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
+                  : 'text-gray-450 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'
+              }`}
+            >
+              <MessageSquare size={14} />
+              <span>Mensajes</span>
+              {unreadChatsCount > 0 && (
+                <span className="bg-accent-red text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                  {unreadChatsCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('announcements')}
+              className={`flex-1 py-2 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 rounded-xl cursor-pointer ${
+                activeTab === 'announcements'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
+                  : 'text-gray-455 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'
+              }`}
+            >
+              <Volume2 size={14} />
+              <span>Avisos Generales</span>
+              {unreadAnnouncementsCount > 0 && (
+                <span className="bg-accent-red text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                  {unreadAnnouncementsCount}
+                </span>
+              )}
+            </button>
+          </div>
 
-                  return (
-                    <button
-                      key={chat.id}
-                      onClick={() => handleOpenChat(chat)}
-                      className={`w-full text-left p-4 flex items-start gap-3 transition cursor-pointer border-l-3 ${
-                        isUnread
-                          ? 'bg-primary/5 dark:bg-primary/10 border-primary'
-                          : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/40'
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
-                        {otherParticipant?.photo_url ? (
-                          <img
-                            src={otherParticipant.photo_url}
-                            alt={chatName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{initials}</span>
-                        )}
-                      </div>
+          {/* Drawer Body */}
+          <div className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/10">
+            {activeTab === 'chats' ? (
+              /* TAB 1: CHATS */
+              loadingChats ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-2">
+                  <Loader2 className="animate-spin text-primary" size={24} />
+                  <span className="text-xs text-gray-400">Buscando mensajes...</span>
+                </div>
+              ) : chats.length === 0 ? (
+                <div className="text-center py-20 px-6 space-y-3">
+                  <MessageSquare className="mx-auto text-gray-300 dark:text-slate-700" size={38} />
+                  <p className="text-xs font-semibold text-gray-700 dark:text-slate-350">
+                    Sin conversaciones todavía
+                  </p>
+                  <p className="text-xxs text-gray-400 leading-relaxed max-w-[220px] mx-auto">
+                    Aquí aparecerán los mensajes directos enviados por los pastores y líderes de la congregación.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 dark:divide-slate-800/60 animate-fadeIn">
+                  {chats.map((chat) => {
+                    const otherParticipant = chat.participants?.find((p) => p.id !== user.id);
+                    const chatName = chat.is_group
+                      ? (chat.name || 'Grupo de la Iglesia')
+                      : `${otherParticipant?.first_name || ''} ${otherParticipant?.last_name || 'Líder'}`;
+                    const senderRole = otherParticipant?.role || 'leader';
+                    
+                    const initials = chatName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    const lastMsg = chat.last_message;
+                    
+                    const isUnread = lastMsg && lastMsg.sender_id !== user.id && (
+                      !readTimes[chat.id] || new Date(lastMsg.created_at).getTime() > new Date(readTimes[chat.id]).getTime()
+                    );
 
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex justify-between items-baseline">
-                          <h4 className="font-bold text-xs text-gray-800 dark:text-white truncate">
-                            {chatName}
-                          </h4>
-                          {lastMsg && (
-                            <span className="text-[10px] text-gray-400 shrink-0">
-                              {new Date(lastMsg.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    return (
+                      <button
+                        key={chat.id}
+                        onClick={() => handleOpenChat(chat)}
+                        className={`w-full text-left p-4 flex items-start gap-3 transition cursor-pointer border-l-3 ${
+                          isUnread
+                            ? 'bg-primary/5 dark:bg-primary/10 border-primary'
+                            : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-850/30'
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
+                          {otherParticipant?.photo_url ? (
+                            <img
+                              src={otherParticipant.photo_url}
+                              alt={chatName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{initials}</span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex justify-between items-baseline">
+                            <h4 className="font-bold text-xs text-gray-800 dark:text-white truncate">
+                              {chatName}
+                            </h4>
+                            {lastMsg && (
+                              <span className="text-[10px] text-gray-450 shrink-0">
+                                {new Date(lastMsg.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-primary/10 text-primary dark:bg-gold/10 dark:text-gold">
+                              {getRoleLabel(senderRole)}
                             </span>
-                          )}
+                            {isUnread && (
+                              <span className="w-1.5 h-1.5 bg-accent-red rounded-full"></span>
+                            )}
+                          </div>
+
+                          <p className={`text-xs truncate ${isUnread ? 'font-semibold text-gray-855 dark:text-slate-200' : 'text-gray-400'}`}>
+                            {lastMsg ? lastMsg.content : 'Sin mensajes'}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              /* TAB 2: ANNOUNCEMENTS */
+              loadingAnnouncements ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-2">
+                  <Loader2 className="animate-spin text-primary" size={24} />
+                  <span className="text-xs text-gray-455">Buscando avisos...</span>
+                </div>
+              ) : visibleAnnouncements.length === 0 ? (
+                <div className="text-center py-20 px-6 space-y-3 animate-fadeIn">
+                  <Volume2 className="mx-auto text-gray-300 dark:text-slate-700" size={38} />
+                  <p className="text-xs font-semibold text-gray-700 dark:text-slate-350">
+                    Cartelera limpia
+                  </p>
+                  <p className="text-xxs text-gray-400 leading-relaxed max-w-[220px] mx-auto">
+                    No hay comunicados generales activos en este momento. ¡Que tengas un excelente día!
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4 animate-fadeIn">
+                  {visibleAnnouncements.map((ann) => {
+                    const styles = getAnnouncementStyles(ann.category);
+                    return (
+                      <div
+                        key={ann.id}
+                        className={`p-3.5 rounded-2xl border bg-white dark:bg-slate-900 transition-all shadow-2xs hover:shadow-xs space-y-2.5 relative overflow-hidden ${styles.bgColor}`}
+                      >
+                        {/* Card header */}
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex items-center gap-1.5">
+                            {styles.icon}
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                              {styles.badgeText}
+                            </span>
+                          </div>
+                          
+                          <button
+                            onClick={() => handleDismissAnnouncement(ann.id)}
+                            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer"
+                            title="Entendido / Archivar aviso"
+                          >
+                            <Check size={14} />
+                          </button>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-primary/10 text-primary dark:bg-gold/10 dark:text-gold">
-                            {getRoleLabel(senderRole)}
+                        {/* Title & Body */}
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-xs text-gray-850 dark:text-white leading-tight">
+                            {ann.title}
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed break-words">
+                            {ann.message}
+                          </p>
+                        </div>
+
+                        {/* Card Footer */}
+                        <div className="flex justify-between items-center text-[9px] text-gray-400 pt-1 border-t border-gray-100/50 dark:border-slate-800/40">
+                          <span>
+                            {new Date(ann.created_at).toLocaleDateString([], {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </span>
-                          {isUnread && (
-                            <span className="w-1.5 h-1.5 bg-accent-red rounded-full"></span>
-                          )}
+                          
+                          <span className="font-semibold text-slate-450 dark:text-slate-500">
+                            Iglesia Jerusalén
+                          </span>
                         </div>
-
-                        <p className={`text-xs truncate ${isUnread ? 'font-semibold text-gray-800 dark:text-slate-200' : 'text-gray-400'}`}>
-                          {lastMsg ? lastMsg.content : 'Sin mensajes'}
-                        </p>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
 
@@ -350,7 +579,7 @@ export default function NotificationTray() {
                         }`}>
                           <p className="break-words whitespace-pre-wrap">{msg.content}</p>
                         </div>
-                        <span className="text-[8px] text-gray-400 mt-1 px-1 flex items-center gap-1">
+                        <span className="text-[8px] text-gray-450 dark:text-gray-400 mt-1 px-1 flex items-center gap-1">
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           {isMe && <CheckCheck size={8} />}
                         </span>
@@ -394,7 +623,7 @@ export default function NotificationTray() {
                         setReplyText(prev => prev + emoji);
                         setShowEmojis(false);
                       }}
-                      className="text-sm p-1 hover:bg-gray-50 dark:hover:bg-slate-700 rounded cursor-pointer text-center"
+                      className="text-sm p-1 hover:bg-gray-55 dark:hover:bg-slate-700 rounded cursor-pointer text-center"
                     >
                       {emoji}
                     </button>
@@ -412,7 +641,7 @@ export default function NotificationTray() {
                   placeholder="Escribe una respuesta..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value.slice(0, 1000))}
-                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-slate-800 rounded-xl text-xs bg-transparent dark:text-white focus:outline-none"
+                  className="flex-1 px-3 py-2 border border-gray-205 dark:border-slate-800 rounded-xl text-xs bg-transparent dark:text-white focus:outline-none"
                   maxLength={1000}
                   disabled={sending}
                 />

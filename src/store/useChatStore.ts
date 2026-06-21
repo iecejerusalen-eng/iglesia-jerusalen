@@ -431,8 +431,51 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const total = targetProfileIds.length;
     let sentCount = 0;
 
+    // Fetch profile details for replacement
+    const { data: targetProfiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, role, ministry_id')
+      .in('id', targetProfileIds);
+    
+    const profileMap = new Map<string, any>();
+    targetProfiles?.forEach(p => profileMap.set(p.id, p));
+
+    const getRoleLabel = (role: string) => {
+      switch (role) {
+        case 'admin': return 'Administrador';
+        case 'pastor': return 'Pastor';
+        case 'leader': return 'Líder';
+        case 'secretary':
+        case 'secretaria': return 'Secretaría';
+        case 'member': return 'Miembro';
+        case 'guest': return 'Invitado';
+        default: return 'Miembro';
+      }
+    };
+
     for (const targetId of targetProfileIds) {
       try {
+        // Personalize the message for this participant
+        const targetProfile = profileMap.get(targetId);
+        let dynamicContent = messageContent.trim();
+        if (targetProfile) {
+          const name = targetProfile.first_name || '';
+          const lastName = targetProfile.last_name || '';
+          const roleLabel = getRoleLabel(targetProfile.role || '');
+          
+          let ministryName = '';
+          if (targetProfile.ministry_id) {
+            const min = get().ministries.find(m => m.id === targetProfile.ministry_id);
+            if (min) ministryName = min.name;
+          }
+          
+          dynamicContent = dynamicContent
+            .replace(/\[Nombre\]/g, name)
+            .replace(/\[Apellido\]/g, lastName)
+            .replace(/\[Rol\]/g, roleLabel)
+            .replace(/\[Ministerio\]/g, ministryName);
+        }
+
         // Find or create direct chat
         // 1. Get user's chats
         const { data: myParticipants } = await supabase
@@ -485,7 +528,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           await supabase.from('messages').insert({
             chat_id: chatToUseId,
             sender_id: user.id,
-            content: messageContent.trim(),
+            content: dynamicContent,
           });
         }
 
