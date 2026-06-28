@@ -8,6 +8,7 @@ import { usePluginStore } from '../../store/usePluginStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import type { Message } from '../../types';
+import { useChats, useChatMessages, useChatContacts, useChatMutations, useChatRetentionDays, useChatRealtime } from '../../features/chat/hooks';
 import {
   Search,
   Send,
@@ -98,29 +99,16 @@ export default function ChatManager() {
   const userRoles = roles || (role ? [role] : []);
   const isPrivileged = userRoles.some(r => ['admin', 'pastor', 'leader'].includes(r));
   const confirm = useConfirmStore((state) => state.confirm);
-  const {
-    chats,
-    activeChat,
-    messages,
-    contacts,
-    members,
-    ministries,
-    loadingChats,
-    loadingMessages,
-    loadingContacts,
-    retentionDays,
-    fetchChats,
-    fetchContacts,
-    fetchRetentionDays,
-    setActiveChat,
-    sendMessage,
-    startChatWith,
-    sendBroadcast,
-    subscribeToRealtime,
-    unsubscribeFromRealtime,
-    deleteMessage,
-    deleteChat
-  } = useChatStore();
+  const { activeChat, setActiveChat } = useChatStore();
+  
+  const { data: chats = [], isLoading: loadingChats } = useChats();
+  const { data: contactsData, isLoading: loadingContacts } = useChatContacts();
+  const { contacts = [], members = [], ministries = [] } = contactsData || {};
+  const { data: messages = [], isLoading: loadingMessages } = useChatMessages(activeChat?.id);
+  const { data: retentionDays = 7 } = useChatRetentionDays();
+  const { sendMessage, startChatWith, sendBroadcast, deleteMessage, deleteChat } = useChatMutations();
+  
+  useChatRealtime(activeChat?.id || null);
 
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,7 +174,7 @@ export default function ChatManager() {
   // Handle deleting a message
   const handleDeleteMessage = async (messageId: string) => {
     try {
-      await deleteMessage(messageId);
+      await deleteMessage.mutateAsync(messageId);
       toast.success('Mensaje eliminado.');
     } catch (err) {
       toast.error('No se pudo eliminar el mensaje: ' + (err instanceof Error ? err.message : String(err)));
@@ -224,15 +212,11 @@ export default function ChatManager() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchChats();
-    fetchContacts();
-    fetchRetentionDays();
-    subscribeToRealtime();
-
-    return () => {
-      unsubscribeFromRealtime();
-    };
-  }, [fetchChats, fetchContacts, fetchRetentionDays, subscribeToRealtime, unsubscribeFromRealtime]);
+    // Initial fetch, now handled by useQuery automatically, but can leave refetch if desired.
+    // fetchChats();
+    // fetchContacts();
+    // fetchRetentionDays();
+  }, []);
 
   // Scroll to bottom on active chat change or if user is near bottom
   useEffect(() => {
@@ -247,7 +231,7 @@ export default function ChatManager() {
 
     setSendingMessage(true);
     try {
-      await sendMessage(activeChat.id, messageInput.trim());
+      await sendMessage.mutateAsync({ chatId: activeChat.id, content: messageInput.trim() });
       setMessageInput('');
       setShowEmojiPicker(false);
     } catch (err) {
@@ -259,7 +243,8 @@ export default function ChatManager() {
 
   const handleStartConversation = async (contactId: string) => {
     try {
-      await startChatWith(contactId);
+      const chat = await startChatWith.mutateAsync(contactId);
+      setActiveChat(chat);
       setActiveTab('chats');
     } catch (err) {
       toast.error('No se pudo iniciar la conversación: ' + (err instanceof Error ? err.message : String(err)));
@@ -360,8 +345,13 @@ export default function ChatManager() {
 
     try {
       const targetIds = recipientsList.map((r) => r.id);
-      await sendBroadcast(targetIds, broadcastContent.trim(), (sent, total) => {
-        setBroadcastProgress({ sent, total });
+      await sendBroadcast.mutateAsync({
+        targetProfileIds: targetIds, 
+        messageContent: broadcastContent.trim(), 
+        ministries, 
+        onProgress: (sent, total) => {
+          setBroadcastProgress({ sent, total });
+        }
       });
 
       toast.success('Mensaje de difusión enviado con éxito.');
@@ -508,7 +498,7 @@ export default function ChatManager() {
                         {/* Profile Image / Initials */}
                         <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
-                            <img
+                            <img loading="lazy"
                               src={otherParticipant.photo_url}
                               alt={chatName}
                               className="w-full h-full object-cover"
@@ -540,7 +530,7 @@ export default function ChatManager() {
                                    });
                                    if (confirmed) {
                                      try {
-                                       await deleteChat(chat.id);
+                                       await deleteChat.mutateAsync(chat.id);
                                        toast.success('Conversación eliminada.');
                                      } catch (err) {
                                        toast.error('No se pudo eliminar la conversación: ' + (err instanceof Error ? err.message : String(err)));
@@ -598,7 +588,7 @@ export default function ChatManager() {
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {contact.photo_url ? (
-                            <img
+                            <img loading="lazy"
                               src={contact.photo_url}
                               alt={contactName}
                               className="w-full h-full object-cover"
@@ -657,7 +647,7 @@ export default function ChatManager() {
                       <>
                         <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
-                            <img
+                            <img loading="lazy"
                               src={otherParticipant.photo_url}
                               alt={chatName}
                               className="w-full h-full object-cover"

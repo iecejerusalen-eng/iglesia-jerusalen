@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
+import { GlobalErrorBoundary } from './components/common/ErrorBoundary';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { Toaster } from 'sonner';
@@ -7,63 +9,70 @@ import ConfirmDialog from './components/common/ConfirmDialog';
 import CRMRegistrationPrompt from './components/common/CRMRegistrationPrompt';
 import BirthdayCelebrationModal from './components/common/BirthdayCelebrationModal';
 
+// Lazy loaded pages
+const Home = lazy(() => import('./pages/public/Home'));
+const Login = lazy(() => import('./pages/auth/Login'));
+const Store = lazy(() => import('./pages/public/Store'));
+const Cart = lazy(() => import('./pages/public/Cart'));
+const Donations = lazy(() => import('./pages/public/Donations'));
+const About = lazy(() => import('./pages/public/About'));
+const MinistriesOverview = lazy(() => import('./pages/public/MinistriesOverview'));
+const MinistryDetail = lazy(() => import('./pages/public/MinistryDetail'));
+const Sermons = lazy(() => import('./pages/public/Sermons'));
+const Contact = lazy(() => import('./pages/public/Contact'));
+const Events = lazy(() => import('./pages/public/Events'));
+const Petitions = lazy(() => import('./pages/public/Petitions'));
+const SongsLibrary = lazy(() => import('./pages/public/SongsLibrary'));
+const ProgramsOverview = lazy(() => import('./pages/public/ProgramsOverview'));
+const VirtualClassroomLanding = lazy(() => import('./pages/public/VirtualClassroomLanding'));
+const ProgramDetail = lazy(() => import('./pages/public/ProgramDetail'));
+const MyPurchases = lazy(() => import('./pages/public/MyPurchases'));
+const Checkout = lazy(() => import('./pages/public/Checkout'));
+const OrderSuccess = lazy(() => import('./pages/public/OrderSuccess'));
+const DashboardHome = lazy(() => import('./pages/admin/DashboardHome'));
+const SermonsManager = lazy(() => import('./pages/admin/SermonsManager'));
+const FinanceDashboard = lazy(() => import('./pages/admin/FinanceDashboard'));
+const StoreManager = lazy(() => import('./pages/admin/StoreManager'));
+const StoreSettings = lazy(() => import('./pages/admin/StoreSettings'));
+const OrdersManager = lazy(() => import('./pages/admin/OrdersManager'));
+const MinistryManager = lazy(() => import('./pages/admin/MinistryManager'));
+const MinistryDashboard = lazy(() => import('./pages/admin/MinistryDashboard'));
+const LogosManager = lazy(() => import('./pages/admin/LogosManager'));
+const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
+const SettingsManager = lazy(() => import('./pages/admin/SettingsManager'));
+const AdminSettings = lazy(() => import('./pages/admin/Settings/AdminSettings'));
+const MembersManager = lazy(() => import('./pages/admin/MembersManager'));
+const EventsManager = lazy(() => import('./pages/admin/EventsManager'));
+const StrategicMap = lazy(() => import('./pages/admin/StrategicMap'));
+const PageEditor = lazy(() => import('./pages/admin/PageEditor'));
+const AnalyticsDashboard = lazy(() => import('./pages/admin/AnalyticsDashboard'));
+const NotificationsManager = lazy(() => import('./pages/admin/NotificationsManager'));
+const PetitionsManager = lazy(() => import('./pages/admin/PetitionsManager'));
+const SongsManager = lazy(() => import('./pages/admin/SongsManager'));
+const LMSManager = lazy(() => import('./pages/admin/LMSManager'));
+const CourseBuilder = lazy(() => import('./pages/admin/CourseBuilder'));
+const LMSGradebook = lazy(() => import('./pages/admin/LMSGradebook'));
+const ChatManager = lazy(() => import('./pages/admin/ChatManager'));
+const OpenResourcesManager = lazy(() => import('./pages/admin/OpenResourcesManager'));
+const OpenResourceBuilder = lazy(() => import('./pages/admin/OpenResourceBuilder'));
+const PluginManager = lazy(() => import('./pages/admin/PluginManager'));
+const SundaySchool = lazy(() => import('./pages/public/SundaySchool'));
+const ReadingPlan = lazy(() => import('./pages/public/ReadingPlan'));
+const SermonDetail = lazy(() => import('./pages/public/SermonDetail'));
+const ProductionBoard = lazy(() => import('./pages/admin/ProductionBoard'));
+const MediaVault = lazy(() => import('./pages/admin/MediaVault'));
+const InventoryManager = lazy(() => import('./pages/admin/InventoryManager'));
+const AnimationCatalog = lazy(() => import('./pages/admin/AnimationCatalog'));
+const DesignCatalog = lazy(() => import('./pages/admin/DesignCatalog'));
+const Birthdays = lazy(() => import('./pages/public/Birthdays'));
+const Bible = lazy(() => import('./pages/public/Bible'));
+const StudentDashboard = lazy(() => import('./pages/lms/StudentDashboard'));
+const TeacherDashboard = lazy(() => import('./pages/lms/TeacherDashboard'));
+const CourseViewer = lazy(() => import('./pages/lms/CourseViewer'));
+
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
-import Home from './pages/public/Home';
-import Login from './pages/auth/Login';
-import Store from './pages/public/Store';
-import Cart from './pages/public/Cart';
-import Donations from './pages/public/Donations';
-import About from './pages/public/About';
-import MinistriesOverview from './pages/public/MinistriesOverview';
-import MinistryDetail from './pages/public/MinistryDetail';
-import Sermons from './pages/public/Sermons';
-import Contact from './pages/public/Contact';
-import Events from './pages/public/Events';
-import Petitions from './pages/public/Petitions';
-import SongsLibrary from './pages/public/SongsLibrary';
-import ProgramsOverview from './pages/public/ProgramsOverview';
-import VirtualClassroomLanding from './pages/public/VirtualClassroomLanding';
-import ProgramDetail from './pages/public/ProgramDetail';
-import MyPurchases from './pages/public/MyPurchases';
 
-import DashboardHome from './pages/admin/DashboardHome';
-import SermonsManager from './pages/admin/SermonsManager';
-import FinanceDashboard from './pages/admin/FinanceDashboard';
-import StoreManager from './pages/admin/StoreManager';
-import MinistryManager from './pages/admin/MinistryManager';
-import MinistryDashboard from './pages/admin/MinistryDashboard';
-import LogosManager from './pages/admin/LogosManager';
-import UsersManager from './pages/admin/UsersManager';
-import SettingsManager from './pages/admin/SettingsManager';
-import MembersManager from './pages/admin/MembersManager';
-import EventsManager from './pages/admin/EventsManager';
-import StrategicMap from './pages/admin/StrategicMap';
-import PageEditor from './pages/admin/PageEditor';
-import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
-import NotificationsManager from './pages/admin/NotificationsManager';
-import PetitionsManager from './pages/admin/PetitionsManager';
-import SongsManager from './pages/admin/SongsManager';
-import LMSManager from './pages/admin/LMSManager';
-import CourseBuilder from './pages/admin/CourseBuilder';
-import LMSGradebook from './pages/admin/LMSGradebook';
-import ChatManager from './pages/admin/ChatManager';
-import OpenResourcesManager from './pages/admin/OpenResourcesManager';
-import OpenResourceBuilder from './pages/admin/OpenResourceBuilder';
-import PluginManager from './pages/admin/PluginManager';
-import SundaySchool from './pages/public/SundaySchool';
-import ReadingPlan from './pages/public/ReadingPlan';
-import SermonDetail from './pages/public/SermonDetail';
-import ProductionBoard from './pages/admin/ProductionBoard';
-import MediaVault from './pages/admin/MediaVault';
-import InventoryManager from './pages/admin/InventoryManager';
-import AnimationCatalog from './pages/admin/AnimationCatalog';
-import DesignCatalog from './pages/admin/DesignCatalog';
-import Birthdays from './pages/public/Birthdays';
-import Bible from './pages/public/Bible';
-import StudentDashboard from './pages/lms/StudentDashboard';
-import TeacherDashboard from './pages/lms/TeacherDashboard';
-import CourseViewer from './pages/lms/CourseViewer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
@@ -81,9 +90,9 @@ function App() {
         await syncStore.syncOfflineQueue();
       }
     };
-    initDb();
+    initDb().catch(console.error);
     useAuthStore.getState().initializeAuth();
-    usePluginStore.getState().fetchPlugins();
+    usePluginStore.getState().fetchPlugins().catch(console.error);
     
     // Initialize Theme
     const themeStore = useThemeStore.getState();
@@ -144,13 +153,15 @@ function App() {
   }, []);
 
   return (
-    <>
-      <Toaster richColors position="top-right" />
-      <ConfirmDialog />
+    <HelmetProvider>
+      <GlobalErrorBoundary>
+        <Toaster richColors position="top-right" />
+        <ConfirmDialog />
       <BrowserRouter>
         <ScrollToTop />
         <CRMRegistrationPrompt />
         <BirthdayCelebrationModal />
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
         <Routes>
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
@@ -191,6 +202,8 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route path="/lms/estudiante" element={<StudentDashboard />} />
               <Route path="/lms/docente" element={<TeacherDashboard />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-success" element={<OrderSuccess />} />
             </Route>
             
             <Route element={<AdminLayout />}>
@@ -309,6 +322,8 @@ function App() {
           <Route element={<ProtectedRoute module="products" />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/productos" element={<StoreManager />} />
+              <Route path="/admin/ordenes" element={<OrdersManager />} />
+              <Route path="/admin/pagos-envios" element={<StoreSettings />} />
             </Route>
           </Route>
 
@@ -317,6 +332,13 @@ function App() {
             <Route element={<AdminLayout />}>
               <Route path="/admin/configuracion" element={<SettingsManager />} />
               <Route path="/admin/extensiones" element={<PluginManager />} />
+            </Route>
+          </Route>
+
+          {/* Protected Routes: Appearance / Customization */}
+          <Route element={<ProtectedRoute module="appearance" />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/apariencia" element={<AdminSettings />} />
             </Route>
           </Route>
 
@@ -348,8 +370,10 @@ function App() {
             </Route>
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
-    </>
+      </GlobalErrorBoundary>
+    </HelmetProvider>
   );
 }
 

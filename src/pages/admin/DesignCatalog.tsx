@@ -586,7 +586,7 @@ export default function DesignCatalog() {
                     <div className="space-y-4">
                       {/* Logo container with checkers pattern background to show alpha transparent */}
                       <div className="w-full h-40 rounded-2xl bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] bg-[size:16px_16px] bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 border border-slate-100 dark:border-white/5 shadow-inner">
-                        <img 
+                        <img loading="lazy" 
                           src={logo.src} 
                           alt={logo.name} 
                           className="max-h-full max-w-full object-contain filter drop-shadow-sm select-none" 

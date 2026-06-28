@@ -84,7 +84,7 @@ alter table public.orders enable row level security;
 
 create policy "Permitir crear pedidos públicamente" 
   on public.orders for insert 
-  with check (true);
+  with check (auth.uid() is not null);
 
 create policy "Permitir lectura de pedidos a administradores" 
   on public.orders for select 
@@ -118,7 +118,7 @@ alter table public.order_items enable row level security;
 
 create policy "Permitir crear detalles de pedido públicamente" 
   on public.order_items for insert 
-  with check (true);
+  with check (auth.uid() is not null);
 
 create policy "Permitir lectura de detalles de pedido a administradores" 
   on public.order_items for select 
@@ -147,7 +147,7 @@ alter table public.donations enable row level security;
 
 create policy "Permitir insertar donaciones públicamente" 
   on public.donations for insert 
-  with check (true);
+  with check (auth.uid() is not null);
 
 create policy "Permitir lectura de donaciones a administradores" 
   on public.donations for select 

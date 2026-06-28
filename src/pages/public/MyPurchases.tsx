@@ -273,7 +273,7 @@ export default function MyPurchases() {
                     return (
                       <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <img 
+                          <img loading="lazy" 
                             src={product?.cover_image_url || product?.image_url || '/placeholder-product.png'} 
                             alt={product?.name || 'Producto'} 
                             className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-slate-800 shadow-2xs"

@@ -742,7 +742,7 @@ const InventoryManager = () => {
                         <td className="py-3 px-6">
                           <div className="w-10 h-10 rounded-lg border border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center p-1 relative select-none">
                             {item.photo_url ? (
-                              <img src={item.photo_url} alt="" className="max-w-full max-h-full object-contain" />
+                              <img loading="lazy" src={item.photo_url} alt="" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <ImageIcon size={16} className="text-gray-300" />
                             )}
@@ -1022,7 +1022,7 @@ const InventoryManager = () => {
                   </div>
                   {(selectedFile || watch('photo_url') || editingItem?.photo_url) && (
                     <div className="w-14 h-14 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-slate-950 p-1 flex items-center justify-center flex-shrink-0">
-                      <img 
+                      <img loading="lazy" 
                         src={selectedFile ? URL.createObjectURL(selectedFile) : (watch('photo_url') || editingItem?.photo_url || '')} 
                         alt="Miniatura" 
                         className="max-w-full max-h-full object-contain" 

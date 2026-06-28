@@ -180,6 +180,7 @@ CREATE POLICY "Permitir lectura pública de comprobantes"
 DROP POLICY IF EXISTS "Permitir subir comprobantes públicamente" ON storage.objects;
 CREATE POLICY "Permitir subir comprobantes públicamente"
     ON storage.objects FOR INSERT
+    TO authenticated
     WITH CHECK (bucket_id = 'receipts');
 
 DROP POLICY IF EXISTS "Permitir gestión de comprobantes a administradores" ON storage.objects;

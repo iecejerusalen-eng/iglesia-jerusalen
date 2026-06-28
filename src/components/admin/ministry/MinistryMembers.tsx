@@ -259,7 +259,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {m.members?.photo_url ? (
-                        <img src={m.members.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                        <img loading="lazy" src={m.members.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs">
                           {m.members ? m.members.first_name?.[0] : m.member_name?.[0] || 'U'}

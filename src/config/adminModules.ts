@@ -105,7 +105,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'admin'
   },
   {
-    id: 'dashboard',
+    id: 'animations',
     label: 'Catálogo de Animaciones',
     name: 'Catálogo Animaciones',
     path: '/admin/animaciones',
@@ -113,7 +113,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'diseno'
   },
   {
-    id: 'dashboard',
+    id: 'design',
     label: 'Catálogo de Diseño',
     name: 'Guía de Estilo / Diseño',
     path: '/admin/diseno',
@@ -161,7 +161,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
-    id: 'programs',
+    id: 'open_resources',
     label: 'Programas y Estudios',
     name: 'Programas y Estudios',
     path: '/admin/recursos-abiertos',
@@ -233,6 +233,22 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'tienda'
   },
   {
+    id: 'orders',
+    label: 'Órdenes',
+    name: 'Órdenes',
+    path: '/admin/ordenes',
+    icon: Package,
+    group: 'tienda'
+  },
+  {
+    id: 'store_settings',
+    label: 'Pagos y Envíos',
+    name: 'Pagos y Envíos',
+    path: '/admin/pagos-envios',
+    icon: DollarSign,
+    group: 'tienda'
+  },
+  {
     id: 'pages',
     label: 'Editor de Páginas',
     name: 'Editor Páginas',
@@ -254,6 +270,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Datos Iglesia',
     path: '/admin/configuracion',
     icon: Settings,
+    group: 'admin'
+  },
+  {
+    id: 'appearance',
+    label: 'Configuración del Panel',
+    name: 'Personalizar Panel',
+    path: '/admin/apariencia',
+    icon: Palette,
     group: 'admin'
   },
   {
@@ -289,7 +313,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'operaciones'
   },
   {
-    id: 'programs',
+    id: 'lms_enrollments',
     label: 'Matrículas y Solicitudes',
     name: 'Solicitudes Matrícula',
     path: '/admin/lms/matriculas',
@@ -297,7 +321,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
-    id: 'settings',
+    id: 'plugins',
     label: 'Gestor de Extensiones',
     name: 'Extensiones / Plugins',
     path: '/admin/extensiones',

@@ -389,7 +389,7 @@ export const ImageGallerySection = ({
                               : 'border-white/10 opacity-55 hover:opacity-100 brightness-75'
                           }`}
                         >
-                          <img
+                          <img loading="lazy"
                             src={img.url}
                             alt={`Thumbnail ${index + 1}`}
                             className="w-full h-full object-cover pointer-events-none select-none"

@@ -59,7 +59,8 @@ const Login = () => {
           toast.success('¡Registro e ingreso exitoso!');
           await checkSession();
           const params = new URLSearchParams(window.location.search);
-          const to = params.get('redirectTo');
+          const rawRedirect = params.get('redirectTo');
+          const to = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
           if (to) {
             navigate(to);
           } else {
@@ -90,7 +91,8 @@ const Login = () => {
       } else {
         await checkSession();
         const params = new URLSearchParams(window.location.search);
-        const to = params.get('redirectTo');
+        const rawRedirect = params.get('redirectTo');
+        const to = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
         if (to) {
           navigate(to);
         } else {
@@ -126,18 +128,18 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface px-4 py-12">
-      <div className="bg-white p-8 rounded-2xl border border-gray-150 shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-900 px-4 py-12">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-md w-full max-w-md">
         
         {/* Auth Toggle Tabs */}
-        <div className="flex border-b border-gray-100 mb-6">
+        <div className="flex border-b border-gray-100 dark:border-gray-700 mb-6">
           <button
             onClick={() => {
               setIsRegister(false);
               setErrorMsg('');
             }}
             className={`flex-1 pb-3 text-sm font-semibold text-center transition-colors cursor-pointer ${
-              !isRegister ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-600'
+              !isRegister ? 'text-primary border-b-2 border-primary' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
             Ingresar
@@ -148,19 +150,19 @@ const Login = () => {
               setErrorMsg('');
             }}
             className={`flex-1 pb-3 text-sm font-semibold text-center transition-colors cursor-pointer ${
-              isRegister ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-600'
+              isRegister ? 'text-primary border-b-2 border-primary' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
             Registrarse
           </button>
         </div>
 
-        <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 text-center">
+        <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">
           {isRegister ? 'Crear Cuenta Nueva' : 'Ingresar al Panel'}
         </h2>
         
         {errorMsg && (
-          <div className="bg-red-50 text-accent-red p-3.5 rounded-xl mb-4 text-xs font-semibold text-center border border-red-100">
+          <div className="bg-red-50 dark:bg-red-900/20 text-accent-red dark:text-red-400 p-3.5 rounded-xl mb-4 text-xs font-semibold text-center border border-red-100 dark:border-red-900/50">
             {errorMsg}
           </div>
         )}
@@ -172,24 +174,24 @@ const Login = () => {
                 className="grid grid-cols-2 gap-4"
               >
                 <div>
-                  <label htmlFor="firstName" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre</label>
+                  <label htmlFor="firstName" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nombre</label>
                   <input 
                     id="firstName"
                     autoComplete="given-name"
                     {...register('firstName')}
                     type="text" 
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Juan"
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Apellido</label>
+                  <label htmlFor="lastName" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Apellido</label>
                   <input 
                     id="lastName"
                     autoComplete="family-name"
                     {...register('lastName')}
                     type="text" 
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Pérez"
                   />
                 </div>
@@ -198,35 +200,35 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Correo Electrónico</label>
+            <label htmlFor="email" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Correo Electrónico</label>
             <input 
               id="email"
               autoComplete="email"
               {...register('email')}
               type="email" 
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
               placeholder="correo@ejemplo.com"
             />
-            {errors.email && <p className="text-accent-red text-xs mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-accent-red dark:text-red-400 text-xs mt-1">{errors.email.message}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Contraseña</label>
+            <label htmlFor="password" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Contraseña</label>
             <input 
               id="password"
               autoComplete="current-password"
               {...register('password')}
               type="password" 
-              className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
               placeholder="••••••••"
             />
-            {errors.password && <p className="text-accent-red text-xs mt-1">{errors.password.message}</p>}
+            {errors.password && <p className="text-accent-red dark:text-red-400 text-xs mt-1">{errors.password.message}</p>}
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-primary hover:bg-blue-900 text-white py-3 px-4 rounded-xl font-semibold transition-colors mt-6 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer shadow-sm"
+            className="w-full bg-primary hover:bg-blue-900 dark:hover:bg-blue-800 text-white py-3 px-4 rounded-xl font-semibold transition-colors mt-6 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 cursor-pointer shadow-sm"
           >
             {loading 
               ? (isRegister ? 'Registrando...' : 'Ingresando...') 
@@ -238,10 +240,10 @@ const Login = () => {
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100"></div>
+            <div className="w-full border-t border-gray-100 dark:border-gray-700"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-400 font-bold">O también</span>
+            <span className="bg-white dark:bg-gray-800 px-3 text-gray-400 dark:text-gray-500 font-bold">O también</span>
           </div>
         </div>
 
@@ -250,7 +252,7 @@ const Login = () => {
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full border border-gray-250 hover:bg-gray-50 text-gray-700 py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 shadow-xs hover:shadow-sm"
+          className="w-full border border-gray-250 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 shadow-xs hover:shadow-sm"
         >
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
             <path

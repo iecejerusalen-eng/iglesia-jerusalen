@@ -183,5 +183,15 @@ DROP POLICY IF EXISTS "Permitir carga de imágenes de eventos a autorizados" ON 
 CREATE POLICY "Permitir carga de imágenes de eventos a autorizados"
   ON storage.objects FOR ALL
   TO authenticated
-  USING (bucket_id = 'event-images')
-  WITH CHECK (bucket_id = 'event-images');
+  USING (
+    bucket_id = 'event-images' AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role IN ('admin', 'pastor', 'secretary', 'secretaria')
+    )
+  )
+  WITH CHECK (
+    bucket_id = 'event-images' AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role IN ('admin', 'pastor', 'secretary', 'secretaria')
+    )
+  );

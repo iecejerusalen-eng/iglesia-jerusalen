@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import RichTextEditor from './RichTextEditor';
 import MediaUploader from '../common/MediaUploader';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -163,14 +164,14 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
                 {block.type === 'text' && (
                   <div 
                     className="prose dark:prose-invert max-w-none text-slate-850 dark:text-gray-300 text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: block.text || '' }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.text || '') }}
                   />
                 )}
                 
                 {block.type === 'image' && block.image_url && (
                   <div className="my-6 text-center">
                     <div className="inline-block border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm bg-slate-50 dark:bg-slate-900 max-w-full">
-                      <img src={block.image_url} alt={block.text || 'Imagen'} className="max-h-[400px] w-auto max-w-full object-contain" />
+                      <img loading="lazy" src={block.image_url} alt={block.text || 'Imagen'} className="max-h-[400px] w-auto max-w-full object-contain" />
                     </div>
                     {block.text && (
                       <p className="text-xs text-gray-400 italic mt-2">{block.text}</p>
@@ -181,7 +182,7 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
                 {block.type === 'html' && block.html && (
                   <div 
                     className="my-4 overflow-x-auto" 
-                    dangerouslySetInnerHTML={{ __html: block.html }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.html) }}
                   />
                 )}
                 
@@ -312,7 +313,7 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
                       <div className="space-y-3">
                         {block.image_url ? (
                           <div className="relative inline-block w-full max-w-sm rounded-lg overflow-hidden border border-gray-200">
-                            <img src={block.image_url} alt="" className="w-full h-40 object-cover" />
+                            <img loading="lazy" src={block.image_url} alt="" className="w-full h-40 object-cover" />
                             <button
                               type="button"
                               onClick={() => updateBlockValue(block.id, { image_url: '' })}

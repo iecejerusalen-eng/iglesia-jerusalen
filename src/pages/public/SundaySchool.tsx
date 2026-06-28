@@ -211,7 +211,7 @@ const SundaySchool = () => {
                         }`}
                       >
                       <div className="relative shrink-0">
-                        <img
+                        <img loading="lazy"
                           src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
                           alt={badge.name}
                           className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${

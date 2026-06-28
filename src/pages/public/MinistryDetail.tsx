@@ -161,7 +161,7 @@ const MinistryDetail = () => {
         {/* Imagen de Fondo o Degradado */}
         {ministry.image_url ? (
           <>
-            <img 
+            <img loading="lazy" 
               src={ministry.image_url} 
               alt={ministry.name} 
               className="absolute inset-0 w-full h-full object-cover"
@@ -276,7 +276,7 @@ const MinistryDetail = () => {
                   {/* Photo or Initials */}
                   <div className="w-14 h-14 rounded-full overflow-hidden border border-white dark:border-slate-800 shadow-sm bg-primary/10 text-primary dark:text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
                     {photoUrl ? (
-                      <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+                      <img loading="lazy" src={photoUrl} alt={name} className="w-full h-full object-cover" />
                     ) : (
                       <span>{name?.[0] || 'U'}</span>
                     )}
@@ -336,7 +336,7 @@ const MinistryDetail = () => {
                   {/* Foto o Iniciales */}
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm bg-primary/10 text-primary dark:text-white flex items-center justify-center font-bold text-xl mb-3 flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
                     {member.photo_url ? (
-                      <img src={member.photo_url} alt={`${member.first_name} ${member.last_name}`} className="w-full h-full object-cover" />
+                      <img loading="lazy" src={member.photo_url} alt={`${member.first_name} ${member.last_name}`} className="w-full h-full object-cover" />
                     ) : (
                       <span>{member.first_name?.[0] || ''}{member.last_name?.[0] || ''}</span>
                     )}
@@ -427,7 +427,7 @@ const MinistryDetail = () => {
                 <div key={logo.id} className="border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-gray-50 dark:bg-slate-900/50 flex flex-col items-center justify-between p-4 group hover:shadow-md transition-shadow relative">
                   <div className="h-32 w-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-xl p-4 overflow-hidden">
                     {isRenderable ? (
-                      <img 
+                      <img loading="lazy" 
                         src={publicUrl} 
                         alt={`${ministry.name} logo`} 
                         className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105"

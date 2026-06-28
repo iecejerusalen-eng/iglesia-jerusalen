@@ -410,7 +410,7 @@ export const AnimeParallax = ({
 
   return (
     <div ref={ref} className="overflow-hidden w-full h-full relative">
-      <img
+      <img loading="lazy"
         ref={imgRef}
         src={src}
         alt={alt}

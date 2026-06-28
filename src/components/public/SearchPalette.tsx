@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { Command } from 'cmdk';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
@@ -401,7 +402,7 @@ export default function SearchPalette() {
                       <BookOpen size={18} className="text-sky-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
                         <span className="font-bold text-gray-800 dark:text-slate-100 block">{min.name}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate" dangerouslySetInnerHTML={{ __html: min.description?.replace(/<[^>]*>/g, '') || '' }} />
+                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(min.description?.replace(/<[^>]*>/g, '') || '') }} />
                       </div>
                       <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
                     </Command.Item>

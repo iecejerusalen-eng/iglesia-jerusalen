@@ -348,7 +348,7 @@ const OpenResourcesManager = () => {
                     >
                       <div className="h-40 bg-gray-200 dark:bg-slate-800 relative">
                         {resource.cover_image_url ? (
-                          <img src={resource.cover_image_url} alt={resource.title} className="w-full h-full object-cover" />
+                          <img loading="lazy" src={resource.cover_image_url} alt={resource.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <BookOpen className="text-gray-400" size={40} />
@@ -425,7 +425,7 @@ const OpenResourcesManager = () => {
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-800 shrink-0 overflow-hidden">
                                 {study.cover_image_url ? (
-                                  <img src={study.cover_image_url} alt="" className="w-full h-full object-cover" />
+                                  <img loading="lazy" src={study.cover_image_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                   <FileText className="text-gray-450 m-2" size={24} />
                                 )}

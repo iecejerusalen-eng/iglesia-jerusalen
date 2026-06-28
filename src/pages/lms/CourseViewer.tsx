@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -606,7 +607,7 @@ export default function CourseViewer() {
                   {(activeLesson.type === 'document' || activeLesson.type === 'resource') && (
                     <div 
                       className="prose dark:prose-invert max-w-none text-slate-850 dark:text-gray-300 text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: activeLesson.content || '<p class="italic text-gray-400">Esta lección no contiene texto.</p>' }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeLesson.content || '<p class="italic text-gray-400">Esta lección no contiene texto.</p>') }}
                     />
                   )}
 
@@ -764,7 +765,7 @@ export default function CourseViewer() {
                             <div key={post.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/5 shadow-2xs space-y-2">
                               <div className="flex items-center gap-3">
                                 {post.profiles?.photo_url ? (
-                                  <img src={post.profiles.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-150" />
+                                  <img loading="lazy" src={post.profiles.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-150" />
                                 ) : (
                                   <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-gray-400">
                                     <User size={14} />

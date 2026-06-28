@@ -134,7 +134,7 @@ const LMSForum = ({ activity }: Props) => {
       <div key={post.id} className={`${isReply ? 'ml-8 mt-3 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-4' : 'bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-4'}`}>
         <div className="flex items-start gap-3">
           {post.profiles?.photo_url ? (
-            <img src={post.profiles.photo_url} alt={authorName} className="w-8 h-8 rounded-full object-cover" />
+            <img loading="lazy" src={post.profiles.photo_url} alt={authorName} className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
               <User size={16} />
@@ -186,7 +186,7 @@ const LMSForum = ({ activity }: Props) => {
         {replyingTo === post.id && (
           <div className="ml-11 mt-3 flex items-start gap-2">
             {photoUrl ? (
-              <img src={photoUrl} alt="You" className="w-6 h-6 rounded-full object-cover" />
+              <img loading="lazy" src={photoUrl} alt="You" className="w-6 h-6 rounded-full object-cover" />
             ) : (
               <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                 <User size={12} className="text-gray-500" />
@@ -233,7 +233,7 @@ const LMSForum = ({ activity }: Props) => {
       {user ? (
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl p-4 mb-6 shadow-sm flex items-start gap-3">
           {photoUrl ? (
-            <img src={photoUrl} alt="You" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+            <img loading="lazy" src={photoUrl} alt="You" className="w-10 h-10 rounded-full object-cover shadow-sm" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
               <User size={20} />

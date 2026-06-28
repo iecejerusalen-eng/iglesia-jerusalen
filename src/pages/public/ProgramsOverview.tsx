@@ -348,7 +348,7 @@ export default function ProgramsOverview() {
                         {/* Cover */}
                         <div className="h-44 bg-gray-100 dark:bg-slate-800 relative overflow-hidden shrink-0">
                           {study.cover_image_url ? (
-                            <img src={study.cover_image_url} alt={study.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <img loading="lazy" src={study.cover_image_url} alt={study.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900/40 flex items-center justify-center">
                               <BookOpen size={40} className="text-indigo-300 dark:text-indigo-800" />
@@ -482,7 +482,7 @@ export default function ProgramsOverview() {
                                 <div className="flex gap-4 items-start">
                                   <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 shrink-0 overflow-hidden flex items-center justify-center">
                                     {course.cover_image_url ? (
-                                      <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover" />
+                                      <img loading="lazy" src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover" />
                                     ) : (
                                       <GraduationCap size={28} />
                                     )}

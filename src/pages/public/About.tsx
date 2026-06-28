@@ -138,13 +138,13 @@ const About = () => {
                 >
                   <div className="absolute inset-0 z-0">
                     {cover_image_url ? (
-                      <img 
+                      <img loading="lazy" 
                         src={cover_image_url} 
                         alt="Portada" 
                         className="w-full h-full object-cover opacity-20"
                       />
                     ) : (
-                      <img 
+                      <img loading="lazy" 
                         src="/images/about/hero.png" 
                         alt="Quiénes Somos" 
                         className="w-full h-full object-cover opacity-30 mix-blend-overlay"

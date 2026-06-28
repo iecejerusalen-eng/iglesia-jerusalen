@@ -7,10 +7,9 @@ import {
   BarChart
 } from 'recharts';
 import { 
-  Edit2, XCircle, DollarSign, Tag, FolderPlus, 
-  Heart, Download, ShoppingBag, TrendingUp,
-  FileText, PieChart as PieChartIcon
+  Download, Edit2, TrendingUp, DollarSign, Heart, ShoppingBag, Tag, PieChart as PieChartIcon, FileText, XCircle, FolderPlus
 } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/common/Skeletons';
 import { toast } from 'sonner';
 
@@ -109,6 +108,7 @@ const FinanceDashboard = () => {
   const [activeTab, setActiveTab] = useState<'metrics' | 'categories'>('metrics');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(50);
 
   // Master lists
   const [allDonations, setAllDonations] = useState<Donation[]>([]);
@@ -438,6 +438,7 @@ const FinanceDashboard = () => {
 
   const handleDateFilterChange = (val: '30days' | '90days' | 'year' | 'all') => {
     setDateFilter(val);
+    setVisibleCount(50); // Reset visible count on filter change
     computeStatsAndChart(allDonations, allOrders, val);
   };
 
@@ -520,49 +521,37 @@ const FinanceDashboard = () => {
     }
   };
 
-  const exportToCSV = () => {
+  const prepareExportData = () => {
+    return filteredTransactions.map(t => ({
+      'Tipo': t.type === 'donation' ? 'Donación' : 'Venta Tienda',
+      'Cliente/Donante': t.name,
+      'Correo': t.email || '',
+      'Monto': t.amount.toFixed(2),
+      'Categoría': t.category,
+      'Método': t.paymentMethod === 'card' ? 'Tarjeta' : t.paymentMethod === 'transfer' ? 'Transferencia' : t.paymentMethod === 'cash' ? 'Efectivo' : t.paymentMethod,
+      'Estado': t.status === 'completed' ? 'Completado' : t.status === 'pending' ? 'Pendiente' : 'Fallido',
+      'Fecha': new Date(t.date).toLocaleDateString('es-ES')
+    }));
+  };
+
+  const exportExcel = () => {
     if (filteredTransactions.length === 0) {
       toast.error('No hay transacciones para exportar.');
       return;
     }
+    const data = prepareExportData();
+    exportToExcel(data, `finanzas_iglesia_${dateFilter}_${new Date().toISOString().split('T')[0]}`);
+  };
 
-    const headers = [
-      'Tipo',
-      'Cliente/Donante',
-      'Correo',
-      'Monto ($ USD)',
-      'Categoría',
-      'Método de Pago',
-      'Estado',
-      'Fecha'
-    ];
-
-    const rows = filteredTransactions.map(t => [
-      t.type === 'donation' ? 'Donación' : 'Venta de Tienda',
-      t.name,
-      t.email || '',
-      t.amount.toFixed(2),
-      t.category,
-      t.paymentMethod === 'card' ? 'Tarjeta' : t.paymentMethod === 'transfer' ? 'Transferencia' : t.paymentMethod === 'cash' ? 'Efectivo' : t.paymentMethod,
-      t.status === 'completed' ? 'Completado' : t.status === 'pending' ? 'Pendiente' : 'Fallido',
-      new Date(t.date).toLocaleDateString('es-ES')
-    ]);
-
-    const csvContent = [
-      headers.join(';'),
-      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
-    ].join('\n');
-
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `finanzas_iglesia_${dateFilter}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Historial de transacciones exportado con éxito.');
+  const exportPDF = () => {
+    if (filteredTransactions.length === 0) {
+      toast.error('No hay transacciones para exportar.');
+      return;
+    }
+    const data = prepareExportData();
+    const headers = Object.keys(data[0]);
+    const rows = data.map(obj => Object.values(obj));
+    exportToPDF('Libro Diario de Transacciones', headers, rows, `finanzas_iglesia_${dateFilter}_${new Date().toISOString().split('T')[0]}`);
   };
 
   return (
@@ -802,7 +791,7 @@ const FinanceDashboard = () => {
                       <div key={idx} className="py-2.5 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
                           {prod.imageUrl ? (
-                            <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
+                            <img loading="lazy" src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
                           ) : (
                             <ShoppingBag className="text-gray-400 dark:text-gray-500" size={16} />
                           )}
@@ -883,15 +872,26 @@ const FinanceDashboard = () => {
                 </h3>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5">Donaciones y ventas registradas en Supabase.</p>
               </div>
-              <button
-                type="button"
-                onClick={exportToCSV}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer w-full sm:w-auto justify-center"
-                title="Exportar transacciones a CSV"
-              >
-                <Download size={14} />
-                Exportar Libro Diario (CSV)
-              </button>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={exportExcel}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer flex-1 sm:flex-none justify-center"
+                  title="Exportar a Excel"
+                >
+                  <Download size={14} />
+                  Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={exportPDF}
+                  className="bg-red-600 hover:bg-red-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer flex-1 sm:flex-none justify-center"
+                  title="Exportar a PDF"
+                >
+                  <FileText size={14} />
+                  PDF
+                </button>
+              </div>
             </div>
 
             {filteredTransactions.length > 0 ? (
@@ -909,7 +909,7 @@ const FinanceDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-white/10 text-sm text-gray-700 dark:text-gray-300">
-                    {filteredTransactions.slice(0, 50).map((tx) => (
+                    {filteredTransactions.slice(0, visibleCount).map((tx) => (
                       <tr key={tx.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-4 px-6">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
@@ -960,6 +960,16 @@ const FinanceDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+                {visibleCount < filteredTransactions.length && (
+                  <div className="p-4 border-t border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-900/50 flex justify-center">
+                    <button
+                      onClick={() => setVisibleCount(prev => prev + 50)}
+                      className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      Cargar más transacciones
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-450 text-sm italic">

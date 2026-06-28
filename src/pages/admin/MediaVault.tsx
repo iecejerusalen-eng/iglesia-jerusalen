@@ -252,7 +252,7 @@ const MediaVault = () => {
                 {/* Preview window */}
                 <div className="h-36 bg-slate-950 flex items-center justify-center relative group overflow-hidden border-b border-gray-100 dark:border-white/5">
                   {file.previewUrl ? (
-                    <img
+                    <img loading="lazy"
                       src={file.previewUrl}
                       alt={file.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

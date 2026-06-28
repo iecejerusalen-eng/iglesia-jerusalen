@@ -86,7 +86,7 @@ const Footer = () => {
           <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="inline-block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-lg p-1">
               <div className="flex items-center justify-center md:justify-start gap-3">
-                <img src={soloLogoColorido} alt="Logo" className="h-10 w-auto" />
+                <img loading="lazy" src={soloLogoColorido} alt="Logo" className="h-10 w-auto" />
                 <div className="text-left">
                   <span className="font-serif text-2xl font-bold text-white tracking-tight group-hover:text-gold transition-colors block leading-tight">
                     Jerusalén

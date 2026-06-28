@@ -3,26 +3,35 @@ import { supabase } from '../../config/supabase';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const contactSchema = z.object({
+  name: z.string().min(1, 'El nombre es requerido'),
+  email: z.string().email('Correo electrónico inválido').min(1, 'El correo es requerido'),
+  subject: z.string().min(1, 'El asunto es requerido'),
+  message: z.string().min(1, 'El mensaje es requerido'),
+});
+
+type ContactFormValues = z.infer<typeof contactSchema>;
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: 'Consulta General',
-    message: '',
-  });
-
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      subject: 'Consulta General',
+      message: '',
+    }
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: ContactFormValues) => {
     setLoading(true);
     setError(null);
 
@@ -50,15 +59,17 @@ const Contact = () => {
       const { error: insertError } = await supabase
         .from('contact_messages')
         .insert({
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject,
-          message: formData.message,
+          name: data.name,
+          email: data.email,
+          subject: data.subject,
+          message: data.message,
           status: 'unread',
         });
 
       if (insertError) throw insertError;
+      
       setSuccess(true);
+      reset();
     } catch (err: any) {
       console.error('Error enviando mensaje a Supabase:', err);
       if (err.context?.status === 429 || err.message?.includes('429')) {
@@ -240,7 +251,7 @@ const Contact = () => {
             </MagneticButton>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 space-y-6 shadow-xs">
+          <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 space-y-6 shadow-xs">
             <div className="space-y-1">
               <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-white">
                 Escríbenos tu Mensaje
@@ -254,28 +265,24 @@ const Contact = () => {
                 <input
                   id="name"
                   type="text"
-                  required
-                  name="name"
                   autoComplete="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
+                  {...register('name')}
                   className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
                   placeholder="Ej. Ana de Castro"
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
               </div>
               <div>
                 <label htmlFor="email" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tu Correo</label>
                 <input
                   id="email"
                   type="email"
-                  required
-                  name="email"
                   autoComplete="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  {...register('email')}
                   className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
                   placeholder="Ej. ana@correo.com"
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
             </div>
 
@@ -283,9 +290,7 @@ const Contact = () => {
               <label htmlFor="subject" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-medium">Asunto</label>
               <select
                 id="subject"
-                name="subject"
-                value={formData.subject}
-                onChange={handleInputChange}
+                {...register('subject')}
                 className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white dark:bg-slate-900"
               >
                 <option value="Consulta General">Consulta General</option>
@@ -294,20 +299,19 @@ const Contact = () => {
                 <option value="Tienda / Pedidos">Pregunta sobre Tienda / Pedidos</option>
                 <option value="Voluntariado / Servicio">Deseo Servir en Ministerios</option>
               </select>
+              {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
             </div>
 
             <div>
               <label htmlFor="message" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-medium">Mensaje</label>
               <textarea
                 id="message"
-                required
-                name="message"
                 rows={5}
-                value={formData.message}
-                onChange={handleInputChange}
+                {...register('message')}
                 className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
                 placeholder="Escribe aquí tu petición de oración, consulta o mensaje..."
               />
+              {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
             </div>
 
             {error && (

@@ -591,7 +591,7 @@ export default function MiGrillaAnimeJS() {
                           transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
                         }}
                       >
-                        <img 
+                        <img loading="lazy" 
                           src="https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=800&q=80" 
                           alt="Paralaje Simulada"
                           className="w-full h-full object-cover"

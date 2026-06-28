@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
 import { Search, Calendar, User, Video, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
@@ -157,7 +158,7 @@ const Sermons = () => {
                   {sermon.content && sermon.content.trim().startsWith('[') ? (
                     <p>{sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.'}</p>
                   ) : (
-                    <div dangerouslySetInnerHTML={{ __html: sermon.content || '' }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(sermon.content || '') }} />
                   )}
                 </div>
 

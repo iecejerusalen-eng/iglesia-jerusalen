@@ -85,9 +85,45 @@ export default function PluginManager() {
     }
   };
 
+  const getPluginTemplate = (pluginName: string, currentSettings: any) => {
+    let base: any = { enabled: true, debug: false };
+    if (currentSettings && typeof currentSettings === 'object' && Object.keys(currentSettings).length > 0) {
+      base = { ...currentSettings };
+    }
+
+    switch(pluginName) {
+      case 'Filtro de Contenido Ofensivo':
+        if (!('words' in base)) base.words = ['ejemplo1', 'ejemplo2'];
+        if (!('replacement' in base)) base.replacement = '***';
+        break;
+      case 'Cuestionarios Interactivos':
+        if (!('timeLimit' in base)) base.timeLimit = 30;
+        if (!('passingScore' in base)) base.passingScore = 70;
+        break;
+      case 'Bloque de Lectura Diaria':
+        if (!('planId' in base)) base.planId = 'default_plan';
+        if (!('showProgress' in base)) base.showProgress = true;
+        break;
+      case 'Tema Metalizado Oro':
+        if (!('primaryColor' in base)) base.primaryColor = '#d4af37';
+        if (!('borderRadius' in base)) base.borderRadius = '8px';
+        break;
+      case 'Foros de Discusión':
+        if (!('allowAnonymous' in base)) base.allowAnonymous = false;
+        if (!('requireApproval' in base)) base.requireApproval = true;
+        break;
+      case 'Módulo de Tareas':
+        if (!('maxFileSizeMB' in base)) base.maxFileSizeMB = 10;
+        if (!('allowedTypes' in base)) base.allowedTypes = ['.pdf', '.doc', '.docx'];
+        break;
+    }
+    return base;
+  };
+
   const handleOpenSettings = (plugin: PluginItem) => {
     setSelectedPlugin(plugin);
-    setCustomSettings(JSON.stringify(plugin.settings, null, 2));
+    const templateSettings = getPluginTemplate(plugin.name, plugin.settings);
+    setCustomSettings(JSON.stringify(templateSettings, null, 2));
     setIsSettingsOpen(true);
   };
 

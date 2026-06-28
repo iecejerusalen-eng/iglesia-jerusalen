@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
+import { useChats, useChatMessages, useChatMutations, useChatRetentionDays, useChatRealtime } from '../../features/chat/hooks';
 import {
   Bell,
   MessageSquare,
@@ -35,19 +36,14 @@ const getRoleLabel = (role: string) => {
 
 export default function NotificationTray() {
   const { user, role, ministryId } = useAuthStore();
-  const {
-    chats,
-    activeChat,
-    messages,
-    loadingChats,
-    loadingMessages,
-    retentionDays,
-    fetchChats,
-    setActiveChat,
-    sendMessage,
-    subscribeToRealtime,
-    unsubscribeFromRealtime
-  } = useChatStore();
+  const { activeChat, setActiveChat } = useChatStore();
+
+  const { data: chats = [], isLoading: loadingChats, refetch: fetchChats } = useChats();
+  const { data: messages = [], isLoading: loadingMessages } = useChatMessages(activeChat?.id);
+  const { data: retentionDays = 7 } = useChatRetentionDays();
+  const { sendMessage } = useChatMutations();
+  
+  useChatRealtime(activeChat?.id || null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'announcements'>('chats');
@@ -89,12 +85,8 @@ export default function NotificationTray() {
   useEffect(() => {
     if (user) {
       fetchChats();
-      subscribeToRealtime();
     }
-    return () => {
-      unsubscribeFromRealtime();
-    };
-  }, [user]);
+  }, [user, fetchChats]);
 
   // Fetch announcements when tray is opened or when activeTab changes to announcements
   useEffect(() => {
@@ -198,7 +190,7 @@ export default function NotificationTray() {
 
     setSending(true);
     try {
-      await sendMessage(activeChat.id, replyText.trim());
+      await sendMessage.mutateAsync({ chatId: activeChat.id, content: replyText.trim() });
       setReplyText('');
       setShowEmojis(false);
       
@@ -382,7 +374,7 @@ export default function NotificationTray() {
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
-                            <img
+                            <img loading="lazy"
                               src={otherParticipant.photo_url}
                               alt={chatName}
                               className="w-full h-full object-cover"
@@ -519,7 +511,7 @@ export default function NotificationTray() {
                     <>
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden relative shadow-inner">
                         {otherParticipant?.photo_url ? (
-                          <img
+                          <img loading="lazy"
                             src={otherParticipant.photo_url}
                             alt={chatName}
                             className="w-full h-full object-cover"

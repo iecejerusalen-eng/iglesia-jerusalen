@@ -274,7 +274,7 @@ export default function Birthdays() {
                         title={`${item.member.first_name} ${item.member.last_name} (Cumple ${item.age} años)`}
                       >
                         {item.member.photo_url ? (
-                          <img
+                          <img loading="lazy"
                             src={item.member.photo_url}
                             alt={item.member.first_name}
                             className="w-full h-full object-cover"
@@ -471,7 +471,7 @@ export default function Birthdays() {
                         : 'bg-primary/10 text-primary dark:text-gold border-gray-100 dark:border-white/5'
                     }`}>
                       {item.member.photo_url ? (
-                        <img
+                        <img loading="lazy"
                           src={item.member.photo_url}
                           alt={item.member.first_name}
                           className="w-full h-full object-cover"
@@ -580,7 +580,7 @@ export default function Birthdays() {
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-xs border border-gray-100 dark:border-white/5 shrink-0 overflow-hidden relative shadow-inner">
                               {item.member.photo_url ? (
-                                <img
+                                <img loading="lazy"
                                   src={item.member.photo_url}
                                   alt={item.member.first_name}
                                   className="w-full h-full object-cover"

@@ -69,6 +69,8 @@ export interface Product {
   stock: number;
   category: string;
   type?: ProductType;
+  ecommerce_product_type?: 'physical' | 'digital';
+  digital_file_url?: string | null;
   features?: any; // JSONB array of features/specs
   cover_image_url?: string | null;
   deleted_at?: string | null;
@@ -98,15 +100,25 @@ export interface Donation {
   donation_categories?: DonationCategory | null;
 }
 
+export type EcommercePaymentMethod = 'payphone' | 'de_una' | 'transfer' | string;
+export type EcommercePaymentStatus = 'pending' | 'paid' | 'verifying' | 'failed' | string;
+export type EcommerceFulfillmentStatus = 'unfulfilled' | 'processing' | 'shipped' | 'delivered' | string;
+
 export interface Order {
   id: string;
   user_id: string | null;
   customer_name: string;
   customer_email: string;
+  subtotal?: number;
+  payment_fee?: number;
   total: number;
   status: OrderStatus;
   payment_method?: string;
   payment_voucher_url?: string | null;
+  ecommerce_payment_method?: EcommercePaymentMethod;
+  ecommerce_payment_status?: EcommercePaymentStatus;
+  ecommerce_fulfillment_status?: EcommerceFulfillmentStatus;
+  payment_receipt_url?: string | null;
   refund_status?: string;
   refunded_amount?: number;
   refund_reason?: string | null;
@@ -705,3 +717,38 @@ export interface Study {
   updated_at: string;
 }
 
+export interface StorePaymentMethod {
+  id: string;
+  name: string;
+  active: boolean;
+  fee_percent: number;
+}
+
+export interface StoreShippingMethod {
+  id: string;
+  name: string;
+  active: boolean;
+  base_cost: number;
+  description?: string;
+}
+
+export interface ChurchSettings {
+  id: number;
+  phone?: string;
+  email?: string;
+  address?: string;
+  google_maps_url?: string;
+  bank_name?: string;
+  bank_account?: string;
+  ruc?: string;
+  facebook_url?: string;
+  instagram_url?: string;
+  youtube_url?: string;
+  chat_retention_days?: number;
+  payphone_fee_percent?: number;
+  de_una_fee_percent?: number;
+  payment_methods?: StorePaymentMethod[];
+  shipping_methods?: StoreShippingMethod[];
+  created_at?: string;
+  updated_at?: string;
+}

@@ -608,7 +608,7 @@ const UsersManager = () => {
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                               profile.permissions_override
                                 ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'
+                                : 'bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
                             }`}
                           >
                             <Sliders size={12} />
@@ -1027,7 +1027,7 @@ const UsersManager = () => {
                 </p>
 
                 {/* Search Bar */}
-                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-gray-250 rounded-xl px-3 py-2 shadow-2xs flex-shrink-0">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 shadow-2xs flex-shrink-0">
                   <Search size={16} className="text-gray-400" />
                   <input
                     type="text"

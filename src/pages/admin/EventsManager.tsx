@@ -230,10 +230,11 @@ const EventsManager = () => {
         toast.success('Evento creado con éxito.');
       }
 
-      // Limpieza inteligente y automática de eventos antiguos (anteriores al año pasado) para ahorrar espacio
-      const currentYear = new Date().getFullYear();
-      const cutoffDate = `${currentYear - 1}-01-01`;
-      const { error: cleanupError } = await supabase.from('events').delete().lt('start_date', cutoffDate);
+      // Limpieza inteligente y automática de eventos antiguos (anteriores a 2 años) para ahorrar espacio
+      const cutoffDate = new Date();
+      cutoffDate.setFullYear(cutoffDate.getFullYear() - 2);
+      const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+      const { error: cleanupError } = await supabase.from('events').delete().lt('start_date', cutoffDateStr);
       if (cleanupError) {
         console.error('Error en limpieza automática:', cleanupError);
       } else {
@@ -386,7 +387,7 @@ const EventsManager = () => {
 
                     {coverImagePreview ? (
                       <div className="relative w-28 h-20 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-100 flex-shrink-0">
-                        <img src={coverImagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                        <img loading="lazy" src={coverImagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => {
@@ -626,7 +627,7 @@ const EventsManager = () => {
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               {event.cover_image_url ? (
-                                <img
+                                <img loading="lazy"
                                   src={event.cover_image_url}
                                   alt={event.title}
                                   className="w-12 h-10 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"

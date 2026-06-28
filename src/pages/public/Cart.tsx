@@ -294,7 +294,7 @@ const Cart = () => {
                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-5 first:pt-0 last:pb-0"
                       >
                         <div className="flex items-center gap-4">
-                          <img
+                          <img loading="lazy"
                             src={item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'}
                             alt={item.product.name}
                             className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-white/10 shadow-2xs"
@@ -678,7 +678,7 @@ const Cart = () => {
                         
                         {voucherUrl && (
                           <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-2xs relative shrink-0">
-                            <img src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />
+                            <img loading="lazy" src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>

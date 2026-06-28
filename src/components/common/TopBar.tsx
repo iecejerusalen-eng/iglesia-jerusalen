@@ -119,7 +119,7 @@ const TopBar = () => {
                 }`}
               >
                 {photoUrl ? (
-                  <img
+                  <img loading="lazy"
                     src={photoUrl}
                     alt="Perfil"
                     className="w-6 h-6 rounded-full object-cover border border-gray-250"
@@ -160,7 +160,7 @@ const TopBar = () => {
                       isTransparent ? 'border-white/10' : 'border-gray-150 dark:border-white/10'
                     }`}>
                       {photoUrl ? (
-                        <img
+                        <img loading="lazy"
                           src={photoUrl}
                           alt="Avatar"
                           className="w-12 h-12 rounded-full object-cover border-2 border-gold/40"

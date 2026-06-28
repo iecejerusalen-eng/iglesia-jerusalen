@@ -617,7 +617,7 @@ export default function MediaSearchModal({
                       </div>
                       {!imagePreviewError ? (
                         <div className="max-w-xs h-36 rounded-xl overflow-hidden border border-gray-200 bg-white flex items-center justify-center p-1 relative">
-                          <img
+                          <img loading="lazy"
                             src={pastedUrl}
                             alt="Preview"
                             className="max-w-full max-h-full object-contain"
@@ -734,7 +734,7 @@ export default function MediaSearchModal({
                     <div className="bg-blue-50/50 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-14 h-14 rounded-xl border border-gray-200 overflow-hidden bg-white shrink-0">
-                          <img
+                          <img loading="lazy"
                             src={selectedStockImage.thumbnail || selectedStockImage.url}
                             alt=""
                             className="w-full h-full object-cover"

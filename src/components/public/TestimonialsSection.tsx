@@ -138,7 +138,7 @@ export default function TestimonialsSection() {
             {/* Avatar and Identity */}
             <div className="flex flex-col items-center gap-2 pt-6 mt-8 border-t border-slate-250 dark:border-white/5 w-full max-w-xs relative z-10">
               {active.avatarUrl ? (
-                <img
+                <img loading="lazy"
                   src={active.avatarUrl}
                   alt={active.name}
                   className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40"

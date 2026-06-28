@@ -361,7 +361,7 @@ const Events = () => {
                                     className="text-[10px] font-bold px-2 py-0.5 rounded-md truncate cursor-pointer hover:opacity-90 transition-all flex items-center gap-1.5 border border-transparent shadow-2xs focus-visible:ring-1 focus-visible:ring-white focus-visible:outline-none"
                                   >
                                     {logoUrl ? (
-                                      <img src={logoUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/90" />
+                                      <img loading="lazy" src={logoUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/90" />
                                     ) : (
                                       event.emoji && <span>{event.emoji}</span>
                                     )}
@@ -430,7 +430,7 @@ const Events = () => {
                                   >
                                     <h4 className="text-xs font-bold line-clamp-1 flex items-center gap-1.5 text-white">
                                       {logoUrl ? (
-                                        <img src={logoUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/80" />
+                                        <img loading="lazy" src={logoUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/80" />
                                       ) : (
                                         event.emoji && <span>{event.emoji}</span>
                                       )}
@@ -484,13 +484,13 @@ const Events = () => {
                           >
                             {event.cover_image_url && (
                               <div className="w-full md:w-32 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100 dark:border-white/5">
-                                <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
+                                <img loading="lazy" src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
                               </div>
                             )}
                             <div className="space-y-2 flex-grow">
                               <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-gray-100 flex items-center gap-2">
                                 {getLogoUrl(event) ? (
-                                  <img src={getLogoUrl(event)!} alt="" className="w-5 h-5 rounded-full object-cover bg-gray-50 dark:bg-slate-950" />
+                                  <img loading="lazy" src={getLogoUrl(event)!} alt="" className="w-5 h-5 rounded-full object-cover bg-gray-50 dark:bg-slate-950" />
                                 ) : (
                                   event.emoji && <span className="text-xl">{event.emoji}</span>
                                 )}
@@ -624,7 +624,7 @@ const Events = () => {
           <div className="border-b border-gray-100 dark:border-white/5 pb-1.5">
             <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Actividad</span>
             {hoveredEvent.cover_image_url && (
-              <img src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100 dark:border-white/5" />
+              <img loading="lazy" src={hoveredEvent.cover_image_url} alt="" className="w-full h-24 rounded-lg object-cover mt-1.5 border border-gray-100 dark:border-white/5" />
             )}
             <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mt-1.5 flex items-center gap-1.5">
               {hoveredEvent.emoji && <span className="text-base">{hoveredEvent.emoji}</span>}
@@ -687,7 +687,7 @@ const Events = () => {
                 {/* Banner */}
                 {selectedEvent.cover_image_url ? (
                   <div className="relative w-full h-48 md:h-52 overflow-hidden flex-shrink-0">
-                    <img src={selectedEvent.cover_image_url} alt={selectedEvent.title} className="w-full h-full object-cover" />
+                    <img loading="lazy" src={selectedEvent.cover_image_url} alt={selectedEvent.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                     <div className="absolute bottom-4 left-6 right-6 text-white text-left">
                       <span
@@ -695,13 +695,13 @@ const Events = () => {
                         className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 shadow-xs"
                       >
                         {getLogoUrl(selectedEvent) && (
-                          <img src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
+                          <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
                         )}
                         {selectedEvent.ministries?.name || 'General'}
                       </span>
                       <h2 className="text-xl md:text-2xl font-serif font-bold mt-1.5 flex items-center gap-2">
                         {getLogoUrl(selectedEvent) ? (
-                          <img src={getLogoUrl(selectedEvent)!} alt="" className="w-6 h-6 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
+                          <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-6 h-6 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
                         ) : (
                           selectedEvent.emoji && <span className="text-2xl">{selectedEvent.emoji}</span>
                         )}
@@ -716,13 +716,13 @@ const Events = () => {
                       className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 shadow-xs"
                     >
                       {getLogoUrl(selectedEvent) && (
-                        <img src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
+                        <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
                       )}
                       {selectedEvent.ministries?.name || 'General'}
                     </span>
                     <h2 className="text-xl md:text-2xl font-serif font-bold mt-1.5 flex items-center gap-2">
                       {getLogoUrl(selectedEvent) ? (
-                        <img src={getLogoUrl(selectedEvent)!} alt="" className="w-6 h-6 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
+                        <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-6 h-6 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
                       ) : (
                         selectedEvent.emoji && <span className="text-2xl">{selectedEvent.emoji}</span>
                       )}
@@ -823,7 +823,7 @@ const Events = () => {
 
                   {selectedEvent.cover_image_url ? (
                     <div className="w-full h-48 md:h-56 overflow-hidden">
-                      <img src={selectedEvent.cover_image_url} alt={selectedEvent.title} className="w-full h-full object-cover" />
+                      <img loading="lazy" src={selectedEvent.cover_image_url} alt={selectedEvent.title} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                       <div className="absolute bottom-4 left-6 right-6 text-white">
                         <span
@@ -831,13 +831,13 @@ const Events = () => {
                           className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 shadow-xs"
                         >
                           {getLogoUrl(selectedEvent) && (
-                            <img src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
+                            <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
                           )}
                           {selectedEvent.ministries?.name || 'General'}
                         </span>
                         <h2 className="text-lg md:text-xl font-serif font-bold mt-1 flex items-center gap-2">
                           {getLogoUrl(selectedEvent) ? (
-                            <img src={getLogoUrl(selectedEvent)!} alt="" className="w-5 h-5 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
+                            <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-5 h-5 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
                           ) : (
                             selectedEvent.emoji && <span className="text-xl">{selectedEvent.emoji}</span>
                           )}
@@ -852,13 +852,13 @@ const Events = () => {
                         className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 shadow-xs"
                       >
                         {getLogoUrl(selectedEvent) && (
-                          <img src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
+                          <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-3.5 h-3.5 rounded-full object-cover bg-white dark:bg-slate-900/95" />
                         )}
                         {selectedEvent.ministries?.name || 'General'}
                       </span>
                       <h2 className="text-lg md:text-xl font-serif font-bold mt-1 flex items-center gap-2">
                         {getLogoUrl(selectedEvent) ? (
-                          <img src={getLogoUrl(selectedEvent)!} alt="" className="w-5 h-5 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
+                          <img loading="lazy" src={getLogoUrl(selectedEvent)!} alt="" className="w-5 h-5 rounded-full object-cover bg-white dark:bg-slate-900 shadow-sm" />
                         ) : (
                           selectedEvent.emoji && <span className="text-xl">{selectedEvent.emoji}</span>
                         )}

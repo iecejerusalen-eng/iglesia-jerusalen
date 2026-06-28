@@ -181,7 +181,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                         displayImage === imgUrl ? 'border-primary dark:border-blue-500 scale-95 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'
                       }`}
                     >
-                      <img src={imgUrl} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img loading="lazy" src={imgUrl} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -423,7 +423,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="w-full h-full flex items-center justify-center p-4 sm:p-12 cursor-zoom-out"
             >
-              <img
+              <img loading="lazy"
                 src={displayImage}
                 alt={product.name}
                 className="max-w-full max-h-full object-contain shadow-2xl drop-shadow-2xl"

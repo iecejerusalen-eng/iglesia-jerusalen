@@ -1,24 +1,24 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import { LogOut, X, Globe, ChevronRight, Search } from 'lucide-react';
+import { useThemeStore } from '../../store/useThemeStore';
+import { X, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
-import ThemeToggle from '../common/ThemeToggle';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  searchQuery?: string;
 }
 
-const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const { user, userRole, firstName, lastName, logout } = useAuthStore();
+const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
+  const { user, userRole, firstName, lastName } = useAuthStore();
+  const { sidebarViewMode, sidebarAccordionMode, sidebarMenuMode, sidebarDefaultClosed, sidebarGridColumns, sidebarGridSort, sidebarCustomOrder } = useThemeStore();
   const { hasPermission } = usePermissions();
-  const navigate = useNavigate();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const prevPathRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -30,11 +30,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    onClose();
-    navigate('/login');
-  };
+
 
   // Filter items visible to the current user's permissions
   const visibleNavItems = useMemo(() => {
@@ -72,6 +68,33 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     }).filter(group => group.items.length > 0);
   }, [visibleNavItems]);
 
+  // Sorted items for Grid mode
+  const gridItems = useMemo(() => {
+    if (sidebarMenuMode !== 'grid') return [];
+    const items = [...visibleNavItems];
+    
+    if (sidebarGridSort === 'name') {
+      return items.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sidebarGridSort === 'category') {
+      return items.sort((a, b) => {
+        const groupComparison = a.group.localeCompare(b.group);
+        if (groupComparison !== 0) return groupComparison;
+        return a.name.localeCompare(b.name);
+      });
+    } else if (sidebarGridSort === 'custom' && sidebarCustomOrder && sidebarCustomOrder.length > 0) {
+      return items.sort((a, b) => {
+        const indexA = sidebarCustomOrder.indexOf(a.id);
+        const indexB = sidebarCustomOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
+    
+    return items;
+  }, [visibleNavItems, sidebarMenuMode, sidebarGridSort, sidebarCustomOrder]);
+
   // Expanded groups state (persisted in localStorage)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     try {
@@ -96,28 +119,55 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     if (activeItem) {
       setExpandedGroups(prev => {
         if (prev[activeItem.group]) return prev;
-        const next = { ...prev, [activeItem.group]: true };
+        
+        // Si sidebarDefaultClosed está activo y es el montaje inicial (prev está vacío), NO expandimos
+        if (sidebarDefaultClosed && Object.keys(prev).length === 0) {
+          return prev;
+        }
+
+        let next = { ...prev };
+        
+        // Si es acordeón único, cerramos los demás
+        if (sidebarAccordionMode === 'single') {
+          next = { [activeItem.group]: true };
+        } else {
+          next[activeItem.group] = true;
+        }
+        
         localStorage.setItem('admin_sidebar_expanded', JSON.stringify(next));
         return next;
       });
     }
-  }, [location.pathname]);
+  }, [location.pathname, sidebarAccordionMode, sidebarDefaultClosed]);
 
   const toggleGroup = (groupKey: string) => {
     setExpandedGroups(prev => {
-      const next = { ...prev, [groupKey]: !prev[groupKey] };
+      let next;
+      if (sidebarAccordionMode === 'single') {
+        // Si ya está abierto, lo cerramos; si está cerrado, lo abrimos y cerramos los demás.
+        next = prev[groupKey] ? {} : { [groupKey]: true };
+      } else {
+        next = { ...prev, [groupKey]: !prev[groupKey] };
+      }
       localStorage.setItem('admin_sidebar_expanded', JSON.stringify(next));
       return next;
     });
   };
 
+  const isCollapsed = !isMobile && sidebarViewMode === 'compact';
+  const isFloating = !isMobile && sidebarViewMode === 'floating';
+  const isDrawer = !isMobile && sidebarViewMode === 'drawer';
+  
+  const sidebarWidthClass = isCollapsed ? 'w-20' : 'w-64';
+
   const sidebarContent = (
-    <div className="w-64 bg-primary dark:bg-slate-950 border-r border-transparent dark:border-white/5 text-white h-screen flex flex-col shadow-xl transition-colors duration-500">
+    <div className={`${sidebarWidthClass} bg-primary dark:bg-slate-950 border-r border-transparent dark:border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-screen'} flex flex-col shadow-xl transition-all duration-500`}>
       {/* Sidebar Header */}
-      <div className="p-5 border-b border-white/10 flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-3">
-          <img src={soloLogoColorido} alt="Logo" className="h-10 w-auto flex-shrink-0" />
-          <div className="min-w-0">
+      <div className={`p-5 border-b border-white/10 flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center shrink-0 transition-all duration-500`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+          <img loading="lazy" src={soloLogoColorido} alt="Logo" className="h-10 w-auto flex-shrink-0" />
+          {!isCollapsed && (
+            <div className="min-w-0 animate-fade-in">
             <h2 className="font-serif text-lg font-bold tracking-wide">Panel Admin</h2>
             <div className="mt-1 text-sm text-gray-300">
               <p 
@@ -130,9 +180,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 {userRole || 'Cargando...'}
               </p>
             </div>
-          </div>
+            </div>
+          )}
         </div>
-        {isMobile && (
+        {!isCollapsed && isMobile && (
           <button 
             onClick={onClose}
             className="p-2 rounded hover:bg-white/10 transition-colors cursor-pointer"
@@ -141,28 +192,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <X size={20} />
           </button>
         )}
-      </div>
-
-      {/* Modern Search Bar */}
-      <div className="px-4 py-3 border-b border-white/5 shrink-0 bg-primary/30 dark:bg-slate-950/40">
-        <div className="relative flex items-center bg-white/5 hover:bg-white/10 focus-within:bg-white/10 rounded-xl border border-white/10 focus-within:border-gold/50 px-3 py-2.5 transition-all duration-300">
-          <Search size={16} className="text-gray-300 mr-2 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar herramienta... (Ctrl + K)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs bg-transparent focus:outline-none text-white placeholder-gray-400 font-semibold"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="p-1 rounded-full hover:bg-white/10 text-gray-300 hover:text-white shrink-0 cursor-pointer"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
       </div>
       
       {/* Navigation Links */}
@@ -205,10 +234,101 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               </div>
             )}
           </div>
+        ) : isCollapsed ? (
+          /* Collapsed View Mode (Icons Only) */
+          <div className="space-y-4 pb-4 animate-fade-in pt-2">
+            {groupedItems.map(group => (
+              <div key={group.key} className="space-y-2">
+                <div className="flex justify-center border-b border-white/5 pb-2">
+                   <span className="text-[10px] text-gray-500" title={group.label}>
+                     <group.icon size={16} />
+                   </span>
+                </div>
+                <div className="space-y-1">
+                  {group.items.map(item => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.path === '/admin'}
+                      title={item.name}
+                      onClick={() => { if (isMobile) onClose(); }}
+                      className={({ isActive }) => 
+                        `flex justify-center p-3 rounded-xl mx-2 transition-all duration-200 border-l-2 ${
+                          isActive 
+                            ? 'bg-white/10 dark:bg-slate-900 border-gold text-white font-bold shadow-inner' 
+                            : 'hover:bg-white/5 border-transparent text-gray-300 hover:text-white'
+                        }`
+                      }
+                    >
+                      <item.icon size={20} className={location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 'text-gold' : 'text-gray-400'} />
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : sidebarMenuMode === 'cards_ungrouped' ? (
+          /* Ungrouped Cards View */
+          <div className="space-y-2">
+            {filteredNavItems.map((item) => (
+              <NavLink 
+                key={item.path}
+                to={item.path} 
+                end={item.path === '/admin'}
+                onClick={() => {
+                  if (isMobile) onClose();
+                }}
+                className={({ isActive }) => 
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border border-transparent ${
+                    isActive 
+                      ? 'bg-white/10 dark:bg-slate-900 border-gold/30 text-white font-bold shadow-inner' 
+                      : 'bg-white/5 dark:bg-slate-900/30 hover:bg-white/10 dark:hover:bg-slate-900/60 hover:border-gold/20 text-gray-300 hover:text-white'
+                  }`
+                }
+              >
+                <div className={`p-1.5 rounded-lg ${location.pathname === item.path ? 'bg-gold text-white' : 'bg-transparent text-gold'}`}>
+                  <item.icon size={18} className="shrink-0" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold">{item.name}</span>
+                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block truncate">
+                    {groupLabelMap[item.group]}
+                  </span>
+                </div>
+              </NavLink>
+            ))}
+          </div>
+        ) : sidebarMenuMode === 'grid' ? (
+          /* Grid View */
+          <div 
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${sidebarGridColumns || 3}, minmax(0, 1fr))` }}
+          >
+            {gridItems.map((item) => (
+              <NavLink 
+                key={item.path}
+                to={item.path} 
+                end={item.path === '/admin'}
+                onClick={() => {
+                  if (isMobile) onClose();
+                }}
+                className={({ isActive }) => 
+                  `flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all duration-200 border border-transparent text-center aspect-square ${
+                    isActive 
+                      ? 'bg-white/10 dark:bg-slate-900 border-gold/30 text-white font-bold shadow-inner' 
+                      : 'bg-white/5 dark:bg-slate-900/30 hover:bg-white/10 dark:hover:bg-slate-900/60 hover:border-gold/20 text-gray-300 hover:text-white'
+                  }`
+                }
+              >
+                <item.icon size={20} className={`shrink-0 ${location.pathname === item.path ? 'text-gold' : 'text-gray-400'}`} />
+                <span className="text-[10px] font-semibold leading-tight line-clamp-2">{item.name}</span>
+              </NavLink>
+            ))}
+          </div>
         ) : (
-          /* Standard Grouped Collapsible Accordions view */
+          /* Standard Grouped Collapsible Accordions or Grouped Cards view */
           groupedItems.map((group) => {
-            const isExpanded = !!expandedGroups[group.key];
+            const isExpanded = sidebarAccordionMode === 'all_open' || !!expandedGroups[group.key];
             
             // Check if any sub-item in this group is active
             const hasActiveChild = group.items.some(item => {
@@ -217,14 +337,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             });
 
             return (
-              <div key={group.key} className="space-y-0.5 bg-white/2 dark:bg-slate-950/20 rounded-xl overflow-hidden">
+              <div key={group.key} className={`space-y-0.5 overflow-hidden ${sidebarMenuMode === 'cards_grouped' ? 'mb-4 bg-white/5 p-2' : 'bg-white/2 dark:bg-slate-950/20'} rounded-xl`}>
                 {/* Group Accordion Header */}
                 <button
-                  onClick={() => toggleGroup(group.key)}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-300 text-left cursor-pointer border ${
+                  onClick={() => sidebarAccordionMode !== 'all_open' && toggleGroup(group.key)}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-300 text-left ${sidebarAccordionMode !== 'all_open' ? 'cursor-pointer' : 'cursor-default'} border ${
                     hasActiveChild 
                       ? 'bg-white/5 border-white/10 dark:border-white/5 text-white font-bold' 
-                      : 'hover:bg-white/5 border-transparent text-gray-300 hover:text-white'
+                      : sidebarAccordionMode !== 'all_open' ? 'hover:bg-white/5 border-transparent text-gray-300 hover:text-white' : 'border-transparent text-gray-300'
                   }`}
                   style={{ minHeight: '44px' }} // mobile friendly tap size
                 >
@@ -232,24 +352,26 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     <group.icon size={18} className={`shrink-0 ${hasActiveChild ? 'text-gold' : 'text-gray-400'}`} />
                     <span className="text-xs font-bold truncate tracking-wide">{group.label}</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] bg-white/10 text-gray-300 font-extrabold px-1.5 py-0.5 rounded-full select-none">
-                      {group.items.length}
-                    </span>
-                    <ChevronRight 
-                      size={14} 
-                      className={`text-gray-400 shrink-0 transition-transform duration-300 ${
-                        isExpanded ? 'rotate-90 text-gold' : 'rotate-0'
-                      }`} 
-                    />
-                  </div>
+                  {sidebarAccordionMode !== 'all_open' && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9px] bg-white/10 text-gray-300 font-extrabold px-1.5 py-0.5 rounded-full select-none">
+                        {group.items.length}
+                      </span>
+                      <ChevronRight 
+                        size={14} 
+                        className={`text-gray-400 shrink-0 transition-transform duration-300 ${
+                          isExpanded ? 'rotate-90 text-gold' : 'rotate-0'
+                        }`} 
+                      />
+                    </div>
+                  )}
                 </button>
 
                 {/* Collapsible Sub-items Container */}
                 <div 
                   className={`overflow-hidden transition-all duration-300 ease-in-out pl-4 ${
                     isExpanded 
-                      ? 'max-h-[500px] opacity-100 py-1 space-y-1' 
+                      ? 'max-h-[800px] opacity-100 py-1 space-y-1' 
                       : 'max-h-0 opacity-0 pointer-events-none'
                   }`}
                 >
@@ -262,16 +384,22 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         if (isMobile) onClose();
                       }}
                       className={({ isActive }) => 
-                        `flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 border-l-2 font-medium text-[11px] sm:text-xs group ${
-                          isActive 
-                            ? 'bg-white/10 dark:bg-slate-900 border-gold text-white font-bold shadow-inner' 
-                            : 'hover:bg-white/5 dark:hover:bg-slate-900/50 border-transparent text-gray-300 hover:text-white'
-                        }`
+                        sidebarMenuMode === 'cards_grouped'
+                        ? `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 font-medium text-[11px] sm:text-xs group ${
+                            isActive 
+                              ? 'bg-white/10 dark:bg-slate-900 text-white font-bold shadow-sm' 
+                              : 'bg-white/5 dark:bg-slate-900/30 hover:bg-white/10 text-gray-300 hover:text-white mt-1'
+                          }`
+                        : `flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 border-l-2 font-medium text-[11px] sm:text-xs group ${
+                            isActive 
+                              ? 'bg-white/10 dark:bg-slate-900 border-gold text-white font-bold shadow-inner' 
+                              : 'hover:bg-white/5 dark:hover:bg-slate-900/50 border-transparent text-gray-300 hover:text-white'
+                          }`
                       }
                       style={{ minHeight: '40px' }} // mobile friendly tap size
                     >
-                      <item.icon size={15} className="shrink-0 opacity-70 group-hover:opacity-100 group-hover:text-gold transition-colors duration-200" />
-                      <span className="group-hover:translate-x-1.5 transition-transform duration-200">{item.name}</span>
+                      <item.icon size={15} className={`shrink-0 transition-colors duration-200 ${sidebarMenuMode === 'cards_grouped' ? 'text-gold opacity-100' : 'opacity-70 group-hover:opacity-100 group-hover:text-gold'}`} />
+                      <span className={`${sidebarMenuMode === 'cards_grouped' ? '' : 'group-hover:translate-x-1.5 transition-transform duration-200'}`}>{item.name}</span>
                     </NavLink>
                   ))}
                 </div>
@@ -280,56 +408,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           })
         )}
       </nav>
-
-      {/* Sidebar Footer */}
-      <div className="p-5 border-t border-white/10 space-y-2 shrink-0 bg-primary/20 dark:bg-slate-950/20">
-        <div className="flex justify-between items-center pb-2 px-1">
-          <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Apariencia</span>
-          <ThemeToggle />
-        </div>
-
-        <button 
-          onClick={() => {
-            if (isMobile) onClose();
-            window.open('/presentacion.html', '_blank');
-          }}
-          className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 dark:hover:bg-slate-800 py-3 px-4 rounded-xl transition-all duration-200 w-full text-xs font-semibold border border-white/5 hover:border-white/10 cursor-pointer"
-          style={{ minHeight: '44px' }}
-        >
-          <svg className="w-[16px] h-[16px] text-gold fill-none stroke-current shrink-0" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-            <line x1="8" y1="21" x2="16" y2="21" />
-            <line x1="12" y1="17" x2="12" y2="21" />
-            <polygon points="10 7 15 10 10 13 10 7" className="fill-current" />
-          </svg>
-          <span>Ver Presentación</span>
-        </button>
-
-        <button 
-          onClick={() => {
-            onClose();
-            navigate('/');
-          }}
-          className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 dark:hover:bg-slate-800 py-3 px-4 rounded-xl transition-all duration-200 w-full text-xs font-semibold border border-white/5 hover:border-white/10 cursor-pointer"
-          style={{ minHeight: '44px' }}
-        >
-          <Globe size={16} className="text-gold shrink-0" />
-          <span>Cerrar Panel</span>
-        </button>
-
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-3 text-red-300 hover:text-red-450 hover:bg-red-950/20 py-3 px-4 rounded-xl transition-all duration-200 w-full text-xs font-semibold border border-transparent hover:border-red-900/30 cursor-pointer"
-          style={{ minHeight: '44px' }}
-        >
-          <LogOut size={16} className="shrink-0" />
-          <span>Cerrar Sesión</span>
-        </button>
-      </div>
     </div>
   );
 
-  if (isMobile) {
+  if (isMobile || isDrawer) {
     if (!isOpen) return null;
     return (
       <div className="fixed inset-0 z-50 flex">
@@ -345,10 +427,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   }
 
   return (
-    <div className="fixed top-0 bottom-0 left-0 z-20 w-64 hidden md:block">
+    <div className={`fixed top-0 bottom-0 left-0 z-20 ${isFloating ? 'w-auto' : sidebarWidthClass} hidden md:block transition-all duration-500`}>
       {sidebarContent}
     </div>
   );
 };
 
-export default Sidebar;
+export default React.memo(Sidebar);

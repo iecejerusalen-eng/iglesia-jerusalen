@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Award, Clock, PlayCircle } from 'lucide-react';
@@ -138,7 +139,7 @@ export default function StudentDashboard() {
                     className="bg-surface-light border border-border rounded-xl overflow-hidden hover:border-accent/50 transition-colors group"
                   >
                     <div className="h-40 overflow-hidden relative">
-                      <img 
+                      <img loading="lazy" 
                         src={enr.lms_courses.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
                         alt={enr.lms_courses.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -201,7 +202,7 @@ export default function StudentDashboard() {
                       className="flex flex-col items-center justify-center p-4 bg-surface border border-border rounded-lg text-center"
                       title={badge.description}
                     >
-                      <div className="text-3xl mb-2" dangerouslySetInnerHTML={{ __html: badge.badge_icon }} />
+                      <div className="text-3xl mb-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(badge.badge_icon) }} />
                       <span className="text-xs font-medium line-clamp-2">{badge.badge_name}</span>
                     </div>
                   ))}

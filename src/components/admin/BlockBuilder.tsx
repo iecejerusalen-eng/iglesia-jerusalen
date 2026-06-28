@@ -514,7 +514,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         {block.imageUrl ? (
                           <div className="relative w-full h-32 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                            <img src={block.imageUrl} alt="Block Preview" className="w-full h-full object-cover" />
+                            <img loading="lazy" src={block.imageUrl} alt="Block Preview" className="w-full h-full object-cover" />
                             {!disabled && (
                               <button
                                 type="button"

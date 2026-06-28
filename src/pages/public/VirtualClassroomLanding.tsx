@@ -57,7 +57,7 @@ const VirtualClassroomLanding = () => {
               <div className="flex items-center gap-4 text-left">
                 <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
                   {photoUrl ? (
-                    <img 
+                    <img loading="lazy" 
                       src={photoUrl} 
                       alt="Perfil" 
                       className="w-full h-full object-cover" 

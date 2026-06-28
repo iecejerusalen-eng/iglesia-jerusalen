@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
 import {
   HelpCircle, CheckCircle2, XCircle, Save, Check, ShieldAlert, BookOpen
@@ -36,7 +37,7 @@ const BlockLessonRenderer = ({ content, lessonId }: Props) => {
     return (
       <div 
         className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-400 italic">Sin contenido</p>' }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '<p class="text-gray-400 italic">Sin contenido</p>') }}
       />
     );
   }
@@ -119,14 +120,14 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
       {block.type === 'text' && (
         <div 
           className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: block.text || '' }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.text || '') }}
         />
       )}
 
       {/* 2. IMAGE BLOCK */}
       {block.type === 'image' && block.image_url && (
         <figure className="space-y-2 text-center max-w-xl mx-auto">
-          <img 
+          <img loading="lazy" 
             src={block.image_url} 
             alt={block.text || 'Imagen de lección'} 
             className="rounded-2xl border border-gray-150 shadow-md max-w-full mx-auto block hover:scale-[1.01] transition-transform"
@@ -143,7 +144,7 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
       {block.type === 'html' && block.html && (
         <div 
           className="w-full overflow-hidden rounded-xl bg-slate-950 p-2 shadow-inner border border-slate-900"
-          dangerouslySetInnerHTML={{ __html: block.html }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.html || '') }}
         />
       )}
 

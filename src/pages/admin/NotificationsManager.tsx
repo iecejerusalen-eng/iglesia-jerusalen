@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
-import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useChatContacts, useChatMutations } from '../../features/chat/hooks';
 import { 
   Bell, MessageSquare, Send, CheckCircle, 
   Gift, Award, RefreshCw, Phone, Copy, Search, Check,
@@ -65,13 +65,14 @@ export default function NotificationsManager() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
-  const [ministries, setMinistries] = useState<MinistryData[]>([]);
   const [logs, setLogs] = useState<NotificationLog[]>([]);
   const [profiles, setProfiles] = useState<ProfileData[]>([]);
 
-  // Auth & Chat Stores
+  // Auth & Chat Hooks
   const { user } = useAuthStore();
-  const { sendBroadcast, fetchContacts } = useChatStore();
+  const { data: contactsData } = useChatContacts();
+  const { sendBroadcast } = useChatMutations();
+  const ministries = contactsData?.ministries || [];
 
   // Manual message form
   const [recipientGroup, setRecipientGroup] = useState('todos');
@@ -122,25 +123,22 @@ export default function NotificationsManager() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [membersRes, ministriesRes, logsRes, profilesRes] = await Promise.all([
+      const [membersRes, logsRes, profilesRes] = await Promise.all([
         supabase.from('members').select('*').is('deleted_at', null),
-        supabase.from('ministries').select('id, name, anniversary_date'),
         supabase.from('notification_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('profiles').select('id, first_name, last_name, role, member_id, ministry_id')
       ]);
 
       const fetchedMembers = membersRes.data || [];
-      const fetchedMinistries = ministriesRes.data || [];
       const fetchedLogs = logsRes.data || [];
       const fetchedProfiles: ProfileData[] = (profilesRes.data || []) as unknown as ProfileData[];
 
       setMembers(fetchedMembers);
-      setMinistries(fetchedMinistries);
       setLogs(fetchedLogs);
       setProfiles(fetchedProfiles);
 
       // Perform Daily Scan
-      scanCelebrants(fetchedMembers, fetchedMinistries);
+      scanCelebrants(fetchedMembers, ministries);
 
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -149,12 +147,11 @@ export default function NotificationsManager() {
     } finally {
       setLoading(false);
     }
-  }, [scanCelebrants]);
+  }, [scanCelebrants, ministries]);
 
   useEffect(() => {
     loadData();
-    fetchContacts(); // Ensure contacts are in store
-  }, [loadData, fetchContacts]);
+  }, [loadData]);
 
   const logNotification = async (
     type: 'whatsapp' | 'push', 
@@ -259,8 +256,13 @@ export default function NotificationsManager() {
 
         const targetIds = targetProfiles.map(p => p.id);
         
-        await sendBroadcast(targetIds, notifMessage.trim(), (sent, total) => {
-          setBroadcastProgress({ sent, total });
+        await sendBroadcast.mutateAsync({
+          targetProfileIds: targetIds, 
+          messageContent: notifMessage.trim(), 
+          ministries, 
+          onProgress: (sent, total) => {
+            setBroadcastProgress({ sent, total });
+          }
         });
 
         await logNotification('push', notifTitle.trim(), notifMessage.trim(), groupLabel, 'enviado', null, notifCategory, targetMinistryId);

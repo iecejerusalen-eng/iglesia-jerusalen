@@ -28,4 +28,4 @@ const AdminHeader = ({ title, description, action }: AdminHeaderProps) => {
   );
 };
 
-export default AdminHeader;
+export default React.memo(AdminHeader);

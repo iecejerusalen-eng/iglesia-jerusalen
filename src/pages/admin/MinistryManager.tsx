@@ -49,7 +49,7 @@ const compileBlocksToHtml = (blocks: LessonBlock[]): string => {
         return `
           <div style="margin: 24px 0; text-align: center;">
             <div style="border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); background-color: #F8FAFC;">
-              <img src="${block.image_url || ''}" alt="${block.text || 'Imagen'}" style="width: 100%; object-fit: cover; max-height: 500px;" />
+              <img loading="lazy" src="${block.image_url || ''}" alt="${block.text || 'Imagen'}" style="width: 100%; object-fit: cover; max-height: 500px;" />
             </div>
             ${block.text ? `<p style="font-size: 12px; color: #94A3B8; font-style: italic; margin-top: 8px;">${block.text}</p>` : ''}
           </div>
@@ -405,7 +405,7 @@ const MinistryManager = () => {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-4">
                             {min.image_url ? (
-                              <img
+                              <img loading="lazy"
                                 src={min.image_url}
                                 alt={min.name}
                                 className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
@@ -501,7 +501,7 @@ const MinistryManager = () => {
                   {/* Foto de portada */}
                   <div className="h-40 relative bg-slate-100 dark:bg-slate-950 overflow-hidden">
                     {min.image_url ? (
-                      <img
+                      <img loading="lazy"
                         src={min.image_url}
                         alt={min.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -804,7 +804,7 @@ const MinistryManager = () => {
                     <div className="flex items-center gap-3">
                       {imagePreview ? (
                         <div className="relative w-24 h-24 rounded-xl border border-gray-150 dark:border-white/10 overflow-hidden bg-gray-55 flex-shrink-0">
-                          <img src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                          <img loading="lazy" src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
                           {!isEditingReadOnly && (
                             <button
                               type="button"

@@ -83,7 +83,7 @@ const MinistriesOverview = () => {
                   {/* Banner de Imagen o Fallback */}
                   <div className="h-44 w-full relative overflow-hidden bg-primary flex-shrink-0">
                     {min.image_url ? (
-                      <img 
+                      <img loading="lazy" 
                         src={min.image_url} 
                         alt={min.name} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

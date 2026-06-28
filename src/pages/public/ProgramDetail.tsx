@@ -179,7 +179,7 @@ const ProgramDetail = () => {
       {/* Hero Header */}
       <div className="relative bg-gradient-to-r from-indigo-800 to-indigo-950 text-white overflow-hidden shadow-md">
         {course.cover_image_url && (
-          <img src={course.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-xs" />
+          <img loading="lazy" src={course.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-xs" />
         )}
         <div className="relative max-w-4xl mx-auto px-4 py-16">
           <Link to="/programas" className="inline-flex items-center gap-1.5 text-indigo-300 hover:text-white text-xs font-semibold uppercase tracking-wider mb-6 transition-colors">

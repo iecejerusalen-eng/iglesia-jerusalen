@@ -5,15 +5,29 @@ import type { Petition, PetitionCategory } from '../../types';
 import { Send, Clock, BookOpen, CheckCircle, Flame, Plus, HeartHandshake } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const petitionSchema = z.object({
+  categoryId: z.string().min(1, 'Selecciona una categoría'),
+  content: z.string().min(10, 'La petición debe tener al menos 10 caracteres').max(1000, 'La petición es muy larga')
+});
+type PetitionFormValues = z.infer<typeof petitionSchema>;
 
 const Petitions = () => {
   const { user } = useAuthStore();
   const [categories, setCategories] = useState<PetitionCategory[]>([]);
   const [myPetitions, setMyPetitions] = useState<Petition[]>([]);
-  const [content, setContent] = useState('');
-  const [categoryId, setCategoryId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting }, setValue } = useForm<PetitionFormValues>({
+    resolver: zodResolver(petitionSchema),
+    defaultValues: {
+      categoryId: '',
+      content: ''
+    }
+  });
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -24,7 +38,7 @@ const Petitions = () => {
       if (error) throw error;
       setCategories(data || []);
       if (data && data.length > 0) {
-        setCategoryId(data[0].id);
+        setValue('categoryId', data[0].id);
       }
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -65,18 +79,12 @@ const Petitions = () => {
     }
   }, [user, fetchCategories, fetchMyPetitions]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) {
-      toast.warning('Por favor escribe el motivo de tu petición');
-      return;
-    }
+  const onSubmit = async (values: PetitionFormValues) => {
     if (!user) {
       toast.error('Debes iniciar sesión para enviar peticiones');
       return;
     }
 
-    setSubmitting(true);
     try {
       // Call rate-limiter Edge Function to protect public prayer request endpoint
       const { data: limitData, error: limitError } = await supabase.functions.invoke('rate-limiter', {
@@ -87,13 +95,11 @@ const Petitions = () => {
         const status = limitError.context?.status;
         if (status === 429) {
           toast.error('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-          setSubmitting(false);
           return;
         }
         console.warn('Rate limiter check failed or not deployed, proceeding:', limitError);
       } else if (!limitData || !limitData.success) {
         toast.error('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-        setSubmitting(false);
         return;
       }
 
@@ -102,15 +108,15 @@ const Petitions = () => {
         .from('petitions')
         .insert({
           user_id: user.id,
-          category_id: categoryId || null,
-          content: content.trim(),
+          category_id: values.categoryId || null,
+          content: values.content.trim(),
           status: 'pendiente'
         });
 
       if (error) throw error;
 
       toast.success('Petición de oración enviada con éxito. Estaremos orando por ti.');
-      setContent('');
+      reset({ categoryId: values.categoryId, content: '' });
       fetchMyPetitions();
     } catch (err: any) {
       console.error('Error submitting petition:', err);
@@ -120,8 +126,6 @@ const Petitions = () => {
         const errMsg = err instanceof Error ? err.message : 'Error desconocido';
         toast.error('No se pudo enviar la petición: ' + errMsg);
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -199,19 +203,21 @@ const Petitions = () => {
               <p className="text-xs text-gray-400 mt-1">Escribe tu petición con total libertad y confianza.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor="categoryId" className="text-xs font-semibold text-gray-500 dark:text-gray-400 block">Categoría de Oración</label>
                 <select
                   id="categoryId"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
+                  {...register('categoryId')}
                   className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
+                {errors.categoryId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -219,20 +225,22 @@ const Petitions = () => {
                 <textarea
                   id="content"
                   rows={5}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  {...register('content')}
                   placeholder="Describe aquí tu petición o acción de gracias..."
                   className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-750 dark:text-gray-200 resize-none"
                 />
+                {errors.content && (
+                  <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>
+                )}
               </div>
 
               <AnimeRubberBandHover>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={isSubmitting}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-55 cursor-pointer text-sm"
                 >
-                  {submitting ? (
+                  {isSubmitting ? (
                     <span className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></span>
                   ) : (
                     <>

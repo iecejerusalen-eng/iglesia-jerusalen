@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
@@ -25,6 +27,11 @@ const settingsSchema = z.object({
   instagram_url: z.string().url('Ingresa una URL de Instagram válida').or(z.literal('')),
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
   chat_retention_days: z.number().min(1, 'La retención mínima es 1 día').max(365, 'La retención máxima es 365 días'),
+  payphone_fee_percent: z.number().min(0, 'El porcentaje mínimo es 0').max(100, 'El porcentaje máximo es 100'),
+  de_una_fee_percent: z.number().min(0, 'El porcentaje mínimo es 0').max(100, 'El porcentaje máximo es 100'),
+  maintenance_mode: z.boolean().default(false),
+  enable_email_notifications: z.boolean().default(true),
+  global_announcement: z.string().nullable().optional(),
 });
 
 type SettingsForm = z.infer<typeof settingsSchema>;
@@ -40,6 +47,7 @@ type CatalogCategory = typeof CATEGORIES[number]['id'];
 
 const SettingsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
+
   const [activeTab, setActiveTab] = useState<'settings' | 'catalogs'>('settings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +61,7 @@ const SettingsManager = () => {
   const [editingCatalogName, setEditingCatalogName] = useState('');
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsForm>({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(settingsSchema) as any,
   });
 
   useEffect(() => {
@@ -92,6 +100,11 @@ const SettingsManager = () => {
           instagram_url: data.instagram_url || '',
           youtube_url: data.youtube_url || '',
           chat_retention_days: data.chat_retention_days !== undefined ? data.chat_retention_days : 7,
+          payphone_fee_percent: data.payphone_fee_percent !== undefined ? data.payphone_fee_percent : 6.00,
+          de_una_fee_percent: data.de_una_fee_percent !== undefined ? data.de_una_fee_percent : 2.00,
+          maintenance_mode: data.maintenance_mode || false,
+          enable_email_notifications: data.enable_email_notifications !== false, // default true
+          global_announcement: data.global_announcement || '',
         });
       }
     } catch (err: any) {
@@ -261,7 +274,7 @@ const SettingsManager = () => {
         {activeTab === 'settings' ? (
           <AnimeFadeUp key="settings-tab">
             <form 
-              onSubmit={handleSubmit(onSubmit)} 
+              onSubmit={handleSubmit(onSubmit as SubmitHandler<SettingsForm>)} 
               className="space-y-6"
             >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -437,6 +450,97 @@ const SettingsManager = () => {
                     placeholder="https://youtube.com/..."
                   />
                   {errors.youtube_url && <p className="text-accent-red text-xs mt-1">{errors.youtube_url.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Payment Gateways */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
+              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <Landmark size={18} className="text-gold" />
+                Pasarelas de Pago e Impuestos
+              </h3>
+              <p className="text-xs text-gray-500 mb-2">
+                Configura los recargos adicionales que cobran las pasarelas al procesar un pago. 
+                El recargo se calcula y añade de forma automática y transparente solo sobre el costo de los productos.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="payphone_fee_percent" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Comisión PayPhone (%)</label>
+                  <input 
+                    id="payphone_fee_percent"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                    {...register('payphone_fee_percent', { valueAsNumber: true })}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    placeholder="6.00"
+                  />
+                  {errors.payphone_fee_percent && <p className="text-accent-red text-xs mt-1">{errors.payphone_fee_percent.message}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="de_una_fee_percent" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Comisión De Una (%)</label>
+                  <input 
+                    id="de_una_fee_percent"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                    {...register('de_una_fee_percent', { valueAsNumber: true })}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    placeholder="2.00"
+                  />
+                  {errors.de_una_fee_percent && <p className="text-accent-red text-xs mt-1">{errors.de_una_fee_percent.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: System Preferences */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
+              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <Settings size={18} className="text-gold" />
+                Preferencias del Sistema
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                  <div>
+                    <label htmlFor="maintenance_mode" className="block text-sm font-bold text-gray-800 dark:text-gray-100">Modo de Mantenimiento</label>
+                    <p className="text-xs text-gray-500 mt-0.5">Activa esta opción para deshabilitar el acceso al sitio público mientras realizas cambios.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="maintenance_mode" className="sr-only peer" {...register('maintenance_mode')} />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                  <div>
+                    <label htmlFor="enable_email_notifications" className="block text-sm font-bold text-gray-800 dark:text-gray-100">Notificaciones por Correo</label>
+                    <p className="text-xs text-gray-500 mt-0.5">Activa o desactiva el envío automático de correos (registros, pagos, etc).</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="enable_email_notifications" className="sr-only peer" {...register('enable_email_notifications')} />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label htmlFor="global_announcement" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Anuncio Global del Dashboard</label>
+                  <p className="text-xs text-gray-500 mb-2">Este mensaje se mostrará a todos los administradores en el inicio del panel.</p>
+                  <textarea 
+                    id="global_announcement"
+                    rows={3}
+                    {...register('global_announcement')}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    placeholder="Ej. El domingo tendremos mantenimiento programado..."
+                  />
+                  {errors.global_announcement && <p className="text-accent-red text-xs mt-1">{errors.global_announcement.message}</p>}
                 </div>
               </div>
             </div>

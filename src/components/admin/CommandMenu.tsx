@@ -225,7 +225,7 @@ export default function CommandMenu() {
                         }}
                       >
                         {member.photo_url ? (
-                          <img src={member.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                          <img loading="lazy" src={member.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-6 h-6 bg-slate-800 text-[10px] font-bold text-slate-350 rounded-full flex items-center justify-center shrink-0">
                             {member.first_name[0]}{member.last_name[0]}
@@ -265,7 +265,7 @@ export default function CommandMenu() {
 
               <div className="flex flex-col items-center text-center space-y-3 pb-4 border-b border-slate-800">
                 {selectedMember.photo_url ? (
-                  <img 
+                  <img loading="lazy" 
                     src={selectedMember.photo_url} 
                     alt="" 
                     className="w-20 h-20 rounded-full object-cover border-2 border-gold shadow-md" 

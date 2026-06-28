@@ -79,7 +79,7 @@ export default function Preloader() {
         ref={logoRef}
         className="w-48 h-48 flex items-center justify-center"
       >
-        <img src={logo} alt="Iglesia Jerusalén Logo" className="w-full h-full object-contain" />
+        <img loading="lazy" src={logo} alt="Iglesia Jerusalén Logo" className="w-full h-full object-contain" />
       </div>
       
       <span

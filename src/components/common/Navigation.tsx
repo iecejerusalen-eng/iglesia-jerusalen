@@ -59,7 +59,7 @@ const Navigation = () => {
           onClick={closeMenu} 
           className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg p-1"
         >
-          <img 
+          <img loading="lazy" 
             src={isTransparent ? soloLogoBlanco : soloLogoColorido} 
             alt="Logo Iglesia Jerusalén" 
             className="h-9 w-auto transition-transform duration-300 group-hover:scale-105"
@@ -582,7 +582,7 @@ const Navigation = () => {
 
               {/* Pie de menú móvil */}
               <div className="text-center text-xs text-gray-400 mt-auto pt-6 border-t border-gray-100 dark:border-white/10 flex flex-col items-center gap-2">
-                <img src={soloLogoColorido} alt="Logo" className="h-6 w-auto opacity-75" />
+                <img loading="lazy" src={soloLogoColorido} alt="Logo" className="h-6 w-auto opacity-75" />
                 <p className="font-medium text-slate-500 dark:text-slate-400">Iglesia Jerusalén</p>
                 <p className="mt-1">© {new Date().getFullYear()} Todos los derechos reservados.</p>
               </div>
