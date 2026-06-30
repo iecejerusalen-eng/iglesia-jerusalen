@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ShieldCheck, BarChart4, BellRing, Network, ChevronRight } from 'lucide-react';
+import { ShieldCheck, BellRing, Network, ChevronRight } from 'lucide-react';
 
 export default function Section9Security({ onNext }: { onNext: () => void }) {
   return (

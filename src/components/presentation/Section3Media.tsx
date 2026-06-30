@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Music, Video, Headphones, Search, ChevronRight, Play } from 'lucide-react';
+import { Music, Video, Search, ChevronRight } from 'lucide-react';
 
 export default function Section3Media({ onNext }: { onNext: () => void }) {
   return (

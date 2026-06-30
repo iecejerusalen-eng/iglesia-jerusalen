@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { GraduationCap, PlayCircle, Edit3, BookOpen, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, PlayCircle, Edit3, BookOpen, ChevronRight } from 'lucide-react';
 
 export default function Section2LMS({ onNext }: { onNext: () => void }) {
   return (

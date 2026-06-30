@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Palette, Layout, Wand2, ChevronRight, Play, Image as ImageIcon, Type, Square } from 'lucide-react';
+import { Palette, Layout, Wand2, ChevronRight, Image as ImageIcon, Type, Square } from 'lucide-react';
 
 export default function Section7Design({ onNext }: { onNext: () => void }) {
-  const [activeTab, setActiveTab] = useState('editor');
 
   return (
     <div className="w-full h-full flex flex-col p-6 md:p-12 overflow-y-auto custom-scrollbar scrollable-content">
