@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Server, Database, Zap, Cloud, Code2, Key, 
   ShieldCheck, Activity, Globe, WifiOff, Cpu, Lock, 
-  ArrowRight, Layers, Smartphone
+  Layers, Smartphone
 } from 'lucide-react';
 import { useState } from 'react';
 
