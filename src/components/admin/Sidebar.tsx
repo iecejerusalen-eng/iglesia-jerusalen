@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import { X, ChevronRight } from 'lucide-react';
+import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
+import { supabase } from '../../config/supabase';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 interface SidebarProps {
@@ -95,6 +96,8 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
     return items;
   }, [visibleNavItems, sidebarMenuMode, sidebarGridSort, sidebarCustomOrder]);
 
+  const navigate = useNavigate();
+
   // Expanded groups state (persisted in localStorage)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     try {
@@ -103,6 +106,16 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
     } catch (e) {}
     return {};
   });
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      useAuthStore.getState().setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   // Auto-expand group of active path on mount or path change
   useEffect(() => {
@@ -161,7 +174,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
   const sidebarWidthClass = isCollapsed ? 'w-20' : 'w-64';
 
   const sidebarContent = (
-    <div className={`${sidebarWidthClass} bg-primary dark:bg-slate-950 border-r border-transparent dark:border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-screen'} flex flex-col shadow-xl transition-all duration-500`}>
+    <div className={`${sidebarWidthClass} bg-primary dark:bg-slate-950 border-r border-transparent dark:border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-[100dvh]'} flex flex-col shadow-xl transition-all duration-500`}>
       {/* Sidebar Header */}
       <div className={`p-5 border-b border-white/10 flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center shrink-0 transition-all duration-500`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
@@ -371,7 +384,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
                 <div 
                   className={`overflow-hidden transition-all duration-300 ease-in-out pl-4 ${
                     isExpanded 
-                      ? 'max-h-[800px] opacity-100 py-1 space-y-1' 
+                      ? 'max-h-[2000px] opacity-100 py-1 space-y-1' 
                       : 'max-h-0 opacity-0 pointer-events-none'
                   }`}
                 >
@@ -408,6 +421,42 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
           })
         )}
       </nav>
+
+      {/* Mobile Footer Actions */}
+      {(isMobile || isDrawer) && (
+        <div className="p-4 border-t border-white/10 bg-black/20 shrink-0 space-y-2">
+          {hasPermission('appearance', 'view') && (
+            <button 
+              onClick={() => { navigate('/admin/apariencia'); if (isMobile) onClose(); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+            >
+              <Settings size={18} className="shrink-0 text-gold/80" />
+              <span>Configuración</span>
+            </button>
+          )}
+          <button 
+            onClick={() => { window.open('/presentacion', '_blank'); if (isMobile) onClose(); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+          >
+            <MonitorPlay size={18} className="shrink-0 text-blue-400" />
+            <span>Ver Presentación</span>
+          </button>
+          <button 
+            onClick={() => { navigate('/'); if (isMobile) onClose(); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+          >
+            <Globe size={18} className="shrink-0 text-green-400" />
+            <span>Ir a la web</span>
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 font-bold text-xs"
+          >
+            <LogOut size={18} className="shrink-0" />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -419,7 +468,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
           className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity duration-300"
           onClick={onClose}
         />
-        <div className="relative z-10 h-screen animate-slide-in-right">
+        <div className="relative z-10 h-[100dvh] animate-slide-in-right">
           {sidebarContent}
         </div>
       </div>

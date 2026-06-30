@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import RichTextRenderer from '../../components/common/RichTextRenderer';
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -605,9 +606,9 @@ export default function CourseViewer() {
                   
                   {/* TEXT/DOCUMENT */}
                   {(activeLesson.type === 'document' || activeLesson.type === 'resource') && (
-                    <div 
+                    <RichTextRenderer 
                       className="prose dark:prose-invert max-w-none text-slate-850 dark:text-gray-300 text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeLesson.content || '<p class="italic text-gray-400">Esta lección no contiene texto.</p>') }}
+                      html={DOMPurify.sanitize(activeLesson.content || '<p class="italic text-gray-400">Esta lección no contiene texto.</p>')}
                     />
                   )}
 

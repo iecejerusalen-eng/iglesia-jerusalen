@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import type { ContentBlock } from '../admin/BlockBuilder';
 import type { LessonBlock } from '../admin/BlockEditor';
 import BlockLessonRenderer from './BlockLessonRenderer';
+import RichTextRenderer from '../common/RichTextRenderer';
 import { 
   Check, Award, Send, RefreshCw, ClipboardList, HelpCircle
 } from 'lucide-react';
@@ -150,10 +151,10 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
           case 'text': {
             const rawText = (block as any).text || (block as any).textContent || '';
             return (
-              <div 
+              <RichTextRenderer 
                 key={key} 
                 className="prose max-w-none text-gray-650 leading-relaxed text-sm md:text-base space-y-4"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawText) }}
+                html={DOMPurify.sanitize(rawText)}
               />
             );
           }
@@ -161,10 +162,10 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
           case 'html': {
             const rawHtml = (block as any).html || (block as any).htmlContent || '';
             return (
-              <div 
+              <RichTextRenderer 
                 key={key}
                 className="w-full overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawHtml) }}
+                html={DOMPurify.sanitize(rawHtml)}
               />
             );
           }
@@ -212,9 +213,9 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
                   />
                 </div>
                 {/* Accompanied text element */}
-                <div 
+                <RichTextRenderer 
                   className="prose max-w-none text-gray-650 leading-relaxed text-sm md:text-base"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(imageText) }}
+                  html={DOMPurify.sanitize(imageText)}
                 />
               </div>
             );
@@ -231,10 +232,10 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
             return (
               <div key={key} className={`grid ${gridClasses} gap-6 my-6`}>
                 {cols.map((colText, idx) => (
-                  <div 
+                  <RichTextRenderer 
                     key={idx} 
                     className="bg-slate-50/50 p-6 rounded-2xl border border-gray-100 shadow-2xs hover:shadow-xs transition-shadow prose max-w-none text-gray-650 leading-relaxed text-xs md:text-sm"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(colText) }}
+                    html={DOMPurify.sanitize(colText)}
                   />
                 ))}
               </div>

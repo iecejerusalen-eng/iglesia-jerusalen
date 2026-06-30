@@ -9,66 +9,104 @@ import ConfirmDialog from './components/common/ConfirmDialog';
 import CRMRegistrationPrompt from './components/common/CRMRegistrationPrompt';
 import BirthdayCelebrationModal from './components/common/BirthdayCelebrationModal';
 
+const lazyWithRetry = (componentImport: () => Promise<any>) => {
+  return lazy(async () => {
+    try {
+      const component = await componentImport();
+      window.sessionStorage.removeItem('chunk-failed-reload');
+      return component;
+    } catch (error: any) {
+      if (
+        error?.message?.includes('Failed to fetch dynamically imported module') ||
+        error?.message?.includes('Importing a module script failed') ||
+        error?.message?.includes('error loading dynamically imported module')
+      ) {
+        if (!window.sessionStorage.getItem('chunk-failed-reload')) {
+          window.sessionStorage.setItem('chunk-failed-reload', 'true');
+          window.location.reload();
+          return new Promise(() => {}); // Prevent rendering during reload
+        }
+      }
+      window.sessionStorage.removeItem('chunk-failed-reload');
+      throw error;
+    }
+  });
+};
+
 // Lazy loaded pages
-const Home = lazy(() => import('./pages/public/Home'));
-const Login = lazy(() => import('./pages/auth/Login'));
-const Store = lazy(() => import('./pages/public/Store'));
-const Cart = lazy(() => import('./pages/public/Cart'));
-const Donations = lazy(() => import('./pages/public/Donations'));
-const About = lazy(() => import('./pages/public/About'));
-const MinistriesOverview = lazy(() => import('./pages/public/MinistriesOverview'));
-const MinistryDetail = lazy(() => import('./pages/public/MinistryDetail'));
-const Sermons = lazy(() => import('./pages/public/Sermons'));
-const Contact = lazy(() => import('./pages/public/Contact'));
-const Events = lazy(() => import('./pages/public/Events'));
-const Petitions = lazy(() => import('./pages/public/Petitions'));
-const SongsLibrary = lazy(() => import('./pages/public/SongsLibrary'));
-const ProgramsOverview = lazy(() => import('./pages/public/ProgramsOverview'));
-const VirtualClassroomLanding = lazy(() => import('./pages/public/VirtualClassroomLanding'));
-const ProgramDetail = lazy(() => import('./pages/public/ProgramDetail'));
-const MyPurchases = lazy(() => import('./pages/public/MyPurchases'));
-const Checkout = lazy(() => import('./pages/public/Checkout'));
-const OrderSuccess = lazy(() => import('./pages/public/OrderSuccess'));
-const DashboardHome = lazy(() => import('./pages/admin/DashboardHome'));
-const SermonsManager = lazy(() => import('./pages/admin/SermonsManager'));
-const FinanceDashboard = lazy(() => import('./pages/admin/FinanceDashboard'));
-const StoreManager = lazy(() => import('./pages/admin/StoreManager'));
-const StoreSettings = lazy(() => import('./pages/admin/StoreSettings'));
-const OrdersManager = lazy(() => import('./pages/admin/OrdersManager'));
-const MinistryManager = lazy(() => import('./pages/admin/MinistryManager'));
-const MinistryDashboard = lazy(() => import('./pages/admin/MinistryDashboard'));
-const LogosManager = lazy(() => import('./pages/admin/LogosManager'));
-const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
-const SettingsManager = lazy(() => import('./pages/admin/SettingsManager'));
-const AdminSettings = lazy(() => import('./pages/admin/Settings/AdminSettings'));
-const MembersManager = lazy(() => import('./pages/admin/MembersManager'));
-const EventsManager = lazy(() => import('./pages/admin/EventsManager'));
-const StrategicMap = lazy(() => import('./pages/admin/StrategicMap'));
-const PageEditor = lazy(() => import('./pages/admin/PageEditor'));
-const AnalyticsDashboard = lazy(() => import('./pages/admin/AnalyticsDashboard'));
-const NotificationsManager = lazy(() => import('./pages/admin/NotificationsManager'));
-const PetitionsManager = lazy(() => import('./pages/admin/PetitionsManager'));
-const SongsManager = lazy(() => import('./pages/admin/SongsManager'));
-const LMSManager = lazy(() => import('./pages/admin/LMSManager'));
-const CourseBuilder = lazy(() => import('./pages/admin/CourseBuilder'));
-const LMSGradebook = lazy(() => import('./pages/admin/LMSGradebook'));
-const ChatManager = lazy(() => import('./pages/admin/ChatManager'));
-const OpenResourcesManager = lazy(() => import('./pages/admin/OpenResourcesManager'));
-const OpenResourceBuilder = lazy(() => import('./pages/admin/OpenResourceBuilder'));
-const PluginManager = lazy(() => import('./pages/admin/PluginManager'));
-const SundaySchool = lazy(() => import('./pages/public/SundaySchool'));
-const ReadingPlan = lazy(() => import('./pages/public/ReadingPlan'));
-const SermonDetail = lazy(() => import('./pages/public/SermonDetail'));
-const ProductionBoard = lazy(() => import('./pages/admin/ProductionBoard'));
-const MediaVault = lazy(() => import('./pages/admin/MediaVault'));
-const InventoryManager = lazy(() => import('./pages/admin/InventoryManager'));
-const AnimationCatalog = lazy(() => import('./pages/admin/AnimationCatalog'));
-const DesignCatalog = lazy(() => import('./pages/admin/DesignCatalog'));
-const Birthdays = lazy(() => import('./pages/public/Birthdays'));
-const Bible = lazy(() => import('./pages/public/Bible'));
-const StudentDashboard = lazy(() => import('./pages/lms/StudentDashboard'));
-const TeacherDashboard = lazy(() => import('./pages/lms/TeacherDashboard'));
-const CourseViewer = lazy(() => import('./pages/lms/CourseViewer'));
+const Home = lazyWithRetry(() => import('./pages/public/Home'));
+const Login = lazyWithRetry(() => import('./pages/auth/Login'));
+const Store = lazyWithRetry(() => import('./pages/public/Store'));
+const Cart = lazyWithRetry(() => import('./pages/public/Cart'));
+const Donations = lazyWithRetry(() => import('./pages/public/Donations'));
+const About = lazyWithRetry(() => import('./pages/public/About'));
+const MinistriesOverview = lazyWithRetry(() => import('./pages/public/MinistriesOverview'));
+const MinistryDetail = lazyWithRetry(() => import('./pages/public/MinistryDetail'));
+const Sermons = lazyWithRetry(() => import('./pages/public/Sermons'));
+const Contact = lazyWithRetry(() => import('./pages/public/Contact'));
+const Events = lazyWithRetry(() => import('./pages/public/Events'));
+const Petitions = lazyWithRetry(() => import('./pages/public/Petitions'));
+const SongsLibrary = lazyWithRetry(() => import('./pages/public/SongsLibrary'));
+const ProgramsOverview = lazyWithRetry(() => import('./pages/public/ProgramsOverview'));
+const VirtualClassroomLanding = lazyWithRetry(() => import('./pages/public/VirtualClassroomLanding'));
+const Presentation = lazyWithRetry(() => import('./pages/public/Presentation').then(m => ({ default: m.Presentation })));
+const ProgramDetail = lazyWithRetry(() => import('./pages/public/ProgramDetail'));
+const MyPurchases = lazyWithRetry(() => import('./pages/public/MyPurchases'));
+const Checkout = lazyWithRetry(() => import('./pages/public/Checkout'));
+const OrderSuccess = lazyWithRetry(() => import('./pages/public/OrderSuccess'));
+const DashboardHome = lazyWithRetry(() => import('./pages/admin/DashboardHome'));
+const SermonsManager = lazyWithRetry(() => import('./pages/admin/SermonsManager'));
+const FinanceDashboard = lazyWithRetry(() => import('./pages/admin/FinanceDashboard'));
+const StoreManager = lazyWithRetry(() => import('./pages/admin/StoreManager'));
+const StoreSettings = lazyWithRetry(() => import('./pages/admin/StoreSettings'));
+const OrdersManager = lazyWithRetry(() => import('./pages/admin/OrdersManager'));
+const MinistryManager = lazyWithRetry(() => import('./pages/admin/MinistryManager'));
+const MinistryDashboard = lazyWithRetry(() => import('./pages/admin/MinistryDashboard'));
+const LogosManager = lazyWithRetry(() => import('./pages/admin/LogosManager'));
+const UsersManager = lazyWithRetry(() => import('./pages/admin/UsersManager'));
+const SettingsManager = lazyWithRetry(() => import('./pages/admin/SettingsManager'));
+const AdminSettings = lazyWithRetry(() => import('./pages/admin/Settings/AdminSettings'));
+const MembersManager = lazyWithRetry(() => import('./pages/admin/MembersManager'));
+const EventsManager = lazyWithRetry(() => import('./pages/admin/EventsManager'));
+const StrategicMap = lazyWithRetry(() => import('./pages/admin/StrategicMap'));
+const PageEditor = lazyWithRetry(() => import('./pages/admin/PageEditor'));
+const AnalyticsDashboard = lazyWithRetry(() => import('./pages/admin/AnalyticsDashboard'));
+const NotificationsManager = lazyWithRetry(() => import('./pages/admin/NotificationsManager'));
+const PetitionsManager = lazyWithRetry(() => import('./pages/admin/PetitionsManager'));
+const SongsManager = lazyWithRetry(() => import('./pages/admin/SongsManager'));
+const LMSManager = lazyWithRetry(() => import('./pages/admin/LMSManager'));
+const CourseBuilder = lazyWithRetry(() => import('./pages/admin/CourseBuilder'));
+const LMSGradebook = lazyWithRetry(() => import('./pages/admin/LMSGradebook'));
+const ChatManager = lazyWithRetry(() => import('./pages/admin/ChatManager'));
+const OpenResourcesManager = lazyWithRetry(() => import('./pages/admin/OpenResourcesManager'));
+const OpenResourceBuilder = lazyWithRetry(() => import('./pages/admin/OpenResourceBuilder'));
+const PluginManager = lazyWithRetry(() => import('./pages/admin/PluginManager'));
+const SundaySchool = lazyWithRetry(() => import('./pages/public/SundaySchool'));
+const ReadingPlan = lazyWithRetry(() => import('./pages/public/ReadingPlan'));
+const SermonDetail = lazyWithRetry(() => import('./pages/public/SermonDetail'));
+const ProductionBoard = lazyWithRetry(() => import('./pages/admin/ProductionBoard'));
+const MediaVault = lazyWithRetry(() => import('./pages/admin/MediaVault'));
+const InventoryManager = lazyWithRetry(() => import('./pages/admin/InventoryManager'));
+const AnimationCatalog = lazyWithRetry(() => import('./pages/admin/AnimationCatalog'));
+const Birthdays = lazyWithRetry(() => import('./pages/public/Birthdays'));
+const Bible = lazyWithRetry(() => import('./pages/public/Bible'));
+const StudentDashboard = lazyWithRetry(() => import('./pages/lms/StudentDashboard'));
+const TeacherDashboard = lazyWithRetry(() => import('./pages/lms/TeacherDashboard'));
+const CourseViewer = lazyWithRetry(() => import('./pages/lms/CourseViewer'));
+
+const PresentationEditor = lazyWithRetry(() => import('./pages/admin/PresentationEditor').then(m => ({ default: m.PresentationEditor })));
+const GamesManager = lazyWithRetry(() => import('./pages/admin/GamesManager').then(m => ({ default: m.GamesManager })));
+const BiblionarioEditor = lazyWithRetry(() => import('./pages/admin/games/BiblionarioEditor').then(m => ({ default: m.BiblionarioEditor })));
+const GamesHub = lazyWithRetry(() => import('./pages/public/GamesHub').then(m => ({ default: m.GamesHub })));
+const Biblionario = lazyWithRetry(() => import('./pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
+
+const Hangman = lazyWithRetry(() => import('./pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
+const HangmanEditor = lazyWithRetry(() => import('./pages/admin/games/HangmanEditor').then(m => ({ default: m.HangmanEditor })));
+const MemoryMatch = lazyWithRetry(() => import('./pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
+const MemoryEditor = lazyWithRetry(() => import('./pages/admin/games/MemoryEditor').then(m => ({ default: m.MemoryEditor })));
+const AudioLibrary = lazyWithRetry(() => import('./pages/admin/games/AudioLibrary').then(m => ({ default: m.AudioLibrary })));
+
+const DesignCatalog = lazyWithRetry(() => import('./pages/admin/DesignCatalog'));
 
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -164,6 +202,7 @@ function App() {
         <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/presentacion" element={<Presentation />} />
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -187,6 +226,10 @@ function App() {
             <Route path="/predicas/:id" element={<SermonDetail />} />
             <Route path="/cumpleanos" element={<Birthdays />} />
             <Route path="/recursos/biblia" element={<Bible />} />
+            <Route path="/recursos/juegos" element={<GamesHub />} />
+            <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
+            <Route path="/recursos/juegos/ahorcado-biblico" element={<Hangman />} />
+            <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           </Route>
 
           <Route element={<ProtectedRoute module="dashboard" />}>
@@ -294,6 +337,18 @@ function App() {
               <Route path="/admin/lms/matriculas" element={<LMSManager />} />
               <Route path="/admin/recursos-abiertos" element={<OpenResourcesManager />} />
               <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
+              <Route path="/admin/juegos" element={<GamesManager />} />
+              <Route path="/admin/juegos/audio-library" element={<AudioLibrary />} />
+              <Route path="/admin/juegos/quien-quiere-ser-biblionario" element={<BiblionarioEditor />} />
+              <Route path="/admin/juegos/ahorcado-biblico" element={<HangmanEditor />} />
+              <Route path="/admin/juegos/memorama-biblico" element={<MemoryEditor />} />
+            </Route>
+          </Route>
+
+          {/* Protected Routes: Editor de Presentación */}
+          <Route element={<ProtectedRoute module="diseno" />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/presentacion" element={<PresentationEditor />} />
             </Route>
           </Route>
 

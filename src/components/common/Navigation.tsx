@@ -42,7 +42,7 @@ const Navigation = () => {
     ['/ministerios', '/eventos', '/peticiones', '/cumpleanos'].some(path => location.pathname === path);
 
   const isRecursosActive = () => 
-    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia'].some(path => location.pathname === path);
+    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia', '/recursos/juegos'].some(path => location.pathname === path);
 
   const isHome = location.pathname === '/';
   const isTransparent = isHome && !isScrolled;
@@ -255,6 +255,17 @@ const Navigation = () => {
                     }`}
                   >
                     Programas / Estudios
+                  </Link>
+                  <Link
+                    to="/recursos/juegos"
+                    onClick={() => setIsRecursosHovered(false)}
+                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
+                      isTransparent 
+                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
+                    }`}
+                  >
+                    Juegos Bíblicos 🎮
                   </Link>
                 </motion.div>
               )}
@@ -531,6 +542,15 @@ const Navigation = () => {
                                 className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
                               >
                                 Programas / Estudios
+                              </Link>
+                            </li>
+                            <li>
+                              <Link
+                                to="/recursos/juegos"
+                                onClick={closeMenu}
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
+                              >
+                                Juegos Bíblicos 🎮
                               </Link>
                             </li>
                           </motion.ul>

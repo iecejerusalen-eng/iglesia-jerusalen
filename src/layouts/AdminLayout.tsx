@@ -105,7 +105,7 @@ const AdminLayout = () => {
             )}
 
             <button 
-              onClick={() => window.open('/presentacion.html', '_blank')}
+              onClick={() => window.open('/presentacion', '_blank')}
               className="p-2 rounded-xl text-gray-500 dark:text-gray-300 hover:text-primary dark:hover:text-gold hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Ver Presentación"
             >

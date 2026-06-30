@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
@@ -61,20 +62,8 @@ const Cart = () => {
       setUploadingVoucher(true);
       setError(null);
       try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
-        const filePath = `vouchers/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('receipts')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('receipts')
-          .getPublicUrl(filePath);
-
+        // Subir a Cloudinary
+        const publicUrl = await uploadFileToCloudinary(file, 'ecommerce_vouchers', 'image');
         setVoucherUrl(publicUrl);
       } catch (err) {
         console.error('Error uploading receipt:', err);

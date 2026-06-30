@@ -26,6 +26,7 @@ import {
   Compass
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BibleVerseLink } from '../ui/BibleVerseLink';
 
 // Dynamic icon mapping to render icons dynamically based on string ID
 const iconMap: { [key: string]: React.ComponentType<any> } = {
@@ -480,7 +481,7 @@ export default function PrinciplesOfFaith() {
                       </div>
                       <div className="pt-4 border-t border-gray-50 dark:border-slate-800/50 mt-5">
                         <span className="inline-block bg-primary/5 dark:bg-slate-800 border border-primary/10 dark:border-slate-700/60 px-3 py-1 rounded-full text-primary dark:text-church-gold-pale font-serif font-medium text-[10px] uppercase tracking-wider">
-                          {principle.reference}
+                          <BibleVerseLink reference={principle.reference} />
                         </span>
                       </div>
                     </motion.div>
@@ -624,7 +625,7 @@ export default function PrinciplesOfFaith() {
 
                         <div className="pt-4 border-t border-gray-50 dark:border-slate-800/50 mt-5 relative z-10">
                           <span className="inline-block bg-primary/5 dark:bg-slate-800/60 border border-primary/10 dark:border-slate-700/60 px-3 py-1 rounded-full text-primary dark:text-church-gold-pale font-serif font-medium text-[10px] uppercase tracking-wider">
-                            {principle.reference}
+                            <BibleVerseLink reference={principle.reference} />
                           </span>
                         </div>
                       </div>

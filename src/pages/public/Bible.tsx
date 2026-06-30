@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import type { BibleBook } from '../../config/bibleBooks';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { parseVerseRange } from '../../utils/bibleParser';
 
 interface Verse {
   verse: string;
@@ -86,33 +87,35 @@ export default function Bible() {
   const [selectedBookForChapters, setSelectedBookForChapters] = useState<BibleBook | null>(null);
   const [indexTab, setIndexTab] = useState<'Antiguo' | 'Nuevo'>('Antiguo');
 
-  // Highlighted Verse (from search redirect or query param)
-  const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
+  // Highlighted Verses (from search redirect or query param)
+  const [highlightedVerses, setHighlightedVerses] = useState<number[]>([]);
   const highlightedVerseRef = useRef<HTMLDivElement>(null);
 
   // Sync 'versiculo' query param with highlightedVerse state
   const searchParamsVerse = searchParams.get('versiculo');
   useEffect(() => {
     if (searchParamsVerse) {
-      const vNum = parseInt(searchParamsVerse, 10);
-      if (!isNaN(vNum)) {
-        setHighlightedVerse(vNum);
+      const vNums = parseVerseRange(searchParamsVerse);
+      if (vNums.length > 0) {
+        setHighlightedVerses(vNums);
+      } else {
+        setHighlightedVerses([]);
       }
     } else {
-      setHighlightedVerse(null);
+      setHighlightedVerses([]);
     }
   }, [searchParamsVerse]);
 
   // Scroll dismiss scroll listener
   useEffect(() => {
-    if (highlightedVerse === null) return;
+    if (highlightedVerses.length === 0) return;
     
     const initialScrollY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const diff = Math.abs(currentScrollY - initialScrollY);
       if (diff > 80) {
-        setHighlightedVerse(null);
+        setHighlightedVerses([]);
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('versiculo');
         setSearchParams(newParams, { replace: true });
@@ -127,7 +130,7 @@ export default function Bible() {
       clearTimeout(timer);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [highlightedVerse, searchParams, setSearchParams]);
+  }, [highlightedVerses, searchParams, setSearchParams]);
 
   // Simple client caching of chapter requests
   const chapterCache = useRef<Record<string, ChapterData>>({});
@@ -224,7 +227,7 @@ export default function Bible() {
 
   // Scroll to Highlighted Verse
   useEffect(() => {
-    if (chapterData && highlightedVerse && !loading) {
+    if (chapterData && highlightedVerses.length > 0 && !loading) {
       const timer = setTimeout(() => {
         if (highlightedVerseRef.current) {
           highlightedVerseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -233,7 +236,7 @@ export default function Bible() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [chapterData, highlightedVerse, loading]);
+  }, [chapterData, highlightedVerses, loading]);
 
   // Route updates helper
   const updateRoute = (params: Record<string, string | number | null>) => {
@@ -326,7 +329,7 @@ export default function Bible() {
   // Chapter navigation (Prev/Next)
   const navigateChapter = (dir: 'prev' | 'next') => {
     setSelectedVerses([]);
-    setHighlightedVerse(null);
+    setHighlightedVerses([]);
 
     const bookIdx = BIBLE_BOOKS.findIndex(b => b.id === bookId);
     if (bookIdx === -1) return;
@@ -375,7 +378,7 @@ export default function Bible() {
       return;
     }
     
-    setHighlightedVerse(res.number);
+    setHighlightedVerses([res.number]);
     setSelectedVerses([]);
     
     // Clear search and load passage
@@ -706,13 +709,14 @@ export default function Bible() {
                 >
                   {chapterData.vers.map((v) => {
                     const isSelected = selectedVerses.includes(v.number);
-                    const isHighlighted = highlightedVerse === v.number;
-                    const isDimmed = highlightedVerse !== null && !isHighlighted;
+                    const isHighlighted = highlightedVerses.includes(v.number);
+                    const isFirstHighlighted = highlightedVerses.length > 0 && highlightedVerses[0] === v.number;
+                    const isDimmed = highlightedVerses.length > 0 && !isHighlighted;
                     
                     return (
                       <div 
                         key={v.id} 
-                        ref={isHighlighted ? highlightedVerseRef : undefined}
+                        ref={isFirstHighlighted ? highlightedVerseRef : undefined}
                         className={`group relative py-2 rounded-2xl px-3.5 transition-all duration-500 ${
                           isSelected 
                             ? 'bg-amber-500/10 border-l-4 border-amber-600 dark:border-gold pl-4' 

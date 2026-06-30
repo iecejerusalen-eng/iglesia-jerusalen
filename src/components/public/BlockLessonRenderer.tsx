@@ -5,6 +5,7 @@ import {
   HelpCircle, CheckCircle2, XCircle, Save, Check, ShieldAlert, BookOpen
 } from 'lucide-react';
 import type { LessonBlock } from '../admin/BlockEditor';
+import RichTextRenderer from '../common/RichTextRenderer';
 
 interface Props {
   content: string;
@@ -35,9 +36,9 @@ const BlockLessonRenderer = ({ content, lessonId }: Props) => {
   if (!isJson) {
     // Legacy HTML Fallback
     return (
-      <div 
+      <RichTextRenderer 
         className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '<p class="text-gray-400 italic">Sin contenido</p>') }}
+        html={DOMPurify.sanitize(content || '<p class="text-gray-400 italic">Sin contenido</p>')}
       />
     );
   }
@@ -118,9 +119,9 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
     <div className="animate-fadeIn">
       {/* 1. TEXT BLOCK */}
       {block.type === 'text' && (
-        <div 
+        <RichTextRenderer 
           className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.text || '') }}
+          html={DOMPurify.sanitize(block.text || '')}
         />
       )}
 
@@ -142,9 +143,9 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
 
       {/* 3. HTML CODE EMBED */}
       {block.type === 'html' && block.html && (
-        <div 
+        <RichTextRenderer 
           className="w-full overflow-hidden rounded-xl bg-slate-950 p-2 shadow-inner border border-slate-900"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.html || '') }}
+          html={DOMPurify.sanitize(block.html || '')}
         />
       )}
 

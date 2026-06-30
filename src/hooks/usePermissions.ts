@@ -9,8 +9,9 @@ export const usePermissions = () => {
    * Admin role always returns true.
    */
   const hasPermission = (moduleName: string, action: 'view' | 'edit' = 'view'): boolean => {
-    // Admin has total access
-    if (userRoles.includes('admin')) return true;
+    // Admin and Superadmin have total access
+    const rolesStr = userRoles as string[];
+    if (rolesStr.includes('admin') || rolesStr.includes('superadmin')) return true;
 
     // If not authenticated or permissions not loaded, deny access
     if (!user || !permissions) return false;
@@ -27,7 +28,8 @@ export const usePermissions = () => {
    * Other roles with general ministries edit permission have access unless restricted by an explicit allowed list.
    */
   const canEditMinistry = (minId: string): boolean => {
-    if (userRoles.includes('admin')) return true;
+    const rolesStr = userRoles as string[];
+    if (rolesStr.includes('admin') || rolesStr.includes('superadmin')) return true;
     if (!user) return false;
 
     // 1. Explicit leader check

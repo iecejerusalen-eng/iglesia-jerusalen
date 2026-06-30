@@ -22,7 +22,8 @@ import {
   Package,
   Sparkles,
   Shield,
-  Palette
+  Palette,
+  Gamepad2
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -166,6 +167,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Programas y Estudios',
     path: '/admin/recursos-abiertos',
     icon: FileText,
+    group: 'educacion'
+  },
+  {
+    id: 'games',
+    label: 'Juegos',
+    name: 'Juegos',
+    path: '/admin/juegos',
+    icon: Gamepad2,
     group: 'educacion'
   },
   {
@@ -319,6 +328,22 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/lms/matriculas',
     icon: Users,
     group: 'educacion'
+  },
+  {
+    id: 'audio_library',
+    label: 'Gestor de Audios',
+    name: 'Biblioteca de Sonidos',
+    path: '/admin/juegos/audio-library',
+    icon: Music,
+    group: 'eventos_medios'
+  },
+  {
+    id: 'presentation_editor',
+    label: 'Presentación (Pitch Deck)',
+    name: 'Editor de Presentación',
+    path: '/admin/presentacion',
+    icon: Sparkles,
+    group: 'diseno'
   },
   {
     id: 'plugins',

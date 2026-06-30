@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { Upload, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import type { LMSAssignmentSubmission, LMSActivity } from '../../../types';
 import { toast } from 'sonner';
+import { uploadFileToCloudinary } from '../../../lib/cloudinaryService';
 
 interface Props {
   activity: LMSActivity;
@@ -50,23 +51,8 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
       let fileUrl = submission?.file_url || null;
 
       if (file) {
-        // Upload to a media bucket or documents bucket
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${activity.id}_${studentId}_${Date.now()}.${fileExt}`;
-        const filePath = `assignments/${fileName}`;
-
-        // Assuming a generic 'media' bucket exists based on other components
-        const { error: uploadError } = await supabase.storage
-          .from('media')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: publicUrlData } = supabase.storage
-          .from('media')
-          .getPublicUrl(filePath);
-          
-        fileUrl = publicUrlData.publicUrl;
+        // Subir a Cloudinary (resourceType 'raw' para que acepte docx, pdf, zip, etc.)
+        fileUrl = await uploadFileToCloudinary(file, 'assignments', 'raw');
       }
 
       if (submission) {

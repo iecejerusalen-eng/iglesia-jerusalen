@@ -8,6 +8,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import { BibleVerseExtension } from '../../extensions/BibleVerseExtension';
 import DOMPurify from 'dompurify';
 import {
   Bold,
@@ -29,6 +30,7 @@ import {
   Undo2,
   Redo2,
   Trash2,
+  BookOpen,
 } from 'lucide-react';
 
 interface Props {
@@ -72,6 +74,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
       TaskItem.configure({
         nested: true,
       }),
+      BibleVerseExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -81,7 +84,7 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
         ADD_TAGS: ['iframe', 'img', 'input', 'label', 'span'], 
         ADD_ATTR: [
           'allowfullscreen', 'frameborder', 'src', 'width', 'height', 'style', 'class', 'alt', 'title',
-          'type', 'checked', 'disabled', 'data-type', 'data-checked'
+          'type', 'checked', 'disabled', 'data-type', 'data-checked', 'data-reference'
         ] 
       });
       onChange(cleanHtml);
@@ -107,6 +110,13 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
     const url = prompt('Ingresa la URL de la imagen:');
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+
+  const addBibleVerse = () => {
+    const reference = prompt('Ingresa la cita bíblica (ej. Juan 3:16):');
+    if (reference) {
+      editor.chain().focus().setBibleVerse({ reference }).run();
     }
   };
 
@@ -426,6 +436,15 @@ const RichTextEditor = ({ content, onChange, disabled = false }: Props) => {
               title="Insertar Video de YouTube"
             >
               <MonitorPlay size={16} />
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); addBibleVerse(); }}
+              onMouseDown={(e) => e.preventDefault()}
+              className={`p-1.5 rounded cursor-pointer transition-colors ${editor.isActive('bibleVerse') ? 'bg-gray-200 dark:bg-slate-850 text-black dark:text-white ring-1 ring-gray-300 dark:ring-white/10' : 'text-amber-600 dark:text-amber-500 hover:bg-gray-200 dark:hover:bg-slate-800'}`}
+              type="button"
+              title="Insertar Versículo Bíblico"
+            >
+              <BookOpen size={16} />
             </button>
           </div>
 

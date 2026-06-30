@@ -24,7 +24,7 @@ const MobileBottomNav: React.FC = () => {
     ['/ministerios', '/eventos', '/peticiones'].some((p) => location.pathname === p);
 
   const isRecursosActive = () =>
-    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia'].some((p) => location.pathname === p);
+    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia', '/recursos/juegos'].some((p) => location.pathname === p);
 
   const toggleSheet = (type: 'comunidad' | 'recursos' | 'mas') => {
     if (activeSheet === type) {
@@ -269,6 +269,19 @@ const MobileBottomNav: React.FC = () => {
                 <div>
                   <div className="font-semibold text-gray-800 dark:text-gray-200">Programas / Estudios</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Planes de discipulado y escuela dominical</div>
+                </div>
+              </Link>
+              <Link
+                to="/recursos/juegos"
+                onClick={closeSheet}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center">
+                  <span className="text-xl leading-none">🎮</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">Juegos Bíblicos</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Aprende jugando con dinámicas interactivas</div>
                 </div>
               </Link>
             </div>

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import type { InventoryCategory, InventoryItem } from '../../types';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
+import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -195,19 +196,8 @@ const InventoryManager = () => {
   const uploadPhoto = async (file: File): Promise<string | null> => {
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
-      const timestamp = Date.now();
-      const filename = `item_${timestamp}.${fileExt}`;
-      const path = `photos/${filename}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('inventory')
-        .upload(path, file, { cacheControl: '31536000', upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('inventory').getPublicUrl(path);
-      return data?.publicUrl || null;
+      const publicUrl = await uploadFileToCloudinary(file, 'inventory_photos', 'image');
+      return publicUrl;
     } catch (err: any) {
       console.error('Error uploading item photo:', err);
       toast.error('Error al subir la imagen: ' + err.message);

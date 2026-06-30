@@ -6,8 +6,9 @@ import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   FolderLock, Upload, Download, Trash2, FileText, Image as ImageIcon,
-  RefreshCw, Lock, FileArchive
+  RefreshCw, Lock, FileArchive, Cloud
 } from 'lucide-react';
+import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 
 interface VaultFile {
   name: string;
@@ -18,6 +19,7 @@ interface VaultFile {
     lastModified: string;
   };
   previewUrl?: string;
+  isCloudinary?: boolean;
 }
 
 const MediaVault = () => {
@@ -57,6 +59,29 @@ const MediaVault = () => {
             }))
         : [];
 
+      // Fetch from Cloudinary tracked table
+      const { data: cloudinaryData, error: cloudinaryError } = await supabase
+        .from('media_vault_files')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (cloudinaryError && cloudinaryError.code !== '42P01') {
+        // Ignore 42P01 (relation does not exist) to avoid crashing before running the SQL script
+        console.error('Error fetching Cloudinary files:', cloudinaryError);
+      }
+      
+      const cloudinaryFileList: VaultFile[] = (cloudinaryData || []).map(f => ({
+        name: f.name,
+        id: f.id,
+        metadata: {
+          size: f.size || 0,
+          mimetype: f.mimetype || '',
+          lastModified: f.created_at
+        },
+        previewUrl: f.url,
+        isCloudinary: true
+      }));
+
       // Generate signed URLs for previews and downloads
       const filesWithPreviews = await Promise.all(
         fileList.map(async (file) => {
@@ -78,7 +103,12 @@ const MediaVault = () => {
         })
       );
 
-      setFiles(filesWithPreviews);
+      // Merge and sort both lists by date
+      const mergedFiles = [...cloudinaryFileList, ...filesWithPreviews].sort((a, b) => {
+        return new Date(b.metadata.lastModified).getTime() - new Date(a.metadata.lastModified).getTime();
+      });
+
+      setFiles(mergedFiles);
     } catch (err) {
       console.error('Error fetching media vault files:', err);
       toast.error('Error al cargar la bóveda de media');
@@ -99,12 +129,26 @@ const MediaVault = () => {
     setUploading(true);
 
     try {
-      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const { error } = await supabase.storage
-        .from('media_vault')
-        .upload(fileName, file);
+      // Subir a Cloudinary
+      const fileUrl = await uploadFileToCloudinary(file, 'media_vault', 'auto');
 
-      if (error) throw error;
+      // Registrar en la base de datos
+      const { error } = await supabase
+        .from('media_vault_files')
+        .insert({
+          name: file.name,
+          url: fileUrl,
+          mimetype: file.type,
+          size: file.size
+        });
+
+      if (error) {
+        if (error.code === '42P01') {
+          toast.error('La tabla media_vault_files no existe. Ejecuta el script SQL de migración.');
+        } else {
+          throw error;
+        }
+      }
 
       toast.success('Archivo subido correctamente a la bóveda privada');
       fetchFiles();
@@ -117,18 +161,32 @@ const MediaVault = () => {
     }
   };
 
-  const handleDownload = async (fileName: string) => {
+  const handleDownload = async (file: VaultFile) => {
     try {
+      if (file.isCloudinary && file.previewUrl) {
+        // Para Cloudinary abrimos la URL en nueva pestaña, con flag de fl_attachment
+        const downloadUrl = file.previewUrl.replace('/upload/', '/upload/fl_attachment/');
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', file.name);
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Descarga iniciada');
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('media_vault')
-        .createSignedUrl(fileName, 60); // short-lived 60 seconds link
+        .createSignedUrl(file.name, 60); // short-lived 60 seconds link
 
       if (error || !data) throw error || new Error('No se pudo generar enlace de descarga');
 
       // Open download in a new tab or trigger manual download
       const link = document.createElement('a');
       link.href = data.signedUrl;
-      link.setAttribute('download', fileName);
+      link.setAttribute('download', file.name);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -139,7 +197,7 @@ const MediaVault = () => {
     }
   };
 
-  const handleDelete = async (fileName: string) => {
+  const handleDelete = async (file: VaultFile) => {
     const confirmed = await confirm({
       title: 'Eliminar recurso',
       message: '¿Estás seguro de eliminar este recurso permanentemente de la bóveda multimedia?',
@@ -150,13 +208,20 @@ const MediaVault = () => {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.storage
-        .from('media_vault')
-        .remove([fileName]);
+      if (file.isCloudinary) {
+        const { error } = await supabase
+          .from('media_vault_files')
+          .delete()
+          .eq('id', file.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.storage
+          .from('media_vault')
+          .remove([file.name]);
+        if (error) throw error;
+      }
 
-      if (error) throw error;
-
-      setFiles(prev => prev.filter(f => f.name !== fileName));
+      setFiles(prev => prev.filter(f => f.id !== file.id));
       toast.success('Recurso eliminado de la bóveda');
     } catch (err) {
       console.error('Error deleting asset:', err);
@@ -246,7 +311,7 @@ const MediaVault = () => {
           <>
             {files.map((file) => (
               <AnimeFadeUp
-                key={file.name}
+                key={file.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-[280px]"
               >
                 {/* Preview window */}
@@ -266,7 +331,7 @@ const MediaVault = () => {
                     </div>
                   )}
                   <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white rounded-full p-1 border border-white/20">
-                    <Lock size={12} className="text-amber-400" />
+                    {file.isCloudinary ? <Cloud size={12} className="text-blue-400" /> : <Lock size={12} className="text-amber-400" />}
                   </div>
                 </div>
 
@@ -289,7 +354,7 @@ const MediaVault = () => {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-white/5 mt-2">
                     <button
-                      onClick={() => handleDownload(file.name)}
+                      onClick={() => handleDownload(file)}
                       className="flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 cursor-pointer"
                     >
                       <Download size={14} />
@@ -298,7 +363,7 @@ const MediaVault = () => {
 
                     {canEdit && (
                       <button
-                        onClick={() => handleDelete(file.name)}
+                        onClick={() => handleDelete(file)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                         title="Eliminar recurso"
                       >

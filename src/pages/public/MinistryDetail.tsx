@@ -4,6 +4,7 @@ import { ArrowLeft, User, Calendar, Users, AlertCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
+import RichTextRenderer from '../../components/common/RichTextRenderer';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
 const MinistryDetail = () => {
@@ -245,9 +246,9 @@ const MinistryDetail = () => {
         {ministry.content_blocks && Array.isArray(ministry.content_blocks) && ministry.content_blocks.length > 0 ? (
           <BlockRenderer blocks={ministry.content_blocks} />
         ) : (
-          <div 
+          <RichTextRenderer 
             className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(ministry.description || '') }}
+            html={DOMPurify.sanitize(ministry.description || '')}
           />
         )}
       </div>
