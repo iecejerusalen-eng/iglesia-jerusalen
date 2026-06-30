@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, ChevronUp, Church, ShieldCheck, Wrench, LayoutDashboard, Globe, 
   ShoppingBag, Server, CheckCircle2, GraduationCap, Users, Gamepad2, CreditCard, 
-  Radio, HardDrive, Smartphone, Code, PlaySquare 
+  Radio, HardDrive, Smartphone, Code, PlaySquare, Presentation as PresentationIcon
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../../config/supabase';
@@ -196,7 +196,7 @@ const defaultSlides: PresentationSlide[] = [
 const IconMap: Record<string, React.ElementType> = {
   Church, ShieldCheck, Wrench, LayoutDashboard, Globe, ShoppingBag, Server, CheckCircle2,
   GraduationCap, Users, Gamepad2, CreditCard, Radio, HardDrive, Smartphone, Code, PlaySquare,
-  Presentation: Presentation
+  Presentation: PresentationIcon
 };
 
 export const Presentation = () => {
@@ -265,7 +265,7 @@ export const Presentation = () => {
   const slide = slides[currentSlide];
   
   // Resolve icon
-  let IconComponent = Church;
+  let IconComponent: React.ElementType = Church;
   if (typeof slide.icon === 'string' && IconMap[slide.icon]) {
     IconComponent = IconMap[slide.icon];
   } else if (typeof slide.icon !== 'string' && slide.icon) {
