@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore } from '../../store/useThemeStore';
-import { Moon, Sun, Menu, X } from 'lucide-react';
+import { Moon, Sun, Menu, X, ChevronUp, ChevronDown } from 'lucide-react';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
@@ -14,6 +14,7 @@ import Section6StoreFinance from './Section6StoreFinance';
 import Section7Design from './Section7Design';
 import Section8Logistics from './Section8Logistics';
 import Section9Security from './Section9Security';
+import Section10Departments from './Section10Departments';
 import Section10Architecture from './Section10Architecture';
 
 export default function PresentationLayout() {
@@ -30,8 +31,9 @@ export default function PresentationLayout() {
     { id: 'store', title: '6. Tienda y Finanzas' },
     { id: 'design', title: '7. Diseño y Editor' },
     { id: 'logistics', title: '8. Logística' },
-    { id: 'security', title: '9. Analíticas' },
-    { id: 'tech', title: '10. Arquitectura' }
+    { id: 'security', title: '9. Analíticas y Seguridad' },
+    { id: 'departments', title: '10. Ministerios' },
+    { id: 'tech', title: '11. Arquitectura' }
   ];
 
   // Keybindings and Scroll handling
@@ -39,10 +41,8 @@ export default function PresentationLayout() {
     const handleWheel = (e: WheelEvent) => {
       if (document.body.style.pointerEvents === 'none') return;
       
-      // Target elements inside sections might need scrolling. 
-      // Only trigger main navigation if the user scrolls on the main container.
       const target = e.target as HTMLElement;
-      if (target.closest('.scrollable-content')) return; // Allow inner scroll
+      if (target.closest('.scrollable-content')) return; 
 
       if (e.deltaY > 50) {
         document.body.style.pointerEvents = 'none';
@@ -79,8 +79,11 @@ export default function PresentationLayout() {
     root.classList.add(nextTheme);
   };
 
+  const handlePrev = () => setActiveSection(prev => Math.max(prev - 1, 0));
+  const handleNext = () => setActiveSection(prev => Math.min(prev + 1, sections.length - 1));
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-surface dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-500 font-sans selection:bg-gold-500/30">
+    <div className="flex h-screen w-full overflow-hidden bg-surface dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-500 font-sans selection:bg-gold-500/30 relative">
       
       {/* Background ambient effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -92,13 +95,13 @@ export default function PresentationLayout() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center glass-nav border-b border-gray-200 dark:border-white/10">
         <div className="flex items-center gap-2">
           <img src={soloLogoColorido} alt="Iglesia Jerusalén" className="w-6 h-6 object-contain" />
-          <span className="font-bold">Ecosistema Jerusalén</span>
+          <span className="font-bold truncate max-w-[200px]">Ecosistema Jerusalén</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={toggleTheme} className="p-2">
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <button onClick={toggleTheme} className="p-2 bg-gray-100 dark:bg-white/5 rounded-full">
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
           </button>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-gray-100 dark:bg-white/5 rounded-full">
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -118,7 +121,10 @@ export default function PresentationLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1 mt-16 lg:mt-0">
+        <nav className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1 mt-16 lg:mt-0 relative">
+          {/* Active section indicator line */}
+          <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-200 dark:bg-white/10 rounded-full" />
+          
           {sections.map((section, idx) => (
             <button
               key={section.id}
@@ -126,22 +132,24 @@ export default function PresentationLayout() {
                 setActiveSection(idx);
                 setSidebarOpen(false);
               }}
-              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-300 text-sm flex items-center justify-between ${
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-300 text-sm flex items-center gap-3 relative z-10 ${
                 activeSection === idx 
-                  ? 'bg-gold-gradient text-white shadow-md' 
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                  ? 'bg-gold-gradient text-white shadow-md font-bold' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 pl-6'
               }`}
             >
+              {/* Vertical line connector logic */}
+              <div className={`w-2 h-2 rounded-full absolute -left-1 ${activeSection === idx ? 'bg-[#C79D3F] ring-4 ring-[#C79D3F]/30' : 'bg-gray-300 dark:bg-gray-700'}`} />
+              
               <span>{section.title}</span>
-              {activeSection === idx && <motion.div layoutId="active-dot" className="w-2 h-2 rounded-full bg-white" />}
             </button>
           ))}
         </nav>
 
         <div className="p-4 border-t border-gray-200 dark:border-white/10 hidden lg:flex justify-between items-center">
-          <span className="text-xs text-gray-500">Versión Interactiva 3.0</span>
+          <span className="text-xs text-gray-500 font-medium">Versión Interactiva 3.0</span>
           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-600" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
           </button>
         </div>
       </aside>
@@ -166,9 +174,30 @@ export default function PresentationLayout() {
             {activeSection === 6 && <Section7Design onNext={() => setActiveSection(7)} />}
             {activeSection === 7 && <Section8Logistics onNext={() => setActiveSection(8)} />}
             {activeSection === 8 && <Section9Security onNext={() => setActiveSection(9)} />}
-            {activeSection === 9 && <Section10Architecture />}
+            {activeSection === 9 && <Section10Departments onNext={() => setActiveSection(10)} />}
+            {activeSection === 10 && <Section10Architecture />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Global Navigation Controls */}
+        <div className="absolute right-6 bottom-6 flex flex-col gap-2 z-50">
+          <button 
+            onClick={handlePrev}
+            disabled={activeSection === 0}
+            className="p-3 rounded-full bg-white dark:bg-slate-800 text-gray-800 dark:text-white shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            aria-label="Anterior"
+          >
+            <ChevronUp className="w-6 h-6" />
+          </button>
+          <button 
+            onClick={handleNext}
+            disabled={activeSection === sections.length - 1}
+            className="p-3 rounded-full bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30 hover:bg-[#b08b35] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            aria-label="Siguiente"
+          >
+            <ChevronDown className="w-6 h-6" />
+          </button>
+        </div>
       </main>
 
     </div>
