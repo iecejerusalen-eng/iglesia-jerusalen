@@ -1,4 +1,3 @@
-import React from 'react';
 import PresentationLayout from '../../components/presentation/PresentationLayout';
 import { Helmet } from 'react-helmet-async';
 

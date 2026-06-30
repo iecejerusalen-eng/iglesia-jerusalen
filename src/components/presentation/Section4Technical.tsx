@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Database, Server, Image as ImageIcon, Key, Cloud } from 'lucide-react';
 

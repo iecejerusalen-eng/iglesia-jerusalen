@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Users, Heart, BookOpen, Music, ShoppingBag, Gamepad2, GraduationCap, X } from 'lucide-react';
 

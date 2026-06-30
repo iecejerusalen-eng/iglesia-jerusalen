@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Church, Layers, Database, LayoutTemplate } from 'lucide-react';
 
@@ -55,7 +55,7 @@ export default function Section1Overview({ onNext }: { onNext: () => void }) {
   );
 }
 
-function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) {
+function FeatureCard({ icon, title, description, delay }: { icon: ReactNode, title: string, description: string, delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
