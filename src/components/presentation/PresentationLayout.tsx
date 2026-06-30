@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore } from '../../store/useThemeStore';
-import { Moon, Sun, Church, Menu, X } from 'lucide-react';
+import { Moon, Sun, Menu, X } from 'lucide-react';
+import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
+import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 import Section1Overview from './Section1Overview';
 import Section2LMS from './Section2LMS';
@@ -89,7 +91,7 @@ export default function PresentationLayout() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center glass-nav border-b border-gray-200 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <Church className="w-6 h-6 text-[#C79D3F]" />
+          <img src={soloLogoColorido} alt="Iglesia Jerusalén" className="w-6 h-6 object-contain" />
           <span className="font-bold">Ecosistema Jerusalén</span>
         </div>
         <div className="flex items-center gap-2">
@@ -107,8 +109,8 @@ export default function PresentationLayout() {
         className={`fixed inset-y-0 left-0 z-40 w-72 glass-nav border-r border-gray-200 dark:border-white/10 transform transition-transform duration-300 ease-in-out flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} lg:relative lg:flex`}
       >
         <div className="p-6 hidden lg:flex items-center gap-3 border-b border-gray-200 dark:border-white/10">
-          <div className="p-2 bg-gradient-to-br from-[#9D660E] to-[#FFD679] rounded-lg shadow-lg">
-            <Church className="w-6 h-6 text-white" />
+          <div className="p-2 bg-gradient-to-br from-[#9D660E] to-[#FFD679] rounded-lg shadow-lg flex items-center justify-center">
+            <img src={soloLogoBlanco} alt="Iglesia Jerusalén" className="w-6 h-6 object-contain" />
           </div>
           <div>
             <h1 className="font-serif font-bold text-lg leading-none">Iglesia Jerusalén</h1>
