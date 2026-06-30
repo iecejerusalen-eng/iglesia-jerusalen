@@ -1,34 +1,47 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore } from '../../store/useThemeStore';
+import { Moon, Sun, Church, Menu, X } from 'lucide-react';
+
 import Section1Overview from './Section1Overview';
 import Section2LMS from './Section2LMS';
-import Section3MediaGames from './Section3MediaGames';
-import Section4CommunityStore from './Section4CommunityStore';
-import Section5Admin from './Section5Admin';
-import Section6Tech from './Section6Tech';
-import { Moon, Sun, Church } from 'lucide-react';
+import Section3Media from './Section3Media';
+import Section4Community from './Section4Community';
+import Section5Games from './Section5Games';
+import Section6StoreFinance from './Section6StoreFinance';
+import Section7Design from './Section7Design';
+import Section8Logistics from './Section8Logistics';
+import Section9Security from './Section9Security';
+import Section10Architecture from './Section10Architecture';
 
 export default function PresentationLayout() {
   const [activeSection, setActiveSection] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, setTheme } = useThemeStore();
   
   const sections = [
-    { id: 'overview', title: 'Inicio' },
-    { id: 'lms', title: 'Educación' },
-    { id: 'media', title: 'Multimedia & Juegos' },
-    { id: 'community', title: 'Comunidad & Tienda' },
-    { id: 'admin', title: 'Centro Admin' },
-    { id: 'tech', title: 'Arquitectura' }
+    { id: 'overview', title: '1. Ecosistema' },
+    { id: 'lms', title: '2. Aula Virtual' },
+    { id: 'media', title: '3. Multimedia' },
+    { id: 'community', title: '4. Comunidad' },
+    { id: 'games', title: '5. Juegos Bíblicos' },
+    { id: 'store', title: '6. Tienda y Finanzas' },
+    { id: 'design', title: '7. Diseño y Editor' },
+    { id: 'logistics', title: '8. Logística' },
+    { id: 'security', title: '9. Analíticas' },
+    { id: 'tech', title: '10. Arquitectura' }
   ];
 
+  // Keybindings and Scroll handling
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Prevent multiple scroll triggers
       if (document.body.style.pointerEvents === 'none') return;
       
-      // We only want to trigger next section if we are at the bottom of the current section, 
-      // or at the top. Since these are full height sections, we check deltaY
+      // Target elements inside sections might need scrolling. 
+      // Only trigger main navigation if the user scrolls on the main container.
+      const target = e.target as HTMLElement;
+      if (target.closest('.scrollable-content')) return; // Allow inner scroll
+
       if (e.deltaY > 50) {
         document.body.style.pointerEvents = 'none';
         setTimeout(() => { document.body.style.pointerEvents = 'auto'; }, 1000);
@@ -40,8 +53,20 @@ export default function PresentationLayout() {
       }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        setActiveSection(prev => Math.min(prev + 1, sections.length - 1));
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        setActiveSection(prev => Math.max(prev - 1, 0));
+      }
+    };
+
     window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => window.removeEventListener('wheel', handleWheel);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [sections.length]);
 
   const toggleTheme = () => {
@@ -53,87 +78,96 @@ export default function PresentationLayout() {
   };
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-surface dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-500 font-sans relative selection:bg-gold-500/30">
+    <div className="flex h-screen w-full overflow-hidden bg-surface dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-500 font-sans selection:bg-gold-500/30">
       
-      {/* Background ambient effects - Gold & Primary */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/10 dark:bg-blue-900/20 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#C79D3F]/10 dark:bg-[#C79D3F]/15 blur-[120px]" />
+      {/* Background ambient effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/5 dark:bg-blue-900/10 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#C79D3F]/5 dark:bg-[#C79D3F]/10 blur-[120px]" />
       </div>
 
-      {/* Floating Header / Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4">
-        <div className="flex items-center gap-3">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center glass-nav border-b border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-2">
+          <Church className="w-6 h-6 text-[#C79D3F]" />
+          <span className="font-bold">Ecosistema Jerusalén</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={toggleTheme} className="p-2">
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Sidebar Navigation */}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-40 w-72 glass-nav border-r border-gray-200 dark:border-white/10 transform transition-transform duration-300 ease-in-out flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} lg:relative lg:flex`}
+      >
+        <div className="p-6 hidden lg:flex items-center gap-3 border-b border-gray-200 dark:border-white/10">
           <div className="p-2 bg-gradient-to-br from-[#9D660E] to-[#FFD679] rounded-lg shadow-lg">
             <Church className="w-6 h-6 text-white" />
           </div>
-          <span className="font-serif font-bold text-xl tracking-tight hidden md:block">
-            Jerusalén <span className="font-sans font-light text-gray-500 dark:text-gray-400 text-sm">| Ecosistema</span>
-          </span>
+          <div>
+            <h1 className="font-serif font-bold text-lg leading-none">Iglesia Jerusalén</h1>
+            <span className="font-sans text-xs text-gray-500 dark:text-gray-400">Guía de la Plataforma</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <nav className="hidden lg:flex bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-full p-1.5 border border-gray-200 dark:border-white/10 shadow-sm">
-            {sections.map((section, idx) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(idx)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  activeSection === idx 
-                    ? 'bg-gold-gradient text-white shadow-md' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {section.title}
-              </button>
-            ))}
-          </nav>
+        <nav className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-1 mt-16 lg:mt-0">
+          {sections.map((section, idx) => (
+            <button
+              key={section.id}
+              onClick={() => {
+                setActiveSection(idx);
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-300 text-sm flex items-center justify-between ${
+                activeSection === idx 
+                  ? 'bg-gold-gradient text-white shadow-md' 
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <span>{section.title}</span>
+              {activeSection === idx && <motion.div layoutId="active-dot" className="w-2 h-2 rounded-full bg-white" />}
+            </button>
+          ))}
+        </nav>
 
-          <button 
-            onClick={toggleTheme}
-            className="p-3 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <div className="p-4 border-t border-gray-200 dark:border-white/10 hidden lg:flex justify-between items-center">
+          <span className="text-xs text-gray-500">Versión Interactiva 3.0</span>
+          <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-600" />}
           </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Content Area - Slide transitions */}
-      <main className="relative w-full h-full z-10 pt-20">
+      {/* Main Content Area */}
+      <main className="flex-1 relative z-10 w-full h-full pt-16 lg:pt-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSection}
-            initial={{ opacity: 0, y: 80, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -80, scale: 0.95 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.5 }}
             className="w-full h-full"
           >
             {activeSection === 0 && <Section1Overview onNext={() => setActiveSection(1)} />}
             {activeSection === 1 && <Section2LMS onNext={() => setActiveSection(2)} />}
-            {activeSection === 2 && <Section3MediaGames onNext={() => setActiveSection(3)} />}
-            {activeSection === 3 && <Section4CommunityStore onNext={() => setActiveSection(4)} />}
-            {activeSection === 4 && <Section5Admin onNext={() => setActiveSection(5)} />}
-            {activeSection === 5 && <Section6Tech />}
+            {activeSection === 2 && <Section3Media onNext={() => setActiveSection(3)} />}
+            {activeSection === 3 && <Section4Community onNext={() => setActiveSection(4)} />}
+            {activeSection === 4 && <Section5Games onNext={() => setActiveSection(5)} />}
+            {activeSection === 5 && <Section6StoreFinance onNext={() => setActiveSection(6)} />}
+            {activeSection === 6 && <Section7Design onNext={() => setActiveSection(7)} />}
+            {activeSection === 7 && <Section8Logistics onNext={() => setActiveSection(8)} />}
+            {activeSection === 8 && <Section9Security onNext={() => setActiveSection(9)} />}
+            {activeSection === 9 && <Section10Architecture />}
           </motion.div>
         </AnimatePresence>
       </main>
-
-      {/* Progress Indicators (Mobile / Side) */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 lg:hidden">
-        {sections.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setActiveSection(idx)}
-            className={`w-2.5 rounded-full transition-all duration-300 ${
-              activeSection === idx 
-                ? 'h-12 bg-gold-gradient shadow-[0_0_10px_rgba(199,157,63,0.5)]' 
-                : 'h-2.5 bg-gray-300 dark:bg-gray-700'
-            }`}
-            aria-label={`Go to section ${idx + 1}`}
-          />
-        ))}
-      </div>
 
     </div>
   );
