@@ -1,139 +1,233 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Church, ShieldCheck, Wrench, LayoutDashboard, Globe, ShoppingBag, Server, CheckCircle2 } from 'lucide-react';
+import { 
+  ChevronDown, ChevronUp, Church, ShieldCheck, Wrench, LayoutDashboard, Globe, 
+  ShoppingBag, Server, CheckCircle2, GraduationCap, Users, Gamepad2, CreditCard, 
+  Radio, HardDrive, Smartphone, Code, PlaySquare 
+} from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { supabase } from '../../config/supabase';
 
 interface PresentationSlide {
   id: string;
+  order_index: number;
   title: string;
   subtitle: string;
   content: string;
-  icon: React.ElementType;
+  icon: string | React.ElementType; // Can be string from DB or Component in fallback
   image_url: string;
-  layout: 'split' | 'grid';
+  layout: string;
   features: string[];
+  animation_type?: string;
+  theme_color?: string;
 }
 
-const slides: PresentationSlide[] = [
+// ============================================================================
+// DATOS POR DEFECTO SÚPER DETALLADOS (EXPLICANDO TODA LA PLATAFORMA)
+// ============================================================================
+const defaultSlides: PresentationSlide[] = [
   {
     id: 'intro',
+    order_index: 1,
     title: 'Iglesia Jerusalén',
-    subtitle: 'Plataforma Web Integral',
-    content: 'Un proyecto innovador diseñado para proporcionar una plataforma en línea moderna, rápida y escalable, fortaleciendo la conexión y gestión de toda la comunidad de la iglesia.',
+    subtitle: 'La Plataforma Web Definitiva',
+    content: 'Bienvenido al sistema integral de gestión eclesial más avanzado. No es solo una página web; es un Ecosistema Digital Completo que unifica la administración, el discipulado, el comercio y la comunidad en una sola plataforma en la nube.',
     icon: Church,
     image_url: 'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&q=80',
     layout: 'split',
-    features: ['Modernidad', 'Escalabilidad', 'Comunidad en línea']
-  },
-  {
-    id: 'caracteristicas',
-    title: 'Características y Funciones',
-    subtitle: 'Todo lo que necesitas en un solo lugar',
-    content: 'El sistema integra múltiples módulos diseñados para cubrir cada necesidad de la congregación.',
-    icon: ShieldCheck,
-    image_url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80',
-    layout: 'grid',
-    features: [
-      'Gestión de usuarios y roles',
-      'Panel de administración completo',
-      'Vista pública interactiva',
-      'Tienda en línea integrada',
-      'Infraestructura moderna y robusta'
-    ]
+    features: ['Ecosistema Unificado', 'Arquitectura Modular', 'Escalabilidad Global']
   },
   {
     id: 'tecnologias',
-    title: 'Herramientas y Tecnologías',
-    subtitle: 'Stack tecnológico de vanguardia',
-    content: 'Construido con las mejores y más modernas herramientas del desarrollo web para asegurar rendimiento y fiabilidad.',
-    icon: Wrench,
+    order_index: 2,
+    title: 'Arquitectura de Vanguardia',
+    subtitle: 'El Stack Tecnológico',
+    content: 'Diseñado bajo una arquitectura robusta y moderna, garantizando tiempos de carga milimétricos y disponibilidad del 99.99%. Todo construido con las herramientas estándar de la industria Tech.',
+    icon: Server,
     image_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80',
-    layout: 'split',
-    features: [
-      'Frontend: React, Tailwind CSS, JS',
-      'Backend y BD: Supabase',
-      'Despliegue y Hosting: Vercel',
-      'Multimedia: Cloudinary'
-    ]
-  },
-  {
-    id: 'dashboard',
-    title: 'Dashboard y Panel Admin',
-    subtitle: 'Control total de la plataforma',
-    content: 'Una interfaz administrativa potente para gestionar cada aspecto del sitio web y la comunidad.',
-    icon: LayoutDashboard,
-    image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80',
-    layout: 'split',
-    features: [
-      'Visión general y métricas del sitio web',
-      'Gestión avanzada de usuarios y roles',
-      'Configuración dinámica del sistema',
-      'Control total de todos los módulos'
-    ]
-  },
-  {
-    id: 'public',
-    title: 'Vista Pública',
-    subtitle: 'El rostro digital de la Iglesia',
-    content: 'Una experiencia de usuario atractiva, rápida y accesible para que todos los miembros y visitantes puedan informarse.',
-    icon: Globe,
-    image_url: 'https://images.unsplash.com/photo-1497215848147-386f784e1832?auto=format&fit=crop&q=80',
     layout: 'grid',
     features: [
-      'Página de inicio dinámica',
-      'Sección de noticias y anuncios',
-      'Calendario y sección de eventos',
-      'Recursos, ministerios y prédicas'
+      'React 18 + Vite (Frontend Ultra Rápido)',
+      'TypeScript Estricto (Seguridad de Código)',
+      'Supabase (PostgreSQL + Auth + Realtime)',
+      'Zustand (Estado Global Offline-First)',
+      'Tailwind CSS (Diseño Premium)',
+      'Cloudinary (Optimización Multimedia)'
     ]
   },
   {
-    id: 'tienda',
-    title: 'Tienda en Línea',
-    subtitle: 'Comercio electrónico integrado',
-    content: 'Facilitamos el acceso a recursos, libros y materiales a través de una tienda virtual segura y fácil de usar.',
+    id: 'crm',
+    order_index: 3,
+    title: 'CRM y Gestión de Usuarios',
+    subtitle: 'Control Absoluto de Membresía',
+    content: 'El corazón del sistema. Un módulo de gestión de relaciones que administra los perfiles de los congregantes, sus roles y sus niveles de acceso a cada rincón de la plataforma.',
+    icon: Users,
+    image_url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80',
+    layout: 'split',
+    features: [
+      'Perfiles dinámicos y roles jerárquicos',
+      'Permisos Override (Excepciones por usuario)',
+      'Gestión de Ministerios y Departamentos',
+      'Sistema de Baneo de Cuentas en tiempo real',
+      'Autenticación Segura (Supabase Auth)'
+    ]
+  },
+  {
+    id: 'lms',
+    order_index: 4,
+    title: 'Aula Virtual (LMS)',
+    subtitle: 'Discipulado y Aprendizaje Online',
+    content: 'Una academia digital completa integrada directamente en la página. Los estudiantes pueden tomar cursos, ver lecciones en video y seguir su progreso académico minuto a minuto.',
+    icon: GraduationCap,
+    image_url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80',
+    layout: 'grid',
+    features: [
+      'Dashboard interactivo del estudiante',
+      'Cálculo de progreso matemático en tiempo real',
+      'Gamificación: Sistema de insignias (Badges)',
+      'Estructura: Cursos > Módulos > Lecciones',
+      'Calificaciones (Gradebook) para docentes'
+    ]
+  },
+  {
+    id: 'ecommerce',
+    order_index: 5,
+    title: 'Tienda Jerusalén',
+    subtitle: 'E-commerce Inteligente',
+    content: 'Un módulo comercial completo para distribuir recursos de la iglesia. Soporta tanto productos físicos como descargables digitales, gestionado completamente con persistencia local.',
     icon: ShoppingBag,
     image_url: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80',
     layout: 'split',
     features: [
-      'Catálogo de productos organizado',
-      'Carrito de compras intuitivo',
-      'Gestión de pedidos y envíos',
-      'Pagos en línea rápidos y seguros'
+      'Carrito de compras (Offline persistente)',
+      'Productos físicos y e-Books (Digitales)',
+      'Gestión de Variantes (Tallas y colores)',
+      'Ajustes dinámicos de precios por variante',
+      'Integración con Checkout y pagos seguros'
     ]
   },
   {
-    id: 'detalles',
-    title: 'Detalles Técnicos',
-    subtitle: 'Arquitectura de Software',
-    content: 'La infraestructura del proyecto está pensada para ser altamente disponible, segura y fácil de mantener.',
-    icon: Server,
-    image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80',
+    id: 'juegos',
+    order_index: 6,
+    title: 'Juegos y Gamificación',
+    subtitle: 'Módulo de Entretenimiento: Biblionario',
+    content: 'El aprendizaje bíblico transformado en un desafío divertido. Un completo motor de minijuegos diseñado para interactuar con todas las edades de la iglesia.',
+    icon: Gamepad2,
+    image_url: 'https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?auto=format&fit=crop&q=80',
     layout: 'grid',
     features: [
-      'Base de datos PostgreSQL vía Supabase',
-      'Servidor Edge y CDN provisto por Vercel',
-      'Gestión de imágenes optimizada con Cloudinary',
-      'Versionamiento y CI/CD integrado con GitHub'
+      'Niveles de dificultad escalables (1 al 15)',
+      'Soporte nativo de Emojis e Imágenes',
+      'Tabla de Clasificación (Leaderboard global)',
+      'Editor de preguntas intuitivo en el Admin',
+      'Explicaciones y referencias bíblicas al fallar'
+    ]
+  },
+  {
+    id: 'multimedia',
+    order_index: 7,
+    title: 'Recursos Multimedia',
+    subtitle: 'Prédicas, Canciones y Peticiones',
+    content: 'Administra todo el material audiovisual y las necesidades espirituales de la congregación con flujos de trabajo especializados y categorización dinámica.',
+    icon: PlaySquare,
+    image_url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80',
+    layout: 'split',
+    features: [
+      'Biblioteca de Prédicas con filtros y búsqueda',
+      'Repertorio de Canciones y acordes',
+      'Gestión de Peticiones de Oración anónimas',
+      'Vault de Recursos Abiertos para creativos',
+      'Almacenamiento Cloudinary sin pérdida de calidad'
+    ]
+  },
+  {
+    id: 'admin',
+    order_index: 8,
+    title: 'Panel de Administración',
+    subtitle: 'El Centro de Mando',
+    content: 'Una vista protegida donde los líderes pueden monitorear, crear y modificar absolutamente todos los aspectos del sistema sin escribir una sola línea de código.',
+    icon: LayoutDashboard,
+    image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80',
+    layout: 'grid',
+    features: [
+      'Gráficos y Métricas (Analytics Dashboard)',
+      'CMS (Sistema de Gestión de Contenido)',
+      'Gestor de Plugins y Ajustes del sistema',
+      'Editor de Páginas Dinámicas',
+      'Diseño Glassmorphism Premium'
+    ]
+  },
+  {
+    id: 'offline',
+    order_index: 9,
+    title: 'Diseño Resiliente',
+    subtitle: 'Conexión y Sincronización',
+    content: 'Sabemos que la conexión a internet puede fallar. Por eso, el sistema cuenta con "Offline First capabilities", almacenando el carrito, preferencias de tema y progreso hasta que la conexión vuelve.',
+    icon: HardDrive,
+    image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80',
+    layout: 'split',
+    features: [
+      'Zustand Persist Middleware',
+      'Lógica de Sincronización en Background',
+      'Tema Claro/Oscuro guardado localmente',
+      'Optimizaciones para dispositivos móviles',
+      'Carga diferida (Lazy Loading)'
     ]
   },
   {
     id: 'conclusion',
+    order_index: 10,
     title: 'Conclusión',
-    subtitle: 'Un proyecto transformador',
-    content: 'La página web de Iglesia Jerusalén es un proyecto complejo que busca proporcionar una plataforma en línea integral. Con sus características y funciones, es una herramienta invaluable para la gestión y el crecimiento de nuestra comunidad.',
-    icon: CheckCircle2,
+    subtitle: 'El Futuro de Iglesia Jerusalén',
+    content: 'No es un MVP; es una aplicación empresarial (SaaS) adaptada al contexto de la iglesia, lista para crecer, recibir tráfico masivo y unir a la congregación en la era digital.',
+    icon: Globe,
     image_url: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&q=80',
-    layout: 'split',
+    layout: 'grid',
     features: [
-      'Gestión centralizada de recursos',
-      'Crecimiento escalable y medible',
-      'Comunidad más conectada e informada'
+      'Despliegue contínuo y Edge Network (Vercel)',
+      'Protección de Rutas (Auth Guards)',
+      'Preparado para integraciones futuras',
+      'Una congregación verdaderamente conectada'
     ]
   }
 ];
 
+// Helper to map string icon names to Lucide components if needed
+const IconMap: Record<string, React.ElementType> = {
+  Church, ShieldCheck, Wrench, LayoutDashboard, Globe, ShoppingBag, Server, CheckCircle2,
+  GraduationCap, Users, Gamepad2, CreditCard, Radio, HardDrive, Smartphone, Code, PlaySquare,
+  Presentation: Presentation
+};
+
 export const Presentation = () => {
+  const [slides, setSlides] = useState<PresentationSlide[]>(defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Intentar cargar las diapositivas desde Supabase si existen
+  useEffect(() => {
+    const fetchCustomSlides = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('presentation_slides')
+          .select('*')
+          .eq('is_active', true)
+          .order('order_index', { ascending: true });
+          
+        if (error && error.code !== '42P01') {
+          console.warn('Supabase fetch error, using defaults:', error);
+        } else if (data && data.length > 0) {
+          setSlides(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load slides, using default massive presentation');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCustomSlides();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -146,7 +240,7 @@ export const Presentation = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlide]);
+  }, [currentSlide, slides.length]);
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
@@ -160,19 +254,45 @@ export const Presentation = () => {
     }
   };
 
-  const slide = slides[currentSlide];
-  const IconComponent = slide.icon;
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-gray-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
-  const animationProps = {
-    initial: { opacity: 0, y: 50 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -50 }
+  const slide = slides[currentSlide];
+  
+  // Resolve icon
+  let IconComponent = Church;
+  if (typeof slide.icon === 'string' && IconMap[slide.icon]) {
+    IconComponent = IconMap[slide.icon];
+  } else if (typeof slide.icon !== 'string' && slide.icon) {
+    IconComponent = slide.icon as React.ElementType;
+  }
+
+  // Animation Maps
+  const getAnimationProps = (type?: string) => {
+    switch (type) {
+      case 'slide_up':
+        return { initial: { opacity: 0, y: 100 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -100 } };
+      case 'zoom':
+        return { initial: { opacity: 0, scale: 0.8 }, animate: { opacity: 1, scale: 1 }, exit: { opacity: 0, scale: 1.2 } };
+      case 'spring':
+        return { initial: { opacity: 0, x: 100 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -100 }, transition: { type: 'spring', bounce: 0.4 } };
+      case 'fade':
+      default:
+        return { initial: { opacity: 0, y: 30 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -30 } };
+    }
   };
+
+  const animProps = getAnimationProps(slide.animation_type);
 
   return (
     <div className="fixed inset-0 bg-gray-950 overflow-hidden text-white font-sans selection:bg-indigo-500/30">
       <Helmet>
-        <title>Presentación del Proyecto | Iglesia Jerusalén</title>
+        <title>Presentación Integral | Iglesia Jerusalén</title>
       </Helmet>
       
       {/* Background with parallax/blur effect */}
@@ -204,11 +324,11 @@ export const Presentation = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id}
-            {...animationProps}
+            {...animProps}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className={`flex-1 flex flex-col h-full ${slide.layout === 'split' ? 'md:flex-row items-center gap-10 lg:gap-16' : 'justify-center items-center text-center'}`}
           >
-            {/* Split Layout: Text */}
+            {/* Texto */}
             <div className={`flex-1 w-full ${slide.layout !== 'split' ? 'max-w-4xl mx-auto' : ''}`}>
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -216,14 +336,14 @@ export const Presentation = () => {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className={`inline-flex items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl mb-8 ${slide.layout === 'split' ? '' : 'mx-auto flex'}`}
               >
-                <IconComponent className="w-10 h-10 text-indigo-400" />
+                <IconComponent className="w-12 h-12 text-indigo-400" />
               </motion.div>
               
               <motion.h1 
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300 drop-shadow-sm leading-tight"
+                className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300 drop-shadow-sm leading-tight"
               >
                 {slide.title}
               </motion.h1>
@@ -233,7 +353,7 @@ export const Presentation = () => {
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
-                  className="text-2xl md:text-3xl font-medium text-indigo-300 mb-8 tracking-wide"
+                  className="text-2xl md:text-3xl font-bold text-indigo-400 mb-8 tracking-wide drop-shadow-sm uppercase"
                 >
                   {slide.subtitle}
                 </motion.h2>
@@ -262,12 +382,12 @@ export const Presentation = () => {
                       key={idx}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-4 bg-white/5 p-4 lg:p-5 rounded-2xl border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors group"
+                      className="flex items-center gap-4 bg-white/5 p-4 lg:p-5 rounded-2xl border border-white/10 backdrop-blur-md shadow-lg hover:bg-white/10 hover:-translate-y-1 transition-all group"
                     >
                       <div className="min-w-10 min-h-10 rounded-full bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/40 transition-colors">
                         <CheckCircle2 className="w-5 h-5 text-indigo-400" />
                       </div>
-                      <span className="text-gray-200 font-medium text-base lg:text-lg leading-tight">{feature}</span>
+                      <span className="text-gray-100 font-medium text-base lg:text-lg leading-tight">{feature}</span>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -282,13 +402,13 @@ export const Presentation = () => {
                 transition={{ delay: 0.4, duration: 0.8, type: 'spring' }}
                 className="flex-1 w-full max-w-2xl relative perspective-1000 hidden lg:block"
               >
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-3xl blur-3xl opacity-30 transform rotate-6 scale-105 animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-3xl blur-3xl opacity-40 transform rotate-6 scale-105 animate-pulse"></div>
                 <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent z-10"></div>
                   <img 
                     src={slide.image_url} 
                     alt={slide.title} 
-                    className="w-full h-[450px] xl:h-[550px] object-cover transform hover:scale-105 transition-transform duration-700"
+                    className="w-full h-[450px] xl:h-[600px] object-cover transform hover:scale-105 transition-transform duration-1000"
                   />
                 </div>
               </motion.div>
@@ -313,7 +433,7 @@ export const Presentation = () => {
             <button 
               key={idx}
               onClick={() => setCurrentSlide(idx)}
-              className={`h-2 md:h-2.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-6 md:w-8 bg-indigo-400' : 'w-2 md:w-2.5 bg-white/30 hover:bg-white/60'}`}
+              className={`h-2 md:h-2.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-8 md:w-10 bg-indigo-400' : 'w-2 md:w-2.5 bg-white/30 hover:bg-white/60'}`}
               aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
@@ -331,4 +451,3 @@ export const Presentation = () => {
     </div>
   );
 };
-
