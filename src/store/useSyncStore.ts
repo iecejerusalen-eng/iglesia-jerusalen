@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { enqueueMutation } from '../features/sync/services/syncQueue';
+import { enqueueMutation, type SyncPayload } from '../features/sync/services/syncQueue';
 import { processSyncQueue } from '../features/sync/services/syncWorker';
 import { pullFromServer } from '../features/sync/services/syncPull';
 
@@ -12,7 +12,7 @@ interface SyncState {
     tableName: string,
     recordId: string,
     action: 'INSERT' | 'UPDATE' | 'DELETE',
-    payload: any
+    payload: SyncPayload
   ) => Promise<void>;
   syncOfflineQueue: () => Promise<void>;
   pullFromServer: () => Promise<void>;
@@ -48,7 +48,7 @@ export const useSyncStore = create<SyncState>((set, get) => {
       tableName: string,
       recordId: string,
       action: 'INSERT' | 'UPDATE' | 'DELETE',
-      payload: any
+      payload: SyncPayload
     ) => {
       await enqueueMutation(tableName, recordId, action, payload);
     },

@@ -25,7 +25,7 @@ export const processSyncQueue = async (
   try {
     const db = await getDb();
     // Fetch all queued mutations and sort by created_at
-    let queue: SyncQueueItem[] = await db.getAll('sync_queue');
+    const queue: SyncQueueItem[] = await db.getAll('sync_queue');
     queue.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     if (queue.length === 0) {
@@ -74,6 +74,7 @@ export const processSyncQueue = async (
 
             if (conflict.winner === 'remote') {
               console.log(`Conflict resolved: Server wins for ${item.table_name} id ${item.record_id}`);
+              toast.warning(`Tus cambios en ${item.table_name} no se aplicaron porque alguien más modificó el registro.`);
               const r = conflict.resolvedRecord;
               
               if (item.table_name === 'members') {
@@ -140,9 +141,9 @@ export const processSyncQueue = async (
               const { error: delErr } = await supabase.from('member_emails').delete().eq('member_id', item.record_id);
               if (delErr) throw delErr;
 
-              const validEmails = emails.filter((x: any) => x.email && x.email.trim() !== '');
+              const validEmails = emails.filter((x: Record<string, unknown>) => typeof x.email === 'string' && x.email.trim() !== '');
               if (validEmails.length > 0) {
-                const { error: insErr } = await supabase.from('member_emails').insert(validEmails.map((x: any) => ({ member_id: item.record_id, email: x.email })));
+                const { error: insErr } = await supabase.from('member_emails').insert(validEmails.map((x: Record<string, unknown>) => ({ member_id: item.record_id, email: x.email })));
                 if (insErr) throw insErr;
               }
             }
@@ -152,7 +153,7 @@ export const processSyncQueue = async (
               if (delErr) throw delErr;
 
               if (service_areas.length > 0) {
-                const { error: insErr } = await supabase.from('member_service_areas').insert(service_areas.map((x: any) => ({ member_id: item.record_id, service_area_id: x.catalog_roles?.id || x })));
+                const { error: insErr } = await supabase.from('member_service_areas').insert(service_areas.map((x: Record<string, unknown>) => ({ member_id: item.record_id, service_area_id: (x.catalog_roles as Record<string, string>)?.id || x })));
                 if (insErr) throw insErr;
               }
             }
@@ -162,7 +163,7 @@ export const processSyncQueue = async (
               if (delErr) throw delErr;
 
               if (talents.length > 0) {
-                const { error: insErr } = await supabase.from('member_talents').insert(talents.map((x: any) => ({ member_id: item.record_id, talent_id: x.catalog_roles?.id || x })));
+                const { error: insErr } = await supabase.from('member_talents').insert(talents.map((x: Record<string, unknown>) => ({ member_id: item.record_id, talent_id: (x.catalog_roles as Record<string, string>)?.id || x })));
                 if (insErr) throw insErr;
               }
             }
@@ -172,7 +173,7 @@ export const processSyncQueue = async (
               if (delErr) throw delErr;
 
               if (spiritual_gifts.length > 0) {
-                const { error: insErr } = await supabase.from('member_spiritual_gifts').insert(spiritual_gifts.map((x: any) => ({ member_id: item.record_id, gift_id: x.catalog_roles?.id || x })));
+                const { error: insErr } = await supabase.from('member_spiritual_gifts').insert(spiritual_gifts.map((x: Record<string, unknown>) => ({ member_id: item.record_id, gift_id: (x.catalog_roles as Record<string, string>)?.id || x })));
                 if (insErr) throw insErr;
               }
             }
@@ -180,9 +181,9 @@ export const processSyncQueue = async (
 
           await db.delete('sync_queue', item.id);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error(`Sync error on table ${item.table_name} for record ${item.record_id}:`, err);
-          const errCode = err?.code || '';
+          const errCode = (err as Record<string, unknown>)?.code || '';
           const isPermanentDbError = typeof errCode === 'string' && (
             errCode.startsWith('23') || errCode.startsWith('42') || errCode.startsWith('22')
           );
@@ -192,7 +193,7 @@ export const processSyncQueue = async (
             if (errCode === '23505') errorMsg += 'Cédula/DNI o dato duplicado en el servidor.';
             else if (errCode === '42501') errorMsg += 'Permisos denegados (RLS) en el servidor.';
             else if (errCode === '42703') errorMsg += 'La columna "dedicated_verse" no existe en el servidor. Aplica la migración SQL.';
-            else errorMsg += err.message || 'Error de base de datos.';
+            else errorMsg += (err as Error)?.message || 'Error de base de datos.';
             toast.error(errorMsg, { duration: 6000 });
             await db.delete('sync_queue', item.id);
           } else {

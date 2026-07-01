@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -5,6 +6,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**'],
+  },
   plugins: [
 
     react(),
@@ -61,7 +68,7 @@ export default defineConfig({
     })
   ],
   esbuild: {
-    // @ts-ignore
+    // @ts-expect-error: vite esbuild types might be incomplete
     drop: ['console', 'debugger'],
   },
 
@@ -88,8 +95,20 @@ export default defineConfig({
             if (id.includes('emoji-mart') || id.includes('@emoji-mart')) {
               return 'emoji-mart';
             }
-            if (id.includes('react-router-dom') || id.includes('recharts')) {
+            if (id.includes('react-router-dom')) {
               return 'vendor-libs';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            if (id.includes('zod') || id.includes('react-hook-form')) {
+              return 'forms';
+            }
+            if (id.includes('zustand')) {
+              return 'state';
+            }
+            if (id.includes('sonner')) {
+              return 'ui-primitives';
             }
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-core';

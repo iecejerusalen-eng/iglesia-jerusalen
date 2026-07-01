@@ -1,10 +1,62 @@
 import { getDb } from '../../../config/localDb';
 
+export interface BasePayload {
+  [key: string]: unknown;
+}
+
+export interface MemberPayload extends BasePayload {
+  first_name: string;
+  last_name: string;
+  photo_url?: string | null;
+  birth_date?: string | null;
+  conversion_date?: string | null;
+  baptism_date?: string | null;
+  phone?: string | null;
+  dni?: string | null;
+  address?: string | null;
+  maps_link?: string | null;
+  is_leader?: boolean;
+  leadership_role?: string | null;
+  ministry_id?: string | null;
+  role_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  deleted_at?: string | null;
+  tithes_sum?: number;
+  emails?: Record<string, unknown>[];
+  service_areas?: Record<string, unknown>[];
+  talents?: Record<string, unknown>[];
+  spiritual_gifts?: Record<string, unknown>[];
+  gender?: string | null;
+  education_level?: string | null;
+  career_id?: string | null;
+  is_studying?: boolean;
+  studying_career_id?: string | null;
+  phone_country_code?: string;
+  dedicated_verse?: string | null;
+}
+
+export interface SchedulePayload extends BasePayload {
+  day: number;
+  title: string;
+  time_range: string;
+  description?: string | null;
+  order_index?: number;
+}
+
+export interface SermonNotePayload extends BasePayload {
+  user_id: string;
+  sermon_id?: string | null;
+  content: string;
+}
+
+export type SyncPayload = MemberPayload | SchedulePayload | SermonNotePayload | Record<string, unknown>;
+
 export const enqueueMutation = async (
   tableName: string,
   recordId: string,
   action: 'INSERT' | 'UPDATE' | 'DELETE',
-  payload: any
+  payload: SyncPayload
 ) => {
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
