@@ -4,6 +4,7 @@ import { useHomeData } from '../../features/home/hooks/useHomeData';
 import { HeroSection } from '../../features/home/components/HeroSection';
 import { StatsSection } from '../../features/home/components/StatsSection';
 import { WelcomeSection } from '../../features/home/components/WelcomeSection';
+import { DailyVerseSection } from '../../features/home/components/DailyVerseSection';
 import { SchedulesSection } from '../../features/home/components/SchedulesSection';
 import { EventsSection } from '../../features/home/components/EventsSection';
 import { SermonsSection } from '../../features/home/components/SermonsSection';
@@ -52,7 +53,12 @@ const Home = () => {
               return <HeroSection key={id} sectionData={section} />;
             }
             if (id === 'home_welcome') {
-              return <WelcomeSection key={id} sectionData={section} />;
+              return (
+                <div key={id} className="flex flex-col">
+                  <WelcomeSection sectionData={section} />
+                  <DailyVerseSection />
+                </div>
+              );
             }
             if (id === 'home_donations') {
               return <DonationsSection key={id} sectionData={section} />;

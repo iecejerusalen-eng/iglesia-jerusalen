@@ -427,10 +427,10 @@ export const SongViewer = ({
               .song-lyrics span.chord-node-wrapper::before {
                 content: attr(data-chord);
                 position: absolute;
-                bottom: 100%;
+                bottom: 1.2rem;
                 left: 50%;
                 transform: translateX(-50%);
-                font-size: 0.75rem;
+                font-size: 0.8rem;
                 font-weight: 800;
                 color: #dc2626;
                 font-family: 'Inter', sans-serif;
