@@ -378,6 +378,7 @@ const Navigation = () => {
                     <ThemeToggle />
                     <button
                       onClick={closeMenu}
+                      aria-label="Cerrar menú"
                       className="text-primary dark:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <X size={24} />
@@ -429,6 +430,7 @@ const Navigation = () => {
                         </span>
                         <button
                           onClick={() => setMobileComunidadOpen(!mobileComunidadOpen)}
+                          aria-label="Desplegar menú Comunidad"
                           className="p-2 text-primary hover:text-accent-red cursor-pointer"
                         >
                           <ChevronDown size={20} className={`transition-transform duration-200 ${mobileComunidadOpen ? 'rotate-180' : ''}`} />
@@ -495,6 +497,7 @@ const Navigation = () => {
                         </span>
                         <button
                           onClick={() => setMobileRecursosOpen(!mobileRecursosOpen)}
+                          aria-label="Desplegar menú Recursos"
                           className="p-2 text-primary hover:text-accent-red cursor-pointer"
                         >
                           <ChevronDown size={20} className={`transition-transform duration-200 ${mobileRecursosOpen ? 'rotate-180' : ''}`} />

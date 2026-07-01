@@ -58,25 +58,26 @@ export const Hangman = () => {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
-  useEffect(() => {
-    fetchWords();
-  }, []);
-
   const fetchWords = async () => {
     try {
       const { data, error } = await supabase
-        .from('game_hangman_words')
+        .from('biblical_words')
         .select('*');
-        
+      
       if (error) throw error;
-      if (data) {
-        // Simple client-side shuffle
-        setWords(data.sort(() => 0.5 - Math.random()));
+      if (data && data.length > 0) {
+        setWords(data);
+        const randomWord = data[Math.floor(Math.random() * data.length)];
+        setCurrentWord(randomWord);
       }
-    } catch (err) {
-      console.error('Error fetching words:', err);
+    } catch (error) {
+      console.error('Error fetching words:', error);
     }
   };
+
+  useEffect(() => {
+    fetchWords();
+  }, []);
 
   const startGame = () => {
     setScore(0);

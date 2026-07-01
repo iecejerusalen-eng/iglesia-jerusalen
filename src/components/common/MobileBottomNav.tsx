@@ -387,6 +387,7 @@ const MobileBottomNav: React.FC = () => {
                   key={item.label}
                   to={item.path || '#'}
                   onClick={closeSheet}
+                  aria-label={item.label}
                   className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors"
                 >
                   <div className={`mb-0.5 ${isItemActive ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
@@ -402,6 +403,7 @@ const MobileBottomNav: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={item.onClick}
+                  aria-label={item.label}
                   className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors cursor-pointer"
                 >
                   <div className={`mb-0.5 ${isItemActive ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
@@ -417,6 +419,7 @@ const MobileBottomNav: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={() => toggleSheet(item.sheetType!)}
+                  aria-label={`Menú ${item.label}`}
                   className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors cursor-pointer"
                 >
                   <div className={`mb-0.5 ${isItemActive ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
