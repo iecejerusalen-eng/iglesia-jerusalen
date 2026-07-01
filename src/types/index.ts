@@ -305,7 +305,7 @@ export interface Member {
   member_spiritual_gifts?: { catalog_roles: CatalogRole }[];
   ministries?: { name: string } | null;
   catalog_roles?: CatalogRole | null;
-  profiles?: Profile[];
+  profiles?: Partial<Profile>[];
   careers?: Career | null;
   studying_careers?: Career | null;
 }

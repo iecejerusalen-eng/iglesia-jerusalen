@@ -10,9 +10,10 @@ import { uploadFileToCloudinary } from '../lib/cloudinaryService';
  * @param folder - Destination folder inside the Cloudinary account.
  * @returns Promise resolving to the secure URL of the uploaded image.
  */
-export const uploadImage = async (file: File, folder: string): Promise<string> => {
+export const uploadImage = async (file: File, folder: string): Promise<{ secure_url: string }> => {
   // Force the resource type to "image" for clarity.
-  return uploadFileToCloudinary(file, folder, 'image');
+  const secure_url = await uploadFileToCloudinary(file, folder, 'image');
+  return { secure_url };
 };
 
 // Re-export the generic function for cases where callers need explicit control.

@@ -36,18 +36,19 @@ const ProgramDetail = () => {
         if (error) throw error;
 
         if (courseData) {
-          setCourse(courseData as any);
+          const resource = courseData as unknown as OpenResource;
+          setCourse(resource);
           
-          let fetchedSections = (courseData.open_sections as any[]) || [];
+          const fetchedSections = resource.open_sections || [];
           // Sort sections by order_index
-          fetchedSections.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-          setSections(fetchedSections);
+          const sortedSections = [...fetchedSections].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+          setSections(sortedSections);
 
           let fetchedActivities: OpenActivity[] = [];
-          fetchedSections.forEach(sec => {
+          sortedSections.forEach(sec => {
             const secActs = sec.open_activities || [];
-            secActs.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
-            fetchedActivities = [...fetchedActivities, ...secActs];
+            const sortedActs = [...secActs].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            fetchedActivities = [...fetchedActivities, ...sortedActs];
           });
           setActivities(fetchedActivities);
 
@@ -144,7 +145,7 @@ const ProgramDetail = () => {
                 {(activity.type === 'video_link' && activity.settings?.video_url) || (activity.type === 'video' && activity.content) ? (
                   <div className="mb-4 aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
                     <iframe
-                      src={activity.settings?.video_url || activity.content || ''}
+                      src={(activity.settings?.video_url as string) || activity.content || ''}
                       className="w-full h-full"
                       allowFullScreen
                       title="Video de clase"
