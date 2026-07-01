@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { GlobalErrorBoundary } from './components/common/ErrorBoundary';
 import { BrowserRouter } from 'react-router-dom';
@@ -6,9 +6,11 @@ import { useAuthStore } from './store/useAuthStore';
 import { Toaster } from 'sonner';
 import ScrollToTop from './components/common/ScrollToTop';
 import ConfirmDialog from './components/common/ConfirmDialog';
-import CRMRegistrationPrompt from './components/common/CRMRegistrationPrompt';
-import BirthdayCelebrationModal from './components/common/BirthdayCelebrationModal';
 import AppRouter from './routes/AppRouter';
+
+// Heavy modals — lazy loaded so they don't block the initial bundle
+const CRMRegistrationPrompt = lazy(() => import('./components/common/CRMRegistrationPrompt'));
+const BirthdayCelebrationModal = lazy(() => import('./components/common/BirthdayCelebrationModal'));
 
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
@@ -95,8 +97,11 @@ function App() {
         <ConfirmDialog />
         <BrowserRouter>
           <ScrollToTop />
-          <CRMRegistrationPrompt />
-          <BirthdayCelebrationModal />
+          {/* Lazy-loaded modals — rendered only after main bundle resolves */}
+          <Suspense fallback={null}>
+            <CRMRegistrationPrompt />
+            <BirthdayCelebrationModal />
+          </Suspense>
           <AppRouter />
         </BrowserRouter>
       </GlobalErrorBoundary>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Palette, Layout, Settings } from 'lucide-react';
+import { Palette, Layout, Settings, Bell } from 'lucide-react';
 
 import AppearanceTab from './tabs/AppearanceTab';
 import ColorsTab from './tabs/ColorsTab';
 import NavigationTab from './tabs/NavigationTab';
+import NotificationsTab from './tabs/NotificationsTab';
 
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import AdminHeader from '../../../components/admin/AdminHeader';
@@ -13,19 +14,13 @@ const TABS = [
   { id: 'appearance', label: 'Tema Visual', icon: Settings },
   { id: 'colors', label: 'Colores de Acento', icon: Palette },
   { id: 'navigation', label: 'Diseño de Barra', icon: Layout },
+  { id: 'notifications', label: 'Notificaciones', icon: Bell },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState<TabId>('appearance');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   return (
     <AnimeFadeUp className="max-w-5xl space-y-6">
@@ -68,6 +63,7 @@ const AdminSettings = () => {
             {activeTab === 'appearance' && <AppearanceTab key="appearance" />}
             {activeTab === 'colors' && <ColorsTab key="colors" />}
             {activeTab === 'navigation' && <NavigationTab key="navigation" />}
+            {activeTab === 'notifications' && <NotificationsTab key="notifications" />}
           </AnimatePresence>
         </div>
       </div>

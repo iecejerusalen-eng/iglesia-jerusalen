@@ -1,21 +1,25 @@
-import { Suspense, lazy } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import PublicLayout from '../layouts/PublicLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import ProtectedRoute from '../components/common/ProtectedRoute';
+import { PageSkeleton } from '../components/common/Skeletons';
 
-const lazyWithRetry = (componentImport: () => Promise<any>) => {
+const lazyWithRetry = <T extends React.ComponentType<unknown>>(
+  componentImport: () => Promise<{ default: T }>
+) => {
   return lazy(async () => {
     try {
       const component = await componentImport();
       window.sessionStorage.removeItem('chunk-failed-reload');
       return component;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as Error)?.message ?? '';
       if (
-        error?.message?.includes('Failed to fetch dynamically imported module') ||
-        error?.message?.includes('Importing a module script failed') ||
-        error?.message?.includes('error loading dynamically imported module')
+        message.includes('Failed to fetch dynamically imported module') ||
+        message.includes('Importing a module script failed') ||
+        message.includes('error loading dynamically imported module')
       ) {
         if (!window.sessionStorage.getItem('chunk-failed-reload')) {
           window.sessionStorage.setItem('chunk-failed-reload', 'true');
@@ -107,7 +111,7 @@ const DesignCatalog = lazyWithRetry(() => import('../pages/admin/DesignCatalog')
 
 export default function AppRouter() {
   return (
-    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+    <Suspense fallback={<PageSkeleton />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/presentacion" element={<Presentation />} />

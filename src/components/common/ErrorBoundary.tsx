@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { useRouteError } from 'react-router-dom';
 
 interface Props {
@@ -31,6 +31,11 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
+  private handleGoHome = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.href = '/';
+  };
+
   public render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
@@ -50,7 +55,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               </h2>
               
               <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-                Ha ocurrido un error inesperado en la aplicación. Por favor, intenta recargar la página.
+                Ha ocurrido un error inesperado en la aplicación. Por favor, intenta recargar la página o volver al inicio.
               </p>
 
               {this.state.error && (
@@ -66,13 +71,22 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 </div>
               )}
 
-              <button
-                onClick={this.handleReload}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition-colors font-medium"
-              >
-                <RefreshCw className="h-5 w-5" />
-                Recargar página
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={this.handleReload}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition-colors font-medium"
+                >
+                  <RefreshCw className="h-5 w-5" />
+                  Recargar página
+                </button>
+                <button
+                  onClick={this.handleGoHome}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors font-medium"
+                >
+                  <Home className="h-5 w-5" />
+                  Volver al inicio
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -2,23 +2,26 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Edit2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 import EmojiPicker from 'emoji-picker-react';
 
+interface MemoryCard {
+  id: string;
+  pair_name: string;
+  image_url: string | null;
+}
+
 export const MemoryEditor = () => {
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<MemoryCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCard, setEditingCard] = useState<any>(null);
+  const [editingCard, setEditingCard] = useState<MemoryCard | null>(null);
   
   // Form State
   const [pairName, setPairName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-  useEffect(() => {
-    fetchCards();
-  }, []);
 
   const fetchCards = async () => {
     setLoading(true);
@@ -37,6 +40,10 @@ export const MemoryEditor = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCards();
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +99,7 @@ export const MemoryEditor = () => {
     setImageUrl('');
   };
 
-  const openEdit = (c: any) => {
+  const openEdit = (c: MemoryCard) => {
     setEditingCard(c);
     setPairName(c.pair_name);
     setImageUrl(c.image_url || '');
@@ -133,7 +140,7 @@ export const MemoryEditor = () => {
                     <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden flex items-center justify-center">
                       {c.image_url ? (
                         c.image_url.startsWith('<svg') ? (
-                          <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: c.image_url }} />
+                          <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.image_url, { USE_PROFILES: { svg: true } }) }} />
                         ) : c.image_url.startsWith('http') || c.image_url.startsWith('/') || c.image_url.startsWith('data:') ? (
                           <img src={c.image_url} alt={c.pair_name} className="w-full h-full object-cover" />
                         ) : (
@@ -225,7 +232,7 @@ export const MemoryEditor = () => {
                   <p className="text-sm font-medium mb-2 dark:text-gray-300">Vista previa:</p>
                   <div className="w-24 h-24 border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 mx-auto flex items-center justify-center">
                     {imageUrl.startsWith('<svg') ? (
-                      <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: imageUrl }} />
+                      <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(imageUrl, { USE_PROFILES: { svg: true } }) }} />
                     ) : imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('data:') ? (
                       <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => {
                         (e.target as HTMLImageElement).src = '';

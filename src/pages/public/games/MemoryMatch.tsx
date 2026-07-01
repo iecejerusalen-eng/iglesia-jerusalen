@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Trophy, X, Play, RefreshCw, Layers } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -15,6 +16,15 @@ interface MemoryCard {
   isFlipped: boolean;
   isMatched: boolean;
   uniqueId: string;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  score: number;
+  time_seconds: number;
+  moves: number;
+  created_at: string;
+  profiles?: any;
 }
 
 export const MemoryMatch = () => {
@@ -33,7 +43,7 @@ export const MemoryMatch = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   
   // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   // Timer Effect
@@ -41,7 +51,7 @@ export const MemoryMatch = () => {
     let interval: number;
     if (gameState === 'playing' && startTime) {
       interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+        setElapsedTime(Math.floor((new Date().getTime() - startTime) / 1000));
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -52,7 +62,7 @@ export const MemoryMatch = () => {
     setMoves(0);
     setMatches(0);
     setElapsedTime(0);
-    setStartTime(Date.now());
+    setStartTime(new Date().getTime());
     setFlippedCards([]);
     
     try {
@@ -154,7 +164,7 @@ export const MemoryMatch = () => {
       colors: ['#38bdf8', '#0ea5e9', '#ffffff']
     });
 
-    const finalTime = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
+    const finalTime = Math.floor((new Date().getTime() - (startTime || new Date().getTime())) / 1000);
     // Base score calculation: Faster time = more points, fewer moves = more points
     const baseScore = 1000;
     const timePenalty = finalTime * 2;
@@ -366,7 +376,7 @@ export const MemoryMatch = () => {
                   <div className="absolute inset-0 backface-hidden bg-white rounded-xl shadow-xl flex items-center justify-center text-center p-2 border-2 border-sky-300 overflow-hidden" style={{ transform: "rotateY(180deg)" }}>
                     {card.image_url ? (
                       card.image_url.startsWith('<svg') ? (
-                        <div className="w-full h-full flex items-center justify-center text-sky-600" dangerouslySetInnerHTML={{ __html: card.image_url }} />
+                        <div className="w-full h-full flex items-center justify-center text-sky-600" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(card.image_url, { USE_PROFILES: { svg: true } }) }} />
                       ) : card.image_url.startsWith('http') || card.image_url.startsWith('/') || card.image_url.startsWith('data:') ? (
                         <img src={card.image_url} alt={card.pair_name} className="w-full h-full object-cover rounded-lg" />
                       ) : (
