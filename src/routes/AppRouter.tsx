@@ -61,6 +61,9 @@ const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m =
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
+const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
+const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
+const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -78,6 +81,9 @@ const StoreSettings = lazyWithRetry(() => import('../pages/admin/StoreSettings')
 const OrdersManager = lazyWithRetry(() => import('../pages/admin/OrdersManager'));
 const MinistryManager = lazyWithRetry(() => import('../pages/admin/MinistryManager'));
 const MinistryDashboard = lazyWithRetry(() => import('../pages/admin/MinistryDashboard'));
+const MissionsManager = lazyWithRetry(() => import('../pages/admin/MissionsManager'));
+const VolunteersManager = lazyWithRetry(() => import('../pages/admin/VolunteersManager'));
+const BookingManager = lazyWithRetry(() => import('../pages/admin/BookingManager'));
 const LogosManager = lazyWithRetry(() => import('../pages/admin/LogosManager'));
 const UsersManager = lazyWithRetry(() => import('../pages/admin/UsersManager'));
 const SettingsManager = lazyWithRetry(() => import('../pages/admin/SettingsManager'));
@@ -125,6 +131,7 @@ export default function AppRouter() {
           <Route path="/ministerios" element={<MinistriesOverview />} />
           <Route path="/ministerios/:slug" element={<MinistryDetail />} />
           <Route path="/predicas" element={<Sermons />} />
+          <Route path="/misiones" element={<Missions />} />
           <Route path="/contacto" element={<Contact />} />
           <Route path="/eventos" element={<Events />} />
           <Route path="/peticiones" element={<Petitions />} />
@@ -142,6 +149,8 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
           <Route path="/recursos/juegos/ahorcado-biblico" element={<Hangman />} />
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
+          <Route path="/mi-horario" element={<VolunteerSchedule />} />
+          <Route path="/reservas" element={<Bookings />} />
         </Route>
 
         <Route element={<ProtectedRoute module="dashboard" />}>
@@ -178,6 +187,9 @@ export default function AppRouter() {
         </Route></Route>
         <Route element={<ProtectedRoute module="logos" />}><Route element={<AdminLayout />}><Route path="/admin/logos" element={<LogosManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="missions" />}><Route element={<AdminLayout />}><Route path="/admin/misiones" element={<MissionsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="members" />}><Route element={<AdminLayout />}><Route path="/admin/miembros" element={<MembersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>

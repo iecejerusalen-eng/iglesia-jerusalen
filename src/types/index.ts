@@ -58,6 +58,68 @@ export interface ProductDigitalAsset {
   created_at?: string;
 }
 
+export interface Mission {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  goal_amount: number | null;
+  current_amount: number | null;
+  image_url: string | null;
+  status: 'active' | 'completed' | 'paused';
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VolunteerShift {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  ministry_id: string | null;
+  required_volunteers: number;
+  created_at: string;
+  ministries?: { name: string; theme_color?: string } | null;
+}
+
+export interface VolunteerAssignment {
+  id: string;
+  shift_id: string;
+  member_id: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'attended';
+  created_at: string;
+  volunteer_shifts?: VolunteerShift | null;
+  members?: Member | null;
+}
+
+export interface Space {
+  id: string;
+  name: string;
+  description: string | null;
+  capacity: number | null;
+  features: string[] | null;
+  image_url: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SpaceBooking {
+  id: string;
+  space_id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  created_at: string;
+  spaces?: Space | null;
+  users?: { id: string; email: string } | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -71,7 +133,7 @@ export interface Product {
   type?: ProductType;
   ecommerce_product_type?: 'physical' | 'digital';
   digital_file_url?: string | null;
-  features?: any; // JSONB array of features/specs
+  features?: unknown; // JSONB array of features/specs
   cover_image_url?: string | null;
   deleted_at?: string | null;
   created_at: string;
@@ -150,6 +212,8 @@ export interface Sermon {
   description?: string | null;
   date?: string;
   created_at: string;
+  thumbnail_url?: string | null;
+  video_url?: string | null;
 }
 
 export interface Schedule {
@@ -241,7 +305,7 @@ export interface Member {
   member_spiritual_gifts?: { catalog_roles: CatalogRole }[];
   ministries?: { name: string } | null;
   catalog_roles?: CatalogRole | null;
-  profiles?: any[];
+  profiles?: Profile[];
   careers?: Career | null;
   studying_careers?: Career | null;
 }
@@ -253,7 +317,7 @@ export interface FormResponse {
   user_id: string | null;
   member_name: string | null;
   member_email: string | null;
-  answers: Record<string, any>;
+  answers: Record<string, unknown>;
   score: number;
   max_score: number;
   created_at: string;
@@ -529,8 +593,8 @@ export interface LMSLesson {
   type: 'document' | 'video' | 'quiz' | 'forum' | 'h5p' | 'assignment' | 'video_link' | 'resource' | 'h5p_embed';
   content: string | null;
   description: string | null;
-  settings?: Record<string, any> | null;
-  metadata?: Record<string, any> | null;
+  settings?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
   order_index: number;
   created_at: string;
   updated_at: string;
@@ -619,8 +683,8 @@ export interface LMSActivity {
   type: 'resource' | 'forum' | 'assignment' | 'quiz' | 'h5p_embed' | 'video_link' | 'document' | 'video' | 'h5p';
   content: string | null;
   teacher_content: string | null;
-  settings: Record<string, any>;
-  metadata?: Record<string, any> | null;
+  settings: Record<string, unknown>;
+  metadata?: Record<string, unknown> | null;
   description?: string | null;
   requires_completion_of: string | null;
   weighting: number;
@@ -697,7 +761,7 @@ export interface OpenActivity {
   title: string;
   type: string;
   content: string | null;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   order_index: number;
   created_at: string;
   updated_at: string;

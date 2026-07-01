@@ -12,6 +12,7 @@ import { BirthdaysSection } from '../../features/home/components/BirthdaysSectio
 import { GenericSection } from '../../features/home/components/GenericSection';
 import { DonationsSection } from '../../features/home/components/DonationsSection';
 import { CtaBanner } from '../../features/home/components/CtaBanner';
+import { BentoGridSection } from '../../features/home/components/BentoGridSection';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
 import { Helmet } from 'react-helmet-async';
 import { DEFAULT_SECTIONS } from '../../features/home/constants';
@@ -50,7 +51,12 @@ const Home = () => {
         switch (section_type) {
           case 'custom':
             if (id === 'home_hero') {
-              return <HeroSection key={id} sectionData={section} />;
+              return (
+                <div key={id} className="flex flex-col">
+                  <HeroSection sectionData={section} />
+                  <BentoGridSection latestSermon={sermons[0]} nextEvent={events[0]} />
+                </div>
+              );
             }
             if (id === 'home_welcome') {
               return (

@@ -23,7 +23,10 @@ import {
   Sparkles,
   Shield,
   Palette,
-  Gamepad2
+  Gamepad2,
+  Heart,
+  Globe2,
+  Building
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -39,7 +42,7 @@ export interface ModuleGroupMetadata {
   key: ModuleGroup;
   label: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ElementType;
 }
 
 export const MODULE_GROUPS: ModuleGroupMetadata[] = [
@@ -92,7 +95,7 @@ export interface AdminModule {
   label: string;   // Display name for the Permissions Matrix / RBAC GUI
   name: string;    // Display name for the Sidebar item
   path: string;    // Router path (e.g. '/admin/logos')
-  icon: React.ComponentType<any>; // Lucide Icon component
+  icon: React.ElementType; // Lucide Icon component
   group: ModuleGroup;
 }
 
@@ -200,6 +203,30 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/eventos',
     icon: Calendar,
     group: 'eventos_medios'
+  },
+  {
+    id: 'missions',
+    label: 'Misiones',
+    name: 'Misiones',
+    path: '/admin/misiones',
+    icon: Globe2,
+    group: 'comunidad'
+  },
+  {
+    id: 'volunteering',
+    label: 'Voluntariado',
+    name: 'Voluntariado',
+    path: '/admin/voluntariado',
+    icon: Heart,
+    group: 'comunidad'
+  },
+  {
+    id: 'bookings',
+    label: 'Reservas',
+    name: 'Reservas de Espacios',
+    path: '/admin/reservas',
+    icon: Building,
+    group: 'operaciones'
   },
   {
     id: 'ministries',

@@ -126,13 +126,13 @@ export default function Section10Architecture({ onNext }: Props) {
 
       {/* Tabs Control */}
       <div className="w-full max-w-6xl mb-8 flex gap-2 overflow-x-auto pb-2">
-        <button onClick={() => setActiveTab('flow')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'flow' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
+        <button onClick={() => setActiveTab('flow')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${activeTab === 'flow' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
           <Layers className="w-4 h-4 inline-block mr-2 -mt-0.5" /> Flujo de Datos
         </button>
-        <button onClick={() => setActiveTab('stack')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'stack' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
+        <button onClick={() => setActiveTab('stack')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${activeTab === 'stack' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
           <Server className="w-4 h-4 inline-block mr-2 -mt-0.5" /> Stack Tecnológico
         </button>
-        <button onClick={() => setActiveTab('env')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap ${activeTab === 'env' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
+        <button onClick={() => setActiveTab('env')} className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${activeTab === 'env' ? 'bg-[#C79D3F] text-white shadow-lg shadow-[#C79D3F]/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'}`}>
           <Key className="w-4 h-4 inline-block mr-2 -mt-0.5" /> Entorno y Configuración
         </button>
       </div>
