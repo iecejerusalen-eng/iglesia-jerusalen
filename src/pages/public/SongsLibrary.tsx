@@ -20,7 +20,7 @@ const SongsLibrary = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [showChords, setShowChords] = useState(true);
-  const [fontFamily, setFontFamily] = useState<'mono' | 'serif' | 'sans'>('mono');
+  const [fontFamily, setFontFamily] = useState<'mono' | 'serif' | 'sans'>('sans');
   const [activeTab, setActiveTab] = useState<'lyrics' | 'resources'>('lyrics');
 
   const filtered = songs.filter((s) => {

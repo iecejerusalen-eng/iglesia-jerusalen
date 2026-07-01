@@ -1,8 +1,10 @@
+import { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { AnimeZoomIn } from '../../../components/animations/AnimeWrappers';
-import { X, Eye, EyeOff, Copy, ExternalLink, Info, PlayCircle, FileText } from 'lucide-react';
+import { X, Eye, EyeOff, Copy, ExternalLink, Info, PlayCircle, FileText, Printer, Maximize, Minimize, Hash, ArrowDownToLine, Volume2, VolumeX, Play, Square } from 'lucide-react';
 import type { Song } from '../../../types';
-import { htmlToBracketText, bracketTextToHtml } from '../utils/songUtils';
+import { htmlToBracketText, bracketTextToHtml, processBracketText, getOriginalKey, transposeNote } from '../utils/songUtils';
+import { useMetronome } from '../hooks/useMetronome';
 import { toast } from 'sonner';
 
 interface SongViewerProps {
@@ -20,18 +22,78 @@ export const SongViewer = ({
   selectedSong, setSelectedSong, showChords, setShowChords, 
   fontFamily, setFontFamily, activeTab, setActiveTab
 }: SongViewerProps) => {
+  const [transposeAmount, setTransposeAmount] = useState(0);
+  const [nashvilleMode, setNashvilleMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<number | null>(null);
+
+  const { isPlaying: metronomePlaying, isMuted: metronomeMuted, currentBeat, togglePlay: toggleMetronome, toggleMute: toggleMetronomeMute } = useMetronome(selectedSong.bpm);
+
+  const originalKey = (() => {
+    let textToAnalyze;
+    if (selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0) {
+      textToAnalyze = selectedSong.structure_blocks.map(b => b.lyrics).join('\n');
+    } else {
+      textToAnalyze = htmlToBracketText(selectedSong.lyrics);
+    }
+    return getOriginalKey(textToAnalyze);
+  })();
+
+
+
+  useEffect(() => {
+    if (autoScrollSpeed > 0) {
+      const scrollSpeedMap = { 1: 50, 2: 35, 3: 20, 4: 10, 5: 5 };
+      scrollIntervalRef.current = window.setInterval(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop += 1;
+        }
+      }, scrollSpeedMap[autoScrollSpeed as keyof typeof scrollSpeedMap]);
+    } else {
+      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    }
+    return () => {
+      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    };
+  }, [autoScrollSpeed]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const copyChords = (song: Song) => {
-    let result = '';
+    let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
       result = song.structure_blocks.map(b => {
         let blockStr = `[${b.label.toUpperCase()}]\n`;
         if (b.melody) blockStr += `(Guía: ${b.melody})\n`;
-        blockStr += `${b.lyrics}\n`;
+        blockStr += `${processBracketText(b.lyrics, transposeAmount, nashvilleMode, originalKey)}\n`;
         return blockStr;
       }).join('\n');
     } else {
-      result = htmlToBracketText(song.lyrics);
+      result = processBracketText(htmlToBracketText(song.lyrics), transposeAmount, nashvilleMode, originalKey);
     }
 
     navigator.clipboard.writeText(result);
@@ -39,11 +101,11 @@ export const SongViewer = ({
   };
 
   const copyOnlyLyrics = (song: Song) => {
-    let result = '';
+    let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
       result = song.structure_blocks.map(b => {
         let blockStr = `[${b.label.toUpperCase()}]\n`;
-        const cleanLyrics = b.lyrics.replace(/\[([a-zA-Z0-9#\/+\-.]+?)\]/g, '');
+        const cleanLyrics = b.lyrics.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
         blockStr += `${cleanLyrics}\n`;
         return blockStr;
       }).join('\n');
@@ -59,17 +121,24 @@ export const SongViewer = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
+    <div ref={containerRef} className="fixed inset-0 z-50 flex items-start justify-center p-0 md:p-4 md:pt-8 bg-slate-950/60 backdrop-blur-sm print:bg-white print:p-0 print:block">
       {/* Modal Backdrop overlay */}
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setSelectedSong(null)}></div>
+      <div className="absolute inset-0" onClick={() => !isFullscreen && setSelectedSong(null)}></div>
       
-      <AnimeZoomIn delay={0} duration={400} className="relative w-full max-w-4xl my-4 z-10">
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full border border-gray-150 dark:border-white/10 overflow-hidden">
+      <AnimeZoomIn delay={0} duration={400} className={`relative w-full ${isFullscreen ? 'max-w-none h-full' : 'max-w-5xl h-[100dvh] md:h-auto max-h-[90vh]'} z-10 flex flex-col shadow-2xl overflow-hidden md:rounded-3xl bg-white dark:bg-slate-900 border-0 md:border border-gray-150 dark:border-white/10 print:border-none print:shadow-none print:max-h-none print:h-auto`}>
+        <div className="flex-1 overflow-y-auto print:overflow-visible" ref={scrollContainerRef}>
           {/* Header block */}
-          <div className="p-6 border-b border-gray-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/20 relative">
+          <div className="p-4 md:p-6 border-b border-gray-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/20 relative print:hidden">
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white flex items-center gap-2">{selectedSong.title}</h2>
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-800 dark:text-white">{selectedSong.title}</h2>
+                  {originalKey && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
+                      Tono Original: {originalKey}
+                    </span>
+                  )}
+                </div>
                 {selectedSong.artist && <p className="text-xs text-gray-400 dark:text-gray-450 font-bold">{selectedSong.artist}</p>}
                 
                 <div className="flex flex-wrap gap-2 mt-3 pt-1">
@@ -79,8 +148,44 @@ export const SongViewer = ({
                   {selectedSong.song_styles && (
                     <span className="text-[10px] bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-extrabold px-2.5 py-1 rounded-xl border border-blue-200/50 dark:border-blue-800/30 uppercase">{selectedSong.song_styles.name}</span>
                   )}
-                  {selectedSong.bpm && (
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-bold px-2.5 py-1 rounded-xl font-mono">♩ {selectedSong.bpm} BPM</span>
+                {selectedSong.bpm && (
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-0.5">
+                      <span className="text-[10px] text-gray-600 dark:text-gray-300 font-bold font-mono">♩ {selectedSong.bpm} BPM</span>
+                      
+                      {/* Metronome Visual Indicator */}
+                      <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-300 dark:border-slate-600">
+                        {metronomePlaying && (
+                          <div className="flex gap-1 items-center mr-1">
+                            {[1, 2, 3, 4].map((beat) => (
+                              <div 
+                                key={beat}
+                                className={`w-2 h-2 rounded-full transition-all duration-75 ${
+                                  currentBeat === beat 
+                                    ? (beat === 1 ? 'bg-red-500 scale-125 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-green-500 scale-110 shadow-[0_0_5px_rgba(34,197,94,0.6)]') 
+                                    : 'bg-gray-300 dark:bg-slate-700 scale-100'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        
+                        <button 
+                          onClick={toggleMetronome} 
+                          className={`p-1 rounded-full transition-colors ${metronomePlaying ? 'text-amber-600 hover:bg-amber-100 dark:hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 dark:hover:bg-slate-700'}`}
+                          title={metronomePlaying ? "Detener metrónomo" : "Iniciar metrónomo"}
+                        >
+                          {metronomePlaying ? <Square size={12} className="fill-current" /> : <Play size={12} className="fill-current" />}
+                        </button>
+                        
+                        <button 
+                          onClick={toggleMetronomeMute} 
+                          className={`p-1 rounded-full transition-colors ${!metronomeMuted ? 'text-blue-600 hover:bg-blue-100 dark:hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 dark:hover:bg-slate-700'}`}
+                          title={metronomeMuted ? "Activar sonido" : "Silenciar sonido"}
+                        >
+                          {metronomeMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                        </button>
+                      </div>
+                    </div>
                   )}
                   {selectedSong.drum_style && (
                     <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-extrabold px-2.5 py-1 rounded-xl border border-indigo-200/20">🥁 Batería: {selectedSong.drum_style}</span>
@@ -88,32 +193,106 @@ export const SongViewer = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
+              <div className="flex flex-wrap items-center gap-2 self-start md:self-auto max-w-full justify-end">
+                {/* Advanced Musician Controls Toolbar */}
+                {selectedSong.has_chords && showChords && (
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-750 shadow-sm">
+                    {/* Transposition */}
+                    <div className="flex items-center">
+                      <button 
+                        onClick={() => setTransposeAmount(prev => prev - 1)}
+                        className="px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        title="Bajar medio tono"
+                      >
+                        -½
+                      </button>
+                      <div className="px-2 flex flex-col items-center justify-center min-w-[3.5rem]" title="Resetear tono">
+                        <span className="text-[10px] leading-tight font-extrabold text-amber-600 dark:text-amber-400">
+                          {originalKey ? transposeNote(originalKey, transposeAmount) : (transposeAmount > 0 ? `+${transposeAmount}` : transposeAmount)}
+                        </span>
+                        {transposeAmount !== 0 && (
+                          <button onClick={() => setTransposeAmount(0)} className="text-[8px] uppercase tracking-wider text-gray-400 hover:text-gray-600">Reset</button>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => setTransposeAmount(prev => prev + 1)}
+                        className="px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        title="Subir medio tono"
+                      >
+                        +½
+                      </button>
+                    </div>
+
+                    <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
+
+                    {/* Nashville Toggle */}
+                    <button
+                      onClick={() => setNashvilleMode(!nashvilleMode)}
+                      className={`flex items-center justify-center p-1.5 rounded-lg transition-colors ${
+                        nashvilleMode 
+                          ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' 
+                          : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700'
+                      }`}
+                      title="Sistema Nashville (Grados Numéricos)"
+                    >
+                      <Hash size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Autoscroll */}
+                <div className="flex items-center bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl px-2 py-1 shadow-sm gap-1">
+                  <ArrowDownToLine size={14} className="text-gray-400 mr-1" />
+                  {[0, 1, 2, 3, 4, 5].map(speed => (
+                    <button
+                      key={speed}
+                      onClick={() => setAutoScrollSpeed(speed)}
+                      className={`w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-md text-[9px] font-bold transition-all ${
+                        autoScrollSpeed === speed 
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' 
+                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {speed === 0 ? '■' : speed}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Lyrics Font Selector */}
                 <select
                   value={fontFamily}
-                  onChange={(e) => setFontFamily(e.target.value as any)}
-                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl px-2.5 py-1.5 text-xxs font-bold text-gray-700 dark:text-gray-300 outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  onChange={(e) => setFontFamily(e.target.value as 'mono' | 'serif' | 'sans')}
+                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl px-2.5 py-1.5 text-xxs font-bold text-gray-700 dark:text-gray-300 outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm h-8"
                 >
-                  <option value="mono font-mono">Letra Monospace</option>
-                  <option value="serif font-serif">Letra Serif</option>
-                  <option value="sans font-sans">Letra Sans</option>
+                  <option value="mono font-mono">Monospace</option>
+                  <option value="serif font-serif">Serif</option>
+                  <option value="sans font-sans">Sans</option>
                 </select>
 
-                {/* Show/Hide Chords toggle */}
-                {selectedSong.has_chords && (
-                  <button
-                    onClick={() => setShowChords(!showChords)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xxs font-bold transition-all border cursor-pointer ${
-                      showChords
-                        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/35 dark:text-green-300 dark:border-green-900/30'
-                        : 'bg-slate-100 text-gray-500 border-slate-200 dark:bg-slate-800 dark:border-slate-750 dark:text-gray-400'
-                    }`}
-                  >
-                    {showChords ? <Eye size={12} /> : <EyeOff size={12} />}
-                    {showChords ? 'Ver Acordes' : 'Sin acordes'}
+                {/* Utilities (Print, Fullscreen, Toggle Chords) */}
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-750 shadow-sm p-0.5 h-8">
+                  <button onClick={handlePrint} className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Imprimir">
+                    <Printer size={14} />
                   </button>
-                )}
+                  
+                  <button onClick={toggleFullscreen} className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Pantalla Completa">
+                    {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                  </button>
+
+                  {selectedSong.has_chords && (
+                    <button
+                      onClick={() => setShowChords(!showChords)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xxs font-bold transition-all ml-1 ${
+                        showChords
+                          ? 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400'
+                          : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {showChords ? <Eye size={12} /> : <EyeOff size={12} />}
+                      <span className="hidden md:inline">{showChords ? 'Acordes' : 'Sin acordes'}</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Close button */}
                 <button 
@@ -158,7 +337,7 @@ export const SongViewer = ({
           </div>
 
           {/* Main Content Area */}
-          <div className="p-6">
+          <div className="p-4 md:p-6 pb-20 print:p-0 print:text-black">
             <style>{`
               .song-lyrics-wrapper.font-mono .song-lyrics {
                 font-family: 'Courier New', Courier, monospace !important;
@@ -265,13 +444,53 @@ export const SongViewer = ({
               .song-lyrics.hide-chords span.chord-node-wrapper::before {
                 display: none;
               }
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                .song-lyrics-wrapper, .song-lyrics-wrapper * {
+                  visibility: visible;
+                }
+                .song-lyrics-wrapper {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  color: black !important;
+                }
+                .song-lyrics {
+                  color: black !important;
+                  font-size: 14pt !important;
+                  line-height: 1.5 !important;
+                }
+                .song-lyrics span.chord-node-wrapper::before,
+                .song-lyrics span.chord-annotation::before {
+                  color: #333 !important;
+                  font-size: 11pt !important;
+                  font-weight: bold !important;
+                }
+                .dark .song-lyrics span.chord-node-wrapper::before,
+                .dark .song-lyrics span.chord-annotation::before {
+                   color: #333 !important;
+                }
+              }
             `}</style>
 
             {activeTab === 'lyrics' ? (
               /* LYRICS TAB */
               <div className="space-y-6">
+                {/* Print Title (Visible only in print) */}
+                <div className="hidden print:block mb-8 text-center border-b pb-4">
+                  <h1 className="text-3xl font-bold font-serif m-0">{selectedSong.title}</h1>
+                  {selectedSong.artist && <h2 className="text-lg text-gray-600 m-0 mt-1">{selectedSong.artist}</h2>}
+                  <div className="flex justify-center gap-4 mt-2 text-sm text-gray-500">
+                    {originalKey && <span>Tono: {transposeAmount !== 0 ? transposeNote(originalKey, transposeAmount) : originalKey}</span>}
+                    {selectedSong.bpm && <span>♩ {selectedSong.bpm}</span>}
+                  </div>
+                </div>
+
                 {/* Copy Buttons Panel */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 print:hidden">
                   <button
                     onClick={() => copyChords(selectedSong)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 text-amber-700 dark:text-gold border border-amber-250/20 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer shadow-2xs"
@@ -315,7 +534,7 @@ export const SongViewer = ({
                           </div>
                           <div 
                             className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics)) }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics, transposeAmount, nashvilleMode, originalKey)) }}
                           />
                         </div>
                       ))}
@@ -324,7 +543,7 @@ export const SongViewer = ({
                     /* LEGACY HTML RENDERING */
                     <div
                       className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedSong.lyrics || '<p class="text-gray-400 italic">Sin letra disponible</p>') }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(htmlToBracketText(selectedSong.lyrics || ''), transposeAmount, nashvilleMode, originalKey) || '<p class="text-gray-400 italic">Sin letra disponible</p>') }}
                     />
                   )}
                 </div>
