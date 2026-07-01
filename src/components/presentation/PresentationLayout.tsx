@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore } from '../../store/useThemeStore';
-import { Moon, Sun, Menu, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Menu, X, ChevronUp, ChevronDown, Maximize, Play, Pause } from 'lucide-react';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
@@ -16,10 +16,17 @@ import Section8Logistics from './Section8Logistics';
 import Section9Security from './Section9Security';
 import Section10Departments from './Section10Departments';
 import Section10Architecture from './Section10Architecture';
+import Section11Volunteering from './Section11Volunteering';
+import Section12Missions from './Section12Missions';
+import Section13Resources from './Section13Resources';
+import Section14AI from './Section14AI';
+import Section15Mobile from './Section15Mobile';
 
 export default function PresentationLayout() {
   const [activeSection, setActiveSection] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [autoplay, setAutoplay] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   const { theme, setTheme } = useThemeStore();
   
   const sections = [
@@ -33,7 +40,12 @@ export default function PresentationLayout() {
     { id: 'logistics', title: '8. Logística' },
     { id: 'security', title: '9. Analíticas y Seguridad' },
     { id: 'departments', title: '10. Ministerios' },
-    { id: 'tech', title: '11. Arquitectura' }
+    { id: 'tech', title: '11. Arquitectura' },
+    { id: 'volunteering', title: '12. Voluntariado' },
+    { id: 'missions', title: '13. Misiones' },
+    { id: 'resources', title: '14. Recursos' },
+    { id: 'ai', title: '15. Asistente IA' },
+    { id: 'mobile', title: '16. App Móvil' }
   ];
 
   // Keybindings and Scroll handling
@@ -71,6 +83,27 @@ export default function PresentationLayout() {
     };
   }, [sections.length]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTooltip(false), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const interval = setInterval(() => {
+      setActiveSection(prev => (prev === sections.length - 1 ? 0 : prev + 1));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [autoplay, sections.length]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -84,6 +117,16 @@ export default function PresentationLayout() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-surface dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-500 font-sans selection:bg-gold-500/30 relative">
+      
+      {/* Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-gray-200 dark:bg-slate-800">
+        <motion.div 
+          className="h-full bg-[#C79D3F]"
+          initial={{ width: 0 }}
+          animate={{ width: `${(activeSection / (sections.length - 1)) * 100}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
       
       {/* Background ambient effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -175,12 +218,45 @@ export default function PresentationLayout() {
             {activeSection === 7 && <Section8Logistics onNext={() => setActiveSection(8)} />}
             {activeSection === 8 && <Section9Security onNext={() => setActiveSection(9)} />}
             {activeSection === 9 && <Section10Departments onNext={() => setActiveSection(10)} />}
-            {activeSection === 10 && <Section10Architecture />}
+            {activeSection === 10 && <Section10Architecture onNext={() => setActiveSection(11)} />}
+            {activeSection === 11 && <Section11Volunteering onNext={() => setActiveSection(12)} />}
+            {activeSection === 12 && <Section12Missions onNext={() => setActiveSection(13)} />}
+            {activeSection === 13 && <Section13Resources onNext={() => setActiveSection(14)} />}
+            {activeSection === 14 && <Section14AI onNext={() => setActiveSection(15)} />}
+            {activeSection === 15 && <Section15Mobile />}
           </motion.div>
+        </AnimatePresence>
+
+        {/* Tooltip UX */}
+        <AnimatePresence>
+          {showTooltip && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-4 py-2 rounded-full text-sm shadow-xl z-50 flex items-center gap-2 backdrop-blur-md border border-white/10"
+            >
+              💡 Usa las flechas del teclado o haz scroll para navegar
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Global Navigation Controls */}
         <div className="absolute right-6 bottom-6 flex flex-col gap-2 z-50">
+          <button 
+            onClick={toggleFullscreen}
+            className="p-3 rounded-full bg-white dark:bg-slate-800 text-gray-800 dark:text-white shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all mb-2"
+            title="Pantalla Completa"
+          >
+            <Maximize className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setAutoplay(!autoplay)}
+            className={`p-3 rounded-full shadow-lg transition-all mb-2 ${autoplay ? 'bg-[#C79D3F] text-white hover:bg-[#b08b35]' : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-white border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
+            title="Autoplay (10s)"
+          >
+            {autoplay ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+          </button>
           <button 
             onClick={handlePrev}
             disabled={activeSection === 0}

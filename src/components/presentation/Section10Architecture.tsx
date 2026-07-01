@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Server, Database, Zap, Cloud, Code2, Key, 
   ShieldCheck, Activity, Globe, WifiOff, Cpu, Lock, 
-  Layers, Smartphone
+  Layers, Smartphone, ChevronRight
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -87,7 +87,11 @@ const pillars = [
   }
 ];
 
-export default function Section10Architecture() {
+interface Props {
+  onNext?: () => void;
+}
+
+export default function Section10Architecture({ onNext }: Props) {
   const [activeTab, setActiveTab] = useState<'stack' | 'flow' | 'env'>('flow');
 
   return (
@@ -312,6 +316,23 @@ export default function Section10Architecture() {
 
         </AnimatePresence>
       </div>
+
+      {onNext && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 pb-12 flex justify-center w-full"
+        >
+          <button
+            onClick={onNext}
+            className="flex items-center gap-2 px-8 py-4 bg-[#C79D3F] hover:bg-[#b08b35] text-white rounded-full font-bold transition-all transform hover:scale-105 shadow-lg shadow-[#C79D3F]/30"
+          >
+            Siguiente Sección
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </motion.div>
+      )}
 
     </div>
   );
