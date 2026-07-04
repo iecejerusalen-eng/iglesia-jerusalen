@@ -26,7 +26,7 @@ const songSchema = z.object({
   has_chords: z.boolean(),
 });
 
-type SongFormData = z.infer<typeof songSchema>;
+
 
 const DRUM_STYLES = [
   'Balada Worship',
@@ -93,14 +93,14 @@ function htmlToBracketText(html: string): string {
 
 function bracketTextToHtml(text: string): string {
   if (!text) return '';
-  let escaped = text
+  const escaped = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   
-  return escaped.replace(/\[([a-zA-Z0-9#\/+\-.]+?)\]/g, (_, chord) => {
+  return escaped.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, (_, chord) => {
     return `<span class="chord-node-wrapper" data-chord-node="true" data-chord="${chord}"></span>`;
   });
 }
@@ -153,7 +153,7 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
   const sectionDivs = temp.querySelectorAll('div.song-section');
   if (sectionDivs.length > 0) {
     sectionDivs.forEach(div => {
-      const type = (div.getAttribute('data-section-type') || 'otro') as any;
+      const type = (div.getAttribute('data-section-type') || 'otro') as 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'otro';
       const h2 = div.querySelector('h2');
       const label = h2 ? h2.textContent || 'Sección' : 'Sección';
       
@@ -212,7 +212,7 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
         };
         currentLines = [];
       } else {
-        let lineText = '';
+        let lineText: string;
         if (el.tagName === 'P') {
           const innerTemp = document.createElement('div');
           innerTemp.innerHTML = el.innerHTML;
@@ -305,12 +305,12 @@ const SongsManager = () => {
   const [newTypeName, setNewTypeName] = useState('');
   const [newStyleName, setNewStyleName] = useState('');
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
-    resolver: zodResolver(songSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(songSchema) as any,
     defaultValues: { title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false },
   });
-
-  useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -325,9 +325,15 @@ const SongsManager = () => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => { fetchAll(); }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   const openCreate = () => {
     setEditingSong(null);
-    reset({ title: '', artist: '', bpm: '', type_id: '', style_id: '', has_chords: false });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reset({ title: '', artist: '', bpm: undefined as any, type_id: '', style_id: '', has_chords: false });
     setLyrics('');
     setDrumStyle('');
     setResourceLinks([]);
@@ -341,7 +347,8 @@ const SongsManager = () => {
     reset({
       title: song.title,
       artist: song.artist || '',
-      bpm: song.bpm ?? '',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      bpm: song.bpm ?? (undefined as any),
       type_id: song.type_id || '',
       style_id: song.style_id || '',
       has_chords: song.has_chords,
@@ -354,8 +361,10 @@ const SongsManager = () => {
     setShowForm(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onSubmit = async (data: any) => {
-    const typedData = data as SongFormData;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const typedData = data as any;
     
     // Compile lyrics if in structured mode
     let compiledLyrics = lyrics;
@@ -621,43 +630,43 @@ const SongsManager = () => {
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-max">
               <thead className="bg-gray-50 dark:bg-slate-950 border-b border-gray-200 dark:border-white/10">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400">Título</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden md:table-cell">Artista</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden lg:table-cell">BPM</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden lg:table-cell">Tipo / Estilo</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400">Batería / Estructura</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400">Acordes</th>
-                  {!readOnly && <th className="text-right px-4 py-3 font-semibold text-gray-650 dark:text-gray-400">Acciones</th>}
+                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Título</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden md:table-cell whitespace-nowrap">Artista</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden lg:table-cell whitespace-nowrap">BPM</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden lg:table-cell whitespace-nowrap">Tipo / Estilo</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Batería / Estructura</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Acordes</th>
+                  {!readOnly && <th className="text-right px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Acciones</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {filtered.map((song) => (
                   <tr key={song.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-850/50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-gray-850 dark:text-gray-100">{song.title}</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-450 hidden md:table-cell">{song.artist || '—'}</td>
-                    <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-455 hidden lg:table-cell font-mono">{song.bpm || '—'}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell space-y-1">
+                    <td className="px-4 py-3 font-bold text-gray-850 dark:text-gray-100 whitespace-nowrap max-w-xs truncate" title={song.title}>{song.title}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-450 hidden md:table-cell whitespace-nowrap max-w-[150px] truncate" title={song.artist || ''}>{song.artist || '—'}</td>
+                    <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-455 hidden lg:table-cell font-mono whitespace-nowrap">{song.bpm || '—'}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell space-x-1 whitespace-nowrap">
                       {song.song_types && (
                         <span className="inline-block bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-250/20">{song.song_types.name}</span>
                       )}
                       {song.song_styles && (
-                        <span className="inline-block bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-blue-250/20 ml-1.5">{song.song_styles.name}</span>
+                        <span className="inline-block bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-blue-250/20">{song.song_styles.name}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center space-y-1">
+                    <td className="px-4 py-3 text-center space-x-1 whitespace-nowrap">
                       {song.drum_style ? (
                         <span className="inline-flex items-center bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200/30">🥁 {song.drum_style}</span>
                       ) : (
                         <span className="text-[10px] text-gray-300 dark:text-gray-600">—</span>
                       )}
                       {song.structure_blocks && song.structure_blocks.length > 0 && (
-                        <span className="inline-flex items-center bg-teal-50 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-teal-200/30 ml-1.5" title={`${song.structure_blocks.length} secciones estructuradas`}>📋 Secciones</span>
+                        <span className="inline-flex items-center bg-teal-50 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-teal-200/30" title={`${song.structure_blocks.length} secciones estructuradas`}>📋 Secciones</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       {song.has_chords ? (
                         <span className="inline-block bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-green-250/20">🎸 Acordes</span>
                       ) : (
@@ -665,7 +674,7 @@ const SongsManager = () => {
                       )}
                     </td>
                     {!readOnly && (
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex justify-end gap-1">
                           <button onClick={() => openEdit(song)} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/30 text-gray-500 dark:text-gray-450 hover:text-amber-700 cursor-pointer transition-colors" title="Editar">
                             <Edit3 size={16} />
@@ -704,7 +713,7 @@ const SongsManager = () => {
                 <div>
                   <label htmlFor="song-title" className="block text-xs font-bold text-gray-400 uppercase mb-1">Título *</label>
                   <input id="song-title" {...register('title')} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-850 dark:text-gray-100 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Grande es tu fidelidad" />
-                  {errors.title && <p className="text-red-500 text-xs mt-1">{(errors.title as any).message}</p>}
+                  {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message as string}</p>}
                 </div>
                 <div>
                   <label htmlFor="song-artist" className="block text-xs font-bold text-gray-400 uppercase mb-1">Artista / Autor</label>
@@ -836,7 +845,7 @@ const SongsManager = () => {
                                 <select
                                   value={block.type}
                                   onChange={(e) => {
-                                    const type = e.target.value as any;
+                                    const type = e.target.value as SongStructureBlock['type'];
                                     const count = structureBlocks.filter((b, i) => b.type === type && i !== idx).length + 1;
                                     const typeLabels: Record<string, string> = {
                                       intro: 'Introducción',
@@ -967,7 +976,7 @@ const SongsManager = () => {
                       <div key={link.id} className="flex flex-col md:flex-row gap-3 bg-slate-50/50 dark:bg-slate-950/10 p-3 rounded-2xl border border-gray-150 dark:border-white/5 items-start md:items-center">
                         <select
                           value={link.instrument}
-                          onChange={(e) => updateLink(link.id, { instrument: e.target.value as any })}
+                          onChange={(e) => updateLink(link.id, { instrument: e.target.value as 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' | 'Viento' | 'Otro' })}
                           className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-750 dark:text-gray-300 outline-none shrink-0"
                         >
                           {INSTRUMENTS.map(opt => (

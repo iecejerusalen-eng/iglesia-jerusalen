@@ -13,6 +13,15 @@ interface SongsListProps {
 }
 
 export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiveTab }: SongsListProps) => {
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const rowVirtualizer = useWindowVirtualizer({
+    count: sorted.length,
+    estimateSize: () => 70,
+    overscan: 5,
+    scrollMargin: 0,
+  });
+
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-16 flex flex-col justify-center items-center gap-2 animate-pulse">
@@ -75,14 +84,7 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
     );
   }
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  
-  const rowVirtualizer = useWindowVirtualizer({
-    count: sorted.length,
-    estimateSize: () => 70,
-    overscan: 5,
-    scrollMargin: parentRef.current?.offsetTop ?? 0,
-  });
+
 
   const items = rowVirtualizer.getVirtualItems();
   const paddingTop = items.length > 0 ? items[0].start : 0;
@@ -91,16 +93,16 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
   return (
     <div ref={parentRef} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xs">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse text-sm min-w-max">
           <thead>
             <tr className="bg-gray-50/50 dark:bg-slate-950/20 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase tracking-wider">
-              <th className="px-6 py-4">Título</th>
-              <th className="px-6 py-4">Artista</th>
-              <th className="px-6 py-4">Tipo</th>
-              <th className="px-6 py-4">Estilo</th>
-              <th className="px-6 py-4 text-center">BPM</th>
-              <th className="px-6 py-4">Toque Batería</th>
-              <th className="px-6 py-4 text-center">Acordes</th>
+              <th className="px-6 py-4 whitespace-nowrap">Título</th>
+              <th className="px-6 py-4 whitespace-nowrap">Artista</th>
+              <th className="px-6 py-4 whitespace-nowrap">Tipo</th>
+              <th className="px-6 py-4 whitespace-nowrap">Estilo</th>
+              <th className="px-6 py-4 text-center whitespace-nowrap">BPM</th>
+              <th className="px-6 py-4 whitespace-nowrap">Toque Batería</th>
+              <th className="px-6 py-4 text-center whitespace-nowrap">Acordes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-300 font-medium">
@@ -117,25 +119,25 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
                 onClick={() => { setSelectedSong(song); setActiveTab('lyrics'); }}
                 className="hover:bg-gray-50/50 dark:hover:bg-slate-850/20 transition-colors cursor-pointer"
               >
-                <td className="px-6 py-4 font-bold text-gray-850 dark:text-white">{song.title}</td>
-                <td className="px-6 py-4 text-xs font-semibold">{song.artist || '—'}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 font-bold text-gray-850 dark:text-white whitespace-nowrap max-w-xs truncate" title={song.title}>{song.title}</td>
+                <td className="px-6 py-4 text-xs font-semibold whitespace-nowrap max-w-[150px] truncate" title={song.artist || ''}>{song.artist || '—'}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   {song.song_types ? (
                     <span className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-250/20 uppercase">{song.song_types.name}</span>
                   ) : '—'}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 whitespace-nowrap">
                   {song.song_styles ? (
                     <span className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-250/20 uppercase">{song.song_styles.name}</span>
                   ) : '—'}
                 </td>
-                <td className="px-6 py-4 text-center font-mono text-xs">{song.bpm ? `♩ ${song.bpm}` : '—'}</td>
-                <td className="px-6 py-4 text-xs">
+                <td className="px-6 py-4 text-center font-mono text-xs whitespace-nowrap">{song.bpm ? `♩ ${song.bpm}` : '—'}</td>
+                <td className="px-6 py-4 text-xs whitespace-nowrap">
                   {song.drum_style ? (
                     <span className="inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/20 text-[10px] px-2 py-0.5 rounded-full border border-indigo-200/20">🥁 {song.drum_style}</span>
                   ) : '—'}
                 </td>
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 text-center whitespace-nowrap">
                   {song.has_chords ? (
                     <span className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-green-250/20">🎸 Sí</span>
                   ) : (
