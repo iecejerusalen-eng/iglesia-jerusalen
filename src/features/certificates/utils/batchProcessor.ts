@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { generateCertificate } from './pdfEngine';
-import type { CertificateTemplate, FieldMapping } from '../types';
+import type { CertificateTemplate } from '../types';
 
 export interface BatchProgress {
   total: number;
@@ -11,7 +11,7 @@ export interface BatchProgress {
 
 export const processBatchToZip = async (
   template: CertificateTemplate,
-  membersData: Record<string, any>[],
+  membersData: Record<string, unknown>[],
   fonts: Map<string, string>,
   onProgress: (progress: BatchProgress) => void
 ): Promise<Blob> => {
@@ -34,7 +34,7 @@ export const processBatchToZip = async (
       zip.file(fileName, pdfBytes);
       
       onProgress({ total, current: i + 1, status: 'running' });
-    } catch (e: any) {
+    } catch (e) {
       console.error(`Error generating certificate for ${member.id}:`, e);
       // Continuar con el resto aunque falle uno
     }
@@ -49,7 +49,7 @@ import { PDFDocument } from 'pdf-lib';
 
 export const processBatchToSinglePdf = async (
   template: CertificateTemplate,
-  membersData: Record<string, any>[],
+  membersData: Record<string, unknown>[],
   fonts: Map<string, string>,
   onProgress: (progress: BatchProgress) => void
 ): Promise<Uint8Array> => {
@@ -73,7 +73,7 @@ export const processBatchToSinglePdf = async (
       copiedPages.forEach((page) => mergedPdf.addPage(page));
 
       onProgress({ total, current: i + 1, status: 'running' });
-    } catch (e: any) {
+    } catch (e) {
       console.error(`Error generating certificate for ${member.id}:`, e);
     }
   }

@@ -24,6 +24,7 @@ interface LeaderboardEntry {
   time_seconds: number;
   moves: number;
   created_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   profiles?: any;
 }
 
@@ -48,7 +49,7 @@ export const MemoryMatch = () => {
 
   // Timer Effect
   useEffect(() => {
-    let interval: number;
+    let interval: ReturnType<typeof setInterval>;
     if (gameState === 'playing' && startTime) {
       interval = setInterval(() => {
         setElapsedTime(Math.floor((new Date().getTime() - startTime) / 1000));

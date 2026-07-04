@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileCheck, Upload, Type, Download, Users } from 'lucide-react';
+import { FileCheck, Upload, Type, Users } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { TemplateList } from '../../features/certificates/components/TemplateList';

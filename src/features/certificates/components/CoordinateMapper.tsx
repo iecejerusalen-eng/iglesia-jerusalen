@@ -23,10 +23,11 @@ export const CoordinateMapper = ({
   const [pageDims, setPageDims] = useState({ width: template.page_width, height: template.page_height });
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let renderTask: any = null;
     const renderPDF = async () => {
       try {
-        const loadingTask = pdfjsLib.getDocument(template.pdf_url);
+        const loadingTask = pdfjsLib.getDocument({ url: template.pdf_url });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
         
@@ -50,7 +51,8 @@ export const CoordinateMapper = ({
           viewport: viewport
         };
         
-        renderTask = page.render(renderContext);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        renderTask = page.render(renderContext as any);
         await renderTask.promise;
       } catch (error) {
         console.error('Error renderizando PDF:', error);

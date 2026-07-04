@@ -1,6 +1,6 @@
 import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
-import { FieldMapping } from '../types';
+import type { FieldMapping } from '../types';
 import { resolveFieldValue, applyTextTransform } from './fieldTransforms';
 
 // Función para parsear color hexadecimal a rgb de pdf-lib
@@ -14,7 +14,7 @@ const parseColor = (hex: string) => {
 export const generateCertificate = async (
   templatePdfUrl: string,
   fieldMappings: FieldMapping[],
-  memberData: Record<string, any>,
+  memberData: Record<string, unknown>,
   fonts: Map<string, string> // Map de fontId -> fontUrl
 ): Promise<Uint8Array> => {
   // 1. Descargar el PDF base
@@ -66,7 +66,7 @@ export const generateCertificate = async (
     }
 
     // Ajustar si el texto excede el maxWidth (truncar u otra estrategia, simplificado aquí)
-    let textToDraw = text;
+    const textToDraw = text;
     if (textWidth > field.maxWidth) {
        // Podríamos reducir el fontSize o truncar, aquí reducimos el tamaño dinámicamente o truncamos.
        // Para simplicidad, solo truncamos.
