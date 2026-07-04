@@ -474,17 +474,19 @@ export const SongViewer = ({
               }
               .song-lyrics.chords-inline span.chord-annotation::before,
               .song-lyrics.chords-inline span.chord-node-wrapper::before {
-                content: '[' attr(data-chord) ']';
+                content: attr(data-chord);
                 position: static;
                 transform: none;
-                font-size: 0.9em;
+                font-size: 0.85em;
                 font-weight: 800;
-                color: #dc2626;
+                color: #b91c1c;
                 font-family: 'Inter', sans-serif;
-                background: rgba(220, 38, 38, 0.1);
-                padding: 0px 4px;
-                border-radius: 4px;
-                margin: 0 4px;
+                background: rgba(254, 226, 226, 0.6);
+                border: 1px solid rgba(252, 165, 165, 0.5);
+                padding: 2px 6px;
+                border-radius: 6px;
+                margin: 0 6px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
               }
               .dark .song-lyrics.chords-inline span.chord-annotation::before,
               .dark .song-lyrics.chords-inline span.chord-node-wrapper::before {
@@ -591,7 +593,7 @@ export const SongViewer = ({
                             )}
                           </div>
                           <div 
-                            className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
+                            className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics, transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                           />
                         </div>
@@ -600,7 +602,7 @@ export const SongViewer = ({
                   ) : (
                     /* LEGACY HTML RENDERING */
                     <div
-                      className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
+                      className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(htmlToBracketText(selectedSong.lyrics || ''), transposeAmount, nashvilleMode, originalKey) || '<p class="text-gray-400 italic">Sin letra disponible</p>', { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                     />
                   )}

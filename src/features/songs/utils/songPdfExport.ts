@@ -19,9 +19,12 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
 
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 50;
+  const margin = 40;
   
   let currentY: number;
+  let currentColumn = 0;
+  const columnGap = 30;
+  const columnWidth = (pageWidth - (margin * 2) - columnGap) / 2;
 
   // Colors
   const primaryColor = '#0f172a'; // slate-900
@@ -31,58 +34,56 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
   
   // 1. Premium Header Background
   doc.setFillColor(15, 23, 42); // slate-900
-  doc.rect(0, 0, pageWidth, 120, 'F');
+  doc.rect(0, 0, pageWidth, 110, 'F');
   
   // Header Text
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
+  doc.setFontSize(24);
   doc.setTextColor(255, 255, 255);
   
-  // Title wrapping
   const titleStr = song.title.toUpperCase();
   const splitTitle = doc.splitTextToSize(titleStr, pageWidth - margin * 2);
-  doc.text(splitTitle, margin, 50);
-  const headerY = 50 + (splitTitle.length * 28);
+  doc.text(splitTitle, margin, 45);
+  const headerY = 45 + ((splitTitle.length - 1) * 24) + 20;
 
   // Artist
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setTextColor(203, 213, 225); // slate-300
   const artistText = song.artist || 'Artista Desconocido';
   doc.text(artistText, margin, headerY);
   
   // Metadata Pills
-  currentY = 150;
+  currentY = 135;
+  const startContentY = 160;
   
   const drawPill = (text: string, x: number, y: number, bgColor: number[], textColor: number[]) => {
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     const tw = doc.getTextWidth(text);
     doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
-    doc.roundedRect(x, y - 11, tw + 16, 16, 8, 8, 'F');
+    doc.roundedRect(x, y - 10, tw + 16, 14, 4, 4, 'F');
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.text(text, x + 8, y);
     return tw + 24; // return width plus spacing
   };
 
-  let currentX = margin;
+  let pillX = margin;
   if (song.bpm) {
-    currentX += drawPill(`BPM: ${song.bpm}`, currentX, currentY, [241, 245, 249], [15, 23, 42]);
+    pillX += drawPill(`BPM: ${song.bpm}`, pillX, currentY, [241, 245, 249], [15, 23, 42]);
   }
   if (options.originalKey) {
     const displayKey = options.nashvilleMode ? 'Nashville' : options.originalKey;
-    currentX += drawPill(`Tono: ${displayKey}`, currentX, currentY, [254, 243, 199], [180, 83, 9]); // amber pill
+    pillX += drawPill(`Tono: ${displayKey}`, pillX, currentY, [254, 243, 199], [180, 83, 9]);
   }
   if (song.drum_style) {
-    drawPill(`Ritmo: ${song.drum_style}`, currentX, currentY, [241, 245, 249], [15, 23, 42]);
+    drawPill(`Ritmo: ${song.drum_style}`, pillX, currentY, [241, 245, 249], [15, 23, 42]);
   }
   
-  currentY += 30;
+  currentY = startContentY;
 
   // 2. Prepare Lyrics
-  // Convert everything to bracket text first, processed with transposed chords
   let processedText: string;
-  
   if (song.structure_blocks && song.structure_blocks.length > 0) {
     processedText = song.structure_blocks.map(b => {
       let blockStr = `[BLOCK:${b.label.toUpperCase()}]\n`;
@@ -95,73 +96,67 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
     processedText = processBracketText(baseText, options.transposeAmount, options.nashvilleMode, options.originalKey);
   }
 
-  // 3. Render Lyrics
+  // 3. Render Lyrics in 2 Columns
   const lines = processedText.split('\n');
-  
-  doc.setFont('helvetica', 'normal');
-  
-  const fontSize = 12;
-  const lineHeight = options.showChords ? 28 : 18; 
+  const fontSize = 11;
+  const lineHeight = options.showChords ? 26 : 16; 
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Check page break
-    if (currentY > pageHeight - margin) {
-      doc.addPage();
-      currentY = margin;
+    // Check page/column break
+    if (currentY > pageHeight - margin - 20) {
+      if (currentColumn === 0) {
+        currentColumn = 1;
+        currentY = startContentY; // Reset to top of column 2
+      } else {
+        doc.addPage();
+        currentColumn = 0;
+        currentY = margin + 20; // Some margin on new pages
+      }
     }
 
+    const currentX = margin + (currentColumn * (columnWidth + columnGap));
+
     if (line.trim() === '') {
-      currentY += lineHeight * 0.5;
+      currentY += lineHeight * 0.4;
       continue;
     }
 
     // Block Headers
     if (line.startsWith('[BLOCK:')) {
       const blockName = line.replace('[BLOCK:', '').replace(']', '');
-      currentY += 15;
+      currentY += 12;
       
       // Draw block background
       doc.setFillColor(241, 245, 249); // slate-100
       doc.setDrawColor(203, 213, 225); // slate-300
-      doc.roundedRect(margin, currentY - 12, pageWidth - margin * 2, 20, 4, 4, 'FD');
+      doc.roundedRect(currentX, currentY - 12, columnWidth, 18, 3, 3, 'FD');
       
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(primaryColor);
-      doc.text(blockName, margin + 10, currentY + 2);
+      doc.text(blockName, currentX + 8, currentY + 1);
       
-      currentY += 25;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(fontSize);
-      doc.setTextColor(primaryColor);
+      currentY += 20;
       continue;
     }
     
     // Melody guides
     if (line.startsWith('(Guía:')) {
       doc.setFont('helvetica', 'bolditalic');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(blockColor);
-      doc.text(line, margin, currentY);
-      currentY += 16;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(fontSize);
-      doc.setTextColor(primaryColor);
+      doc.text(line, currentX, currentY);
+      currentY += 14;
       continue;
     }
 
-    // Parse chords and lyrics inline
-    // A line might look like: "Oh, amor[C] que no me dejarás[G]"
-    let x = margin;
+    let lx = currentX;
 
     if (options.showChords && line.includes('[')) {
-      // We render chords above the text.
-      // So we have two Y positions for this line: currentY (for chords), currentY + 14 (for lyrics)
       const chordY = currentY;
       const textY = currentY + 12;
-      
       const segments = line.split(/(\[[^\]]+\])/g);
       
       for (const seg of segments) {
@@ -171,34 +166,46 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
           const chord = seg.slice(1, -1);
           // Draw chord box slightly offset
           doc.setFillColor(254, 242, 242); // red-50
-          doc.roundedRect(x - 2, chordY - 10, doc.getTextWidth(chord) + 4, 12, 2, 2, 'F');
+          const cw = doc.getTextWidth(chord);
+          doc.roundedRect(lx - 2, chordY - 9, cw + 4, 11, 2, 2, 'F');
           
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(fontSize - 1);
           doc.setTextColor(chordColor);
-          doc.text(chord, x, chordY);
+          doc.text(chord, lx, chordY);
           
-          // Add just a tiny bit of horizontal spacing
-          const chordWidth = doc.getTextWidth(chord);
-          x += (chordWidth * 0.1);
+          lx += (cw * 0.2);
         } else {
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(fontSize);
           doc.setTextColor(primaryColor);
-          doc.text(seg, x, textY);
-          x += doc.getTextWidth(seg);
+          
+          // Truncate long lines so they don't overflow the column
+          const maxAllowedWidth = columnWidth - (lx - currentX);
+          let safeSeg = seg;
+          if (doc.getTextWidth(safeSeg) > maxAllowedWidth) {
+             safeSeg = safeSeg.slice(0, 30) + '...'; // Basic truncation fallback
+          }
+          
+          doc.text(safeSeg, lx, textY);
+          lx += doc.getTextWidth(safeSeg);
         }
       }
-      
-      currentY += 28; // move down for next line
+      currentY += 26; 
     } else {
       // No chords, just print lyrics
-      // Strip brackets if showChords is false
       const cleanLine = options.showChords ? line : line.replace(/\[.*?\]/g, '');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(fontSize);
       doc.setTextColor(primaryColor);
-      doc.text(cleanLine, margin, currentY + 12);
+      
+      // Basic truncation logic if line overflows column
+      let safeLine = cleanLine;
+      if (doc.getTextWidth(safeLine) > columnWidth) {
+        safeLine = safeLine.slice(0, 35) + '...';
+      }
+      
+      doc.text(safeLine, currentX, currentY + 10);
       currentY += lineHeight;
     }
   }

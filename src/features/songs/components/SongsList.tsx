@@ -1,7 +1,6 @@
 import { Music } from 'lucide-react';
 import { AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 import type { Song } from '../../../types';
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
 
 interface SongsListProps {
@@ -14,13 +13,6 @@ interface SongsListProps {
 
 export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiveTab }: SongsListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
-  
-  const rowVirtualizer = useWindowVirtualizer({
-    count: sorted.length,
-    estimateSize: () => 70,
-    overscan: 5,
-    scrollMargin: 0,
-  });
 
   if (loading) {
     return (
@@ -86,9 +78,6 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
 
 
 
-  const items = rowVirtualizer.getVirtualItems();
-  const paddingTop = items.length > 0 ? items[0].start : 0;
-  const paddingBottom = items.length > 0 ? rowVirtualizer.getTotalSize() - items[items.length - 1].end : 0;
 
   return (
     <div ref={parentRef} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xs">
@@ -106,16 +95,9 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-300 font-medium">
-            {paddingTop > 0 && (
-              <tr><td style={{ height: `${paddingTop}px` }} colSpan={7} /></tr>
-            )}
-            {items.map((virtualRow) => {
-              const song = sorted[virtualRow.index];
-              return (
+            {sorted.map((song) => (
               <tr 
                 key={song.id} 
-                ref={rowVirtualizer.measureElement}
-                data-index={virtualRow.index}
                 onClick={() => { setSelectedSong(song); setActiveTab('lyrics'); }}
                 className="hover:bg-gray-50/50 dark:hover:bg-slate-850/20 transition-colors cursor-pointer"
               >
@@ -145,11 +127,7 @@ export const SongsList = ({ loading, sorted, viewMode, setSelectedSong, setActiv
                   )}
                 </td>
               </tr>
-              );
-            })}
-            {paddingBottom > 0 && (
-              <tr><td style={{ height: `${paddingBottom}px` }} colSpan={7} /></tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
