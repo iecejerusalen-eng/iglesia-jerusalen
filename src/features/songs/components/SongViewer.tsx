@@ -592,7 +592,7 @@ export const SongViewer = ({
                           </div>
                           <div 
                             className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics, transposeAmount, nashvilleMode, originalKey)) }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics, transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                           />
                         </div>
                       ))}
@@ -601,7 +601,7 @@ export const SongViewer = ({
                     /* LEGACY HTML RENDERING */
                     <div
                       className={`song-lyrics ${!showChords ? 'hide-chords' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(htmlToBracketText(selectedSong.lyrics || ''), transposeAmount, nashvilleMode, originalKey) || '<p class="text-gray-400 italic">Sin letra disponible</p>') }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(htmlToBracketText(selectedSong.lyrics || ''), transposeAmount, nashvilleMode, originalKey) || '<p class="text-gray-400 italic">Sin letra disponible</p>', { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                     />
                   )}
                 </div>

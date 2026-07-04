@@ -382,8 +382,8 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'certificates',
-    label: 'Generador de Certificados',
-    name: 'Certificados',
+    label: 'Generador de Certificados (PDF)',
+    name: 'Generador PDFs',
     path: '/admin/certificados',
     icon: FileText,
     group: 'comunidad'

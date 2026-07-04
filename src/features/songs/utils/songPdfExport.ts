@@ -21,58 +21,67 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
   const pageHeight = doc.internal.pageSize.height;
   const margin = 50;
   
-  let currentY = margin;
+  let currentY: number;
 
   // Colors
   const primaryColor = '#0f172a'; // slate-900
-  const secondaryColor = '#64748b'; // slate-500
+  const secondaryColor = '#475569'; // slate-600
   const chordColor = '#dc2626'; // red-600
   const blockColor = '#0284c7'; // sky-600
-
-  // 1. Header
+  
+  // 1. Premium Header Background
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, pageWidth, 120, 'F');
+  
+  // Header Text
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(primaryColor);
+  doc.setFontSize(26);
+  doc.setTextColor(255, 255, 255);
   
   // Title wrapping
-  const splitTitle = doc.splitTextToSize(song.title.toUpperCase(), pageWidth - margin * 2);
-  doc.text(splitTitle, margin, currentY);
-  currentY += (splitTitle.length * 28);
+  const titleStr = song.title.toUpperCase();
+  const splitTitle = doc.splitTextToSize(titleStr, pageWidth - margin * 2);
+  doc.text(splitTitle, margin, 50);
+  const headerY = 50 + (splitTitle.length * 28);
 
   // Artist
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('helvetica', 'italic');
   doc.setFontSize(14);
-  doc.setTextColor(secondaryColor);
+  doc.setTextColor(203, 213, 225); // slate-300
   const artistText = song.artist || 'Artista Desconocido';
-  doc.text(artistText, margin, currentY);
-  currentY += 25;
-
-  // Metadata Row
-  doc.setFontSize(10);
-  doc.setTextColor(primaryColor);
+  doc.text(artistText, margin, headerY);
   
-  const metadata = [];
-  if (song.bpm) metadata.push(`BPM: ${song.bpm}`);
+  // Metadata Pills
+  currentY = 150;
+  
+  const drawPill = (text: string, x: number, y: number, bgColor: number[], textColor: number[]) => {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    const tw = doc.getTextWidth(text);
+    doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    doc.roundedRect(x, y - 11, tw + 16, 16, 8, 8, 'F');
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text(text, x + 8, y);
+    return tw + 24; // return width plus spacing
+  };
+
+  let currentX = margin;
+  if (song.bpm) {
+    currentX += drawPill(`BPM: ${song.bpm}`, currentX, currentY, [241, 245, 249], [15, 23, 42]);
+  }
   if (options.originalKey) {
-    const displayKey = options.nashvilleMode ? 'Nashville' : (options.originalKey /* TODO: transpose */); // Will show transpose via songUtils
-    metadata.push(`Tono: ${displayKey}`); 
+    const displayKey = options.nashvilleMode ? 'Nashville' : options.originalKey;
+    currentX += drawPill(`Tono: ${displayKey}`, currentX, currentY, [254, 243, 199], [180, 83, 9]); // amber pill
   }
-  if (song.drum_style) metadata.push(`Batería: ${song.drum_style}`);
+  if (song.drum_style) {
+    drawPill(`Ritmo: ${song.drum_style}`, currentX, currentY, [241, 245, 249], [15, 23, 42]);
+  }
   
-  if (metadata.length > 0) {
-    doc.text(metadata.join('  |  '), margin, currentY);
-    currentY += 15;
-  }
-
-  // Divider
-  doc.setDrawColor('#e2e8f0');
-  doc.setLineWidth(1);
-  doc.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 25;
+  currentY += 30;
 
   // 2. Prepare Lyrics
   // Convert everything to bracket text first, processed with transposed chords
-  let processedText = '';
+  let processedText: string;
   
   if (song.structure_blocks && song.structure_blocks.length > 0) {
     processedText = song.structure_blocks.map(b => {
@@ -111,12 +120,19 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
     // Block Headers
     if (line.startsWith('[BLOCK:')) {
       const blockName = line.replace('[BLOCK:', '').replace(']', '');
-      currentY += 10;
+      currentY += 15;
+      
+      // Draw block background
+      doc.setFillColor(241, 245, 249); // slate-100
+      doc.setDrawColor(203, 213, 225); // slate-300
+      doc.roundedRect(margin, currentY - 12, pageWidth - margin * 2, 20, 4, 4, 'FD');
+      
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(blockColor);
-      doc.text(blockName, margin, currentY);
-      currentY += 18;
+      doc.setFontSize(10);
+      doc.setTextColor(primaryColor);
+      doc.text(blockName, margin + 10, currentY + 2);
+      
+      currentY += 25;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(fontSize);
       doc.setTextColor(primaryColor);
@@ -125,9 +141,9 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
     
     // Melody guides
     if (line.startsWith('(Guía:')) {
-      doc.setFont('helvetica', 'italic');
+      doc.setFont('helvetica', 'bolditalic');
       doc.setFontSize(10);
-      doc.setTextColor(secondaryColor);
+      doc.setTextColor(blockColor);
       doc.text(line, margin, currentY);
       currentY += 16;
       doc.setFont('helvetica', 'normal');
@@ -153,15 +169,18 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
         
         if (seg.startsWith('[') && seg.endsWith(']')) {
           const chord = seg.slice(1, -1);
+          // Draw chord box slightly offset
+          doc.setFillColor(254, 242, 242); // red-50
+          doc.roundedRect(x - 2, chordY - 10, doc.getTextWidth(chord) + 4, 12, 2, 2, 'F');
+          
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(fontSize - 1);
           doc.setTextColor(chordColor);
           doc.text(chord, x, chordY);
           
-          // To ensure chords don't overlap if lyric text is too short, we advance X slightly
-          // But usually we just let it be at current X
+          // Add just a tiny bit of horizontal spacing
           const chordWidth = doc.getTextWidth(chord);
-          x += (chordWidth * 0.3); // minimal space
+          x += (chordWidth * 0.1);
         } else {
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(fontSize);
