@@ -11,7 +11,8 @@ export interface BatchProgress {
 
 export const processBatchToZip = async (
   template: CertificateTemplate,
-  membersData: Record<string, unknown>[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  membersData: Record<string, any>[],
   fonts: Map<string, string>,
   onProgress: (progress: BatchProgress) => void
 ): Promise<Blob> => {
@@ -49,7 +50,8 @@ import { PDFDocument } from 'pdf-lib';
 
 export const processBatchToSinglePdf = async (
   template: CertificateTemplate,
-  membersData: Record<string, unknown>[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  membersData: Record<string, any>[],
   fonts: Map<string, string>,
   onProgress: (progress: BatchProgress) => void
 ): Promise<Uint8Array> => {

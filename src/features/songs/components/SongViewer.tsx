@@ -4,6 +4,7 @@ import { AnimeZoomIn } from '../../../components/animations/AnimeWrappers';
 import { X, Eye, EyeOff, Copy, ExternalLink, Info, PlayCircle, FileText, Printer, Maximize, Minimize, Hash, ArrowDownToLine, Volume2, VolumeX, Play, Square } from 'lucide-react';
 import type { Song } from '../../../types';
 import { htmlToBracketText, bracketTextToHtml, processBracketText, getOriginalKey, transposeNote } from '../utils/songUtils';
+import { exportSongToPdf } from '../utils/songPdfExport';
 import { useMetronome } from '../hooks/useMetronome';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ export const SongViewer = ({
   const [nashvilleMode, setNashvilleMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
+  const [chordPosition, setChordPosition] = useState<'above' | 'inline'>('above');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +82,13 @@ export const SongViewer = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    exportSongToPdf(selectedSong, {
+      transposeAmount,
+      nashvilleMode,
+      originalKey,
+      showChords
+    });
+    toast.success('Generando PDF profesional...');
   };
 
   const copyChords = (song: Song) => {
@@ -237,6 +245,17 @@ export const SongViewer = ({
                     >
                       <Hash size={14} />
                     </button>
+
+                    <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
+
+                    {/* Position Toggle */}
+                    <button
+                      onClick={() => setChordPosition(prev => prev === 'above' ? 'inline' : 'above')}
+                      className="px-2 py-1 text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors uppercase tracking-wider"
+                      title="Posición de Acordes"
+                    >
+                      {chordPosition === 'above' ? 'ARRIBA' : 'INLINE'}
+                    </button>
                   </div>
                 )}
 
@@ -378,45 +397,42 @@ export const SongViewer = ({
               .song-lyrics.hide-chords ruby rt {
                 display: none;
               }
+              }
               
-              /* Chord annotation style */
-              .song-lyrics span.chord-annotation {
+              /* Chord annotation style (Above) */
+              .song-lyrics.chords-above span.chord-annotation {
                 position: relative;
                 display: inline-block;
                 background: rgba(220, 38, 38, 0.05);
-                border-radius: 2px;
+                border-radius: 4px;
                 padding: 0 1px;
                 margin-top: 1.2rem;
               }
-              .dark .song-lyrics span.chord-annotation {
+              .dark .song-lyrics.chords-above span.chord-annotation {
                 background: rgba(248, 113, 113, 0.08);
               }
-              .song-lyrics span.chord-annotation::before {
+              .song-lyrics.chords-above span.chord-annotation::before {
                 content: attr(data-chord);
                 position: absolute;
-                top: -1.2rem;
-                left: 0;
-                font-size: 0.75rem;
-                font-weight: 700;
+                top: -1.3rem;
+                left: -0.1rem;
+                font-size: 0.85rem;
+                font-weight: 800;
                 color: #dc2626;
                 font-family: 'Inter', sans-serif;
                 line-height: 1;
                 pointer-events: none;
+                background: rgba(255, 255, 255, 0.8);
+                padding: 0px 4px;
+                border-radius: 4px;
               }
-              .dark .song-lyrics span.chord-annotation::before {
+              .dark .song-lyrics.chords-above span.chord-annotation::before {
                 color: #f87171;
+                background: rgba(15, 23, 42, 0.8);
               }
-              .song-lyrics.hide-chords span.chord-annotation::before {
-                display: none;
-              }
-              .song-lyrics.hide-chords span.chord-annotation {
-                margin-top: 0;
-                background: none;
-                padding: 0;
-              }
-              
-              /* Chord node wrapper (Tiptap custom node view) */
-              .song-lyrics span.chord-node-wrapper {
+
+              /* Chord node wrapper (Above) */
+              .song-lyrics.chords-above span.chord-node-wrapper {
                 display: inline-block;
                 position: relative;
                 width: 0;
@@ -424,25 +440,67 @@ export const SongViewer = ({
                 overflow: visible;
                 user-select: none;
               }
-              .song-lyrics span.chord-node-wrapper::before {
+              .song-lyrics.chords-above span.chord-node-wrapper::before {
                 content: attr(data-chord);
                 position: absolute;
-                bottom: 1.2rem;
+                bottom: 1.3rem;
                 left: 50%;
                 transform: translateX(-50%);
-                font-size: 0.8rem;
+                font-size: 0.85rem;
                 font-weight: 800;
                 color: #dc2626;
                 font-family: 'Inter', sans-serif;
                 line-height: 1;
                 pointer-events: none;
                 white-space: nowrap;
+                background: rgba(255, 255, 255, 0.8);
+                padding: 0px 4px;
+                border-radius: 4px;
               }
-              .dark .song-lyrics span.chord-node-wrapper::before {
+              .dark .song-lyrics.chords-above span.chord-node-wrapper::before {
                 color: #f87171;
+                background: rgba(15, 23, 42, 0.8);
               }
+
+              /* Inline Chords */
+              .song-lyrics.chords-inline span.chord-annotation,
+              .song-lyrics.chords-inline span.chord-node-wrapper {
+                position: static;
+                display: inline;
+                margin: 0;
+                padding: 0;
+                width: auto;
+                height: auto;
+              }
+              .song-lyrics.chords-inline span.chord-annotation::before,
+              .song-lyrics.chords-inline span.chord-node-wrapper::before {
+                content: '[' attr(data-chord) ']';
+                position: static;
+                transform: none;
+                font-size: 0.9em;
+                font-weight: 800;
+                color: #dc2626;
+                font-family: 'Inter', sans-serif;
+                background: rgba(220, 38, 38, 0.1);
+                padding: 0px 4px;
+                border-radius: 4px;
+                margin: 0 4px;
+              }
+              .dark .song-lyrics.chords-inline span.chord-annotation::before,
+              .dark .song-lyrics.chords-inline span.chord-node-wrapper::before {
+                color: #fca5a5;
+                background: rgba(248, 113, 113, 0.15);
+              }
+
+              /* Hide chords */
+              .song-lyrics.hide-chords span.chord-annotation::before,
               .song-lyrics.hide-chords span.chord-node-wrapper::before {
                 display: none;
+              }
+              .song-lyrics.hide-chords span.chord-annotation {
+                margin-top: 0;
+                background: none;
+                padding: 0;
               }
               @media print {
                 body * {

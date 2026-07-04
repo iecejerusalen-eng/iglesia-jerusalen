@@ -14,7 +14,8 @@ const parseColor = (hex: string) => {
 export const generateCertificate = async (
   templatePdfUrl: string,
   fieldMappings: FieldMapping[],
-  memberData: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  memberData: Record<string, any>,
   fonts: Map<string, string> // Map de fontId -> fontUrl
 ): Promise<Uint8Array> => {
   // 1. Descargar el PDF base

@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export const useMetronome = (bpm: number | null) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(1);
+  const visualTimeoutsRef = useRef<number[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const timerIDRef = useRef<number | null>(null);
   const nextNoteTimeRef = useRef<number>(0);
@@ -56,8 +57,17 @@ export const useMetronome = (bpm: number | null) => {
         while (nextNoteTimeRef.current < audioContextRef.current.currentTime + scheduleAheadTime) {
           playClick(currentBeatRef.current, nextNoteTimeRef.current);
           
+          const timeToPlay = nextNoteTimeRef.current - audioContextRef.current.currentTime;
           const beatForState = (currentBeatRef.current % 4) + 1; // 4/4 time signature
-          setCurrentBeat(beatForState);
+          
+          if (timeToPlay > 0) {
+            const timeoutId = window.setTimeout(() => {
+              setCurrentBeat(beatForState);
+            }, timeToPlay * 1000) as unknown as number;
+            visualTimeoutsRef.current.push(timeoutId);
+          } else {
+            setCurrentBeat(beatForState);
+          }
           
           const secondsPerBeat = 60.0 / bpm;
           nextNoteTimeRef.current += secondsPerBeat;
@@ -73,6 +83,8 @@ export const useMetronome = (bpm: number | null) => {
         window.clearTimeout(timerIDRef.current);
         timerIDRef.current = null;
       }
+      visualTimeoutsRef.current.forEach(id => window.clearTimeout(id));
+      visualTimeoutsRef.current = [];
     }
     
     return () => {
@@ -80,6 +92,8 @@ export const useMetronome = (bpm: number | null) => {
         window.clearTimeout(timerIDRef.current);
         timerIDRef.current = null;
       }
+      visualTimeoutsRef.current.forEach(id => window.clearTimeout(id));
+      visualTimeoutsRef.current = [];
     };
   }, [isPlaying, bpm, playClick]);
 
