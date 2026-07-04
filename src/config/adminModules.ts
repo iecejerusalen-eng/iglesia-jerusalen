@@ -379,5 +379,13 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/extensiones',
     icon: Sparkles,
     group: 'diseno'
+  },
+  {
+    id: 'certificates',
+    label: 'Generador de Certificados',
+    name: 'Certificados',
+    path: '/admin/certificados',
+    icon: FileText,
+    group: 'comunidad'
   }
 ];

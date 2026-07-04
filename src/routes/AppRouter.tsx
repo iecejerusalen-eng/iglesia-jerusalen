@@ -114,6 +114,7 @@ const HangmanEditor = lazyWithRetry(() => import('../pages/admin/games/HangmanEd
 const MemoryEditor = lazyWithRetry(() => import('../pages/admin/games/MemoryEditor').then(m => ({ default: m.MemoryEditor })));
 const AudioLibrary = lazyWithRetry(() => import('../pages/admin/games/AudioLibrary').then(m => ({ default: m.AudioLibrary })));
 const DesignCatalog = lazyWithRetry(() => import('../pages/admin/DesignCatalog'));
+const CertificatesManager = lazyWithRetry(() => import('../pages/admin/CertificatesManager'));
 
 export default function AppRouter() {
   return (
@@ -191,6 +192,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="members" />}><Route element={<AdminLayout />}><Route path="/admin/miembros" element={<MembersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
