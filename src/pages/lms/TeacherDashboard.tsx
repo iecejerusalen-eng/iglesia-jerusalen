@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate } from 'lucide-react';
+import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 import { useTeacherData } from '../../features/teacher-dashboard/hooks/useTeacherData';
@@ -13,6 +13,7 @@ import { CommunicationTab } from '../../features/teacher-dashboard/components/Co
 import { GradesTab } from '../../features/teacher-dashboard/components/GradesTab';
 import { IntegrationsTab } from '../../features/teacher-dashboard/components/IntegrationsTab';
 import { OverviewTab } from '../../features/teacher-dashboard/components/OverviewTab';
+import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
 
 export default function TeacherDashboard() {
   const { user, roles, role: primaryRole } = useAuthStore();
@@ -112,6 +113,7 @@ export default function TeacherDashboard() {
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-8 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-150 dark:border-white/5 shadow-sm">
           {[
             { id: 'overview', label: 'Resumen', icon: LayoutTemplate },
+            { id: 'calendar', label: 'Horarios y Agenda', icon: CalendarIcon },
             { id: 'students', label: 'Alumnos y Aulas', icon: Users },
             { id: 'planning', label: 'Planificación', icon: BookOpen },
             { id: 'grades', label: 'Calificaciones', icon: Award },
@@ -134,7 +136,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Main Content */}
-        {!selectedCourseId && activeTab !== 'overview' ? (
+        {!selectedCourseId && activeTab !== 'overview' && activeTab !== 'calendar' ? (
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-3xl p-12 text-center shadow-xl shadow-gray-200/20 dark:shadow-none">
             <h2 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-2">Seleccione un curso</h2>
             <p className="text-sm text-gray-500">Por favor, elija un curso en el menú superior para administrar su contenido.</p>
@@ -148,6 +150,15 @@ export default function TeacherDashboard() {
                 classesToday={classesToday}
                 assignmentsToGrade={submissions.filter((s: any) => !s.grade).length}
                 recentSubmissions={submissions}
+              />
+            )}
+
+            {activeTab === 'calendar' && (
+              <UniversityCalendar
+                role="teacher"
+                userId={user?.id}
+                courseId={selectedCourseId || undefined}
+                editable={true}
               />
             )}
 

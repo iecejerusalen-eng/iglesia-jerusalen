@@ -702,6 +702,38 @@ export interface LMSEnrollment {
   lms_courses?: LMSCourse;
 }
 
+export interface LMSTeacherSchedule {
+  id: string;
+  course_id: string;
+  teacher_id: string;
+  shift_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  meet_link?: string | null;
+  room_or_location?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  lms_courses?: { title: string };
+  profiles?: Profile;
+}
+
+export interface LMSCalendarEvent {
+  id: string;
+  course_id: string;
+  activity_id?: string | null;
+  title: string;
+  description?: string | null;
+  event_type: 'class' | 'assignment' | 'exam' | 'general' | 'live_session';
+  start_date: string;
+  end_date: string;
+  created_by?: string | null;
+  is_public: boolean;
+  created_at?: string;
+  updated_at?: string;
+  lms_courses?: { title: string };
+}
+
 export interface LMSActivityCompletion {
   id: string;
   activity_id: string;

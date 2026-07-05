@@ -13,12 +13,14 @@ import { CategoriesList } from '../../features/lms/components/CategoriesList';
 import { CategoryForm } from '../../features/lms/components/CategoryForm';
 import { EnrollmentRequestsList } from '../../features/lms/components/EnrollmentRequestsList';
 import { LMSDefaultsForm } from '../../features/lms/components/LMSDefaultsForm';
+import { AcademicStaffManager } from '../../features/lms/components/AcademicStaffManager';
+import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
 
 export default function LMSManager() {
   const location = useLocation();
   const navigate = useNavigate();
   const initialTab = location.pathname.includes('matriculas') ? 'requests' : 'courses';
-  const [activeTab, setActiveTab] = useState<'courses' | 'categories' | 'requests' | 'defaults'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'courses' | 'categories' | 'requests' | 'defaults' | 'staff' | 'calendar'>(initialTab);
 
   const { courses, isLoading: loadingCourses } = useCourses();
   const { categories, isLoading: loadingCategories } = useCategories();
@@ -163,6 +165,22 @@ export default function LMSManager() {
         >
           Formatos / Configuración
         </button>
+        <button
+          onClick={() => setActiveTab('staff')}
+          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'staff' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Docentes y Turnos (CRM)
+        </button>
+        <button
+          onClick={() => setActiveTab('calendar')}
+          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'calendar' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Calendario General
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -189,6 +207,14 @@ export default function LMSManager() {
 
           {activeTab === 'defaults' && (
             <LMSDefaultsForm />
+          )}
+
+          {activeTab === 'staff' && (
+            <AcademicStaffManager />
+          )}
+
+          {activeTab === 'calendar' && (
+            <UniversityCalendar role="admin" editable={true} />
           )}
         </div>
       )}
