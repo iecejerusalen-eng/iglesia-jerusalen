@@ -15,12 +15,17 @@ import { EnrollmentRequestsList } from '../../features/lms/components/Enrollment
 import { LMSDefaultsForm } from '../../features/lms/components/LMSDefaultsForm';
 import { AcademicStaffManager } from '../../features/lms/components/AcademicStaffManager';
 import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
+import { SchoolManager } from '../../features/lms/components/SchoolManager';
+import { SchoolSelector } from '../../features/lms/components/SchoolSelector';
+import { ParticipantsTable } from '../../features/lms/components/ParticipantsTable';
+import { LMSAnalytics } from '../../features/lms/components/LMSAnalytics';
 
 export default function LMSManager() {
   const location = useLocation();
   const navigate = useNavigate();
   const initialTab = location.pathname.includes('matriculas') ? 'requests' : 'courses';
-  const [activeTab, setActiveTab] = useState<'courses' | 'categories' | 'requests' | 'defaults' | 'staff' | 'calendar'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'schools' | 'courses' | 'categories' | 'requests' | 'participants' | 'analytics' | 'defaults' | 'staff' | 'calendar'>(initialTab);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('all');
 
   const { courses, isLoading: loadingCourses } = useCourses();
   const { categories, isLoading: loadingCategories } = useCategories();
@@ -83,7 +88,7 @@ export default function LMSManager() {
         {activeTab === 'courses' && (
           <button
             onClick={() => navigate('/admin/lms/course/settings/new')}
-            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer"
+            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer flex-shrink-0"
           >
             <Plus size={20} />
             Nuevo Curso
@@ -92,12 +97,24 @@ export default function LMSManager() {
         {activeTab === 'categories' && (
           <button
             onClick={() => handleOpenCategoryModal()}
-            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer"
+            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer flex-shrink-0"
           >
             <Plus size={20} />
             Nueva Categoría
           </button>
         )}
+      </div>
+
+      {/* Global Context Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm">
+        <SchoolSelector 
+          value={selectedSchoolId} 
+          onChange={setSelectedSchoolId}
+          className="w-full md:w-auto"
+        />
+        <div className="text-xs text-gray-500 font-medium hidden md:block">
+          Filtro contextual activo para vistas de administración
+        </div>
       </div>
 
       {/* Quick Navigation Banner */}
@@ -108,7 +125,7 @@ export default function LMSManager() {
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
           <button 
-            onClick={() => navigate('/admin/lms/analytics')}
+            onClick={() => setActiveTab('analytics')}
             className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
           >
             Ver Analíticas LMS
@@ -134,12 +151,36 @@ export default function LMSManager() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto pb-px gap-2">
         <button
+          onClick={() => setActiveTab('schools')}
+          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'schools' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          🏛️ Escuelas
+        </button>
+        <button
           onClick={() => setActiveTab('courses')}
           className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
             activeTab === 'courses' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
           Cursos
+        </button>
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Matrículas
+        </button>
+        <button
+          onClick={() => setActiveTab('participants')}
+          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === 'participants' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          Participantes
         </button>
         <button
           onClick={() => setActiveTab('categories')}
@@ -192,13 +233,45 @@ export default function LMSManager() {
         <div className="space-y-6">
           {activeTab === 'courses' && (
             <CoursesList 
-              courses={courses}
+              courses={selectedSchoolId === 'all' ? courses : courses.filter(c => c.school_id === selectedSchoolId)}
               onEditCourse={handleOpenCourseModal}
             />
           )}
 
           {activeTab === 'categories' && (
             <CategoriesList onEditCategory={handleOpenCategoryModal} />
+          )}
+
+          {activeTab === 'participants' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Directorio Global de Participantes</h2>
+                  <p className="text-sm text-gray-500">
+                    Gestión masiva de estudiantes y docentes.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl text-sm text-blue-800 dark:text-blue-300">
+                <p className="font-bold mb-1 flex items-center gap-2"><ArrowRight size={14} /> Gestión de Grupos / Paralelos</p>
+                <p className="text-xs opacity-90">Para crear o administrar paralelos (Ej. Paralelo A, Grupo de Sábado), por favor diríjase al Dashboard del Docente de cada materia.</p>
+              </div>
+
+              <ParticipantsTable schoolId={selectedSchoolId} />
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Analíticas LMS</h2>
+                <p className="text-sm text-gray-500">
+                  Visión general del rendimiento y progreso académico.
+                </p>
+              </div>
+              <LMSAnalytics />
+            </div>
           )}
 
           {activeTab === 'requests' && (
@@ -210,11 +283,15 @@ export default function LMSManager() {
           )}
 
           {activeTab === 'staff' && (
-            <AcademicStaffManager />
+            <AcademicStaffManager schoolId={selectedSchoolId} />
           )}
 
           {activeTab === 'calendar' && (
             <UniversityCalendar role="admin" editable={true} />
+          )}
+
+          {activeTab === 'schools' && (
+            <SchoolManager />
           )}
         </div>
       )}

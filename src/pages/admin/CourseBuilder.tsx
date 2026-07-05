@@ -203,7 +203,8 @@ const CourseBuilder = () => {
         subject_id: subjectId,
         title: '',
         description: '',
-        order_index: subjectModules.length
+        order_index: subjectModules.length,
+        is_hidden: false
       });
     }
     setIsModuleModalOpen(true);
@@ -219,6 +220,7 @@ const CourseBuilder = () => {
         const { error } = await supabase.from('lms_modules').update({
           title: editingModule.title,
           description: editingModule.description,
+          is_hidden: editingModule.is_hidden,
           updated_at: new Date().toISOString()
         }).eq('id', editingModule.id);
         if (error) throw error;
@@ -228,7 +230,8 @@ const CourseBuilder = () => {
           subject_id: editingModule.subject_id,
           title: editingModule.title,
           description: editingModule.description,
-          order_index: editingModule.order_index
+          order_index: editingModule.order_index,
+          is_hidden: editingModule.is_hidden
         }]);
         if (error) throw error;
         toast.success('Módulo creado');
@@ -806,6 +809,19 @@ const CourseBuilder = () => {
                   className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Contenido central que se estudiará en este módulo..."
                 />
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <input
+                  type="checkbox"
+                  id="isHiddenModule"
+                  checked={editingModule.is_hidden || false}
+                  onChange={(e) => setEditingModule({ ...editingModule, is_hidden: e.target.checked })}
+                  className="w-4 h-4 text-gold border-gray-300 rounded focus:ring-gold"
+                />
+                <label htmlFor="isHiddenModule" className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Ocultar unidad para estudiantes (borrador)
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10 mt-6">

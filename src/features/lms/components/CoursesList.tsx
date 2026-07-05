@@ -52,6 +52,23 @@ export function CoursesList({ courses, onEditCourse }: CoursesListProps) {
             </div>
             <div className="p-5 flex-1 flex flex-col justify-between">
               <div>
+                {(course.lms_schools || course.lms_levels) && (
+                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                    {course.lms_schools && (
+                      <span
+                        className="text-[10px] font-extrabold px-2 py-0.5 rounded-full text-white uppercase tracking-wider"
+                        style={{ backgroundColor: course.lms_schools.color || '#6366F1' }}
+                      >
+                        {course.lms_schools.name}
+                      </span>
+                    )}
+                    {course.lms_levels && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300">
+                        {course.lms_levels.name}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1 group-hover:text-gold transition-colors">{course.title}</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
                   {course.description || 'Sin descripción'}

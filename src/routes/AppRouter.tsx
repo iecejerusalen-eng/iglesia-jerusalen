@@ -48,6 +48,7 @@ const Events = lazyWithRetry(() => import('../pages/public/Events'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
 const ProgramsOverview = lazyWithRetry(() => import('../pages/public/ProgramsOverview'));
+const CertificateViewer = lazyWithRetry(() => import('../pages/lms/CertificateViewer'));
 const VirtualClassroomLanding = lazyWithRetry(() => import('../pages/public/VirtualClassroomLanding'));
 const Presentation = lazyWithRetry(() => import('../pages/public/Presentation').then(m => ({ default: m.Presentation })));
 const ProgramDetail = lazyWithRetry(() => import('../pages/public/ProgramDetail'));
@@ -144,6 +145,7 @@ export default function AppRouter() {
           <Route path="/programas" element={<ProgramsOverview />} />
           <Route path="/programas/:id" element={<ProgramDetail />} />
           <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />
+          <Route path="/certificados/:id" element={<CertificateViewer />} />
           <Route path="/mis-compras" element={<MyPurchases />} />
           <Route path="/escuela-dominical" element={<SundaySchool />} />
           <Route path="/plan-lectura" element={<ReadingPlan />} />

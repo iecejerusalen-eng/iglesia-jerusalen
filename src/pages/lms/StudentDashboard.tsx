@@ -11,6 +11,7 @@ import { StudentCalendar } from '../../features/student-dashboard/components/Stu
 import { StudentGrades } from '../../features/student-dashboard/components/StudentGrades';
 import { StudentBadges } from '../../features/student-dashboard/components/StudentBadges';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -166,8 +167,8 @@ export default function StudentDashboard() {
 
       {/* Top Menu (Tabs) */}
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 sticky top-[72px] z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <div className="flex overflow-x-auto custom-scrollbar flex-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -186,6 +187,11 @@ export default function StudentDashboard() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Notification Center */}
+          <div className="pl-4 flex items-center shrink-0 border-l border-gray-200 dark:border-white/10 ml-4 hidden sm:flex">
+            <NotificationCenter />
           </div>
         </div>
       </div>

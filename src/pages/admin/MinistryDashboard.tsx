@@ -2,24 +2,30 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
-import { ArrowLeft, Users, Calendar, Clock, FileText, Settings, ShieldAlert, Loader2 } from 'lucide-react';
-import type { Ministry } from '../../types';
+import { ArrowLeft, Users, Calendar, Clock, FileText, Settings, ShieldAlert, Loader2, GraduationCap, ArrowRight, BookOpen } from 'lucide-react';
+import type { Ministry, LMSSchool } from '../../types';
 import MinistryMembers from '../../components/admin/ministry/MinistryMembers';
 import SmartScheduler from '../../components/admin/ministry/SmartScheduler';
 import MeetingNotes from '../../components/admin/ministry/MeetingNotes';
 import MinistryCalendar from '../../components/admin/ministry/MinistryCalendar';
+import { AcademicStaffManager } from '../../features/lms/components/AcademicStaffManager';
+import { CoursesList } from '../../features/lms/components/CoursesList';
+import { useCourses } from '../../features/lms/hooks/useCourses';
 
 export default function MinistryDashboard() {
   const { id } = useParams();
   const { canEditMinistry } = usePermissions();
 
   const [ministry, setMinistry] = useState<Ministry | null>(null);
+  const [school, setSchool] = useState<LMSSchool | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('detalles');
 
   useEffect(() => {
     fetchMinistry();
   }, [id]);
+
+  const { courses } = useCourses();
 
   const fetchMinistry = async () => {
     if (!id) return;
@@ -33,6 +39,17 @@ export default function MinistryDashboard() {
 
       if (error) throw error;
       setMinistry(data);
+
+      // Check if this ministry has an associated school
+      const { data: schoolData } = await supabase
+        .from('lms_schools')
+        .select('*')
+        .eq('ministry_id', id)
+        .maybeSingle();
+      
+      if (schoolData) {
+        setSchool(schoolData as LMSSchool);
+      }
     } catch (err) {
       console.error('Error fetching ministry:', err);
     } finally {
@@ -67,6 +84,10 @@ export default function MinistryDashboard() {
     { id: 'planificador', label: 'Planificador de Reuniones', icon: Clock },
     { id: 'actas', label: 'Actas', icon: FileText },
   ];
+
+  if (school) {
+    tabs.push({ id: 'escuela', label: 'Escuela Académica', icon: GraduationCap });
+  }
 
   return (
     <div className="space-y-6">
@@ -126,6 +147,39 @@ export default function MinistryDashboard() {
 
           {activeTab === 'actas' && (
             <MeetingNotes ministryId={ministry.id} />
+          )}
+
+          {activeTab === 'escuela' && school && (
+            <div className="space-y-8 animate-in fade-in">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-indigo-950/30 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg" style={{ backgroundColor: school.color || '#4F46E5' }}>
+                    {school.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black font-serif text-slate-900 dark:text-white">{school.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Panel administrativo simplificado de la escuela.</p>
+                  </div>
+                </div>
+                <Link to="/admin/lms" className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-md">
+                  Ir al Aula Virtual Central <ArrowRight size={16} />
+                </Link>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                  <BookOpen className="text-gold" size={20} /> Cursos de la Escuela
+                </h4>
+                <CoursesList courses={courses.filter(c => c.school_id === school.id)} />
+              </div>
+
+              <div className="pt-8 border-t border-gray-100 dark:border-white/10">
+                <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                  <Users className="text-emerald-500" size={20} /> Plantilla Docente
+                </h4>
+                <AcademicStaffManager schoolId={school.id} />
+              </div>
+            </div>
           )}
         </div>
       </div>

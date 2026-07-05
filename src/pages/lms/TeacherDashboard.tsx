@@ -14,6 +14,9 @@ import { GradesTab } from '../../features/teacher-dashboard/components/GradesTab
 import { IntegrationsTab } from '../../features/teacher-dashboard/components/IntegrationsTab';
 import { OverviewTab } from '../../features/teacher-dashboard/components/OverviewTab';
 import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
+import { GroupManager } from '../../features/lms/components/GroupManager';
+import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
+import { ForumManager } from '../../features/lms/components/ForumManager';
 
 export default function TeacherDashboard() {
   const { user, roles, role: primaryRole } = useAuthStore();
@@ -92,20 +95,26 @@ export default function TeacherDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 min-w-[250px]">
-            <label className="text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">Seleccionar Curso</label>
-            <select
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-gold shadow-sm"
-            >
-              <option value="">Seleccione un curso...</option>
-              {courses.map((course: any) => (
-                <option key={course.id} value={course.id}>
-                  {course.title}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-end gap-4 min-w-[250px]">
+            <div className="flex-1 flex flex-col gap-2">
+              <label className="text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">Seleccionar Curso</label>
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-gold shadow-sm"
+              >
+                <option value="">Seleccione un curso...</option>
+                {courses.map((course: any) => (
+                  <option key={course.id} value={course.id}>
+                    {course.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl h-[42px] px-2 flex items-center shadow-sm">
+              <NotificationCenter />
+            </div>
           </div>
         </div>
 
@@ -163,22 +172,26 @@ export default function TeacherDashboard() {
             )}
 
             {activeTab === 'students' && (
-              <StudentsTab
-                students={students}
-                sessions={sessions}
-                groups={groups}
-                onAddSession={(e: any, title: string, date: string) => {
-                  e.preventDefault();
-                  createSessionMutation.mutate({ title, date });
-                }}
-                onAddGroup={(e: any, name: string, desc: string) => {
-                  e.preventDefault();
-                  createGroupMutation.mutate({ name, description: desc });
-                }}
-                onAttendanceChange={(sessionId: string, studentId: string, status: 'present'|'absent'|'late'|'excused') => 
-                  updateAttendance.mutate({ sessionId, studentId, status })
-                }
-              />
+              <div className="space-y-6">
+                <GroupManager courseId={selectedCourseId} />
+                <hr className="border-gray-200 dark:border-white/10" />
+                <StudentsTab
+                  students={students}
+                  sessions={sessions}
+                  groups={groups}
+                  onAddSession={(e: any, title: string, date: string) => {
+                    e.preventDefault();
+                    createSessionMutation.mutate({ title, date });
+                  }}
+                  onAddGroup={(e: any, name: string, desc: string) => {
+                    e.preventDefault();
+                    createGroupMutation.mutate({ name, description: desc });
+                  }}
+                  onAttendanceChange={(sessionId: string, studentId: string, status: 'present'|'absent'|'late'|'excused') => 
+                    updateAttendance.mutate({ sessionId, studentId, status })
+                  }
+                />
+              </div>
             )}
 
             {activeTab === 'planning' && (
@@ -198,19 +211,19 @@ export default function TeacherDashboard() {
             )}
 
             {activeTab === 'comm' && (
-              <CommunicationTab
-                students={students}
-                announcements={announcements}
-                tutoring={tutoring}
-                onAddAnnouncement={(e: any, title: any, content: any) => {
-                  e?.preventDefault?.();
-                  addAnnouncement.mutate({ title, content });
-                }}
-                onAddTutoring={(e: any, studentId: any, time: any, notes: any) => {
-                  e?.preventDefault?.();
-                  addTutoring.mutate({ studentId, time, notes });
-                }}
-              />
+              <div className="space-y-6">
+                <CommunicationTab
+                  students={students}
+                  announcements={announcements}
+                  tutoring={tutoring}
+                  onAddAnnouncement={(e: any, title: any, content: any) => {
+                    e?.preventDefault?.();
+                    addAnnouncement.mutate({ title, content });
+                  }}
+                  onAddTutoring={(data: any) => addTutoring.mutate(data)}
+                />
+                <ForumManager courseId={selectedCourseId} />
+              </div>
             )}
 
             {activeTab === 'integrations' && (

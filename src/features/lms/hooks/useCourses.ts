@@ -9,7 +9,7 @@ export const useCourses = () => {
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('lms_courses').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('lms_courses').select('*, lms_schools(name, slug, color), lms_levels(name)').order('created_at', { ascending: false });
       if (error) throw error;
       return data as LMSCourse[];
     }

@@ -4,7 +4,11 @@ import type { Profile, LMSCourse, LMSTeacherSchedule } from '../../../types';
 import { GraduationCap, BookOpen, Clock, Link2, Plus, Trash2, Edit3, Search, UserCheck, ShieldCheck, Video, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 
-export function AcademicStaffManager() {
+interface AcademicStaffManagerProps {
+  schoolId?: string;
+}
+
+export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [courses, setCourses] = useState<LMSCourse[]>([]);
   const [schedules, setSchedules] = useState<LMSTeacherSchedule[]>([]);
@@ -142,7 +146,13 @@ export function AcademicStaffManager() {
     setIsModalOpen(true);
   };
 
+  const filteredCourses = schoolId === 'all' ? courses : courses.filter(c => c.school_id === schoolId);
+
   const filteredSchedules = schedules.filter(sch => {
+    // Only show schedules for courses in the currently selected school
+    const isCourseInSchool = filteredCourses.some(c => c.id === sch.course_id);
+    if (!isCourseInSchool) return false;
+
     const courseMatch = selectedCourseId === 'all' || sch.course_id === selectedCourseId;
     const teacher = profiles.find(p => p.id === sch.teacher_id);
     const teacherName = `${teacher?.first_name || ''} ${teacher?.last_name || ''}`.trim();

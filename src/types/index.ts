@@ -544,6 +544,34 @@ export interface InventoryItem {
   inventory_categories?: { name: string } | null;
 }
 
+export interface LMSSchool {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  cover_image_url: string | null;
+  color: string;
+  leader_id: string | null;
+  ministry_id: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile | null;
+  lms_levels?: LMSLevel[];
+}
+
+export interface LMSLevel {
+  id: string;
+  school_id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  lms_schools?: { name: string } | null;
+}
+
 export interface LMSCourse {
   id: string;
   title: string;
@@ -557,11 +585,15 @@ export interface LMSCourse {
   duration?: string;
   schedule?: string;
   category_id?: string;
+  school_id?: string | null;
+  level_id?: string | null;
   created_at: string;
   updated_at: string;
   lms_sections?: LMSSection[];
   lms_subjects?: LMSSubject[];
   lms_course_categories?: { name: string } | null;
+  lms_schools?: { name: string; slug: string; color: string } | null;
+  lms_levels?: { name: string } | null;
 }
 
 export interface LMSSubject {
@@ -581,6 +613,7 @@ export interface LMSModule {
   title: string;
   description: string | null;
   order_index: number;
+  is_hidden?: boolean;
   created_at: string;
   updated_at: string;
   lms_lessons?: LMSLesson[];

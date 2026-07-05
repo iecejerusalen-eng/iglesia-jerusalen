@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { LMSCourse } from '../../../types';
+import type { LMSCourse, LMSSchool, LMSLevel } from '../../../types';
+import { supabase } from '../../../config/supabase';
 import { useCourses } from '../hooks/useCourses';
 
 interface CourseFormProps {
@@ -21,12 +22,33 @@ export function CourseForm({ editingCourse: initialCourse, categories, onClose }
       is_published: false,
       cover_image_url: '',
       category_id: '',
+      school_id: '',
+      level_id: '',
       capacity: 0,
       start_date: '',
       duration: '',
       schedule: ''
     }
   );
+
+  const [schools, setSchools] = useState<LMSSchool[]>([]);
+  const [levels, setLevels] = useState<LMSLevel[]>([]);
+
+  useEffect(() => {
+    supabase.from('lms_schools').select('*').eq('is_active', true).order('sort_order').then(({ data }) => {
+      if (data) setSchools(data as LMSSchool[]);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (editingCourse.school_id) {
+      supabase.from('lms_levels').select('*').eq('school_id', editingCourse.school_id).order('sort_order').then(({ data }) => {
+        if (data) setLevels(data as LMSLevel[]);
+      });
+    } else {
+      setLevels([]);
+    }
+  }, [editingCourse.school_id]);
 
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +62,8 @@ export function CourseForm({ editingCourse: initialCourse, categories, onClose }
       is_published: editingCourse.is_published,
       cover_image_url: editingCourse.cover_image_url,
       category_id: editingCourse.category_id || undefined,
+      school_id: editingCourse.school_id || null,
+      level_id: editingCourse.level_id || null,
       capacity: editingCourse.capacity || 0,
       start_date: editingCourse.start_date || undefined,
       duration: editingCourse.duration || undefined,
@@ -117,6 +141,36 @@ export function CourseForm({ editingCourse: initialCourse, categories, onClose }
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Escuela</label>
+              <select
+                value={editingCourse.school_id || ''}
+                onChange={(e) => setEditingCourse({ ...editingCourse, school_id: e.target.value || null, level_id: null })}
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+              >
+                <option value="">Sin escuela asignada</option>
+                {schools.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {levels.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel / Ciclo</label>
+                <select
+                  value={editingCourse.level_id || ''}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, level_id: e.target.value || null })}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+                >
+                  <option value="">Sin nivel asignado</option>
+                  {levels.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Inicio</label>
