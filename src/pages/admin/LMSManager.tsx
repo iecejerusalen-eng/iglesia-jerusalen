@@ -33,11 +33,14 @@ export default function LMSManager() {
   const [editingCategory, setEditingCategory] = useState<Partial<CategoryItem> | null>(null);
 
   useEffect(() => {
-    if (location.pathname.includes('matriculas')) {
-      setActiveTab('requests');
-    } else if (location.pathname === '/admin/lms') {
-      setActiveTab('courses');
-    }
+    const timer = setTimeout(() => {
+      if (location.pathname.includes('matriculas')) {
+        setActiveTab('requests');
+      } else if (location.pathname === '/admin/lms') {
+        setActiveTab('courses');
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   const handleOpenCourseModal = (course?: LMSCourse) => {
@@ -77,7 +80,7 @@ export default function LMSManager() {
         
         {activeTab === 'courses' && (
           <button
-            onClick={() => handleOpenCourseModal()}
+            onClick={() => navigate('/admin/lms/course/settings/new')}
             className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer"
           >
             <Plus size={20} />
@@ -96,18 +99,34 @@ export default function LMSManager() {
       </div>
 
       {/* Quick Navigation Banner */}
-      <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+      <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="space-y-0.5">
-          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400">¿Deseas administrar los Programas de Estudio o la Biblioteca?</p>
-          <p className="text-[11px] text-indigo-650/80 dark:text-indigo-400/80">Los estudios de libre consumo y material de descarga (PDFs) se gestionan por separado.</p>
+          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Administración Adicional</p>
+          <p className="text-[11px] text-indigo-650/80 dark:text-indigo-400/80">Gestiona estudios de libre consumo, material de descarga y el diseño visual de la Landing Page.</p>
         </div>
-        <button 
-          onClick={() => navigate('/admin/recursos-abiertos')}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
-        >
-          Administrar Programas y Estudios
-          <ArrowRight size={14} />
-        </button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button 
+            onClick={() => navigate('/admin/lms/analytics')}
+            className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            Ver Analíticas LMS
+            <ArrowRight size={14} />
+          </button>
+          <button 
+            onClick={() => navigate('/admin/lms/landing-editor')}
+            className="px-4 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-50 dark:hover:bg-slate-800 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            Editar Landing Page
+            <ArrowRight size={14} />
+          </button>
+          <button 
+            onClick={() => navigate('/admin/recursos-abiertos')}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            Programas Libres
+            <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

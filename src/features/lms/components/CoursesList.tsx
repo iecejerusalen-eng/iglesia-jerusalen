@@ -6,7 +6,7 @@ import { useCourses } from '../hooks/useCourses';
 
 interface CoursesListProps {
   courses: LMSCourse[];
-  onEditCourse: (course: LMSCourse) => void;
+  onEditCourse?: (course?: LMSCourse) => void;
 }
 
 export function CoursesList({ courses, onEditCourse }: CoursesListProps) {
@@ -71,9 +71,16 @@ export function CoursesList({ courses, onEditCourse }: CoursesListProps) {
                     <FileText size={16} />
                   </button>
                   <button 
-                    onClick={(e) => { e.stopPropagation(); onEditCourse(course); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (onEditCourse) {
+                        onEditCourse(course);
+                      } else {
+                        navigate(`/admin/lms/course/settings/${course.id}`); 
+                      }
+                    }}
                     className="p-2 text-gray-500 hover:text-gold hover:bg-gold/10 rounded-lg transition-colors"
-                    title="Editar Curso"
+                    title="Configuración de Curso"
                   >
                     <Edit size={16} />
                   </button>

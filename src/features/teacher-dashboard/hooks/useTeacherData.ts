@@ -204,6 +204,35 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     enabled: !!selectedCourseId && activeTab === 'comm',
   });
 
+  const { data: finalGrades = [] } = useQuery({
+    queryKey: ['course-final-grades', selectedCourseId],
+    queryFn: async () => {
+      const { data: enrollments } = await supabase
+        .from('lms_enrollments')
+        .select('id, user_id')
+        .eq('course_id', selectedCourseId)
+        .eq('role', 'student');
+
+      if (!enrollments || enrollments.length === 0) return [];
+
+      const enrollmentIds = enrollments.map(e => e.id);
+      
+      const { data: grades } = await supabase
+        .from('lms_grades')
+        .select('*')
+        .in('enrollment_id', enrollmentIds);
+
+      return (grades || []).map(grade => {
+        const enrollment = enrollments.find(e => e.id === grade.enrollment_id);
+        return {
+          ...grade,
+          user_id: enrollment?.user_id
+        };
+      });
+    },
+    enabled: !!selectedCourseId && activeTab === 'grades',
+  });
+
   return {
     profile,
     isTeacher,
@@ -217,6 +246,7 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     submissions,
     announcements: commData.announcements,
     tutoring: commData.tutoring,
+    finalGrades,
   };
 }
 

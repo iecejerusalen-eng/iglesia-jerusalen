@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -12,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import RichTextRenderer from '../../components/common/RichTextRenderer';
+import confetti from 'canvas-confetti';
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +27,7 @@ export default function CourseViewer() {
   const [modules, setModules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
+  const [badgeAwarded, setBadgeAwarded] = useState(false);
 
   // Active state
   const [activeLesson, setActiveLesson] = useState<any>(null);
@@ -59,6 +62,7 @@ export default function CourseViewer() {
     if (id) {
       fetchCourseOutline();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
 
   useEffect(() => {
@@ -74,9 +78,10 @@ export default function CourseViewer() {
         fetchQuizAttempts(activeLesson.id);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLesson]);
 
-  const fetchCourseOutline = async () => {
+  async function fetchCourseOutline() {
     setLoading(true);
     try {
       // 1. Fetch course details
@@ -171,7 +176,7 @@ export default function CourseViewer() {
   };
 
   // --- FORUM ACTIONS ---
-  const fetchForumPosts = async (lessonId: string) => {
+  async function fetchForumPosts(lessonId: string) {
     try {
       const { data: postsData, error: postsError } = await supabase
         .from('lms_lesson_forum_posts')
@@ -238,7 +243,7 @@ export default function CourseViewer() {
   };
 
   // --- ASSIGNMENT ACTIONS ---
-  const fetchAssignmentSubmission = async (lessonId: string) => {
+  async function fetchAssignmentSubmission(lessonId: string) {
     try {
       const { data, error } = await supabase
         .from('lms_lesson_submissions')
@@ -299,7 +304,7 @@ export default function CourseViewer() {
   };
 
   // --- QUIZ ACTIONS ---
-  const fetchQuizAttempts = async (lessonId: string) => {
+  async function fetchQuizAttempts(lessonId: string) {
     setQuizSubmitted(false);
     setQuizAnswers({});
     setQuizScore(null);
@@ -325,7 +330,7 @@ export default function CourseViewer() {
   const handleQuizSubmit = async () => {
     if (!activeLesson?.content) return;
     
-    let parsedQuestions: any[] = [];
+    let parsedQuestions: any[];
     try {
       parsedQuestions = JSON.parse(activeLesson.content);
     } catch {
@@ -424,6 +429,53 @@ export default function CourseViewer() {
     return Math.round((completedCount / lessons.length) * 100);
   };
 
+  useEffect(() => {
+    if (lessons.length > 0 && calculateProgress() === 100 && !badgeAwarded) {
+      awardCompletionBadge();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completions, lessons.length, badgeAwarded]);
+
+  const awardCompletionBadge = async () => {
+    try {
+      // Check if badge already exists
+      const { data: existingBadge } = await supabase
+        .from('lms_student_badges')
+        .select('id')
+        .eq('student_id', user?.id)
+        .eq('course_id', id)
+        .eq('badge_name', 'Curso Completado')
+        .single();
+      
+      if (!existingBadge) {
+        // Insert badge
+        const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gold w-full h-full"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>`;
+        
+        await supabase.from('lms_student_badges').insert([{
+          student_id: user?.id,
+          course_id: id,
+          badge_name: 'Curso Completado',
+          badge_svg: badgeSvg
+        }]);
+
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#D4AF37', '#FFDF00', '#C5B358', '#4F46E5']
+        });
+        
+        toast.success('¡Felicidades! Has completado el curso y obtenido una insignia.', {
+          duration: 5000,
+          icon: '🎓'
+        });
+      }
+      setBadgeAwarded(true);
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 pt-20">
@@ -476,8 +528,8 @@ export default function CourseViewer() {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Outline Sidebar Drawer */}
         <div className={`
-          absolute lg:relative top-0 bottom-0 left-0 w-80 max-w-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-white/10 z-30 lg:z-10
-          transform transition-transform duration-300 flex flex-col
+          absolute lg:relative top-0 bottom-0 left-0 w-80 max-w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border-r border-gray-200 dark:border-white/10 z-30 lg:z-10
+          transform transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col shadow-2xl lg:shadow-none
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center lg:hidden">
@@ -571,31 +623,33 @@ export default function CourseViewer() {
         </div>
 
         {/* Content Pane */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-white dark:bg-slate-950">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/50 dark:bg-slate-950/50 relative">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gold/5 dark:bg-gold/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
           <AnimatePresence mode="wait">
             {activeLesson ? (
               <motion.div
                 key={activeLesson.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="max-w-4xl mx-auto space-y-6"
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="max-w-4xl mx-auto space-y-8 relative z-10"
               >
                 {/* Lesson Header */}
                 <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-gray-500 capitalize">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-slate-200 dark:bg-slate-800 text-gray-500 capitalize">
                       {activeLesson.type}
                     </span>
                     {completions[activeLesson.id] && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/30">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/30">
                         Completado
                       </span>
                     )}
                   </div>
-                  <h2 className="text-2xl font-bold font-serif text-slate-800 dark:text-white">{activeLesson.title}</h2>
+                  <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-slate-900 dark:text-white tracking-tight">{activeLesson.title}</h2>
                   {activeLesson.description && (
-                    <p className="text-sm text-gray-450 dark:text-gray-400 mt-2 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-gray-150 dark:border-white/5 italic">
+                    <p className="text-base text-gray-500 dark:text-gray-400 mt-4 bg-white/60 dark:bg-slate-900/40 backdrop-blur-md p-5 rounded-2xl border border-gray-200 dark:border-white/10 italic leading-relaxed">
                       {activeLesson.description}
                     </p>
                   )}
@@ -606,18 +660,53 @@ export default function CourseViewer() {
                   
                   {/* TEXT/DOCUMENT */}
                   {(activeLesson.type === 'document' || activeLesson.type === 'resource') && (
-                    <RichTextRenderer 
-                      className="prose dark:prose-invert max-w-none text-slate-850 dark:text-gray-300 text-sm leading-relaxed"
-                      html={DOMPurify.sanitize(activeLesson.content || '<p class="italic text-gray-400">Esta lección no contiene texto.</p>')}
-                    />
+                    <div className="space-y-6">
+                      {activeLesson.settings?.file_url && activeLesson.settings.file_url.toLowerCase().endsWith('.pdf') ? (
+                        <div className="w-full h-[70vh] rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-lg bg-slate-100 dark:bg-slate-900 relative">
+                          <iframe
+                            src={`${activeLesson.settings.file_url}#toolbar=0`}
+                            className="w-full h-full absolute inset-0"
+                            title="Visor PDF"
+                          />
+                        </div>
+                      ) : activeLesson.settings?.file_url ? (
+                        <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-gray-200 dark:border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <FileText size={32} className="text-gold" />
+                            <div>
+                              <h4 className="font-bold text-slate-800 dark:text-white">Archivo Adjunto</h4>
+                              <p className="text-xs text-gray-500">Haz clic para descargar o abrir en una nueva pestaña.</p>
+                            </div>
+                          </div>
+                          <a 
+                            href={activeLesson.settings.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-gold hover:bg-yellow-600 text-white font-bold rounded-xl text-xs transition-colors shadow-sm"
+                          >
+                            Abrir Archivo
+                          </a>
+                        </div>
+                      ) : null}
+
+                      {activeLesson.content && (
+                        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 md:p-10 rounded-3xl border border-gray-150 dark:border-white/10 shadow-sm">
+                          <RichTextRenderer 
+                            className="prose dark:prose-invert max-w-none text-slate-800 dark:text-gray-200 text-base md:text-lg leading-loose font-sans"
+                            html={DOMPurify.sanitize(activeLesson.content || '')}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {/* VIDEO PLAYER */}
                   {activeLesson.type === 'video' && activeLesson.content && (
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-gray-100 dark:border-white/10 shadow-lg">
+                    <div className="aspect-video w-full rounded-3xl overflow-hidden bg-black border border-gray-200 dark:border-white/10 shadow-2xl relative group">
+                      <div className="absolute inset-0 pointer-events-none border border-white/10 rounded-3xl z-10" />
                       <iframe
                         src={activeLesson.content}
-                        className="w-full h-full"
+                        className="w-full h-full z-0 relative"
                         allowFullScreen
                         title={activeLesson.title}
                       />
@@ -673,7 +762,7 @@ export default function CourseViewer() {
                       ) : (
                         <div className="space-y-6">
                           {(() => {
-                            let questions: any[] = [];
+                            let questions: any[];
                             try {
                               questions = JSON.parse(activeLesson.content || '[]');
                             } catch {

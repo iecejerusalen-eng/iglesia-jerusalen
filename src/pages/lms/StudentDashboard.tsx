@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Calendar, BarChart3, GraduationCap, ChevronRight } from 'lucide-react';
+import { BookOpen, Award, Calendar, BarChart3, GraduationCap, ChevronRight, ShieldCheck } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { StudentCalendar } from '../../features/student-dashboard/components/StudentCalendar';
 import { StudentGrades } from '../../features/student-dashboard/components/StudentGrades';
+import { StudentBadges } from '../../features/student-dashboard/components/StudentBadges';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 // Define the interface for the enrollment progress object to replace `any`
@@ -26,10 +27,18 @@ interface CourseProgress {
   total: number;
 }
 
+interface StudentBadgeItem {
+  id: string;
+  badge_name: string;
+  badge_svg: string;
+  awarded_at: string;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<CourseProgress[]>([]);
+  const [badges, setBadges] = useState<StudentBadgeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('courses');
 
@@ -87,6 +96,14 @@ export default function StudentDashboard() {
 
       setEnrollments(coursesWithProgress);
 
+      const { data: badgesData } = await supabase
+        .from('lms_student_badges')
+        .select('*')
+        .eq('student_id', user?.id)
+        .order('awarded_at', { ascending: false });
+        
+      if (badgesData) setBadges(badgesData);
+
     } catch (error) {
       console.error('Error fetching student dashboard:', error);
       toast.error('Error al cargar el panel de estudiante');
@@ -100,7 +117,10 @@ export default function StudentDashboard() {
       navigate('/login');
       return;
     }
-    fetchDashboardData();
+    const timer = setTimeout(() => {
+      fetchDashboardData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [user, navigate, fetchDashboardData]);
 
   if (isLoading) {
@@ -115,6 +135,7 @@ export default function StudentDashboard() {
     { id: 'courses', label: 'Mis Cursos', icon: BookOpen },
     { id: 'calendar', label: 'Calendario', icon: Calendar },
     { id: 'grades', label: 'Calificaciones', icon: Award },
+    { id: 'badges', label: 'Mis Logros', icon: ShieldCheck },
     { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
   ];
 
@@ -254,6 +275,11 @@ export default function StudentDashboard() {
             <h2 className="text-2xl font-bold mb-2">Estadísticas de Aprendizaje</h2>
             <p className="text-gray-500">Próximamente: Gráficos de horas de estudio, progreso histórico e insignias ganadas detalladas.</p>
           </AnimeFadeUp>
+        )}
+
+        {/* BADGES TAB */}
+        {activeTab === 'badges' && (
+          <StudentBadges badges={badges} />
         )}
 
       </div>

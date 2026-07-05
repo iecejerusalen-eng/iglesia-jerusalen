@@ -98,7 +98,10 @@ const NotificationsManager = lazyWithRetry(() => import('../pages/admin/Notifica
 const PetitionsManager = lazyWithRetry(() => import('../pages/admin/PetitionsManager'));
 const SongsManager = lazyWithRetry(() => import('../pages/admin/SongsManager'));
 const LMSManager = lazyWithRetry(() => import('../pages/admin/LMSManager'));
+const LMSLandingEditor = lazyWithRetry(() => import('../pages/admin/LMSLandingEditor'));
+const LMSAnalyticsDashboard = lazyWithRetry(() => import('../pages/admin/LMSAnalyticsDashboard'));
 const CourseBuilder = lazyWithRetry(() => import('../pages/admin/CourseBuilder'));
+const LMSCourseSettings = lazyWithRetry(() => import('../pages/admin/LMSCourseSettings'));
 const LMSGradebook = lazyWithRetry(() => import('../pages/admin/LMSGradebook'));
 const ChatManager = lazyWithRetry(() => import('../pages/admin/ChatManager'));
 const OpenResourcesManager = lazyWithRetry(() => import('../pages/admin/OpenResourcesManager'));
@@ -174,6 +177,7 @@ export default function AppRouter() {
           </Route>
           
           <Route element={<AdminLayout />}>
+            <Route path="/admin/lms/course/settings/:id" element={<LMSCourseSettings />} />
             <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
             <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
           </Route>
@@ -203,6 +207,8 @@ export default function AppRouter() {
           <Route element={<AdminLayout />}>
             <Route path="/admin/lms" element={<LMSManager />} />
             <Route path="/admin/lms/matriculas" element={<LMSManager />} />
+            <Route path="/admin/lms/landing-editor" element={<LMSLandingEditor />} />
+            <Route path="/admin/lms/analytics" element={<LMSAnalyticsDashboard />} />
             <Route path="/admin/recursos-abiertos" element={<OpenResourcesManager />} />
             <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
             <Route path="/admin/juegos" element={<GamesManager />} />

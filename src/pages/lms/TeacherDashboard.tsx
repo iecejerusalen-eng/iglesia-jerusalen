@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate } from 'lucide-react';
@@ -39,6 +40,7 @@ export default function TeacherDashboard() {
     submissions,
     announcements,
     tutoring,
+    finalGrades,
     isLoading
   } = useTeacherData(selectedCourseId, activeTab);
 
@@ -53,7 +55,7 @@ export default function TeacherDashboard() {
   // Set default course when loaded
   useEffect(() => {
     if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
+      setTimeout(() => setSelectedCourseId(courses[0].id), 0);
     }
   }, [courses, selectedCourseId]);
 
@@ -179,6 +181,8 @@ export default function TeacherDashboard() {
               <GradesTab
                 students={students}
                 submissions={submissions}
+                finalGrades={finalGrades}
+                courseId={selectedCourseId}
               />
             )}
 

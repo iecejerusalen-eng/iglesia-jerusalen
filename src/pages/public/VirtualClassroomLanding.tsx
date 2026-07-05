@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../config/supabase';
 import { 
   GraduationCap, 
   User, 
@@ -8,7 +11,8 @@ import {
   BookOpen, 
   Compass, 
   Award,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 
@@ -16,12 +20,55 @@ const VirtualClassroomLanding = () => {
   const { user, userRole, firstName, lastName, logout, photoUrl } = useAuthStore();
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  const [heroContent, setHeroContent] = useState({
+    title: 'Aula Virtual',
+    subtitle: 'Ecosistema Educativo LMS',
+    description: 'Plataforma de formación teológica y crecimiento espiritual. Accede a tus cursos, interactúa con docentes y realiza un seguimiento a tu aprendizaje.'
+  });
+
+  const [featuresContent, setFeaturesContent] = useState({
+    items: [
+      { title: 'Formación Integral', description: 'Cursos diseñados para un crecimiento profundo.' },
+      { title: 'Comunidad Activa', description: 'Interactúa con docentes y compañeros.' },
+      { title: 'Seguimiento', description: 'Evalúa tu progreso en tiempo real.' }
+    ]
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const { data, error } = await supabase.from('lms_landing_content').select('*');
+        if (!error && data) {
+          const hero = data.find(d => d.section_key === 'hero');
+          const features = data.find(d => d.section_key === 'features');
+          if (hero?.content) setHeroContent(hero.content as any);
+          if (features?.content) setFeaturesContent(features.content as any);
+        }
+      } catch (err) {
+        console.error('Error fetching landing content:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContent();
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const isTeacherOrAdmin = ['admin', 'pastor', 'leader', 'editor'].includes(userRole || '');
+  const isTeacherOrAdmin = ['admin', 'pastor', 'leader', 'editor', 'docente', 'maestro'].includes(userRole || '');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center">
+        <Loader2 className="animate-spin text-gold" size={40} />
+        <p className="mt-4 text-sm text-gray-500 font-semibold">Cargando Plataforma...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 transition-colors duration-500">
@@ -31,14 +78,16 @@ const VirtualClassroomLanding = () => {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-400 via-transparent to-transparent"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-6">
           <AnimeFadeUp delay={0} duration={600}>
-            <span className="inline-flex bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-2 leading-none">
-              Ecosistema Educativo LMS
-            </span>
+            {heroContent.subtitle && (
+              <span className="inline-flex bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-2 leading-none">
+                {heroContent.subtitle}
+              </span>
+            )}
             <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight">
-              Aula Virtual
+              {heroContent.title}
             </h1>
             <p className="text-indigo-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mt-2">
-              Plataforma de formación teológica y crecimiento espiritual. Accede a tus cursos, interactúa con docentes y realiza un seguimiento a tu aprendizaje.
+              {heroContent.description}
             </p>
           </AnimeFadeUp>
         </div>
@@ -208,27 +257,22 @@ const VirtualClassroomLanding = () => {
             <p className="text-xs md:text-sm text-gray-400 font-medium">Equipándote con recursos interactivos y guías de estudio teológico sistemático.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <div className="text-indigo-600 dark:text-indigo-400"><BookOpen size={24} /></div>
-              <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100">Material de Estudio</h3>
-              <p className="text-xs text-gray-405 dark:text-gray-500 font-medium leading-relaxed">Lecciones estructuradas por unidades temáticas y contenido descargable en PDF y audios.</p>
-            </div>
-            <div className="space-y-2">
-              <div className="text-indigo-600 dark:text-indigo-400"><Compass size={24} /></div>
-              <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100">Guias de Lectura</h3>
-              <p className="text-xs text-gray-405 dark:text-gray-500 font-medium leading-relaxed">Planes interactivos para fomentar hábitos de lectura bíblica e interpretación de las Escrituras.</p>
-            </div>
-            <div className="space-y-2">
-              <div className="text-indigo-600 dark:text-indigo-400"><Award size={24} /></div>
-              <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100">Evaluación de Avance</h3>
-              <p className="text-xs text-gray-405 dark:text-gray-500 font-medium leading-relaxed">Cuestionarios automatizados con retroalimentación inmediata sobre tus respuestas.</p>
-            </div>
-            <div className="space-y-2">
-              <div className="text-indigo-600 dark:text-indigo-400"><Calendar size={24} /></div>
-              <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100">Calendario Académico</h3>
-              <p className="text-xs text-gray-405 dark:text-gray-500 font-medium leading-relaxed">Horarios de clases presenciales complementarias y fechas de entrega de trabajos.</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuresContent.items.map((item: any, idx: number) => {
+              const icons = [BookOpen, Compass, Award, Calendar];
+              const IconComp = icons[idx % icons.length];
+              return (
+                <div key={idx} className="space-y-2">
+                  <div className="text-indigo-600 dark:text-indigo-400">
+                    <IconComp size={24} />
+                  </div>
+                  <h3 className="font-bold text-sm text-gray-800 dark:text-gray-100">{item.title}</h3>
+                  <p className="text-xs text-gray-405 dark:text-gray-500 font-medium leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
