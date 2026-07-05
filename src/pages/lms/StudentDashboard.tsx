@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Calendar, BarChart3, GraduationCap, ChevronRight, ShieldCheck } from 'lucide-react';
+import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
@@ -12,6 +12,8 @@ import { StudentGrades } from '../../features/student-dashboard/components/Stude
 import { StudentBadges } from '../../features/student-dashboard/components/StudentBadges';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
+import { ProgressHero } from '../../features/student-dashboard/components/ProgressHero';
+import { NextUpWidget } from '../../features/student-dashboard/components/NextUpWidget';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -40,6 +42,13 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<CourseProgress[]>([]);
   const [badges, setBadges] = useState<StudentBadgeItem[]>([]);
+  const [stats, setStats] = useState({
+    activeCourses: 0,
+    completedCourses: 0,
+    totalXp: 0,
+    streak: 0,
+    overallProgress: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('courses');
 
@@ -105,6 +114,30 @@ export default function StudentDashboard() {
         
       if (badgesData) setBadges(badgesData);
 
+      // Fetch global stats
+      const { data: statsData } = await supabase
+        .from('lms_student_stats')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      // Get current streak (RPC)
+      const { data: streakData } = await supabase.rpc('get_current_streak', { student_id: user?.id });
+
+      let overall = 0;
+      if (coursesWithProgress.length > 0) {
+        const sum = coursesWithProgress.reduce((acc, c) => acc + c.progressPercentage, 0);
+        overall = sum / coursesWithProgress.length;
+      }
+
+      setStats({
+        activeCourses: statsData?.active_courses || 0,
+        completedCourses: statsData?.completed_courses || 0,
+        totalXp: statsData?.total_xp || 0,
+        streak: streakData || 0,
+        overallProgress: overall
+      });
+
     } catch (error) {
       console.error('Error fetching student dashboard:', error);
       toast.error('Error al cargar el panel de estudiante');
@@ -142,26 +175,28 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen pt-24 pb-12 bg-gray-50 dark:bg-[#0B1120] text-slate-800 dark:text-white">
-      {/* Top Banner (Premium UI) */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-900 text-white border-b border-white/10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="h-24 w-24 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl shrink-0">
-              <img 
-                src={user?.user_metadata?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user?.id} 
-                alt="Avatar" 
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="text-center md:text-left">
-              <h1 className="text-3xl md:text-4xl font-bold font-serif flex items-center justify-center md:justify-start gap-3">
-                Hola, {user?.user_metadata?.full_name?.split(' ')[0] || 'Estudiante'}!
-                <GraduationCap className="text-gold" size={32} />
-              </h1>
-              <p className="text-indigo-200 mt-2 text-lg">Tu viaje de aprendizaje continúa hoy. ¡Sigue brillando!</p>
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <ProgressHero 
+          userFullName={user?.user_metadata?.full_name || 'Estudiante'}
+          avatarUrl={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+          activeCourses={stats.activeCourses}
+          completedCourses={stats.completedCourses}
+          totalXp={stats.totalXp}
+          streak={stats.streak}
+          overallProgress={stats.overallProgress}
+        />
+        
+        {/* Widgets Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-6">
+          {enrollments.length > 0 && (
+            <NextUpWidget 
+              courseId={enrollments[0]?.lms_courses?.id || ""}
+              courseTitle={enrollments[0]?.lms_courses?.title || ""}
+              lessonTitle="Continuar desde donde te quedaste"
+              type="video"
+              timeEstimate={15}
+            />
+          )}
         </div>
       </div>
 
