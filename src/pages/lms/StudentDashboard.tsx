@@ -1,30 +1,40 @@
-import { useState, useEffect } from 'react';
-import DOMPurify from 'dompurify';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Clock, PlayCircle } from 'lucide-react';
+import { BookOpen, Award, Calendar, BarChart3, GraduationCap, ChevronRight } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 
+import { CircularProgress } from '../../components/ui/CircularProgress';
+import { StudentCalendar } from '../../features/student-dashboard/components/StudentCalendar';
+import { StudentGrades } from '../../features/student-dashboard/components/StudentGrades';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+
+// Define the interface for the enrollment progress object to replace `any`
+interface CourseProgress {
+  id: string;
+  course_id: string;
+  lms_courses?: {
+    id: string;
+    title: string;
+    description: string;
+    cover_image_url: string;
+  } | null;
+  progressPercentage: number;
+  completed: number;
+  total: number;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const [enrollments, setEnrollments] = useState<any[]>([]);
-  const [badges, setBadges] = useState<any[]>([]);
+  const [enrollments, setEnrollments] = useState<CourseProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('courses');
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchDashboardData();
-  }, [user]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
-      // Fetch enrollments with course details
       const { data: enrollData, error: enrollError } = await supabase
         .from('lms_enrollments')
         .select(`
@@ -41,17 +51,13 @@ export default function StudentDashboard() {
 
       if (enrollError) throw enrollError;
       
-      // Fetch progress for each course
       const coursesWithProgress = await Promise.all((enrollData || []).map(async (enr) => {
-        // Fetch total lessons in course
         const { data: totalLessons } = await supabase
           .from('lms_lessons')
           .select('id, lms_modules!inner(subject_id, lms_subjects!inner(course_id))')
           .eq('lms_modules.lms_subjects.course_id', enr.course_id);
 
         const total = totalLessons?.length || 0;
-
-        // Fetch completed progress
         let completed = 0;
         if (totalLessons && totalLessons.length > 0) {
           const lessonIds = totalLessons.map(l => l.id);
@@ -61,31 +67,25 @@ export default function StudentDashboard() {
             .eq('student_id', user?.id)
             .in('lesson_id', lessonIds)
             .eq('is_completed', true);
-
           completed = progressData?.length || 0;
         }
 
-        const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const progressPercentage = total > 0 ? (completed / total) * 100 : 0;
+        
+        // Ensure proper typing since joined tables can return objects or arrays of objects
+        const courseData = Array.isArray(enr.lms_courses) ? enr.lms_courses[0] : enr.lms_courses;
 
         return {
-          ...enr,
+          id: enr.id,
+          course_id: enr.course_id,
+          lms_courses: courseData,
           progressPercentage,
           completed,
           total
-        };
+        } as CourseProgress;
       }));
 
       setEnrollments(coursesWithProgress);
-
-      // Fetch badges
-      const { data: badgeData, error: badgeError } = await supabase
-        .from('lms_student_badges')
-        .select('*')
-        .eq('student_id', user?.id)
-        .order('earned_at', { ascending: false });
-
-      if (badgeError) throw badgeError;
-      setBadges(badgeData || []);
 
     } catch (error) {
       console.error('Error fetching student dashboard:', error);
@@ -93,86 +93,140 @@ export default function StudentDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchDashboardData();
+  }, [user, navigate, fetchDashboardData]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24 pb-12 bg-surface text-primary">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center pt-24 pb-12 bg-gray-50 dark:bg-[#0B1120]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-gold"></div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen pt-24 pb-12 bg-surface text-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold font-heading">Mi Aula Virtual</h1>
-          <p className="text-secondary mt-2">Bienvenido de nuevo. Continúa con tu aprendizaje.</p>
-        </div>
+  const tabs = [
+    { id: 'courses', label: 'Mis Cursos', icon: BookOpen },
+    { id: 'calendar', label: 'Calendario', icon: Calendar },
+    { id: 'grades', label: 'Calificaciones', icon: Award },
+    { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
+  ];
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - Courses */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-accent" />
-              Mis Cursos
-            </h2>
-            
+  return (
+    <div className="min-h-screen pt-24 pb-12 bg-gray-50 dark:bg-[#0B1120] text-slate-800 dark:text-white">
+      {/* Top Banner (Premium UI) */}
+      <div className="bg-gradient-to-r from-slate-900 to-indigo-900 text-white border-b border-white/10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="h-24 w-24 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl shrink-0">
+              <img 
+                src={user?.user_metadata?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user?.id} 
+                alt="Avatar" 
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-bold font-serif flex items-center justify-center md:justify-start gap-3">
+                Hola, {user?.user_metadata?.full_name?.split(' ')[0] || 'Estudiante'}!
+                <GraduationCap className="text-gold" size={32} />
+              </h1>
+              <p className="text-indigo-200 mt-2 text-lg">Tu viaje de aprendizaje continúa hoy. ¡Sigue brillando!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Menu (Tabs) */}
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 sticky top-[72px] z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex overflow-x-auto custom-scrollbar">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-4 font-bold whitespace-nowrap border-b-2 transition-colors ${
+                    isActive 
+                      ? 'border-gold text-gold bg-gold/5 dark:bg-gold/10' 
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* COURSES TAB */}
+        {activeTab === 'courses' && (
+          <AnimeFadeUp className="space-y-8">
             {enrollments.length === 0 ? (
-              <div className="bg-surface-light border border-border rounded-xl p-8 text-center">
-                <BookOpen className="w-12 h-12 text-secondary/50 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No estás inscrito en ningún curso</h3>
-                <p className="text-secondary mb-4">Explora nuestros programas y comienza a aprender.</p>
-                <Link to="/programas" className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors inline-block">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-gray-100 dark:border-white/10 shadow-sm">
+                <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold mb-2">Aún no estás matriculado</h3>
+                <p className="text-gray-500 mb-6 text-lg">Explora nuestros programas académicos y comienza tu formación.</p>
+                <Link to="/programas" className="px-8 py-3 bg-gold text-white rounded-xl font-bold hover:bg-yellow-600 transition-colors inline-block shadow-lg hover:shadow-gold/20 hover:-translate-y-1">
                   Explorar Programas
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {enrollments.map((enr) => (
                   <motion.div
                     key={enr.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-surface-light border border-border rounded-xl overflow-hidden hover:border-accent/50 transition-colors group"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ y: -5 }}
+                    className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group flex flex-col"
                   >
-                    <div className="h-40 overflow-hidden relative">
+                    <div className="h-48 overflow-hidden relative">
                       <img loading="lazy" 
-                        src={enr.lms_courses.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
-                        alt={enr.lms_courses.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        src={enr.lms_courses?.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
+                        alt={enr.lms_courses?.title || 'Curso'}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="font-bold text-lg mb-2 line-clamp-1">{enr.lms_courses.title}</h3>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                       
-                      {/* Progress Bar */}
-                      <div className="mt-4">
-                        <div className="flex justify-between text-xs text-secondary mb-1">
-                          <span>Progreso</span>
-                          <span>{enr.progressPercentage}%</span>
-                        </div>
-                        <div className="w-full bg-border rounded-full h-2">
-                          <div 
-                            className="bg-accent h-2 rounded-full transition-all duration-1000"
-                            style={{ width: `${enr.progressPercentage}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-xs text-secondary mt-1 text-right">
-                          {enr.completed} de {enr.total} actividades
-                        </p>
+                      {/* Circular Progress Overlay */}
+                      <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/20">
+                        <CircularProgress percentage={enr.progressPercentage} size={48} strokeWidth={4} />
                       </div>
-
-                      <div className="mt-6 flex justify-end">
+                    </div>
+                    
+                    <div className="p-6 flex flex-col flex-grow">
+                      <h3 className="font-bold font-serif text-xl mb-2 line-clamp-2 text-slate-900 dark:text-white">
+                        {enr.lms_courses?.title || 'Curso Desconocido'}
+                      </h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 line-clamp-2">
+                        {enr.lms_courses?.description || 'Sin descripción disponible.'}
+                      </p>
+                      
+                      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 px-3 py-1 rounded-full">
+                          {enr.completed} / {enr.total} Lecciones
+                        </span>
+                        
                         <Link 
                           to={`/lms/curso/${enr.course_id}`}
-                          className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+                          className="flex items-center gap-1 text-gold hover:text-yellow-600 font-bold transition-colors group-hover:translate-x-1"
                         >
-                          <PlayCircle className="w-4 h-4" />
-                          {enr.progressPercentage === 0 ? 'Comenzar' : 'Continuar'}
+                          {enr.progressPercentage === 0 ? 'Comenzar' : enr.progressPercentage === 100 ? 'Repasar' : 'Continuar'}
+                          <ChevronRight size={18} />
                         </Link>
                       </div>
                     </div>
@@ -180,47 +234,27 @@ export default function StudentDashboard() {
                 ))}
               </div>
             )}
-          </div>
+          </AnimeFadeUp>
+        )}
 
-          {/* Sidebar - Badges & Stats */}
-          <div className="space-y-6">
-            <div className="bg-surface-light border border-border rounded-xl p-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <Award className="w-5 h-5 text-yellow-500" />
-                Mis Insignias
-              </h2>
-              
-              {badges.length === 0 ? (
-                <div className="text-center py-6 text-secondary text-sm">
-                  Aún no tienes insignias. ¡Completa cursos para ganarlas!
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  {badges.map((badge) => (
-                    <div 
-                      key={badge.id}
-                      className="flex flex-col items-center justify-center p-4 bg-surface border border-border rounded-lg text-center"
-                      title={badge.description}
-                    >
-                      <div className="text-3xl mb-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(badge.badge_icon) }} />
-                      <span className="text-xs font-medium line-clamp-2">{badge.badge_name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* CALENDAR TAB */}
+        {activeTab === 'calendar' && (
+          <StudentCalendar />
+        )}
 
-            <div className="bg-surface-light border border-border rounded-xl p-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-blue-500" />
-                Actividad Reciente
-              </h2>
-              <div className="text-sm text-secondary text-center py-4">
-                No hay actividad reciente para mostrar.
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* GRADES TAB */}
+        {activeTab === 'grades' && (
+          <StudentGrades />
+        )}
+
+        {/* STATS TAB */}
+        {activeTab === 'stats' && (
+          <AnimeFadeUp className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-gray-100 dark:border-white/10 text-center shadow-sm">
+            <BarChart3 className="mx-auto text-gold mb-4" size={48} />
+            <h2 className="text-2xl font-bold mb-2">Estadísticas de Aprendizaje</h2>
+            <p className="text-gray-500">Próximamente: Gráficos de horas de estudio, progreso histórico e insignias ganadas detalladas.</p>
+          </AnimeFadeUp>
+        )}
 
       </div>
     </div>
