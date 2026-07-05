@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
-import { Trophy, Medal, Star, ChevronUp, ChevronDown, Award } from 'lucide-react';
+import { Trophy, Medal, Star, Award } from 'lucide-react';
 
 interface LeaderboardEntry {
   id: string; // student profile id
@@ -8,7 +8,17 @@ interface LeaderboardEntry {
   avatar_url: string;
   xp_points: number;
   rank: number;
-  badges: any[];
+  badges: unknown[];
+}
+
+interface RawLeaderboardData {
+  user_id: string;
+  xp_points: number;
+  profiles: {
+    id: string;
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
 export function Leaderboard({ courseId }: { courseId: string }) {
@@ -16,46 +26,46 @@ export function Leaderboard({ courseId }: { courseId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('lms_enrollments')
+          .select(`
+            user_id,
+            xp_points,
+            profiles:user_id (id, full_name, avatar_url)
+          `)
+          .eq('course_id', courseId)
+          .eq('role', 'student')
+          .order('xp_points', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        if (data) {
+          // Formatear y añadir rank
+          const formatted: LeaderboardEntry[] = (data as unknown as RawLeaderboardData[]).map((d, index) => ({
+            id: d.profiles.id,
+            full_name: d.profiles.full_name,
+            avatar_url: d.profiles.avatar_url,
+            xp_points: d.xp_points || 0,
+            rank: index + 1,
+            badges: [] // Optionally fetch badges if needed
+          }));
+          setEntries(formatted);
+        }
+      } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (courseId) {
       fetchLeaderboard();
     }
   }, [courseId]);
-
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('lms_enrollments')
-        .select(`
-          user_id,
-          xp_points,
-          profiles:user_id (id, full_name, avatar_url)
-        `)
-        .eq('course_id', courseId)
-        .eq('role', 'student')
-        .order('xp_points', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      if (data) {
-        // Formatear y añadir rank
-        const formatted = data.map((d: any, index) => ({
-          id: d.profiles.id,
-          full_name: d.profiles.full_name,
-          avatar_url: d.profiles.avatar_url,
-          xp_points: d.xp_points || 0,
-          rank: index + 1,
-          badges: [] // Optionally fetch badges if needed
-        }));
-        setEntries(formatted);
-      }
-    } catch (err) {
-      console.error('Error fetching leaderboard:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getRankIcon = (rank: number) => {
     switch(rank) {

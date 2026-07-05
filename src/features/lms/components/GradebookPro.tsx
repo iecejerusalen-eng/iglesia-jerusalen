@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Loader2, Search, Edit2, FileText, X, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,16 +7,42 @@ interface GradebookProProps {
   courseId: string;
 }
 
+interface GBStudent {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  doc_id?: string;
+}
+
+interface GBActivity {
+  id: string;
+  title: string;
+  type: string;
+  weighting: number;
+  section_id?: string;
+}
+
+interface GBSubmission {
+  id: string;
+  student_id: string;
+  activity_id: string;
+  grade: string | number | null;
+  teacher_feedback: string | null;
+  status?: string;
+  file_url?: string;
+  text_content?: string;
+}
+
 export function GradebookPro({ courseId }: GradebookProProps) {
   const [loading, setLoading] = useState(true);
-  const [students, setStudents] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [students, setStudents] = useState<GBStudent[]>([]);
+  const [activities, setActivities] = useState<GBActivity[]>([]);
+  const [submissions, setSubmissions] = useState<GBSubmission[]>([]);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [selectedActivity, setSelectedActivity] = useState<any>(null);
-  const [activeSubmission, setActiveSubmission] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<GBStudent | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<GBActivity | null>(null);
+  const [activeSubmission, setActiveSubmission] = useState<GBSubmission | null>(null);
 
   // Panel State
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -38,7 +64,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
           .eq('role', 'student');
         
         if (enrollError) throw enrollError;
-        setStudents(enrollments?.map(e => e.profiles) || []);
+        setStudents((enrollments?.map(e => e.profiles) as unknown as GBStudent[]) || []);
 
         const { data: fetchedActivities, error: actError } = await supabase
           .from('lms_activities')
@@ -48,7 +74,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
           .order('order_index', { ascending: true });
 
         if (actError) throw actError;
-        setActivities(fetchedActivities || []);
+        setActivities((fetchedActivities as GBActivity[]) || []);
 
         if (fetchedActivities && fetchedActivities.length > 0) {
           const actIds = fetchedActivities.map(a => a.id);
@@ -58,7 +84,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
             .in('activity_id', actIds);
 
           if (subError) throw subError;
-          setSubmissions(fetchedSubmissions || []);
+          setSubmissions((fetchedSubmissions as GBSubmission[]) || []);
         }
       } catch (err) {
         console.error(err);
@@ -82,7 +108,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
         .in('activity_id', activities.map(a => a.id));
 
       if (subError) throw subError;
-      setSubmissions(fetchedSubmissions || []);
+      setSubmissions((fetchedSubmissions as GBSubmission[]) || []);
     } catch (err) {
       console.error(err);
     }
@@ -92,12 +118,12 @@ export function GradebookPro({ courseId }: GradebookProProps) {
     return submissions.find(s => s.student_id === studentId && s.activity_id === activityId);
   };
 
-  const openGradingPanel = (student: any, activity: any) => {
+  const openGradingPanel = (student: GBStudent, activity: GBActivity) => {
     setSelectedStudent(student);
     setSelectedActivity(activity);
     const sub = getSubmission(student.id, activity.id);
-    setActiveSubmission(sub);
-    setGradeInput(sub?.grade || '');
+    setActiveSubmission(sub || null);
+    setGradeInput(sub?.grade?.toString() || '');
     setFeedbackInput(sub?.teacher_feedback || '');
     setIsPanelOpen(true);
   };
@@ -138,7 +164,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
       if (sub && sub.grade) {
         // Assume grade is out of 10 or 100, weighting is percentage (0-100)
         // If grade is a string, try to parse it
-        const numericGrade = parseFloat(sub.grade);
+        const numericGrade = parseFloat(sub.grade?.toString() || '');
         if (!isNaN(numericGrade)) {
           // If grade scale is 10/10, multiply by weight% / 10
           // If weight is 30(%), and grade is 10, total += (10/10) * 30 = 30 points of 100

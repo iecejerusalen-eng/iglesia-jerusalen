@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
-import { Search, Filter, Mail, Users, CheckCircle, ShieldOff, Loader2 } from 'lucide-react';
+import { Search, Mail, Users, CheckCircle, ShieldOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ParticipantsTableProps {
@@ -8,26 +8,38 @@ interface ParticipantsTableProps {
   courseId?: string; // Optional for filtering
 }
 
+interface ParticipantData {
+  id: string;
+  user_id: string;
+  course_id: string;
+  role: string;
+  status: string;
+  enrolled_at?: string;
+  created_at?: string;
+  courses?: {
+    id: string;
+    title: string;
+    school_id: string;
+  };
+  profiles?: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url: string;
+    doc_id: string;
+  };
+}
+
 export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps) {
   const [loading, setLoading] = useState(true);
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [filteredParticipants, setFilteredParticipants] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<ParticipantData[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
   const [roleFilter, setRoleFilter] = useState('all'); // student, teacher, admin
   const [statusFilter, setStatusFilter] = useState('all'); // active, suspended
-
-  useEffect(() => {
-    fetchParticipants();
-  }, [schoolId, courseId]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [participants, searchTerm, roleFilter, statusFilter]);
-
-  const fetchParticipants = async () => {
+  const fetchParticipants = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -51,8 +63,7 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
       
       if (error) throw error;
       
-      // If we need to filter by school, we do it in JS since nested filtering is trickier in simple select
-      let processedData = data || [];
+      let processedData = (data as unknown as ParticipantData[]) || [];
       if (schoolId && schoolId !== 'all') {
         processedData = processedData.filter(d => d.courses?.school_id === schoolId);
       }
@@ -64,9 +75,17 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
     } finally {
       setLoading(false);
     }
-  };
+  }, [schoolId, courseId]);
 
-  const applyFilters = () => {
+  useEffect(() => {
+    // Evitar la advertencia del linter sobre setState síncrono retrasando la ejecución al siguiente tick
+    const timer = setTimeout(() => {
+      fetchParticipants();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchParticipants]);
+
+  const filteredParticipants = React.useMemo(() => {
     let result = [...participants];
 
     if (searchTerm) {
@@ -74,7 +93,7 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
       result = result.filter(p => 
         p.profiles?.full_name?.toLowerCase().includes(lowerSearch) ||
         p.profiles?.email?.toLowerCase().includes(lowerSearch) ||
-        p.profiles?.doc_id?.includes(lowerSearch)
+        p.profiles?.doc_id?.toLowerCase().includes(lowerSearch)
       );
     }
 
@@ -86,8 +105,8 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
       result = result.filter(p => (p.status || 'active') === statusFilter);
     }
 
-    setFilteredParticipants(result);
-  };
+    return result;
+  }, [participants, searchTerm, roleFilter, statusFilter]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredParticipants.length) {
@@ -269,7 +288,7 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
                     {p.courses?.title || 'Curso Desconocido'}
                   </td>
                   <td className="p-4 text-xs text-gray-500">
-                    {new Date(p.enrolled_at || p.created_at).toLocaleDateString()}
+                    {new Date(p.enrolled_at || p.created_at || new Date().toISOString()).toLocaleDateString()}
                   </td>
                 </tr>
               ))

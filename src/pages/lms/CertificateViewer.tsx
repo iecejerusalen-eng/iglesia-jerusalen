@@ -1,53 +1,73 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { Award, Printer, Share2, CheckCircle, ShieldCheck, Download } from 'lucide-react';
+import { Award, Printer, Share2, CheckCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface CertificateData {
+  id: string;
+  grade?: number;
+  issued_at: string;
+  courses?: {
+    title: string;
+    description: string;
+    schools?: {
+      name: string;
+      color: string;
+      cover_image_url: string;
+    };
+  };
+  profiles?: {
+    full_name: string;
+    doc_id: string;
+  };
+}
 
 export default function CertificateViewer() {
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
-  const [certificate, setCertificate] = useState<any>(null);
+  const [certificate, setCertificate] = useState<CertificateData | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchCertificate = async (certId: string) => {
+      try {
+        // Intentionally allowing unauthenticated access based on RLS
+        const { data, error } = await supabase
+          .from('lms_certificates')
+          .select(`
+            *,
+            courses:course_id (
+              title, 
+              description,
+              schools:school_id (name, color, cover_image_url)
+            ),
+            profiles:user_id (full_name, doc_id)
+          `)
+          .eq('id', certId)
+          .single();
+          
+        if (error) throw error;
+        setCertificate(data);
+      } catch (err) {
+        console.error(err);
+        toast.error('Certificado no encontrado o inválido');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (id) {
       fetchCertificate(id);
     }
   }, [id]);
-
-  const fetchCertificate = async (certId: string) => {
-    try {
-      // Intentionally allowing unauthenticated access based on RLS
-      const { data, error } = await supabase
-        .from('lms_certificates')
-        .select(`
-          *,
-          courses:course_id (
-            title, 
-            description,
-            schools:school_id (name, color, cover_image_url)
-          ),
-          profiles:user_id (full_name, doc_id)
-        `)
-        .eq('id', certId)
-        .single();
-        
-      if (error) throw error;
-      setCertificate(data);
-    } catch (err) {
-      console.error(err);
-      toast.error('Certificado no encontrado o inválido');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleShare = async () => {
+    if (!certificate) return;
     if (navigator.share) {
       try {
         await navigator.share({
