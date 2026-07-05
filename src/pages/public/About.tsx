@@ -11,6 +11,7 @@ import OptimizedMedia from '../../components/common/OptimizedMedia';
 import pastorDavidImg from '../../assets/Jerusalén/Pastor David.png';
 import pastoraCorinaImg from '../../assets/Jerusalén/Pastora Corina.png';
 import pastoresAgrupadosImg from '../../assets/Jerusalén/Pastores.jpg';
+import aimeeImg from '../../assets/Imágenes Cuadrangular/Imagen Aime Semple Mcpherson.webp';
 
 const AnimatedFoursquareLogo = () => (
   <div className="flex justify-center my-8 relative">
@@ -72,7 +73,18 @@ const AnimatedFoursquareLogo = () => (
   </div>
 );
 
-const DEFAULT_ABOUT_SECTIONS = [
+interface AboutSection {
+  id: string;
+  section_type: string;
+  name?: string;
+  title?: string;
+  subtitle?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content_blocks?: any[];
+  cover_image_url?: string;
+}
+
+const DEFAULT_ABOUT_SECTIONS: AboutSection[] = [
   { id: 'about_hero', section_type: 'custom', name: 'Héroe Principal', title: 'Quiénes Somos', subtitle: 'Conoce la historia, misión, principios de fe y las personas llamadas por Dios a guiar a la Iglesia del Evangelio Cuadrangular Jerusalén.', content_blocks: [] },
   { id: 'about_vision_mission', section_type: 'custom', name: 'Misión y Visión', title: 'Misión & Visión', subtitle: 'Nuestra guía en la expansión del evangelio.', content_blocks: [] },
   { id: 'about_history', section_type: 'custom', name: 'Nuestra Historia', title: 'Nuestra Historia', subtitle: 'La trayectoria y cimientos de la congregación.', content_blocks: [] },
@@ -82,7 +94,7 @@ const DEFAULT_ABOUT_SECTIONS = [
 ];
 
 const About = () => {
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<AboutSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
@@ -264,7 +276,7 @@ const About = () => {
                               </div>
                               <div className="relative group overflow-hidden rounded-2xl shadow-md">
                                 <OptimizedMedia 
-                                  src="/images/history/aimee_mcpherson.png"
+                                  src={aimeeImg}
                                   alt="Aimee Semple McPherson"
                                   className="w-full aspect-[4/3] object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
@@ -637,7 +649,7 @@ const About = () => {
               </p>
               
               <div className="my-8 rounded-2xl overflow-hidden shadow-md">
-                <OptimizedMedia src="/images/history/aimee_mcpherson.png" alt="Aimee Semple McPherson" className="w-full max-h-[400px] object-cover object-top" />
+                <OptimizedMedia src={aimeeImg} alt="Aimee Semple McPherson" className="w-full max-h-[400px] object-cover object-top" />
               </div>
 
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-8 mb-4">La declaración de fe</h3>

@@ -3,7 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 
 export function useTeacherData(selectedCourseId: string | undefined, activeTab: string) {
-  const { user } = useAuthStore();
+  const { user, roles, role: primaryRole } = useAuthStore();
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['teacher-profile', user?.id],
@@ -18,8 +18,9 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     enabled: !!user?.id,
   });
 
-  const isAdmin = ['admin', 'pastor'].includes(profile?.role || '');
-  const isTeacher = profile?.is_teacher || isAdmin;
+  const userRoles = roles || (primaryRole ? [primaryRole] : []);
+  const isAdmin = userRoles.some(r => ['admin', 'pastor', 'editor'].includes(r));
+  const isTeacher = profile?.is_teacher || userRoles.some(r => ['admin', 'pastor', 'leader', 'editor', 'teacher', 'maestro', 'docente'].includes(r));
 
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['teacher-courses', user?.id],

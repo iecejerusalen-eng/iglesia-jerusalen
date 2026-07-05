@@ -14,18 +14,19 @@ import { IntegrationsTab } from '../../features/teacher-dashboard/components/Int
 import { OverviewTab } from '../../features/teacher-dashboard/components/OverviewTab';
 
 export default function TeacherDashboard() {
-  const { user } = useAuthStore();
+  const { user, roles, role: primaryRole } = useAuthStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCourseId, setSelectedCourseId] = useState('');
 
   // Protect route
   useEffect(() => {
-    const role = user?.user_metadata?.role;
-    if (role !== 'teacher' && role !== 'admin') {
+    const userRoles = roles || (primaryRole ? [primaryRole] : []);
+    const isTeacher = userRoles.some(r => ['admin', 'pastor', 'leader', 'editor', 'teacher', 'maestro', 'docente'].includes(r));
+    if (!isTeacher) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [roles, primaryRole, navigate]);
 
   // Fetch data with custom hooks
   const {
