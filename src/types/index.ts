@@ -203,6 +203,14 @@ export interface OrderItem {
   product_variants?: ProductVariant | null;
 }
 
+export interface SermonCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  created_at: string;
+}
+
 export interface Sermon {
   id: string;
   title: string;
@@ -211,9 +219,11 @@ export interface Sermon {
   pastor_name: string;
   description?: string | null;
   date?: string;
+  category_id?: string | null;
   created_at: string;
   thumbnail_url?: string | null;
   video_url?: string | null;
+  sermon_categories?: SermonCategory | null;
 }
 
 export interface Schedule {
