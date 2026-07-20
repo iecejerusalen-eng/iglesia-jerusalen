@@ -184,23 +184,66 @@ export default function StudentDashboard() {
           completedCourses={stats.completedCourses}
           totalXp={stats.totalXp}
           streak={stats.streak}
+          attendance={97}
           overallProgress={stats.overallProgress}
         />
         
         {/* Widgets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-6">
           {enrollments.length > 0 && (
-            <NextUpWidget 
-              courseId={enrollments[0]?.lms_courses?.id || ""}
-              courseTitle={enrollments[0]?.lms_courses?.title || ""}
-              lessonTitle="Continuar desde donde te quedaste"
-              type="video"
-              timeEstimate={15}
-            />
+            <div className="lg:col-span-1">
+              <NextUpWidget 
+                courseId={enrollments[0]?.lms_courses?.id || ""}
+                courseTitle={enrollments[0]?.lms_courses?.title || ""}
+                lessonTitle="Continuar desde donde te quedaste"
+                type="video"
+                timeEstimate={15}
+              />
+            </div>
           )}
 
+          {/* Calificaciones Rápidas */}
+          <div className="lg:col-span-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6">
+            <h3 className="font-bold font-serif text-xl mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+              <Award className="text-gold" size={20} />
+              Mis Calificaciones
+            </h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/10 pb-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Ciencias Sociales</p>
+                  <p className="text-xs text-gray-500">Examen Final</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-green-500">10 / 10</p>
+                </div>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/10 pb-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Matemáticas</p>
+                  <p className="text-xs text-gray-500">Lección Práctica</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-green-500">9.5 / 10</p>
+                </div>
+              </div>
+              <div className="flex justify-between items-center pb-1">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Historia</p>
+                  <p className="text-xs text-gray-500">Ensayo</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-yellow-500">8.0 / 10</p>
+                </div>
+              </div>
+            </div>
+            <button className="w-full mt-4 py-2 text-sm font-bold text-gold hover:bg-gold/10 rounded-xl transition-colors">
+              Ver todas
+            </button>
+          </div>
+
           {/* New Pending Tasks Widget */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <PendingTasksWidget 
               tasks={[
                 { id: '1', title: 'Ensayo sobre historia contemporánea', courseTitle: 'Ciencias Sociales', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 12), status: 'PENDING' },

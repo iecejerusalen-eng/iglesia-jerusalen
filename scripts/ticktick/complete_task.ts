@@ -8,7 +8,7 @@ let tokenData = { access_token: '' };
 try {
   const tokenFile = fs.readFileSync(tokenPath, 'utf8');
   tokenData = JSON.parse(tokenFile);
-} catch (e) {
+} catch {
   console.error('Error leyendo token. Ejecuta auth.cjs primero.');
   process.exit(1);
 }
@@ -23,7 +23,7 @@ if (taskIds.length === 0) {
 
 async function completeTask(taskId: string, projectId: string) {
   try {
-    const response = await fetch(`https://api.ticktick.com/open/v1/project/${projectId}/task/${taskId}`, {
+    await fetch(`https://api.ticktick.com/open/v1/project/${projectId}/task/${taskId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

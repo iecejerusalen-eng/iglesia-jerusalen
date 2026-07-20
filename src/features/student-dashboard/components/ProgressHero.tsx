@@ -8,6 +8,7 @@ interface ProgressHeroProps {
   completedCourses: number;
   totalXp: number;
   streak: number;
+  attendance: number;
   overallProgress: number; // 0-100
 }
 
@@ -18,6 +19,7 @@ export function ProgressHero({
   completedCourses, 
   totalXp, 
   streak,
+  attendance,
   overallProgress 
 }: ProgressHeroProps) {
   return (
@@ -84,7 +86,7 @@ export function ProgressHero({
           </div>
 
           {/* KPI Mini-cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-2 text-indigo-300 mb-1">
                 <BookOpen size={14} />
@@ -106,6 +108,16 @@ export function ProgressHero({
                 <span className="text-xs font-bold uppercase tracking-wider text-gold">XP Total</span>
               </div>
               <p className="text-2xl font-bold font-serif text-white">{totalXp.toLocaleString()}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-2 text-cyan-400 mb-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Asistencia</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-bold font-serif text-white">{attendance}</p>
+                <span className="text-xs text-cyan-200">%</span>
+              </div>
             </div>
             <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 hover:border-orange-500/50 transition-colors shadow-[0_0_15px_rgba(249,115,22,0.15)] relative">
               <div className="flex items-center gap-2 text-orange-400 mb-1">
