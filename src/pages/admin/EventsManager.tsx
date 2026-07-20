@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import AdminHeader from '../../components/admin/AdminHeader';
-import { Plus, LayoutGrid, List, Calendar as CalendarIcon, Search, Filter } from 'lucide-react';
+import { Plus, LayoutGrid, List, Calendar as CalendarIcon, Search, Filter, FileDown } from 'lucide-react';
 import type { Event as DbEvent, Profile } from '../../types';
 
 // Feature Components
@@ -13,6 +13,8 @@ import EventFormModal from '../../features/events/components/EventFormModal';
 import EventsTable from '../../features/events/components/EventsTable';
 import EventsGrid from '../../features/events/components/EventsGrid';
 import EventsCalendar from '../../features/events/components/calendar/EventsCalendar';
+import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
+import { exportEventsPdf } from '../../utils/calendarPdfExport';
 
 type MainViewMode = 'table' | 'grid' | 'calendar';
 
@@ -21,13 +23,14 @@ const EventsManager = () => {
   const { user, role, roles } = useAuthStore();
   const userRoles = roles || (role ? [role] : []);
   const [events, setEvents] = useState<DbEvent[]>([]);
-  const [ministries, setMinistries] = useState<any[]>([]);
+  const [ministries, setMinistries] = useState<{ id: string; name: string }[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<DbEvent | null>(null);
   const [viewMode, setViewMode] = useState<MainViewMode>('calendar');
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
 
   // For pre-filling form from Calendar
   const [initialDate, setInitialDate] = useState<string | undefined>(undefined);
@@ -37,10 +40,6 @@ const EventsManager = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMinistry, setFilterMinistry] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'past'>('all');
-
-  useEffect(() => {
-    fetchInitialData();
-  }, [user]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -69,15 +68,23 @@ const EventsManager = () => {
 
   const fetchEvents = async () => {
     try {
-      let query = supabase.from('events').select('*, ministries(name, slug)');
+      const query = supabase.from('events').select('*, ministries(name, slug)');
       const { data, error } = await query.order('start_date', { ascending: false });
       if (error) throw error;
       setEvents(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching events:', err);
-      toast.error('Error al cargar eventos: ' + err.message);
+      toast.error('Error al cargar eventos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInitialData();
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleOpenCreate = () => {
     setEditingEvent(null);
@@ -123,9 +130,9 @@ const EventsManager = () => {
       if (error) throw error;
       toast.success('Evento eliminado con éxito.');
       fetchEvents();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting event:', err);
-      toast.error('No se pudo eliminar el evento: ' + err.message);
+      toast.error('No se pudo eliminar el evento: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setActionLoading(false);
     }
@@ -160,6 +167,18 @@ const EventsManager = () => {
     return true;
   });
 
+  const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
+    const filterLabel = filterStatus !== 'all' 
+      ? (filterStatus === 'upcoming' ? 'Próximos' : 'Pasados') 
+      : (filterMinistry !== 'all' ? ministries.find(m => m.id === filterMinistry)?.name : 'Todos');
+      
+    exportEventsPdf(visibleEvents, {
+      viewMode,
+      orientation,
+      filterLabel
+    });
+  };
+
   return (
     <AnimeFadeUp className="space-y-6 max-w-7xl mx-auto">
       <AdminHeader 
@@ -191,6 +210,14 @@ const EventsManager = () => {
                 <List size={18} />
               </button>
             </div>
+
+            <button
+              onClick={() => setShowPdfDialog(true)}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm border border-slate-200 dark:border-white/10"
+            >
+              <FileDown size={16} />
+              <span className="hidden sm:inline">Exportar PDF</span>
+            </button>
             
             <button
               onClick={handleOpenCreate}
@@ -221,7 +248,7 @@ const EventsManager = () => {
             <Filter size={16} className="text-gray-400 hidden sm:block" />
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'upcoming' | 'past')}
               className="w-full sm:w-auto px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 font-medium"
             >
               <option value="all">Todos los estados</option>
@@ -291,6 +318,15 @@ const EventsManager = () => {
           userRoles={userRoles}
           userProfile={userProfile}
           ministries={ministries}
+        />
+      )}
+
+      {/* PDF Export Dialog */}
+      {showPdfDialog && (
+        <CalendarPdfDialog
+          title="Exportar Eventos"
+          onClose={() => setShowPdfDialog(false)}
+          onExport={handleExportPdf}
         />
       )}
     </AnimeFadeUp>

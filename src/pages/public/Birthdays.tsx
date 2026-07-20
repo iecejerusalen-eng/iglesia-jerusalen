@@ -10,6 +10,9 @@ import {
 import type { Member } from '../../types';
 import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
+import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
+import { exportBirthdaysPdf } from '../../utils/calendarPdfExport';
+import { FileDown } from 'lucide-react';
 
 function getBibleLinkForVerse(verseStr: string | null | undefined): string | null {
   if (!verseStr || typeof verseStr !== 'string') return null;
@@ -61,12 +64,8 @@ export default function Birthdays() {
   const [confettiRecipients, setConfettiRecipients] = useState<string>('');
   const { width, height } = useWindowSize();
 
-  // Calendar navigation state
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -78,13 +77,20 @@ export default function Birthdays() {
 
       if (error) throw error;
       setMembers(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching members:', err);
-      toast.error('Error al cargar cumpleañeros: ' + err.message);
+      toast.error('Error al cargar cumpleañeros: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMembers();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const getBirthdayInfo = (member: Member): BirthdayInfo | null => {
     if (!member.birth_date) return null;
@@ -179,6 +185,19 @@ export default function Birthdays() {
     setTimeout(() => {
       setShowConfetti(false);
     }, 4500);
+  };
+
+  const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
+    const filterLabel = viewMode === 'calendar'
+      ? `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`
+      : activeTab === 'hoy' ? 'Hoy' : activeTab === 'semana' ? 'Próximos 7 días' : 'Este Mes';
+
+    exportBirthdaysPdf(filteredBirthdays, {
+      viewMode,
+      orientation,
+      filterLabel,
+      calendarMonth: `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`
+    });
   };
 
   // Calendar calculations
@@ -384,39 +403,50 @@ export default function Birthdays() {
         </div>
 
         {/* View mode buttons */}
-        <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-2xl w-fit border border-slate-200 dark:border-white/10 shrink-0">
+        <div className="flex gap-2 items-center shrink-0">
+          <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`p-2 rounded-xl transition cursor-pointer ${
+                viewMode === 'cards'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
+              }`}
+              title="Vista Tarjetas"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded-xl transition cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
+              }`}
+              title="Vista Tabla"
+            >
+              <Table size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`p-2 rounded-xl transition cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
+              }`}
+              title="Vista Calendario"
+            >
+              <CalendarIcon size={15} />
+            </button>
+          </div>
+
           <button
-            onClick={() => setViewMode('cards')}
-            className={`p-2 rounded-xl transition cursor-pointer ${
-              viewMode === 'cards'
-                ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
-                : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
-            }`}
-            title="Vista Tarjetas"
+            onClick={() => setShowPdfDialog(true)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm border border-slate-200 dark:border-white/10"
+            title="Exportar PDF"
           >
-            <LayoutGrid size={15} />
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`p-2 rounded-xl transition cursor-pointer ${
-              viewMode === 'table'
-                ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
-                : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
-            }`}
-            title="Vista Tabla"
-          >
-            <Table size={15} />
-          </button>
-          <button
-            onClick={() => setViewMode('calendar')}
-            className={`p-2 rounded-xl transition cursor-pointer ${
-              viewMode === 'calendar'
-                ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs'
-                : 'text-slate-500 hover:text-slate-850 dark:text-gray-400 dark:hover:text-white'
-            }`}
-            title="Vista Calendario"
-          >
-            <CalendarIcon size={15} />
+            <FileDown size={16} />
+            <span className="hidden sm:inline">Exportar PDF</span>
           </button>
         </div>
       </div>
@@ -659,6 +689,15 @@ export default function Birthdays() {
           </div>
         )}
       </div>
+
+      {/* PDF Export Dialog */}
+      {showPdfDialog && (
+        <CalendarPdfDialog
+          title="Exportar Cumpleañeros"
+          onClose={() => setShowPdfDialog(false)}
+          onExport={handleExportPdf}
+        />
+      )}
     </div>
   );
 }
