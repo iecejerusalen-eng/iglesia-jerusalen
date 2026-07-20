@@ -28,28 +28,7 @@ const Events = () => {
   const [detailViewType, setDetailViewType] = useState<'modal' | 'drawer'>('modal');
   const [showPdfDialog, setShowPdfDialog] = useState(false);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      setHoveredEvent(null);
-    }
-  }, [selectedEvent]);
-
-  const getLogoUrl = (event: any) => {
-    const ministry = event?.ministries;
-    if (!ministry || !ministry.logos || !Array.isArray(ministry.logos) || ministry.logos.length === 0) return null;
-    const logo = ministry.logos.find((l: any) => l.variant === 'circular') ||
-      ministry.logos.find((l: any) => l.variant === 'cuadrado') ||
-      ministry.logos[0];
-    if (!logo) return null;
-    return supabase.storage.from('logos').getPublicUrl(logo.storage_path).data.publicUrl;
-  };
-
   const fetchEvents = async () => {
-    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('events')
@@ -75,6 +54,30 @@ const Events = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchEvents();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      const timer = setTimeout(() => setHoveredEvent(null), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedEvent]);
+
+  const getLogoUrl = (event: DbEvent & { ministries?: any }) => {
+    const ministry = event?.ministries;
+    if (!ministry || !ministry.logos || !Array.isArray(ministry.logos) || ministry.logos.length === 0) return null;
+    const logo = ministry.logos.find((l: any) => l.variant === 'circular') ||
+      ministry.logos.find((l: any) => l.variant === 'cuadrado') ||
+      ministry.logos[0];
+    if (!logo) return null;
+    return supabase.storage.from('logos').getPublicUrl(logo.storage_path).data.publicUrl;
   };
 
   // Date Calculation Helpers
@@ -163,14 +166,11 @@ const Events = () => {
   };
 
   const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
-    let filterLabel = '';
-    if (view === 'month') {
-      filterLabel = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-    } else if (view === 'year') {
-      filterLabel = `${currentDate.getFullYear()}`;
-    } else {
-      filterLabel = 'Semana/Día';
-    }
+    const filterLabel = view === 'month' 
+      ? `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+      : view === 'year'
+        ? `${currentDate.getFullYear()}`
+        : 'Semana/Día';
 
     exportEventsPdf(events, {
       viewMode: 'calendar',
@@ -962,6 +962,15 @@ const Events = () => {
             )}
           </div>
         )}
+      
+      {/* PDF Export Dialog */}
+      {showPdfDialog && (
+        <CalendarPdfDialog
+          title="Exportar Calendario"
+          onClose={() => setShowPdfDialog(false)}
+          onExport={handleExportPdf}
+        />
+      )}
     </div>
   );
 };
