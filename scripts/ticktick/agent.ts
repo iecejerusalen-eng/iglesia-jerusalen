@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Note: This requires Node 18+ for native fetch
-const TOKEN_PATH = path.join(__dirname, 'token.json');
+const TOKEN_PATH = path.resolve('scripts/ticktick/token.json');
 
 async function getAccessToken() {
   if (!fs.existsSync(TOKEN_PATH)) {

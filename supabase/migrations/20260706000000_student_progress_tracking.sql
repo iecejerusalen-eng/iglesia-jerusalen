@@ -33,7 +33,7 @@ FOR SELECT TO authenticated USING (user_id = auth.uid());
 
 -- Vista materializada no se usa en Supabase directamente si queremos realtime o policies. 
 -- Crearemos una función o vista estándar.
-CREATE OR REPLACE VIEW public.lms_student_stats AS
+CREATE OR REPLACE VIEW public.lms_student_stats WITH (security_invoker = true) AS
 SELECT
     e.user_id,
     COUNT(DISTINCT e.course_id) FILTER (WHERE e.status = 'active') as active_courses,
