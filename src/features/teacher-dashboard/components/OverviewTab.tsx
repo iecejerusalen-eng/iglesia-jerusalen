@@ -31,15 +31,7 @@ export function OverviewTab({
             <BookOpen size={18} />
           </div>
           <p className="font-extrabold text-2xl text-slate-900 dark:text-white font-mono">{coursesCount}</p>
-          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Cursos Asignados</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm text-center">
-          <div className="w-10 h-10 mx-auto bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-3">
-            <Clock size={18} />
-          </div>
-          <p className="font-extrabold text-2xl text-slate-900 dark:text-white font-mono">{classesToday}</p>
-          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Clases Hoy</p>
+          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Carga Académica</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm text-center">
@@ -48,6 +40,22 @@ export function OverviewTab({
           </div>
           <p className="font-extrabold text-2xl text-slate-900 dark:text-white font-mono">{assignmentsToGrade}</p>
           <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Por Calificar</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm text-center">
+          <div className="w-10 h-10 mx-auto bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-3">
+            <Users size={18} />
+          </div>
+          <p className="font-extrabold text-2xl text-slate-900 dark:text-white font-mono">{studentsCount}</p>
+          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Asist. Ptes.</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm text-center">
+          <div className="w-10 h-10 mx-auto bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-3">
+            <Clock size={18} />
+          </div>
+          <p className="font-extrabold text-2xl text-slate-900 dark:text-white font-mono">{classesToday}</p>
+          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mt-1">Planificaciones</p>
         </div>
       </div>
 

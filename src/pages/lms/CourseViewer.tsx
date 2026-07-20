@@ -512,7 +512,7 @@ export default function CourseViewer() {
                     setActiveTabId("general");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "general" ? "bg-indigo-600 text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "general" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 >
                   Información General
                 </button>
@@ -530,9 +530,9 @@ export default function CourseViewer() {
                         setActiveTabId(mod.id);
                         setActiveLesson(null);
                       }}
-                      className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === mod.id ? "bg-indigo-600 text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                      className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === mod.id ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                     >
-                      {mod.title || `Unidad ${idx + 1}`}
+                      {mod.title || `Módulo ${idx + 1}`}
                     </button>
                   ))}
                 <button
@@ -540,7 +540,7 @@ export default function CourseViewer() {
                     setActiveTabId("forums");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all flex items-center gap-2 ${activeTabId === "forums" ? "bg-indigo-600 text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all flex items-center gap-2 ${activeTabId === "forums" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 >
                   <MessageSquare size={16} /> Foros
                 </button>
