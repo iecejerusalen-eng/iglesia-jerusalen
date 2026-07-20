@@ -165,6 +165,8 @@ export default function TeacherDashboard() {
                 classesToday={classesToday}
                 assignmentsToGrade={submissions.filter((s: any) => !s.grade).length}
                 recentSubmissions={submissions}
+                courses={courses}
+                activities={activities}
               />
             )}
 
