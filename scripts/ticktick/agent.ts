@@ -28,12 +28,13 @@ async function fetchTasks(token: string) {
 
   // Typically, to get tasks for a project: /open/v1/project/{projectId}/data
   for (const project of projects) {
-    if (project.id === 'inbox') {
-      const pRes = await fetch(`https://api.ticktick.com/open/v1/project/${project.id}/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await pRes.json();
-      console.log('Inbox Tasks:', JSON.stringify(data.tasks, null, 2));
+    const pRes = await fetch(`https://api.ticktick.com/open/v1/project/${project.id}/data`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await pRes.json();
+    if (data.tasks && data.tasks.length > 0) {
+      console.log(`Tasks for project: ${project.name}`);
+      console.log(JSON.stringify(data.tasks, null, 2));
     }
   }
 }
