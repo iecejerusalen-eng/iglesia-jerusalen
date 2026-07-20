@@ -70,11 +70,17 @@ const Events = () => {
     }
   }, [selectedEvent]);
 
-  const getLogoUrl = (event: DbEvent & { ministries?: any }) => {
+  interface MinistryLogo {
+    id: string;
+    variant: string;
+    storage_path: string;
+  }
+
+  const getLogoUrl = (event: DbEvent & { ministries?: { logos?: MinistryLogo[] } | null }) => {
     const ministry = event?.ministries;
     if (!ministry || !ministry.logos || !Array.isArray(ministry.logos) || ministry.logos.length === 0) return null;
-    const logo = ministry.logos.find((l: any) => l.variant === 'circular') ||
-      ministry.logos.find((l: any) => l.variant === 'cuadrado') ||
+    const logo = ministry.logos.find((l: MinistryLogo) => l.variant === 'circular') ||
+      ministry.logos.find((l: MinistryLogo) => l.variant === 'cuadrado') ||
       ministry.logos[0];
     if (!logo) return null;
     return supabase.storage.from('logos').getPublicUrl(logo.storage_path).data.publicUrl;
