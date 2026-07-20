@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Award, BarChart3, FileDown, Edit, Check, X } from 'lucide-react';
+import { AlertTriangle, Award, BarChart3, FileDown, Check, X, Search, ChevronRight } from 'lucide-react';
 import { ResponsiveContainer, Cell, PieChart, Pie, Tooltip } from 'recharts';
 import { supabase } from '../../../config/supabase';
 import { toast } from 'sonner';
@@ -15,22 +15,17 @@ interface GradesTabProps {
 }
 
 export function GradesTab({ students, submissions, finalGrades = [], courseId, activities = [] }: GradesTabProps) {
-  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingCell, setEditingCell] = useState<{ studentId: string, activityId: string } | null>(null);
   const [editGrade, setEditGrade] = useState<string>('');
-  const [editComment, setEditComment] = useState<string>('');
   
-  const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
-  const [editSubGrade, setEditSubGrade] = useState<string>('');
-  const [editSubComment, setEditSubComment] = useState<string>('');
+  const [editingFinalGrade, setEditingFinalGrade] = useState<string | null>(null);
+  const [editFinal, setEditFinal] = useState<string>('');
   
   const [isSaving, setIsSaving] = useState(false);
 
-  // We should also have access to enrollment mapping to find the enrollment_id for each student.
-  // Because lms_grades needs enrollment_id, not just user_id. We map it out in finalGrades, but
-  // if a student doesn't have a finalGrade yet, we need their enrollment_id to create one.
+  // Enrollments mapping
   const [enrollmentsMap, setEnrollmentsMap] = useState<Record<string, string>>({});
-
-  // Fetch enrollments mapped by user_id for this course
   useMemo(() => {
     supabase
       .from('lms_enrollments')
@@ -47,12 +42,8 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
   }, [courseId]);
 
   const { averageGrade, strugglingStudents, highlightStudents, metricsData } = useMemo(() => {
-    // Determine grades by submissions OR finalGrades
     const numericFinalGrades = finalGrades.map(fg => parseFloat(fg.final_grade)).filter(g => !isNaN(g));
-    
-    // Fallback to submissions if no final grades exist
     const gradesSource = numericFinalGrades.length > 0 ? numericFinalGrades : submissions.map(s => parseFloat(s.grade || '0')).filter(g => !isNaN(g) && g > 0);
-    
     const avg = gradesSource.length > 0 ? gradesSource.reduce((a, b) => a + b, 0) / gradesSource.length : 0;
     const average = parseFloat(avg.toFixed(1));
 
@@ -60,14 +51,11 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
     const highPerformers: any[] = [];
 
     students.forEach(s => {
-      // Find final grade first
       const fGrade = finalGrades.find(fg => fg.user_id === s.id);
       let sAvg = 0;
-      
       if (fGrade && fGrade.final_grade) {
         sAvg = parseFloat(fGrade.final_grade);
       } else {
-        // Fallback to submissions average
         const sSubmissions = submissions.filter(sub => sub.student_id === s.id);
         const sGrades = sSubmissions.map(sub => parseFloat(sub.grade || '0')).filter(g => !isNaN(g) && g > 0);
         sAvg = sGrades.length > 0 ? sGrades.reduce((a, b) => a + b, 0) / sGrades.length : 0;
@@ -89,59 +77,87 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
       { name: 'Rezago (< 7)', value: struggling.length }
     ].filter(d => d.value > 0);
 
-    return {
-      averageGrade: average,
-      strugglingStudents: struggling,
-      highlightStudents: highPerformers,
-      metricsData: metrics
-    };
+    return { averageGrade: average, strugglingStudents: struggling, highlightStudents: highPerformers, metricsData: metrics };
   }, [students, submissions, finalGrades]);
 
-  const handleExportPDF = () => {
-    window.print();
+  const handleExportPDF = () => window.print();
+
+  // Helper to find submission for a specific student and activity
+  const getSubmission = (studentId: string, activityId: string) => {
+    return submissions.find(s => s.student_id === studentId && s.lesson_id === activityId);
   };
 
-  const handleEditClick = (studentId: string, currentGrade: string, currentComment: string) => {
-    setEditingStudentId(studentId);
-    setEditGrade(currentGrade);
-    setEditComment(currentComment);
+  const handleEditCell = (studentId: string, activityId: string, currentGrade: string) => {
+    setEditingCell({ studentId, activityId });
+    setEditGrade(currentGrade || '');
   };
 
-  const handleSaveGrade = async (studentId: string) => {
+  const handleSaveCell = async (studentId: string, activityId: string) => {
+    setIsSaving(true);
+    try {
+      const existingSub = getSubmission(studentId, activityId);
+      
+      if (existingSub) {
+        // Update existing submission
+        const { error } = await supabase
+          .from('lms_lesson_submissions')
+          .update({
+            grade: editGrade,
+            graded_at: new Date().toISOString(),
+            status: 'graded'
+          })
+          .eq('id', existingSub.id);
+        if (error) throw error;
+      } else {
+        // Create a teacher-initiated submission (override) if student hasn't submitted yet
+        const { error } = await supabase
+          .from('lms_lesson_submissions')
+          .insert({
+            lesson_id: activityId,
+            student_id: studentId,
+            grade: editGrade,
+            status: 'graded',
+            graded_at: new Date().toISOString(),
+            teacher_feedback: 'Calificación ingresada directamente en la matriz.'
+          });
+        if (error) throw error;
+      }
+      
+      toast.success('Calificación actualizada');
+      setEditingCell(null);
+    } catch (err: any) {
+      toast.error('Error al calificar: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveFinalGrade = async (studentId: string) => {
     const enrollmentId = enrollmentsMap[studentId];
     if (!enrollmentId) {
-      toast.error('Error de vinculación: No se encontró la matrícula del estudiante');
+      toast.error('Error: No se encontró matrícula');
       return;
     }
 
     setIsSaving(true);
     try {
       const existingGrade = finalGrades.find(fg => fg.user_id === studentId);
-      
       const payload = {
         enrollment_id: enrollmentId,
-        final_grade: parseFloat(editGrade) || 0,
-        comments: editComment,
+        final_grade: parseFloat(editFinal) || 0,
         updated_at: new Date().toISOString()
       };
 
       if (existingGrade?.id) {
-        // Update
-        const { error } = await supabase
-          .from('lms_grades')
-          .update(payload)
-          .eq('id', existingGrade.id);
+        const { error } = await supabase.from('lms_grades').update(payload).eq('id', existingGrade.id);
         if (error) throw error;
       } else {
-        // Insert
-        const { error } = await supabase
-          .from('lms_grades')
-          .insert(payload);
+        const { error } = await supabase.from('lms_grades').insert(payload);
         if (error) throw error;
       }
       
-      toast.success('Calificación final guardada correctamente');
-      setEditingStudentId(null);
+      toast.success('Nota final guardada');
+      setEditingFinalGrade(null);
     } catch (err: any) {
       toast.error('Error al guardar: ' + err.message);
     } finally {
@@ -149,37 +165,13 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
     }
   };
 
-  const handleEditSubmission = (sub: any) => {
-    setEditingSubmissionId(sub.id);
-    setEditSubGrade(sub.grade || '');
-    setEditSubComment(sub.teacher_feedback || '');
-  };
-
-  const handleSaveSubmissionGrade = async (subId: string) => {
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('lms_lesson_submissions')
-        .update({
-          grade: editSubGrade,
-          teacher_feedback: editSubComment,
-          graded_at: new Date().toISOString()
-        })
-        .eq('id', subId);
-
-      if (error) throw error;
-      toast.success('Calificación de entrega guardada correctamente');
-      setEditingSubmissionId(null);
-      // Wait for react-query to refetch or we can manually reload
-    } catch (err: any) {
-      toast.error('Error al calificar entrega: ' + err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const filteredStudents = students.filter(s => 
+    `${s.first_name} ${s.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-full">
           <div>
@@ -187,7 +179,7 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
             <p className="text-4xl font-extrabold font-serif text-slate-900 dark:text-white">{averageGrade} <span className="text-sm font-sans font-semibold text-gray-400">/ 10</span></p>
           </div>
           <div className="border-t border-gray-100 dark:border-white/5 pt-3 mt-4 flex items-center justify-between text-xs text-gray-500">
-            <span>Entregas Procesadas:</span>
+            <span>Entregas Registradas:</span>
             <span className="font-bold font-mono text-slate-900 dark:text-white">{submissions.length}</span>
           </div>
         </div>
@@ -198,40 +190,27 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
             {metricsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
-                  <Pie
-                    data={metricsData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={30}
-                    outerRadius={45}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {metricsData.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Pie data={metricsData} cx="50%" cy="50%" innerRadius={30} outerRadius={45} paddingAngle={3} dataKey="value">
+                    {metricsData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <span className="text-xs text-gray-400">Sin registros</span>
-            )}
+            ) : <span className="text-xs text-gray-400">Sin registros</span>}
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-full text-left space-y-3">
-          <h4 className="font-serif font-bold text-xs text-gray-455 uppercase tracking-wider">Centro de Alertas Académicas</h4>
-          
+          <h4 className="font-serif font-bold text-xs text-gray-455 uppercase tracking-wider">Centro de Alertas</h4>
           <div className="space-y-2 overflow-y-auto max-h-24">
             {strugglingStudents.map(std => (
-              <div key={std.id} className="flex items-center gap-1.5 text-xs text-red-600 font-bold bg-red-50 dark:bg-red-950/20 p-1.5 rounded-lg">
+              <div key={std.id} className="flex items-center gap-1.5 text-[11px] text-red-600 font-bold bg-red-50 dark:bg-red-950/20 p-2 rounded-lg">
                 <AlertTriangle size={12} />
                 <span>Rezago: {std.first_name} {std.last_name} ({std.average})</span>
               </div>
             ))}
             {highlightStudents.map(std => (
-              <div key={std.id} className="flex items-center gap-1.5 text-xs text-green-600 font-bold bg-green-50 dark:bg-green-950/20 p-1.5 rounded-lg">
+              <div key={std.id} className="flex items-center gap-1.5 text-[11px] text-green-600 font-bold bg-green-50 dark:bg-green-950/20 p-2 rounded-lg">
                 <Award size={12} />
                 <span>Destacado: {std.first_name} {std.last_name} ({std.average})</span>
               </div>
@@ -243,243 +222,171 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
         </div>
       </div>
 
-      {/* Tareas Individuales */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
-        <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-          <Award size={18} className="text-gold" />
-          Revisión de Tareas Individuales
-        </h3>
-        
-        {submissions.length === 0 ? (
-          <p className="text-xs text-gray-500">No hay entregas pendientes.</p>
-        ) : (
-          <div className="overflow-x-auto border border-gray-100 dark:border-white/5 rounded-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-800/40 border-b border-gray-250 dark:border-white/5">
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Lección/Tarea</th>
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Estudiante</th>
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Archivo</th>
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Nota</th>
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Retroalimentación</th>
-                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400 text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submissions.map(sub => {
-                  const isEditing = editingSubmissionId === sub.id;
-                  const lessonName = activities?.find(a => a.id === sub.lesson_id)?.title || 'Tarea';
-                  
-                  return (
-                    <tr key={sub.id} className="border-b border-gray-100 dark:border-white/5 last:border-none hover:bg-gray-50/50">
-                      <td className="p-3.5 text-xs text-slate-800 dark:text-white font-medium">{lessonName}</td>
-                      <td className="p-3.5 text-xs text-slate-800 dark:text-white">
-                        {sub.profiles?.first_name} {sub.profiles?.last_name}
-                      </td>
-                      <td className="p-3.5 text-xs">
-                        {sub.file_url ? (
-                          <a 
-                            href={`https://jerusalen.nyc3.cdn.digitaloceanspaces.com/lms-assignments/${sub.file_url}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                          >
-                            <FileDown size={14} /> Ver Archivo
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">Sin archivo</span>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            value={editSubGrade}
-                            onChange={(e) => setEditSubGrade(e.target.value)}
-                            className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
-                            placeholder="0-10"
-                            step="0.1"
-                            max="10"
-                          />
-                        ) : (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.grade ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
-                            {sub.grade ? `${sub.grade} / 10` : 'Pdte'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editSubComment}
-                            onChange={(e) => setEditSubComment(e.target.value)}
-                            className="w-full min-w-[150px] px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
-                            placeholder="Buen trabajo..."
-                          />
-                        ) : (
-                          <div className="text-xs text-gray-500 max-w-[200px] truncate" title={sub.teacher_feedback}>
-                            {sub.teacher_feedback || '-'}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3.5 text-right">
-                        {isEditing ? (
-                          <div className="flex justify-end gap-1">
-                            <button 
-                              disabled={isSaving}
-                              onClick={() => handleSaveSubmissionGrade(sub.id)}
-                              className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded cursor-pointer"
-                            >
-                              <Check size={14} />
-                            </button>
-                            <button 
-                              disabled={isSaving}
-                              onClick={() => setEditingSubmissionId(null)}
-                              className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded cursor-pointer"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleEditSubmission(sub)}
-                            className="p-1.5 text-gray-400 hover:text-gold hover:bg-gold/10 rounded cursor-pointer"
-                            title="Calificar Entrega"
-                          >
-                            <Edit size={14} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* GRADEBOOK MATRIX */}
+      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="p-5 border-b border-gray-150 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center text-gold">
+              <BarChart3 size={20} />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white">Matriz de Calificaciones (Gradebook)</h3>
+              <p className="text-xs text-gray-500">Haz clic en cualquier celda para ingresar o editar una nota (Modo Interactivo).</p>
+            </div>
           </div>
-        )}
-      </div>
-
-      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex justify-between items-center flex-wrap gap-2">
-          <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <BarChart3 size={18} className="text-gold" />
-            Matriz General de Calificaciones (Gradebook Final)
-          </h3>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => window.open(`/admin/lms/gradebook/${courseId}`, '_blank')}
-              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 dark:text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
-            >
-              <FileDown size={14} /> Revisar Entregas
-            </button>
+          
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input 
+                type="text" 
+                placeholder="Buscar estudiante..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-gold outline-none w-full md:w-64"
+              />
+            </div>
             <button 
               onClick={handleExportPDF}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
+              className="bg-slate-800 hover:bg-slate-900 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all whitespace-nowrap"
             >
-              <FileDown size={14} /> Imprimir Boletines
+              <FileDown size={14} /> Exportar
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-gray-100 dark:border-white/5 rounded-xl">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-max">
             <thead>
-              <tr className="bg-gray-50 dark:bg-slate-800/40 border-b border-gray-250 dark:border-white/5">
-                <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Estudiante</th>
-                <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Prom. Entregas</th>
-                <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Nota Final (Boletín)</th>
-                <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Comentario del Docente</th>
-                <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400 text-right">Acción</th>
+              <tr className="bg-slate-100 dark:bg-slate-950/60 border-b border-gray-250 dark:border-white/10">
+                <th className="p-4 font-bold text-xs text-slate-700 dark:text-gray-300 sticky left-0 bg-slate-100 dark:bg-slate-950/95 z-10 w-64 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  Estudiante
+                </th>
+                {/* Dynamically render activity columns */}
+                {activities.map((act, i) => (
+                  <th key={act.id} className="p-4 font-bold text-[10px] text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-white/5 w-24 text-center">
+                    <div className="truncate w-20 mx-auto" title={act.title}>
+                      A{i+1}: {act.title}
+                    </div>
+                    <div className="font-normal text-[9px] mt-1 text-gold">{act.type === 'assignment' ? 'Tarea' : 'Quiz'}</div>
+                  </th>
+                ))}
+                
+                <th className="p-4 font-bold text-xs text-slate-700 dark:text-gray-300 border-l border-gray-300 dark:border-white/10 w-24 text-center bg-gray-50 dark:bg-slate-900/40">
+                  Promedio
+                </th>
+                <th className="p-4 font-bold text-xs text-blue-700 dark:text-blue-400 border-l border-gray-300 dark:border-white/10 w-28 text-center bg-blue-50 dark:bg-blue-900/10">
+                  Nota Final
+                </th>
               </tr>
             </thead>
             <tbody>
-              {students.map(std => {
-                const fGrade = finalGrades.find(fg => fg.user_id === std.id);
-                
-                // Calculate submissions average just for reference
-                const sSubmissions = submissions.filter(sub => sub.student_id === std.id);
-                const sGrades = sSubmissions.map(sub => parseFloat(sub.grade || '0')).filter(g => !isNaN(g) && g > 0);
-                const calcAvg = sGrades.length > 0 ? sGrades.reduce((a, b) => a + b, 0) / sGrades.length : 0;
+              {filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={activities.length + 3} className="p-8 text-center text-sm text-gray-500">
+                    No hay estudiantes para mostrar.
+                  </td>
+                </tr>
+              ) : (
+                filteredStudents.map(std => {
+                  const fGrade = finalGrades.find(fg => fg.user_id === std.id);
+                  const sSubmissions = submissions.filter(sub => sub.student_id === std.id);
+                  const sGrades = sSubmissions.map(sub => parseFloat(sub.grade || '0')).filter(g => !isNaN(g) && g > 0);
+                  const calcAvg = sGrades.length > 0 ? sGrades.reduce((a, b) => a + b, 0) / sGrades.length : 0;
+                  
+                  const isEditingFinal = editingFinalGrade === std.id;
 
-                const isEditing = editingStudentId === std.id;
-                const finalGradeValue = fGrade?.final_grade;
-                const finalCommentValue = fGrade?.comments || '';
+                  return (
+                    <tr key={std.id} className="border-b border-gray-150 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 group">
+                      {/* Name Column (Sticky) */}
+                      <td className="p-4 text-xs font-medium text-slate-900 dark:text-white sticky left-0 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800/30 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                        <div className="flex items-center justify-between">
+                          <span className="truncate pr-2">{std.last_name} {std.first_name}</span>
+                          <ChevronRight size={12} className="text-gray-300" />
+                        </div>
+                      </td>
 
-                return (
-                  <tr key={std.id} className="border-b border-gray-100 dark:border-white/5 last:border-none hover:bg-gray-50/50">
-                    <td className="p-3.5 font-bold text-xs text-slate-800 dark:text-white">{std.first_name} {std.last_name}</td>
-                    <td className="p-3.5 font-mono text-xs text-gray-500">
-                      {calcAvg > 0 ? calcAvg.toFixed(1) : '-'}
-                    </td>
-                    <td className="p-3.5">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={editGrade}
-                          onChange={(e) => setEditGrade(e.target.value)}
-                          className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
-                          placeholder="0-10"
-                          step="0.1"
-                          max="10"
-                        />
-                      ) : (
-                        <div className="font-mono font-bold text-xs">
-                          {finalGradeValue ? (
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${finalGradeValue >= 7 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                              {finalGradeValue} / 10
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">Sin asignar</span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-3.5">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editComment}
-                          onChange={(e) => setEditComment(e.target.value)}
-                          className="w-full min-w-[150px] px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
-                          placeholder="Comentarios (opcional)"
-                        />
-                      ) : (
-                        <div className="text-xs text-gray-500 max-w-[200px] truncate" title={finalCommentValue}>
-                          {finalCommentValue || '-'}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-right">
-                      {isEditing ? (
-                        <div className="flex justify-end gap-1">
-                          <button 
-                            disabled={isSaving}
-                            onClick={() => handleSaveGrade(std.id)}
-                            className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors disabled:opacity-50 cursor-pointer"
+                      {/* Dynamic Activity Cells */}
+                      {activities.map(act => {
+                        const sub = getSubmission(std.id, act.id);
+                        const isEditingThis = editingCell?.studentId === std.id && editingCell?.activityId === act.id;
+                        const gradeVal = sub?.grade ? parseFloat(sub.grade) : null;
+                        
+                        return (
+                          <td 
+                            key={act.id} 
+                            className={`p-2 border-l border-gray-150 dark:border-white/5 text-center cursor-pointer transition-colors ${isEditingThis ? 'bg-gold/10' : 'hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                            onClick={() => !isEditingThis && handleEditCell(std.id, act.id, sub?.grade || '')}
                           >
-                            <Check size={14} />
-                          </button>
-                          <button 
-                            disabled={isSaving}
-                            onClick={() => setEditingStudentId(null)}
-                            className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition-colors disabled:opacity-50 cursor-pointer"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEditClick(std.id, finalGradeValue?.toString() || '', finalCommentValue)}
-                          className="p-1.5 text-gray-400 hover:text-gold hover:bg-gold/10 rounded transition-colors cursor-pointer"
-                          title="Editar Nota Final"
-                        >
-                          <Edit size={14} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                            {isEditingThis ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <input
+                                  autoFocus
+                                  type="number"
+                                  value={editGrade}
+                                  onChange={(e) => setEditGrade(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveCell(std.id, act.id);
+                                    if (e.key === 'Escape') setEditingCell(null);
+                                  }}
+                                  className="w-12 px-1 py-1 text-[11px] font-mono text-center border-b-2 border-gold bg-transparent outline-none"
+                                  placeholder="-"
+                                  step="0.1"
+                                  max="10"
+                                />
+                                <div className="flex gap-1">
+                                  <button onClick={(e) => { e.stopPropagation(); handleSaveCell(std.id, act.id); }} className="text-green-600"><Check size={12}/></button>
+                                  <button onClick={(e) => { e.stopPropagation(); setEditingCell(null); }} className="text-red-500"><X size={12}/></button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className={`font-mono text-xs font-bold ${!gradeVal ? 'text-gray-300' : gradeVal >= 7 ? 'text-green-600' : 'text-red-500'}`}>
+                                {gradeVal ? gradeVal.toFixed(1) : '-'}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      {/* Calculated Average */}
+                      <td className="p-4 font-mono text-xs font-bold text-gray-500 border-l border-gray-300 dark:border-white/10 text-center bg-gray-50/50 dark:bg-slate-900/20">
+                        {calcAvg > 0 ? calcAvg.toFixed(1) : '-'}
+                      </td>
+
+                      {/* Final Grade (Editable) */}
+                      <td 
+                        className={`p-2 font-mono text-xs font-bold border-l border-gray-300 dark:border-white/10 text-center cursor-pointer ${isEditingFinal ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-blue-50/50 dark:bg-blue-900/5 hover:bg-blue-100 dark:hover:bg-blue-900/20'}`}
+                        onClick={() => !isEditingFinal && (setEditingFinalGrade(std.id), setEditFinal(fGrade?.final_grade || ''))}
+                      >
+                        {isEditingFinal ? (
+                           <div className="flex flex-col items-center gap-1">
+                             <input
+                               autoFocus
+                               type="number"
+                               value={editFinal}
+                               onChange={(e) => setEditFinal(e.target.value)}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') handleSaveFinalGrade(std.id);
+                                 if (e.key === 'Escape') setEditingFinalGrade(null);
+                               }}
+                               className="w-12 px-1 py-1 text-[11px] font-mono text-center border-b-2 border-blue-500 bg-transparent outline-none"
+                               placeholder="-"
+                             />
+                             <div className="flex gap-1">
+                               <button onClick={(e) => { e.stopPropagation(); handleSaveFinalGrade(std.id); }} className="text-blue-600"><Check size={12}/></button>
+                               <button onClick={(e) => { e.stopPropagation(); setEditingFinalGrade(null); }} className="text-red-500"><X size={12}/></button>
+                             </div>
+                           </div>
+                        ) : (
+                          <div className={fGrade?.final_grade ? (parseFloat(fGrade.final_grade) >= 7 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500') : 'text-gray-400'}>
+                            {fGrade?.final_grade ? parseFloat(fGrade.final_grade).toFixed(1) : 'S/N'}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

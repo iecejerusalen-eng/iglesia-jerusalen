@@ -20,6 +20,7 @@ import { ForumViewer } from "../../features/lms/components/ForumViewer";
 import { Leaderboard } from "../../features/lms/components/Leaderboard";
 import { CircularProgress } from "../../components/ui/CircularProgress";
 import { NextUpWidget } from "../../features/student-dashboard/components/NextUpWidget";
+import { QuizPlayer } from "../../features/student-dashboard/components/QuizPlayer";
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,6 @@ export default function CourseViewer() {
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<any[]>([]);
-  const [lessons, setLessons] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
@@ -786,126 +786,15 @@ export default function CourseViewer() {
 
                     {/* QUIZ TAKING */}
                     {activeLesson.type === "quiz" && (
-                      <div className="space-y-6 bg-slate-50 dark:bg-slate-900/30 p-6 rounded-2xl border border-gray-150 dark:border-white/5">
-                        <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/5">
-                          <h3 className="font-bold font-serif text-sm">
-                            Cuestionario Evaluativo
-                          </h3>
-                          {quizScore !== null && (
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${quizScore >= 7 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-750"}`}
-                            >
-                              Calificación: {quizScore}/10
-                            </span>
-                          )}
-                        </div>
-
-                        {quizSubmitted ? (
-                          <div className="text-center py-8 space-y-4">
-                            <CheckCircle2
-                              size={48}
-                              className="mx-auto text-green-600"
-                            />
-                            <h4 className="font-bold text-lg">
-                              Examen enviado con éxito
-                            </h4>
-                            <p className="text-xs text-gray-450 dark:text-gray-400">
-                              Obtuviste una calificación de{" "}
-                              <strong>{quizScore}/10</strong>.
-                              {quizScore !== null && quizScore >= 7
-                                ? " ¡Felicidades! Has aprobado esta lección."
-                                : " No alcanzaste la nota mínima de 7/10. Inténtalo de nuevo cuando el docente reabra el intento."}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setQuizSubmitted(false);
-                                setQuizAnswers({});
-                                setQuizScore(null);
-                              }}
-                              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
-                            >
-                              Reintentar Cuestionario
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="space-y-6">
-                            {(() => {
-                              let questions: any[];
-                              try {
-                                questions = JSON.parse(
-                                  activeLesson.content || "[]",
-                                );
-                              } catch {
-                                return (
-                                  <p className="text-xs text-red-500 italic">
-                                    Error al decodificar preguntas del
-                                    cuestionario.
-                                  </p>
-                                );
-                              }
-
-                              if (questions.length === 0) {
-                                return (
-                                  <p className="text-xs text-gray-450 italic text-center">
-                                    Este examen no tiene preguntas aún.
-                                  </p>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  {questions.map((q, idx) => (
-                                    <div key={idx} className="space-y-3">
-                                      <p className="text-xs font-bold text-slate-800 dark:text-gray-200">
-                                        {idx + 1}. {q.question_text}
-                                      </p>
-                                      <div className="grid grid-cols-1 gap-2 pl-3">
-                                        {(q.options || []).map(
-                                          (opt: string, optIdx: number) => {
-                                            const isSelected =
-                                              quizAnswers[idx] === optIdx;
-                                            return (
-                                              <button
-                                                key={optIdx}
-                                                type="button"
-                                                onClick={() =>
-                                                  setQuizAnswers((prev) => ({
-                                                    ...prev,
-                                                    [idx]: optIdx,
-                                                  }))
-                                                }
-                                                className={`p-3 text-left text-xs rounded-xl border transition-all cursor-pointer ${
-                                                  isSelected
-                                                    ? "bg-gold/10 border-gold text-gold font-semibold"
-                                                    : "bg-white dark:bg-slate-950 border-gray-200 dark:border-white/5 hover:border-gray-300"
-                                                }`}
-                                              >
-                                                {opt}
-                                              </button>
-                                            );
-                                          },
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-
-                                  <div className="pt-4 border-t border-gray-150 dark:border-white/5 flex justify-end">
-                                    <button
-                                      onClick={handleQuizSubmit}
-                                      disabled={
-                                        Object.keys(quizAnswers).length <
-                                        questions.length
-                                      }
-                                      className="px-6 py-2.5 bg-gold hover:bg-yellow-600 disabled:bg-gray-250 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                    >
-                                      Enviar Cuestionario
-                                    </button>
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        )}
+                      <div className="bg-slate-50 dark:bg-slate-900/30 p-2 md:p-6 rounded-2xl border border-gray-150 dark:border-white/5">
+                        <QuizPlayer 
+                          lessonId={activeLesson.id} 
+                          onComplete={() => {
+                            if (!completions[activeLesson.id]) {
+                              handleMarkComplete(activeLesson.id);
+                            }
+                          }}
+                        />
                       </div>
                     )}
 

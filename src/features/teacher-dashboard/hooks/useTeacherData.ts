@@ -111,22 +111,23 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     enabled: !!selectedCourseId && activeTab === 'students',
   });
 
-  const { data: planningData = { materials: [], activities: [] } } = useQuery({
+  const { data: planningData = { modules: [], materials: [], activities: [], resources: [] } } = useQuery({
     queryKey: ['course-planning', selectedCourseId],
     queryFn: async () => {
       const { data: modules } = await supabase
         .from('lms_modules')
-        .select('id')
-        .eq('course_id', selectedCourseId);
+        .select('*')
+        .eq('course_id', selectedCourseId)
+        .order('order_index', { ascending: true });
       const moduleIds = modules?.map(m => m.id) || [];
-      if (moduleIds.length === 0) return { materials: [], activities: [] };
+      if (moduleIds.length === 0) return { modules: [], materials: [], activities: [], resources: [] };
 
       const [{ data: materialsData }, { data: evalData }, { data: resourcesData }] = await Promise.all([
         supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['video', 'pdf', 'zoom']),
         supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['assignment', 'quiz']),
         supabase.from('lms_course_resources').select('*').eq('course_id', selectedCourseId)
       ]);
-      return { materials: materialsData || [], activities: evalData || [], resources: resourcesData || [] };
+      return { modules: modules || [], materials: materialsData || [], activities: evalData || [], resources: resourcesData || [] };
     },
     enabled: !!selectedCourseId && activeTab === 'planning',
   });
@@ -242,6 +243,7 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     students,
     sessions,
     groups,
+    modules: planningData.modules,
     materials: planningData.materials,
     resources: planningData.resources,
     activities: planningData.activities,

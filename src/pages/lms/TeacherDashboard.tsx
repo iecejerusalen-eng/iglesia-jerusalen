@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon } from 'lucide-react';
+import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 import { useTeacherData } from '../../features/teacher-dashboard/hooks/useTeacherData';
@@ -11,8 +11,10 @@ import { StudentsTab } from '../../features/teacher-dashboard/components/Student
 import { PlanningTab } from '../../features/teacher-dashboard/components/PlanningTab';
 import { CommunicationTab } from '../../features/teacher-dashboard/components/CommunicationTab';
 import { GradesTab } from '../../features/teacher-dashboard/components/GradesTab';
+import { ComplianceTab } from '../../features/teacher-dashboard/components/ComplianceTab';
 import { IntegrationsTab } from '../../features/teacher-dashboard/components/IntegrationsTab';
 import { OverviewTab } from '../../features/teacher-dashboard/components/OverviewTab';
+import { QuestionBankTab } from '../../features/teacher-dashboard/components/QuestionBankTab';
 import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
 import { GroupManager } from '../../features/lms/components/GroupManager';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
@@ -39,6 +41,7 @@ export default function TeacherDashboard() {
     students,
     sessions = [],
     groups = [],
+    modules = [],
     materials = [],
     resources = [],
     activities,
@@ -126,7 +129,9 @@ export default function TeacherDashboard() {
             { id: 'calendar', label: 'Horarios y Agenda', icon: CalendarIcon },
             { id: 'students', label: 'Alumnos y Aulas', icon: Users },
             { id: 'planning', label: 'Planificación', icon: BookOpen },
+            { id: 'questions', label: 'Banco de Preguntas', icon: BookOpen },
             { id: 'grades', label: 'Calificaciones', icon: Award },
+            { id: 'compliance', label: 'Incumplimientos', icon: AlertTriangle },
             { id: 'comm', label: 'Comunicación', icon: MessageSquare },
             { id: 'integrations', label: 'Integraciones', icon: MonitorPlay }
           ].map((tab) => (
@@ -197,10 +202,18 @@ export default function TeacherDashboard() {
 
             {activeTab === 'planning' && (
               <PlanningTab
+                modules={modules}
                 materials={materials}
                 activities={activities}
                 resources={resources}
                 courseId={selectedCourseId}
+              />
+            )}
+
+            {activeTab === 'questions' && (
+              <QuestionBankTab
+                courseId={selectedCourseId}
+                courses={courses}
               />
             )}
 
@@ -211,6 +224,15 @@ export default function TeacherDashboard() {
                 finalGrades={finalGrades}
                 courseId={selectedCourseId}
                 activities={activities}
+              />
+            )}
+
+            {activeTab === 'compliance' && (
+              <ComplianceTab
+                students={students}
+                submissions={submissions}
+                activities={activities}
+                courseId={selectedCourseId}
               />
             )}
 

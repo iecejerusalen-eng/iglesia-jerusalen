@@ -33,13 +33,16 @@ ALTER TABLE public.lms_activity_resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_resource_progress ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de RLS
+DROP POLICY IF EXISTS "Public can read activity resources" ON public.lms_activity_resources;
 CREATE POLICY "Public can read activity resources" ON public.lms_activity_resources 
 FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Admins and teachers can manage activity resources" ON public.lms_activity_resources;
 CREATE POLICY "Admins and teachers can manage activity resources" ON public.lms_activity_resources 
 FOR ALL TO authenticated USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can manage their own resource progress" ON public.lms_resource_progress;
 CREATE POLICY "Users can manage their own resource progress" ON public.lms_resource_progress 
 FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());

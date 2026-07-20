@@ -23,11 +23,13 @@ ALTER TABLE public.lms_study_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_study_streaks ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de RLS
+DROP POLICY IF EXISTS "Users can manage their own study sessions" ON public.lms_study_sessions;
 CREATE POLICY "Users can manage their own study sessions" ON public.lms_study_sessions 
 FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Users can manage their own study streaks" ON public.lms_study_streaks 
-FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Users can view their own streaks" ON public.lms_study_streaks;
+CREATE POLICY "Users can view their own streaks" ON public.lms_study_streaks 
+FOR SELECT TO authenticated USING (user_id = auth.uid());
 
 -- Vista materializada no se usa en Supabase directamente si queremos realtime o policies. 
 -- Crearemos una función o vista estándar.

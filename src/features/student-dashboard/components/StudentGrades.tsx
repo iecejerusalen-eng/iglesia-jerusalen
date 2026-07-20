@@ -14,9 +14,19 @@ interface GradeRecord {
   lms_subjects?: { name: string };
 }
 
+interface QuizResult {
+  attempt_id: string;
+  lesson_id: string;
+  lesson_title: string;
+  status: string;
+  score: number;
+  completed_at: string;
+}
+
 export function StudentGrades() {
   const { user } = useAuthStore();
   const [grades, setGrades] = useState<GradeRecord[]>([]);
+  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +89,18 @@ export function StudentGrades() {
         });
 
         setGrades(enrichedGrades);
+
+        // Fetch quiz results
+        const { data: quizData, error: quizError } = await supabase
+          .from('lms_quiz_results_view')
+          .select('*')
+          .eq('student_id', user.id)
+          .not('status', 'eq', 'in_progress')
+          .order('completed_at', { ascending: false });
+          
+        if (!quizError && quizData) {
+          setQuizResults(quizData);
+        }
       } catch (err) {
         console.error('Error fetching grades:', err);
       } finally {
@@ -144,6 +166,55 @@ export function StudentGrades() {
                     </td>
                     <td className="py-4 px-4 text-right text-sm text-gray-500">
                       {new Date(grade.updated_at).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Quiz Results Section */}
+        <h3 className="text-xl font-bold font-serif mb-4 mt-8 flex items-center gap-2 text-slate-800 dark:text-white">
+          <FileText className="text-gold" size={24} />
+          Evaluaciones y Cuestionarios
+        </h3>
+
+        {quizResults.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10">
+            <p className="text-gray-500">Aún no has completado evaluaciones.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-white/10 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="pb-3 px-4">Lección / Evaluación</th>
+                  <th className="pb-3 px-4 text-center">Estado</th>
+                  <th className="pb-3 px-4 text-center">Puntuación</th>
+                  <th className="pb-3 px-4 text-right">Fecha Completado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                {quizResults.map(quiz => (
+                  <tr key={quiz.attempt_id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-4 font-medium text-slate-800 dark:text-white">
+                      {quiz.lesson_title}
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        quiz.status === 'graded' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      }`}>
+                        {quiz.status === 'graded' ? 'Calificado' : 'Completado (Pendiente)'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-center font-bold text-slate-800 dark:text-white">
+                      {quiz.score !== null ? `${quiz.score} pt(s)` : '-'}
+                    </td>
+                    <td className="py-4 px-4 text-right text-sm text-gray-500">
+                      {new Date(quiz.completed_at).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
