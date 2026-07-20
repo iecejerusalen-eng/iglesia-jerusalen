@@ -1,5 +1,4 @@
-import { Users, BookOpen, Clock, FileCheck, CheckCircle, ChevronRight, Layers, FileText } from 'lucide-react';
-import { cn } from '../../../utils/cn';
+import { Users, BookOpen, Clock, FileCheck, ChevronRight, Layers, FileText } from 'lucide-react';
 
 interface OverviewTabProps {
   studentsCount: number;
@@ -89,7 +88,7 @@ export function OverviewTab({
                 const gradedCount = activitySubmissions.filter(s => s.grade).length;
                 const totalStudentsForCourse = studentsCount; // fallback
                 
-                const ratio = \`\${gradedCount}/\${totalStudentsForCourse || activitySubmissions.length || 29}\`;
+                const ratio = `${gradedCount}/${totalStudentsForCourse || activitySubmissions.length || 29}`;
                 const isFullyGraded = gradedCount >= (totalStudentsForCourse || activitySubmissions.length || 29);
 
                 return (
@@ -111,12 +110,11 @@ export function OverviewTab({
                       </div>
                     </div>
                     
-                    <div className={cn(
-                      "px-3 py-1 rounded-full text-xs font-bold font-mono tracking-tight",
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold font-mono tracking-tight ${
                       isFullyGraded 
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" 
                         : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                    )}>
+                    }`}>
                       {ratio}
                     </div>
                   </div>
