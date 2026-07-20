@@ -219,6 +219,19 @@ const TopBar = () => {
                         <span>Panel Admin</span>
                       </Link>
                     )}
+
+                    <Link 
+                      to="/lms/estudiante" 
+                      onClick={() => setUserMenuOpen(false)}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b transition-colors ${
+                        isTransparent 
+                          ? 'text-white hover:bg-white/10 hover:text-gold border-white/10' 
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-gold border-gray-100 dark:border-white/5'
+                      }`}
+                    >
+                      <LayoutDashboard size={14} className="text-gold" />
+                      <span>Panel de Estudiante</span>
+                    </Link>
                     
                     <Link 
                       to="/mis-compras" 
