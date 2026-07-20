@@ -7,12 +7,12 @@ import { toast } from 'sonner';
 
 interface AssignmentDropzoneProps {
   courseId: string;
-  activityId: string;
+  lessonId: string;
   maxSizeMB?: number;
   onSuccess?: () => void;
 }
 
-export function AssignmentDropzone({ courseId, activityId, maxSizeMB = 5, onSuccess }: AssignmentDropzoneProps) {
+export function AssignmentDropzone({ courseId, lessonId, maxSizeMB = 5, onSuccess }: AssignmentDropzoneProps) {
   const { user } = useAuthStore();
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -28,9 +28,9 @@ export function AssignmentDropzone({ courseId, activityId, maxSizeMB = 5, onSucc
     if (!user) return;
     try {
       const { data, error } = await supabase
-        .from('lms_assignment_submissions')
+        .from('lms_lesson_submissions')
         .select('*')
-        .eq('activity_id', activityId)
+        .eq('lesson_id', lessonId)
         .eq('student_id', user.id)
         .maybeSingle();
 
@@ -41,7 +41,7 @@ export function AssignmentDropzone({ courseId, activityId, maxSizeMB = 5, onSucc
     } finally {
       setLoading(false);
     }
-  }, [activityId, user]);
+  }, [lessonId, user]);
 
   useEffect(() => {
     loadExistingSubmission();
@@ -106,7 +106,7 @@ export function AssignmentDropzone({ courseId, activityId, maxSizeMB = 5, onSucc
           fileName: file.name,
           fileType: file.type,
           courseId,
-          activityId
+          lessonId
         }
       });
 
@@ -134,9 +134,9 @@ export function AssignmentDropzone({ courseId, activityId, maxSizeMB = 5, onSucc
       // 3. Register submission in Database
       
       const { error: dbError } = await supabase
-        .from('lms_assignment_submissions')
+        .from('lms_lesson_submissions')
         .upsert({
-          activity_id: activityId,
+          lesson_id: lessonId,
           student_id: user.id,
           file_url: fileKey, // Store the key, we can reconstruct the public URL later
           submitted_at: new Date().toISOString()

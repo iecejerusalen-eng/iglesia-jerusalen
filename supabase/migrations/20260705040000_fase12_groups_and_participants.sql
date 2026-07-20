@@ -23,17 +23,20 @@ ALTER TABLE public.lms_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_group_members ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de lectura
+DROP POLICY IF EXISTS "Public read groups" ON public.lms_groups;
 CREATE POLICY "Public read groups"
     ON public.lms_groups FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Public read group members" ON public.lms_group_members;
 CREATE POLICY "Public read group members"
     ON public.lms_group_members FOR SELECT
     TO authenticated
     USING (true);
 
 -- Políticas de escritura para admin
+DROP POLICY IF EXISTS "Admin write groups" ON public.lms_groups;
 CREATE POLICY "Admin write groups"
     ON public.lms_groups FOR ALL
     TO authenticated
@@ -46,6 +49,7 @@ CREATE POLICY "Admin write groups"
     )
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admin write group members" ON public.lms_group_members;
 CREATE POLICY "Admin write group members"
     ON public.lms_group_members FOR ALL
     TO authenticated

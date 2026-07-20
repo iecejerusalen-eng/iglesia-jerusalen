@@ -18,6 +18,8 @@ import { SyncLinksManager } from "../../features/lms/components/SyncLinksManager
 import { AssignmentDropzone } from "../../features/lms/components/AssignmentDropzone";
 import { ForumViewer } from "../../features/lms/components/ForumViewer";
 import { Leaderboard } from "../../features/lms/components/Leaderboard";
+import { CircularProgress } from "../../components/ui/CircularProgress";
+import { NextUpWidget } from "../../features/student-dashboard/components/NextUpWidget";
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +31,8 @@ export default function CourseViewer() {
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [badgeAwarded, setBadgeAwarded] = useState(false);
 
@@ -152,17 +156,6 @@ export default function CourseViewer() {
         }
       }
 
-      // 6. Fetch completions
-      const { data: completionsData } = await supabase
-        .from("lms_lesson_completions")
-        .select("lesson_id, is_completed")
-        .eq("student_id", user?.id);
-
-      const completionMap: Record<string, boolean> = {};
-      (completionsData || []).forEach((c) => {
-        completionMap[c.lesson_id] = c.is_completed;
-      });
-      setCompletions(completionMap);
     } catch (err) {
       console.error("Error fetching course outline:", err);
       toast.error("Error al cargar la información del aula.");
@@ -301,7 +294,6 @@ export default function CourseViewer() {
       setQuizSubmitted(true);
       toast.success(`Cuestionario calificado: ${finalScore}/10`);
 
-      // Auto complete the lesson if score is above passing grade (e.g. 7)
       if (finalScore >= 7) {
         await toggleLessonCompletion(activeLesson.id, true);
       }
@@ -322,20 +314,20 @@ export default function CourseViewer() {
 
     try {
       if (targetStatus) {
-        const { error } = await supabase.from("lms_lesson_completions").upsert([
+        const { error } = await supabase.from("lms_student_progress").upsert([
           {
             lesson_id: lessonId,
-            student_id: user?.id,
+            user_id: user?.id,
             is_completed: true,
           },
         ]);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from("lms_lesson_completions")
+          .from("lms_student_progress")
           .delete()
           .eq("lesson_id", lessonId)
-          .eq("student_id", user?.id);
+          .eq("user_id", user?.id);
         if (error) throw error;
       }
 
@@ -364,7 +356,6 @@ export default function CourseViewer() {
 
   const awardCompletionBadge = async () => {
     try {
-      // Check if badge already exists
       const { data: existingBadge } = await supabase
         .from("lms_student_badges")
         .select("id")
@@ -374,7 +365,6 @@ export default function CourseViewer() {
         .single();
 
       if (!existingBadge) {
-        // Insert badge
         const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gold w-full h-full"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>`;
 
         await supabase.from("lms_student_badges").insert([
@@ -424,7 +414,6 @@ export default function CourseViewer() {
 
   return (
     <div className="min-h-screen pt-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-gray-150 transition-colors flex flex-col">
-      {/* Top Banner / Navbar */}
       <div className="bg-white dark:bg-slate-900 border-b border-gray-250 dark:border-white/10 py-4 px-6 sticky top-20 z-20 flex justify-between items-center shadow-xs">
         <div className="flex items-center gap-3">
           <Link
@@ -443,7 +432,6 @@ export default function CourseViewer() {
           </div>
         </div>
 
-        {/* Progress Circular/Badge */}
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs text-gray-400 font-semibold">
@@ -471,7 +459,6 @@ export default function CourseViewer() {
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 relative pb-20">
-          {/* Hero Banner */}
           <div className="relative w-full h-64 md:h-80 bg-slate-900 overflow-hidden">
             {course.cover_image_url ? (
               <img
@@ -503,7 +490,6 @@ export default function CourseViewer() {
             </div>
           </div>
 
-          {/* Nav Tabs */}
           <div className="sticky top-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 px-4">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar py-2">
@@ -515,6 +501,24 @@ export default function CourseViewer() {
                   className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "general" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 >
                   Información General
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTabId('materiales');
+                    setActiveLesson(null);
+                  }}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "materiales" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                >
+                  Materiales
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTabId('forum');
+                    setActiveLesson(null);
+                  }}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "forum" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                >
+                  Foros de Debate
                 </button>
                 {modules
                   .filter(
@@ -560,18 +564,60 @@ export default function CourseViewer() {
                   exit={{ opacity: 0, y: -20 }}
                   className="space-y-8 relative z-10"
                 >
+                  {/* Tab: Foro */}
+                  {activeTabId === "forum" && (
+                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+                      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Foros de Debate</h2>
+                      <ForumViewer courseId={id || ''} />
+                    </div>
+                  )}
+
                   <SyncLinksManager courseId={id || ""} />
 
                   <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-gray-150 dark:border-white/10 shadow-sm">
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4">
-                      Acerca de este curso
-                    </h2>
-                    <RichTextRenderer
-                      className="prose dark:prose-invert max-w-none text-slate-700 dark:text-gray-300"
-                      html={DOMPurify.sanitize(
-                        course.long_description || course.description || "",
-                      )}
-                    />
+                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4">
+                          Acerca de este curso
+                        </h2>
+                        <RichTextRenderer
+                          className="prose dark:prose-invert max-w-none text-slate-700 dark:text-gray-300"
+                          html={DOMPurify.sanitize(
+                            course.long_description || course.description || "",
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="w-full md:w-80 space-y-6">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+                          <CircularProgress 
+                            percentage={lessons.length > 0 ? (Object.values(completions).filter(Boolean).length / lessons.length) * 100 : 0} 
+                            size={120} 
+                            strokeWidth={8} 
+                          />
+                          <h3 className="mt-4 font-bold text-slate-800 dark:text-white">Progreso del Curso</h3>
+                          <p className="text-sm text-gray-500">
+                            {Object.values(completions).filter(Boolean).length} de {lessons.length} lecciones completadas
+                          </p>
+                        </div>
+                        
+                        {(() => {
+                          const nextLesson = lessons.find(l => !completions[l.id]);
+                          if (nextLesson) {
+                            return (
+                              <NextUpWidget 
+                                courseId={id || ""}
+                                courseTitle={course?.title || ""}
+                                lessonTitle={nextLesson.title}
+                                type={nextLesson.type}
+                                timeEstimate={nextLesson.estimated_minutes || 15}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </div>
                   </div>
                     
                   <div className="mt-8">
@@ -635,6 +681,18 @@ export default function CourseViewer() {
                           Completado
                         </span>
                       )}
+                      <button
+                        onClick={() => {
+                          setActiveTabId('forum');
+                          if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-colors flex items-center gap-3 ${
+                          activeTabId === 'forum' ? 'bg-gold/10 text-gold' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <MessageSquare size={18} />
+                        Foros de Debate
+                      </button>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-slate-900 dark:text-white tracking-tight">
                       {activeLesson.title}

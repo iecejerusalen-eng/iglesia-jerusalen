@@ -40,6 +40,7 @@ export default function TeacherDashboard() {
     sessions = [],
     groups = [],
     materials = [],
+    resources = [],
     activities,
     submissions,
     announcements,
@@ -187,7 +188,7 @@ export default function TeacherDashboard() {
                     e.preventDefault();
                     createGroupMutation.mutate({ name, description: desc });
                   }}
-                  onAttendanceChange={(sessionId: string, studentId: string, status: 'present'|'absent'|'late'|'excused') => 
+                  onAttendanceChange={(sessionId: string, studentId: string, status: 'present'|'zoom'|'absent'|'late'|'excused') => 
                     updateAttendance.mutate({ sessionId, studentId, status })
                   }
                 />
@@ -198,6 +199,8 @@ export default function TeacherDashboard() {
               <PlanningTab
                 materials={materials}
                 activities={activities}
+                resources={resources}
+                courseId={selectedCourseId}
               />
             )}
 
@@ -207,11 +210,12 @@ export default function TeacherDashboard() {
                 submissions={submissions}
                 finalGrades={finalGrades}
                 courseId={selectedCourseId}
+                activities={activities}
               />
             )}
 
             {activeTab === 'comm' && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <CommunicationTab
                   students={students}
                   announcements={announcements}
@@ -222,7 +226,12 @@ export default function TeacherDashboard() {
                   }}
                   onAddTutoring={(data: any) => addTutoring.mutate(data)}
                 />
-                <ForumManager courseId={selectedCourseId} />
+                <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm">
+                  <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white mb-4">
+                    Foros de Debate
+                  </h3>
+                  <ForumManager courseId={selectedCourseId} />
+                </div>
               </div>
             )}
 

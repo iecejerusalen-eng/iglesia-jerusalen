@@ -11,12 +11,18 @@ interface GradesTabProps {
   submissions: any[];
   finalGrades: any[];
   courseId: string;
+  activities?: any[];
 }
 
-export function GradesTab({ students, submissions, finalGrades = [], courseId }: GradesTabProps) {
+export function GradesTab({ students, submissions, finalGrades = [], courseId, activities = [] }: GradesTabProps) {
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [editGrade, setEditGrade] = useState<string>('');
   const [editComment, setEditComment] = useState<string>('');
+  
+  const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(null);
+  const [editSubGrade, setEditSubGrade] = useState<string>('');
+  const [editSubComment, setEditSubComment] = useState<string>('');
+  
   const [isSaving, setIsSaving] = useState(false);
 
   // We should also have access to enrollment mapping to find the enrollment_id for each student.
@@ -136,10 +142,37 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId }:
       
       toast.success('Calificación final guardada correctamente');
       setEditingStudentId(null);
-      // Let the react-query auto-refetch handle the UI update (we assume the parent will refetch on focus or interval)
-      // For immediate response, one would invalidate the query, but a page refresh/tab switch also does it.
     } catch (err: any) {
       toast.error('Error al guardar: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditSubmission = (sub: any) => {
+    setEditingSubmissionId(sub.id);
+    setEditSubGrade(sub.grade || '');
+    setEditSubComment(sub.teacher_feedback || '');
+  };
+
+  const handleSaveSubmissionGrade = async (subId: string) => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('lms_lesson_submissions')
+        .update({
+          grade: editSubGrade,
+          teacher_feedback: editSubComment,
+          graded_at: new Date().toISOString()
+        })
+        .eq('id', subId);
+
+      if (error) throw error;
+      toast.success('Calificación de entrega guardada correctamente');
+      setEditingSubmissionId(null);
+      // Wait for react-query to refetch or we can manually reload
+    } catch (err: any) {
+      toast.error('Error al calificar entrega: ' + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -208,6 +241,122 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId }:
             )}
           </div>
         </div>
+      </div>
+
+      {/* Tareas Individuales */}
+      <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
+        <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+          <Award size={18} className="text-gold" />
+          Revisión de Tareas Individuales
+        </h3>
+        
+        {submissions.length === 0 ? (
+          <p className="text-xs text-gray-500">No hay entregas pendientes.</p>
+        ) : (
+          <div className="overflow-x-auto border border-gray-100 dark:border-white/5 rounded-xl">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-800/40 border-b border-gray-250 dark:border-white/5">
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Lección/Tarea</th>
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Estudiante</th>
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Archivo</th>
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Nota</th>
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400">Retroalimentación</th>
+                  <th className="p-3.5 font-bold text-xs text-gray-500 dark:text-gray-400 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map(sub => {
+                  const isEditing = editingSubmissionId === sub.id;
+                  const lessonName = activities?.find(a => a.id === sub.lesson_id)?.title || 'Tarea';
+                  
+                  return (
+                    <tr key={sub.id} className="border-b border-gray-100 dark:border-white/5 last:border-none hover:bg-gray-50/50">
+                      <td className="p-3.5 text-xs text-slate-800 dark:text-white font-medium">{lessonName}</td>
+                      <td className="p-3.5 text-xs text-slate-800 dark:text-white">
+                        {sub.profiles?.first_name} {sub.profiles?.last_name}
+                      </td>
+                      <td className="p-3.5 text-xs">
+                        {sub.file_url ? (
+                          <a 
+                            href={`https://jerusalen.nyc3.cdn.digitaloceanspaces.com/lms-assignments/${sub.file_url}`} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                          >
+                            <FileDown size={14} /> Ver Archivo
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">Sin archivo</span>
+                        )}
+                      </td>
+                      <td className="p-3.5">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={editSubGrade}
+                            onChange={(e) => setEditSubGrade(e.target.value)}
+                            className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
+                            placeholder="0-10"
+                            step="0.1"
+                            max="10"
+                          />
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.grade ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+                            {sub.grade ? `${sub.grade} / 10` : 'Pdte'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editSubComment}
+                            onChange={(e) => setEditSubComment(e.target.value)}
+                            className="w-full min-w-[150px] px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-slate-800 outline-none focus:border-gold"
+                            placeholder="Buen trabajo..."
+                          />
+                        ) : (
+                          <div className="text-xs text-gray-500 max-w-[200px] truncate" title={sub.teacher_feedback}>
+                            {sub.teacher_feedback || '-'}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-right">
+                        {isEditing ? (
+                          <div className="flex justify-end gap-1">
+                            <button 
+                              disabled={isSaving}
+                              onClick={() => handleSaveSubmissionGrade(sub.id)}
+                              className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded cursor-pointer"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button 
+                              disabled={isSaving}
+                              onClick={() => setEditingSubmissionId(null)}
+                              className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded cursor-pointer"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditSubmission(sub)}
+                            className="p-1.5 text-gray-400 hover:text-gold hover:bg-gold/10 rounded cursor-pointer"
+                            title="Calificar Entrega"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">

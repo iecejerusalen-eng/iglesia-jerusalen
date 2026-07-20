@@ -114,18 +114,19 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
   const { data: planningData = { materials: [], activities: [] } } = useQuery({
     queryKey: ['course-planning', selectedCourseId],
     queryFn: async () => {
-      const { data: sections } = await supabase
-        .from('lms_sections')
+      const { data: modules } = await supabase
+        .from('lms_modules')
         .select('id')
         .eq('course_id', selectedCourseId);
-      const sectionIds = sections?.map(s => s.id) || [];
-      if (sectionIds.length === 0) return { materials: [], activities: [] };
+      const moduleIds = modules?.map(m => m.id) || [];
+      if (moduleIds.length === 0) return { materials: [], activities: [] };
 
-      const [{ data: materialsData }, { data: evalData }] = await Promise.all([
-        supabase.from('lms_activities').select('*').in('section_id', sectionIds).eq('type', 'resource'),
-        supabase.from('lms_activities').select('*').in('section_id', sectionIds).in('type', ['assignment', 'quiz'])
+      const [{ data: materialsData }, { data: evalData }, { data: resourcesData }] = await Promise.all([
+        supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['video', 'pdf', 'zoom']),
+        supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['assignment', 'quiz']),
+        supabase.from('lms_course_resources').select('*').eq('course_id', selectedCourseId)
       ]);
-      return { materials: materialsData || [], activities: evalData || [] };
+      return { materials: materialsData || [], activities: evalData || [], resources: resourcesData || [] };
     },
     enabled: !!selectedCourseId && activeTab === 'planning',
   });
@@ -133,25 +134,25 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
   const { data: submissions = [] } = useQuery({
     queryKey: ['course-submissions', selectedCourseId],
     queryFn: async () => {
-      const { data: sections } = await supabase
-        .from('lms_sections')
+      const { data: modules } = await supabase
+        .from('lms_modules')
         .select('id')
         .eq('course_id', selectedCourseId);
-      const sectionIds = sections?.map(s => s.id) || [];
-      if (sectionIds.length === 0) return [];
+      const moduleIds = modules?.map(m => m.id) || [];
+      if (moduleIds.length === 0) return [];
       
-      const { data: evalData } = await supabase
-        .from('lms_activities')
+      const { data: lessonsData } = await supabase
+        .from('lms_lessons')
         .select('id, title, type')
-        .in('section_id', sectionIds)
+        .in('module_id', moduleIds)
         .in('type', ['assignment', 'quiz']);
-      const activityIds = evalData?.map(a => a.id) || [];
-      if (activityIds.length === 0) return [];
+      const lessonIds = lessonsData?.map(a => a.id) || [];
+      if (lessonIds.length === 0) return [];
 
       const { data: subsData } = await supabase
-        .from('lms_assignment_submissions')
+        .from('lms_lesson_submissions')
         .select('*')
-        .in('activity_id', activityIds);
+        .in('lesson_id', lessonIds);
       if (!subsData?.length) return [];
 
       const studentIds = [...new Set(subsData.map(s => s.student_id))];
@@ -242,6 +243,7 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     sessions,
     groups,
     materials: planningData.materials,
+    resources: planningData.resources,
     activities: planningData.activities,
     submissions,
     announcements: commData.announcements,
@@ -259,7 +261,7 @@ export function useSessionAttendance(sessionId: string | undefined) {
         .from('lms_attendance')
         .select('student_id, status')
         .eq('session_id', sessionId);
-      const map: Record<string, 'present' | 'absent' | 'late' | 'excused'> = {};
+      const map: Record<string, 'present' | 'zoom' | 'absent' | 'late' | 'excused'> = {};
       data?.forEach(item => {
         map[item.student_id] = item.status;
       });

@@ -8,7 +8,7 @@ interface StudentsTabProps {
   groups: any[];
   onAddSession: (e: React.FormEvent, title: string, date: string) => void;
   onAddGroup: (e: React.FormEvent, name: string, desc: string) => void;
-  onAttendanceChange: (sessionId: string, studentId: string, status: 'present'|'absent'|'late'|'excused') => void;
+  onAttendanceChange: (sessionId: string, studentId: string, status: 'present'|'zoom'|'absent'|'late'|'excused') => void;
 }
 
 export function StudentsTab({
@@ -159,9 +159,19 @@ export function StudentsTab({
                         className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase transition-all cursor-pointer ${
                           status === 'present' ? 'bg-green-500 text-white shadow-2xs' : 'text-gray-400 hover:text-green-500'
                         }`}
-                        title="Presente"
+                        title="Presente Presencial"
                       >
                         P
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onAttendanceChange(selectedSession, std.id, 'zoom')}
+                        className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase transition-all cursor-pointer ${
+                          status === 'zoom' ? 'bg-indigo-500 text-white shadow-2xs' : 'text-gray-400 hover:text-indigo-500'
+                        }`}
+                        title="Presente Zoom"
+                      >
+                        Z
                       </button>
                       <button
                         type="button"

@@ -83,7 +83,7 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
   });
 
   const updateAttendance = useMutation({
-    mutationFn: async ({ sessionId, studentId, status }: { sessionId: string; studentId: string; status: 'present'|'absent'|'late'|'excused' }) => {
+    mutationFn: async ({ sessionId, studentId, status }: { sessionId: string; studentId: string; status: 'present'|'zoom'|'absent'|'late'|'excused' }) => {
       const { error } = await supabase
         .from('lms_attendance')
         .upsert([{ session_id: sessionId, student_id: studentId, status }], { onConflict: 'session_id,student_id' });
