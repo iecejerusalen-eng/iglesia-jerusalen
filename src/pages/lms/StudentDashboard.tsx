@@ -14,6 +14,7 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
 import { ProgressHero } from '../../features/student-dashboard/components/ProgressHero';
 import { NextUpWidget } from '../../features/student-dashboard/components/NextUpWidget';
+import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -197,6 +198,17 @@ export default function StudentDashboard() {
               timeEstimate={15}
             />
           )}
+
+          {/* New Pending Tasks Widget */}
+          <div className="lg:col-span-2">
+            <PendingTasksWidget 
+              tasks={[
+                { id: '1', title: 'Ensayo sobre historia contemporánea', courseTitle: 'Ciencias Sociales', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 12), status: 'PENDING' },
+                { id: '2', title: 'Resolución de problemas algebraicos', courseTitle: 'Matemáticas Avanzadas', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), status: 'PENDING' },
+                { id: '3', title: 'Lectura Comprensiva Capítulo 4', courseTitle: 'Lenguaje y Comunicación', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5), status: 'PENDING' }
+              ]} 
+            />
+          </div>
         </div>
       </div>
 
