@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
+import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon, AlertTriangle, CheckSquare } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 import { useTeacherData } from '../../features/teacher-dashboard/hooks/useTeacherData';
@@ -15,6 +15,7 @@ import { ComplianceTab } from '../../features/teacher-dashboard/components/Compl
 import { IntegrationsTab } from '../../features/teacher-dashboard/components/IntegrationsTab';
 import { OverviewTab } from '../../features/teacher-dashboard/components/OverviewTab';
 import { QuestionBankTab } from '../../features/teacher-dashboard/components/QuestionBankTab';
+import { ClassesTab } from '../../features/teacher-dashboard/components/ClassesTab';
 import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
 import { GroupManager } from '../../features/lms/components/GroupManager';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
@@ -126,6 +127,7 @@ export default function TeacherDashboard() {
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-8 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-150 dark:border-white/5 shadow-sm">
           {[
             { id: 'overview', label: 'Resumen', icon: LayoutTemplate },
+            { id: 'classes', label: 'Mis Clases (Diario)', icon: CheckSquare },
             { id: 'calendar', label: 'Horarios y Agenda', icon: CalendarIcon },
             { id: 'students', label: 'Alumnos y Aulas', icon: Users },
             { id: 'planning', label: 'Planificación', icon: BookOpen },
@@ -168,6 +170,10 @@ export default function TeacherDashboard() {
                 courses={courses}
                 activities={activities}
               />
+            )}
+
+            {activeTab === 'classes' && (
+              <ClassesTab />
             )}
 
             {activeTab === 'calendar' && (
