@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { getDb } from '../../config/localDb';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import {
   Calendar, User, ArrowLeft, RefreshCw, FileText,
   Save, AlertTriangle, Bold, Italic, List, ListOrdered,
-  Heading2, Heading3, Undo, Redo
+  Heading2, Heading3, Undo, Redo, Edit2
 } from 'lucide-react';
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
@@ -55,7 +55,8 @@ const SermonDetail = () => {
     },
   });
 
-  const fetchSermonAndNotes = async () => {
+
+  const fetchSermonAndNotes = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -84,11 +85,11 @@ const SermonDetail = () => {
       // Fetch user note if authenticated
       if (user && activeSermon) {
         // Try local IDB first
-        let cachedNotes: any[] = [];
+        let cachedNotes: { id: string; user_id: string; sermon_id: string; content?: string }[] = [];
         try {
           const db = await getDb();
           const allNotes = await db.getAll('local_sermon_notes');
-          cachedNotes = allNotes.filter(n => n.user_id === user.id && n.sermon_id === activeSermon.id);
+          cachedNotes = allNotes.filter((n: { user_id: string; sermon_id: string; [key: string]: unknown }) => n.user_id === user.id && n.sermon_id === activeSermon.id) as typeof cachedNotes;
         } catch (idbErr) {
           console.warn('IDB sermon notes fetch failed, falling back to Supabase:', idbErr);
         }
@@ -126,11 +127,14 @@ const SermonDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user, editor]);
 
   useEffect(() => {
-    fetchSermonAndNotes();
-  }, [id, user, !!editor]);
+    const load = async () => {
+      await fetchSermonAndNotes();
+    };
+    load();
+  }, [fetchSermonAndNotes]);
 
   const handleSaveNotes = async () => {
     if (!user) {
@@ -256,6 +260,12 @@ const SermonDetail = () => {
                   year: 'numeric'
                 })}
               </span>
+              {sermon.editors && sermon.editors.length > 0 && (
+                <span className="flex items-center gap-1.5 text-xs italic opacity-80" title="Editores / Creadores">
+                  <Edit2 size={14} className="text-gray-400" />
+                  Editado por: {sermon.editors.join(', ')}
+                </span>
+              )}
             </div>
           </div>
 

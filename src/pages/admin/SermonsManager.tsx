@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import BlockEditor from '../../components/admin/BlockEditor';
@@ -53,6 +54,9 @@ const getFirstDayOfMonth = (year: number, month: number) => {
 const SermonsManager = () => {
   const { isReadOnly } = usePermissions();
   const readOnly = isReadOnly('sermons');
+  const { firstName, lastName } = useAuthStore();
+  const currentEditorName = [firstName, lastName].filter(Boolean).join(' ') || 'Editor Desconocido';
+  
   const confirm = useConfirmStore((state) => state.confirm);
   const [sermons, setSermons] = useState<Sermon[]>([]);
   const [categories, setCategories] = useState<SermonCategory[]>([]);
@@ -175,7 +179,7 @@ const SermonsManager = () => {
         }
       }
 
-      const payload = {
+      const payload: any = {
         title: data.title,
         pastor_name: data.pastor_name,
         date: data.date,
@@ -186,10 +190,12 @@ const SermonsManager = () => {
       };
 
       if (editingSermon) {
+        payload.editors = Array.from(new Set([...(editingSermon.editors || []), currentEditorName]));
         const { error } = await supabase.from('sermons').update(payload).eq('id', editingSermon.id);
         if (error) throw error;
         toast.success('Prédica actualizada con éxito.');
       } else {
+        payload.editors = [currentEditorName];
         const { error } = await supabase.from('sermons').insert(payload);
         if (error) throw error;
         toast.success('Prédica publicada con éxito.');
@@ -281,6 +287,7 @@ const SermonsManager = () => {
               <th className="py-4 px-6">Prédica</th>
               <th className="py-4 px-6">Categoría</th>
               <th className="py-4 px-6">Pastor / Predicador</th>
+              <th className="py-4 px-6">Editores</th>
               <th className="py-4 px-6">Fecha</th>
               <th className="py-4 px-6 text-right">Acciones</th>
             </tr>
@@ -318,6 +325,9 @@ const SermonsManager = () => {
                 </td>
                 <td className="py-4 px-6 text-gray-600 dark:text-gray-400 font-medium">
                   {sermon.pastor_name}
+                </td>
+                <td className="py-4 px-6 text-gray-500 dark:text-gray-450 text-xs">
+                  {sermon.editors && sermon.editors.length > 0 ? sermon.editors.join(', ') : '—'}
                 </td>
                 <td className="py-4 px-6 text-gray-400 text-xs font-medium">
                   {sermon.date ? new Date(sermon.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha'}
@@ -367,7 +377,10 @@ const SermonsManager = () => {
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/10">
               <div>
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{sermon.pastor_name}</p>
-                <p className="text-[10px] text-gray-400">{sermon.date}</p>
+                {sermon.editors && sermon.editors.length > 0 && (
+                  <p className="text-[10px] text-gray-500 italic mt-0.5">Por: {sermon.editors.join(', ')}</p>
+                )}
+                <p className="text-[10px] text-gray-400 mt-1">{sermon.date}</p>
               </div>
               <div className="flex gap-1">
                 {!readOnly && (
@@ -412,6 +425,9 @@ const SermonsManager = () => {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate">{sermon.title}</h4>
                       <p className="text-xs text-gray-500 mt-1">{sermon.date}</p>
+                      {sermon.editors && sermon.editors.length > 0 && (
+                        <p className="text-[10px] text-gray-400 italic truncate mt-0.5">Por: {sermon.editors.join(', ')}</p>
+                      )}
                       <button onClick={() => handleOpenEdit(sermon)} className="text-primary text-xs font-semibold mt-2 hover:underline">Ver / Editar</button>
                     </div>
                  </div>
