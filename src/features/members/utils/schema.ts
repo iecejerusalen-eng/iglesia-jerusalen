@@ -54,6 +54,11 @@ export const memberSchema = z.object({
   is_studying: z.boolean().optional(),
   studying_career_id: z.string().nullable().optional().or(z.literal('')),
   dedicated_verse: z.string().optional().nullable().or(z.literal('')),
+  gender: z.enum(['Masculino', 'Femenino', 'Otro']).nullable().optional().or(z.literal('')),
+  marital_status: z.string().nullable().optional().or(z.literal('')),
+  birth_place: z.string().nullable().optional().or(z.literal('')),
+  has_disability: z.boolean().optional(),
+  disability_types: z.array(z.string()).nullable().optional(),
 });
 
 export type MemberForm = z.infer<typeof memberSchema>;
@@ -98,6 +103,11 @@ export interface LocalMemberRow {
   leadership_role?: string | null;
   ministry_id?: string | null;
   role_id?: string | null;
+  marital_status?: string | null;
+  gender?: string | null;
+  birth_place?: string | null;
+  has_disability?: number; // SQLite stores booleans as 0/1
+  disability_types?: string | null; // SQLite stores arrays as JSON string
   tithes_sum?: number;
   education_level?: string | null;
   career_id?: string | null;

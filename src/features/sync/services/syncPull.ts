@@ -37,7 +37,11 @@ export const pullFromServer = async () => {
             gender: m.gender || null, education_level: m.education_level || null, career_id: m.career_id || null,
             is_studying: m.is_studying ? 1 : 0, studying_career_id: m.studying_career_id || null,
             phone_country_code: m.phone_country_code || '+593',
-            dedicated_verse: m.dedicated_verse || null
+            dedicated_verse: m.dedicated_verse || null,
+            marital_status: m.marital_status || null,
+            birth_place: m.birth_place || null,
+            has_disability: m.has_disability ? 1 : 0,
+            disability_types: m.disability_types ? JSON.stringify(m.disability_types) : '[]'
         });
       }
       await tx.done;

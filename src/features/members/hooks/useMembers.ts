@@ -37,6 +37,8 @@ export const useMembers = () => {
           ...m,
           is_leader: m.is_leader === 1,
           is_studying: m.is_studying === 1,
+          has_disability: m.has_disability === 1,
+          disability_types: m.disability_types ? JSON.parse(m.disability_types) : [],
           member_emails: m.emails ? JSON.parse(m.emails) : [],
           member_service_areas: m.service_areas ? JSON.parse(m.service_areas) : [],
           member_talents: m.talents ? JSON.parse(m.talents) : [],

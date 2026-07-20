@@ -300,7 +300,11 @@ export interface Member {
   role_id: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  marital_status?: string | null;
   gender?: 'Masculino' | 'Femenino' | 'Otro' | null;
+  birth_place?: string | null;
+  has_disability?: boolean | null;
+  disability_types?: string[] | null;
   education_level?: string | null;
   career_id?: string | null;
   is_studying?: boolean | null;

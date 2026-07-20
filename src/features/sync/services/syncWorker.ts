@@ -91,6 +91,11 @@ export const processSyncQueue = async (
                     is_studying: r.is_studying ? 1 : 0, studying_career_id: r.studying_career_id,
                     phone_country_code: r.phone_country_code || '+593',
                     dedicated_verse: r.dedicated_verse || null,
+                    marital_status: r.marital_status || null,
+                    gender: r.gender || null,
+                    birth_place: r.birth_place || null,
+                    has_disability: r.has_disability ? 1 : 0,
+                    disability_types: r.disability_types ? JSON.stringify(r.disability_types) : '[]',
                     emails: '[]', service_areas: '[]', talents: '[]', spiritual_gifts: '[]' // handled in pull
                 });
               } else if (item.table_name === 'schedules') {

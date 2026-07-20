@@ -72,8 +72,15 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       is_studying: !!editingMember?.is_studying,
       studying_career_id: editingMember?.studying_career_id || '',
       dedicated_verse: editingMember?.dedicated_verse || '',
+      gender: editingMember?.gender || null,
+      marital_status: editingMember?.marital_status || '',
+      birth_place: editingMember?.birth_place || '',
+      has_disability: !!editingMember?.has_disability,
+      disability_types: editingMember?.disability_types || [],
     }
   });
+
+  const hasDisability = watch('has_disability');
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -247,6 +254,61 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                 <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Fecha de Nacimiento</label>
                 <input type="date" {...register('birth_date')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Sexo</label>
+                <select {...register('gender')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none">
+                  <option value="">Seleccione...</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Estado Civil</label>
+                <select {...register('marital_status')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none">
+                  <option value="">Seleccione...</option>
+                  <option value="Soltero/a">Soltero/a</option>
+                  <option value="Casado/a">Casado/a</option>
+                  <option value="Divorciado/a">Divorciado/a</option>
+                  <option value="Viudo/a">Viudo/a</option>
+                  <option value="Unión Libre">Unión Libre</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Lugar de Nacimiento</label>
+                <input type="text" {...register('birth_place')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" placeholder="Ej. Guayaquil, Ecuador" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-white/5 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" {...register('has_disability')} className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary" />
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tiene algún tipo de discapacidad</span>
+              </label>
+
+              {hasDisability && (
+                <div className="pt-2">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-2">Tipos de Discapacidad</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {['Física', 'Visual', 'Auditiva', 'Intelectual', 'Psicosocial', 'Múltiple'].map(type => (
+                      <label key={type} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400">
+                        <input
+                          type="checkbox"
+                          value={type}
+                          {...register('disability_types')}
+                          className="w-3.5 h-3.5 text-primary rounded border-gray-300"
+                        />
+                        {type}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
