@@ -4,8 +4,10 @@ import type { Event as DbEvent } from '../../types';
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock,
-  Users, Layers, AlertCircle, X, CalendarDays
+  Users, Layers, AlertCircle, X, CalendarDays, FileDown
 } from 'lucide-react';
+import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
+import { exportEventsPdf } from '../../utils/calendarPdfExport';
 
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
@@ -24,6 +26,7 @@ const Events = () => {
   // Interactive details state
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
   const [detailViewType, setDetailViewType] = useState<'modal' | 'drawer'>('modal');
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -156,6 +159,23 @@ const Events = () => {
     return events.filter(event => {
       // Direct date match or between start_date and end_date
       return event.start_date <= dateStr && event.end_date >= dateStr;
+    });
+  };
+
+  const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
+    let filterLabel = '';
+    if (view === 'month') {
+      filterLabel = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    } else if (view === 'year') {
+      filterLabel = `${currentDate.getFullYear()}`;
+    } else {
+      filterLabel = 'Semana/Día';
+    }
+
+    exportEventsPdf(events, {
+      viewMode: 'calendar',
+      orientation,
+      filterLabel
     });
   };
 
@@ -296,6 +316,15 @@ const Events = () => {
               </button>
             ))}
           </div>
+
+          <button
+            onClick={() => setShowPdfDialog(true)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm border border-slate-200 dark:border-white/10"
+            title="Exportar PDF"
+          >
+            <FileDown size={16} />
+            <span className="hidden sm:inline">Imprimir PDF</span>
+          </button>
         </div>
 
         {/* Calendar Grid Container with Motion transitions */}
