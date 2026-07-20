@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck } from 'lucide-react';
@@ -52,6 +52,12 @@ export default function StudentDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('courses');
+
+  const pendingTasks = useMemo(() => [
+    { id: '1', title: 'Ensayo sobre historia contemporánea', courseTitle: 'Ciencias Sociales', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 12), status: 'PENDING' },
+    { id: '2', title: 'Resolución de problemas algebraicos', courseTitle: 'Matemáticas Avanzadas', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), status: 'PENDING' },
+    { id: '3', title: 'Lectura Comprensiva Capítulo 4', courseTitle: 'Lenguaje y Comunicación', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5), status: 'PENDING' }
+  ] as any[], []);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -245,11 +251,7 @@ export default function StudentDashboard() {
           {/* New Pending Tasks Widget */}
           <div className="lg:col-span-1">
             <PendingTasksWidget 
-              tasks={[
-                { id: '1', title: 'Ensayo sobre historia contemporánea', courseTitle: 'Ciencias Sociales', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 12), status: 'PENDING' },
-                { id: '2', title: 'Resolución de problemas algebraicos', courseTitle: 'Matemáticas Avanzadas', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), status: 'PENDING' },
-                { id: '3', title: 'Lectura Comprensiva Capítulo 4', courseTitle: 'Lenguaje y Comunicación', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5), status: 'PENDING' }
-              ]} 
+              tasks={pendingTasks} 
             />
           </div>
         </div>
