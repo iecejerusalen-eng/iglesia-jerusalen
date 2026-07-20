@@ -1,13 +1,32 @@
 import { Users, BookOpen, Clock, FileCheck, ChevronRight, Layers, FileText } from 'lucide-react';
 
+interface Submission {
+  activity_id?: string;
+  grade?: number | string | null;
+  [key: string]: unknown;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  [key: string]: unknown;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  course_id?: string;
+  [key: string]: unknown;
+}
+
 interface OverviewTabProps {
   studentsCount: number;
   coursesCount: number;
   classesToday: number;
   assignmentsToGrade: number;
-  recentSubmissions: any[];
-  courses?: any[];
-  activities?: any[];
+  recentSubmissions: Submission[];
+  courses?: Course[];
+  activities?: Activity[];
 }
 
 export function OverviewTab({
