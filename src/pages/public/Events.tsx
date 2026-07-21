@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Event as DbEvent } from '../../types';
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
@@ -8,6 +8,16 @@ import {
 } from 'lucide-react';
 import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
 import { exportEventsPdf } from '../../utils/calendarPdfExport';
+import {
+  Autocomplete,
+  AutocompleteInput,
+  AutocompletePopup,
+  AutocompleteList,
+  AutocompleteItem,
+  AutocompleteEmpty,
+  AutocompleteGroup,
+  type AutocompleteItemType,
+} from '@/components/ui/autocomplete';
 
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
@@ -27,6 +37,7 @@ const Events = () => {
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
   const [detailViewType, setDetailViewType] = useState<'modal' | 'drawer'>('modal');
   const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchEvents = async () => {
     try {
@@ -162,12 +173,37 @@ const Events = () => {
     setCurrentDate(new Date());
   };
 
-  // Filter events by date range
+  const eventAutocompleteItems: AutocompleteItemType[] = useMemo(() => {
+    return events.map((event) => {
+      const ministryName = event.ministries?.name || 'Evento General';
+      const dateText = formatEventDateRange(event.start_date, event.end_date);
+      const timeText = formatTime(event.start_time);
+
+      return {
+        value: event.id,
+        label: event.title,
+        category: ministryName,
+        description: `${dateText} (${timeText})`,
+        icon: <CalendarIcon className="w-4 h-4 text-amber-400" />,
+        rawEvent: event,
+      };
+    });
+  }, [events]);
+
+  // Filter events by date range and search query
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => {
-      // Direct date match or between start_date and end_date
-      return event.start_date <= dateStr && event.end_date >= dateStr;
+    return events.filter((event) => {
+      const isDateMatch = event.start_date <= dateStr && event.end_date >= dateStr;
+      if (!isDateMatch) return false;
+      if (!searchQuery.trim()) return true;
+
+      const q = searchQuery.toLowerCase().trim();
+      const titleMatch = event.title.toLowerCase().includes(q);
+      const descMatch = (event.description || '').toLowerCase().includes(q);
+      const ministryMatch = (event.ministries?.name || '').toLowerCase().includes(q);
+
+      return titleMatch || descMatch || ministryMatch;
     });
   };
 
@@ -300,6 +336,44 @@ const Events = () => {
               {view === 'day' && `${currentDate.getDate()} de ${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
               {view === 'year' && `${currentDate.getFullYear()}`}
             </h2>
+          </div>
+
+          {/* Buscador Inteligente de Eventos */}
+          <div className="w-full md:w-80 shrink-0">
+            <Autocomplete
+              items={eventAutocompleteItems}
+              value={searchQuery}
+              onValueChange={(val) => setSearchQuery(val)}
+              onSelect={(item) => {
+                setSearchQuery(item.label);
+                const ev = item.rawEvent as DbEvent;
+                if (ev && ev.start_date) {
+                  const [yr, mo, dy] = ev.start_date.split('-').map(Number);
+                  if (!isNaN(yr) && !isNaN(mo) && !isNaN(dy)) {
+                    setCurrentDate(new Date(yr, mo - 1, dy));
+                  }
+                  setSelectedEvent(ev);
+                }
+              }}
+            >
+              <AutocompleteInput
+                placeholder="Buscar evento, lugar o ministerio..."
+                showClear
+                size="sm"
+              />
+              <AutocompletePopup>
+                <AutocompleteEmpty>No se encontraron actividades con esa búsqueda.</AutocompleteEmpty>
+                <AutocompleteList>
+                  <AutocompleteGroup label="Actividades Sugeridas">
+                    {eventAutocompleteItems.map((item) => (
+                      <AutocompleteItem key={item.value} value={item}>
+                        {item.label}
+                      </AutocompleteItem>
+                    ))}
+                  </AutocompleteGroup>
+                </AutocompleteList>
+              </AutocompletePopup>
+            </Autocomplete>
           </div>
 
           {/* View Toggles */}
