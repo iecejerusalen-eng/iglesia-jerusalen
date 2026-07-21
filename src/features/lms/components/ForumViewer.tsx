@@ -104,6 +104,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
   const handlePost = async (parentId: string | null = null) => {
     if (!newPostContent.trim()) return;
     if (!user) return;
+    if (!activeForum) return;
     
     try {
       const { error } = await supabase
@@ -167,7 +168,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
                 </div>
 
                 {/* Replies */}
-                {post.replies?.length > 0 && (
+                {post.replies && post.replies.length > 0 && (
                   <div className="mt-4 ml-8 space-y-3 border-l-2 border-indigo-100 dark:border-indigo-900/50 pl-4">
                     {post.replies.map((reply: ForumPost) => (
                       <div key={reply.id} className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl">
