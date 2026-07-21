@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Mail, User, Loader2 } from 'lucide-react';
+import { Users, Mail, User, Loader2, Search, X } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 
 interface CourseClassmatesTabProps {
@@ -17,6 +17,8 @@ interface Classmate {
 export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
   const [classmates, setClassmates] = useState<Classmate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<Classmate | null>(null);
 
   useEffect(() => {
     async function fetchClassmates() {
@@ -76,6 +78,10 @@ export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
     );
   }
 
+  const filteredClassmates = classmates.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-gray-150 dark:border-white/10 shadow-sm relative z-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
@@ -88,15 +94,31 @@ export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
             <p className="text-gray-500 dark:text-gray-400 text-sm">Conoce y conecta con otros estudiantes de este curso.</p>
           </div>
         </div>
-        
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2 flex items-center gap-2">
-          <Users size={16} className="text-gray-500" />
-          <span className="text-sm font-bold text-slate-700 dark:text-gray-300">{classmates.length} Estudiantes inscritos</span>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Buscar compañero..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 text-slate-800 dark:text-white rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
+          <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2 flex items-center gap-2 shrink-0">
+            <Users size={16} className="text-gray-500" />
+            <span className="text-sm font-bold text-slate-700 dark:text-gray-300">{classmates.length} inscritos</span>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {classmates.map(student => (
+        {filteredClassmates.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-gray-500">
+            No se encontraron compañeros que coincidan con la búsqueda.
+          </div>
+        ) : (
+          filteredClassmates.map(student => (
           <div key={student.id} className="bg-slate-50 dark:bg-slate-950 border border-gray-150 dark:border-white/5 rounded-2xl p-6 flex flex-col items-center text-center hover:shadow-md transition-shadow group">
             <div className="relative mb-4">
               {student.avatar ? (
@@ -125,7 +147,10 @@ export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
             )}
             
             <div className="mt-6 w-full flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="flex-1 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:border-sky-500 dark:hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 text-gray-600 dark:text-gray-400 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1">
+              <button 
+                onClick={() => setSelectedStudent(student)}
+                className="flex-1 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:border-sky-500 dark:hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 text-gray-600 dark:text-gray-400 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
+              >
                 <User size={14} /> Perfil
               </button>
               <button className="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1">
@@ -134,7 +159,39 @@ export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
             </div>
           </div>
         ))}
+        )}
       </div>
+
+      {/* Modal de Perfil del Estudiante */}
+      {selectedStudent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedStudent(null)} />
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-gray-200 dark:border-white/10 text-center">
+            <button onClick={() => setSelectedStudent(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <X size={24} />
+            </button>
+            <div className="mb-4 inline-block relative">
+              {selectedStudent.avatar ? (
+                <img src={selectedStudent.avatar} alt={selectedStudent.name} className="w-24 h-24 rounded-full object-cover border-4 border-sky-100 dark:border-sky-900" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 border-4 border-sky-100 dark:border-sky-900 flex items-center justify-center text-gray-400">
+                  <User size={40} />
+                </div>
+              )}
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white">{selectedStudent.name}</h3>
+            <span className="inline-block mt-2 bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 px-3 py-1 rounded-full text-xs font-bold uppercase">
+              {selectedStudent.role}
+            </span>
+            <p className="mt-4 text-sm text-gray-500">
+              Estudiante activo de la Iglesia Jerusalén. Comprometido con el aprendizaje y el crecimiento espiritual.
+            </p>
+            <button className="w-full mt-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl flex justify-center items-center gap-2 transition-colors">
+              <Mail size={18} /> Enviar Mensaje
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

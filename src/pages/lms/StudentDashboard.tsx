@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck } from 'lucide-react';
+import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
@@ -14,7 +14,9 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
 import { ProgressHero } from '../../features/student-dashboard/components/ProgressHero';
 import { NextUpWidget } from '../../features/student-dashboard/components/NextUpWidget';
-import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
+import { GradesOverviewWidget } from '../../features/student-dashboard/components/GradesOverviewWidget';
+import { MyAttendanceWidget } from '../../features/student-dashboard/components/MyAttendanceWidget';
+import { DigitalIDCard } from '../../features/student-dashboard/components/DigitalIDCard';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -45,19 +47,16 @@ export default function StudentDashboard() {
   const [badges, setBadges] = useState<StudentBadgeItem[]>([]);
   const [stats, setStats] = useState({
     activeCourses: 0,
-    completedCourses: 0,
     totalXp: 0,
     streak: 0,
+    attendance: 100,
     overallProgress: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('courses');
+  const [isIdCardOpen, setIsIdCardOpen] = useState(false);
 
-  const pendingTasks = useMemo(() => [
-    { id: '1', title: 'Ensayo sobre historia contemporánea', courseTitle: 'Ciencias Sociales', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 12), status: 'PENDING' },
-    { id: '2', title: 'Resolución de problemas algebraicos', courseTitle: 'Matemáticas Avanzadas', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), status: 'PENDING' },
-    { id: '3', title: 'Lectura Comprensiva Capítulo 4', courseTitle: 'Lenguaje y Comunicación', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5), status: 'PENDING' }
-  ] as any[], []);
+  const [pendingTasks, setPendingTasks] = useState<any[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -121,6 +120,58 @@ export default function StudentDashboard() {
         
       if (badgesData) setBadges(badgesData);
 
+      // Fetch pending tasks
+      const courseIds = (enrollData || []).map((e) => e.course_id);
+      if (courseIds.length > 0) {
+        const { data: assignmentsData } = await supabase
+          .from('lms_lessons')
+          .select(`
+            id,
+            title,
+            due_date,
+            lms_modules!inner (
+              lms_subjects!inner (
+                course_id,
+                lms_courses ( title )
+              )
+            )
+          `)
+          .eq('type', 'assignment')
+          .not('due_date', 'is', null)
+          .in('lms_modules.lms_subjects.course_id', courseIds);
+
+        if (assignmentsData && assignmentsData.length > 0) {
+          const assignmentIds = assignmentsData.map((a) => a.id);
+          
+          const { data: submissionsData } = await supabase
+            .from('lms_lesson_submissions')
+            .select('lesson_id')
+            .eq('student_id', user?.id)
+            .in('lesson_id', assignmentIds);
+
+          const submittedIds = new Set(submissionsData?.map((s) => s.lesson_id) || []);
+
+          const formattedTasks = assignmentsData
+            .filter((a) => !submittedIds.has(a.id))
+            .map((a: any) => {
+              const courses = a.lms_modules?.lms_subjects?.lms_courses;
+              const courseTitle = Array.isArray(courses) ? courses[0]?.title : courses?.title || 'Curso';
+              return {
+                id: a.id,
+                title: a.title,
+                courseTitle,
+                dueDate: new Date(a.due_date),
+                status: 'PENDING'
+              };
+            })
+            .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+            
+          setPendingTasks(formattedTasks);
+        } else {
+          setPendingTasks([]);
+        }
+      }
+
       // Fetch global stats
       const { data: statsData } = await supabase
         .from('lms_student_stats')
@@ -137,11 +188,23 @@ export default function StudentDashboard() {
         overall = sum / coursesWithProgress.length;
       }
 
+      // Get attendance
+      const { data: attendanceData } = await supabase
+        .from('lms_attendance')
+        .select('status')
+        .eq('student_id', user?.id);
+        
+      let attendancePercentage = 100;
+      if (attendanceData && attendanceData.length > 0) {
+        const presentCount = attendanceData.filter(a => a.status === 'present' || a.status === 'zoom').length;
+        attendancePercentage = Math.round((presentCount / attendanceData.length) * 100);
+      }
+
       setStats({
         activeCourses: statsData?.active_courses || 0,
-        completedCourses: statsData?.completed_courses || 0,
         totalXp: statsData?.total_xp || 0,
         streak: streakData || 0,
+        attendance: attendancePercentage,
         overallProgress: overall
       });
 
@@ -174,7 +237,8 @@ export default function StudentDashboard() {
 
   const tabs = [
     { id: 'courses', label: 'Mis Cursos', icon: BookOpen },
-    { id: 'calendar', label: 'Calendario', icon: Calendar },
+    { id: 'attendance', label: 'Mi Asistencia', icon: UserCheck },
+    { id: 'calendar', label: 'Horario', icon: Calendar },
     { id: 'grades', label: 'Calificaciones', icon: Award },
     { id: 'badges', label: 'Mis Logros', icon: ShieldCheck },
     { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
@@ -187,11 +251,12 @@ export default function StudentDashboard() {
           userFullName={user?.user_metadata?.full_name || 'Estudiante'}
           avatarUrl={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
           activeCourses={stats.activeCourses}
-          completedCourses={stats.completedCourses}
+          pendingTasksCount={pendingTasks.length}
           totalXp={stats.totalXp}
           streak={stats.streak}
-          attendance={97}
+          attendance={stats.attendance}
           overallProgress={stats.overallProgress}
+          onOpenIDCard={() => setIsIdCardOpen(true)}
         />
         
         {/* Widgets Grid */}
@@ -208,44 +273,9 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Calificaciones Rápidas */}
-          <div className="lg:col-span-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6">
-            <h3 className="font-bold font-serif text-xl mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-              <Award className="text-gold" size={20} />
-              Mis Calificaciones
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/10 pb-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Ciencias Sociales</p>
-                  <p className="text-xs text-gray-500">Examen Final</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-green-500">10 / 10</p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/10 pb-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Matemáticas</p>
-                  <p className="text-xs text-gray-500">Lección Práctica</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-green-500">9.5 / 10</p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pb-1">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Historia</p>
-                  <p className="text-xs text-gray-500">Ensayo</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-yellow-500">8.0 / 10</p>
-                </div>
-              </div>
-            </div>
-            <button className="w-full mt-4 py-2 text-sm font-bold text-gold hover:bg-gold/10 rounded-xl transition-colors">
-              Ver todas
-            </button>
+          {/* Widget Rendimiento por Curso */}
+          <div className="lg:col-span-1">
+            <GradesOverviewWidget enrollments={enrollments} />
           </div>
 
           {/* New Pending Tasks Widget */}
@@ -361,6 +391,11 @@ export default function StudentDashboard() {
           <StudentCalendar />
         )}
 
+        {/* ATTENDANCE TAB */}
+        {activeTab === 'attendance' && (
+          <MyAttendanceWidget />
+        )}
+
         {/* GRADES TAB */}
         {activeTab === 'grades' && (
           <StudentGrades />
@@ -381,6 +416,20 @@ export default function StudentDashboard() {
         )}
 
       </div>
+
+      {user && (
+        <DigitalIDCard 
+          isOpen={isIdCardOpen}
+          onClose={() => setIsIdCardOpen(false)}
+          student={{
+            id: user.id,
+            name: user.user_metadata?.full_name || 'Estudiante',
+            role: user.user_metadata?.role || 'student',
+            avatarUrl: user.user_metadata?.avatar_url || null,
+            email: user.email || ''
+          }}
+        />
+      )}
     </div>
   );
 }

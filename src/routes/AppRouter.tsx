@@ -65,6 +65,7 @@ const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatc
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
+const VerifyStudent = lazyWithRetry(() => import('../pages/public/VerifyStudent'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -158,6 +159,7 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/reservas" element={<Bookings />} />
+          <Route path="/verify/:studentId" element={<VerifyStudent />} />
         </Route>
 
         <Route element={<ProtectedRoute module="dashboard" />}>

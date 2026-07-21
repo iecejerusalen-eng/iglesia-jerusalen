@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FileText, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Loader2, Eye } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
+import { ActivityDetailModal } from './components/ActivityDetailModal';
 
 interface CourseActivitiesTabProps {
   courseId: string;
@@ -32,6 +33,10 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal State
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchActivities() {
@@ -111,7 +116,12 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
       setLoading(false);
     }
   }
-  fetchActivities();
+  
+  const handleFetchActivities = () => {
+    fetchActivities();
+  };
+  
+  handleFetchActivities();
   }, [courseId, user]);
 
   const filteredActivities = filter === 'all' 
@@ -209,12 +219,18 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
                     <span className="text-xs font-bold text-gray-400 uppercase">Calificación</span>
                   </div>
                 ) : activity.status === 'pending' ? (
-                  <button className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors">
-                    Ver Tarea
+                  <button 
+                    onClick={() => { setSelectedActivity(activity); setIsModalOpen(true); }}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    <FileText size={16} /> Entregar
                   </button>
                 ) : (
-                  <button className="w-full sm:w-auto px-6 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-gray-300 font-bold rounded-xl text-sm transition-colors">
-                    Ver Entrega
+                  <button 
+                    onClick={() => { setSelectedActivity(activity); setIsModalOpen(true); }}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-gray-300 font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Eye size={16} /> Ver Entrega
                   </button>
                 )}
               </div>
@@ -222,6 +238,21 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
           ))
         )}
       </div>
+
+      <ActivityDetailModal 
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setSelectedActivity(null); }}
+        activity={selectedActivity}
+        courseId={courseId}
+        onSuccess={() => {
+          // Refresh list to update status
+          setIsModalOpen(false);
+          // fetchActivities relies on useEffect, but since we didn't export it, 
+          // a quick hack is to let the user see the change, or we could trigger a reload.
+          // For now, we update the local state optimistically or reload.
+          window.location.reload(); 
+        }}
+      />
     </div>
   );
 }

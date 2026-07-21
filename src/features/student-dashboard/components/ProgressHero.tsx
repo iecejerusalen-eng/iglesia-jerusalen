@@ -5,22 +5,24 @@ interface ProgressHeroProps {
   userFullName: string;
   avatarUrl: string;
   activeCourses: number;
-  completedCourses: number;
+  pendingTasksCount: number;
   totalXp: number;
   streak: number;
   attendance: number;
   overallProgress: number; // 0-100
+  onOpenIDCard?: () => void;
 }
 
 export function ProgressHero({ 
   userFullName, 
   avatarUrl, 
   activeCourses, 
-  completedCourses, 
+  pendingTasksCount, 
   totalXp, 
   streak,
   attendance,
-  overallProgress 
+  overallProgress,
+  onOpenIDCard
 }: ProgressHeroProps) {
   return (
     <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl mb-8 border border-white/10">
@@ -83,6 +85,15 @@ export function ProgressHero({
               </motion.div>
             </h1>
             <p className="text-indigo-200 mt-2 text-lg opacity-90">Sigue aprendiendo y creciendo espiritualmente.</p>
+            
+            {onOpenIDCard && (
+              <button 
+                onClick={onOpenIDCard}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50 rounded-xl transition-all shadow-sm shadow-gold/10 font-bold text-sm uppercase tracking-wider"
+              >
+                <Award size={16} /> Ver Mi Carnet Estudiantil
+              </button>
+            )}
           </div>
 
           {/* KPI Mini-cards */}
@@ -95,11 +106,11 @@ export function ProgressHero({
               <p className="text-2xl font-bold font-serif">{activeCourses}</p>
             </div>
             <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-2 text-green-300 mb-1">
-                <Award size={14} />
-                <span className="text-xs font-bold uppercase tracking-wider">Logrados</span>
+              <div className="flex items-center gap-2 text-rose-400 mb-1">
+                <BookOpen size={14} />
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Pendientes</span>
               </div>
-              <p className="text-2xl font-bold font-serif">{completedCourses}</p>
+              <p className="text-2xl font-bold font-serif text-white">{pendingTasksCount}</p>
             </div>
             <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden group">
               <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>

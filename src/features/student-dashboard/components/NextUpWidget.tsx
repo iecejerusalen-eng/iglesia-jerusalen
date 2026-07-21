@@ -34,7 +34,7 @@ export function NextUpWidget({ courseId, courseTitle, lessonTitle, type, timeEst
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{courseTitle}</p>
 
       <Link 
-        to={`/lms/course/${courseId}`}
+        to={`/lms/curso/${courseId}`}
         className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group/link"
       >
         <TypeIcon size={18} className="group-hover/link:scale-110 transition-transform" />
