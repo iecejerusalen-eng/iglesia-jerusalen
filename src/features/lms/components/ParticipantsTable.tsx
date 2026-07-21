@@ -23,7 +23,8 @@ interface ParticipantData {
   };
   profiles?: {
     id: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     avatar_url: string;
     doc_id: string;
@@ -52,7 +53,7 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
           status,
           enrolled_at,
           courses:course_id (id, title, school_id),
-          profiles:user_id (id, full_name, email, avatar_url, doc_id)
+          profiles:user_id (id, first_name, last_name, email, avatar_url, doc_id)
         `);
 
       if (courseId && courseId !== 'all') {
@@ -90,11 +91,14 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
 
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(p => 
-        p.profiles?.full_name?.toLowerCase().includes(lowerSearch) ||
-        p.profiles?.email?.toLowerCase().includes(lowerSearch) ||
-        p.profiles?.doc_id?.toLowerCase().includes(lowerSearch)
-      );
+      result = result.filter(p => {
+        const fullName = `${p.profiles?.first_name ?? ''} ${p.profiles?.last_name ?? ''}`.toLowerCase();
+        return (
+          fullName.includes(lowerSearch) ||
+          p.profiles?.email?.toLowerCase().includes(lowerSearch) ||
+          p.profiles?.doc_id?.toLowerCase().includes(lowerSearch)
+        );
+      });
     }
 
     if (roleFilter !== 'all') {
@@ -256,13 +260,13 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
                           <img src={p.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center font-bold text-gray-500">
-                            {p.profiles?.full_name?.charAt(0) || 'U'}
+                            {(p.profiles?.first_name?.charAt(0) ?? p.profiles?.last_name?.charAt(0)) || 'U'}
                           </div>
                         )}
                       </div>
                       <div>
                         <p className="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[200px]">
-                          {p.profiles?.full_name || 'Sin Nombre'}
+                          {p.profiles ? `${p.profiles.first_name ?? ''} ${p.profiles.last_name ?? ''}`.trim() || 'Sin Nombre' : 'Sin Nombre'}
                         </p>
                         <p className="text-xs text-gray-500 truncate max-w-[200px] flex items-center gap-1">
                           <Mail size={10} /> {p.profiles?.email}
