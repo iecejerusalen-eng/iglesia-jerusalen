@@ -156,10 +156,7 @@ export default function Missions() {
 
   // Selected Country for 3D Globe focus
   const [selectedPoint, setSelectedPoint] = useState<MissionPoint>(MISSION_LOCATIONS[0]);
-  const [focusCoords, setFocusCoords] = useState<[number, number] | null>([
-    MISSION_LOCATIONS[0].lat,
-    MISSION_LOCATIONS[0].lng,
-  ]);
+  const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
 
   const loadMissions = async () => {
     try {
@@ -306,8 +303,20 @@ export default function Missions() {
 
           {/* Country Selection Bar */}
           <div className="flex flex-wrap items-center justify-center gap-2 py-2">
+            <button
+              onClick={() => setFocusCoords(null)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                focusCoords === null
+                  ? 'bg-gradient-to-r from-rose-600 to-amber-500 text-white shadow-md scale-105'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-rose-400'
+              }`}
+            >
+              <Globe2 className="w-3.5 h-3.5 animate-spin-slow" />
+              <span>Rotación 360°</span>
+            </button>
+
             {MISSION_LOCATIONS.map((point) => {
-              const isSelected = selectedPoint.id === point.id;
+              const isSelected = selectedPoint.id === point.id && focusCoords !== null;
               return (
                 <button
                   key={point.id}

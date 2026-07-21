@@ -1,12 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import createGlobe, { type COBEOptions } from "cobe";
 import { useSpring, useMotionValue } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const MOVEMENT_DAMPING = 1200;
+const MOVEMENT_DAMPING = 350;
 
 export interface GlobeMarker {
   location: [number, number]; // [lat, lng]
@@ -36,32 +36,33 @@ export interface GlobeProps {
   className?: string;
   config?: COBEOptions;
   interactive?: boolean;
+  autoRotate?: boolean;
+  autoRotateSpeed?: number;
   focusCoords?: [number, number] | null; // [lat, lng]
-  onSelectLocation?: (location: { lat: number; lng: number; index: number }) => void;
 }
 
 export function Globe({
   className,
   config = DEFAULT_GLOBE_CONFIG,
   interactive = true,
+  autoRotate = true,
+  autoRotateSpeed = 0.004,
   focusCoords = null,
-  onSelectLocation,
 }: GlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerInteracting = useRef<{ x: number; y: number } | null>(null);
-  const pointerInteractionMovement = useRef({ x: 0, y: 0 });
   const widthRef = useRef(0);
+  const phiRef = useRef(config.phi || 0);
 
   // Motion values for smooth rotation physics
   const rX = useMotionValue(config.phi || 0);
   const rY = useMotionValue(config.theta || 0.2);
 
-  const springX = useSpring(rX, { mass: 1, damping: 35, stiffness: 120 });
-  const springY = useSpring(rY, { mass: 1, damping: 35, stiffness: 120 });
+  const springX = useSpring(rX, { mass: 1, damping: 30, stiffness: 100 });
+  const springY = useSpring(rY, { mass: 1, damping: 30, stiffness: 100 });
 
   // Convert lat, lng to phi, theta for COBE globe
   const convertLocationToAngles = useCallback((lat: number, lng: number) => {
-    // COBE phi angle mapping
     const phi = (lng * Math.PI) / 180;
     const theta = (lat * Math.PI) / 180;
     return { phi: -phi + Math.PI / 2, theta };
@@ -72,12 +73,19 @@ export function Globe({
     if (focusCoords) {
       const [lat, lng] = focusCoords;
       const { phi, theta } = convertLocationToAngles(lat, lng);
-      rX.set(phi);
+      // Keep continuous rotation direction
+      let targetPhi = phi;
+      const currentPhi = rX.get();
+      while (targetPhi - currentPhi > Math.PI) targetPhi -= Math.PI * 2;
+      while (targetPhi - currentPhi < -Math.PI) targetPhi += Math.PI * 2;
+
+      rX.set(targetPhi);
       rY.set(theta);
+      phiRef.current = targetPhi;
     }
   }, [focusCoords, convertLocationToAngles, rX, rY]);
 
-  // Pointer Interaction Handlers
+  // Pointer Interaction Handlers with global window tracking
   const handlePointerDown = (clientX: number, clientY: number) => {
     if (!interactive) return;
     pointerInteracting.current = { x: clientX, y: clientY };
@@ -86,28 +94,41 @@ export function Globe({
     }
   };
 
-  const handlePointerUp = () => {
-    pointerInteracting.current = null;
-    if (canvasRef.current) {
-      canvasRef.current.style.cursor = "grab";
-    }
-  };
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (pointerInteracting.current !== null && interactive) {
+        const deltaX = e.clientX - pointerInteracting.current.x;
+        const deltaY = e.clientY - pointerInteracting.current.y;
 
-  const handlePointerMove = (clientX: number, clientY: number) => {
-    if (pointerInteracting.current !== null && interactive) {
-      const deltaX = clientX - pointerInteracting.current.x;
-      const deltaY = clientY - pointerInteracting.current.y;
+        pointerInteracting.current = { x: e.clientX, y: e.clientY };
 
-      pointerInteracting.current = { x: clientX, y: clientY };
+        const newPhi = rX.get() + deltaX / MOVEMENT_DAMPING;
+        // Clamp vertical theta between -1.0 and 1.0 radians
+        const newTheta = Math.max(-1.0, Math.min(1.0, rY.get() - deltaY / MOVEMENT_DAMPING));
 
-      // Update motion values
-      rX.set(rX.get() + deltaX / MOVEMENT_DAMPING);
-      
-      // Clamp vertical theta between -0.8 and 0.8 radians to prevent flip
-      const newTheta = Math.max(-0.8, Math.min(0.8, rY.get() - deltaY / MOVEMENT_DAMPING));
-      rY.set(newTheta);
-    }
-  };
+        rX.set(newPhi);
+        rY.set(newTheta);
+        phiRef.current = newPhi;
+      }
+    };
+
+    const handlePointerUp = () => {
+      if (pointerInteracting.current !== null) {
+        pointerInteracting.current = null;
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = "grab";
+        }
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [interactive, rX, rY]);
 
   useEffect(() => {
     const onResize = () => {
@@ -119,22 +140,18 @@ export function Globe({
     window.addEventListener("resize", onResize);
     onResize();
 
-    let phiAccumulator = config.phi || 0;
-
     const globe = createGlobe(canvasRef.current!, {
       ...config,
       width: widthRef.current * 2,
       height: widthRef.current * 2,
       onRender: (state) => {
-        // Auto slow rotation if user is not dragging and no focus point active
-        if (!pointerInteracting.current && !focusCoords) {
-          phiAccumulator += 0.003;
-          state.phi = phiAccumulator + springX.get();
-        } else {
-          phiAccumulator = 0;
-          state.phi = springX.get();
+        // Auto slow rotation if user is not dragging
+        if (!pointerInteracting.current && autoRotate) {
+          phiRef.current += autoRotateSpeed;
+          rX.set(phiRef.current);
         }
 
+        state.phi = springX.get();
         state.theta = springY.get();
         state.width = widthRef.current * 2;
         state.height = widthRef.current * 2;
@@ -149,7 +166,7 @@ export function Globe({
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [springX, springY, config, focusCoords]);
+  }, [springX, springY, config, autoRotate, autoRotateSpeed, rX]);
 
   return (
     <div className={cn("relative aspect-square w-full select-none", className)}>
@@ -157,12 +174,6 @@ export function Globe({
         className="size-full opacity-0 transition-opacity duration-700 cursor-grab active:cursor-grabbing touch-none"
         ref={canvasRef}
         onPointerDown={(e) => handlePointerDown(e.clientX, e.clientY)}
-        onPointerUp={handlePointerUp}
-        onPointerOut={handlePointerUp}
-        onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
-        onTouchStart={(e) => e.touches[0] && handlePointerDown(e.touches[0].clientX, e.touches[0].clientY)}
-        onTouchEnd={handlePointerUp}
-        onTouchMove={(e) => e.touches[0] && handlePointerMove(e.touches[0].clientX, e.touches[0].clientY)}
       />
     </div>
   );
