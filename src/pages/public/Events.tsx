@@ -173,22 +173,7 @@ const Events = () => {
     setCurrentDate(new Date());
   };
 
-  const eventAutocompleteItems: AutocompleteItemType[] = useMemo(() => {
-    return events.map((event) => {
-      const ministryName = event.ministries?.name || 'Evento General';
-      const dateText = formatEventDateRange(event.start_date, event.end_date);
-      const timeText = formatTime(event.start_time);
 
-      return {
-        value: event.id,
-        label: event.title,
-        category: ministryName,
-        description: `${dateText} (${timeText})`,
-        icon: <CalendarIcon className="w-4 h-4 text-amber-400" />,
-        rawEvent: event,
-      };
-    });
-  }, [events]);
 
   // Filter events by date range and search query
   const getEventsForDate = (date: Date) => {
@@ -207,17 +192,21 @@ const Events = () => {
     });
   };
 
-  const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
-    const filterLabel = view === 'month' 
-      ? `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-      : view === 'year'
+  const handleExportPdf = (
+    orientation: 'portrait' | 'landscape',
+    viewMode: 'cards' | 'table' = 'cards'
+  ) => {
+    const filterLabel =
+      view === 'month'
+        ? `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+        : view === 'year'
         ? `${currentDate.getFullYear()}`
         : 'Semana/Día';
 
     exportEventsPdf(events, {
-      viewMode: 'calendar',
+      viewMode,
       orientation,
-      filterLabel
+      filterLabel,
     });
   };
 
@@ -262,6 +251,24 @@ const Events = () => {
 
     return `Del ${start.getDate()} de ${MONTHS[start.getMonth()]} al ${formatDate(end)}`;
   };
+
+  // Must be declared after formatEventDateRange and formatTime to avoid TDZ
+  const eventAutocompleteItems: AutocompleteItemType[] = useMemo(() => {
+    return events.map((event) => {
+      const ministryName = event.ministries?.name || 'Evento General';
+      const dateText = formatEventDateRange(event.start_date, event.end_date);
+      const timeText = formatTime(event.start_time);
+
+      return {
+        value: event.id,
+        label: event.title,
+        category: ministryName,
+        description: `${dateText} (${timeText})`,
+        icon: <CalendarIcon className="w-4 h-4 text-amber-400" />,
+        rawEvent: event,
+      };
+    });
+  }, [events]);
 
   const getRecurrenceText = (event: DbEvent) => {
     if (!event.is_recurring || !event.recurrence_type) return null;
