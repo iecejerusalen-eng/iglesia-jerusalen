@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, Volume1, VolumeX, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,6 +72,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [progress, setProgress] = useState(0);
@@ -86,8 +88,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const targetYouTubeId = extractYouTubeId(youtubeUrl || "") || extractYouTubeId(src || "");
   const externalYouTubeLink = youtubeUrl || (extractYouTubeId(src || "") ? src : null);
 
+  // Helper to send postMessage commands to YouTube iframe
+  const sendYouTubeCommand = useCallback((func: string, args: unknown[] | unknown = "") => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func, args }),
+        "*"
+      );
+    }
+  }, []);
+
   const togglePlay = () => {
-    if (videoRef.current) {
+    if (targetYouTubeId) {
+      if (isPlaying) {
+        sendYouTubeCommand("pauseVideo");
+        setIsPlaying(false);
+      } else {
+        sendYouTubeCommand("playVideo");
+        setIsPlaying(true);
+      }
+    } else if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
@@ -98,16 +118,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVolumeChange = (value: number) => {
-    if (videoRef.current) {
-      const newVolume = value / 100;
+    const newVolume = value / 100;
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+
+    if (targetYouTubeId) {
+      sendYouTubeCommand("setVolume", [value]);
+      if (newVolume === 0) sendYouTubeCommand("mute");
+      else sendYouTubeCommand("unMute");
+    } else if (videoRef.current) {
       videoRef.current.volume = newVolume;
-      setVolume(newVolume);
-      setIsMuted(newVolume === 0);
     }
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
+    if (!targetYouTubeId && videoRef.current) {
       const prog = (videoRef.current.currentTime / videoRef.current.duration) * 100;
       setProgress(isFinite(prog) ? prog : 0);
       setCurrentTime(videoRef.current.currentTime);
@@ -116,7 +141,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleSeek = (value: number) => {
-    if (videoRef.current && videoRef.current.duration) {
+    if (targetYouTubeId && duration) {
+      const time = (value / 100) * duration;
+      if (isFinite(time)) {
+        sendYouTubeCommand("seekTo", [time, true]);
+        setProgress(value);
+        setCurrentTime(time);
+      }
+    } else if (videoRef.current && videoRef.current.duration) {
       const time = (value / 100) * videoRef.current.duration;
       if (isFinite(time)) {
         videoRef.current.currentTime = time;
@@ -126,12 +158,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-      if (!isMuted) {
-        setVolume(0);
+    const nextMuteState = !isMuted;
+    setIsMuted(nextMuteState);
+
+    if (targetYouTubeId) {
+      if (nextMuteState) {
+        sendYouTubeCommand("mute");
       } else {
+        sendYouTubeCommand("unMute");
+        sendYouTubeCommand("setVolume", [volume * 100 || 100]);
+      }
+    } else if (videoRef.current) {
+      videoRef.current.muted = nextMuteState;
+      if (!nextMuteState && volume === 0) {
         setVolume(1);
         videoRef.current.volume = 1;
       }
@@ -139,9 +178,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const setSpeed = (speed: number) => {
-    if (videoRef.current) {
+    setPlaybackSpeed(speed);
+    if (targetYouTubeId) {
+      sendYouTubeCommand("setPlaybackRate", [speed]);
+    } else if (videoRef.current) {
       videoRef.current.playbackRate = speed;
-      setPlaybackSpeed(speed);
     }
   };
 
@@ -164,6 +205,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
 
+  // Listen to YouTube postMessage events for time and state updates
+  useEffect(() => {
+    if (!targetYouTubeId) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (typeof event.data !== "string") return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === "infoDelivery" && data.info) {
+          if (data.info.currentTime !== undefined) {
+            setCurrentTime(data.info.currentTime);
+            if (duration > 0) {
+              setProgress((data.info.currentTime / duration) * 100);
+            }
+          }
+          if (data.info.duration !== undefined && data.info.duration > 0) {
+            setDuration(data.info.duration);
+          }
+          if (data.info.playerState !== undefined) {
+            if (data.info.playerState === 1) setIsPlaying(true); // playing
+            if (data.info.playerState === 2) setIsPlaying(false); // paused
+          }
+        }
+      } catch {
+        // ignore non-json messages
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [targetYouTubeId, duration]);
+
   // If it's a YouTube video
   if (targetYouTubeId) {
     const youtubeHref = externalYouTubeLink || `https://www.youtube.com/watch?v=${targetYouTubeId}`;
@@ -173,22 +246,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       <motion.div
         ref={containerRef}
         className={cn(
-          "relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 group",
+          "relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 group select-none",
           className
         )}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
       >
-        {/* YouTube Embed / Thumbnail Container */}
+        {/* YouTube Embed / Cover Container */}
         <div className="relative pt-[56.25%] w-full bg-black">
           {isPlaying || autoPlay ? (
             <iframe
-              className="absolute inset-0 w-full h-full border-0"
-              src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&rel=0&modestbranding=1`}
+              ref={iframeRef}
+              className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.02]"
+              src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&enablejsapi=1&controls=0&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&playsinline=1`}
               title={title || "Reproductor de Video"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+              onLoad={() => {
+                sendYouTubeCommand("listening");
+              }}
             />
           ) : (
             <div
@@ -201,7 +279,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 alt={title || "Video thumbnail"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-105"
                 onError={(e) => {
-                  if (e.currentTarget.src.includes('maxresdefault')) {
+                  if (e.currentTarget.src.includes("maxresdefault")) {
                     e.currentTarget.src = `https://img.youtube.com/vi/${targetYouTubeId}/hqdefault.jpg`;
                   }
                 }}
@@ -225,10 +303,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               )}
             </div>
           )}
+
+          {/* Click layer overlay when playing to toggle play/pause */}
+          {(isPlaying || autoPlay) && (
+            <div
+              className="absolute inset-0 z-10 cursor-pointer"
+              onClick={togglePlay}
+            />
+          )}
         </div>
 
         {/* Top Floating Bar for YouTube Link */}
-        <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+        <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
           <a
             href={youtubeHref}
             target="_blank"
@@ -244,6 +330,113 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <ExternalLink className="w-3.5 h-3.5 opacity-90" />
           </a>
         </div>
+
+        {/* Custom Controls Overlay for YouTube */}
+        <AnimatePresence>
+          {(showControls || !isPlaying) && (isPlaying || autoPlay) && (
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 p-4 m-3 bg-[#111111c2] backdrop-blur-md rounded-2xl border border-white/10 z-30"
+              initial={{ y: 20, opacity: 0, filter: "blur(10px)" }}
+              animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+              exit={{ y: 20, opacity: 0, filter: "blur(10px)" }}
+              transition={{ duration: 0.4, ease: "circInOut" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-white/80 text-xs font-mono">
+                  {formatTime(currentTime)}
+                </span>
+                <CustomSlider
+                  value={progress}
+                  onChange={handleSeek}
+                  className="flex-1"
+                />
+                <span className="text-white/80 text-xs font-mono">{formatTime(duration)}</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                    <Button
+                      onClick={togglePlay}
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/10 hover:text-white"
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </motion.div>
+                  <div className="flex items-center gap-x-1">
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      <Button
+                        onClick={toggleMute}
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/10 hover:text-white"
+                      >
+                        {isMuted ? (
+                          <VolumeX className="h-5 w-5" />
+                        ) : volume > 0.5 ? (
+                          <Volume2 className="h-5 w-5" />
+                        ) : (
+                          <Volume1 className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </motion.div>
+
+                    <div className="w-20 hidden sm:block">
+                      <CustomSlider
+                        value={volume * 100}
+                        onChange={handleVolumeChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {[0.5, 1, 1.5, 2].map((speed) => (
+                    <motion.div
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
+                      key={speed}
+                    >
+                      <Button
+                        onClick={() => setSpeed(speed)}
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "text-xs px-2 h-8 text-white/80 hover:bg-white/10 hover:text-white",
+                          playbackSpeed === speed && "bg-white/20 text-white font-bold"
+                        )}
+                      >
+                        {speed}x
+                      </Button>
+                    </motion.div>
+                  ))}
+
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                    <Button
+                      onClick={toggleFullscreen}
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/10 hover:text-white"
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-4 w-4" />
+                      ) : (
+                        <Maximize className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   }
@@ -253,7 +446,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <motion.div
       ref={containerRef}
       className={cn(
-        "relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-[#11111198] shadow-2xl backdrop-blur-sm border border-white/10 group",
+        "relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-[#11111198] shadow-2xl backdrop-blur-sm border border-white/10 group select-none",
         className
       )}
       initial={{ opacity: 0, y: 20 }}
