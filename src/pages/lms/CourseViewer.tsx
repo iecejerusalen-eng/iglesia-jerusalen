@@ -21,6 +21,10 @@ import { Leaderboard } from "../../features/lms/components/Leaderboard";
 import { CircularProgress } from "../../components/ui/CircularProgress";
 import { NextUpWidget } from "../../features/student-dashboard/components/NextUpWidget";
 import { QuizPlayer } from "../../features/student-dashboard/components/QuizPlayer";
+import { CourseCalendarTab } from "../../features/lms/CourseCalendarTab";
+import { CourseGradesTab } from "../../features/lms/CourseGradesTab";
+import { CourseActivitiesTab } from "../../features/lms/CourseActivitiesTab";
+import { CourseClassmatesTab } from "../../features/lms/CourseClassmatesTab";
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
@@ -504,21 +508,39 @@ export default function CourseViewer() {
                 </button>
                 <button
                   onClick={() => {
-                    setActiveTabId('materiales');
+                    setActiveTabId("calendar");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "materiales" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "calendar" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 >
-                  Materiales
+                  Calendario
                 </button>
                 <button
                   onClick={() => {
-                    setActiveTabId('forum');
+                    setActiveTabId("grades");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "forum" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "grades" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                 >
-                  Foros de Debate
+                  Calificaciones
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTabId("activities");
+                    setActiveLesson(null);
+                  }}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "activities" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                >
+                  Actividades
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTabId("classmates");
+                    setActiveLesson(null);
+                  }}
+                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "classmates" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                >
+                  Compañeros
                 </button>
                 {modules
                   .filter(
@@ -638,7 +660,55 @@ export default function CourseViewer() {
                 </motion.div>
               )}
 
-              {!activeLesson && activeTabId !== "general" && activeTabId !== "forums" && (
+              {!activeLesson && activeTabId === "calendar" && (
+                <motion.div
+                  key="calendar-tab"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="relative z-10"
+                >
+                  <CourseCalendarTab courseId={id || ""} />
+                </motion.div>
+              )}
+
+              {!activeLesson && activeTabId === "grades" && (
+                <motion.div
+                  key="grades-tab"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="relative z-10"
+                >
+                  <CourseGradesTab courseId={id || ""} />
+                </motion.div>
+              )}
+
+              {!activeLesson && activeTabId === "activities" && (
+                <motion.div
+                  key="activities-tab"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="relative z-10"
+                >
+                  <CourseActivitiesTab courseId={id || ""} />
+                </motion.div>
+              )}
+
+              {!activeLesson && activeTabId === "classmates" && (
+                <motion.div
+                  key="classmates-tab"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="relative z-10"
+                >
+                  <CourseClassmatesTab courseId={id || ""} />
+                </motion.div>
+              )}
+
+              {!activeLesson && activeTabId !== "general" && activeTabId !== "forums" && activeTabId !== "calendar" && activeTabId !== "grades" && activeTabId !== "activities" && activeTabId !== "classmates" && (
                 <motion.div
                   key="dashboard-tab"
                   initial={{ opacity: 0, y: 20 }}
