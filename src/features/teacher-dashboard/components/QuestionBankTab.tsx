@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../config/supabase';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { Plus, Edit2, Trash2, Save, X, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Course } from '../types';
 
 interface QuestionBankTabProps {
   courseId: string | null;
-  courses: Course[];
+  courses?: any[];
 }
 
 interface Category {
@@ -27,7 +26,7 @@ interface Question {
 }
 
 export function QuestionBankTab({ courseId, courses }: QuestionBankTabProps) {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);

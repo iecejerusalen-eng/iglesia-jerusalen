@@ -578,6 +578,20 @@ export default function CourseViewer() {
           <div className="max-w-7xl mx-auto px-4 py-8 relative">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 dark:bg-indigo-400/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
             <AnimatePresence mode="wait">
+              {!activeLesson && activeTabId === "forum" && (
+                <motion.div
+                  key="forum-tab"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8 relative z-10"
+                >
+                  <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Foros de Debate</h2>
+                    <ForumViewer courseId={id || ''} />
+                  </div>
+                </motion.div>
+              )}
               {!activeLesson && activeTabId === "general" && (
                 <motion.div
                   key="general-tab"
@@ -586,14 +600,6 @@ export default function CourseViewer() {
                   exit={{ opacity: 0, y: -20 }}
                   className="space-y-8 relative z-10"
                 >
-                  {/* Tab: Foro */}
-                  {activeTabId === "forum" && (
-                    <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
-                      <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Foros de Debate</h2>
-                      <ForumViewer courseId={id || ''} />
-                    </div>
-                  )}
-
                   <SyncLinksManager courseId={id || ""} />
 
                   <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-gray-150 dark:border-white/10 shadow-sm">
@@ -861,7 +867,7 @@ export default function CourseViewer() {
                           lessonId={activeLesson.id} 
                           onComplete={() => {
                             if (!completions[activeLesson.id]) {
-                              handleMarkComplete(activeLesson.id);
+                              toggleLessonCompletion(activeLesson.id, true);
                             }
                           }}
                         />
@@ -990,7 +996,7 @@ export default function CourseViewer() {
                         </h3>
                         <AssignmentDropzone 
                           courseId={course.id} 
-                          activityId={activeLesson.id}
+                          lessonId={activeLesson.id}
                           onSuccess={() => toggleLessonCompletion(activeLesson.id, true)} 
                         />
                       </div>

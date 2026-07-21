@@ -158,7 +158,7 @@ export function CourseClassmatesTab({ courseId }: CourseClassmatesTabProps) {
               </button>
             </div>
           </div>
-        ))}
+        ))
         )}
       </div>
 
