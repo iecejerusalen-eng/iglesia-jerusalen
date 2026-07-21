@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, ArrowRight } from 'lucide-react';
+import { Plus, BookOpen, ArrowRight, Building2, GraduationCap, Users, FolderOpen, Inbox, Settings, UserCheck, Calendar } from 'lucide-react';
 import type { LMSCourse } from '../../types';
 
 import { useCourses } from '../../features/lms/hooks/useCourses';
@@ -152,75 +152,75 @@ export default function LMSManager() {
       <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto pb-px gap-2">
         <button
           onClick={() => setActiveTab('schools')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'schools' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          🏛️ Escuelas
+          <Building2 size={16} /> Escuelas
         </button>
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'courses' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Cursos
+          <BookOpen size={16} /> Cursos
         </button>
         <button
           onClick={() => setActiveTab('requests')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Matrículas
+          <GraduationCap size={16} /> Matrículas
         </button>
         <button
           onClick={() => setActiveTab('participants')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'participants' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Participantes
+          <Users size={16} /> Participantes
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'categories' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Categorías
+          <FolderOpen size={16} /> Categorías
         </button>
         <button
           onClick={() => setActiveTab('requests')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Solicitudes ({requests.length})
+          <Inbox size={16} /> Solicitudes ({requests.length})
         </button>
         <button
           onClick={() => setActiveTab('defaults')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'defaults' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Formatos / Configuración
+          <Settings size={16} /> Formatos / Config.
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'staff' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Docentes y Turnos (CRM)
+          <UserCheck size={16} /> Docentes
         </button>
         <button
           onClick={() => setActiveTab('calendar')}
-          className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'calendar' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          Calendario General
+          <Calendar size={16} /> Calendario
         </button>
       </div>
 
