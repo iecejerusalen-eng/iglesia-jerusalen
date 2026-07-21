@@ -138,6 +138,7 @@ export interface AutocompleteInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
   size?: "sm" | "default" | "lg";
   startAddon?: React.ReactNode;
+  hideIcon?: boolean;
   showTrigger?: boolean;
   showClear?: boolean;
   isLoading?: boolean;
@@ -148,6 +149,7 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
     {
       size = "default",
       startAddon,
+      hideIcon = false,
       showTrigger = false,
       showClear = false,
       isLoading = false,
@@ -174,10 +176,31 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
     const inputRef = React.useRef<HTMLInputElement | null>(null);
 
     const sizeClasses = {
-      sm: "h-9 text-xs px-3 py-1.5 rounded-xl",
-      default: "h-11 text-sm px-4 py-2 rounded-2xl",
-      lg: "h-13 text-base px-5 py-3 rounded-2xl",
+      sm: "h-9 text-xs py-1.5 rounded-xl",
+      default: "h-11 text-sm py-2 rounded-2xl",
+      lg: "h-13 text-base py-3 rounded-2xl",
     };
+
+    const hasStartIcon = !hideIcon;
+
+    const leftPaddingClasses = {
+      sm: hasStartIcon ? "pl-9" : "pl-3",
+      default: hasStartIcon ? "pl-11" : "pl-4",
+      lg: hasStartIcon ? "pl-12" : "pl-5",
+    };
+
+    // Calculate active right actions count
+    const hasClear = Boolean(showClear && inputValue);
+    const rightActionsCount = (isLoading ? 1 : 0) + (hasClear ? 1 : 0) + (showTrigger ? 1 : 0);
+
+    const rightPaddingClass =
+      rightActionsCount >= 3
+        ? "pr-24"
+        : rightActionsCount === 2
+        ? "pr-16"
+        : rightActionsCount === 1
+        ? "pr-10"
+        : "pr-4";
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (!isOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
@@ -208,14 +231,10 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
     };
 
     return (
-      <div className="relative flex items-center w-full">
-        {startAddon ? (
-          <div className="absolute left-3.5 z-10 flex items-center justify-center text-slate-400 pointer-events-none">
-            {startAddon}
-          </div>
-        ) : (
-          <div className="absolute left-3.5 z-10 flex items-center justify-center text-slate-400 pointer-events-none">
-            <Search className="w-4 h-4" />
+      <div className="relative flex items-center w-full group">
+        {hasStartIcon && (
+          <div className="absolute left-3.5 z-10 flex items-center justify-center text-slate-400 group-focus-within:text-blue-500 transition-colors pointer-events-none">
+            {startAddon ? startAddon : <Search className="w-4 h-4" />}
           </div>
         )}
 
@@ -239,9 +258,10 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={cn(
-            "w-full bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 font-medium pl-10 pr-10",
+            "w-full bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-md transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 font-medium",
             sizeClasses[size],
-            showTrigger && showClear && inputValue && "pr-16",
+            leftPaddingClasses[size],
+            rightPaddingClass,
             className
           )}
           {...props}
@@ -250,7 +270,7 @@ export const AutocompleteInput = React.forwardRef<HTMLInputElement, Autocomplete
         <div className="absolute right-3.5 z-10 flex items-center gap-1.5 text-slate-400">
           {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
 
-          {showClear && inputValue && (
+          {hasClear && (
             <button
               type="button"
               onClick={() => {
