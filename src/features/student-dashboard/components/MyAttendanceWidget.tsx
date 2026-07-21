@@ -44,12 +44,15 @@ export function MyAttendanceWidget() {
 
         if (error) throw error;
         
-        const fetchedRecords = (data as any) || [];
+        const fetchedRecords = (data as unknown as AttendanceRecord[]) || [];
         setRecords(fetchedRecords);
 
         // Calculate summary
-        const sum = fetchedRecords.reduce((acc: any, curr: AttendanceRecord) => {
-          acc[curr.status] = (acc[curr.status] || 0) + 1;
+        const sum = fetchedRecords.reduce((acc: { present: number; absent: number; late: number; excused: number; total: number }, curr: AttendanceRecord) => {
+          const status = curr.status as keyof typeof acc;
+          if (acc[status] !== undefined) {
+            acc[status] += 1;
+          }
           acc.total += 1;
           return acc;
         }, { present: 0, absent: 0, late: 0, excused: 0, total: 0 });

@@ -1,4 +1,4 @@
-import { X, Clock, FileText, CheckCircle, Download, BookOpen } from 'lucide-react';
+import { X, Clock, FileText, CheckCircle, BookOpen } from 'lucide-react';
 import { AssignmentDropzone } from './AssignmentDropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 

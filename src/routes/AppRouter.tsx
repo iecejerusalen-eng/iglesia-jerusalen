@@ -73,6 +73,7 @@ const OrderSuccess = lazyWithRetry(() => import('../pages/public/OrderSuccess'))
 const StudentDashboard = lazyWithRetry(() => import('../pages/lms/StudentDashboard'));
 const TeacherDashboard = lazyWithRetry(() => import('../pages/lms/TeacherDashboard'));
 const LMSAcademicAdmin = lazyWithRetry(() => import('../pages/lms/LMSAcademicAdmin'));
+const DirectorDashboard = lazyWithRetry(() => import('../pages/lms/DirectorDashboard'));
 const CourseViewer = lazyWithRetry(() => import('../pages/lms/CourseViewer'));
 
 // --- ADMIN PAGES ---
@@ -176,6 +177,7 @@ export default function AppRouter() {
             <Route path="/lms/estudiante" element={<StudentDashboard />} />
             <Route path="/lms/docente" element={<TeacherDashboard />} />
             <Route path="/lms/admin" element={<LMSAcademicAdmin />} />
+            <Route path="/lms/director" element={<DirectorDashboard />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
           </Route>

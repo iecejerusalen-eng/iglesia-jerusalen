@@ -87,25 +87,25 @@ export function GradesOverviewWidget({ enrollments }: GradesOverviewWidgetProps)
             const finalGrade = grades[enr.id];
             
             let colorClass = 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
-            let barColor = 'bg-gray-400';
+            let barBgColor: string;
             
             if (finalGrade !== undefined) {
               if (finalGrade >= 90) {
                 colorClass = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-                barColor = 'bg-green-500';
+                barBgColor = 'bg-green-500';
               } else if (finalGrade >= 70) {
                 colorClass = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-                barColor = 'bg-emerald-500';
+                barBgColor = 'bg-emerald-500';
               } else if (finalGrade >= 50) {
                 colorClass = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-                barColor = 'bg-yellow-500';
+                barBgColor = 'bg-yellow-500';
               } else {
                 colorClass = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-                barColor = 'bg-red-500';
+                barBgColor = 'bg-red-500';
               }
             } else {
                 // If it's in progress but has some progress, use a generic color for the bar
-                barColor = 'bg-indigo-500';
+                barBgColor = 'bg-indigo-500';
             }
 
             return (
@@ -135,7 +135,7 @@ export function GradesOverviewWidget({ enrollments }: GradesOverviewWidgetProps)
                 {/* Progress Bar */}
                 <div className="w-full h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full mt-3 overflow-hidden">
                   <div 
-                    className={`h-full rounded-full ${enr.progressPercentage > 0 ? barColor : 'bg-transparent'} transition-all duration-500`}
+                    className={`h-full rounded-full ${enr.progressPercentage > 0 ? barBgColor : 'bg-transparent'} transition-all duration-500`}
                     style={{ width: `${enr.progressPercentage}%` }}
                   />
                 </div>
