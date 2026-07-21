@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Video, FileText, Loader2 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 

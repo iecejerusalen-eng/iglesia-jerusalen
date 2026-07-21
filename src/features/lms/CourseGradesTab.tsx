@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Award, FileCheck, MessageSquare, BookOpen, ChevronRight, Loader2 } from 'lucide-react';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { supabase } from '../../config/supabase';

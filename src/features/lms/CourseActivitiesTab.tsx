@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -15,6 +15,14 @@ interface Activity {
   status: string;
   grade: number | string | null;
   type: string;
+}
+
+interface Submission {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  grade: string | null;
+  [key: string]: unknown;
 }
 
 type FilterStatus = 'all' | 'pending' | 'submitted' | 'graded';
@@ -56,7 +64,7 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
 
       // 4. Fetch submissions for this student
       const lessonIds = (assignments || []).map(a => a.id);
-      let submissions: any[] = [];
+      let submissions: Submission[] = [];
       
       if (lessonIds.length > 0) {
         const { data: subs } = await supabase
