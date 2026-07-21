@@ -39,7 +39,7 @@ USING (
   EXISTS (
     SELECT 1 FROM public.profiles
     WHERE profiles.id = auth.uid() 
-    AND profiles.role IN ('admin', 'editor', 'pastor', 'leader', 'maestro', 'docente', 'teacher')
+    AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')
   )
 );
 
