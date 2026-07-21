@@ -26,17 +26,18 @@ import {
   Gamepad2,
   Heart,
   Globe2,
-  Building
+  Building,
+  Component,
 } from 'lucide-react';
 
 export type ModuleGroup =
   | 'admin'          // Administración y Métricas
-  | 'tienda'         // Tienda y Productos
-  | 'educacion'      // LMS y Educación
-  | 'comunidad'      // CRM, Ministerios y Comunicación
-  | 'eventos_medios' // Calendario, Sermones, Alabanzas y Notificaciones
-  | 'diseno'         // Personalización, Logos, Animaciones, Páginas
-  | 'operaciones';   // Logística, Inventario, Media Vault
+  | 'diseno'         // Sistema de Diseño, Componentes UI, Logos, Animaciones, Páginas
+  | 'eventos_medios' // Calendario, Sermones, Alabanzas, Sonidos y Notificaciones
+  | 'educacion'      // LMS, Aula Virtual, Cursos y Juegos
+  | 'comunidad'      // CRM Miembros, Ministerios, Misiones, Chat y Oración
+  | 'tienda'         // Tienda, Productos, Órdenes, Pagos y Envíos
+  | 'operaciones';   // Logística, Inventario, Media Vault y Reservas
 
 export interface ModuleGroupMetadata {
   key: ModuleGroup;
@@ -48,58 +49,59 @@ export interface ModuleGroupMetadata {
 export const MODULE_GROUPS: ModuleGroupMetadata[] = [
   {
     key: 'admin',
-    label: 'Administración',
-    description: 'Gestión general, métricas del sistema, configuraciones y finanzas.',
+    label: 'Administración & Métricas',
+    description: 'Gestión general del sistema, analítica, finanzas y configuración de iglesia.',
     icon: Shield
   },
   {
-    key: 'comunidad',
-    label: 'Comunidad y CRM',
-    description: 'Control de membresía, ministerios activos, peticiones de oración y chat.',
-    icon: Users
-  },
-  {
-    key: 'educacion',
-    label: 'Educación',
-    description: 'Gestión de cursos, lecciones, cuestionarios y recursos abiertos.',
-    icon: GraduationCap
-  },
-  {
-    key: 'eventos_medios',
-    label: 'Eventos y Medios',
-    description: 'Programación de eventos, biblioteca de alabanzas, sermones y avisos.',
-    icon: Calendar
-  },
-  {
-    key: 'tienda',
-    label: 'Tienda',
-    description: 'Administración de productos de la librería de la iglesia y pedidos.',
-    icon: Store
-  },
-  {
     key: 'diseno',
-    label: 'Diseño y Recursos',
-    description: 'Catálogo de logos, animaciones multimedia y editor de páginas públicas.',
+    label: 'Sistema de Diseño & Componentes',
+    description: 'Biblioteca visual de componentes UI, Glassmorphism, logos, páginas y plugins.',
     icon: Palette
   },
   {
+    key: 'eventos_medios',
+    label: 'Eventos & Medios',
+    description: 'Programación de eventos, sermones, biblioteca de alabanzas y avisos.',
+    icon: Calendar
+  },
+  {
+    key: 'educacion',
+    label: 'Educación & Aula Virtual',
+    description: 'Cursos, lecciones del LMS, solicitudes de matrícula y juegos interactivos.',
+    icon: GraduationCap
+  },
+  {
+    key: 'comunidad',
+    label: 'Comunidad & CRM',
+    description: 'Directorio de miembros, ministerios, misiones, chat y peticiones de oración.',
+    icon: Users
+  },
+  {
+    key: 'tienda',
+    label: 'Tienda & Librería',
+    description: 'Catálogo de productos de la librería, gestión de órdenes y envíos.',
+    icon: Store
+  },
+  {
     key: 'operaciones',
-    label: 'Operaciones',
-    description: 'Logística de producción dominical, inventario de equipos y bóveda de media.',
+    label: 'Operaciones & Logística',
+    description: 'Producción dominical, inventario de equipos, reservas y bóveda de archivos media.',
     icon: Package
   }
 ];
 
 export interface AdminModule {
-  id: string;      // Permission key used in Database (e.g. 'dashboard', 'logos')
-  label: string;   // Display name for the Permissions Matrix / RBAC GUI
-  name: string;    // Display name for the Sidebar item
-  path: string;    // Router path (e.g. '/admin/logos')
+  id: string;      // Permission key used in DB (e.g. 'dashboard', 'components')
+  label: string;   // Display name for RBAC Matrix
+  name: string;    // Display name for Sidebar item
+  path: string;    // Router path (e.g. '/admin/componentes')
   icon: React.ElementType; // Lucide Icon component
   group: ModuleGroup;
 }
 
 export const ADMIN_MODULES: AdminModule[] = [
+  // --- 1. ADMINISTRACIÓN Y MÉTRICAS ---
   {
     id: 'dashboard',
     label: 'Resumen (Dashboard)',
@@ -107,6 +109,80 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin',
     icon: LayoutDashboard,
     group: 'admin'
+  },
+  {
+    id: 'analytics',
+    label: 'Análisis (Métricas)',
+    name: 'Análisis & Métricas',
+    path: '/admin/analisis',
+    icon: BarChart3,
+    group: 'admin'
+  },
+  {
+    id: 'finances',
+    label: 'Finanzas',
+    name: 'Gestión Financiera',
+    path: '/admin/finanzas',
+    icon: DollarSign,
+    group: 'admin'
+  },
+  {
+    id: 'users',
+    label: 'Gestión de Usuarios (Admin)',
+    name: 'Usuarios & Permisos',
+    path: '/admin/usuarios',
+    icon: UserCog,
+    group: 'admin'
+  },
+  {
+    id: 'settings',
+    label: 'Datos de Iglesia',
+    name: 'Configuración Iglesia',
+    path: '/admin/configuracion',
+    icon: Settings,
+    group: 'admin'
+  },
+  {
+    id: 'map',
+    label: 'Mapa Estratégico',
+    name: 'Mapa Estratégico',
+    path: '/admin/mapa-estrategico',
+    icon: Compass,
+    group: 'admin'
+  },
+  {
+    id: 'appearance',
+    label: 'Configuración del Panel',
+    name: 'Personalizar Panel',
+    path: '/admin/apariencia',
+    icon: Palette,
+    group: 'admin'
+  },
+
+  // --- 2. SISTEMA DE DISEÑO Y COMPONENTES UI ---
+  {
+    id: 'components',
+    label: 'Biblioteca Visual de Componentes UI',
+    name: 'Biblioteca Componentes UI',
+    path: '/admin/componentes',
+    icon: Component,
+    group: 'diseno'
+  },
+  {
+    id: 'button_studio',
+    label: 'Estudio de Botones & Glassmorphism',
+    name: 'Estudio Botones & Glass',
+    path: '/admin/apariencia/botones',
+    icon: Sparkles,
+    group: 'diseno'
+  },
+  {
+    id: 'design',
+    label: 'Catálogo de Diseño & Estilos',
+    name: 'Guía de Estilo / Tokens',
+    path: '/admin/diseno',
+    icon: Palette,
+    group: 'diseno'
   },
   {
     id: 'animations',
@@ -117,20 +193,62 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'diseno'
   },
   {
-    id: 'design',
-    label: 'Catálogo de Diseño',
-    name: 'Guía de Estilo / Diseño',
-    path: '/admin/diseno',
-    icon: Palette,
+    id: 'logos',
+    label: 'Catálogo de Logos',
+    name: 'Catálogo de Logos',
+    path: '/admin/logos',
+    icon: ImageIcon,
     group: 'diseno'
   },
   {
-    id: 'analytics',
-    label: 'Análisis (Métricas)',
-    name: 'Análisis (Métricas)',
-    path: '/admin/analisis',
-    icon: BarChart3,
-    group: 'admin'
+    id: 'pages',
+    label: 'Editor de Páginas',
+    name: 'Editor de Páginas',
+    path: '/admin/paginas',
+    icon: FileText,
+    group: 'diseno'
+  },
+  {
+    id: 'presentation_editor',
+    label: 'Presentación (Pitch Deck)',
+    name: 'Editor Presentaciones',
+    path: '/admin/presentacion',
+    icon: Sparkles,
+    group: 'diseno'
+  },
+  {
+    id: 'plugins',
+    label: 'Gestor de Extensiones',
+    name: 'Extensiones & Plugins',
+    path: '/admin/extensiones',
+    icon: Sparkles,
+    group: 'diseno'
+  },
+
+  // --- 3. EVENTOS, MEDIOS & NOTIFICACIONES ---
+  {
+    id: 'sermons',
+    label: 'Sermones y Devocionales',
+    name: 'Sermones & Predicas',
+    path: '/admin/sermones',
+    icon: Video,
+    group: 'eventos_medios'
+  },
+  {
+    id: 'songs',
+    label: 'Alabanzas (Biblioteca)',
+    name: 'Biblioteca Alabanzas',
+    path: '/admin/alabanzas',
+    icon: Music,
+    group: 'eventos_medios'
+  },
+  {
+    id: 'events',
+    label: 'Eventos (Calendario)',
+    name: 'Calendario Eventos',
+    path: '/admin/eventos',
+    icon: Calendar,
+    group: 'eventos_medios'
   },
   {
     id: 'notifications',
@@ -141,21 +259,15 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'eventos_medios'
   },
   {
-    id: 'sermons',
-    label: 'Sermones',
-    name: 'Sermones',
-    path: '/admin/sermones',
-    icon: Video,
-    group: 'eventos_medios'
-  },
-  {
-    id: 'songs',
-    label: 'Alabanzas (Biblioteca)',
-    name: 'Alabanzas',
-    path: '/admin/alabanzas',
+    id: 'audio_library',
+    label: 'Gestor de Audios',
+    name: 'Biblioteca Sonidos',
+    path: '/admin/juegos/audio-library',
     icon: Music,
     group: 'eventos_medios'
   },
+
+  // --- 4. EDUCACIÓN Y LMS (AULA VIRTUAL) ---
   {
     id: 'programs',
     label: 'Aula Virtual (LMS)',
@@ -167,194 +279,10 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     id: 'open_resources',
     label: 'Programas y Estudios',
-    name: 'Programas y Estudios',
+    name: 'Programas & Estudios',
     path: '/admin/recursos-abiertos',
     icon: FileText,
     group: 'educacion'
-  },
-  {
-    id: 'games',
-    label: 'Juegos',
-    name: 'Juegos',
-    path: '/admin/juegos',
-    icon: Gamepad2,
-    group: 'educacion'
-  },
-  {
-    id: 'members',
-    label: 'Miembros (CRM)',
-    name: 'Miembros (CRM)',
-    path: '/admin/miembros',
-    icon: Users,
-    group: 'comunidad'
-  },
-  {
-    id: 'map',
-    label: 'Mapa Estratégico',
-    name: 'Mapa Estratégico',
-    path: '/admin/mapa-estrategico',
-    icon: Compass,
-    group: 'admin'
-  },
-  {
-    id: 'events',
-    label: 'Eventos (Calendario)',
-    name: 'Eventos (Calendario)',
-    path: '/admin/eventos',
-    icon: Calendar,
-    group: 'eventos_medios'
-  },
-  {
-    id: 'missions',
-    label: 'Misiones',
-    name: 'Misiones',
-    path: '/admin/misiones',
-    icon: Globe2,
-    group: 'comunidad'
-  },
-  {
-    id: 'volunteering',
-    label: 'Voluntariado',
-    name: 'Voluntariado',
-    path: '/admin/voluntariado',
-    icon: Heart,
-    group: 'comunidad'
-  },
-  {
-    id: 'bookings',
-    label: 'Reservas',
-    name: 'Reservas de Espacios',
-    path: '/admin/reservas',
-    icon: Building,
-    group: 'operaciones'
-  },
-  {
-    id: 'ministries',
-    label: 'Ministerios',
-    name: 'Ministerios',
-    path: '/admin/ministerios',
-    icon: Layers,
-    group: 'comunidad'
-  },
-  {
-    id: 'logos',
-    label: 'Catálogo de Logos',
-    name: 'Catálogo de Logos',
-    path: '/admin/logos',
-    icon: ImageIcon,
-    group: 'diseno'
-  },
-  {
-    id: 'appearance',
-    label: 'Estilos de Botones y Glassmorphism',
-    name: 'Estudio de Botones & Glassmorphism',
-    path: '/admin/apariencia/botones',
-    icon: Sparkles,
-    group: 'diseno'
-  },
-  {
-    id: 'petitions',
-    label: 'Peticiones Oración',
-    name: 'Peticiones Oración',
-    path: '/admin/peticiones',
-    icon: FileText,
-    group: 'comunidad'
-  },
-  {
-    id: 'finances',
-    label: 'Finanzas',
-    name: 'Finanzas',
-    path: '/admin/finanzas',
-    icon: DollarSign,
-    group: 'admin'
-  },
-  {
-    id: 'products',
-    label: 'Productos',
-    name: 'Productos',
-    path: '/admin/productos',
-    icon: Store,
-    group: 'tienda'
-  },
-  {
-    id: 'orders',
-    label: 'Órdenes',
-    name: 'Órdenes',
-    path: '/admin/ordenes',
-    icon: Package,
-    group: 'tienda'
-  },
-  {
-    id: 'store_settings',
-    label: 'Pagos y Envíos',
-    name: 'Pagos y Envíos',
-    path: '/admin/pagos-envios',
-    icon: DollarSign,
-    group: 'tienda'
-  },
-  {
-    id: 'pages',
-    label: 'Editor de Páginas',
-    name: 'Editor Páginas',
-    path: '/admin/paginas',
-    icon: FileText,
-    group: 'diseno'
-  },
-  {
-    id: 'users',
-    label: 'Gestión de Usuarios (Admin)',
-    name: 'Gestión Usuarios',
-    path: '/admin/usuarios',
-    icon: UserCog,
-    group: 'admin'
-  },
-  {
-    id: 'settings',
-    label: 'Datos de Iglesia',
-    name: 'Datos Iglesia',
-    path: '/admin/configuracion',
-    icon: Settings,
-    group: 'admin'
-  },
-  {
-    id: 'appearance',
-    label: 'Configuración del Panel',
-    name: 'Personalizar Panel',
-    path: '/admin/apariencia',
-    icon: Palette,
-    group: 'admin'
-  },
-  {
-    id: 'production',
-    label: 'Logística de Producción',
-    name: 'Logística',
-    path: '/admin/produccion',
-    icon: Columns,
-    group: 'operaciones'
-  },
-  {
-    id: 'media_vault',
-    label: 'Bóveda de Media',
-    name: 'Bóveda Media',
-    path: '/admin/media-vault',
-    icon: FolderLock,
-    group: 'operaciones'
-  },
-  {
-    id: 'chat',
-    label: 'Chat de Mensajería',
-    name: 'Mensajería Chat',
-    path: '/admin/chat',
-    icon: MessageSquare,
-    group: 'comunidad'
-  },
-  {
-    id: 'inventory',
-    label: 'Inventario de Equipos',
-    name: 'Inventario',
-    path: '/admin/inventario',
-    icon: Package,
-    group: 'operaciones'
   },
   {
     id: 'lms_enrollments',
@@ -365,35 +293,129 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
-    id: 'audio_library',
-    label: 'Gestor de Audios',
-    name: 'Biblioteca de Sonidos',
-    path: '/admin/juegos/audio-library',
-    icon: Music,
-    group: 'eventos_medios'
+    id: 'games',
+    label: 'Juegos Educativos',
+    name: 'Juegos Educativos',
+    path: '/admin/juegos',
+    icon: Gamepad2,
+    group: 'educacion'
+  },
+
+  // --- 5. COMUNIDAD, CRM & CHAT ---
+  {
+    id: 'members',
+    label: 'Miembros (CRM)',
+    name: 'Directorio Miembros (CRM)',
+    path: '/admin/miembros',
+    icon: Users,
+    group: 'comunidad'
   },
   {
-    id: 'presentation_editor',
-    label: 'Presentación (Pitch Deck)',
-    name: 'Editor de Presentación',
-    path: '/admin/presentacion',
-    icon: Sparkles,
-    group: 'diseno'
+    id: 'ministries',
+    label: 'Ministerios',
+    name: 'Ministerios Activos',
+    path: '/admin/ministerios',
+    icon: Layers,
+    group: 'comunidad'
   },
   {
-    id: 'plugins',
-    label: 'Gestor de Extensiones',
-    name: 'Extensiones / Plugins',
-    path: '/admin/extensiones',
-    icon: Sparkles,
-    group: 'diseno'
+    id: 'missions',
+    label: 'Misiones',
+    name: 'Misiones & Campos',
+    path: '/admin/misiones',
+    icon: Globe2,
+    group: 'comunidad'
+  },
+  {
+    id: 'volunteering',
+    label: 'Voluntariado',
+    name: 'Gestión Voluntariado',
+    path: '/admin/voluntariado',
+    icon: Heart,
+    group: 'comunidad'
+  },
+  {
+    id: 'petitions',
+    label: 'Peticiones Oración',
+    name: 'Peticiones Oración',
+    path: '/admin/peticiones',
+    icon: FileText,
+    group: 'comunidad'
+  },
+  {
+    id: 'chat',
+    label: 'Chat de Mensajería',
+    name: 'Mensajería Chat',
+    path: '/admin/chat',
+    icon: MessageSquare,
+    group: 'comunidad'
   },
   {
     id: 'certificates',
     label: 'Generador de Certificados (PDF)',
-    name: 'Generador PDFs',
+    name: 'Certificados & PDFs',
     path: '/admin/certificados',
     icon: FileText,
     group: 'comunidad'
+  },
+
+  // --- 6. TIENDA Y LIBRERÍA ---
+  {
+    id: 'products',
+    label: 'Productos de Tienda',
+    name: 'Productos Tienda',
+    path: '/admin/productos',
+    icon: Store,
+    group: 'tienda'
+  },
+  {
+    id: 'orders',
+    label: 'Órdenes de Compra',
+    name: 'Órdenes & Pedidos',
+    path: '/admin/ordenes',
+    icon: Package,
+    group: 'tienda'
+  },
+  {
+    id: 'store_settings',
+    label: 'Pagos y Envíos',
+    name: 'Configuración Pagos',
+    path: '/admin/pagos-envios',
+    icon: DollarSign,
+    group: 'tienda'
+  },
+
+  // --- 7. OPERACIONES & LOGÍSTICA ---
+  {
+    id: 'production',
+    label: 'Logística de Producción',
+    name: 'Producción Dominical',
+    path: '/admin/produccion',
+    icon: Columns,
+    group: 'operaciones'
+  },
+  {
+    id: 'inventory',
+    label: 'Inventario de Equipos',
+    name: 'Inventario Equipos',
+    path: '/admin/inventario',
+    icon: Package,
+    group: 'operaciones'
+  },
+  {
+    id: 'media_vault',
+    label: 'Bóveda de Media',
+    name: 'Bóveda Archivos Media',
+    path: '/admin/media-vault',
+    icon: FolderLock,
+    group: 'operaciones'
+  },
+  {
+    id: 'bookings',
+    label: 'Reservas de Espacios',
+    name: 'Reserva Espacios',
+    path: '/admin/reservas',
+    icon: Building,
+    group: 'operaciones'
   }
 ];
