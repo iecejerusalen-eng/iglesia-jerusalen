@@ -59,6 +59,10 @@ export const memberSchema = z.object({
   birth_place: z.string().nullable().optional().or(z.literal('')),
   has_disability: z.boolean().optional(),
   disability_types: z.array(z.string()).nullable().optional(),
+  additional_phones: z.array(z.object({
+    phone: z.string(),
+    phone_country_code: z.string().optional()
+  })).optional(),
 });
 
 export type MemberForm = z.infer<typeof memberSchema>;
@@ -74,8 +78,9 @@ export interface Career {
 }
 
 export interface MemberWithRelations extends DbMember {
-  member_emails?: Array<{ email: string }>;
-  member_service_areas?: Array<{ catalog_roles: CatalogRole }>;
+  member_emails?: { email: string }[];
+  member_phones?: { phone: string, country_code: string }[];
+  member_service_areas?: { catalog_roles: { id: string; name: string } }[];
   member_talents?: Array<{ catalog_roles: CatalogRole }>;
   member_spiritual_gifts?: Array<{ catalog_roles: CatalogRole }>;
   ministries?: { id: string; name: string } | null;
@@ -114,8 +119,9 @@ export interface LocalMemberRow {
   is_studying: number;
   studying_career_id?: string | null;
   deleted_at?: string | null;
-  emails?: string;
-  service_areas?: string;
+  emails: string; // JSON string
+  phones: string; // JSON string
+  service_areas: string; // JSON string
   talents?: string;
   spiritual_gifts?: string;
 }

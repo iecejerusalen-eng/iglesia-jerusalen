@@ -128,14 +128,16 @@ export const processSyncQueue = async (
           let service_areas = null;
           let talents = null;
           let spiritual_gifts = null;
+          let additional_phones = null;
 
           if (item.table_name === 'members') {
-            const { emails: e, service_areas: sa, talents: t, spiritual_gifts: sg, ...rest } = payload;
+            const { emails: e, service_areas: sa, talents: t, spiritual_gifts: sg, additional_phones: ap, ...rest } = payload;
             upsertPayload = rest;
             emails = e;
             service_areas = sa;
             talents = t;
             spiritual_gifts = sg;
+            additional_phones = ap;
           }
 
           const { error: upsertError } = await supabase.from(item.table_name).upsert({ id: item.record_id, ...upsertPayload });
@@ -149,6 +151,21 @@ export const processSyncQueue = async (
               const validEmails = emails.filter((x: Record<string, unknown>) => typeof x.email === 'string' && x.email.trim() !== '');
               if (validEmails.length > 0) {
                 const { error: insErr } = await supabase.from('member_emails').insert(validEmails.map((x: Record<string, unknown>) => ({ member_id: item.record_id, email: x.email })));
+                if (insErr) throw insErr;
+              }
+            }
+
+            if (additional_phones !== undefined && additional_phones !== null) {
+              const { error: delErr } = await supabase.from('member_phones').delete().eq('member_id', item.record_id);
+              if (delErr) throw delErr;
+
+              const validPhones = additional_phones.filter((x: Record<string, unknown>) => typeof x.phone === 'string' && x.phone.trim() !== '');
+              if (validPhones.length > 0) {
+                const { error: insErr } = await supabase.from('member_phones').insert(validPhones.map((x: Record<string, unknown>) => ({ 
+                  member_id: item.record_id, 
+                  phone: x.phone,
+                  country_code: x.phone_country_code || '+593'
+                })));
                 if (insErr) throw insErr;
               }
             }

@@ -40,6 +40,7 @@ export const useMembers = () => {
           has_disability: m.has_disability === 1,
           disability_types: m.disability_types ? JSON.parse(m.disability_types) : [],
           member_emails: m.emails ? JSON.parse(m.emails) : [],
+          member_phones: m.phones ? JSON.parse(m.phones) : [],
           member_service_areas: m.service_areas ? JSON.parse(m.service_areas) : [],
           member_talents: m.talents ? JSON.parse(m.talents) : [],
           member_spiritual_gifts: m.spiritual_gifts ? JSON.parse(m.spiritual_gifts) : []
@@ -51,6 +52,7 @@ export const useMembers = () => {
           .select(`
             *,
             member_emails(email),
+            member_phones(phone, country_code),
             member_service_areas(catalog_roles(id, name)),
             member_talents(catalog_roles(id, name)),
             member_spiritual_gifts(catalog_roles(id, name)),

@@ -12,6 +12,7 @@ export const pullFromServer = async () => {
       .select(`
         *,
         member_emails(email),
+        member_phones(phone, country_code),
         member_service_areas(catalog_roles(id, name)),
         member_talents(catalog_roles(id, name)),
         member_spiritual_gifts(catalog_roles(id, name))
@@ -31,6 +32,7 @@ export const pullFromServer = async () => {
             latitude: m.latitude || null, longitude: m.longitude || null, deleted_at: m.deleted_at || null,
             tithes_sum: m.tithes_sum || 0, created_at: m.created_at, updated_at: m.updated_at, version: m.version,
             emails: m.member_emails ? JSON.stringify(m.member_emails) : '[]',
+            phones: m.member_phones ? JSON.stringify(m.member_phones) : '[]',
             service_areas: m.member_service_areas ? JSON.stringify(m.member_service_areas) : '[]',
             talents: m.member_talents ? JSON.stringify(m.member_talents) : '[]',
             spiritual_gifts: m.member_spiritual_gifts ? JSON.stringify(m.member_spiritual_gifts) : '[]',

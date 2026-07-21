@@ -45,6 +45,10 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     ? editingMember.member_emails.map((e) => ({ email: e.email }))
     : [{ email: '' }];
 
+  const formattedPhones = editingMember?.member_phones && editingMember.member_phones.length > 0
+    ? editingMember.member_phones.map((p) => ({ phone: p.phone, phone_country_code: p.country_code }))
+    : [];
+
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<MemberFormType>({
     resolver: zodResolver(memberSchema),
     defaultValues: {
@@ -77,6 +81,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       birth_place: editingMember?.birth_place || '',
       has_disability: !!editingMember?.has_disability,
       disability_types: editingMember?.disability_types || [],
+      additional_phones: formattedPhones,
     }
   });
 
@@ -85,6 +90,11 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'emails'
+  });
+
+  const { fields: phoneFields, append: appendPhone, remove: removePhone } = useFieldArray({
+    control,
+    name: 'additional_phones'
   });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -414,6 +424,36 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-slate-950 rounded-xl p-4 border border-gray-150 dark:border-white/10 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-gray-650 dark:text-gray-400 uppercase tracking-wider">Teléfonos Adicionales</span>
+                <button type="button" onClick={() => appendPhone({ phone: '', phone_country_code: '+593' })} className="text-[11px] text-primary dark:text-church-gold-bright font-bold hover:underline cursor-pointer flex items-center gap-1">
+                  <Plus size={12} />
+                  Agregar teléfono
+                </button>
+              </div>
+              <div className="space-y-2">
+                {phoneFields.map((field, idx) => (
+                  <div key={field.id} className="flex gap-2 items-center">
+                    <div className="flex-grow flex gap-2">
+                      <select {...register(`additional_phones.${idx}.phone_country_code` as const)} className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none w-28 shrink-0 font-semibold">
+                        {COUNTRY_CODES.map((country) => (
+                          <option key={country.code} value={country.dialCode}>{country.flag} {country.dialCode}</option>
+                        ))}
+                      </select>
+                      <input type="text" {...register(`additional_phones.${idx}.phone` as const)} className="w-full px-4 py-1.5 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" placeholder="0987654321" />
+                    </div>
+                    <button type="button" onClick={() => removePhone(idx)} className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 cursor-pointer">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                {phoneFields.length === 0 && (
+                  <p className="text-xs text-gray-400 italic">No hay teléfonos adicionales registrados.</p>
+                )}
               </div>
             </div>
 

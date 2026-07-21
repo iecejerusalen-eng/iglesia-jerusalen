@@ -18,6 +18,7 @@ export const useMembersMutations = () => {
       talents: string[];
       gifts: string[];
       emails: { email: string }[];
+      phones: { phone: string; phone_country_code?: string }[];
     }) => {
       const syncStore = useSyncStore.getState();
 
@@ -43,6 +44,25 @@ export const useMembersMutations = () => {
             crypto.randomUUID(),
             'INSERT',
             { member_id: payload.id, email: email.email.trim() }
+          );
+        }
+      }
+
+      // Handle additional phones
+      await syncStore.enqueueMutation(
+        'member_phones',
+        payload.id,
+        'DELETE_BY_MEMBER' as any,
+        { member_id: payload.id }
+      );
+
+      for (const p of payload.phones) {
+        if (p.phone) {
+          await syncStore.enqueueMutation(
+            'member_phones',
+            crypto.randomUUID(),
+            'INSERT',
+            { member_id: payload.id, phone: p.phone.trim(), country_code: p.phone_country_code || '+593' }
           );
         }
       }
@@ -153,7 +173,8 @@ export const useMembersMutations = () => {
         areas,
         talents,
         gifts,
-        emails: emails || []
+        emails: emails || [],
+        phones: data.additional_phones || []
       });
       return true;
     } catch (error) {
