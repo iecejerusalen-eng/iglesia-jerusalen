@@ -15,6 +15,85 @@ export interface AutocompleteItemType {
   [key: string]: unknown;
 }
 
+/**
+ * Calculates a relevance score (0-100) for intelligent search ranking.
+ */
+export function calculateRelevanceScore(item: AutocompleteItemType, query: string): number {
+  if (!query || !query.trim()) return 1;
+  const q = query.toLowerCase().trim();
+
+  const label = item.label.toLowerCase();
+  const desc = (item.description || "").toLowerCase();
+  const cat = (item.category || "").toLowerCase();
+
+  // 1. Exact Label Match (100 pts)
+  if (label === q) return 100;
+
+  // 2. Label starts with exact query (80 pts)
+  if (label.startsWith(q)) return 80;
+
+  // 3. Label contains exact query phrase (60 pts)
+  if (label.includes(q)) return 60;
+
+  // 4. All query words are present in label (40 pts)
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  if (queryWords.length > 1 && queryWords.every((word) => label.includes(word))) {
+    return 40;
+  }
+
+  // 5. Description or Pastor contains exact query (20 pts)
+  if (desc.includes(q)) return 20;
+
+  // 6. Category contains exact query (10 pts)
+  if (cat.includes(q)) return 10;
+
+  // 7. Any query word matched (5 pts)
+  if (queryWords.some((word) => label.includes(word) || desc.includes(word))) {
+    return 5;
+  }
+
+  return 0;
+}
+
+/**
+ * Highlights matching search terms in label/description text.
+ */
+export function HighlightMatch({
+  text,
+  query,
+  className,
+}: {
+  text: string;
+  query: string;
+  className?: string;
+}) {
+  if (!query || !query.trim()) {
+    return <span className={className}>{text}</span>;
+  }
+
+  const q = query.trim();
+  const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
+  const parts = text.split(regex);
+
+  return (
+    <span className={className}>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <mark
+            key={index}
+            className="bg-amber-400/30 text-amber-700 dark:text-amber-300 font-bold px-0.5 rounded"
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </span>
+  );
+}
+
 interface AutocompleteContextType {
   inputValue: string;
   setInputValue: (val: string) => void;
@@ -89,20 +168,25 @@ export function Autocomplete({
     [isControlledValue, onValueChange, isOpen, setIsOpen]
   );
 
-  const defaultFilter = (item: AutocompleteItemType, query: string) => {
-    if (!query) return true;
-    const q = query.toLowerCase().trim();
-    return (
-      item.label.toLowerCase().includes(q) ||
-      (item.category && item.category.toLowerCase().includes(q)) ||
-      (item.description && item.description.toLowerCase().includes(q))
-    );
-  };
-
-  const activeFilter = filterFn || defaultFilter;
+  // Intelligent ranking & scoring
   const filteredItems = React.useMemo(() => {
-    return items.filter((item) => activeFilter(item, inputValue));
-  }, [items, inputValue, activeFilter]);
+    if (!inputValue || !inputValue.trim()) {
+      return items;
+    }
+
+    return items
+      .map((item) => ({
+        item,
+        score: filterFn
+          ? filterFn(item, inputValue)
+            ? 50
+            : 0
+          : calculateRelevanceScore(item, inputValue),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ item }) => item);
+  }, [items, inputValue, filterFn]);
 
   const selectItem = React.useCallback(
     (item: AutocompleteItemType) => {
@@ -321,7 +405,7 @@ export function AutocompletePopup({ children, className }: AutocompletePopupProp
           exit={{ opacity: 0, y: -6, scale: 0.98 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-hidden rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-2xl backdrop-blur-xl p-1.5",
+            "absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-2xl backdrop-blur-xl p-1.5",
             className
           )}
         >
@@ -342,14 +426,14 @@ export function AutocompleteList({ children, className, ...props }: Autocomplete
 
   if (typeof children === "function") {
     return (
-      <div className={cn("max-h-64 overflow-y-auto space-y-1 custom-scrollbar-dark", className)} {...props}>
+      <div className={cn("max-h-72 overflow-y-auto space-y-1 custom-scrollbar-dark", className)} {...props}>
         {filteredItems.map((item, index) => children(item, index))}
       </div>
     );
   }
 
   return (
-    <div className={cn("max-h-64 overflow-y-auto space-y-1 custom-scrollbar-dark", className)} {...props}>
+    <div className={cn("max-h-72 overflow-y-auto space-y-1 custom-scrollbar-dark", className)} {...props}>
       {children}
     </div>
   );
@@ -368,7 +452,8 @@ export function AutocompleteItem({
   onClick,
   ...props
 }: AutocompleteItemProps) {
-  const { selectItem, highlightedIndex, setHighlightedIndex, filteredItems } = useAutocompleteContext();
+  const { selectItem, highlightedIndex, setHighlightedIndex, filteredItems, inputValue } =
+    useAutocompleteContext();
 
   const itemObj: AutocompleteItemType =
     typeof value === "string"
@@ -390,20 +475,42 @@ export function AutocompleteItem({
         if (onClick) onClick(e);
       }}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer select-none",
+        "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer select-none",
         isHighlighted
-          ? "bg-blue-600/20 text-blue-300 dark:bg-blue-600/30 dark:text-blue-200"
-          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60",
+          ? "bg-blue-600 text-white font-semibold shadow-md dark:bg-blue-600 dark:text-white"
+          : "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/70",
         className
       )}
       {...props}
     >
-      {itemObj.icon && <span className="shrink-0 text-slate-400">{itemObj.icon}</span>}
+      {itemObj.icon && (
+        <span
+          className={cn(
+            "shrink-0 transition-colors",
+            isHighlighted ? "text-white font-bold" : "text-slate-400"
+          )}
+        >
+          {itemObj.icon}
+        </span>
+      )}
       <div className="flex flex-col min-w-0 flex-1">
-        <span className="truncate">{children || itemObj.label}</span>
+        <span className="truncate">
+          {typeof children === "string" ? (
+            <HighlightMatch text={children} query={inputValue} />
+          ) : children ? (
+            children
+          ) : (
+            <HighlightMatch text={itemObj.label} query={inputValue} />
+          )}
+        </span>
         {itemObj.description && (
-          <span className="text-xs text-slate-400 font-normal truncate">
-            {itemObj.description}
+          <span
+            className={cn(
+              "text-xs font-normal truncate transition-colors mt-0.5",
+              isHighlighted ? "text-blue-100" : "text-slate-400 dark:text-slate-400"
+            )}
+          >
+            <HighlightMatch text={itemObj.description} query={inputValue} />
           </span>
         )}
       </div>
@@ -438,10 +545,17 @@ export function AutocompleteGroup({
   children: React.ReactNode;
   className?: string;
 }) {
+  const { filteredItems } = useAutocompleteContext();
+
   return (
     <div className={cn("space-y-1 py-1", className)}>
-      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        {label}
+      <div className="flex items-center justify-between px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <span>{label}</span>
+        {filteredItems.length > 0 && (
+          <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-mono text-[9px]">
+            {filteredItems.length}
+          </span>
+        )}
       </div>
       {children}
     </div>
