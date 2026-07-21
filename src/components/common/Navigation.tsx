@@ -39,7 +39,7 @@ const Navigation = () => {
   const isPathActive = (path: string) => location.pathname === path;
   
   const isComunidadActive = () => 
-    ['/ministerios', '/eventos', '/peticiones', '/cumpleanos'].some(path => location.pathname === path);
+    ['/ministerios', '/eventos', '/peticiones', '/cumpleanos', '/misiones'].some(path => location.pathname === path);
 
   const isRecursosActive = () => 
     ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia', '/recursos/juegos'].some(path => location.pathname === path);
@@ -177,6 +177,17 @@ const Navigation = () => {
                     }`}
                   >
                     Cumpleaños 🎂
+                  </Link>
+                  <Link
+                    to="/misiones"
+                    onClick={() => setIsComunidadHovered(false)}
+                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
+                      isTransparent 
+                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
+                    }`}
+                  >
+                    Misiones 🌍
                   </Link>
                 </motion.div>
               )}

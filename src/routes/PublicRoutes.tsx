@@ -2,17 +2,20 @@ import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PublicLayout from '../layouts/PublicLayout';
 
-const lazyWithRetry = (componentImport: () => Promise<any>) => {
+const lazyWithRetry = <T extends React.ComponentType<object>>(
+  componentImport: () => Promise<{ default: T }>
+) => {
   return lazy(async () => {
     try {
       const component = await componentImport();
       window.sessionStorage.removeItem('chunk-failed-reload');
       return component;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string } | undefined;
       if (
-        error?.message?.includes('Failed to fetch dynamically imported module') ||
-        error?.message?.includes('Importing a module script failed') ||
-        error?.message?.includes('error loading dynamically imported module')
+        err?.message?.includes('Failed to fetch dynamically imported module') ||
+        err?.message?.includes('Importing a module script failed') ||
+        err?.message?.includes('error loading dynamically imported module')
       ) {
         if (!window.sessionStorage.getItem('chunk-failed-reload')) {
           window.sessionStorage.setItem('chunk-failed-reload', 'true');
@@ -49,6 +52,7 @@ const ReadingPlan = lazyWithRetry(() => import('../pages/public/ReadingPlan'));
 const SermonDetail = lazyWithRetry(() => import('../pages/public/SermonDetail'));
 const Birthdays = lazyWithRetry(() => import('../pages/public/Birthdays'));
 const Bible = lazyWithRetry(() => import('../pages/public/Bible'));
+const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
 
 const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m => ({ default: m.GamesHub })));
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
@@ -80,6 +84,7 @@ export default function PublicRoutes() {
         <Route path="/escuela-dominical" element={<SundaySchool />} />
         <Route path="/plan-lectura" element={<ReadingPlan />} />
         <Route path="/predicas/:id" element={<SermonDetail />} />
+        <Route path="/misiones" element={<Missions />} />
         <Route path="/cumpleanos" element={<Birthdays />} />
         <Route path="/recursos/biblia" element={<Bible />} />
         <Route path="/recursos/juegos" element={<GamesHub />} />
