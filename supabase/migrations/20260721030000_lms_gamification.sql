@@ -59,19 +59,24 @@ ALTER TABLE public.lms_student_badges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_xp_logs ENABLE ROW LEVEL SECURITY;
 
 -- Los estudiantes pueden ver sus propias estadísticas y de otros (para el leaderboard)
+DROP POLICY IF EXISTS "Public can view student stats" ON public.lms_student_stats;
 CREATE POLICY "Public can view student stats" ON public.lms_student_stats
     FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Public can view active badges" ON public.lms_badges;
 CREATE POLICY "Public can view active badges" ON public.lms_badges
     FOR SELECT TO authenticated USING (is_active = true);
 
+DROP POLICY IF EXISTS "Public can view who has what badge" ON public.lms_student_badges;
 CREATE POLICY "Public can view who has what badge" ON public.lms_student_badges
     FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Students can view their own xp logs" ON public.lms_xp_logs;
 CREATE POLICY "Students can view their own xp logs" ON public.lms_xp_logs
     FOR SELECT TO authenticated USING (auth.uid() = student_id);
 
 -- Solo administradores pueden gestionar el catálogo de medallas
+DROP POLICY IF EXISTS "Admins can manage badges" ON public.lms_badges;
 CREATE POLICY "Admins can manage badges" ON public.lms_badges
     FOR ALL TO authenticated USING (
         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))

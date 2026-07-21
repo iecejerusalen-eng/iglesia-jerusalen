@@ -92,34 +92,49 @@ ALTER TABLE public.lms_certificate_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_certificates_issued ENABLE ROW LEVEL SECURITY;
 
 -- Los estudiantes pueden ver quizzes, preguntas, rúbricas y plantillas
+DROP POLICY IF EXISTS "Public can view quizzes" ON public.lms_quizzes;
 CREATE POLICY "Public can view quizzes" ON public.lms_quizzes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public can view quiz questions" ON public.lms_quiz_questions;
 CREATE POLICY "Public can view quiz questions" ON public.lms_quiz_questions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public can view rubrics" ON public.lms_rubrics;
 CREATE POLICY "Public can view rubrics" ON public.lms_rubrics FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public can view certificate templates" ON public.lms_certificate_templates;
 CREATE POLICY "Public can view certificate templates" ON public.lms_certificate_templates FOR SELECT USING (true);
 
 -- Los estudiantes pueden insertar y ver sus propios intentos
+DROP POLICY IF EXISTS "Students can view their quiz attempts" ON public.lms_quiz_attempts;
 CREATE POLICY "Students can view their quiz attempts" ON public.lms_quiz_attempts
     FOR SELECT TO authenticated USING (auth.uid() = student_id);
     
+DROP POLICY IF EXISTS "Students can create quiz attempts" ON public.lms_quiz_attempts;
 CREATE POLICY "Students can create quiz attempts" ON public.lms_quiz_attempts
     FOR INSERT TO authenticated WITH CHECK (auth.uid() = student_id);
     
+DROP POLICY IF EXISTS "Students can update their own uncompleted quiz attempts" ON public.lms_quiz_attempts;
 CREATE POLICY "Students can update their own uncompleted quiz attempts" ON public.lms_quiz_attempts
     FOR UPDATE TO authenticated USING (auth.uid() = student_id AND completed_at IS NULL);
 
 -- Los estudiantes pueden ver sus propios certificados emitidos
+DROP POLICY IF EXISTS "Students can view their certificates" ON public.lms_certificates_issued;
 CREATE POLICY "Students can view their certificates" ON public.lms_certificates_issued
     FOR SELECT TO authenticated USING (auth.uid() = student_id);
 
 -- Los verificadores anónimos pueden ver un certificado si tienen el validation_hash (QR)
 -- Nota: La política de anon/public se hace usualmente por RPC o habilitando SELECT anónimo filtrando por validation_hash.
+DROP POLICY IF EXISTS "Anyone can verify certificate by hash" ON public.lms_certificates_issued;
 CREATE POLICY "Anyone can verify certificate by hash" ON public.lms_certificates_issued
     FOR SELECT USING (true);
 
 -- Administradores tienen control total sobre todo
+DROP POLICY IF EXISTS "Admins full access quizzes" ON public.lms_quizzes;
 CREATE POLICY "Admins full access quizzes" ON public.lms_quizzes FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));
+DROP POLICY IF EXISTS "Admins full access quiz questions" ON public.lms_quiz_questions;
 CREATE POLICY "Admins full access quiz questions" ON public.lms_quiz_questions FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));
+DROP POLICY IF EXISTS "Admins full access quiz attempts" ON public.lms_quiz_attempts;
 CREATE POLICY "Admins full access quiz attempts" ON public.lms_quiz_attempts FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));
+DROP POLICY IF EXISTS "Admins full access rubrics" ON public.lms_rubrics;
 CREATE POLICY "Admins full access rubrics" ON public.lms_rubrics FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));
+DROP POLICY IF EXISTS "Admins full access cert templates" ON public.lms_certificate_templates;
 CREATE POLICY "Admins full access cert templates" ON public.lms_certificate_templates FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));
+DROP POLICY IF EXISTS "Admins full access certs issued" ON public.lms_certificates_issued;
 CREATE POLICY "Admins full access certs issued" ON public.lms_certificates_issued FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor')));

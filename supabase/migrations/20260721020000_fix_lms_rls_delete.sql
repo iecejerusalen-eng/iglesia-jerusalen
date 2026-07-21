@@ -11,16 +11,19 @@ DROP POLICY IF EXISTS "Admins can update schools" ON public.lms_schools;
 DROP POLICY IF EXISTS "Admins can delete schools" ON public.lms_schools;
 
 -- Recreate with explicit operations
+DROP POLICY IF EXISTS \1;\nDROP POLICY IF EXISTS "Admins can insert schools" ON public.lms_schools;
 CREATE POLICY "Admins can insert schools" ON public.lms_schools
   FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
   );
 
+DROP POLICY IF EXISTS \1;\nDROP POLICY IF EXISTS "Admins can update schools" ON public.lms_schools;
 CREATE POLICY "Admins can update schools" ON public.lms_schools
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
   );
 
+DROP POLICY IF EXISTS \1;\nDROP POLICY IF EXISTS "Admins can delete schools" ON public.lms_schools;
 CREATE POLICY "Admins can delete schools" ON public.lms_schools
   FOR DELETE USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
@@ -36,7 +39,8 @@ BEGIN
     SELECT 1 FROM pg_policies 
     WHERE tablename = 'lms_courses' AND policyname = 'Admins can delete courses'
   ) THEN
-    CREATE POLICY "Admins can delete courses" ON public.lms_courses
+    DROP POLICY IF EXISTS \1;\nDROP POLICY IF EXISTS "Admins can delete courses" ON public.lms_courses;
+CREATE POLICY "Admins can delete courses" ON public.lms_courses
       FOR DELETE USING (
         EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
       );
@@ -48,6 +52,7 @@ END $$;
 -- ================================================================
 DROP POLICY IF EXISTS "Admins can manage periods" ON public.lms_academic_periods;
 
+DROP POLICY IF EXISTS \1;\nDROP POLICY IF EXISTS "Admins can manage periods" ON public.lms_academic_periods;
 CREATE POLICY "Admins can manage periods" ON public.lms_academic_periods
   FOR ALL USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
