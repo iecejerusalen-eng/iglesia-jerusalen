@@ -13,37 +13,49 @@ export default function Preloader() {
     const hasSeen = sessionStorage.getItem('jerusalen_preloader_seen');
     if (hasSeen === 'true') {
       setIsRendered(false);
+      setShow(false);
       return;
     }
 
-    if (logoRef.current && textRef.current) {
-      anime.set([logoRef.current, textRef.current], { opacity: 0 });
-      anime.set(logoRef.current, { scale: 0.8 });
-      anime.set(textRef.current, { translateY: 10 });
+    // Safety fallback: force unmount after 2.2 seconds no matter what
+    const safetyTimer = setTimeout(() => {
+      setShow(false);
+      setIsRendered(false);
+      sessionStorage.setItem('jerusalen_preloader_seen', 'true');
+    }, 2200);
 
-      anime({
-        targets: logoRef.current,
-        opacity: 1,
-        duration: 500,
-        easing: 'easeOutQuad',
-      });
+    try {
+      if (logoRef.current && textRef.current) {
+        anime.set([logoRef.current, textRef.current], { opacity: 0 });
+        anime.set(logoRef.current, { scale: 0.8 });
+        anime.set(textRef.current, { translateY: 10 });
 
-      anime({
-        targets: logoRef.current,
-        scale: [0.95, 1.05, 0.95],
-        duration: 1200,
-        loop: true,
-        easing: 'easeInOutQuad',
-      });
+        anime({
+          targets: logoRef.current,
+          opacity: 1,
+          duration: 500,
+          easing: 'easeOutQuad',
+        });
 
-      anime({
-        targets: textRef.current,
-        opacity: 0.7,
-        translateY: 0,
-        delay: 300,
-        duration: 500,
-        easing: 'easeOutQuad'
-      });
+        anime({
+          targets: logoRef.current,
+          scale: [0.95, 1.05, 0.95],
+          duration: 1200,
+          loop: true,
+          easing: 'easeInOutQuad',
+        });
+
+        anime({
+          targets: textRef.current,
+          opacity: 0.7,
+          translateY: 0,
+          delay: 300,
+          duration: 500,
+          easing: 'easeOutQuad'
+        });
+      }
+    } catch (e) {
+      console.warn("Preloader animation error:", e);
     }
 
     const timer = setTimeout(() => {
@@ -51,20 +63,36 @@ export default function Preloader() {
       sessionStorage.setItem('jerusalen_preloader_seen', 'true');
     }, 1800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   useEffect(() => {
-    if (!show && isRendered && containerRef.current) {
-      anime({
-        targets: containerRef.current,
-        translateY: '-100%',
-        duration: 800,
-        easing: 'easeInQuint',
-        complete: () => {
+    if (!show && isRendered) {
+      const unmountTimer = setTimeout(() => {
+        setIsRendered(false);
+      }, 900);
+
+      if (containerRef.current) {
+        try {
+          anime({
+            targets: containerRef.current,
+            translateY: '-100%',
+            duration: 800,
+            easing: 'easeInQuint',
+            complete: () => {
+              setIsRendered(false);
+              clearTimeout(unmountTimer);
+            }
+          });
+        } catch {
           setIsRendered(false);
         }
-      });
+      }
+
+      return () => clearTimeout(unmountTimer);
     }
   }, [show, isRendered]);
 
@@ -73,7 +101,9 @@ export default function Preloader() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center select-none pointer-events-auto"
+      className={`fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center select-none transition-all duration-500 ${
+        show ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+      }`}
     >
       <div
         ref={logoRef}
