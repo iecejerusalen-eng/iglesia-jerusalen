@@ -82,8 +82,42 @@ export default function TeacherDashboard() {
   }).length;
 
   return (
-    <div className="min-h-screen pt-24 pb-12 bg-gray-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pt-24 bg-gray-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-200 flex overflow-hidden">
+      
+      {/* Collapsed Icon Menu (Sidebar) */}
+      <nav className="flex flex-col gap-2 py-6 px-3 w-20 hover:w-[280px] transition-all duration-300 ease-in-out bg-white dark:bg-[#0B0F19] border-r border-gray-200 dark:border-white/5 min-h-[calc(100vh-6rem)] sticky top-24 z-20 shrink-0 group overflow-hidden shadow-sm dark:shadow-none">
+        {[
+          { id: 'overview', label: 'Resumen', icon: LayoutTemplate },
+          { id: 'classes', label: 'Mis Clases (Diario)', icon: CheckSquare },
+          { id: 'calendar', label: 'Horarios y Agenda', icon: CalendarIcon },
+          { id: 'students', label: 'Alumnos y Aulas', icon: Users },
+          { id: 'planning', label: 'Planificación', icon: BookOpen },
+          { id: 'questions', label: 'Banco de Preguntas', icon: BookOpen },
+          { id: 'grades', label: 'Calificaciones', icon: Award },
+          { id: 'compliance', label: 'Incumplimientos', icon: AlertTriangle },
+          { id: 'comm', label: 'Comunicación', icon: MessageSquare },
+          { id: 'integrations', label: 'Integraciones', icon: MonitorPlay }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`group/btn relative flex items-center gap-4 p-3.5 rounded-xl transition-all duration-300 w-full cursor-pointer overflow-hidden ${
+              activeTab === tab.id
+                ? 'bg-gold text-white shadow-md shadow-gold/20'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <tab.icon className={`w-6 h-6 shrink-0 transition-colors ${activeTab === tab.id ? 'text-white' : ''}`} />
+            
+            <span className={`whitespace-nowrap font-bold text-sm transition-opacity duration-300 ${activeTab === tab.id ? 'text-white' : ''} opacity-0 group-hover:opacity-100 delay-100`}>
+              {tab.label}
+            </span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Main Content Area */}
+      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-6 w-full h-[calc(100vh-6rem)] overflow-y-auto hide-scrollbar">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
@@ -121,35 +155,6 @@ export default function TeacherDashboard() {
               <NotificationCenter />
             </div>
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-8 bg-white dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-150 dark:border-white/5 shadow-sm">
-          {[
-            { id: 'overview', label: 'Resumen', icon: LayoutTemplate },
-            { id: 'classes', label: 'Mis Clases (Diario)', icon: CheckSquare },
-            { id: 'calendar', label: 'Horarios y Agenda', icon: CalendarIcon },
-            { id: 'students', label: 'Alumnos y Aulas', icon: Users },
-            { id: 'planning', label: 'Planificación', icon: BookOpen },
-            { id: 'questions', label: 'Banco de Preguntas', icon: BookOpen },
-            { id: 'grades', label: 'Calificaciones', icon: Award },
-            { id: 'compliance', label: 'Incumplimientos', icon: AlertTriangle },
-            { id: 'comm', label: 'Comunicación', icon: MessageSquare },
-            { id: 'integrations', label: 'Integraciones', icon: MonitorPlay }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all duration-300 cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-gold text-white shadow-md shadow-gold/20'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-              }`}
-            >
-              <tab.icon size={16} />
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {/* Main Content */}

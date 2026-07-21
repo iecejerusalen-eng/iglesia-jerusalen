@@ -80,7 +80,7 @@ export interface Career {
 export interface MemberWithRelations extends DbMember {
   member_emails?: { email: string }[];
   member_phones?: { phone: string, country_code: string }[];
-  member_service_areas?: { catalog_roles: { id: string; name: string } }[];
+  member_service_areas?: { catalog_roles: CatalogRole }[];
   member_talents?: Array<{ catalog_roles: CatalogRole }>;
   member_spiritual_gifts?: Array<{ catalog_roles: CatalogRole }>;
   ministries?: { id: string; name: string } | null;
