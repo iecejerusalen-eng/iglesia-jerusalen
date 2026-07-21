@@ -50,8 +50,8 @@ interface YTPlayer {
 }
 
 const loadYouTubeIframeApi = (): Promise<void> => {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined") return;
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return resolve();
     if (window.YT && window.YT.Player) {
       resolve();
       return;
@@ -62,6 +62,7 @@ const loadYouTubeIframeApi = (): Promise<void> => {
       const tag = document.createElement("script");
       tag.id = "youtube-iframe-api";
       tag.src = "https://www.youtube.com/iframe_api";
+      tag.onerror = () => reject(new Error("Failed to load YouTube SDK"));
       const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
     }
@@ -78,6 +79,16 @@ const loadYouTubeIframeApi = (): Promise<void> => {
         resolve();
       }
     }, 100);
+
+    // Safety timeout of 5s
+    setTimeout(() => {
+      if (window.YT && window.YT.Player) {
+        resolve();
+      } else {
+        clearInterval(checkInterval);
+        resolve(); // resolve anyway to attempt fallback
+      }
+    }, 5000);
   });
 };
 
@@ -171,7 +182,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
 
-  // Generate pure React unique ID for YouTube iframe element
   const reactId = useId();
   const uniquePlayerId = `yt-player-${reactId.replace(/:/g, "")}`;
 
@@ -185,8 +195,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [useFallbackEmbed, setUseFallbackEmbed] = useState(false);
 
-  // Check if input source or youtubeUrl is a YouTube video
   const targetYouTubeId = extractYouTubeId(youtubeUrl || "") || extractYouTubeId(src || "");
   const externalYouTubeLink = youtubeUrl || (extractYouTubeId(src || "") ? src : null);
 
@@ -197,7 +207,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return;
     }
 
-    if (targetYouTubeId && playerRef.current) {
+    if (targetYouTubeId && playerRef.current && !useFallbackEmbed) {
       if (isPlaying) {
         playerRef.current.pauseVideo();
         setIsPlaying(false);
@@ -213,6 +223,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         videoRef.current.play();
         setIsPlaying(true);
       }
+    } else {
+      setIsPlaying(!isPlaying);
     }
   };
 
@@ -221,7 +233,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
 
-    if (targetYouTubeId && playerRef.current) {
+    if (targetYouTubeId && playerRef.current && !useFallbackEmbed) {
       playerRef.current.setVolume(value);
       if (newVolume === 0) playerRef.current.mute();
       else playerRef.current.unMute();
@@ -246,7 +258,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const targetPercentage = Math.min(Math.max(value, 0), 100);
     setProgress(targetPercentage);
 
-    if (targetYouTubeId && playerRef.current && duration > 0) {
+    if (targetYouTubeId && playerRef.current && duration > 0 && !useFallbackEmbed) {
       const targetTime = (targetPercentage / 100) * duration;
       setCurrentTime(targetTime);
       playerRef.current.seekTo(targetTime, true);
@@ -261,7 +273,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const nextMuteState = !isMuted;
     setIsMuted(nextMuteState);
 
-    if (targetYouTubeId && playerRef.current) {
+    if (targetYouTubeId && playerRef.current && !useFallbackEmbed) {
       if (nextMuteState) {
         playerRef.current.mute();
       } else {
@@ -279,7 +291,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const setSpeed = (speed: number) => {
     setPlaybackSpeed(speed);
-    if (targetYouTubeId && playerRef.current) {
+    if (targetYouTubeId && playerRef.current && !useFallbackEmbed) {
       playerRef.current.setPlaybackRate(speed);
     } else if (videoRef.current) {
       videoRef.current.playbackRate = speed;
@@ -312,75 +324,91 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     let isMounted = true;
     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
-    loadYouTubeIframeApi().then(() => {
-      if (!isMounted) return;
+    loadYouTubeIframeApi()
+      .then(() => {
+        if (!isMounted) return;
 
-      const playerContainer = document.getElementById(uniquePlayerId);
-      if (!playerContainer) return;
-
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch {
-          // ignore
+        if (!window.YT || !window.YT.Player) {
+          setUseFallbackEmbed(true);
+          return;
         }
-      }
 
-      playerRef.current = new window.YT.Player(uniquePlayerId, {
-        videoId: targetYouTubeId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-          disablekb: 1,
-          iv_load_policy: 3,
-          playsinline: 1,
-          fs: 0,
-        },
-        events: {
-          onReady: (event) => {
-            if (!isMounted) return;
-            const player = event.target;
-            const dur = player.getDuration();
-            if (dur && dur > 0) {
-              setDuration(dur);
-            }
-            player.playVideo();
-            setIsPlaying(true);
-          },
-          onStateChange: (event) => {
-            if (!isMounted) return;
-            const state = event.data;
-            if (state === 1) {
-              setIsPlaying(true);
-            } else if (state === 2 || state === 0) {
-              setIsPlaying(false);
-            }
-          },
-        },
-      });
+        const playerContainer = document.getElementById(uniquePlayerId);
+        if (!playerContainer) return;
 
-      pollInterval = setInterval(() => {
-        if (
-          playerRef.current &&
-          typeof playerRef.current.getCurrentTime === "function"
-        ) {
+        if (playerRef.current) {
           try {
-            const current = playerRef.current.getCurrentTime() || 0;
-            const total = playerRef.current.getDuration() || 0;
-
-            if (total > 0) {
-              setDuration(total);
-              setCurrentTime(current);
-              setProgress((current / total) * 100);
-            }
+            playerRef.current.destroy();
           } catch {
-            // ignore transient state
+            // ignore
           }
         }
-      }, 150);
-    });
+
+        try {
+          playerRef.current = new window.YT.Player(uniquePlayerId, {
+            videoId: targetYouTubeId,
+            playerVars: {
+              autoplay: 1,
+              controls: 0,
+              modestbranding: 1,
+              rel: 0,
+              disablekb: 1,
+              iv_load_policy: 3,
+              playsinline: 1,
+              fs: 0,
+            },
+            events: {
+              onReady: (event) => {
+                if (!isMounted) return;
+                const player = event.target;
+                const dur = player.getDuration();
+                if (dur && dur > 0) {
+                  setDuration(dur);
+                }
+                player.playVideo();
+                setIsPlaying(true);
+              },
+              onStateChange: (event) => {
+                if (!isMounted) return;
+                const state = event.data;
+                if (state === 1) {
+                  setIsPlaying(true);
+                } else if (state === 2 || state === 0) {
+                  setIsPlaying(false);
+                }
+              },
+              onError: () => {
+                if (isMounted) setUseFallbackEmbed(true);
+              },
+            },
+          });
+        } catch {
+          if (isMounted) setUseFallbackEmbed(true);
+        }
+
+        pollInterval = setInterval(() => {
+          if (
+            playerRef.current &&
+            typeof playerRef.current.getCurrentTime === "function"
+          ) {
+            try {
+              const current = playerRef.current.getCurrentTime() || 0;
+              const total = playerRef.current.getDuration() || 0;
+
+              if (total > 0) {
+                setDuration(total);
+                setCurrentTime(current);
+                setProgress((current / total) * 100);
+              }
+            } catch {
+              // ignore transient state
+            }
+          }
+        }, 150);
+      })
+      .catch(() => {
+        if (isMounted) setUseFallbackEmbed(true);
+      });
 
     return () => {
       isMounted = false;
@@ -417,17 +445,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         {/* YouTube Embed Container */}
         <div className="relative pt-[56.25%] w-full bg-black">
           {hasStarted ? (
-            <>
-              <div
-                id={uniquePlayerId}
-                className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.02]"
+            useFallbackEmbed ? (
+              <iframe
+                className="absolute inset-0 w-full h-full border-0"
+                src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&controls=1&rel=0`}
+                title={title || "YouTube video player"}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
               />
-              {/* Click overlay to toggle play/pause */}
-              <div
-                className="absolute inset-0 z-10 cursor-pointer"
-                onClick={togglePlay}
-              />
-            </>
+            ) : (
+              <>
+                <div
+                  id={uniquePlayerId}
+                  className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.02]"
+                />
+                <div
+                  className="absolute inset-0 z-10 cursor-pointer"
+                  onClick={togglePlay}
+                />
+              </>
+            )
           ) : (
             <div
               className="absolute inset-0 w-full h-full cursor-pointer group/cover"
@@ -483,7 +520,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
 
         {/* Center Big Play Button overlay if paused after having started */}
-        {hasStarted && !isPlaying && (
+        {hasStarted && !isPlaying && !useFallbackEmbed && (
           <button
             onClick={togglePlay}
             className="absolute inset-0 m-auto w-16 h-16 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-all z-20 cursor-pointer"
@@ -494,7 +531,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         {/* Custom Controls Overlay for YouTube */}
         <AnimatePresence>
-          {(showControls || !isPlaying) && hasStarted && (
+          {(showControls || !isPlaying) && hasStarted && !useFallbackEmbed && (
             <motion.div
               className="absolute bottom-0 left-0 right-0 p-4 m-3 bg-[#111111c2] backdrop-blur-md rounded-2xl border border-white/10 z-30"
               initial={{ y: 20, opacity: 0, filter: "blur(10px)" }}
