@@ -1,10 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Search, Calendar, User, Video, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
+import {
+  Autocomplete,
+  AutocompleteInput,
+  AutocompletePopup,
+  AutocompleteList,
+  AutocompleteItem,
+  AutocompleteEmpty,
+  AutocompleteGroup,
+  type AutocompleteItemType,
+} from '@/components/ui/autocomplete';
+import VideoPlayer from '@/components/ui/video-player';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -63,12 +74,23 @@ const Sermons = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const getYoutubeId = (url: string | null) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
+  const autocompleteItems: AutocompleteItemType[] = useMemo(() => {
+    return sermons.map((sermon) => ({
+      value: sermon.id,
+      label: sermon.title,
+      category: "Prédicas y Devocionales",
+      description: `${sermon.pastor_name || "Pastor"} • ${
+        sermon.created_at
+          ? new Date(sermon.created_at).toLocaleDateString("es-ES", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : ""
+      }`,
+      icon: <Video className="w-4 h-4 text-blue-400" />,
+    }));
+  }, [sermons]);
 
   const filteredSermons = sermons.filter(s => 
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -96,19 +118,36 @@ const Sermons = () => {
         </div>
       </div>
 
-      {/* buscador */}
-      <div className="relative max-w-md mb-10">
-        <input
-          type="text"
-          placeholder="Buscar sermón por título, contenido o pastor..."
+      {/* Buscador inteligente con Autocomplete */}
+      <div className="max-w-md mb-10">
+        <Autocomplete
+          items={autocompleteItems}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary focus-visible:outline-none transition-all text-sm bg-white dark:bg-slate-900 dark:text-white"
-        />
-        <Search className="absolute left-3.5 top-3 text-slate-500 dark:text-slate-400" size={18} />
+          onValueChange={(val) => setSearchQuery(val)}
+          onSelect={(item) => setSearchQuery(item.label)}
+        >
+          <AutocompleteInput
+            placeholder="Buscar sermón por título, contenido o pastor..."
+            showClear
+            showTrigger
+            size="default"
+          />
+          <AutocompletePopup>
+            <AutocompleteEmpty>No se encontraron prédicas con esa búsqueda.</AutocompleteEmpty>
+            <AutocompleteList>
+              <AutocompleteGroup label="Prédicas Sugeridas">
+                {autocompleteItems.map((item) => (
+                  <AutocompleteItem key={item.value} value={item}>
+                    {item.label}
+                  </AutocompleteItem>
+                ))}
+              </AutocompleteGroup>
+            </AutocompleteList>
+          </AutocompletePopup>
+        </Autocomplete>
       </div>
 
-      {/* grid predicas */}
+      {/* Grid predicas */}
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <RefreshCw className="animate-spin text-primary dark:text-white" size={32} />
@@ -116,24 +155,17 @@ const Sermons = () => {
       ) : filteredSermons.length > 0 ? (
         <AnimeStaggerGrid delay={200} staggerDelay={100} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {filteredSermons.map((sermon) => {
-            const ytId = getYoutubeId(sermon.youtube_url);
-            
             return (
               <AnimeHoverCard key={sermon.id}>
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4 h-full">
-                  {/* Embedded Video */}
-                {ytId && (
-                  <div className="relative pt-[56.25%] rounded-xl overflow-hidden shadow-sm bg-black">
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${ytId}`}
+                  {/* Embedded Video Reproductor Sincronizado */}
+                  {sermon.youtube_url && (
+                    <VideoPlayer
+                      youtubeUrl={sermon.youtube_url}
                       title={sermon.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                )}
+                      className="mb-2"
+                    />
+                  )}
 
                 <div className="space-y-2">
                   <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
@@ -164,13 +196,6 @@ const Sermons = () => {
                     <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(sermon.content || '') }} />
                   )}
                 </div>
-
-                {sermon.youtube_url && !ytId && (
-                  <div className="mt-2 text-xs flex items-center gap-1.5 text-gold bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/50">
-                    <AlertCircle size={14} />
-                    <span>Video disponible enlace externo: <a href={sermon.youtube_url} target="_blank" rel="noreferrer" className="underline font-bold hover:text-gold/80">{sermon.youtube_url}</a></span>
-                  </div>
-                )}
 
                 <div className="flex justify-end items-center border-t border-gray-100 dark:border-white/10 pt-4 mt-2">
                   <Link 
