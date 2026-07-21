@@ -62,8 +62,8 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
             </div>
 
             {/* Body */}
-            <div className="p-8 text-center relative z-10">
-              <div className="relative inline-block mb-6">
+            <div className="p-8 flex flex-col items-center text-center relative z-10">
+              <div className="relative mb-6 w-32 h-32 shrink-0 mx-auto">
                 <div className="absolute inset-0 bg-gold rounded-full blur-md opacity-30 animate-pulse"></div>
                 {student.avatarUrl ? (
                   <img 
@@ -76,20 +76,20 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
                     <User size={48} />
                   </div>
                 )}
-                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full border-4 border-slate-900 relative z-20" title="Estudiante Activo">
-                  <ShieldCheck size={16} />
+                <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-2 rounded-full border-4 border-slate-900 z-20 flex items-center justify-center shadow-lg" title="Estudiante Activo">
+                  <ShieldCheck size={18} />
                 </div>
               </div>
 
               <h3 className="text-2xl font-black text-white mb-1 leading-tight">{student.name}</h3>
               <p className="text-sm text-gray-400 font-medium mb-1">{student.email}</p>
               
-              <div className="inline-block px-4 py-1.5 bg-gold/10 border border-gold/20 rounded-full mt-3 mb-8">
+              <div className="px-4 py-1.5 bg-gold/10 border border-gold/20 rounded-full mt-3 mb-6">
                 <span className="text-sm font-bold text-gold uppercase tracking-wider">{student.role === 'student' ? 'Estudiante' : student.role}</span>
               </div>
 
               {/* QR Section */}
-              <div className="bg-white p-4 rounded-2xl inline-block shadow-lg mx-auto mb-2">
+              <div className="bg-white p-4 rounded-2xl shadow-lg mb-2">
                 <QRCodeSVG 
                   value={verificationUrl}
                   size={140}
@@ -98,7 +98,7 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
                   fgColor="#0f172a" // slate-900
                 />
               </div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-3">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-2">
                 Escanear para verificar validez
               </p>
             </div>

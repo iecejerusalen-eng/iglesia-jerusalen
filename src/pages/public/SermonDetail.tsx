@@ -16,6 +16,7 @@ import {
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
 import { AnimeFadeUp, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
+import VideoPlayer from '../../components/ui/video-player';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -227,20 +228,13 @@ const SermonDetail = () => {
         
         {/* Sermon details & video */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
-          {ytId && (
+          {(sermon.video_url || ytId) && (
             <AnimeZoomIn delay={300} duration={800}>
-              <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black shadow-lg">
-                <iframe
-                  className="absolute inset-0 w-full h-full"
-                  src={`https://www.youtube.com/embed/${ytId}`}
-                  title={sermon.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  // @ts-expect-error credentialless is not yet in React's TS definitions but is supported by the browser
-                  credentialless="true"
-                ></iframe>
-              </div>
+              <VideoPlayer
+                src={sermon.video_url}
+                youtubeUrl={sermon.video_url || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : undefined)}
+                title={sermon.title}
+              />
             </AnimeZoomIn>
           )}
 
