@@ -8,7 +8,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $body
+AS $$
 BEGIN
     -- Verify the caller is an admin or editor
     IF NOT EXISTS (
@@ -24,4 +24,4 @@ BEGIN
     -- where child table rows cannot be deleted due to RLS policies.
     DELETE FROM public.lms_courses WHERE id = p_course_id;
 END;
-$body;
+$$;
