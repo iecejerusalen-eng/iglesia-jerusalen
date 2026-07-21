@@ -108,6 +108,7 @@ const LMSCourseSettings = lazyWithRetry(() => import('../pages/admin/LMSCourseSe
 const LMSGradebook = lazyWithRetry(() => import('../pages/admin/LMSGradebook'));
 const ChatManager = lazyWithRetry(() => import('../pages/admin/ChatManager'));
 const OpenResourcesManager = lazyWithRetry(() => import('../pages/admin/OpenResourcesManager'));
+const ComponentStylesManager = lazyWithRetry(() => import('../pages/admin/ComponentStylesManager'));
 const OpenResourceBuilder = lazyWithRetry(() => import('../pages/admin/OpenResourceBuilder'));
 const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
@@ -241,7 +242,13 @@ export default function AppRouter() {
             <Route path="/admin/extensiones" element={<PluginManager />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute module="appearance" />}><Route element={<AdminLayout />}><Route path="/admin/apariencia" element={<AdminSettings />} /></Route></Route>
+        <Route element={<ProtectedRoute module="appearance" />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/apariencia" element={<AdminSettings />} />
+            <Route path="/admin/estilos" element={<ComponentStylesManager />} />
+            <Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} />
+          </Route>
+        </Route>
         <Route element={<ProtectedRoute module="users" />}><Route element={<AdminLayout />}><Route path="/admin/usuarios" element={<UsersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="petitions" />}><Route element={<AdminLayout />}><Route path="/admin/peticiones" element={<PetitionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /></Route></Route>

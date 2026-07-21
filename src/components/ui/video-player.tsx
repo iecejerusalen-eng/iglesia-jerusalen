@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const formatTime = (seconds: number) => {
-  if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
+  if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return "0:00";
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
@@ -29,27 +29,49 @@ const CustomSlider = ({
   onChange: (value: number) => void;
   className?: string;
 }) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const updateValue = (clientX: number) => {
+      if (rect.width === 0) return;
+      const x = clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      onChange(Math.min(Math.max(percentage, 0), 100));
+    };
+
+    updateValue(e.clientX);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      updateValue(moveEvent.clientX);
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
+  const clampedValue = Math.min(Math.max(value, 0), 100);
+
   return (
-    <motion.div
+    <div
       className={cn(
-        "relative w-full h-1.5 bg-white/20 hover:h-2 transition-all rounded-full cursor-pointer",
+        "relative w-full h-2.5 bg-white/20 hover:h-3 transition-all rounded-full cursor-pointer touch-none flex items-center group/slider select-none",
         className
       )}
-      onClick={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const percentage = (x / rect.width) * 100;
-        onChange(Math.min(Math.max(percentage, 0), 100));
-      }}
+      onPointerDown={handlePointerDown}
     >
-      <motion.div
-        className="absolute top-0 left-0 h-full bg-amber-400 rounded-full"
-        style={{ width: `${value}%` }}
-        initial={{ width: 0 }}
-        animate={{ width: `${value}%` }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      <div
+        className="absolute top-0 left-0 h-full bg-amber-400 rounded-full transition-all duration-75"
+        style={{ width: `${clampedValue}%` }}
       />
-    </motion.div>
+      <div
+        className="absolute w-3.5 h-3.5 bg-amber-300 border-2 border-slate-900 rounded-full shadow-md transition-transform scale-0 group-hover/slider:scale-100 -translate-x-1/2"
+        style={{ left: `${clampedValue}%` }}
+      />
+    </div>
   );
 };
 
@@ -141,27 +163,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const handleTimeUpdate = () => {
     if (!targetYouTubeId && videoRef.current) {
-      const prog = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-      setProgress(isFinite(prog) ? prog : 0);
-      setCurrentTime(videoRef.current.currentTime);
-      setDuration(videoRef.current.duration || 0);
+      const current = videoRef.current.currentTime;
+      const total = videoRef.current.duration || 0;
+      setCurrentTime(current);
+      setDuration(total);
+      if (total > 0) {
+        setProgress((current / total) * 100);
+      }
     }
   };
 
   const handleSeek = (value: number) => {
-    if (targetYouTubeId && duration) {
-      const time = (value / 100) * duration;
-      if (isFinite(time)) {
-        sendYouTubeCommand("seekTo", [time, true]);
-        setProgress(value);
+    const targetPercentage = Math.min(Math.max(value, 0), 100);
+    setProgress(targetPercentage);
+
+    if (targetYouTubeId) {
+      if (duration > 0) {
+        const time = (targetPercentage / 100) * duration;
         setCurrentTime(time);
+        sendYouTubeCommand("seekTo", [time, true]);
       }
     } else if (videoRef.current && videoRef.current.duration) {
-      const time = (value / 100) * videoRef.current.duration;
-      if (isFinite(time)) {
-        videoRef.current.currentTime = time;
-        setProgress(value);
-      }
+      const time = (targetPercentage / 100) * videoRef.current.duration;
+      videoRef.current.currentTime = time;
+      setCurrentTime(time);
     }
   };
 
@@ -213,7 +238,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
 
-  // Listen to YouTube postMessage events for time and state updates
+  // Listen to YouTube postMessage events and active polling for time & state updates
   useEffect(() => {
     if (!targetYouTubeId) return;
 
@@ -221,19 +246,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (typeof event.data !== "string") return;
       try {
         const data = JSON.parse(event.data);
+
+        // YouTube infoDelivery payload containing video metadata & progress
         if (data.event === "infoDelivery" && data.info) {
-          if (data.info.currentTime !== undefined) {
-            setCurrentTime(data.info.currentTime);
-            if (duration > 0) {
-              setProgress((data.info.currentTime / duration) * 100);
-            }
-          }
-          if (data.info.duration !== undefined && data.info.duration > 0) {
+          if (typeof data.info.duration === "number" && data.info.duration > 0) {
             setDuration(data.info.duration);
           }
-          if (data.info.playerState !== undefined) {
-            if (data.info.playerState === 1) setIsPlaying(true); // playing
-            if (data.info.playerState === 2) setIsPlaying(false); // paused
+
+          if (typeof data.info.currentTime === "number") {
+            const current = data.info.currentTime;
+            setCurrentTime(current);
+            setDuration((prevDuration) => {
+              if (prevDuration > 0) {
+                setProgress((current / prevDuration) * 100);
+              }
+              return prevDuration;
+            });
+          }
+
+          if (typeof data.info.playerState === "number") {
+            if (data.info.playerState === 1) setIsPlaying(true);
+            if (data.info.playerState === 2) setIsPlaying(false);
+            if (data.info.playerState === 0) setIsPlaying(false);
           }
         }
       } catch {
@@ -242,8 +276,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
 
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [targetYouTubeId, duration]);
+
+    // Active polling every 250ms when playing to sync current time and duration
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    if (isPlaying && hasStarted) {
+      pollInterval = setInterval(() => {
+        sendYouTubeCommand("infoDelivery");
+        sendYouTubeCommand("getCurrentTime");
+        sendYouTubeCommand("getDuration");
+      }, 250);
+    }
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [targetYouTubeId, isPlaying, hasStarted, sendYouTubeCommand]);
 
   // If it's a YouTube video
   if (targetYouTubeId) {
@@ -275,9 +323,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 onLoad={() => {
                   sendYouTubeCommand("listening");
+                  sendYouTubeCommand("getDuration");
+                  sendYouTubeCommand("getCurrentTime");
                 }}
               />
-              {/* Click layer overlay over iframe when playing or paused to toggle play/pause */}
+              {/* Click layer overlay over iframe to toggle play/pause */}
               <div
                 className="absolute inset-0 z-10 cursor-pointer"
                 onClick={togglePlay}
@@ -362,8 +412,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               transition={{ duration: 0.4, ease: "circInOut" }}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Timeline Slider with Live Time Labels */}
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-white/80 text-xs font-mono">
+                <span className="text-white/90 text-xs font-mono w-10 text-right">
                   {formatTime(currentTime)}
                 </span>
                 <CustomSlider
@@ -371,7 +422,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onChange={handleSeek}
                   className="flex-1"
                 />
-                <span className="text-white/80 text-xs font-mono">{formatTime(duration)}</span>
+                <span className="text-white/90 text-xs font-mono w-10 text-left">
+                  {formatTime(duration)}
+                </span>
               </div>
 
               <div className="flex items-center justify-between gap-2">
@@ -531,7 +584,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             transition={{ duration: 0.4, ease: "circInOut" }}
           >
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-white/80 text-xs font-mono">
+              <span className="text-white/90 text-xs font-mono w-10 text-right">
                 {formatTime(currentTime)}
               </span>
               <CustomSlider
@@ -539,7 +592,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 onChange={handleSeek}
                 className="flex-1"
               />
-              <span className="text-white/80 text-xs font-mono">{formatTime(duration)}</span>
+              <span className="text-white/90 text-xs font-mono w-10 text-left">
+                {formatTime(duration)}
+              </span>
             </div>
 
             <div className="flex items-center justify-between gap-2">

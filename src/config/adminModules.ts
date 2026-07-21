@@ -245,6 +245,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'diseno'
   },
   {
+    id: 'appearance',
+    label: 'Estilos de Botones y Glassmorphism',
+    name: 'Estudio de Botones & Glassmorphism',
+    path: '/admin/apariencia/botones',
+    icon: Sparkles,
+    group: 'diseno'
+  },
+  {
     id: 'petitions',
     label: 'Peticiones Oración',
     name: 'Peticiones Oración',
