@@ -18,17 +18,17 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 -- Define RLS Policies for audit_logs
 CREATE POLICY "Allow users to view their own logs" ON public.audit_logs 
     FOR SELECT TO authenticated 
-    USING (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id);
 
 CREATE POLICY "Allow admins to view all logs" ON public.audit_logs 
     FOR SELECT TO authenticated 
     USING (
         exists (
             select 1 from public.profiles
-            where id = auth.uid() and role = 'admin'
+            where id = (select auth.uid()) and role = 'admin'
         )
     );
 
 CREATE POLICY "Allow authenticated users to insert logs" ON public.audit_logs 
     FOR INSERT TO authenticated 
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((select auth.uid()) = user_id);

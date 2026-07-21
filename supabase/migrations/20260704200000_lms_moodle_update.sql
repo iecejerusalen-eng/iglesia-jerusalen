@@ -48,19 +48,19 @@ ALTER TABLE public.lms_course_teachers ENABLE ROW LEVEL SECURITY;
 -- Terms (Público de lectura, Admin edición)
 CREATE POLICY "Public read terms" ON public.lms_terms FOR SELECT USING (true);
 CREATE POLICY "Admin write terms" ON public.lms_terms FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND (role::text = 'admin' OR role::text = 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND (role::text = 'admin' OR role::text = 'pastor'))
 );
 
 -- Grades (Docente/Admin pueden ver/editar, Alumno solo ve la suya)
 CREATE POLICY "Admin/Teacher write grades" ON public.lms_grades FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND (role::text = 'admin' OR role::text = 'maestro' OR role::text = 'docente' OR role::text = 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND (role::text = 'admin' OR role::text = 'maestro' OR role::text = 'docente' OR role::text = 'pastor'))
 );
 CREATE POLICY "Student read own grades" ON public.lms_grades FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.lms_enrollments WHERE lms_enrollments.id = lms_grades.enrollment_id AND lms_enrollments.user_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.lms_enrollments WHERE lms_enrollments.id = lms_grades.enrollment_id AND lms_enrollments.user_id = (select auth.uid()))
 );
 
 -- Teachers (Público lectura, Admin edición)
 CREATE POLICY "Public read course teachers" ON public.lms_course_teachers FOR SELECT USING (true);
 CREATE POLICY "Admin write course teachers" ON public.lms_course_teachers FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND (role::text = 'admin' OR role::text = 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND (role::text = 'admin' OR role::text = 'pastor'))
 );

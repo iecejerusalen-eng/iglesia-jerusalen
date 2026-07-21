@@ -20,14 +20,14 @@ FOR ALL TO authenticated
 USING (
     exists (
         select 1 from public.profiles
-        where id = auth.uid() and role in ('admin', 'pastor')
+        where id = (select auth.uid()) and role in ('admin', 'pastor')
     )
 );
 
 -- Users can view their own teacher assignments
 CREATE POLICY "Teachers can view their own assignments" ON public.lms_course_teachers
 FOR SELECT TO authenticated
-USING (user_id = auth.uid());
+USING (user_id = (select auth.uid()));
 
 
 -- 3. Fix RLS for Courses, Sections, and Activities to restrict editing
@@ -38,23 +38,23 @@ CREATE POLICY "Admins and Teachers can manage courses" ON public.lms_courses FOR
 USING (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers
-    where course_id = id and user_id = auth.uid()
+    where course_id = id and user_id = (select auth.uid())
   )
 )
 WITH CHECK (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers
-    where course_id = id and user_id = auth.uid()
+    where course_id = id and user_id = (select auth.uid())
   )
 );
 
@@ -64,23 +64,23 @@ CREATE POLICY "Admins and Teachers can manage sections" ON public.lms_sections F
 USING (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers
-    where course_id = lms_sections.course_id and user_id = auth.uid()
+    where course_id = lms_sections.course_id and user_id = (select auth.uid())
   )
 )
 WITH CHECK (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers
-    where course_id = lms_sections.course_id and user_id = auth.uid()
+    where course_id = lms_sections.course_id and user_id = (select auth.uid())
   )
 );
 
@@ -90,24 +90,24 @@ CREATE POLICY "Admins and Teachers can manage activities" ON public.lms_activiti
 USING (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers ct
     inner join public.lms_sections s on ct.course_id = s.course_id
-    where s.id = lms_activities.section_id and ct.user_id = auth.uid()
+    where s.id = lms_activities.section_id and ct.user_id = (select auth.uid())
   )
 )
 WITH CHECK (
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'pastor')
+    where id = (select auth.uid()) and role in ('admin', 'pastor')
   )
   OR
   exists (
     select 1 from public.lms_course_teachers ct
     inner join public.lms_sections s on ct.course_id = s.course_id
-    where s.id = lms_activities.section_id and ct.user_id = auth.uid()
+    where s.id = lms_activities.section_id and ct.user_id = (select auth.uid())
   )
 );

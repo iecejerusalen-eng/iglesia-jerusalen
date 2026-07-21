@@ -75,11 +75,11 @@ CREATE POLICY "Teachers can manage categories" ON public.lms_question_categories
         EXISTS (
             SELECT 1 FROM public.lms_course_teachers ct
             WHERE ct.course_id = lms_question_categories.course_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
 
@@ -90,7 +90,7 @@ CREATE POLICY "Students can read categories" ON public.lms_question_categories
         EXISTS (
             SELECT 1 FROM public.lms_enrollments e
             WHERE e.course_id = lms_question_categories.course_id
-            AND e.user_id = auth.uid()
+            AND e.user_id = (select auth.uid())
             AND e.status = 'active'
         )
     );
@@ -103,11 +103,11 @@ CREATE POLICY "Teachers can manage questions" ON public.lms_questions
         EXISTS (
             SELECT 1 FROM public.lms_course_teachers ct
             WHERE ct.course_id = lms_questions.course_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
 
@@ -122,7 +122,7 @@ CREATE POLICY "Students can read questions if in quiz" ON public.lms_questions
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_enrollments e ON e.course_id = s.course_id
             WHERE qq.question_id = lms_questions.id
-            AND e.user_id = auth.uid()
+            AND e.user_id = (select auth.uid())
             AND e.status = 'active'
         )
     );
@@ -138,11 +138,11 @@ CREATE POLICY "Teachers can manage quiz questions" ON public.lms_quiz_questions
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_course_teachers ct ON ct.course_id = s.course_id
             WHERE l.id = lms_quiz_questions.lesson_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
 
@@ -156,7 +156,7 @@ CREATE POLICY "Students can read quiz questions" ON public.lms_quiz_questions
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_enrollments e ON e.course_id = s.course_id
             WHERE l.id = lms_quiz_questions.lesson_id
-            AND e.user_id = auth.uid()
+            AND e.user_id = (select auth.uid())
             AND e.status = 'active'
         )
     );
@@ -172,11 +172,11 @@ CREATE POLICY "Teachers can read all attempts" ON public.lms_quiz_attempts
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_course_teachers ct ON ct.course_id = s.course_id
             WHERE l.id = lms_quiz_attempts.lesson_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
     
@@ -190,11 +190,11 @@ CREATE POLICY "Teachers can update attempts (grade)" ON public.lms_quiz_attempts
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_course_teachers ct ON ct.course_id = s.course_id
             WHERE l.id = lms_quiz_attempts.lesson_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
 
@@ -202,7 +202,7 @@ DROP POLICY IF EXISTS "Students can manage own attempts" ON public.lms_quiz_atte
 CREATE POLICY "Students can manage own attempts" ON public.lms_quiz_attempts
     FOR ALL TO authenticated
     USING (
-        student_id = auth.uid()
+        student_id = (select auth.uid())
     );
 
 -- Answers
@@ -217,11 +217,11 @@ CREATE POLICY "Teachers can read all answers" ON public.lms_quiz_answers
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_course_teachers ct ON ct.course_id = s.course_id
             WHERE qa.id = lms_quiz_answers.attempt_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
     
@@ -236,11 +236,11 @@ CREATE POLICY "Teachers can update answers (grade essay)" ON public.lms_quiz_ans
             JOIN public.lms_subjects s ON s.id = m.subject_id
             JOIN public.lms_course_teachers ct ON ct.course_id = s.course_id
             WHERE qa.id = lms_quiz_answers.attempt_id
-            AND ct.user_id = auth.uid()
+            AND ct.user_id = (select auth.uid())
         ) OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'pastor')
+            WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor')
         )
     );
 
@@ -251,7 +251,7 @@ CREATE POLICY "Students can manage own answers" ON public.lms_quiz_answers
         EXISTS (
             SELECT 1 FROM public.lms_quiz_attempts
             WHERE id = lms_quiz_answers.attempt_id
-            AND student_id = auth.uid()
+            AND student_id = (select auth.uid())
         )
     );
 

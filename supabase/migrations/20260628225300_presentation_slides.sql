@@ -29,14 +29,14 @@ CREATE POLICY "Enable all access for authenticated superadmin users" ON public.p
     USING (
       EXISTS (
         SELECT 1 FROM public.profiles
-        WHERE profiles.id = auth.uid()
+        WHERE profiles.id = (select auth.uid())
         AND profiles.role = 'admin'
       )
     )
     WITH CHECK (
       EXISTS (
         SELECT 1 FROM public.profiles
-        WHERE profiles.id = auth.uid()
+        WHERE profiles.id = (select auth.uid())
         AND profiles.role = 'admin'
       )
     );

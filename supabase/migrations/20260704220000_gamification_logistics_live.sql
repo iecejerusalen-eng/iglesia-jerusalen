@@ -28,7 +28,7 @@ CREATE POLICY "Gestión de planes de lectura por Admin"
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
+      where id = (select auth.uid()) and role = 'admin'
     )
   );
 
@@ -47,7 +47,7 @@ ALTER TABLE public.user_reading_progress ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Lectura de propio progreso" ON public.user_reading_progress;
 CREATE POLICY "Lectura de propio progreso"
   ON public.user_reading_progress FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Lectura de progreso global por todos" ON public.user_reading_progress;
 CREATE POLICY "Lectura de progreso global por todos"
@@ -57,8 +57,8 @@ CREATE POLICY "Lectura de progreso global por todos"
 DROP POLICY IF EXISTS "Modificación de propio progreso" ON public.user_reading_progress;
 CREATE POLICY "Modificación de propio progreso"
   ON public.user_reading_progress FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- 1c. Insignias (Badges)
 CREATE TABLE IF NOT EXISTS public.badges (
@@ -82,7 +82,7 @@ CREATE POLICY "Gestión de insignias por Admin"
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and role = 'admin'
+      where id = (select auth.uid()) and role = 'admin'
     )
   );
 
@@ -100,7 +100,7 @@ ALTER TABLE public.user_badges ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Lectura de propias insignias" ON public.user_badges;
 CREATE POLICY "Lectura de propias insignias"
   ON public.user_badges FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Lectura pública de insignias de otros" ON public.user_badges;
 CREATE POLICY "Lectura pública de insignias de otros"
@@ -110,7 +110,7 @@ CREATE POLICY "Lectura pública de insignias de otros"
 DROP POLICY IF EXISTS "Adquisición de insignias por usuario" ON public.user_badges;
 CREATE POLICY "Adquisición de insignias por usuario"
   ON public.user_badges FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- -------------------------------------------------------
 -- 2. ÉPICA 2: LOGÍSTICA Y PRODUCCIÓN INTERNA
@@ -143,7 +143,7 @@ ALTER TABLE public.production_tickets ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Lectura de tickets para usuarios autenticados" ON public.production_tickets;
 CREATE POLICY "Lectura de tickets para usuarios autenticados"
   ON public.production_tickets FOR SELECT
-  USING (auth.uid() IS NOT NULL);
+  USING ((select auth.uid()) IS NOT NULL);
 
 DROP POLICY IF EXISTS "Gestión total de tickets por roles de staff" ON public.production_tickets;
 CREATE POLICY "Gestión total de tickets por roles de staff"
@@ -151,7 +151,7 @@ CREATE POLICY "Gestión total de tickets por roles de staff"
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and role in ('admin', 'multimedia', 'editor', 'secretary', 'pastor')
+      where id = (select auth.uid()) and role in ('admin', 'multimedia', 'editor', 'secretary', 'pastor')
     )
   );
 
@@ -169,7 +169,7 @@ USING (
   bucket_id = 'media_vault' AND
   exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'multimedia')
+    where id = (select auth.uid()) and role in ('admin', 'multimedia')
   )
 );
 
@@ -191,13 +191,13 @@ ALTER TABLE public.sermon_notes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Lectura de propias notas de sermones" ON public.sermon_notes;
 CREATE POLICY "Lectura de propias notas de sermones"
   ON public.sermon_notes FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Modificación de propias notas" ON public.sermon_notes;
 CREATE POLICY "Modificación de propias notas"
   ON public.sermon_notes FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Sembrar insignias iniciales de muestra
 INSERT INTO public.badges (name, description, image_url) VALUES

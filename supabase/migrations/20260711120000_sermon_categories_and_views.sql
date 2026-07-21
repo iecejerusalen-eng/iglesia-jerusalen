@@ -26,7 +26,7 @@ create policy "Permitir gestión a administradores"
   using (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and role in ('admin', 'pastor')
+      where id = (select auth.uid()) and role in ('admin', 'pastor')
     )
   );
 

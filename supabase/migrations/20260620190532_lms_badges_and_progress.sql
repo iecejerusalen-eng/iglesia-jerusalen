@@ -19,9 +19,9 @@ CREATE POLICY "Usuarios pueden ver todas las insignias" ON public.lms_student_ba
 FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "Estudiantes pueden insertar sus propias insignias" ON public.lms_student_badges 
-FOR INSERT TO authenticated WITH CHECK (student_id = auth.uid());
+FOR INSERT TO authenticated WITH CHECK (student_id = (select auth.uid()));
 
 -- Asegurar que los estudiantes puedan insertar en activity_completions (si no estaba la política de INSERT explícita)
 DROP POLICY IF EXISTS "Users can view and manage their own completions" ON public.lms_activity_completions;
 CREATE POLICY "Users can view and manage their own completions" ON public.lms_activity_completions 
-FOR ALL TO authenticated USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+FOR ALL TO authenticated USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));

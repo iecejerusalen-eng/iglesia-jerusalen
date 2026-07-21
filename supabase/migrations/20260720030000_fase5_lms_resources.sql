@@ -30,13 +30,13 @@ FOR ALL TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM profiles 
-        WHERE id = auth.uid() AND role IN ('admin', 'editor', 'maestro')
+        WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'maestro')
     )
 )
 WITH CHECK (
     EXISTS (
         SELECT 1 FROM profiles 
-        WHERE id = auth.uid() AND role IN ('admin', 'editor', 'maestro')
+        WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'maestro')
     )
 );
 
@@ -53,4 +53,4 @@ DROP POLICY IF EXISTS "Authenticated users can upload resources" ON storage.obje
 CREATE POLICY "Authenticated users can upload resources" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'lms_resources');
 
 DROP POLICY IF EXISTS "Users can delete their own resources" ON storage.objects;
-CREATE POLICY "Users can delete their own resources" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'lms_resources' AND auth.uid() = owner);
+CREATE POLICY "Users can delete their own resources" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'lms_resources' AND (select auth.uid()) = owner);

@@ -57,15 +57,15 @@ FOR SELECT TO public USING (true);
 -- Admin Write Access
 CREATE POLICY "Admin can manage resources" ON public.open_resources 
 FOR ALL TO authenticated 
-USING (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')))
-WITH CHECK (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')));
+USING (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')))
+WITH CHECK (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')));
 
 CREATE POLICY "Admin can manage sections" ON public.open_sections 
 FOR ALL TO authenticated 
-USING (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')))
-WITH CHECK (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')));
+USING (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')))
+WITH CHECK (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')));
 
 CREATE POLICY "Admin can manage activities" ON public.open_activities 
 FOR ALL TO authenticated 
-USING (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')))
-WITH CHECK (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')));
+USING (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')))
+WITH CHECK (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')));

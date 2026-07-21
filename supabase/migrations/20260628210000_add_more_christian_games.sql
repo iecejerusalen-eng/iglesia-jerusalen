@@ -48,7 +48,7 @@ CREATE POLICY "Admins can manage hangman words" ON public.game_hangman_words
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'maestro')
+            WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'maestro')
         )
     );
 
@@ -60,7 +60,7 @@ CREATE POLICY "Admins can manage memory cards" ON public.game_memory_cards
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'maestro')
+            WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'maestro')
         )
     );
 
@@ -69,14 +69,14 @@ CREATE POLICY "Public can view hangman scores" ON public.game_hangman_scores
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert their own hangman scores" ON public.game_hangman_scores
-    FOR INSERT WITH CHECK (profile_id = auth.uid());
+    FOR INSERT WITH CHECK (profile_id = (select auth.uid()));
 
 -- Memory Scores Policies
 CREATE POLICY "Public can view memory scores" ON public.game_memory_scores
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert their own memory scores" ON public.game_memory_scores
-    FOR INSERT WITH CHECK (profile_id = auth.uid());
+    FOR INSERT WITH CHECK (profile_id = (select auth.uid()));
 
 -- Insert some default words
 INSERT INTO public.game_hangman_words (word, hint, category) VALUES

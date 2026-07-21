@@ -47,7 +47,7 @@ CREATE POLICY "Admins can manage games" ON public.games
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'maestro')
+            WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'maestro')
         )
     );
 
@@ -59,7 +59,7 @@ CREATE POLICY "Admins can manage questions" ON public.game_biblionario_questions
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'maestro')
+            WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'maestro')
         )
     );
 
@@ -68,16 +68,16 @@ CREATE POLICY "Public can view scores" ON public.game_biblionario_scores
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert their own scores" ON public.game_biblionario_scores
-    FOR INSERT WITH CHECK (profile_id = auth.uid());
+    FOR INSERT WITH CHECK (profile_id = (select auth.uid()));
 
 CREATE POLICY "Users can update their own scores" ON public.game_biblionario_scores
-    FOR UPDATE USING (profile_id = auth.uid());
+    FOR UPDATE USING (profile_id = (select auth.uid()));
 
 CREATE POLICY "Admins can manage scores" ON public.game_biblionario_scores
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'maestro')
+            WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'maestro')
         )
     );
 

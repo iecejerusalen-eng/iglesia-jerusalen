@@ -43,7 +43,7 @@ CREATE POLICY "Admin write groups"
     USING (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE profiles.id = auth.uid()
+            WHERE profiles.id = (select auth.uid())
             AND role IN ('admin', 'pastor', 'editor')
         )
     )
@@ -56,7 +56,7 @@ CREATE POLICY "Admin write group members"
     USING (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE profiles.id = auth.uid()
+            WHERE profiles.id = (select auth.uid())
             AND role IN ('admin', 'pastor', 'editor')
         )
     )

@@ -18,12 +18,12 @@ TO authenticated USING (true);
 
 CREATE POLICY "Authenticated users can insert forum posts" 
 ON public.lms_forum_posts FOR INSERT 
-TO authenticated WITH CHECK (auth.uid() = user_id);
+TO authenticated WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own posts" 
 ON public.lms_forum_posts FOR UPDATE 
-TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own posts" 
 ON public.lms_forum_posts FOR DELETE 
-TO authenticated USING (auth.uid() = user_id);
+TO authenticated USING ((select auth.uid()) = user_id);

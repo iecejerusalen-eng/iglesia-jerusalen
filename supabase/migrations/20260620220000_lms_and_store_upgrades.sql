@@ -164,10 +164,10 @@ DROP POLICY IF EXISTS "Public read store_categories" ON public.store_categories;
 CREATE POLICY "Public read store_categories" ON public.store_categories FOR SELECT TO public USING (true);
 
 DROP POLICY IF EXISTS "Read own lesson completions" ON public.lms_lesson_completions;
-CREATE POLICY "Read own lesson completions" ON public.lms_lesson_completions FOR SELECT TO authenticated USING (student_id = auth.uid());
+CREATE POLICY "Read own lesson completions" ON public.lms_lesson_completions FOR SELECT TO authenticated USING (student_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Read own lesson submissions" ON public.lms_lesson_submissions;
-CREATE POLICY "Read own lesson submissions" ON public.lms_lesson_submissions FOR SELECT TO authenticated USING (student_id = auth.uid());
+CREATE POLICY "Read own lesson submissions" ON public.lms_lesson_submissions FOR SELECT TO authenticated USING (student_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Read lesson forum posts" ON public.lms_lesson_forum_posts;
 CREATE POLICY "Read lesson forum posts" ON public.lms_lesson_forum_posts FOR SELECT TO authenticated USING (true);
@@ -175,50 +175,50 @@ CREATE POLICY "Read lesson forum posts" ON public.lms_lesson_forum_posts FOR SEL
 -- Admin manage policies
 DROP POLICY IF EXISTS "Admin manage lms_subjects" ON public.lms_subjects;
 CREATE POLICY "Admin manage lms_subjects" ON public.lms_subjects FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor', 'leader'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor', 'leader'))
 );
 
 DROP POLICY IF EXISTS "Admin manage lms_modules" ON public.lms_modules;
 CREATE POLICY "Admin manage lms_modules" ON public.lms_modules FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor', 'leader'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor', 'leader'))
 );
 
 DROP POLICY IF EXISTS "Admin manage lms_lessons" ON public.lms_lessons;
 CREATE POLICY "Admin manage lms_lessons" ON public.lms_lessons FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor', 'leader'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor', 'leader'))
 );
 
 DROP POLICY IF EXISTS "Admin manage store_categories" ON public.store_categories;
 CREATE POLICY "Admin manage store_categories" ON public.store_categories FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "Admin manage store_suppliers" ON public.store_suppliers;
 CREATE POLICY "Admin manage store_suppliers" ON public.store_suppliers FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "Admin manage store_disputes" ON public.store_disputes;
 CREATE POLICY "Admin manage store_disputes" ON public.store_disputes FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'pastor'))
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'pastor'))
 );
 
 -- Student insert/update completions and submissions
 DROP POLICY IF EXISTS "Student manage own completions" ON public.lms_lesson_completions;
 CREATE POLICY "Student manage own completions" ON public.lms_lesson_completions FOR ALL TO authenticated 
-    USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+    USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Student manage own submissions" ON public.lms_lesson_submissions;
 CREATE POLICY "Student manage own submissions" ON public.lms_lesson_submissions FOR ALL TO authenticated 
-    USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+    USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Student write forum posts" ON public.lms_lesson_forum_posts;
 CREATE POLICY "Student write forum posts" ON public.lms_lesson_forum_posts FOR ALL TO authenticated 
-    USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+    USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Student own quiz grades" ON public.lms_lesson_quiz_grades;
 CREATE POLICY "Student own quiz grades" ON public.lms_lesson_quiz_grades FOR ALL TO authenticated 
-    USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+    USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));
 
 -- Data Migration helper (Non-destructive fallback: migrate existing sections/activities to subjects/modules/lessons)
 DO $$

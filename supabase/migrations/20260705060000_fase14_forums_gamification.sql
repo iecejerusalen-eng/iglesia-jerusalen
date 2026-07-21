@@ -71,38 +71,38 @@ ALTER TABLE public.lms_notifications ENABLE ROW LEVEL SECURITY;
 -- Forums (Lectura pública para inscritos, escritura para inscritos)
 DROP POLICY IF EXISTS "Enrolled users can read forums" ON public.lms_forums;
 CREATE POLICY "Enrolled users can read forums" ON public.lms_forums FOR SELECT TO authenticated USING (
-    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_forums.course_id AND user_id = auth.uid()) OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_forums.course_id AND user_id = (select auth.uid())) OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "Teachers and Admins can create forums" ON public.lms_forums;
 CREATE POLICY "Teachers and Admins can create forums" ON public.lms_forums FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_forums.course_id AND user_id = auth.uid() AND role = 'teacher') OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_forums.course_id AND user_id = (select auth.uid()) AND role = 'teacher') OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);
 
 -- Posts
 DROP POLICY IF EXISTS "Enrolled can read posts" ON public.lms_forum_posts;
 CREATE POLICY "Enrolled can read posts" ON public.lms_forum_posts FOR SELECT TO authenticated USING (
-    EXISTS (SELECT 1 FROM lms_forums f JOIN lms_enrollments e ON f.course_id = e.course_id WHERE f.id = lms_forum_posts.forum_id AND e.user_id = auth.uid()) OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM lms_forums f JOIN lms_enrollments e ON f.course_id = e.course_id WHERE f.id = lms_forum_posts.forum_id AND e.user_id = (select auth.uid())) OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "Enrolled can write posts" ON public.lms_forum_posts;
 CREATE POLICY "Enrolled can write posts" ON public.lms_forum_posts FOR INSERT TO authenticated WITH CHECK (
-    EXISTS (SELECT 1 FROM lms_forums f JOIN lms_enrollments e ON f.course_id = e.course_id WHERE f.id = forum_id AND e.user_id = auth.uid())
+    EXISTS (SELECT 1 FROM lms_forums f JOIN lms_enrollments e ON f.course_id = e.course_id WHERE f.id = forum_id AND e.user_id = (select auth.uid()))
 );
 
 -- Notifications (Cada usuario lee/modifica las suyas)
 DROP POLICY IF EXISTS "Users can read own notifications" ON public.lms_notifications;
-CREATE POLICY "Users can read own notifications" ON public.lms_notifications FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "Users can read own notifications" ON public.lms_notifications FOR SELECT TO authenticated USING (user_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS "Users can update own notifications" ON public.lms_notifications;
-CREATE POLICY "Users can update own notifications" ON public.lms_notifications FOR UPDATE TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "Users can update own notifications" ON public.lms_notifications FOR UPDATE TO authenticated USING (user_id = (select auth.uid()));
 
 -- Badges
 DROP POLICY IF EXISTS "Public read badges" ON public.lms_gamification_badges;
 CREATE POLICY "Public read badges" ON public.lms_gamification_badges FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Users read own badges" ON public.lms_user_badges;
-CREATE POLICY "Users read own badges" ON public.lms_user_badges FOR SELECT TO authenticated USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor')));
+CREATE POLICY "Users read own badges" ON public.lms_user_badges FOR SELECT TO authenticated USING (user_id = (select auth.uid()) OR EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor')));

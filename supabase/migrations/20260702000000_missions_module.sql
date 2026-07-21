@@ -24,20 +24,20 @@ CREATE POLICY "missions_public_read" ON public.missions FOR SELECT USING (true);
 -- Políticas de escritura para administradores y pastores
 DROP POLICY IF EXISTS "missions_admin_insert" ON public.missions;
 CREATE POLICY "missions_admin_insert" ON public.missions FOR INSERT WITH CHECK (
-  auth.role() = 'authenticated' AND 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor'))
+  (select auth.role()) = 'authenticated' AND 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "missions_admin_update" ON public.missions;
 CREATE POLICY "missions_admin_update" ON public.missions FOR UPDATE USING (
-  auth.role() = 'authenticated' AND 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor'))
+  (select auth.role()) = 'authenticated' AND 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor'))
 );
 
 DROP POLICY IF EXISTS "missions_admin_delete" ON public.missions;
 CREATE POLICY "missions_admin_delete" ON public.missions FOR DELETE USING (
-  auth.role() = 'authenticated' AND 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor'))
+  (select auth.role()) = 'authenticated' AND 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor'))
 );
 
 -- Trigger para updated_at

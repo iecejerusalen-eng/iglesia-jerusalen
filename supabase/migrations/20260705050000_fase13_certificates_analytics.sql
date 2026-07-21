@@ -40,7 +40,7 @@ CREATE POLICY "Public read competencies" ON public.lms_competencies FOR SELECT T
 
 DROP POLICY IF EXISTS "Admin write competencies" ON public.lms_competencies;
 CREATE POLICY "Admin write competencies" ON public.lms_competencies FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);
 
 -- Course Competencies Policies
@@ -49,8 +49,8 @@ CREATE POLICY "Public read course competencies" ON public.lms_course_competencie
 
 DROP POLICY IF EXISTS "Teacher write course competencies" ON public.lms_course_competencies;
 CREATE POLICY "Teacher write course competencies" ON public.lms_course_competencies FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_course_competencies.course_id AND user_id = auth.uid() AND role = 'teacher') OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_course_competencies.course_id AND user_id = (select auth.uid()) AND role = 'teacher') OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);
 
 -- Certificates Policies
@@ -59,6 +59,6 @@ CREATE POLICY "Anyone can verify certificate by ID" ON public.lms_certificates F
 
 DROP POLICY IF EXISTS "Teachers and Admins can issue certificates" ON public.lms_certificates;
 CREATE POLICY "Teachers and Admins can issue certificates" ON public.lms_certificates FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_certificates.course_id AND user_id = auth.uid() AND role = 'teacher') OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM lms_enrollments WHERE course_id = lms_certificates.course_id AND user_id = (select auth.uid()) AND role = 'teacher') OR
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);

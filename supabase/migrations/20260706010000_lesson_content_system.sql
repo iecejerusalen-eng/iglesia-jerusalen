@@ -40,9 +40,9 @@ FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Admins and teachers can manage activity resources" ON public.lms_activity_resources;
 CREATE POLICY "Admins and teachers can manage activity resources" ON public.lms_activity_resources 
 FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
 ) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Users can manage their own resource progress" ON public.lms_resource_progress;
 CREATE POLICY "Users can manage their own resource progress" ON public.lms_resource_progress 
-FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+FOR ALL TO authenticated USING (user_id = (select auth.uid())) WITH CHECK (user_id = (select auth.uid()));

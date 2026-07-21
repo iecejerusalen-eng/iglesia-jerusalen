@@ -9,85 +9,85 @@
 -- Certificados
 DROP POLICY IF EXISTS "Escritura (fonts)" ON public.certificate_fonts;
 CREATE POLICY "Escritura (fonts)" ON public.certificate_fonts FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Escritura (generations)" ON public.certificate_generations;
 CREATE POLICY "Escritura (generations)" ON public.certificate_generations FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Escritura (templates)" ON public.certificate_templates;
 CREATE POLICY "Escritura (templates)" ON public.certificate_templates FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader'))) 
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 -- LMS Modificaciones Genéricas
 DROP POLICY IF EXISTS "Allow announcements manage" ON public.lms_announcements;
 CREATE POLICY "Allow announcements manage" ON public.lms_announcements FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow attendance manage" ON public.lms_attendance;
 CREATE POLICY "Allow attendance manage" ON public.lms_attendance FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow class sessions manage" ON public.lms_class_sessions;
 CREATE POLICY "Allow class sessions manage" ON public.lms_class_sessions FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow integrations manage" ON public.lms_course_integrations;
 CREATE POLICY "Allow integrations manage" ON public.lms_course_integrations FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow admin/teacher update enrollment requests" ON public.lms_enrollment_requests;
 CREATE POLICY "Allow admin/teacher update enrollment requests" ON public.lms_enrollment_requests FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Admin can manage enrollments" ON public.lms_enrollments;
 CREATE POLICY "Admin can manage enrollments" ON public.lms_enrollments FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow group members manage" ON public.lms_group_members;
 CREATE POLICY "Allow group members manage" ON public.lms_group_members FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow student groups manage" ON public.lms_student_groups;
 CREATE POLICY "Allow student groups manage" ON public.lms_student_groups FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow tutoring manage" ON public.lms_tutoring_appointments;
 CREATE POLICY "Allow tutoring manage" ON public.lms_tutoring_appointments FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 -- Otros
 DROP POLICY IF EXISTS "Enable write access for all authenticated users to member_avail" ON public.member_availabilities;
 CREATE POLICY "Enable write access for all authenticated users to member_avail" ON public.member_availabilities FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Enable write access for all authenticated users to ministry_mee" ON public.ministry_meeting_notes;
 CREATE POLICY "Enable write access for all authenticated users to ministry_mee" ON public.ministry_meeting_notes FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Enable write access for all authenticated users to ministry_mem" ON public.ministry_members;
 CREATE POLICY "Enable write access for all authenticated users to ministry_mem" ON public.ministry_members FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 DROP POLICY IF EXISTS "Allow admin full access to program_modules" ON public.program_modules;
 CREATE POLICY "Allow admin full access to program_modules" ON public.program_modules FOR ALL TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
-WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')))
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = (select auth.uid()) AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')));
 
 
 -- ==============================================================================
@@ -96,56 +96,56 @@ WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid()
 
 DROP POLICY IF EXISTS "Admins and teachers can manage activity resources" ON public.lms_activity_resources;
 CREATE POLICY "Admins and teachers can manage activity resources" ON public.lms_activity_resources FOR ALL TO authenticated
-USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
-WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))));
+USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))));
 
 DROP POLICY IF EXISTS "Teachers and Admins can issue certificates" ON public.lms_certificates;
 CREATE POLICY "Teachers and Admins can issue certificates" ON public.lms_certificates FOR ALL TO authenticated
 USING (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_certificates.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_certificates.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 )
 WITH CHECK (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_certificates.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_certificates.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 );
 
 DROP POLICY IF EXISTS "Admin write competencies" ON public.lms_competencies;
 CREATE POLICY "Admin write competencies" ON public.lms_competencies FOR ALL TO authenticated
-USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
-WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))));
+USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))));
 
 DROP POLICY IF EXISTS "Teacher write course competencies" ON public.lms_course_competencies;
 CREATE POLICY "Teacher write course competencies" ON public.lms_course_competencies FOR ALL TO authenticated
 USING (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_course_competencies.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_course_competencies.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 )
 WITH CHECK (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_course_competencies.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_course_competencies.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 );
 
 DROP POLICY IF EXISTS "Teachers and Admins can create forums" ON public.lms_forums;
 CREATE POLICY "Teachers and Admins can create forums" ON public.lms_forums FOR ALL TO authenticated
 USING (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_forums.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_forums.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 )
 WITH CHECK (
-  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_forums.course_id) AND (lms_enrollments.user_id = auth.uid()) AND (lms_enrollments.role = 'teacher'::text)))) OR 
-  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
+  (EXISTS ( SELECT 1 FROM public.lms_enrollments WHERE ((lms_enrollments.course_id = lms_forums.course_id) AND (lms_enrollments.user_id = (select auth.uid())) AND (lms_enrollments.role = 'teacher'::text)))) OR 
+  (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'editor'::public.user_role, 'pastor'::public.user_role])))))
 );
 
 DROP POLICY IF EXISTS "Admin write group members" ON public.lms_group_members;
 CREATE POLICY "Admin write group members" ON public.lms_group_members FOR ALL TO authenticated
-USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))))
-WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))));
+USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))))
+WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))));
 
 DROP POLICY IF EXISTS "Admin write groups" ON public.lms_groups;
 CREATE POLICY "Admin write groups" ON public.lms_groups FOR ALL TO authenticated
-USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))))
-WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))));
+USING (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))))
+WITH CHECK (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = (select auth.uid())) AND (profiles.role = ANY (ARRAY['admin'::public.user_role, 'pastor'::public.user_role, 'editor'::public.user_role])))));
 
 
 -- ==============================================================================
@@ -177,32 +177,32 @@ CREATE POLICY "Permitir crear pedidos públicamente" ON public.orders FOR INSERT
 -- Restringimos el listado solo a usuarios autenticados, o forzamos filtros
 
 DROP POLICY IF EXISTS "Public read access for audio_assets bucket" ON storage.objects;
-CREATE POLICY "Public read access for audio_assets bucket" ON storage.objects FOR SELECT USING (bucket_id = 'audio_assets' AND auth.role() = 'authenticated');
+CREATE POLICY "Public read access for audio_assets bucket" ON storage.objects FOR SELECT USING (bucket_id = 'audio_assets' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Permitir acceso público a imágenes de eventos" ON storage.objects;
-CREATE POLICY "Permitir acceso público a imágenes de eventos" ON storage.objects FOR SELECT USING (bucket_id = 'event-images' AND auth.role() = 'authenticated');
+CREATE POLICY "Permitir acceso público a imágenes de eventos" ON storage.objects FOR SELECT USING (bucket_id = 'event-images' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Permitir carga de imágenes de eventos a autorizados" ON storage.objects;
 -- La política de carga (INSERT) no debería ser SELECT, así que esto reemplaza y repara posibles cruces.
 CREATE POLICY "Permitir carga de imágenes de eventos a autorizados" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'event-images');
 
 DROP POLICY IF EXISTS "Permitir lectura pública de fotos de inventario en storage" ON storage.objects;
-CREATE POLICY "Permitir lectura pública de fotos de inventario en storage" ON storage.objects FOR SELECT USING (bucket_id = 'inventory' AND auth.role() = 'authenticated');
+CREATE POLICY "Permitir lectura pública de fotos de inventario en storage" ON storage.objects FOR SELECT USING (bucket_id = 'inventory' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Public access to lms_resources" ON storage.objects;
-CREATE POLICY "Public access to lms_resources" ON storage.objects FOR SELECT USING (bucket_id = 'lms_resources' AND auth.role() = 'authenticated');
+CREATE POLICY "Public access to lms_resources" ON storage.objects FOR SELECT USING (bucket_id = 'lms_resources' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Permitir lectura pública de logos en storage" ON storage.objects;
-CREATE POLICY "Permitir lectura pública de logos en storage" ON storage.objects FOR SELECT USING (bucket_id = 'logos' AND auth.role() = 'authenticated');
+CREATE POLICY "Permitir lectura pública de logos en storage" ON storage.objects FOR SELECT USING (bucket_id = 'logos' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Cualquiera puede leer imágenes de ministerios" ON storage.objects;
-CREATE POLICY "Cualquiera puede leer imágenes de ministerios" ON storage.objects FOR SELECT USING (bucket_id = 'ministry-images' AND auth.role() = 'authenticated');
+CREATE POLICY "Cualquiera puede leer imágenes de ministerios" ON storage.objects FOR SELECT USING (bucket_id = 'ministry-images' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Cualquiera puede leer imágenes de productos" ON storage.objects;
-CREATE POLICY "Cualquiera puede leer imágenes de productos" ON storage.objects FOR SELECT USING (bucket_id = 'products' AND auth.role() = 'authenticated');
+CREATE POLICY "Cualquiera puede leer imágenes de productos" ON storage.objects FOR SELECT USING (bucket_id = 'products' AND (select auth.role()) = 'authenticated');
 
 DROP POLICY IF EXISTS "Permitir lectura pública de comprobantes" ON storage.objects;
-CREATE POLICY "Permitir lectura pública de comprobantes" ON storage.objects FOR SELECT USING (bucket_id = 'receipts' AND auth.role() = 'authenticated');
+CREATE POLICY "Permitir lectura pública de comprobantes" ON storage.objects FOR SELECT USING (bucket_id = 'receipts' AND (select auth.role()) = 'authenticated');
 
 
 -- ==============================================================================

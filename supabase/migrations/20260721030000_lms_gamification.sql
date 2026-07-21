@@ -73,13 +73,13 @@ CREATE POLICY "Public can view who has what badge" ON public.lms_student_badges
 
 DROP POLICY IF EXISTS "Students can view their own xp logs" ON public.lms_xp_logs;
 CREATE POLICY "Students can view their own xp logs" ON public.lms_xp_logs
-    FOR SELECT TO authenticated USING (auth.uid() = student_id);
+    FOR SELECT TO authenticated USING ((select auth.uid()) = student_id);
 
 -- Solo administradores pueden gestionar el catálogo de medallas
 DROP POLICY IF EXISTS "Admins can manage badges" ON public.lms_badges;
 CREATE POLICY "Admins can manage badges" ON public.lms_badges
     FOR ALL TO authenticated USING (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
+        EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor'))
     );
 
 -- ============================================================================

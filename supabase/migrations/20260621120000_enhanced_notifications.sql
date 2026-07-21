@@ -25,6 +25,6 @@ CREATE POLICY "Permitir gestión de notificaciones a personal autorizado"
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and role in ('admin', 'pastor', 'secretary', 'secretaria', 'editor')
+      where id = (select auth.uid()) and role in ('admin', 'pastor', 'secretary', 'secretaria', 'editor')
     )
   );

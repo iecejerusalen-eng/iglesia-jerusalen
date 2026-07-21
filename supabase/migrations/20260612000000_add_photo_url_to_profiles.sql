@@ -10,8 +10,8 @@ BEGIN
   ) THEN
     CREATE POLICY "Permitir a usuarios actualizar su propio perfil" 
       ON public.profiles FOR UPDATE 
-      USING (auth.uid() = id)
-      WITH CHECK (auth.uid() = id);
+      USING ((select auth.uid()) = id)
+      WITH CHECK ((select auth.uid()) = id);
   END IF;
 END
 $$;

@@ -27,7 +27,7 @@ CREATE POLICY "Lectura de teléfonos para staff"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (select auth.uid()) 
             AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')
         )
     );
@@ -39,14 +39,14 @@ CREATE POLICY "Escritura de teléfonos para staff"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (select auth.uid()) 
             AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
+            WHERE profiles.id = (select auth.uid()) 
             AND profiles.role IN ('admin', 'editor', 'pastor', 'leader')
         )
     );
@@ -59,7 +59,7 @@ CREATE POLICY "Lectura de teléfonos propios"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid()
+            WHERE profiles.id = (select auth.uid())
             AND profiles.member_id = member_phones.member_id
         )
     );
@@ -71,14 +71,14 @@ CREATE POLICY "Escritura de teléfonos propios"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid()
+            WHERE profiles.id = (select auth.uid())
             AND profiles.member_id = member_phones.member_id
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE profiles.id = auth.uid()
+            WHERE profiles.id = (select auth.uid())
             AND profiles.member_id = member_phones.member_id
         )
     );

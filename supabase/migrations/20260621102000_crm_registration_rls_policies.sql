@@ -9,7 +9,7 @@ CREATE POLICY "Permitir auto-registro de miembros" ON public.members FOR INSERT 
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and member_id is null
+      where id = (select auth.uid()) and member_id is null
     )
   );
 
@@ -18,13 +18,13 @@ CREATE POLICY "Permitir auto-actualización de miembro propio" ON public.members
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and member_id = public.members.id
+      where id = (select auth.uid()) and member_id = public.members.id
     )
   )
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and member_id = public.members.id
+      where id = (select auth.uid()) and member_id = public.members.id
     )
   );
 
@@ -33,12 +33,12 @@ CREATE POLICY "Permitir auto-gestión de emails propios" ON public.member_emails
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and member_id = public.member_emails.member_id
+      where id = (select auth.uid()) and member_id = public.member_emails.member_id
     )
   )
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and member_id = public.member_emails.member_id
+      where id = (select auth.uid()) and member_id = public.member_emails.member_id
     )
   );

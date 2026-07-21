@@ -56,42 +56,42 @@ DROP POLICY IF EXISTS "shifts_public_read" ON public.volunteer_shifts;
 CREATE POLICY "shifts_public_read" ON public.volunteer_shifts FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "shifts_admin_all" ON public.volunteer_shifts;
-CREATE POLICY "shifts_admin_all" ON public.volunteer_shifts FOR ALL USING (auth.role() = 'authenticated' AND auth.jwt() ->> 'role' IN ('admin', 'pastor', 'leader'));
+CREATE POLICY "shifts_admin_all" ON public.volunteer_shifts FOR ALL USING ((select auth.role()) = 'authenticated' AND (select auth.jwt()) ->> 'role' IN ('admin', 'pastor', 'leader'));
 
 -- Assignments
 DROP POLICY IF EXISTS "assignments_public_read" ON public.volunteer_assignments;
 CREATE POLICY "assignments_public_read" ON public.volunteer_assignments FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "assignments_admin_all" ON public.volunteer_assignments;
-CREATE POLICY "assignments_admin_all" ON public.volunteer_assignments FOR ALL USING (auth.role() = 'authenticated' AND auth.jwt() ->> 'role' IN ('admin', 'pastor', 'leader'));
+CREATE POLICY "assignments_admin_all" ON public.volunteer_assignments FOR ALL USING ((select auth.role()) = 'authenticated' AND (select auth.jwt()) ->> 'role' IN ('admin', 'pastor', 'leader'));
 
 -- Spaces
 DROP POLICY IF EXISTS "spaces_public_read" ON public.spaces;
 CREATE POLICY "spaces_public_read" ON public.spaces FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "spaces_admin_all" ON public.spaces;
-CREATE POLICY "spaces_admin_all" ON public.spaces FOR ALL USING (auth.role() = 'authenticated' AND auth.jwt() ->> 'role' IN ('admin', 'pastor'));
+CREATE POLICY "spaces_admin_all" ON public.spaces FOR ALL USING ((select auth.role()) = 'authenticated' AND (select auth.jwt()) ->> 'role' IN ('admin', 'pastor'));
 
 -- Bookings (Cualquier autenticado puede crear/ver sus reservas, admin ve todas)
 DROP POLICY IF EXISTS "bookings_read" ON public.space_bookings;
 CREATE POLICY "bookings_read" ON public.space_bookings FOR SELECT USING (
-  auth.uid() = user_id OR 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor', 'secretary'))
+  (select auth.uid()) = user_id OR 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor', 'secretary'))
 );
 
 DROP POLICY IF EXISTS "bookings_insert" ON public.space_bookings;
 CREATE POLICY "bookings_insert" ON public.space_bookings FOR INSERT WITH CHECK (
-  auth.role() = 'authenticated' AND auth.uid() = user_id
+  (select auth.role()) = 'authenticated' AND (select auth.uid()) = user_id
 );
 
 DROP POLICY IF EXISTS "bookings_update" ON public.space_bookings;
 CREATE POLICY "bookings_update" ON public.space_bookings FOR UPDATE USING (
-  auth.uid() = user_id OR 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor', 'secretary'))
+  (select auth.uid()) = user_id OR 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor', 'secretary'))
 );
 
 DROP POLICY IF EXISTS "bookings_delete" ON public.space_bookings;
 CREATE POLICY "bookings_delete" ON public.space_bookings FOR DELETE USING (
-  auth.uid() = user_id OR 
-  (auth.jwt() ->> 'role' IN ('admin', 'pastor', 'secretary'))
+  (select auth.uid()) = user_id OR 
+  ((select auth.jwt()) ->> 'role' IN ('admin', 'pastor', 'secretary'))
 );

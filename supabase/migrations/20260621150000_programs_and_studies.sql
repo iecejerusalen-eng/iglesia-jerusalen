@@ -31,8 +31,8 @@ FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Admin can manage studies" ON public.studies;
 CREATE POLICY "Admin can manage studies" ON public.studies 
 FOR ALL TO authenticated
-USING (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')))
-WITH CHECK (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'pastor')));
+USING (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')))
+WITH CHECK (exists (select 1 from public.profiles where id = (select auth.uid()) and role in ('admin', 'pastor')));
 
 -- 3. Añadir columnas de gestión a la tabla public.lms_courses
 ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 0;

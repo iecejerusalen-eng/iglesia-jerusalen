@@ -13,7 +13,7 @@ CREATE POLICY "Permitir creacion de chats a autenticados"
     ON public.chats
     FOR INSERT
     TO authenticated
-    WITH CHECK (auth.uid() IS NOT NULL);
+    WITH CHECK ((select auth.uid()) IS NOT NULL);
 
 -- contact_messages
 DROP POLICY IF EXISTS "Permitir enviar mensajes de contacto públicamente" ON public.contact_messages;
@@ -21,7 +21,7 @@ CREATE POLICY "Permitir enviar mensajes de contacto públicamente"
     ON public.contact_messages
     FOR INSERT
     TO public
-    WITH CHECK (auth.role() IN ('anon', 'authenticated'));
+    WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 
 -- donations
 DROP POLICY IF EXISTS "Permitir insertar donaciones públicamente" ON public.donations;
@@ -29,7 +29,7 @@ CREATE POLICY "Permitir insertar donaciones públicamente"
     ON public.donations
     FOR INSERT
     TO public
-    WITH CHECK (auth.role() IN ('anon', 'authenticated'));
+    WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 
 -- form_responses
 DROP POLICY IF EXISTS "Permitir inserción pública de respuestas" ON public.form_responses;
@@ -37,7 +37,7 @@ CREATE POLICY "Permitir inserción pública de respuestas"
     ON public.form_responses
     FOR INSERT
     TO public
-    WITH CHECK (auth.role() IN ('anon', 'authenticated'));
+    WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 
 -- order_items
 DROP POLICY IF EXISTS "Permitir crear detalles de pedido públicamente" ON public.order_items;
@@ -45,7 +45,7 @@ CREATE POLICY "Permitir crear detalles de pedido públicamente"
     ON public.order_items
     FOR INSERT
     TO public
-    WITH CHECK (auth.role() IN ('anon', 'authenticated'));
+    WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 
 -- orders
 DROP POLICY IF EXISTS "Permitir crear pedidos públicamente" ON public.orders;
@@ -53,7 +53,7 @@ CREATE POLICY "Permitir crear pedidos públicamente"
     ON public.orders
     FOR INSERT
     TO public
-    WITH CHECK (auth.role() IN ('anon', 'authenticated'));
+    WITH CHECK ((select auth.role()) IN ('anon', 'authenticated'));
 
 -- ==============================================================================
 -- 2. FIX SECURITY DEFINER FUNCTIONS EXECUTE PERMISSIONS

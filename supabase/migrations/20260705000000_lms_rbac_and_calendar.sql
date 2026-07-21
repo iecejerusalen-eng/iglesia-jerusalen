@@ -55,13 +55,13 @@ CREATE POLICY "Gestión de horarios para admins y docentes"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid()
+            WHERE p.id = (select auth.uid())
               AND p.role::text IN ('admin', 'pastor', 'editor', 'maestro', 'leader', 'cadetes_leader', 'escuela_dominical_leader')
         )
-        OR teacher_id = auth.uid()
+        OR teacher_id = (select auth.uid())
         OR EXISTS (
             SELECT 1 FROM public.lms_course_teachers ct
-            WHERE ct.course_id = lms_teacher_schedules.course_id AND ct.user_id = auth.uid()
+            WHERE ct.course_id = lms_teacher_schedules.course_id AND ct.user_id = (select auth.uid())
         )
     );
 
@@ -70,7 +70,7 @@ CREATE POLICY "Lectura de eventos para autenticados"
     ON public.lms_calendar_events
     FOR SELECT
     TO authenticated
-    USING (is_public = true OR created_by = auth.uid());
+    USING (is_public = true OR created_by = (select auth.uid()));
 
 CREATE POLICY "Gestión de eventos para admins y docentes"
     ON public.lms_calendar_events
@@ -79,13 +79,13 @@ CREATE POLICY "Gestión de eventos para admins y docentes"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid()
+            WHERE p.id = (select auth.uid())
               AND p.role::text IN ('admin', 'pastor', 'editor', 'maestro', 'leader', 'cadetes_leader', 'escuela_dominical_leader')
         )
-        OR created_by = auth.uid()
+        OR created_by = (select auth.uid())
         OR EXISTS (
             SELECT 1 FROM public.lms_course_teachers ct
-            WHERE ct.course_id = lms_calendar_events.course_id AND ct.user_id = auth.uid()
+            WHERE ct.course_id = lms_calendar_events.course_id AND ct.user_id = (select auth.uid())
         )
     );
 

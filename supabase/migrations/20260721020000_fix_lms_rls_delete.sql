@@ -13,17 +13,17 @@ DROP POLICY IF EXISTS "Admins can delete schools" ON public.lms_schools;
 -- Recreate with explicit operations
 CREATE POLICY "Admins can insert schools" ON public.lms_schools
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
   );
 
 CREATE POLICY "Admins can update schools" ON public.lms_schools
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor'))
   );
 
 CREATE POLICY "Admins can delete schools" ON public.lms_schools
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor'))
   );
 
 -- ================================================================
@@ -39,7 +39,7 @@ BEGIN
     DROP POLICY IF EXISTS "Admins can delete courses" ON public.lms_courses;
     CREATE POLICY "Admins can delete courses" ON public.lms_courses
       FOR DELETE USING (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
+        EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor'))
       );
   END IF;
 END $$;
@@ -51,7 +51,7 @@ DROP POLICY IF EXISTS "Admins can manage periods" ON public.lms_academic_periods
 
 CREATE POLICY "Admins can manage periods" ON public.lms_academic_periods
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'editor'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = (select auth.uid()) AND role IN ('admin', 'editor'))
   );
 
 -- ================================================================

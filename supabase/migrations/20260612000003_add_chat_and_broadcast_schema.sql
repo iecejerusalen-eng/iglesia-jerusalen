@@ -49,7 +49,7 @@ DROP POLICY IF EXISTS "Permitir ver chats a participantes" ON public.chats;
 CREATE POLICY "Permitir ver chats a participantes" ON public.chats
   FOR SELECT TO authenticated
   USING (
-    public.is_chat_participant(id, auth.uid())
+    public.is_chat_participant(id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS "Permitir creacion de chats a autenticados" ON public.chats;
@@ -62,47 +62,47 @@ DROP POLICY IF EXISTS "Permitir ver participantes de chats propios" ON public.ch
 CREATE POLICY "Permitir ver participantes de chats propios" ON public.chat_participants
   FOR SELECT TO authenticated
   USING (
-    public.is_chat_participant(chat_id, auth.uid())
+    public.is_chat_participant(chat_id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS "Permitir unirse o crear participantes" ON public.chat_participants;
 CREATE POLICY "Permitir unirse o crear participantes" ON public.chat_participants
   FOR INSERT TO authenticated
   WITH CHECK (
-    auth.uid() = user_id 
-    OR public.is_chat_participant(chat_id, auth.uid())
+    (select auth.uid()) = user_id 
+    OR public.is_chat_participant(chat_id, (select auth.uid()))
     OR exists (
       select 1 from public.profiles 
-      where id = auth.uid() and role in ('admin', 'pastor', 'secretary', 'secretaria')
+      where id = (select auth.uid()) and role in ('admin', 'pastor', 'secretary', 'secretaria')
     )
   );
 
 DROP POLICY IF EXISTS "Permitir salir de chats" ON public.chat_participants;
 CREATE POLICY "Permitir salir de chats" ON public.chat_participants
   FOR DELETE TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- 8. Setup RLS Policies for public.messages
 DROP POLICY IF EXISTS "Permitir ver mensajes de chats propios" ON public.messages;
 CREATE POLICY "Permitir ver mensajes de chats propios" ON public.messages
   FOR SELECT TO authenticated
   USING (
-    public.is_chat_participant(chat_id, auth.uid())
+    public.is_chat_participant(chat_id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS "Permitir enviar mensajes en chats propios" ON public.messages;
 CREATE POLICY "Permitir enviar mensajes en chats propios" ON public.messages
   FOR INSERT TO authenticated
   WITH CHECK (
-    auth.uid() = sender_id 
-    AND public.is_chat_participant(chat_id, auth.uid())
+    (select auth.uid()) = sender_id 
+    AND public.is_chat_participant(chat_id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS "Permitir borrar mensajes propios" ON public.messages;
 CREATE POLICY "Permitir borrar mensajes propios" ON public.messages
   FOR DELETE TO authenticated
   USING (
-    auth.uid() = sender_id
+    (select auth.uid()) = sender_id
   );
 
 -- 9. Enable Realtime Replication for these tables

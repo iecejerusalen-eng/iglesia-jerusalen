@@ -13,7 +13,7 @@ BEGIN
     -- Verify the caller is an admin, editor, pastor, or leader
     IF NOT EXISTS (
         SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor', 'leader')
+        WHERE id = (select auth.uid()) AND role IN ('admin', 'editor', 'pastor', 'leader')
     ) THEN
         RAISE EXCEPTION 'Access denied. Only admins, editors, pastors, and leaders can delete courses.';
     END IF;

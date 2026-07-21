@@ -139,17 +139,17 @@ CREATE POLICY "Allow view enrollment requests to teachers and admins" ON public.
 USING (
     exists (
         select 1 from public.profiles
-        where id = auth.uid() and role in ('admin', 'pastor')
+        where id = (select auth.uid()) and role in ('admin', 'pastor')
     )
     or
     exists (
         select 1 from public.lms_course_teachers
-        where course_id = lms_enrollment_requests.course_id and user_id = auth.uid()
+        where course_id = lms_enrollment_requests.course_id and user_id = (select auth.uid())
     )
 );
 
 CREATE POLICY "Allow student insert enrollment requests" ON public.lms_enrollment_requests FOR INSERT TO authenticated
-WITH CHECK (user_id = auth.uid());
+WITH CHECK (user_id = (select auth.uid()));
 
 CREATE POLICY "Allow admin/teacher update enrollment requests" ON public.lms_enrollment_requests FOR ALL TO authenticated
 USING (true);

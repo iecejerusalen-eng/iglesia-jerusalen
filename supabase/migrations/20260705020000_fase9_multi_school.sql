@@ -63,7 +63,7 @@ CREATE POLICY "Authenticated users can view active schools"
     ON lms_schools FOR SELECT
     USING (is_active = true OR EXISTS (
         SELECT 1 FROM profiles
-        WHERE id = auth.uid()
+        WHERE id = (select auth.uid())
         AND role::text IN ('admin', 'editor', 'pastor')
     ));
 
@@ -72,7 +72,7 @@ CREATE POLICY "Admins can insert schools"
     ON lms_schools FOR INSERT
     WITH CHECK (EXISTS (
         SELECT 1 FROM profiles
-        WHERE id = auth.uid()
+        WHERE id = (select auth.uid())
         AND role::text IN ('admin', 'editor', 'pastor')
     ));
 
@@ -82,10 +82,10 @@ CREATE POLICY "Admins and leaders can update schools"
     USING (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE id = auth.uid()
+            WHERE id = (select auth.uid())
             AND role::text IN ('admin', 'editor', 'pastor')
         )
-        OR leader_id = auth.uid()
+        OR leader_id = (select auth.uid())
     );
 
 -- Solo admin puede eliminar escuelas
@@ -93,7 +93,7 @@ CREATE POLICY "Admins can delete schools"
     ON lms_schools FOR DELETE
     USING (EXISTS (
         SELECT 1 FROM profiles
-        WHERE id = auth.uid()
+        WHERE id = (select auth.uid())
         AND role::text IN ('admin', 'editor', 'pastor')
     ));
 
@@ -111,13 +111,13 @@ CREATE POLICY "Admins and school leaders can insert levels"
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE id = auth.uid()
+            WHERE id = (select auth.uid())
             AND role::text IN ('admin', 'editor', 'pastor')
         )
         OR EXISTS (
             SELECT 1 FROM lms_schools
             WHERE id = lms_levels.school_id
-            AND leader_id = auth.uid()
+            AND leader_id = (select auth.uid())
         )
     );
 
@@ -126,13 +126,13 @@ CREATE POLICY "Admins and school leaders can update levels"
     USING (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE id = auth.uid()
+            WHERE id = (select auth.uid())
             AND role::text IN ('admin', 'editor', 'pastor')
         )
         OR EXISTS (
             SELECT 1 FROM lms_schools
             WHERE id = lms_levels.school_id
-            AND leader_id = auth.uid()
+            AND leader_id = (select auth.uid())
         )
     );
 
@@ -141,13 +141,13 @@ CREATE POLICY "Admins and school leaders can delete levels"
     USING (
         EXISTS (
             SELECT 1 FROM profiles
-            WHERE id = auth.uid()
+            WHERE id = (select auth.uid())
             AND role::text IN ('admin', 'editor', 'pastor')
         )
         OR EXISTS (
             SELECT 1 FROM lms_schools
             WHERE id = lms_levels.school_id
-            AND leader_id = auth.uid()
+            AND leader_id = (select auth.uid())
         )
     );
 

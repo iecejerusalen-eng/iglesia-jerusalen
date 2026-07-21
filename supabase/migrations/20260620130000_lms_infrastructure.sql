@@ -98,14 +98,14 @@ CREATE POLICY "Authenticated users can view activities" ON public.lms_activities
 CREATE POLICY "Admin can manage activities" ON public.lms_activities FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Enrollments
-CREATE POLICY "Users can view their own enrollments" ON public.lms_enrollments FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "Users can view their own enrollments" ON public.lms_enrollments FOR SELECT TO authenticated USING (user_id = (select auth.uid()));
 CREATE POLICY "Admin can manage enrollments" ON public.lms_enrollments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Activity Completions
-CREATE POLICY "Users can view and manage their own completions" ON public.lms_activity_completions FOR ALL TO authenticated USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+CREATE POLICY "Users can view and manage their own completions" ON public.lms_activity_completions FOR ALL TO authenticated USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));
 
 -- Assignment Submissions
-CREATE POLICY "Users can manage their own submissions" ON public.lms_assignment_submissions FOR ALL TO authenticated USING (student_id = auth.uid()) WITH CHECK (student_id = auth.uid());
+CREATE POLICY "Users can manage their own submissions" ON public.lms_assignment_submissions FOR ALL TO authenticated USING (student_id = (select auth.uid())) WITH CHECK (student_id = (select auth.uid()));
 
 -- Data Migration from legacy 'programs' to 'lms_courses'
 DO $$

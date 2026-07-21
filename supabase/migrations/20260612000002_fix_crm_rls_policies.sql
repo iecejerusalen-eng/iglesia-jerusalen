@@ -35,7 +35,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.members FOR A
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -44,7 +44,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.members FOR A
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -55,7 +55,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_emails
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -64,7 +64,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_emails
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -75,7 +75,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_servic
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -84,7 +84,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_servic
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -95,7 +95,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_talent
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -104,7 +104,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_talent
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -115,7 +115,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_spirit
   USING (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )
@@ -124,7 +124,7 @@ CREATE POLICY "Permitir escritura a personal autorizado" ON public.member_spirit
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = auth.uid() and (
+      where id = (select auth.uid()) and (
         role in ('admin', 'pastor', 'editor', 'secretary', 'secretaria')
         or (permissions_override->'members'->>'edit')::boolean = true
       )

@@ -20,7 +20,7 @@ DROP POLICY IF EXISTS "Admin manage lms_landing_content" ON public.lms_landing_c
 CREATE POLICY "Admin manage lms_landing_content" ON public.lms_landing_content FOR ALL TO authenticated USING (
   EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE profiles.id = auth.uid()
+    WHERE profiles.id = (select auth.uid())
     AND (
       'admin' = ANY(profiles.roles) OR
       'pastor' = ANY(profiles.roles) OR
