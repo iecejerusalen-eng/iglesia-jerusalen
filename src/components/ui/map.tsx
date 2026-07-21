@@ -2,7 +2,6 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useRef,
-  useState,
   useCallback,
   useMemo,
   createContext,
@@ -16,7 +15,7 @@ import ReactMap, {
   GeolocateControl,
   Source,
   Layer,
-  MapRef as ReactMapGlRef,
+  type MapRef as ReactMapGlRef,
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { cn } from '@/lib/utils';
@@ -35,13 +34,13 @@ export interface MapProps {
   pitch?: number;
   bearing?: number;
   styles?: MapStyles;
-  projection?: { type: string };
+  projection?: unknown;
   blank?: boolean;
   fadeDuration?: number;
   className?: string;
   children?: React.ReactNode;
-  onLoad?: (event: any) => void;
-  onClick?: (event: any) => void;
+  onLoad?: (event: unknown) => void;
+  onClick?: (event: unknown) => void;
 }
 
 const DEFAULT_MAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
@@ -52,6 +51,7 @@ interface MapContextType {
 }
 const MapContext = createContext<MapContextType | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useMapInstance = () => {
   const context = useContext(MapContext);
   return context?.mapRef?.current ?? null;
@@ -66,6 +66,7 @@ export const Map = forwardRef<MapRef, MapProps>(
       pitch = 0,
       bearing = 0,
       styles,
+      projection,
       blank = false,
       className,
       children,
@@ -105,7 +106,8 @@ export const Map = forwardRef<MapRef, MapProps>(
               pitch,
               bearing,
             }}
-            mapStyle={mapStyle as any}
+            mapStyle={mapStyle as unknown as React.ComponentProps<typeof ReactMap>['mapStyle']}
+            projection={projection as unknown as React.ComponentProps<typeof ReactMap>['projection']}
             style={{ width: '100%', height: '100%' }}
             onLoad={onLoad}
             onClick={onClick}
@@ -170,7 +172,7 @@ export function MapMarker({
   children,
 }: MapMarkerProps) {
   const handleDragEnd = useCallback(
-    (e: any) => {
+    (e: { lngLat?: { lng: number; lat: number } }) => {
       if (onDrag && e.lngLat) {
         onDrag({ lng: e.lngLat.lng, lat: e.lngLat.lat });
       }
@@ -312,7 +314,6 @@ export function MapRoute({
   color = '#2563eb',
   width = 5,
   opacity = 0.9,
-  onClick,
   id = 'map-route-line',
 }: MapRouteProps) {
   const geojsonData: FeatureCollection = useMemo(
@@ -354,17 +355,19 @@ export function MapRoute({
 }
 
 // --- MapArc Datum & Component ---
+export type MapLayerPaint = Record<string, unknown>;
+
 export interface MapArcDatum {
   id: string | number;
   from: [number, number];
   to: [number, number];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MapArcProps<T extends MapArcDatum = MapArcDatum> {
   data: T[];
-  paint?: any;
-  hoverPaint?: any;
+  paint?: MapLayerPaint;
+  hoverPaint?: MapLayerPaint;
   onHover?: (event: { arc: T; longitude: number; latitude: number } | null) => void;
   interactive?: boolean;
 }
@@ -389,7 +392,7 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
 
   return (
     <Source type="geojson" data={geojson}>
-      <Layer id="map-arc-layer" type="line" paint={paint} />
+      <Layer id="map-arc-layer" type="line" paint={paint as unknown as MapLayerPaint} />
     </Source>
   );
 }
@@ -397,8 +400,8 @@ export function MapArc<T extends MapArcDatum = MapArcDatum>({
 // --- MapGeoJSON Component ---
 export interface MapGeoJSONProps {
   data: FeatureCollection | string;
-  fillPaint?: any;
-  linePaint?: any;
+  fillPaint?: MapLayerPaint;
+  linePaint?: MapLayerPaint;
 }
 
 export function MapGeoJSON({
@@ -408,25 +411,25 @@ export function MapGeoJSON({
 }: MapGeoJSONProps) {
   return (
     <Source type="geojson" data={data}>
-      {fillPaint && <Layer id="geojson-fill" type="fill" paint={fillPaint} />}
-      {linePaint && <Layer id="geojson-line" type="line" paint={linePaint} />}
+      {fillPaint && <Layer id="geojson-fill" type="fill" paint={fillPaint as unknown as MapLayerPaint} />}
+      {linePaint && <Layer id="geojson-line" type="line" paint={linePaint as unknown as MapLayerPaint} />}
     </Source>
   );
 }
 
 // --- MapClusterLayer Component ---
-export interface MapClusterLayerProps<P = any> {
+export interface MapClusterLayerProps {
   data: FeatureCollection | string;
   clusterRadius?: number;
   clusterMaxZoom?: number;
-  onPointClick?: (feature: any, coordinates: [number, number]) => void;
+  onPointClick?: (feature: unknown, coordinates: [number, number]) => void;
 }
 
-export function MapClusterLayer<P = any>({
+export function MapClusterLayer({
   data,
   clusterRadius = 50,
   clusterMaxZoom = 14,
-}: MapClusterLayerProps<P>) {
+}: MapClusterLayerProps) {
   return (
     <Source
       type="geojson"

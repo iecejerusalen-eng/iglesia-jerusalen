@@ -23,3 +23,13 @@ Estas reglas **DEBEN SER SEGUIDAS SIN EXCEPCIÓN** por cualquier agente que part
 - **Verificación de Entorno (Vercel/Supabase):** Antes de ejecutar comandos destructivos o despliegues (ej. `vercel env add`, `supabase db push`), el agente **DEBE** verificar el contexto del proyecto mediante comandos de lectura (`vercel env ls`, `supabase status`) para evitar alterar otros proyectos de la cuenta del usuario.
 - **Proactividad con CLIs:** Se fomenta el uso de interfaces de línea de comandos (Supabase CLI, Vercel CLI, GitHub CLI `gh`) para automatizar tareas repetitivas (subir migraciones `.sql`, desplegar Edge Functions, crear PRs, etc.) sin esperar que el usuario lo haga manualmente en el navegador.
 - **Integraciones Nativas:** Al integrar plataformas externas (Cloudinary, Resend, Vercel), utiliza sus CLI o SDKs oficiales. Si cuentas con las herramientas necesarias, asume la responsabilidad de completar el ciclo completo (escritura de código -> despliegue -> verificación) usando el terminal local.
+
+## 5. Uso de Librerías y Creación de Componentes UI (Magic UI, MapCN, Shadcn UI)
+- **Consulta de Habilidad Obligatoria:** Al crear un nuevo componente o interfaz de usuario, el agente **DEBE** consultar la habilidad `ui-component-builder` (`.agents/skills/ui-component-builder/SKILL.md`).
+- **Reutilización de Librerías del Proyecto:**
+  - **Magic UI (`@magicui/globe`, `@magicui/mcp`)**: Usar para elementos de alto impacto visual (Globo 3D, Bento Grid, Shiny Button, Border Beam, Animated List, Marquee, Text Reveal).
+  - **MapCN (`@mapcn/map`)**: Usar para mapas y rutas interactivos (`Map`, `MapControls`, `MapMarker`, `MapRoute`, `MapArc`, `MapGeoJSON`, `MapClusterLayer`).
+  - **Shadcn UI & Base UI (`@base-ui-components/react`)**: Usar para primitivos de formulario, diálogos y controles interactivos (`@/components/ui/*`).
+  - **Framer Motion & Anime.js**: Usar para micro-animaciones y efectos de entrada escalonados (`AnimeFadeUp`, `AnimeStaggerGrid`, `AnimeHoverCard`).
+- **Velocidad y Calidad de Código:** Privilegiar la reutilización de componentes probados y patrones existentes sobre la invención desde cero, garantizando tipado TypeScript estricto, estética premium y compatibilidad con dark mode.
+
