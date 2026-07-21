@@ -10,6 +10,8 @@ import MediaUploader from '../../../components/common/MediaUploader';
 import type { Event as DbEvent, Profile } from '../../../types';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+import { RoutePickerSection, type RouteConfig } from '@/components/map/RoutePickerSection';
+import { JERUSALEN_CHURCH_COORDS } from '@/components/map/ChurchRouteMap';
 
 const eventSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
@@ -48,7 +50,7 @@ interface EventFormModalProps {
   onSuccess: () => void;
   userRoles: string[];
   userProfile: Profile | null;
-  ministries: any[];
+  ministries: { id: string; name: string }[];
 }
 
 export default function EventFormModal({ 
@@ -67,6 +69,16 @@ export default function EventFormModal({
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(editingEvent?.emoji || null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(editingEvent?.recurrence_days || []);
+
+  const [routeConfig, setRouteConfig] = useState<RouteConfig>(() => ({
+    has_route: editingEvent?.has_route ?? Boolean(editingEvent?.latitude && editingEvent?.longitude),
+    origin_name: editingEvent?.origin_name || JERUSALEN_CHURCH_COORDS.name,
+    origin_lat: editingEvent?.origin_lat || JERUSALEN_CHURCH_COORDS.lat,
+    origin_lng: editingEvent?.origin_lng || JERUSALEN_CHURCH_COORDS.lng,
+    destination_name: editingEvent?.location_name || '',
+    destination_lat: editingEvent?.latitude || -2.1322,
+    destination_lng: editingEvent?.longitude || -79.5912,
+  }));
 
   const defaultMinistry = userRoles.includes('leader') && userProfile?.ministry_id 
     ? userProfile.ministry_id 
@@ -107,9 +119,9 @@ export default function EventFormModal({
         ? formData.leaders_in_charge_raw.split(',').map(x => x.trim()).filter(Boolean)
         : [];
 
-      let finalCoverUrl = formData.cover_image_url || null;
+      const finalCoverUrl = formData.cover_image_url || null;
 
-      const eventPayload = {
+      const eventPayload: Record<string, unknown> = {
         title: formData.title,
         description: formData.description || null,
         start_date: formData.start_date,
@@ -124,29 +136,55 @@ export default function EventFormModal({
         emoji: selectedEmoji || null,
         ministry_id: formData.ministry_id || null,
         leaders_in_charge: leadersList,
+        location_name: routeConfig.has_route ? routeConfig.destination_name : null,
+        latitude: routeConfig.has_route ? routeConfig.destination_lat : null,
+        longitude: routeConfig.has_route ? routeConfig.destination_lng : null,
+        has_route: routeConfig.has_route,
+        origin_name: routeConfig.has_route ? routeConfig.origin_name : null,
+        origin_lat: routeConfig.has_route ? routeConfig.origin_lat : null,
+        origin_lng: routeConfig.has_route ? routeConfig.origin_lng : null,
       };
 
       if (editingEvent) {
-        const { error } = await supabase
+        let { error } = await supabase
           .from('events')
           .update(eventPayload)
           .eq('id', editingEvent.id);
 
+        if (error && error.message?.includes('column')) {
+          delete eventPayload.has_route;
+          delete eventPayload.origin_name;
+          delete eventPayload.origin_lat;
+          delete eventPayload.origin_lng;
+          const retryRes = await supabase.from('events').update(eventPayload).eq('id', editingEvent.id);
+          error = retryRes.error;
+        }
+
         if (error) throw error;
         toast.success('Evento actualizado con éxito.');
       } else {
-        const { error } = await supabase
+        let { error } = await supabase
           .from('events')
           .insert(eventPayload);
+
+        if (error && error.message?.includes('column')) {
+          delete eventPayload.has_route;
+          delete eventPayload.origin_name;
+          delete eventPayload.origin_lat;
+          delete eventPayload.origin_lng;
+          const retryRes = await supabase.from('events').insert(eventPayload);
+          error = retryRes.error;
+        }
 
         if (error) throw error;
         toast.success('Evento creado con éxito.');
       }
 
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving event:', err);
-      toast.error('No se pudo guardar el evento: ' + err.message);
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('No se pudo guardar el evento: ' + msg);
     } finally {
       setActionLoading(false);
     }
@@ -198,7 +236,7 @@ export default function EventFormModal({
                   </div>
                   <Picker 
                     data={data} 
-                    onEmojiSelect={(emoji: any) => {
+                    onEmojiSelect={(emoji: { native: string }) => {
                       setSelectedEmoji(emoji.native);
                       setShowEmojiPicker(false);
                     }} 
@@ -406,6 +444,13 @@ export default function EventFormModal({
               )}
             </div>
           )}
+
+          {/* Route Map Picker Section */}
+          <RoutePickerSection
+            value={routeConfig}
+            onChange={setRouteConfig}
+            eventTitle={watch('title')}
+          />
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Líderes Encargados (Separados por coma)</label>

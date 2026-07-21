@@ -18,6 +18,7 @@ import {
   AutocompleteGroup,
   type AutocompleteItemType,
 } from '@/components/ui/autocomplete';
+import { ShowRouteButton } from '@/components/map/ShowRouteButton';
 
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
@@ -890,6 +891,31 @@ const Events = () => {
                       {selectedEvent.description || 'No hay descripción detallada provista para esta actividad.'}
                     </p>
                   </div>
+
+                  <div className="pt-2 border-t border-gray-100 dark:border-white/5">
+                    <ShowRouteButton
+                      destination={{
+                        lat: selectedEvent.latitude || -2.1322,
+                        lng: selectedEvent.longitude || -79.5912,
+                        name: selectedEvent.location_name || selectedEvent.title,
+                        address: selectedEvent.location_name || 'Milagro, Ecuador',
+                      }}
+                      origin={
+                        selectedEvent.origin_lat && selectedEvent.origin_lng
+                          ? {
+                              lat: selectedEvent.origin_lat,
+                              lng: selectedEvent.origin_lng,
+                              name: selectedEvent.origin_name || 'Punto de Partida',
+                            }
+                          : undefined
+                      }
+                      title={`Ruta hacia ${selectedEvent.title}`}
+                      label="Mostrar Ruta / Cómo llegar"
+                      variant="default"
+                      size="md"
+                      className="w-full shadow-md"
+                    />
+                  </div>
                   </div>
 
                   {/* Footer Switcher */}
@@ -1021,6 +1047,31 @@ const Events = () => {
                     <p className="text-gray-650 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">
                       {selectedEvent.description || 'No hay descripción detallada provista para esta actividad.'}
                     </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 dark:border-white/5">
+                    <ShowRouteButton
+                      destination={{
+                        lat: selectedEvent.latitude || -2.1322,
+                        lng: selectedEvent.longitude || -79.5912,
+                        name: selectedEvent.location_name || selectedEvent.title,
+                        address: selectedEvent.location_name || 'Milagro, Ecuador',
+                      }}
+                      origin={
+                        selectedEvent.origin_lat && selectedEvent.origin_lng
+                          ? {
+                              lat: selectedEvent.origin_lat,
+                              lng: selectedEvent.origin_lng,
+                              name: selectedEvent.origin_name || 'Punto de Partida',
+                            }
+                          : undefined
+                      }
+                      title={`Ruta hacia ${selectedEvent.title}`}
+                      label="Mostrar Ruta / Cómo llegar"
+                      variant="default"
+                      size="md"
+                      className="w-full shadow-md"
+                    />
                   </div>
                 </div>
 

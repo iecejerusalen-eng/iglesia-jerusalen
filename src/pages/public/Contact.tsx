@@ -6,6 +6,7 @@ import MagneticButton from '../../components/animations/MagneticButton';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -70,9 +71,10 @@ const Contact = () => {
       
       setSuccess(true);
       reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error enviando mensaje a Supabase:', err);
-      if (err.context?.status === 429 || err.message?.includes('429')) {
+      const errorObj = err as { context?: { status?: number }; message?: string };
+      if (errorObj.context?.status === 429 || errorObj.message?.includes('429')) {
         setError('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
       } else {
         setError('Ocurrió un error al enviar tu mensaje. Por favor intenta más tarde.');
@@ -339,6 +341,27 @@ const Contact = () => {
             </div>
           </form>
         )}
+      </AnimeFadeUp>
+
+      {/* MAP & ROUTE SECTION */}
+      <AnimeFadeUp className="space-y-4 pt-6">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+            Ubicación & Cómo Llegar
+          </span>
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-white">
+            Encuéntranos en Milagro
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Calcula la mejor ruta desde tu ubicación hasta la Iglesia Jerusalén Central o abre las indicaciones directamente en tu aplicación GPS favorita.
+          </p>
+        </div>
+
+        <ChurchRouteMap
+          destination={JERUSALEN_CHURCH_COORDS}
+          height="460px"
+          title="Cómo llegar a Iglesia Jerusalén Central"
+        />
       </AnimeFadeUp>
 
     </div>

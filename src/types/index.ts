@@ -272,6 +272,13 @@ export interface Event {
   ministry_id: string | null;
   leaders_in_charge: string[];
   is_public?: boolean;
+  location_name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  has_route?: boolean | null;
+  origin_name?: string | null;
+  origin_lat?: number | null;
+  origin_lng?: number | null;
   created_at: string;
   ministries?: { name: string; slug: string; theme_color?: string } | null;
 }
