@@ -17,6 +17,7 @@
     "@emoji-mart/react": "^1.1.1",
     "@hookform/resolvers": "^5.4.0",
     "@pdf-lib/fontkit": "^1.1.1",
+    "@radix-ui/react-alert-dialog": "^1.1.20",
     "@radix-ui/react-slot": "^1.3.0",
     "@supabase/supabase-js": "^2.107.0",
     "@tailwindcss/vite": "^4.3.0",
