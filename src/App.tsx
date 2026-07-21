@@ -42,6 +42,7 @@ export default function App() {
           .limit(1)
           .maybeSingle();
 
+        // Table may not exist yet — silently skip without logging to console
         if (error) return;
 
         if (data?.logo_url) {
@@ -53,8 +54,8 @@ export default function App() {
           }
           link.href = data.logo_url;
         }
-      } catch (err) {
-        console.error('Error al cargar favicon dinámico:', err);
+      } catch {
+        // Silently ignore — church_settings table may not exist in this deployment
       }
     };
 
