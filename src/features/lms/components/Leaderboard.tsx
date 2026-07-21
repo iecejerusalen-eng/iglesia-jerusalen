@@ -4,7 +4,8 @@ import { Trophy, Medal, Star, Award } from 'lucide-react';
 
 interface LeaderboardEntry {
   id: string; // student profile id
-  full_name: string;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url: string;
   xp_points: number;
   rank: number;
@@ -16,7 +17,8 @@ interface RawLeaderboardData {
   xp_points: number;
   profiles: {
     id: string;
-    full_name: string;
+    first_name: string | null;
+    last_name: string | null;
     avatar_url: string;
   };
 }
@@ -34,7 +36,7 @@ export function Leaderboard({ courseId }: { courseId: string }) {
           .select(`
             user_id,
             xp_points,
-            profiles:user_id (id, full_name, avatar_url)
+            profiles:user_id (id, first_name, last_name, avatar_url)
           `)
           .eq('course_id', courseId)
           .eq('role', 'student')
@@ -47,7 +49,8 @@ export function Leaderboard({ courseId }: { courseId: string }) {
           // Formatear y añadir rank
           const formatted: LeaderboardEntry[] = (data as unknown as RawLeaderboardData[]).map((d, index) => ({
             id: d.profiles.id,
-            full_name: d.profiles.full_name,
+            first_name: d.profiles.first_name,
+            last_name: d.profiles.last_name,
             avatar_url: d.profiles.avatar_url,
             xp_points: d.xp_points || 0,
             rank: index + 1,
@@ -113,13 +116,13 @@ export function Leaderboard({ courseId }: { courseId: string }) {
                 <div className="w-8 flex justify-center">
                   {getRankIcon(entry.rank)}
                 </div>
-                <img 
-                  src={entry.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.id}`} 
-                  alt={entry.full_name} 
-                  className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm object-cover"
-                />
-                <div>
-                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">{entry.full_name}</h4>
+                  <img 
+                    src={entry.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.id}`} 
+                    alt={`${entry.first_name || ''} ${entry.last_name || ''}`} 
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm object-cover"
+                  />
+                  <div>
+                    <h4 className="font-bold text-slate-800 dark:text-white text-sm">{entry.first_name} {entry.last_name}</h4>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
                     <Star size={10} className="text-gold" /> Nivel {(Math.floor(entry.xp_points / 100) + 1)}
                   </p>

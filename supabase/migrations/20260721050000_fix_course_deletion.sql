@@ -10,12 +10,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    -- Verify the caller is an admin or editor
+    -- Verify the caller is an admin, editor, pastor, or leader
     IF NOT EXISTS (
         SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND role IN ('admin', 'editor')
+        WHERE id = auth.uid() AND role IN ('admin', 'editor', 'pastor', 'leader')
     ) THEN
-        RAISE EXCEPTION 'Access denied. Only admins and editors can delete courses.';
+        RAISE EXCEPTION 'Access denied. Only admins, editors, pastors, and leaders can delete courses.';
     END IF;
 
     -- Delete the course. 

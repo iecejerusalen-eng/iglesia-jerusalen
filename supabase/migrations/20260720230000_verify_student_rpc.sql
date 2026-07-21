@@ -12,7 +12,7 @@ DECLARE
   v_result JSON;
 BEGIN
   -- 1. Obtener datos basicos del perfil
-  SELECT id, full_name, avatar_url, role, email 
+  SELECT id, first_name || ' ' || last_name as full_name, avatar_url, role, email 
   INTO v_profile 
   FROM profiles 
   WHERE id = p_student_id;

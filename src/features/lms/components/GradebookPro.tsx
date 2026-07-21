@@ -9,7 +9,8 @@ interface GradebookProProps {
 
 interface GBStudent {
   id: string;
-  full_name: string;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url?: string;
   doc_id?: string;
 }
@@ -58,7 +59,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
           .from('lms_enrollments')
           .select(`
             user_id,
-            profiles:user_id (id, full_name, avatar_url, doc_id)
+            profiles:user_id (id, first_name, last_name, avatar_url, doc_id)
           `)
           .eq('course_id', courseId)
           .eq('role', 'student');
@@ -178,10 +179,10 @@ export function GradebookPro({ courseId }: GradebookProProps) {
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gold" size={32} /></div>;
 
-  const filteredStudents = students.filter(s => 
-    s?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s?.doc_id?.includes(searchTerm)
-  );
+  const filteredStudents = students.filter(s => {
+    const fullName = `${s?.first_name || ''} ${s?.last_name || ''}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) || s?.doc_id?.includes(searchTerm);
+  });
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden relative">
@@ -229,11 +230,13 @@ export function GradebookPro({ courseId }: GradebookProProps) {
                         {student.avatar_url ? (
                           <img src={student.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold">{student.full_name?.charAt(0)}</div>
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold">{student.first_name?.charAt(0)}</div>
                         )}
                       </div>
                       <div className="truncate max-w-[200px]">
-                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{student.full_name}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
+                          {student.first_name} {student.last_name}
+                        </p>
                         <p className="text-xs text-gray-500">{student.doc_id || 'Sin Cédula'}</p>
                       </div>
                     </div>
@@ -289,7 +292,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
                   {selectedStudent?.avatar_url && <img src={selectedStudent.avatar_url} className="w-full h-full object-cover" />}
                 </div>
                 <div>
-                  <p className="font-bold">{selectedStudent?.full_name}</p>
+                  <p className="font-bold">{selectedStudent?.first_name} {selectedStudent?.last_name}</p>
                   <p className="text-xs text-gray-500">{selectedActivity?.title}</p>
                 </div>
               </div>

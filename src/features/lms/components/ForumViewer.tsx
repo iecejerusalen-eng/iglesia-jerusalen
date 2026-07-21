@@ -1,23 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { MessageSquare, Pin, UserCircle, ChevronRight, CornerDownRight } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface ForumAuthor {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+}
+
+interface Forum {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  is_locked: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  author?: ForumAuthor;
+}
+
+interface ForumPost {
+  id: string;
+  forum_id: string;
+  parent_id: string | null;
+  author_id: string;
+  content: string;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  author?: ForumAuthor;
+  replies?: ForumPost[];
+}
+
 export function ForumViewer({ courseId }: { courseId: string }) {
   const { user } = useAuthStore();
-  const [forums, setForums] = useState<any[]>([]);
+  const [forums, setForums] = useState<Forum[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeForum, setActiveForum] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [activeForum, setActiveForum] = useState<Forum | null>(null);
+  const [posts, setPosts] = useState<ForumPost[]>([]);
   const [newPostContent, setNewPostContent] = useState('');
 
-  const fetchForums = async () => {
+  const fetchForums = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('lms_forums')
-        .select(`*, author:created_by(id, full_name, avatar_url)`)
+        .select(`*, author:created_by(id, first_name, last_name, avatar_url)`)
         .eq('course_id', courseId)
         .order('created_at', { ascending: false });
 
@@ -28,7 +60,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     const init = async () => {
@@ -37,13 +69,13 @@ export function ForumViewer({ courseId }: { courseId: string }) {
       }
     };
     init();
-  }, [courseId]);
+  }, [courseId, fetchForums]);
 
   const fetchPosts = async (forumId: string) => {
     try {
       const { data, error } = await supabase
         .from('lms_forum_posts')
-        .select(`*, author:author_id(id, full_name, avatar_url)`)
+        .select(`*, author:author_id(id, first_name, last_name, avatar_url)`)
         .eq('forum_id', forumId)
         .order('created_at', { ascending: true });
 
@@ -64,7 +96,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
     }
   };
 
-  const handleOpenForum = (forum: any) => {
+  const handleOpenForum = (forum: Forum) => {
     setActiveForum(forum);
     fetchPosts(forum.id);
   };
@@ -126,7 +158,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
                 <div className="flex items-center gap-3 mb-3">
                   <img src={post.author?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author?.id}`} alt="" className="w-10 h-10 rounded-full" />
                   <div>
-                    <p className="font-bold text-sm text-slate-800 dark:text-white">{post.author?.full_name}</p>
+                    <p className="font-bold text-sm text-slate-800 dark:text-white">{post.author?.first_name} {post.author?.last_name}</p>
                     <p className="text-xs text-gray-400">{new Date(post.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -137,11 +169,11 @@ export function ForumViewer({ courseId }: { courseId: string }) {
                 {/* Replies */}
                 {post.replies?.length > 0 && (
                   <div className="mt-4 ml-8 space-y-3 border-l-2 border-indigo-100 dark:border-indigo-900/50 pl-4">
-                    {post.replies.map((reply: any) => (
+                    {post.replies.map((reply: ForumPost) => (
                       <div key={reply.id} className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <CornerDownRight size={14} className="text-gray-400" />
-                          <p className="font-bold text-xs text-slate-800 dark:text-white">{reply.author?.full_name}</p>
+                          <p className="font-bold text-xs text-slate-800 dark:text-white">{reply.author?.first_name} {reply.author?.last_name}</p>
                           <span className="text-[10px] text-gray-400">{new Date(reply.created_at).toLocaleDateString()}</span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-gray-300 ml-5">{reply.content}</p>
@@ -204,7 +236,7 @@ export function ForumViewer({ courseId }: { courseId: string }) {
                 <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-1">{forum.title}</h3>
                 <p className="text-sm text-gray-500 line-clamp-1">{forum.description}</p>
                 <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
-                  <span className="flex items-center gap-1"><UserCircle size={14}/> Creado por {forum.author?.full_name}</span>
+                  <span className="flex items-center gap-1"><UserCircle size={14}/> Creado por {forum.author?.first_name} {forum.author?.last_name}</span>
                   <span>{new Date(forum.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
