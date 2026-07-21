@@ -167,6 +167,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // If it's a YouTube video
   if (targetYouTubeId) {
     const youtubeHref = externalYouTubeLink || `https://www.youtube.com/watch?v=${targetYouTubeId}`;
+    const defaultThumbnail = poster || `https://img.youtube.com/vi/${targetYouTubeId}/maxresdefault.jpg`;
 
     return (
       <motion.div
@@ -179,15 +180,51 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* YouTube Embed Container */}
+        {/* YouTube Embed / Thumbnail Container */}
         <div className="relative pt-[56.25%] w-full bg-black">
-          <iframe
-            className="absolute inset-0 w-full h-full border-0"
-            src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=${autoPlay ? 1 : 0}&rel=0&modestbranding=1`}
-            title={title || "Reproductor de Video"}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+          {isPlaying || autoPlay ? (
+            <iframe
+              className="absolute inset-0 w-full h-full border-0"
+              src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&rel=0&modestbranding=1`}
+              title={title || "Reproductor de Video"}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div
+              className="absolute inset-0 w-full h-full cursor-pointer group/cover"
+              onClick={() => setIsPlaying(true)}
+            >
+              {/* Custom Thumbnail Image */}
+              <img
+                src={defaultThumbnail}
+                alt={title || "Video thumbnail"}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-105"
+                onError={(e) => {
+                  if (e.currentTarget.src.includes('maxresdefault')) {
+                    e.currentTarget.src = `https://img.youtube.com/vi/${targetYouTubeId}/hqdefault.jpg`;
+                  }
+                }}
+              />
+
+              {/* Dark Overlay Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent transition-opacity duration-300 group-hover/cover:from-slate-950/90" />
+
+              {/* Custom Big Play Button */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow-2xl transition-all duration-300 group-hover/cover:scale-110 group-hover/cover:bg-amber-300">
+                  <Play className="h-8 w-8 fill-current text-slate-950 ml-1" />
+                </div>
+              </div>
+
+              {/* Title overlay at bottom */}
+              {title && (
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-left">
+                  <h3 className="text-xl md:text-2xl font-bold text-white tracking-tight drop-shadow-md">{title}</h3>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Top Floating Bar for YouTube Link */}
@@ -196,7 +233,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             href={youtubeHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg backdrop-blur-md transition-all hover:scale-105"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg backdrop-blur-md transition-all hover:scale-105 cursor-pointer"
             title="Ver directamente en YouTube"
           >
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">

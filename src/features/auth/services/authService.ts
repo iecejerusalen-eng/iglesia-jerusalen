@@ -230,7 +230,10 @@ export const initializeAuthLogic = (
         // If the user ID is the same (e.g. token refresh or window focus), update the session user
         // without triggering the global loading state or profile fetch, preventing component unmounting
         if (currentUser && currentUser.id === session.user.id) {
-          set({ user: session.user });
+          // Token refresh or window focus event: preserve user object reference unless metadata changed
+          if (JSON.stringify(currentUser.user_metadata) !== JSON.stringify(session.user.user_metadata)) {
+            set({ user: session.user });
+          }
           return;
         }
 

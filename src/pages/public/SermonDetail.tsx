@@ -57,9 +57,15 @@ const SermonDetail = () => {
   });
 
 
+  const userId = user?.id;
+
   const fetchSermonAndNotes = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
+    setSermon(prev => {
+      if (!prev) setLoading(true);
+      return prev;
+    });
+
     try {
       // Fetch sermon
       let activeSermon = null;
@@ -84,13 +90,13 @@ const SermonDetail = () => {
       setSermon(activeSermon);
 
       // Fetch user note if authenticated
-      if (user && activeSermon) {
+      if (userId && activeSermon) {
         // Try local IDB first
         let cachedNotes: { id: string; user_id: string; sermon_id: string; content?: string }[] = [];
         try {
           const db = await getDb();
           const allNotes = await db.getAll('local_sermon_notes');
-          cachedNotes = allNotes.filter((n: { user_id: string; sermon_id: string; [key: string]: unknown }) => n.user_id === user.id && n.sermon_id === activeSermon.id) as typeof cachedNotes;
+          cachedNotes = allNotes.filter((n: { user_id: string; sermon_id: string; [key: string]: unknown }) => n.user_id === userId && n.sermon_id === activeSermon.id) as typeof cachedNotes;
         } catch (idbErr) {
           console.warn('IDB sermon notes fetch failed, falling back to Supabase:', idbErr);
         }
@@ -105,7 +111,7 @@ const SermonDetail = () => {
           const { data: noteData, error: noteError } = await supabase
             .from('sermon_notes')
             .select('id, content')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .eq('sermon_id', activeSermon.id)
             .maybeSingle();
 
@@ -116,19 +122,15 @@ const SermonDetail = () => {
             }
           } else {
             setNoteId(null);
-            if (editor && !editor.isDestroyed) {
-              editor.commands.setContent('');
-            }
           }
         }
       }
     } catch (err) {
       console.error('Error fetching sermon detail:', err);
-      toast.error('Error al cargar la prédica');
     } finally {
       setLoading(false);
     }
-  }, [id, user, editor]);
+  }, [id, userId, editor]);
 
   useEffect(() => {
     const load = async () => {

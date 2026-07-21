@@ -31,7 +31,10 @@ const Sermons = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchSermons = async () => {
-    setLoading(true);
+    setSermons(prev => {
+      if (prev.length === 0) setLoading(true);
+      return prev;
+    });
     try {
       const { data, error } = await supabase
         .from('sermons')
@@ -47,7 +50,7 @@ const Sermons = () => {
       }
     } catch (err) {
       console.error('Error fetching sermons from Supabase, using mock fallback:', err);
-      setSermons(MOCK_SERMONS);
+      setSermons(prev => prev.length > 0 ? prev : MOCK_SERMONS);
     } finally {
       setLoading(false);
     }
