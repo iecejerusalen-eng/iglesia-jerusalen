@@ -17,6 +17,7 @@ import { NextUpWidget } from '../../features/student-dashboard/components/NextUp
 import { GradesOverviewWidget } from '../../features/student-dashboard/components/GradesOverviewWidget';
 import { MyAttendanceWidget } from '../../features/student-dashboard/components/MyAttendanceWidget';
 import { DigitalIDCard } from '../../features/student-dashboard/components/DigitalIDCard';
+import { XPBarWidget } from '../../features/student-dashboard/components/XPBarWidget';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -48,6 +49,7 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState({
     activeCourses: 0,
     totalXp: 0,
+    level: 1,
     streak: 0,
     attendance: 100,
     overallProgress: 0
@@ -172,15 +174,12 @@ export default function StudentDashboard() {
         }
       }
 
-      // Fetch global stats
+      // Fetch global stats (Gamification)
       const { data: statsData } = await supabase
         .from('lms_student_stats')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('student_id', user?.id)
         .maybeSingle();
-
-      // Get current streak (RPC)
-      const { data: streakData } = await supabase.rpc('get_current_streak', { student_id: user?.id });
 
       let overall = 0;
       if (coursesWithProgress.length > 0) {
@@ -201,9 +200,10 @@ export default function StudentDashboard() {
       }
 
       setStats({
-        activeCourses: statsData?.active_courses || 0,
-        totalXp: statsData?.total_xp || 0,
-        streak: streakData || 0,
+        activeCourses: enrollData?.length || 0,
+        totalXp: statsData?.xp_total || 0,
+        level: statsData?.level || 1,
+        streak: statsData?.current_streak || 0,
         attendance: attendancePercentage,
         overallProgress: overall
       });
@@ -276,6 +276,11 @@ export default function StudentDashboard() {
           {/* Widget Rendimiento por Curso */}
           <div className="lg:col-span-1">
             <GradesOverviewWidget enrollments={enrollments} />
+          </div>
+
+          {/* Gamification XP Bar */}
+          <div className="lg:col-span-1">
+            <XPBarWidget xp={stats.totalXp} level={stats.level} streak={stats.streak} />
           </div>
 
           {/* New Pending Tasks Widget */}
