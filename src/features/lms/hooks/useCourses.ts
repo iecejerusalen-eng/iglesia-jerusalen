@@ -38,20 +38,25 @@ export const useCourses = () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       toast.success('Curso actualizado con éxito');
     },
-    onError: () => toast.error('Error al guardar el curso.')
+    onError: () => toast.error('Error al actualizar el curso.')
   });
 
   const deleteCourse = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('lms_courses').delete().eq('id', id);
+      // Usamos el RPC para saltarnos restricciones complejas de RLS en cascada
+      const { error } = await supabase.rpc('delete_lms_course', { p_course_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      toast.success('Curso eliminado');
+      toast.success('Curso eliminado correctamente');
     },
-    onError: () => toast.error('Error al eliminar el curso.')
+    onError: (error) => {
+      console.error('Error al eliminar el curso:', error);
+      toast.error('Error al eliminar el curso. Verifica si tiene dependencias activas.');
+    }
   });
 
   return { courses, isLoading, createCourse, updateCourse, deleteCourse };
 };
+
