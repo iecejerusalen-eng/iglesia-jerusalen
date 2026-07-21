@@ -20,6 +20,7 @@ ALTER TABLE public.member_phones ENABLE ROW LEVEL SECURITY;
 
 -- 4. Set up Policies
 -- Admins, pastors, editors, leaders can view and edit all
+DROP POLICY IF EXISTS "Lectura de teléfonos para staff" ON public.member_phones;
 CREATE POLICY "Lectura de teléfonos para staff" 
     ON public.member_phones 
     FOR SELECT 
@@ -32,6 +33,7 @@ CREATE POLICY "Lectura de teléfonos para staff"
         )
     );
 
+DROP POLICY IF EXISTS "Escritura de teléfonos para staff" ON public.member_phones;
 CREATE POLICY "Escritura de teléfonos para staff" 
     ON public.member_phones 
     FOR ALL 
@@ -52,6 +54,7 @@ CREATE POLICY "Escritura de teléfonos para staff"
     );
 
 -- Allow members to manage their own additional phones if self-management is active
+DROP POLICY IF EXISTS "Lectura de teléfonos propios" ON public.member_phones;
 CREATE POLICY "Lectura de teléfonos propios" 
     ON public.member_phones 
     FOR SELECT 
@@ -64,6 +67,7 @@ CREATE POLICY "Lectura de teléfonos propios"
         )
     );
 
+DROP POLICY IF EXISTS "Escritura de teléfonos propios" ON public.member_phones;
 CREATE POLICY "Escritura de teléfonos propios" 
     ON public.member_phones 
     FOR ALL 
