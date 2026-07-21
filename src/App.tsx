@@ -3,7 +3,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import { GlobalErrorBoundary } from './components/common/ErrorBoundary';
 import { BrowserRouter } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
-import { Toaster } from 'sonner';
+import { Toaster as SonnerToaster } from 'sonner';
+import { Toaster as HotToaster } from 'react-hot-toast';
 import ScrollToTop from './components/common/ScrollToTop';
 import ConfirmDialog from './components/common/ConfirmDialog';
 import AppRouter from './routes/AppRouter';
@@ -14,72 +15,45 @@ const BirthdayCelebrationModal = lazy(() => import('./components/common/Birthday
 
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
-import { useSyncStore } from './store/useSyncStore';
-import { useThemeStore } from './store/useThemeStore';
 import { usePluginStore } from './store/usePluginStore';
 
-function App() {
-  useEffect(() => {
-    const initDb = async () => {
-      await initLocalDatabase();
-      const syncStore = useSyncStore.getState();
-      if (syncStore.isOnline) {
-        await syncStore.pullFromServer();
-        await syncStore.syncOfflineQueue();
-      }
-    };
-    initDb().catch(console.error);
-    useAuthStore.getState().initializeAuth();
-    usePluginStore.getState().fetchPlugins().catch(console.error);
-    
-    // Initialize Theme
-    const themeStore = useThemeStore.getState();
-    themeStore.setTheme(themeStore.theme);
-    
-    // Listen to system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      const currentTheme = useThemeStore.getState().theme;
-      if (currentTheme === 'system') {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(mediaQuery.matches ? 'dark' : 'light');
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+export default function App() {
+  const { initializeAuth } = useAuthStore();
 
-  // Dynamic Favicon Loader
+  useEffect(() => {
+    // 1. Iniciar autenticación
+    initializeAuth();
+
+    // 2. Cargar plugins activos (almacenamiento en caché)
+    usePluginStore.getState().fetchPlugins();
+
+    // 3. Inicializar base de datos PWA SQLite/IndexedDB
+    initLocalDatabase().catch((err) =>
+      console.warn('Advertencia al inicializar la BD local:', err)
+    );
+  }, [initializeAuth]);
+
   useEffect(() => {
     const updateFavicon = async () => {
       try {
         const { data, error } = await supabase
-          .from('logos')
-          .select('storage_path')
-          .is('ministry_id', null)
-          .eq('variant', 'circular')
-          .eq('color_mode', 'color')
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .from('church_settings')
+          .select('logo_url')
+          .single();
 
-        if (error) throw error;
+        if (error) return;
 
-        if (data && data.length > 0) {
-          const publicUrl = supabase.storage
-            .from('logos')
-            .getPublicUrl(data[0].storage_path).data.publicUrl;
-
-          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (data?.logo_url) {
+          let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
           if (!link) {
             link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
+            link.rel = 'shortcut icon';
+            document.getElementsByTagName('head')[0].appendChild(link);
           }
-          link.href = publicUrl;
+          link.href = data.logo_url;
         }
       } catch (err) {
-        console.error('Error loading dynamic favicon:', err);
+        console.error('Error al cargar favicon dinámico:', err);
       }
     };
 
@@ -93,11 +67,38 @@ function App() {
   return (
     <HelmetProvider>
       <GlobalErrorBoundary>
-        <Toaster richColors position="top-right" />
+        <SonnerToaster
+          position="bottom-center"
+          offset={48}
+          theme="dark"
+          toastOptions={{
+            duration: 4000,
+          }}
+        />
+        <HotToaster
+          position="bottom-center"
+          containerStyle={{
+            bottom: 48,
+          }}
+          toastOptions={{
+            style: {
+              background: 'rgba(15, 23, 42, 0.95)',
+              color: '#ffffff',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(16px)',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              padding: '0.75rem 1.25rem',
+              maxWidth: '90vw',
+            },
+          }}
+        />
         <ConfirmDialog />
         <BrowserRouter>
           <ScrollToTop />
-          {/* Lazy-loaded modals — rendered only after main bundle resolves */}
+          {/* Modales cargados bajo demanda */}
           <Suspense fallback={null}>
             <CRMRegistrationPrompt />
             <BirthdayCelebrationModal />
@@ -108,5 +109,3 @@ function App() {
     </HelmetProvider>
   );
 }
-
-export default App;

@@ -14,11 +14,61 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { BottomAlertToast, type AlertType } from "@/components/ui/bottom-alert-toast";
+import {
+  Autocomplete,
+  AutocompleteInput,
+  AutocompletePopup,
+  AutocompleteList,
+  AutocompleteItem,
+  AutocompleteEmpty,
+  AutocompleteGroup,
+  type AutocompleteItemType,
+} from "@/components/ui/autocomplete";
+import { BookOpen, Video, Music, Heart, Sparkles } from "lucide-react";
+
+const searchItems: AutocompleteItemType[] = [
+  {
+    value: "sermon-1",
+    label: "Avivando el Compromiso con el Llamado",
+    category: "Prédicas y Devocionales",
+    description: "Pastor Jaime Mora • 15 de Julio de 2026",
+    icon: <Video className="w-4 h-4 text-blue-400" />,
+  },
+  {
+    value: "sermon-2",
+    label: "La Misericordia de Dios en la Elección de los Suyos",
+    category: "Prédicas y Devocionales",
+    description: "Ministerios Integridad & Sabiduría",
+    icon: <Video className="w-4 h-4 text-blue-400" />,
+  },
+  {
+    value: "recurso-1",
+    label: "La Santa Biblia (Reina Valera 1960)",
+    category: "Recursos Bíblicos",
+    description: "Lectura interactiva de pasajes y versículos",
+    icon: <BookOpen className="w-4 h-4 text-amber-400" />,
+  },
+  {
+    value: " alabanza-1",
+    label: "Cuan Grande es Él - Himno de Adoración",
+    category: "Música y Alabanzas",
+    description: "Coro de Alabanza Jerusalén",
+    icon: <Music className="w-4 h-4 text-emerald-400" />,
+  },
+  {
+    value: "ministerio-1",
+    label: "Ministerio de Jóvenes y Voluntariado",
+    category: "Ministerios y Grupos",
+    description: "Reuniones todos los Sábados a las 18:00",
+    icon: <Heart className="w-4 h-4 text-rose-400" />,
+  },
+];
 
 export default function UIComponentsDemo() {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastType, setToastType] = useState<AlertType>("info");
   const [toastMessage, setToastMessage] = useState({ title: "", description: "" });
+  const [selectedSearch, setSelectedSearch] = useState("");
 
   const triggerToast = (type: AlertType, title: string, description: string) => {
     setToastType(type);
@@ -28,6 +78,45 @@ export default function UIComponentsDemo() {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6 space-y-12">
+      {/* Componente Autocomplete Universal */}
+      <div className="space-y-4 p-6 bg-slate-900 rounded-3xl border border-slate-800 text-white shadow-2xl">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl font-bold">Barra de Búsqueda con Autocompletado (Universal)</h2>
+        </div>
+        <p className="text-sm text-slate-400">
+          Componente reutilizable en cualquier vista con sugerencias en tiempo real, navegación por teclado y botones de limpieza.
+        </p>
+
+        <div className="max-w-xl mx-auto pt-2">
+          <Autocomplete
+            items={searchItems}
+            value={selectedSearch}
+            onValueChange={(val) => setSelectedSearch(val)}
+            onSelect={(item) => triggerToast("info", "Seleccionaste:", item.label)}
+          >
+            <AutocompleteInput
+              placeholder="¿Qué deseas buscar? (Ej. Prédicas, Biblia, Alabanzas...)"
+              showClear
+              showTrigger
+              size="lg"
+            />
+            <AutocompletePopup>
+              <AutocompleteEmpty>No encontramos recursos con esa búsqueda.</AutocompleteEmpty>
+              <AutocompleteList>
+                <AutocompleteGroup label="Resultados Sugeridos">
+                  {searchItems.map((item) => (
+                    <AutocompleteItem key={item.value} value={item}>
+                      {item.label}
+                    </AutocompleteItem>
+                  ))}
+                </AutocompleteGroup>
+              </AutocompleteList>
+            </AutocompletePopup>
+          </Autocomplete>
+        </div>
+      </div>
+
       {/* Sistema de Alertas Inferior Centrado */}
       <div className="space-y-4 p-6 bg-slate-100 dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Sistema de Alertas Flotantes (Abajo - Centro)</h2>
