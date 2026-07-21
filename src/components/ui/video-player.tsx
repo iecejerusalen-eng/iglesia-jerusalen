@@ -74,7 +74,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(autoPlay);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [volume, setVolume] = useState(1);
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -99,6 +100,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, []);
 
   const togglePlay = () => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      setIsPlaying(true);
+      return;
+    }
+
     if (targetYouTubeId) {
       if (isPlaying) {
         sendYouTubeCommand("pauseVideo");
@@ -110,10 +117,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        setIsPlaying(false);
       } else {
         videoRef.current.play();
+        setIsPlaying(true);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -257,21 +265,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       >
         {/* YouTube Embed / Cover Container */}
         <div className="relative pt-[56.25%] w-full bg-black">
-          {isPlaying || autoPlay ? (
-            <iframe
-              ref={iframeRef}
-              className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.02]"
-              src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&enablejsapi=1&controls=0&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&playsinline=1`}
-              title={title || "Reproductor de Video"}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              onLoad={() => {
-                sendYouTubeCommand("listening");
-              }}
-            />
+          {hasStarted ? (
+            <>
+              <iframe
+                ref={iframeRef}
+                className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.02]"
+                src={`https://www.youtube.com/embed/${targetYouTubeId}?autoplay=1&enablejsapi=1&controls=0&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&playsinline=1`}
+                title={title || "Reproductor de Video"}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                onLoad={() => {
+                  sendYouTubeCommand("listening");
+                }}
+              />
+              {/* Click layer overlay over iframe when playing or paused to toggle play/pause */}
+              <div
+                className="absolute inset-0 z-10 cursor-pointer"
+                onClick={togglePlay}
+              />
+            </>
           ) : (
             <div
               className="absolute inset-0 w-full h-full cursor-pointer group/cover"
-              onClick={() => setIsPlaying(true)}
+              onClick={() => {
+                setHasStarted(true);
+                setIsPlaying(true);
+              }}
             >
               {/* Custom Thumbnail Image */}
               <img
@@ -303,14 +321,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               )}
             </div>
           )}
-
-          {/* Click layer overlay when playing to toggle play/pause */}
-          {(isPlaying || autoPlay) && (
-            <div
-              className="absolute inset-0 z-10 cursor-pointer"
-              onClick={togglePlay}
-            />
-          )}
         </div>
 
         {/* Top Floating Bar for YouTube Link */}
@@ -331,9 +341,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </a>
         </div>
 
+        {/* Center Big Play Button overlay if paused after having started */}
+        {hasStarted && !isPlaying && (
+          <button
+            onClick={togglePlay}
+            className="absolute inset-0 m-auto w-16 h-16 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-all z-20 cursor-pointer"
+          >
+            <Play className="w-8 h-8 fill-current ml-1" />
+          </button>
+        )}
+
         {/* Custom Controls Overlay for YouTube */}
         <AnimatePresence>
-          {(showControls || !isPlaying) && (isPlaying || autoPlay) && (
+          {(showControls || !isPlaying) && hasStarted && (
             <motion.div
               className="absolute bottom-0 left-0 right-0 p-4 m-3 bg-[#111111c2] backdrop-blur-md rounded-2xl border border-white/10 z-30"
               initial={{ y: 20, opacity: 0, filter: "blur(10px)" }}
