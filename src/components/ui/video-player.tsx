@@ -14,6 +14,7 @@ declare global {
         elementId: string | HTMLElement,
         config: {
           videoId: string;
+          host?: string;
           playerVars?: Record<string, unknown>;
           events?: {
             onReady?: (event: { target: YTPlayer }) => void;
@@ -80,13 +81,12 @@ const loadYouTubeIframeApi = (): Promise<void> => {
       }
     }, 100);
 
-    // Safety timeout of 5s
     setTimeout(() => {
       if (window.YT && window.YT.Player) {
         resolve();
       } else {
         clearInterval(checkInterval);
-        resolve(); // resolve anyway to attempt fallback
+        resolve();
       }
     }, 5000);
   });
@@ -347,6 +347,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         try {
           playerRef.current = new window.YT.Player(uniquePlayerId, {
             videoId: targetYouTubeId,
+            host: "https://www.youtube.com",
             playerVars: {
               autoplay: 1,
               controls: 0,
@@ -356,6 +357,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               iv_load_policy: 3,
               playsinline: 1,
               fs: 0,
+              enablejsapi: 1,
+              origin: typeof window !== "undefined" ? window.location.origin : undefined,
             },
             events: {
               onReady: (event) => {

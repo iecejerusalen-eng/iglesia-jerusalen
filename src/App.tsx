@@ -39,7 +39,8 @@ export default function App() {
         const { data, error } = await supabase
           .from('church_settings')
           .select('logo_url')
-          .single();
+          .limit(1)
+          .maybeSingle();
 
         if (error) return;
 
