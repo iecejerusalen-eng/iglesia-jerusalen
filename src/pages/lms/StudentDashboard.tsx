@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck } from 'lucide-react';
@@ -18,6 +18,10 @@ import { GradesOverviewWidget } from '../../features/student-dashboard/component
 import { MyAttendanceWidget } from '../../features/student-dashboard/components/MyAttendanceWidget';
 import { DigitalIDCard } from '../../features/student-dashboard/components/DigitalIDCard';
 import { XPBarWidget } from '../../features/student-dashboard/components/XPBarWidget';
+import { LeaderboardWidget } from '../../features/student-dashboard/components/LeaderboardWidget';
+import { BadgeShowcase } from '../../features/student-dashboard/components/BadgeShowcase';
+import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
+import type { PendingTask } from '../../features/student-dashboard/components/PendingTasksWidget';
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -57,8 +61,10 @@ export default function StudentDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('courses');
   const [isIdCardOpen, setIsIdCardOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
-  const [pendingTasks, setPendingTasks] = useState<any[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -155,6 +161,7 @@ export default function StudentDashboard() {
 
           const formattedTasks = assignmentsData
             .filter((a) => !submittedIds.has(a.id))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((a: any) => {
               const courses = a.lms_modules?.lms_subjects?.lms_courses;
               const courseTitle = Array.isArray(courses) ? courses[0]?.title : courses?.title || 'Curso';
@@ -163,7 +170,7 @@ export default function StudentDashboard() {
                 title: a.title,
                 courseTitle,
                 dueDate: new Date(a.due_date),
-                status: 'PENDING'
+                status: 'PENDING' as const
               };
             })
             .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
@@ -288,6 +295,11 @@ export default function StudentDashboard() {
             <PendingTasksWidget 
               tasks={pendingTasks} 
             />
+          </div>
+
+          {/* Gamification Leaderboard */}
+          <div className="lg:col-span-1">
+            <LeaderboardWidget />
           </div>
         </div>
       </div>
@@ -417,7 +429,7 @@ export default function StudentDashboard() {
 
         {/* BADGES TAB */}
         {activeTab === 'badges' && (
-          <StudentBadges badges={badges} />
+          <StudentBadges badges={badges} onSelectBadge={setSelectedBadge} />
         )}
 
       </div>
@@ -435,6 +447,13 @@ export default function StudentDashboard() {
           }}
         />
       )}
+
+      <BadgeShowcase 
+        badge={selectedBadge} 
+        isOpen={!!selectedBadge} 
+        onClose={() => setSelectedBadge(null)} 
+        isNewUnlock={false}
+      />
     </div>
   );
 }

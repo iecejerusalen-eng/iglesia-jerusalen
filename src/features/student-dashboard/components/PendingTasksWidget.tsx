@@ -1,7 +1,7 @@
 import { Clock, AlertCircle, CheckCircle, FileText } from 'lucide-react';
 import { differenceInDays, differenceInHours } from 'date-fns';
 
-interface PendingTask {
+export interface PendingTask {
   id: string;
   title: string;
   courseTitle: string;

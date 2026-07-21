@@ -58,6 +58,7 @@ const ReadingPlan = lazyWithRetry(() => import('../pages/public/ReadingPlan'));
 const SermonDetail = lazyWithRetry(() => import('../pages/public/SermonDetail'));
 const Birthdays = lazyWithRetry(() => import('../pages/public/Birthdays'));
 const Bible = lazyWithRetry(() => import('../pages/public/Bible'));
+const CertificateVerification = lazyWithRetry(() => import('../pages/lms/CertificateVerification').then(m => ({ default: m.CertificateVerification })));
 const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m => ({ default: m.GamesHub })));
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
@@ -65,7 +66,6 @@ const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatc
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
-const VerifyStudent = lazyWithRetry(() => import('../pages/public/VerifyStudent'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -160,7 +160,7 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/reservas" element={<Bookings />} />
-          <Route path="/verify/:studentId" element={<VerifyStudent />} />
+          <Route path="/cert-verify/:hash" element={<CertificateVerification />} />
         </Route>
 
         <Route element={<ProtectedRoute module="dashboard" />}>

@@ -1,5 +1,6 @@
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 import { Award, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
 interface Badge {
@@ -9,7 +10,8 @@ interface Badge {
   awarded_at: string;
 }
 
-export function StudentBadges({ badges }: { badges: Badge[] }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function StudentBadges({ badges, onSelectBadge }: { badges: Badge[], onSelectBadge?: (badge: any) => void }) {
   if (!badges || badges.length === 0) {
     return (
       <AnimeFadeUp delay={100} className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-gray-150 dark:border-white/10 shadow-sm">
@@ -27,9 +29,20 @@ export function StudentBadges({ badges }: { badges: Badge[] }) {
   return (
     <AnimeStaggerGrid staggerDelay={100} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {badges.map((badge) => (
-        <div key={badge.id} className="group perspective-1000">
+        <motion.div 
+          key={badge.id}
+          className="group perspective-1000"
+          onClick={() => onSelectBadge && onSelectBadge({
+            id: badge.id,
+            name: badge.badge_name,
+            description: 'Insignia obtenida por tu desempeño',
+            icon_url: badge.badge_svg,
+            unlocked_at: badge.awarded_at
+          })}
+          whileHover={{ y: -5 }}
+        >
           <div className="relative transform-style-3d transition-transform duration-500 group-hover:rotate-y-12">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-gray-150 dark:border-white/10 shadow-md text-center flex flex-col items-center gap-4 hover:shadow-xl transition-shadow relative overflow-hidden">
+            <div className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-150 dark:border-white/10 shadow-sm flex flex-col items-center text-center group ${onSelectBadge ? 'cursor-pointer hover:border-gold/50' : ''} transition-shadow relative overflow-hidden`}>
               
               {/* Glassmorphism shine effect */}
               <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 dark:from-white/0 dark:via-white/5 dark:to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -51,7 +64,7 @@ export function StudentBadges({ badges }: { badges: Badge[] }) {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       ))}
     </AnimeStaggerGrid>
   );

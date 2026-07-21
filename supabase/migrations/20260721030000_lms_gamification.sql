@@ -6,6 +6,7 @@
 -- ============================================================================
 
 -- Estadísticas de cada estudiante (XP, Streaks, Nivel)
+DROP VIEW IF EXISTS public.lms_student_stats CASCADE;
 CREATE TABLE IF NOT EXISTS public.lms_student_stats (
     student_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
     xp_total INTEGER DEFAULT 0 NOT NULL,
