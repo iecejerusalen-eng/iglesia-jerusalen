@@ -68,20 +68,18 @@ function ContextMenuPopup({
 }: ContextMenuPopupProps) {
   return (
     <CM.Portal {...portalProps}>
-      <CM.Positioner sideOffset={4}>
+      <CM.Positioner sideOffset={4} className="z-[99999]">
         <CM.Popup
           className={cn(
-            // Shape & background
-            "z-50 min-w-[180px] overflow-hidden rounded-xl",
-            "border border-slate-200/80 dark:border-slate-800",
-            "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl",
-            // Shadow
-            "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.22),0_4px_16px_-4px_rgba(0,0,0,0.14)]",
+            // Shape & background — Solid background with z-[99999] to stay above all elements
+            "z-[99999] min-w-[210px] overflow-hidden rounded-2xl border",
+            "border-slate-200/90 dark:border-slate-800/90",
+            "bg-white dark:bg-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] backdrop-blur-2xl",
             // Enter / exit animations (Base UI data attrs)
             "origin-[var(--transform-origin)] transition-[transform,opacity] duration-150",
             "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-            "p-1.5",
+            "p-2",
             className
           )}
           {...props}

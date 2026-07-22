@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ContextMenu,
@@ -38,6 +38,7 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
   const navigate = useNavigate();
   const { setTheme, getEffectiveTheme } = useThemeStore();
   const [isRouteOpen, setIsRouteOpen] = useState(false);
+  const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDarkMode = getEffectiveTheme() === 'dark';
 
@@ -59,10 +60,38 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
     document.dispatchEvent(event);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const target = e.target as HTMLElement;
+      touchTimerRef.current = setTimeout(() => {
+        const contextMenuEvent = new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        });
+        target.dispatchEvent(contextMenuEvent);
+      }, 450);
+    }
+  };
+
+  const handleTouchEndOrMove = () => {
+    if (touchTimerRef.current) {
+      clearTimeout(touchTimerRef.current);
+      touchTimerRef.current = null;
+    }
+  };
+
   return (
     <>
       <ContextMenu>
-        <ContextMenuTrigger className="min-h-screen flex flex-col w-full">
+        <ContextMenuTrigger 
+          className="min-h-screen flex flex-col w-full select-none outline-none [-webkit-touch-callout:none]"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchEndOrMove}
+          onTouchEnd={handleTouchEndOrMove}
+        >
           {children}
         </ContextMenuTrigger>
 
