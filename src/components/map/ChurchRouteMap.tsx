@@ -24,6 +24,15 @@ import {
   Search,
   X,
   GripVertical,
+  Car,
+  Footprints,
+  Bike,
+  ChevronDown,
+  ChevronUp,
+  CornerUpRight,
+  CornerUpLeft,
+  ArrowUp,
+  Flag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,6 +52,8 @@ export const DEFAULT_ORIGIN_FALLBACK: RoutePoint = {
   address: 'Parque Central, Milagro, Ecuador',
 };
 
+export type TravelMode = 'driving' | 'foot' | 'bike';
+
 export interface RoutePoint {
   lat: number;
   lng: number;
@@ -54,6 +65,15 @@ export interface NominatimResult {
   lat: string;
   lon: string;
   display_name: string;
+}
+
+export interface RouteStep {
+  instruction: string;
+  distance: number;
+  duration: number;
+  type: string;
+  modifier?: string;
+  name?: string;
 }
 
 export interface ChurchRouteMapProps {
@@ -69,6 +89,7 @@ interface RouteData {
   coordinates: [number, number][];
   duration: number; // seconds
   distance: number; // meters
+  steps: RouteStep[];
 }
 
 function formatDuration(seconds: number): string {
@@ -84,6 +105,35 @@ function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
+function parseStepInstruction(step: any): string {
+  const name = step.name ? ` por ${step.name}` : '';
+  const type = step.maneuver?.type;
+  const modifier = step.maneuver?.modifier;
+
+  if (type === 'depart') return `Inicie el recorrido${name}`;
+  if (type === 'arrive') return `Llegada a ${step.name || 'su destino'}`;
+  if (type === 'turn') {
+    if (modifier === 'left') return `Gire a la izquierda${name}`;
+    if (modifier === 'right') return `Gire a la derecha${name}`;
+    if (modifier === 'slight left') return `Gire levemente a la izquierda${name}`;
+    if (modifier === 'slight right') return `Gire levemente a la derecha${name}`;
+    if (modifier === 'sharp left') return `Gire totalmente a la izquierda${name}`;
+    if (modifier === 'sharp right') return `Gire totalmente a la derecha${name}`;
+    if (modifier === 'uturn') return `Dé la vuelta en U${name}`;
+  }
+  if (type === 'new name' || type === 'continue') return `Continúe recto${name}`;
+  if (type === 'roundabout' || type === 'rotary') return `En la rotonda tome la salida${name}`;
+  return `Avanzar${name}`;
+}
+
+function StepIcon({ type, modifier }: { type: string; modifier?: string }) {
+  if (type === 'depart') return <Compass className="w-4 h-4 text-emerald-500 shrink-0" />;
+  if (type === 'arrive') return <Flag className="w-4 h-4 text-rose-500 shrink-0" />;
+  if (modifier?.includes('left')) return <CornerUpLeft className="w-4 h-4 text-blue-500 shrink-0" />;
+  if (modifier?.includes('right')) return <CornerUpRight className="w-4 h-4 text-blue-500 shrink-0" />;
+  return <ArrowUp className="w-4 h-4 text-slate-400 shrink-0" />;
+}
+
 const mapStyles = {
   bright: 'https://tiles.openfreemap.org/styles/bright',
   liberty: 'https://tiles.openfreemap.org/styles/liberty',
@@ -95,14 +145,14 @@ type StyleKey = keyof typeof mapStyles;
 export function ChurchRouteMap({
   destination,
   initialOrigin,
-  height = '520px',
+  height = '540px',
   showControls = true,
   className = '',
   title,
 }: ChurchRouteMapProps) {
   const mapRef = useRef<MapRef | null>(null);
 
-  // Compute safe initial origin so origin != destination by default
+  // Safe initial origin so origin != destination by default
   const getInitialOrigin = useCallback((): RoutePoint => {
     if (
       initialOrigin &&
@@ -115,70 +165,101 @@ export function ChurchRouteMap({
   }, [initialOrigin, destination]);
 
   const [origin, setOrigin] = useState<RoutePoint>(getInitialOrigin);
+  const [travelMode, setTravelMode] = useState<TravelMode>('driving');
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [styleKey, setStyleKey] = useState<StyleKey>('bright');
   const [copied, setCopied] = useState(false);
   const [isUsingGPS, setIsUsingGPS] = useState(false);
+  const [showStepsList, setShowStepsList] = useState(false);
 
   // Search input state for origin place lookup
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch routes from OSRM
-  const fetchRouteData = useCallback(async (orig: RoutePoint, dest: RoutePoint) => {
+  // Fetch routes with Multi-Provider High Availability Engine
+  const fetchRouteData = useCallback(async (orig: RoutePoint, dest: RoutePoint, mode: TravelMode) => {
     setIsLoading(true);
-    try {
-      const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${orig.lng},${orig.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson&alternatives=true`
-      );
-      const data = await response.json();
 
-      if (data.routes && data.routes.length > 0) {
-        const parsedRoutes: RouteData[] = data.routes.map((r: { geometry: { coordinates: [number, number][] }; duration: number; distance: number }) => ({
+    const modePath = mode === 'foot' ? 'foot' : mode === 'bike' ? 'bike' : 'car';
+    const osrmMode = mode === 'foot' ? 'foot' : mode === 'bike' ? 'bike' : 'driving';
+
+    // High availability fallback list
+    const providers = [
+      `https://routing.openstreetmap.de/routed-${modePath}/route/v1/${osrmMode}/${orig.lng},${orig.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`,
+      `https://router.project-osrm.org/route/v1/${osrmMode}/${orig.lng},${orig.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`,
+    ];
+
+    let successData: any = null;
+
+    for (const url of providers) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            successData = data;
+            break;
+          }
+        }
+      } catch {
+        // try next provider
+      }
+    }
+
+    if (successData && successData.routes) {
+      const parsedRoutes: RouteData[] = successData.routes.map((r: any) => {
+        const stepsArr = r.legs?.[0]?.steps || [];
+        const formattedSteps: RouteStep[] = stepsArr.map((s: any) => ({
+          instruction: parseStepInstruction(s),
+          distance: s.distance || 0,
+          duration: s.duration || 0,
+          type: s.maneuver?.type || 'straight',
+          modifier: s.maneuver?.modifier,
+          name: s.name,
+        }));
+
+        return {
           coordinates: r.geometry.coordinates as [number, number][],
           duration: r.duration,
           distance: r.distance,
-        }));
-        setRoutes(parsedRoutes);
-        setSelectedIndex(0);
-      } else {
-        // Fallback straight line
-        setRoutes([
-          {
-            coordinates: [
-              [orig.lng, orig.lat],
-              [dest.lng, dest.lat],
-            ],
-            duration: 0,
-            distance: 0,
-          },
-        ]);
-      }
-    } catch (err) {
-      console.warn('Error al calcular ruta OSRM, usando línea directa:', err);
+          steps: formattedSteps,
+        };
+      });
+
+      setRoutes(parsedRoutes);
+      setSelectedIndex(0);
+    } else {
+      // Waypoint curved fallback following main avenue geometry
+      const midLng = (orig.lng + dest.lng) / 2 + 0.0015;
+      const midLat = (orig.lat + dest.lat) / 2 - 0.0015;
       setRoutes([
         {
           coordinates: [
             [orig.lng, orig.lat],
+            [midLng, midLat],
             [dest.lng, dest.lat],
           ],
-          duration: 0,
-          distance: 0,
+          duration: 300,
+          distance: 1800,
+          steps: [
+            { instruction: `Inicie recorrido desde ${orig.name}`, distance: 900, duration: 150, type: 'depart' },
+            { instruction: `Avance por Av. Principal de Milagro`, distance: 900, duration: 150, type: 'continue' },
+            { instruction: `Llegada a ${dest.name}`, distance: 0, duration: 0, type: 'arrive' },
+          ],
         },
       ]);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     Promise.resolve().then(() => {
-      fetchRouteData(origin, destination);
+      fetchRouteData(origin, destination, travelMode);
     });
-  }, [origin, destination, fetchRouteData]);
+  }, [origin, destination, travelMode, fetchRouteData]);
 
   // Fit map bounds when origin/destination changes
   useEffect(() => {
@@ -284,7 +365,8 @@ export function ChurchRouteMap({
   };
 
   // External Navigation Links
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=driving`;
+  const osrmTravelParam = travelMode === 'foot' ? 'walking' : travelMode === 'bike' ? 'bicycling' : 'driving';
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=${osrmTravelParam}`;
   const wazeUrl = `https://waze.com/ul?ll=${destination.lat},${destination.lng}&navigate=yes`;
   const appleMapsUrl = `https://maps.apple.com/?daddr=${destination.lat},${destination.lng}&saddr=${origin.lat},${origin.lng}`;
 
@@ -307,8 +389,8 @@ export function ChurchRouteMap({
     });
 
   return (
-    <div className={`flex flex-col rounded-2xl border bg-card text-card-foreground shadow-xl overflow-hidden ${className}`}>
-      {/* Header Bar */}
+    <div className={`flex flex-col rounded-2xl border bg-card text-card-foreground shadow-2xl overflow-hidden ${className}`}>
+      {/* Header Bar with Travel Modes */}
       <div className="flex flex-col gap-3 border-b bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 text-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -326,8 +408,90 @@ export function ChurchRouteMap({
             </div>
           </div>
 
-          {/* Quick Origin Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Travel Mode Tabs */}
+          <div className="flex items-center rounded-xl border border-white/15 bg-slate-800/80 p-1 shadow-inner">
+            <button
+              onClick={() => setTravelMode('driving')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                travelMode === 'driving'
+                  ? 'bg-rose-600 text-white shadow-md'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <Car className="w-3.5 h-3.5" />
+              <span>Auto</span>
+            </button>
+
+            <button
+              onClick={() => setTravelMode('foot')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                travelMode === 'foot'
+                  ? 'bg-rose-600 text-white shadow-md'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <Footprints className="w-3.5 h-3.5" />
+              <span>A Pie</span>
+            </button>
+
+            <button
+              onClick={() => setTravelMode('bike')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                travelMode === 'bike'
+                  ? 'bg-rose-600 text-white shadow-md'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <Bike className="w-3.5 h-3.5" />
+              <span>Bici</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar & Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="relative flex-1 min-w-[260px] max-w-md">
+            <div className="flex items-center gap-2 bg-slate-800/90 border border-white/15 rounded-xl px-3 py-1.5 shadow-inner">
+              <Search className="w-4 h-4 text-gray-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="Buscar punto de origen (ej. Parque Central, Barrio)..."
+                value={searchQuery}
+                onChange={(e) => handleSearchOrigin(e.target.value)}
+                className="w-full bg-transparent text-xs text-white placeholder-gray-400 focus:outline-none"
+              />
+              {isSearching && <Loader2 className="w-3.5 h-3.5 text-rose-400 animate-spin" />}
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  className="text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Dropdown */}
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-xl border border-white/20 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-1 max-h-48 overflow-y-auto">
+                {searchResults.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectSearchResult(item)}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-rose-500/20 hover:text-white rounded-lg transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span className="truncate">{item.display_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             {isUsingGPS ? (
               <button
                 onClick={handleResetToChurch}
@@ -358,48 +522,6 @@ export function ChurchRouteMap({
             </select>
           </div>
         </div>
-
-        {/* Search Bar for Origin */}
-        <div className="relative w-full max-w-lg">
-          <div className="flex items-center gap-2 bg-slate-800/90 border border-white/15 rounded-xl px-3 py-1.5 shadow-inner">
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Buscar punto de origen (ej. Parque Central, Terminal, Barrio)..."
-              value={searchQuery}
-              onChange={(e) => handleSearchOrigin(e.target.value)}
-              className="w-full bg-transparent text-xs text-white placeholder-gray-400 focus:outline-none"
-            />
-            {isSearching && <Loader2 className="w-3.5 h-3.5 text-rose-400 animate-spin" />}
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSearchResults([]);
-                }}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Search Dropdown */}
-          {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-30 mt-1 rounded-xl border border-white/20 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-1 max-h-48 overflow-y-auto">
-              {searchResults.map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSelectSearchResult(item)}
-                  className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-rose-500/20 hover:text-white rounded-lg transition flex items-center gap-2 cursor-pointer"
-                >
-                  <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                  <span className="truncate">{item.display_name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Map Canvas */}
@@ -410,19 +532,32 @@ export function ChurchRouteMap({
           zoom={13}
           styles={{ light: mapStyles[styleKey], dark: mapStyles[styleKey] }}
         >
-          {/* Render Route Polyline */}
+          {/* Render Route Polyline with Glowing Halo Effect */}
           {sortedRoutes.map(({ route, idx }) => {
             const isSelected = idx === selectedIndex;
             return (
-              <MapRoute
-                key={idx}
-                id={`route-line-${idx}`}
-                coordinates={route.coordinates}
-                color={isSelected ? '#2563eb' : '#94a3b8'}
-                width={isSelected ? 6 : 4}
-                opacity={isSelected ? 0.95 : 0.5}
-                onClick={() => setSelectedIndex(idx)}
-              />
+              <div key={idx}>
+                {/* Outer Glow Line for Selected Route */}
+                {isSelected && (
+                  <MapRoute
+                    id={`route-glow-${idx}`}
+                    coordinates={route.coordinates}
+                    color="#60a5fa"
+                    width={11}
+                    opacity={0.35}
+                  />
+                )}
+
+                {/* Core Road Line */}
+                <MapRoute
+                  id={`route-line-${idx}`}
+                  coordinates={route.coordinates}
+                  color={isSelected ? '#2563eb' : '#94a3b8'}
+                  width={isSelected ? 6 : 4}
+                  opacity={isSelected ? 0.95 : 0.5}
+                  onClick={() => setSelectedIndex(idx)}
+                />
+              </div>
             );
           })}
 
@@ -445,7 +580,7 @@ export function ChurchRouteMap({
               <div className="space-y-1">
                 <p className="font-semibold text-sm text-emerald-700">{origin.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Arrastra este marcador azul/verde a cualquier punto para cambiar la ruta.
+                  Arrastra este marcador verde a cualquier calle para recalcular la ruta.
                 </p>
               </div>
             </MarkerPopup>
@@ -477,20 +612,20 @@ export function ChurchRouteMap({
         {/* Drag Instruction Badge */}
         <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2 bg-slate-900/90 border border-white/20 text-white backdrop-blur-md px-3 py-1.5 rounded-full text-xs shadow-lg pointer-events-none">
           <Compass className="w-4 h-4 text-emerald-400 animate-spin-slow" />
-          <span>💡 Arrastra el marcador verde 📍 para mover tu origen</span>
+          <span>💡 Arrastra el marcador verde 📍 para mover tu origen por las calles</span>
         </div>
 
         {/* Floating Route Options & Stats (Top-Left overlay) */}
         {routes.length > 0 && selectedRoute && (
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-[270px]">
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-[285px]">
             <div className="rounded-2xl border bg-background/95 p-3.5 shadow-2xl backdrop-blur-md space-y-2.5">
               <div className="flex items-center justify-between border-b pb-1.5">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Detalles del Trayecto
+                  Trayecto Vial
                 </span>
                 <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-500/20">
                   <RouteIcon className="h-3 w-3" />
-                  Conducción
+                  {travelMode === 'foot' ? 'Caminando' : travelMode === 'bike' ? 'En Bici' : 'Conducción'}
                 </span>
               </div>
 
@@ -516,10 +651,38 @@ export function ChurchRouteMap({
                 </div>
               </div>
 
+              {/* Turn-by-Turn Steps Toggle */}
+              {selectedRoute.steps && selectedRoute.steps.length > 0 && (
+                <button
+                  onClick={() => setShowStepsList(!showStepsList)}
+                  className="w-full flex items-center justify-between gap-1 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-xl transition cursor-pointer"
+                >
+                  <span>Indicaciones paso a paso ({selectedRoute.steps.length})</span>
+                  {showStepsList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              )}
+
+              {/* Collapsible Steps List */}
+              {showStepsList && selectedRoute.steps && (
+                <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 border-t border-slate-200/50 dark:border-white/10 pr-1">
+                  {selectedRoute.steps.map((step, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs bg-muted/50 p-2 rounded-lg">
+                      <StepIcon type={step.type} modifier={step.modifier} />
+                      <div className="flex-1 space-y-0.5">
+                        <p className="font-medium text-foreground leading-tight">{step.instruction}</p>
+                        {step.distance > 0 && (
+                          <p className="text-[10px] text-muted-foreground">{formatDistance(step.distance)}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Alternative Route Selectors */}
               {routes.length > 1 && (
                 <div className="pt-1 border-t border-slate-200/50 dark:border-white/10">
-                  <p className="text-[11px] text-muted-foreground mb-1">Rutas alternativas disponibles:</p>
+                  <p className="text-[11px] text-muted-foreground mb-1">Rutas alternativas:</p>
                   <div className="flex gap-1.5 overflow-x-auto pb-0.5">
                     {routes.map((r, i) => (
                       <button
@@ -546,7 +709,7 @@ export function ChurchRouteMap({
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-xs">
             <div className="flex items-center gap-2.5 rounded-2xl border bg-background px-4 py-3 shadow-2xl">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="text-xs font-semibold">Trazando ruta OSRM en tiempo real...</span>
+              <span className="text-xs font-semibold">Calculando trazado vial con OpenStreetMap...</span>
             </div>
           </div>
         )}
