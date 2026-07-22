@@ -29,6 +29,8 @@ import {
 import { useThemeStore } from '@/store/useThemeStore';
 import { RouteModal } from '@/components/map/RouteModal';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileContextDrawer } from '@/components/common/MobileContextDrawer';
 
 interface GlobalContextMenuProps {
   children: React.ReactNode;
@@ -38,6 +40,8 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
   const navigate = useNavigate();
   const { setTheme, getEffectiveTheme } = useThemeStore();
   const [isRouteOpen, setIsRouteOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDarkMode = getEffectiveTheme() === 'dark';
@@ -65,13 +69,20 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
       const touch = e.touches[0];
       const target = e.target as HTMLElement;
       touchTimerRef.current = setTimeout(() => {
-        const contextMenuEvent = new MouseEvent('contextmenu', {
-          bubbles: true,
-          cancelable: true,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-        });
-        target.dispatchEvent(contextMenuEvent);
+        if (isMobile) {
+          setIsMobileDrawerOpen(true);
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(50);
+          }
+        } else {
+          const contextMenuEvent = new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          });
+          target.dispatchEvent(contextMenuEvent);
+        }
       }, 450);
     }
   };
@@ -188,6 +199,14 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
           </ContextMenuGroup>
         </ContextMenuPopup>
       </ContextMenu>
+
+      {/* Menú Contextual Rápido en formato Bottom Sheet para Móviles */}
+      <MobileContextDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        onOpenRoute={() => setIsRouteOpen(true)}
+        onOpenSearch={handleOpenSearch}
+      />
 
       {/* Modal interactivo de mapa de ruta a la Iglesia */}
       <RouteModal

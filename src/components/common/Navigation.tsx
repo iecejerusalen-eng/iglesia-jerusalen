@@ -491,6 +491,15 @@ const Navigation = () => {
                                 Cumpleaños 🎂
                               </Link>
                             </li>
+                            <li>
+                              <Link
+                                to="/misiones"
+                                onClick={closeMenu}
+                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
+                              >
+                                Misiones 🌍
+                              </Link>
+                            </li>
                           </motion.ul>
                         )}
                       </AnimatePresence>

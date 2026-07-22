@@ -16,9 +16,13 @@ create table if not exists public.church_settings (
   facebook_url text,
   instagram_url text,
   youtube_url text,
+  logo_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Asegurar columna logo_url en tablas existentes
+alter table public.church_settings add column if not exists logo_url text;
 
 -- Habilitar RLS para church_settings
 alter table public.church_settings enable row level security;

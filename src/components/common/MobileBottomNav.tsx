@@ -21,7 +21,7 @@ const MobileBottomNav: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const isComunidadActive = () =>
-    ['/ministerios', '/eventos', '/peticiones'].some((p) => location.pathname === p);
+    ['/ministerios', '/eventos', '/peticiones', '/cumpleanos', '/misiones'].some((p) => location.pathname === p);
 
   const isRecursosActive = () =>
     ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia', '/recursos/juegos'].some((p) => location.pathname === p);
@@ -199,6 +199,21 @@ const MobileBottomNav: React.FC = () => {
                 <div>
                   <div className="font-semibold text-gray-800 dark:text-gray-200">Peticiones de Oración</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Comparte y apoya en oración mutua</div>
+                </div>
+              </Link>
+              <Link
+                to="/cumpleanos"
+                onClick={closeSheet}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513m-3-7.128V4.5a1.5 1.5 0 00-1.5-1.5h-3A1.5 1.5 0 009 4.5v1.5m12 6.628a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12.628V10.5h18v2.128z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">Cumpleaños 🎂</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Celebraciones de nuestra familia</div>
                 </div>
               </Link>
               <Link

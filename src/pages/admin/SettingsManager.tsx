@@ -26,6 +26,7 @@ const settingsSchema = z.object({
   facebook_url: z.string().url('Ingresa una URL de Facebook válida').or(z.literal('')),
   instagram_url: z.string().url('Ingresa una URL de Instagram válida').or(z.literal('')),
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
+  logo_url: z.string().url('Ingresa una URL válida del logo o favicon').or(z.literal('')).optional(),
   chat_retention_days: z.number().min(1, 'La retención mínima es 1 día').max(365, 'La retención máxima es 365 días'),
   payphone_fee_percent: z.number().min(0, 'El porcentaje mínimo es 0').max(100, 'El porcentaje máximo es 100'),
   de_una_fee_percent: z.number().min(0, 'El porcentaje mínimo es 0').max(100, 'El porcentaje máximo es 100'),
@@ -99,6 +100,7 @@ const SettingsManager = () => {
           facebook_url: data.facebook_url || '',
           instagram_url: data.instagram_url || '',
           youtube_url: data.youtube_url || '',
+          logo_url: data.logo_url || '',
           chat_retention_days: data.chat_retention_days !== undefined ? data.chat_retention_days : 7,
           payphone_fee_percent: data.payphone_fee_percent !== undefined ? data.payphone_fee_percent : 6.00,
           de_una_fee_percent: data.de_una_fee_percent !== undefined ? data.de_una_fee_percent : 2.00,
@@ -336,6 +338,19 @@ const SettingsManager = () => {
                       placeholder="https://www.google.com/maps/embed?pb=..."
                     />
                     {errors.google_maps_url && <p className="text-accent-red text-xs mt-1">{errors.google_maps_url.message}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="logo_url" className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Favicon / Logo URL (Personalizado)</label>
+                    <input 
+                      id="logo_url"
+                      type="url"
+                      autoComplete="url"
+                      {...register('logo_url')}
+                      className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      placeholder="https://tudominio.com/logo.png"
+                    />
+                    {errors.logo_url && <p className="text-accent-red text-xs mt-1">{errors.logo_url.message}</p>}
                   </div>
                 </div>
               </div>

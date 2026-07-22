@@ -11,7 +11,8 @@ import {
   Heart,
   Compass,
   ChevronRight,
-  HandHeart
+  HandHeart,
+  X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
@@ -155,7 +156,7 @@ export default function Missions() {
   const [missions, setMissions] = useState<Mission[]>([]);
 
   // Selected Country for 3D Globe focus
-  const [selectedPoint, setSelectedPoint] = useState<MissionPoint>(MISSION_LOCATIONS[0]);
+  const [selectedPoint, setSelectedPoint] = useState<MissionPoint | null>(MISSION_LOCATIONS[0]);
   const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
 
   const loadMissions = async () => {
@@ -316,7 +317,7 @@ export default function Missions() {
             </button>
 
             {MISSION_LOCATIONS.map((point) => {
-              const isSelected = selectedPoint.id === point.id && focusCoords !== null;
+              const isSelected = selectedPoint?.id === point.id && focusCoords !== null;
               return (
                 <button
                   key={point.id}
@@ -354,7 +355,7 @@ export default function Missions() {
 
             {/* Floating Interactive Country Card (Bottom / Right Overlay) */}
             {selectedPoint && (
-              <div className="absolute bottom-4 right-4 left-4 md:left-auto md:w-96 z-20 bg-slate-900/90 border border-white/15 backdrop-blur-xl p-5 rounded-2xl shadow-2xl text-white space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="absolute bottom-16 md:bottom-4 right-4 left-4 md:left-auto md:w-96 z-30 bg-slate-900/90 border border-white/15 backdrop-blur-xl p-5 rounded-2xl shadow-2xl text-white space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{selectedPoint.flag}</span>
@@ -367,9 +368,18 @@ export default function Missions() {
                       </p>
                     </div>
                   </div>
-                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                    Activo
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                      Activo
+                    </span>
+                    <button
+                      onClick={() => setSelectedPoint(null)}
+                      aria-label="Cerrar detalles del país"
+                      className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
