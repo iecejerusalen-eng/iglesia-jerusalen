@@ -33,6 +33,7 @@ import {
   CornerUpLeft,
   ArrowUp,
   Flag,
+  RefreshCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -74,6 +75,7 @@ export interface RouteStep {
   type: string;
   modifier?: string;
   name?: string;
+  location?: [number, number];
 }
 
 export interface ChurchRouteMapProps {
@@ -105,7 +107,27 @@ function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-function parseStepInstruction(step: any): string {
+interface OsrmStep {
+  name?: string;
+  distance?: number;
+  duration?: number;
+  maneuver?: {
+    type?: string;
+    modifier?: string;
+    location?: [number, number];
+  };
+}
+
+interface OsrmRouteResponse {
+  routes?: Array<{
+    geometry: { coordinates: [number, number][] };
+    duration: number;
+    distance: number;
+    legs?: Array<{ steps?: OsrmStep[] }>;
+  }>;
+}
+
+function parseStepInstruction(step: OsrmStep): string {
   const name = step.name ? ` por ${step.name}` : '';
   const type = step.maneuver?.type;
   const modifier = step.maneuver?.modifier;
@@ -165,14 +187,23 @@ export function ChurchRouteMap({
   }, [initialOrigin, destination]);
 
   const [origin, setOrigin] = useState<RoutePoint>(getInitialOrigin);
+  const [currentDestination, setCurrentDestination] = useState<RoutePoint>(destination);
   const [travelMode, setTravelMode] = useState<TravelMode>('driving');
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [activeStepIndex, setActiveStepIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [styleKey, setStyleKey] = useState<StyleKey>('bright');
   const [copied, setCopied] = useState(false);
   const [isUsingGPS, setIsUsingGPS] = useState(false);
   const [showStepsList, setShowStepsList] = useState(false);
+
+  // Recommended React pattern: adjust state during render when prop changes instead of useEffect
+  const [prevDestinationProp, setPrevDestinationProp] = useState<RoutePoint>(destination);
+  if (destination.lat !== prevDestinationProp.lat || destination.lng !== prevDestinationProp.lng) {
+    setPrevDestinationProp(destination);
+    setCurrentDestination(destination);
+  }
 
   // Search input state for origin place lookup
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,7 +223,7 @@ export function ChurchRouteMap({
       `https://router.project-osrm.org/route/v1/${osrmMode}/${orig.lng},${orig.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`,
     ];
 
-    let successData: any = null;
+    let successData: OsrmRouteResponse | null = null;
 
     for (const url of providers) {
       try {
@@ -210,15 +241,16 @@ export function ChurchRouteMap({
     }
 
     if (successData && successData.routes) {
-      const parsedRoutes: RouteData[] = successData.routes.map((r: any) => {
+      const parsedRoutes: RouteData[] = successData.routes.map((r) => {
         const stepsArr = r.legs?.[0]?.steps || [];
-        const formattedSteps: RouteStep[] = stepsArr.map((s: any) => ({
+        const formattedSteps: RouteStep[] = stepsArr.map((s: OsrmStep) => ({
           instruction: parseStepInstruction(s),
           distance: s.distance || 0,
           duration: s.duration || 0,
           type: s.maneuver?.type || 'straight',
           modifier: s.maneuver?.modifier,
           name: s.name,
+          location: s.maneuver?.location,
         }));
 
         return {
@@ -231,6 +263,7 @@ export function ChurchRouteMap({
 
       setRoutes(parsedRoutes);
       setSelectedIndex(0);
+      setActiveStepIndex(null);
     } else {
       // Waypoint curved fallback following main avenue geometry
       const midLng = (orig.lng + dest.lng) / 2 + 0.0015;
@@ -245,29 +278,30 @@ export function ChurchRouteMap({
           duration: 300,
           distance: 1800,
           steps: [
-            { instruction: `Inicie recorrido desde ${orig.name}`, distance: 900, duration: 150, type: 'depart' },
-            { instruction: `Avance por Av. Principal de Milagro`, distance: 900, duration: 150, type: 'continue' },
-            { instruction: `Llegada a ${dest.name}`, distance: 0, duration: 0, type: 'arrive' },
+            { instruction: `Inicie recorrido desde ${orig.name}`, distance: 900, duration: 150, type: 'depart', location: [orig.lng, orig.lat] },
+            { instruction: `Avance por Av. Principal de Milagro`, distance: 900, duration: 150, type: 'continue', location: [midLng, midLat] },
+            { instruction: `Llegada a ${dest.name}`, distance: 0, duration: 0, type: 'arrive', location: [dest.lng, dest.lat] },
           ],
         },
       ]);
+      setActiveStepIndex(null);
     }
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     Promise.resolve().then(() => {
-      fetchRouteData(origin, destination, travelMode);
+      fetchRouteData(origin, currentDestination, travelMode);
     });
-  }, [origin, destination, travelMode, fetchRouteData]);
+  }, [origin, currentDestination, travelMode, fetchRouteData]);
 
   // Fit map bounds when origin/destination changes
   useEffect(() => {
-    if (mapRef.current && origin && destination) {
-      const minLng = Math.min(origin.lng, destination.lng);
-      const maxLng = Math.max(origin.lng, destination.lng);
-      const minLat = Math.min(origin.lat, destination.lat);
-      const maxLat = Math.max(origin.lat, destination.lat);
+    if (mapRef.current && origin && currentDestination) {
+      const minLng = Math.min(origin.lng, currentDestination.lng);
+      const maxLng = Math.max(origin.lng, currentDestination.lng);
+      const minLat = Math.min(origin.lat, currentDestination.lat);
+      const maxLat = Math.max(origin.lat, currentDestination.lat);
 
       try {
         mapRef.current.fitBounds(
@@ -281,7 +315,7 @@ export function ChurchRouteMap({
         // ignore bounds fit error on unmounted map
       }
     }
-  }, [origin, destination]);
+  }, [origin, currentDestination]);
 
   // Handle GPS location trigger
   const handleUseCurrentLocation = () => {
@@ -364,11 +398,37 @@ export function ChurchRouteMap({
     setIsUsingGPS(false);
   };
 
+  // Reverse Origin and Destination handler
+  const handleReverseRoute = () => {
+    const temp = origin;
+    setOrigin(currentDestination);
+    setCurrentDestination(temp);
+    setActiveStepIndex(null);
+    setIsUsingGPS(false);
+    toast.info(`🔄 Ruta invertida: desde ${currentDestination.name} hacia ${temp.name}`);
+  };
+
+  // Turn-by-Turn Step Click Handler (FlyTo Step)
+  const handleStepClick = (step: RouteStep, idx: number) => {
+    setActiveStepIndex(idx);
+    if (mapRef.current && step.location) {
+      try {
+        mapRef.current.flyTo({
+          center: step.location,
+          zoom: 16.5,
+          duration: 800,
+        });
+      } catch (err) {
+        console.error('Error in flyTo:', err);
+      }
+    }
+  };
+
   // External Navigation Links
   const osrmTravelParam = travelMode === 'foot' ? 'walking' : travelMode === 'bike' ? 'bicycling' : 'driving';
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=${osrmTravelParam}`;
-  const wazeUrl = `https://waze.com/ul?ll=${destination.lat},${destination.lng}&navigate=yes`;
-  const appleMapsUrl = `https://maps.apple.com/?daddr=${destination.lat},${destination.lng}&saddr=${origin.lat},${origin.lng}`;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${currentDestination.lat},${currentDestination.lng}&travelmode=${osrmTravelParam}`;
+  const wazeUrl = `https://waze.com/ul?ll=${currentDestination.lat},${currentDestination.lng}&navigate=yes`;
+  const appleMapsUrl = `https://maps.apple.com/?daddr=${currentDestination.lat},${currentDestination.lng}&saddr=${origin.lat},${origin.lng}`;
 
   const handleShareLink = () => {
     navigator.clipboard.writeText(googleMapsUrl);
@@ -399,11 +459,11 @@ export function ChurchRouteMap({
             </div>
             <div>
               <h3 className="font-serif font-bold text-lg leading-tight text-white">
-                {title || `Ruta hacia ${destination.name}`}
+                {title || `Ruta hacia ${currentDestination.name}`}
               </h3>
               <p className="text-xs text-rose-200/80 flex items-center gap-1 mt-0.5">
                 <MapPin className="h-3 w-3 text-rose-400 shrink-0" />
-                <span className="truncate max-w-xs">{destination.address || destination.name}</span>
+                <span className="truncate max-w-xs">{currentDestination.address || currentDestination.name}</span>
               </p>
             </div>
           </div>
@@ -492,6 +552,15 @@ export function ChurchRouteMap({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleReverseRoute}
+              title="Invertir origen y destino"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-slate-800/90 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 transition cursor-pointer shadow-sm"
+            >
+              <RefreshCcw className="h-3.5 w-3.5 text-sky-400" />
+              <span className="hidden sm:inline">Invertir</span>
+            </button>
+
             {isUsingGPS ? (
               <button
                 onClick={handleResetToChurch}
@@ -587,24 +656,41 @@ export function ChurchRouteMap({
           </MapMarker>
 
           {/* Destination Marker */}
-          <MapMarker longitude={destination.lng} latitude={destination.lat}>
+          <MapMarker longitude={currentDestination.lng} latitude={currentDestination.lat}>
             <MarkerContent>
               <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-rose-600 text-white shadow-2xl hover:scale-110 transition">
                 <Church className="h-5 w-5" />
               </div>
               <MarkerLabel position="bottom" className="bg-rose-700 text-white border-rose-800 shadow-lg">
-                ⛪ {destination.name}
+                ⛪ {currentDestination.name}
               </MarkerLabel>
             </MarkerContent>
             <MarkerPopup>
               <div className="space-y-1">
-                <p className="font-semibold text-sm text-rose-700">{destination.name}</p>
-                {destination.address && (
-                  <p className="text-xs text-muted-foreground">{destination.address}</p>
+                <p className="font-semibold text-sm text-rose-700">{currentDestination.name}</p>
+                {currentDestination.address && (
+                  <p className="text-xs text-muted-foreground">{currentDestination.address}</p>
                 )}
               </div>
             </MarkerPopup>
           </MapMarker>
+
+          {/* Active Step Highlight Marker (when FlyTo step clicked) */}
+          {activeStepIndex !== null && selectedRoute?.steps?.[activeStepIndex]?.location && (
+            <MapMarker
+              longitude={selectedRoute.steps[activeStepIndex].location![0]}
+              latitude={selectedRoute.steps[activeStepIndex].location![1]}
+            >
+              <MarkerContent>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-2xl animate-bounce">
+                  <MapPin className="h-4 w-4" />
+                </div>
+                <MarkerLabel position="top" className="bg-blue-700 text-white border-blue-800 shadow-lg font-bold">
+                  Paso #{activeStepIndex + 1}
+                </MarkerLabel>
+              </MarkerContent>
+            </MapMarker>
+          )}
 
           {showControls && <MapControls position="top-right" />}
         </Map>
@@ -664,18 +750,31 @@ export function ChurchRouteMap({
 
               {/* Collapsible Steps List */}
               {showStepsList && selectedRoute.steps && (
-                <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 border-t border-slate-200/50 dark:border-white/10 pr-1">
-                  {selectedRoute.steps.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs bg-muted/50 p-2 rounded-lg">
-                      <StepIcon type={step.type} modifier={step.modifier} />
-                      <div className="flex-1 space-y-0.5">
-                        <p className="font-medium text-foreground leading-tight">{step.instruction}</p>
-                        {step.distance > 0 && (
-                          <p className="text-[10px] text-muted-foreground">{formatDistance(step.distance)}</p>
-                        )}
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 border-t border-slate-200/50 dark:border-white/10 pr-1">
+                  {selectedRoute.steps.map((step, idx) => {
+                    const isActive = idx === activeStepIndex;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleStepClick(step, idx)}
+                        className={`flex items-start gap-2 text-xs p-2.5 rounded-xl transition cursor-pointer border ${
+                          isActive
+                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500/50 text-blue-900 dark:text-blue-100 shadow-sm scale-[1.01]'
+                            : 'bg-muted/50 hover:bg-muted border-transparent text-foreground'
+                        }`}
+                      >
+                        <StepIcon type={step.type} modifier={step.modifier} />
+                        <div className="flex-1 space-y-0.5">
+                          <p className="font-medium leading-tight">{step.instruction}</p>
+                          {step.distance > 0 && (
+                            <p className={`text-[10px] ${isActive ? 'text-blue-600 dark:text-blue-300 font-semibold' : 'text-muted-foreground'}`}>
+                              {formatDistance(step.distance)}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
