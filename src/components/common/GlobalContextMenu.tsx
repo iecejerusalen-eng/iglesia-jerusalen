@@ -31,6 +31,24 @@ import { RouteModal } from '@/components/map/RouteModal';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { MobileContextDrawer } from '@/components/common/MobileContextDrawer';
+import { CONTEXT_MENU_GROUPS } from '@/components/common/contextMenuItems';
+import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
+
+// Icon lookup table for desktop menu
+const DESKTOP_ICONS: Record<string, React.ReactNode> = {
+  Home: <Home className="w-4 h-4 mr-2 text-rose-500" />,
+  Calendar: <Calendar className="w-4 h-4 mr-2 text-blue-500" />,
+  Globe2: <Globe2 className="w-4 h-4 mr-2 text-amber-500" />,
+  GraduationCap: <GraduationCap className="w-4 h-4 mr-2 text-emerald-500" />,
+  ShoppingBag: <ShoppingBag className="w-4 h-4 mr-2 text-purple-500" />,
+  MessageSquareHeart: <MessageSquareHeart className="w-4 h-4 mr-2 text-rose-500" />,
+  MapPin: <MapPin className="w-4 h-4 mr-2 text-rose-600 animate-bounce" />,
+  ArrowLeft: <ArrowLeft className="w-4 h-4 mr-2 text-gray-500" />,
+  ArrowRight: <ArrowRight className="w-4 h-4 mr-2 text-gray-500" />,
+  RotateCw: <RotateCw className="w-4 h-4 mr-2 text-gray-500" />,
+  Copy: <Copy className="w-4 h-4 mr-2 text-gray-500" />,
+  Search: <Search className="w-4 h-4 mr-2 text-blue-500" />,
+};
 
 interface GlobalContextMenuProps {
   children: React.ReactNode;
@@ -64,27 +82,44 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
     document.dispatchEvent(event);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      const target = e.target as HTMLElement;
-      touchTimerRef.current = setTimeout(() => {
-        if (isMobile) {
-          setIsMobileDrawerOpen(true);
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(50);
-          }
-        } else {
-          const contextMenuEvent = new MouseEvent('contextmenu', {
-            bubbles: true,
-            cancelable: true,
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-          });
-          target.dispatchEvent(contextMenuEvent);
-        }
-      }, 450);
+  /** Resolve an action item's onClick handler */
+  const resolveAction = (actionKey: string) => {
+    switch (actionKey) {
+      case 'openRoute':     return () => setIsRouteOpen(true);
+      case 'historyBack':   return () => window.history.back();
+      case 'historyForward':return () => window.history.forward();
+      case 'reload':        return () => window.location.reload();
+      case 'copyLink':      return handleCopyLink;
+      case 'toggleTheme':   return toggleTheme;
+      case 'openSearch':    return handleOpenSearch;
+      default:              return () => {};
     }
+  };
+
+  /** Resolve a theme-dynamic icon for the desktop menu */
+  const resolveDesktopIcon = (iconKey: string) => {
+    if (iconKey === 'ThemeToggle') {
+      return isDarkMode
+        ? <Sun className="w-4 h-4 mr-2 text-amber-400" />
+        : <Moon className="w-4 h-4 mr-2 text-slate-700" />;
+    }
+    return DESKTOP_ICONS[iconKey] ?? null;
+  };
+
+  const resolveDesktopLabel = (item: ContextMenuActionItem) => {
+    if (item.actionKey === 'toggleTheme') {
+      return isDarkMode ? 'Modo Claro' : 'Modo Oscuro';
+    }
+    return item.label;
+  };
+
+  // ── Touch: long-press opens the mobile drawer ──────────────────────────────
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    touchTimerRef.current = setTimeout(() => {
+      setIsMobileDrawerOpen(true);
+      navigator.vibrate?.(50);
+    }, 450);
   };
 
   const handleTouchEndOrMove = () => {
@@ -94,130 +129,105 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
     }
   };
 
-  return (
-    <>
-      <ContextMenu>
-        <ContextMenuTrigger 
+  // ── Shared route modal ─────────────────────────────────────────────────────
+  const routeModal = (
+    <RouteModal
+      isOpen={isRouteOpen}
+      onClose={() => setIsRouteOpen(false)}
+      destination={{
+        name: 'Iglesia Jerusalén Central (Milagro)',
+        lat: -2.139188,
+        lng: -79.5949891,
+      }}
+    />
+  );
+
+  // ── MOBILE: plain wrapper + Bottom Sheet (no Radix ContextMenu) ───────────
+  if (isMobile) {
+    return (
+      <>
+        <div
           className="min-h-screen flex flex-col w-full select-none outline-none [-webkit-touch-callout:none]"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchEndOrMove}
           onTouchEnd={handleTouchEndOrMove}
+          onContextMenu={(e) => e.preventDefault()} // suppress native context menu on mobile
         >
+          {children}
+        </div>
+
+        <MobileContextDrawer
+          isOpen={isMobileDrawerOpen}
+          onClose={() => setIsMobileDrawerOpen(false)}
+          onOpenRoute={() => setIsRouteOpen(true)}
+          onOpenSearch={handleOpenSearch}
+        />
+
+        {routeModal}
+      </>
+    );
+  }
+
+  // ── DESKTOP: Radix ContextMenu (right-click) ───────────────────────────────
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger className="min-h-screen flex flex-col w-full select-none outline-none">
           {children}
         </ContextMenuTrigger>
 
         <ContextMenuPopup className="w-64">
-          <ContextMenuGroup>
-            <ContextMenuGroupLabel>Navegación Iglesia</ContextMenuGroupLabel>
-            <ContextMenuItem onClick={() => navigate('/')}>
-              <Home className="w-4 h-4 mr-2 text-rose-500" />
-              <span>Inicio</span>
-              <ContextMenuShortcut>Alt+H</ContextMenuShortcut>
-            </ContextMenuItem>
-            
-            <ContextMenuItem onClick={() => navigate('/eventos')}>
-              <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-              <span>Eventos y Horarios</span>
-            </ContextMenuItem>
+          {CONTEXT_MENU_GROUPS.map((group, gi) => (
+            <React.Fragment key={gi}>
+              {gi > 0 && <ContextMenuSeparator />}
+              <ContextMenuGroup>
+                {group.groupLabel && (
+                  <ContextMenuGroupLabel>{group.groupLabel}</ContextMenuGroupLabel>
+                )}
+                {group.items.map((item, ii) => {
+                  if (item.type === 'separator') {
+                    return <ContextMenuSeparator key={ii} />;
+                  }
 
-            <ContextMenuItem onClick={() => navigate('/misiones')}>
-              <Globe2 className="w-4 h-4 mr-2 text-amber-500" />
-              <span>Misiones 3D</span>
-            </ContextMenuItem>
+                  if (item.type === 'nav') {
+                    const navItem = item as ContextMenuNavItem;
+                    return (
+                      <ContextMenuItem key={ii} onClick={() => navigate(navItem.path)}>
+                        {resolveDesktopIcon(navItem.iconKey)}
+                        <span>{navItem.label}</span>
+                        {navItem.shortcut && (
+                          <ContextMenuShortcut>{navItem.shortcut}</ContextMenuShortcut>
+                        )}
+                      </ContextMenuItem>
+                    );
+                  }
 
-            <ContextMenuItem onClick={() => navigate('/universidad')}>
-              <GraduationCap className="w-4 h-4 mr-2 text-emerald-500" />
-              <span>Aula Virtual</span>
-            </ContextMenuItem>
+                  if (item.type === 'action') {
+                    const actionItem = item as ContextMenuActionItem;
+                    // Special styling for the route item
+                    const isRoute = actionItem.actionKey === 'openRoute';
+                    return (
+                      <ContextMenuItem key={ii} onClick={resolveAction(actionItem.actionKey)}>
+                        {resolveDesktopIcon(actionItem.iconKey)}
+                        <span className={isRoute ? 'font-semibold text-rose-600 dark:text-rose-400' : ''}>
+                          {resolveDesktopLabel(actionItem)}
+                        </span>
+                        {actionItem.shortcut && (
+                          <ContextMenuShortcut>{actionItem.shortcut}</ContextMenuShortcut>
+                        )}
+                      </ContextMenuItem>
+                    );
+                  }
 
-            <ContextMenuItem onClick={() => navigate('/tienda')}>
-              <ShoppingBag className="w-4 h-4 mr-2 text-purple-500" />
-              <span>Tienda</span>
-            </ContextMenuItem>
-          </ContextMenuGroup>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuGroup>
-            <ContextMenuGroupLabel>Ruta & Ubicación</ContextMenuGroupLabel>
-            <ContextMenuItem onClick={() => setIsRouteOpen(true)}>
-              <MapPin className="w-4 h-4 mr-2 text-rose-600 animate-bounce" />
-              <span className="font-semibold text-rose-600 dark:text-rose-400">¿Cómo llegar a la Iglesia?</span>
-            </ContextMenuItem>
-          </ContextMenuGroup>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuGroup>
-            <ContextMenuGroupLabel>Acciones de Página</ContextMenuGroupLabel>
-            <ContextMenuItem onClick={() => window.history.back()}>
-              <ArrowLeft className="w-4 h-4 mr-2 text-gray-500" />
-              <span>Atrás</span>
-              <ContextMenuShortcut>Alt+←</ContextMenuShortcut>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={() => window.history.forward()}>
-              <ArrowRight className="w-4 h-4 mr-2 text-gray-500" />
-              <span>Adelante</span>
-              <ContextMenuShortcut>Alt+→</ContextMenuShortcut>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={() => window.location.reload()}>
-              <RotateCw className="w-4 h-4 mr-2 text-gray-500" />
-              <span>Recargar Página</span>
-              <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={handleCopyLink}>
-              <Copy className="w-4 h-4 mr-2 text-gray-500" />
-              <span>Copiar Enlace</span>
-            </ContextMenuItem>
-          </ContextMenuGroup>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuGroup>
-            <ContextMenuItem onClick={toggleTheme}>
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 mr-2 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 mr-2 text-slate-700" />
-              )}
-              <span>{isDarkMode ? 'Modo Claro' : 'Modo Oscuro'}</span>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={handleOpenSearch}>
-              <Search className="w-4 h-4 mr-2 text-blue-500" />
-              <span>Buscar...</span>
-              <ContextMenuShortcut>Ctrl+K</ContextMenuShortcut>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={() => navigate('/contacto')}>
-              <MessageSquareHeart className="w-4 h-4 mr-2 text-rose-500" />
-              <span>Oración y Contacto</span>
-            </ContextMenuItem>
-          </ContextMenuGroup>
+                  return null;
+                })}
+              </ContextMenuGroup>
+            </React.Fragment>
+          ))}
         </ContextMenuPopup>
       </ContextMenu>
 
-      {/* Menú Contextual Rápido en formato Bottom Sheet para Móviles */}
-      <MobileContextDrawer
-        isOpen={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-        onOpenRoute={() => setIsRouteOpen(true)}
-        onOpenSearch={handleOpenSearch}
-      />
-
-      {/* Modal interactivo de mapa de ruta a la Iglesia */}
-      <RouteModal
-        isOpen={isRouteOpen}
-        onClose={() => setIsRouteOpen(false)}
-        destination={{
-          name: 'Iglesia Jerusalén Central (Milagro)',
-          lat: -2.139188,
-          lng: -79.5949891,
-        }}
-      />
+      {routeModal}
     </>
   );
 }
