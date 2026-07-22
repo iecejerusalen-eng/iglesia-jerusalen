@@ -17,6 +17,8 @@ import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
 import { usePluginStore } from './store/usePluginStore';
 
+import GlobalContextMenu from './components/common/GlobalContextMenu';
+
 export default function App() {
   const { initializeAuth } = useAuthStore();
 
@@ -99,13 +101,15 @@ export default function App() {
         />
         <ConfirmDialog />
         <BrowserRouter>
-          <ScrollToTop />
-          {/* Modales cargados bajo demanda */}
-          <Suspense fallback={null}>
-            <CRMRegistrationPrompt />
-            <BirthdayCelebrationModal />
-          </Suspense>
-          <AppRouter />
+          <GlobalContextMenu>
+            <ScrollToTop />
+            {/* Modales cargados bajo demanda */}
+            <Suspense fallback={null}>
+              <CRMRegistrationPrompt />
+              <BirthdayCelebrationModal />
+            </Suspense>
+            <AppRouter />
+          </GlobalContextMenu>
         </BrowserRouter>
       </GlobalErrorBoundary>
     </HelmetProvider>
