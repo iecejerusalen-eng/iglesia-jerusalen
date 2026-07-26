@@ -117,7 +117,7 @@ export interface SpaceBooking {
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   created_at: string;
   spaces?: Space | null;
-  users?: { id: string; email: string } | null;
+  profiles?: { id: string; email: string; first_name: string | null; last_name: string | null } | null;
 }
 
 export interface Product {

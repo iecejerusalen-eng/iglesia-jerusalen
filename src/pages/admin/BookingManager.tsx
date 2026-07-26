@@ -26,7 +26,7 @@ export default function BookingManager() {
     try {
       const [spacesRes, bookingsRes] = await Promise.all([
         supabase.from('spaces').select('*').order('name'),
-        supabase.from('space_bookings').select('*, spaces(name), users(email)').order('start_time', { ascending: false })
+        supabase.from('space_bookings').select('*, spaces(name), profiles(email, first_name, last_name)').order('start_time', { ascending: false })
       ]);
 
       if (spacesRes.error) throw spacesRes.error;
@@ -201,7 +201,13 @@ export default function BookingManager() {
                    <div>
                      <h4 className="font-bold text-slate-900 dark:text-white">{booking.title}</h4>
                      <div className="text-sm text-slate-600 dark:text-slate-400"><strong>Espacio:</strong> {booking.spaces?.name}</div>
-                     <div className="text-xs text-slate-500 mt-1">{booking.users?.email}</div>
+                     <div className="text-xs text-slate-500 mt-1">
+                       {booking.profiles ? (
+                         <>
+                           {booking.profiles.first_name} {booking.profiles.last_name} &lt;{booking.profiles.email}&gt;
+                         </>
+                       ) : 'Usuario desconocido'}
+                     </div>
                    </div>
                    <span className={`text-[10px] font-bold px-2 py-1 uppercase rounded ${
                      booking.status === 'approved' ? 'bg-green-100 text-green-700' :
