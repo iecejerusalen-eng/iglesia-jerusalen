@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { ADMIN_MODULES, MODULE_GROUPS } from '../../config/adminModules';
 import { logAuditEvent } from '../../utils/auditLogger';
+import { DynamicDataView } from '../../components/ui/DynamicDataView';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const ROLES: { id: UserRole; label: string }[] = [
   { id: 'guest', label: 'Invitado (Guest)' },
@@ -454,6 +456,152 @@ const UsersManager = () => {
     return fullName.includes(term) || email.includes(term);
   });
 
+  const columns: ColumnDef<Profile, any>[] = [
+    {
+      accessorKey: 'first_name',
+      header: 'Usuario',
+      cell: ({ row }) => {
+        const profile = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-800 dark:text-gray-100">
+              {profile.first_name || profile.last_name 
+                ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                : 'Sin nombre registrado'}
+            </span>
+            {profile.banned && (
+              <span className="bg-red-100 text-red-800 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 select-none">
+                <Ban size={10} />
+                Suspendido
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'email',
+      header: 'Correo Electrónico',
+      cell: ({ getValue }) => (
+        <span className="text-gray-500 dark:text-gray-450 font-mono text-xs">
+          {getValue() as string || 'Sin correo registrado'}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'member',
+      header: 'Miembro CRM',
+      cell: ({ row }) => {
+        const profile = row.original;
+        return profile.member ? (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">
+              {profile.member.first_name} {profile.member.last_name}
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleUnlinkMember(profile.id); }}
+              className="text-red-500 hover:text-red-700 text-[10px] font-bold cursor-pointer underline hover:no-underline"
+              title="Desvincular ficha del CRM"
+            >
+              Desvincular
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLinkingUser(profile);
+              setMemberSearchQuery('');
+            }}
+            className="text-[10px] bg-blue-50 hover:bg-blue-100 text-primary border border-blue-150 px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+          >
+            🔗 Vincular Ficha
+          </button>
+        );
+      },
+    },
+    {
+      accessorKey: 'roles',
+      header: 'Rol Asignado',
+      cell: ({ row }) => {
+        const profile = row.original;
+        return (
+          <div className="flex flex-wrap gap-1 justify-center max-w-[220px]">
+            {(profile.roles && profile.roles.length > 0 ? profile.roles : [profile.role]).map((r) => {
+              const rLabel = ROLES.find(o => o.id === r)?.label.split(' (')[0] || r;
+              return (
+                <span
+                  key={r}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize select-none ${getRoleBadgeStyle(r)}`}
+                >
+                  {rLabel}
+                </span>
+              );
+            })}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'permissions_override',
+      header: 'Permisos Adicionales',
+      cell: ({ row }) => {
+        const profile = row.original;
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleOpenOverrideModal(profile); }}
+            disabled={profile.role === 'admin'}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+              profile.permissions_override
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : 'bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+            }`}
+          >
+            <Sliders size={12} />
+            {profile.permissions_override ? 'Personalizados' : 'Por Defecto'}
+          </button>
+        );
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Acciones de Seguridad',
+      cell: ({ row }) => {
+        const profile = row.original;
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {profile.role !== 'admin' ? (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleToggleBan(profile); }}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border cursor-pointer ${
+                    profile.banned
+                      ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                      : 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                  }`}
+                  title={profile.banned ? 'Activar acceso del usuario' : 'Suspender temporalmente al usuario'}
+                >
+                  <Ban size={12} />
+                  {profile.banned ? 'Activar' : 'Suspender'}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteUser(profile); }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border border-red-700"
+                  title="Eliminar permanentemente del sistema"
+                >
+                  <Trash2 size={12} />
+                  Eliminar
+                </button>
+              </>
+            ) : (
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider select-none">Inmune</span>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Title */}
@@ -467,7 +615,6 @@ const UsersManager = () => {
             Controla y define el acceso modular de los miembros de tu equipo a las áreas del panel administrativo.
           </p>
         </div>
-      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-white/10">
@@ -507,151 +654,103 @@ const UsersManager = () => {
             />
           </div>
 
-          {/* Users Table */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500 dark:text-gray-450 font-semibold text-xs uppercase tracking-wider">
-                    <th className="px-6 py-4">Usuario</th>
-                    <th className="px-6 py-4">Correo Electrónico</th>
-                    <th className="px-6 py-4">Miembro CRM</th>
-                    <th className="px-6 py-4 text-center">Rol Asignado</th>
-                    <th className="px-6 py-4 text-center">Permisos Adicionales</th>
-                    <th className="px-6 py-4 text-center">Acciones de Seguridad</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-650 dark:text-gray-400">
-                  {loading ? (
-                    Array.from({ length: 4 }).map((_, idx) => (
-                      <tr key={idx} className="animate-pulse">
-                        <td className="px-6 py-5"><div className="h-4 w-32 bg-gray-100 rounded"></div></td>
-                        <td className="px-6 py-5"><div className="h-4 w-48 bg-gray-100 rounded"></div></td>
-                        <td className="px-6 py-5"><div className="h-4 w-40 bg-gray-100 rounded"></div></td>
-                        <td className="px-6 py-5 text-center"><div className="h-8 w-28 bg-gray-100 rounded mx-auto"></div></td>
-                        <td className="px-6 py-5 text-center"><div className="h-8 w-24 bg-gray-100 rounded mx-auto"></div></td>
-                        <td className="px-6 py-5 text-center"><div className="h-8 w-36 bg-gray-100 rounded mx-auto"></div></td>
-                      </tr>
-                    ))
-                  ) : filteredProfiles.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
-                        No se encontraron usuarios registrados.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProfiles.map((profile) => (
-                      <tr key={profile.id} className={`hover:bg-gray-50/50 transition-colors ${profile.banned ? 'bg-red-50/25' : ''}`}>
-                        <td className="px-6 py-4.5 font-semibold text-gray-800 dark:text-gray-100">
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {profile.first_name || profile.last_name 
-                                ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-                                : 'Sin nombre registrado'}
-                            </span>
-                            {profile.banned && (
-                              <span className="bg-red-100 text-red-800 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5 select-none">
-                                <Ban size={10} />
-                                Suspendido
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4.5 text-gray-500 dark:text-gray-450 font-mono text-xs">
-                          {profile.email || 'Sin correo registrado'}
-                        </td>
-                        <td className="px-6 py-4.5">
-                          {profile.member ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm">
-                                {profile.member.first_name} {profile.member.last_name}
-                              </span>
-                              <button
-                                onClick={() => handleUnlinkMember(profile.id)}
-                                className="text-red-500 hover:text-red-700 text-[10px] font-bold cursor-pointer underline hover:no-underline"
-                                title="Desvincular ficha del CRM"
-                              >
-                                Desvincular
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setLinkingUser(profile);
-                                setMemberSearchQuery('');
-                              }}
-                              className="text-[10px] bg-blue-50 hover:bg-blue-100 text-primary border border-blue-150 px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
-                            >
-                              🔗 Vincular Ficha
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-6 py-4.5 text-center">
-                          <div className="flex flex-wrap gap-1 justify-center max-w-[220px] mx-auto">
-                            {(profile.roles && profile.roles.length > 0 ? profile.roles : [profile.role]).map((r) => {
-                              const rLabel = ROLES.find(o => o.id === r)?.label.split(' (')[0] || r;
-                              return (
-                                <span
-                                  key={r}
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize select-none ${getRoleBadgeStyle(r)}`}
-                                >
-                                  {rLabel}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4.5 text-center">
-                          <button
-                            onClick={() => handleOpenOverrideModal(profile)}
-                            disabled={profile.role === 'admin'}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                              profile.permissions_override
-                                ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                : 'bg-white hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
-                            }`}
-                          >
-                            <Sliders size={12} />
-                            {profile.permissions_override ? 'Personalizados' : 'Por Defecto'}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {profile.role !== 'admin' ? (
-                              <>
-                                <button
-                                  onClick={() => handleToggleBan(profile)}
-                                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border cursor-pointer ${
-                                    profile.banned
-                                      ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-                                      : 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
-                                  }`}
-                                  title={profile.banned ? 'Activar acceso del usuario' : 'Suspender temporalmente al usuario'}
-                                >
-                                  <Ban size={12} />
-                                  {profile.banned ? 'Activar' : 'Suspender'}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUser(profile)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border border-red-700"
-                                  title="Eliminar permanentemente del sistema"
-                                >
-                                  <Trash2 size={12} />
-                                  Eliminar
-                                </button>
-                              </>
-                            ) : (
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider select-none">Inmune</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+          <DynamicDataView
+            title="Lista de Usuarios Registrados"
+            data={filteredProfiles}
+            columns={columns}
+            isLoading={loading}
+            defaultView="table"
+            renderGridItem={(profile) => (
+              <div 
+                className={`bg-white dark:bg-slate-900 rounded-2xl border p-5 space-y-4 shadow-xs transition-all relative ${
+                  profile.banned 
+                    ? 'border-red-200 dark:border-red-900/40 bg-red-50/20' 
+                    : 'border-gray-150 dark:border-white/10 hover:shadow-md'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 text-primary dark:bg-gold/10 dark:text-gold rounded-full flex items-center justify-center font-bold">
+                      {(profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
+                        {profile.first_name || profile.last_name 
+                          ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                          : 'Sin nombre'}
+                        {profile.banned && (
+                          <span className="bg-red-100 text-red-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                            Suspendido
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-gray-400 font-mono truncate max-w-[180px]">{profile.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-2">
+                    <span className="text-gray-400 font-medium">CRM:</span>
+                    {profile.member ? (
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {profile.member.first_name} {profile.member.last_name}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setLinkingUser(profile);
+                          setMemberSearchQuery('');
+                        }}
+                        className="text-[10px] text-primary dark:text-gold font-bold underline"
+                      >
+                        Vincular Ficha
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-white/5 pt-2">
+                    <span className="text-gray-400 font-medium">Roles:</span>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {(profile.roles && profile.roles.length > 0 ? profile.roles : [profile.role]).map((r) => (
+                        <span key={r} className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getRoleBadgeStyle(r)}`}>
+                          {ROLES.find(o => o.id === r)?.label.split(' (')[0] || r}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5">
+                  <button
+                    onClick={() => handleOpenOverrideModal(profile)}
+                    disabled={profile.role === 'admin'}
+                    className="text-xs text-gray-500 hover:text-primary dark:hover:text-gold font-semibold flex items-center gap-1"
+                  >
+                    <Sliders size={12} />
+                    Permisos
+                  </button>
+
+                  {profile.role !== 'admin' && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleBan(profile)}
+                        className="text-xs text-amber-600 font-bold"
+                      >
+                        {profile.banned ? 'Activar' : 'Suspender'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(profile)}
+                        className="text-xs text-red-600 font-bold"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </div>
+              </div>
+            )}
+          />
         </>
       ) : (
         /* ROLE PERMISSIONS TAB */

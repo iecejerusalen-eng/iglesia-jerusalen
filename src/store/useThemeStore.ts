@@ -8,6 +8,13 @@ export type SidebarMenuMode = 'list' | 'cards_grouped' | 'cards_ungrouped' | 'gr
 export type SidebarGridSort = 'name' | 'category' | 'custom';
 export type SidebarAccordionMode = 'single' | 'multiple' | 'all_open';
 
+export interface GlobalUIEffects {
+  glassmorphism: boolean;
+  blurIntensity: 'low' | 'medium' | 'high';
+  animations: boolean;
+  defaultTableView: 'table' | 'grid' | 'list';
+}
+
 export interface AdminPreferences {
   theme?: Theme;
   sidebarMode?: SidebarViewMode;
@@ -30,6 +37,7 @@ interface ThemeState {
   sidebarGridColumns: number;
   sidebarGridSort: SidebarGridSort;
   sidebarCustomOrder: string[];
+  globalEffects: GlobalUIEffects;
   setTheme: (theme: Theme) => void;
   setSidebarViewMode: (mode: SidebarViewMode) => void;
   setSidebarMenuMode: (mode: SidebarMenuMode) => void;
@@ -38,6 +46,7 @@ interface ThemeState {
   setSidebarGridColumns: (cols: number) => void;
   setSidebarGridSort: (sort: SidebarGridSort) => void;
   setSidebarCustomOrder: (order: string[]) => void;
+  setGlobalEffects: (effects: Partial<GlobalUIEffects>) => void;
   setAccentColor: (color: string) => void;
   getEffectiveTheme: () => 'light' | 'dark';
   setAdminPreferences: (prefs: AdminPreferences) => void;
@@ -56,6 +65,12 @@ export const useThemeStore = create<ThemeState>()(
       sidebarGridColumns: 3,
       sidebarGridSort: 'category',
       sidebarCustomOrder: [],
+      globalEffects: {
+        glassmorphism: true,
+        blurIntensity: 'medium',
+        animations: true,
+        defaultTableView: 'table'
+      },
       setSidebarViewMode: (mode) => {
         set({ sidebarViewMode: mode });
         get().syncToDatabase();
@@ -82,6 +97,10 @@ export const useThemeStore = create<ThemeState>()(
       },
       setSidebarCustomOrder: (order) => {
         set({ sidebarCustomOrder: order });
+        get().syncToDatabase();
+      },
+      setGlobalEffects: (effects) => {
+        set((state) => ({ globalEffects: { ...state.globalEffects, ...effects } }));
         get().syncToDatabase();
       },
       setAccentColor: (color) => {
@@ -121,6 +140,11 @@ export const useThemeStore = create<ThemeState>()(
         if (prefs.sidebarGridSort) updates.sidebarGridSort = prefs.sidebarGridSort;
         if (prefs.sidebarCustomOrder) updates.sidebarCustomOrder = prefs.sidebarCustomOrder;
         
+        // Convert old boolean string formats if needed (legacy edge case, but safe)
+        if ((prefs as any).globalEffects) {
+           updates.globalEffects = (prefs as any).globalEffects;
+        }
+
         if (Object.keys(updates).length > 0) {
           set(updates);
           
@@ -146,7 +170,8 @@ export const useThemeStore = create<ThemeState>()(
           sidebarGridColumns: state.sidebarGridColumns,
           sidebarGridSort: state.sidebarGridSort,
           sidebarCustomOrder: state.sidebarCustomOrder,
-        };
+          globalEffects: state.globalEffects,
+        } as any;
         
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.user) {

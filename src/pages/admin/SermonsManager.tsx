@@ -13,6 +13,8 @@ import { Plus, Edit2, Trash2, X, Loader2, Video, FileText, Search, Grid, List, F
 import { usePermissions } from '../../hooks/usePermissions';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
 import type { Sermon, SermonCategory } from '../../types';
+import { DynamicDataView } from '../../components/ui/DynamicDataView';
+import type { ColumnDef } from '@tanstack/react-table';
 
 // Zod Validation Schema for Sermon
 const sermonSchema = z.object({
@@ -302,10 +304,99 @@ const SermonsManager = () => {
       fetchData();
     } catch (err: any) {
       toast.error('Error al eliminar categoría: ' + err.message);
-    }
-  };
-
-  // Sub-components for views
+  const columns: ColumnDef<Sermon, any>[] = [
+    {
+      accessorKey: 'title',
+      header: 'Prédica',
+      cell: ({ row }) => {
+        const sermon = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            {sermon.youtube_url ? (
+              <div className="w-10 h-10 bg-red-50 text-accent-red rounded-lg flex items-center justify-center flex-shrink-0">
+                <Video size={18} />
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText size={18} />
+              </div>
+            )}
+            <span className="font-bold text-gray-800 dark:text-gray-100 truncate max-w-xs md:max-w-sm" title={sermon.title}>
+              {sermon.title}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'sermon_categories',
+      header: 'Categoría',
+      cell: ({ getValue }) => {
+        const cat = getValue() as SermonCategory | null;
+        return cat ? (
+          <span 
+            className="px-2 py-1 rounded-full text-xs font-medium"
+            style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+          >
+            {cat.name}
+          </span>
+        ) : (
+          <span className="text-gray-400 text-xs">Sin categoría</span>
+        );
+      },
+    },
+    {
+      accessorKey: 'pastor_name',
+      header: 'Pastor / Predicador',
+      cell: ({ getValue }) => <span className="font-medium text-gray-700 dark:text-gray-300">{getValue() as string}</span>,
+    },
+    {
+      accessorKey: 'created_by_profile',
+      header: 'Editores',
+      cell: ({ getValue }) => {
+        const prof = getValue() as any;
+        return prof ? (
+          <span className="text-xs text-gray-500 font-semibold">{prof.first_name} {prof.last_name}</span>
+        ) : (
+          <span className="text-xs text-gray-400">Sistema</span>
+        );
+      },
+    },
+    {
+      accessorKey: 'date',
+      header: 'Fecha',
+      cell: ({ getValue }) => <span className="text-xs text-gray-500">{getValue() as string}</span>,
+    },
+    {
+      id: 'actions',
+      header: 'Acciones',
+      cell: ({ row }) => {
+        const sermon = row.original;
+        return (
+          <div className="flex justify-end gap-1">
+            {!readOnly && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(sermon); }}
+                  className="text-gray-400 hover:text-primary dark:hover:text-gold p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Editar Prédica"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(sermon.id); }}
+                  className="text-gray-400 hover:text-accent-red p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+                  title="Eliminar"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
   const renderTable = () => (
     <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-glass overflow-hidden">
       <div className="overflow-x-auto">
@@ -649,10 +740,62 @@ const SermonsManager = () => {
                 <div className="flex justify-center items-center py-20 bg-white rounded-2xl"><Loader2 className="animate-spin text-primary" size={32} /></div>
               ) : sermons.length > 0 ? (
                 <>
-                  {viewMode === 'table' && renderTable()}
-                  {viewMode === 'cards' && renderCards()}
-                  {viewMode === 'categories' && renderCategories()}
-                  {viewMode === 'calendar' && renderCalendar()}
+                  {(viewMode === 'table' || viewMode === 'cards') ? (
+                    <DynamicDataView
+                      title="Prédicas Publicadas"
+                      data={sermons}
+                      columns={columns}
+                      isLoading={loading}
+                      defaultView={viewMode === 'cards' ? 'grid' : 'table'}
+                      renderGridItem={(sermon) => (
+                        <div key={sermon.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-white/10 p-5 space-y-4 shadow-xs hover:shadow-md transition-all">
+                          <div className="flex items-center gap-3">
+                            {sermon.youtube_url ? (
+                              <div className="w-10 h-10 bg-red-50 text-accent-red rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Video size={18} />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText size={18} />
+                              </div>
+                            )}
+                            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate" title={sermon.title}>
+                              {sermon.title}
+                            </h4>
+                          </div>
+
+                          <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+                            <p>Predicador: <strong className="text-gray-800 dark:text-gray-200">{sermon.pastor_name}</strong></p>
+                            <p>Fecha: <span>{sermon.date}</span></p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5">
+                            {!readOnly && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenEdit(sermon)}
+                                  className="text-xs text-primary dark:text-gold font-bold flex items-center gap-1"
+                                >
+                                  <Edit2 size={12} /> Editar
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(sermon.id)}
+                                  className="text-xs text-red-600 font-bold flex items-center gap-1"
+                                >
+                                  <Trash2 size={12} /> Eliminar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    />
+                  ) : (
+                    <>
+                      {viewMode === 'categories' && renderCategories()}
+                      {viewMode === 'calendar' && renderCalendar()}
+                    </>
+                  )}
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (

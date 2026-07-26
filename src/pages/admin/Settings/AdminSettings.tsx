@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Palette, Layout, Settings, Bell } from 'lucide-react';
+import { Palette, Layout, Settings, Bell, Layers } from 'lucide-react';
 
 import AppearanceTab from './tabs/AppearanceTab';
 import ColorsTab from './tabs/ColorsTab';
 import NavigationTab from './tabs/NavigationTab';
 import NotificationsTab from './tabs/NotificationsTab';
+import GlobalEffectsTab from './tabs/GlobalEffectsTab';
 
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import AdminHeader from '../../../components/admin/AdminHeader';
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'colors', label: 'Colores de Acento', icon: Palette },
   { id: 'navigation', label: 'Diseño de Barra', icon: Layout },
   { id: 'notifications', label: 'Notificaciones', icon: Bell },
+  { id: 'effects', label: 'Efectos Globales', icon: Layers },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -64,6 +66,7 @@ const AdminSettings = () => {
             {activeTab === 'colors' && <ColorsTab key="colors" />}
             {activeTab === 'navigation' && <NavigationTab key="navigation" />}
             {activeTab === 'notifications' && <NotificationsTab key="notifications" />}
+            {activeTab === 'effects' && <GlobalEffectsTab key="effects" />}
           </AnimatePresence>
         </div>
       </div>

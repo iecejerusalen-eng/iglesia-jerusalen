@@ -25,13 +25,13 @@ CREATE POLICY "Permitir escritura a administradores" ON public.public_menu_items
   USING (
     exists (
       select 1 from public.profiles
-      where id = (select auth.uid()) and role = 'admin'
+      where id = auth.uid() and role = 'admin'
     )
   )
   WITH CHECK (
     exists (
       select 1 from public.profiles
-      where id = (select auth.uid()) and role = 'admin'
+      where id = auth.uid() and role = 'admin'
     )
   );
 

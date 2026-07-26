@@ -6,12 +6,28 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import BlockEditor from '../../components/admin/BlockEditor';
 import type { LessonBlock } from '../../components/admin/BlockEditor';
-import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings, Grid, List } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings } from 'lucide-react';
 import MediaUploader from '../../components/common/MediaUploader';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../store/useAuthStore';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { DynamicDataView } from '../../components/ui/DynamicDataView';
+import type { ColumnDef } from '@tanstack/react-table';
+
+export interface Ministry {
+  id: string;
+  name: string;
+  slug: string;
+  leader_name: string | null;
+  schedule: string | null;
+  category: 'departamento' | 'servicio';
+  description: string | null;
+  image_url: string | null;
+  anniversary_date: string | null;
+  theme_color: string | null;
+  content_blocks?: any[];
+}
 
 // Esquema de Validación Zod
 const ministrySchema = z.object({
@@ -76,11 +92,11 @@ const MinistryManager = () => {
   const isGlobalReadOnly = isReadOnly('ministries');
   const [isEditingReadOnly, setIsEditingReadOnly] = useState(false);
 
-  const [ministries, setMinistries] = useState<any[]>([]);
+  const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [editingMinistry, setEditingMinistry] = useState<any | null>(null);
+  const [editingMinistry, setEditingMinistry] = useState<Ministry | null>(null);
   const [blocks, setBlocks] = useState<LessonBlock[]>([]);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -161,7 +177,7 @@ const MinistryManager = () => {
     setShowForm(true);
   };
 
-  const handleOpenEdit = (min: any) => {
+  const handleOpenEdit = (min: Ministry) => {
     const canEditThis = canEditMinistry(min.id);
     setIsEditingReadOnly(!canEditThis);
     setEditingMinistry(min);
@@ -237,9 +253,9 @@ const MinistryManager = () => {
 
       setShowForm(false);
       fetchMinistries();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving ministry:', err);
-      alert(err.message || 'Error al guardar el ministerio.');
+      alert((err as Error).message || 'Error al guardar el ministerio.');
     } finally {
       setActionLoading(false);
     }
@@ -285,6 +301,121 @@ const MinistryManager = () => {
     const matchesCategory = categoryFilter === 'all' || min.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  const columns: ColumnDef<Ministry, any>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Ministerio',
+      cell: ({ row }) => {
+        const min = row.original;
+        return (
+          <div className="flex items-center gap-4">
+            {min.image_url ? (
+              <img loading="lazy"
+                src={min.image_url}
+                alt={min.name}
+                className="w-10 h-10 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-gray-400 flex-shrink-0">
+                <ImageIcon size={18} />
+              </div>
+            )}
+            <div>
+              <span className="font-bold text-gray-800 dark:text-gray-200 block">{min.name}</span>
+              <span className="text-xs text-gray-400 font-mono block">/{min.slug}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'category',
+      header: 'Categoría',
+      cell: ({ getValue }) => {
+        const category = getValue() as string;
+        return (
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+            category === 'departamento' 
+              ? 'bg-gold/15 text-gold border border-gold/25' 
+              : 'bg-blue-50 dark:bg-blue-900/25 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
+          }`}>
+            {category}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'leader_name',
+      header: 'Responsable',
+      cell: ({ getValue }) => <span className="font-semibold text-gray-600 dark:text-gray-400">{getValue() as string || 'No asignado'}</span>,
+    },
+    {
+      accessorKey: 'schedule',
+      header: 'Horarios',
+      cell: ({ row }) => {
+        const min = row.original;
+        return (
+          <div className="text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title={min.schedule}>
+            <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
+            {min.anniversary_date && (
+              <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
+                <Gift size={12} className="inline text-amber-500" />
+                <span>Aniv: {formatDate(min.anniversary_date)}</span>
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Acciones',
+      cell: ({ row }) => {
+        const min = row.original;
+        const canEditThisRow = canEditMinistry(min.id);
+        return (
+          <div className="flex justify-end gap-1">
+            {canEditThisRow ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleOpenEdit(min); }}
+                className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+                title="Editar Info General"
+              >
+                <Edit2 size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleOpenEdit(min); }}
+                className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+                title="Ver Detalles"
+              >
+                <Eye size={16} />
+              </button>
+            )}
+            <Link
+              to={`/admin/ministerios/${min.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
+              title="Panel del Ministerio"
+            >
+              <Settings size={16} />
+            </Link>
+            {canDeleteGlobal && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(min.id, min.name); }}
+                disabled={actionLoading}
+                className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer inline-flex"
+                title="Eliminar"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -350,266 +481,129 @@ const MinistryManager = () => {
             </button>
           </div>
         </div>
-
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-              viewMode === 'grid'
-                ? 'bg-white dark:bg-slate-800 text-primary dark:text-white border-gray-200 dark:border-white/10 shadow-xs'
-                : 'text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-slate-800'
-            }`}
-            title="Vista Cuadrícula"
-          >
-            <Grid size={18} />
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-              viewMode === 'table'
-                ? 'bg-white dark:bg-slate-800 text-primary dark:text-white border-gray-200 dark:border-white/10 shadow-xs'
-                : 'text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-slate-800'
-            }`}
-            title="Vista Tabla"
-          >
-            <List size={18} />
-          </button>
-        </div>
       </div>
 
-      {/* Lista de Ministerios */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm">
-          <Loader2 className="animate-spin text-primary" size={32} />
-        </div>
-      ) : filteredMinistries.length > 0 ? (
-        viewMode === 'table' ? (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden animate-fade-in">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-950 text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
-                    <th className="py-4 px-6">Detalle Ministerio</th>
-                    <th className="py-4 px-6">Categoría</th>
-                    <th className="py-4 px-6">Responsable</th>
-                    <th className="py-4 px-6">Horarios</th>
-                    <th className="py-4 px-6 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-700 dark:text-gray-300">
-                  {filteredMinistries.map((min) => {
-                    const canEditThisRow = canEditMinistry(min.id);
-                    
-                    return (
-                      <tr key={min.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-4">
-                            {min.image_url ? (
-                              <img loading="lazy"
-                                src={min.image_url}
-                                alt={min.name}
-                                className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-55 dark:bg-slate-800 rounded-lg flex items-center justify-center text-gray-300 flex-shrink-0">
-                                <ImageIcon size={20} />
-                              </div>
-                            )}
-                            <div>
-                              <span className="font-bold text-gray-850 dark:text-gray-100 block">{min.name}</span>
-                              <span className="text-xs text-gray-400 font-mono block">/{min.slug}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                            min.category === 'departamento' 
-                              ? 'bg-gold/15 text-gold border border-gold/25' 
-                              : 'bg-blue-50 dark:bg-blue-900/25 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40'
-                          }`}>
-                            {min.category}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 font-semibold text-gray-650 dark:text-gray-400">
-                          {min.leader_name || 'No asignado'}
-                        </td>
-                        <td className="py-4 px-6 text-gray-500 dark:text-gray-450 truncate max-w-[200px]" title={min.schedule}>
-                          <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
-                          {min.anniversary_date && (
-                            <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
-                              <Gift size={12} className="inline text-amber-500" />
-                              <span>Aniv: {formatDate(min.anniversary_date)}</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-right space-x-2">
-                          {canEditThisRow ? (
-                            <button
-                              onClick={() => handleOpenEdit(min)}
-                              className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
-                              title="Editar Info General"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleOpenEdit(min)}
-                              className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
-                              title="Ver Detalles"
-                            >
-                              <Eye size={16} />
-                            </button>
-                          )}
-                          <Link
-                            to={`/admin/ministerios/${min.id}`}
-                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex"
-                            title="Panel del Ministerio"
-                          >
-                            <Settings size={16} />
-                          </Link>
-                          {canDeleteGlobal && (
-                            <button
-                              onClick={() => handleDelete(min.id, min.name)}
-                              disabled={actionLoading}
-                              className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer inline-flex"
-                              title="Eliminar"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          /* VISTA GRID/CARDS RESPONSIVE */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-            {filteredMinistries.map((min) => {
-              const canEditThisRow = canEditMinistry(min.id);
-              const accentColor = min.theme_color || '#1E3A8A';
+      {/* Vista Dinámica de Ministerios */}
+      <DynamicDataView
+        title="Directorio de Ministerios"
+        data={filteredMinistries}
+        columns={columns}
+        isLoading={loading}
+        defaultView="grid"
+        renderGridItem={(min) => {
+          const canEditThisRow = canEditMinistry(min.id);
+          const accentColor = min.theme_color || '#1E3A8A';
 
-              return (
-                <div
-                  key={min.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col group relative"
-                  style={{ borderTop: `4px solid ${accentColor}` }}
-                >
-                  {/* Foto de portada */}
-                  <div className="h-40 relative bg-slate-100 dark:bg-slate-950 overflow-hidden">
-                    {min.image_url ? (
-                      <img loading="lazy"
-                        src={min.image_url}
-                        alt={min.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-700 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-                        <ImageIcon size={40} className="mb-2 opacity-50" />
-                        <span className="text-xs font-semibold tracking-wider uppercase opacity-40">Sin Imagen</span>
-                      </div>
-                    )}
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                        min.category === 'departamento' 
-                          ? 'bg-gold text-white' 
-                          : 'bg-blue-600 text-white'
-                      }`}>
-                        {min.category}
-                      </span>
+          return (
+            <div
+              className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col group relative h-full"
+              style={{ borderTop: `4px solid ${accentColor}` }}
+            >
+              {/* Foto de portada */}
+              <div className="h-40 relative bg-slate-100 dark:bg-slate-950 overflow-hidden">
+                {min.image_url ? (
+                  <img loading="lazy"
+                    src={min.image_url}
+                    alt={min.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-700 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+                    <ImageIcon size={40} className="mb-2 opacity-50" />
+                    <span className="text-xs font-semibold tracking-wider uppercase opacity-40">Sin Imagen</span>
+                  </div>
+                )}
+                <div className="absolute top-3 right-3">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-xs ${
+                    min.category === 'departamento' 
+                      ? 'bg-gold text-white' 
+                      : 'bg-blue-600 text-white'
+                  }`}>
+                    {min.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Detalle */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800 dark:text-gray-100 line-clamp-1 group-hover:text-primary dark:group-hover:text-church-gold-bright transition-colors" title={min.name}>
+                        {min.name}
+                      </h3>
+                      <span className="text-xs text-gray-400 font-mono">/{min.slug}</span>
                     </div>
                   </div>
+                  
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
+                    {min.description || 'Sin descripción detallada.'}
+                  </p>
+                </div>
 
-                  {/* Detalle */}
-                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-lg text-slate-800 dark:text-gray-100 line-clamp-1 group-hover:text-primary dark:group-hover:text-church-gold-bright transition-colors" title={min.name}>
-                            {min.name}
-                          </h3>
-                          <span className="text-xs text-gray-400 font-mono">/{min.slug}</span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
-                        {min.description || 'Sin descripción detallada.'}
-                      </p>
+                <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <Users size={14} className="text-gray-400 flex-shrink-0" />
+                    <span>Responsable: <strong className="text-gray-800 dark:text-gray-100">{min.leader_name || 'No asignado'}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Settings size={14} className="text-gray-400 flex-shrink-0" />
+                    <span className="truncate" title={min.schedule}>Reunión: <strong>{min.schedule || 'No especificado'}</strong></span>
+                  </div>
+                  {min.anniversary_date && (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 font-medium">
+                      <Gift size={14} className="flex-shrink-0" />
+                      <span>Aniversario: <strong>{formatDate(min.anniversary_date)}</strong></span>
                     </div>
+                  )}
+                </div>
 
-                    <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/5 text-xs text-gray-650 dark:text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <Users size={14} className="text-gray-400 flex-shrink-0" />
-                        <span>Responsable: <strong className="text-gray-800 dark:text-gray-100">{min.leader_name || 'No asignado'}</strong></span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Settings size={14} className="text-gray-400 flex-shrink-0" />
-                        <span className="truncate" title={min.schedule}>Reunión: <strong>{min.schedule || 'No especificado'}</strong></span>
-                      </div>
-                      {min.anniversary_date && (
-                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 font-medium">
-                          <Gift size={14} className="flex-shrink-0" />
-                          <span>Aniversario: <strong>{formatDate(min.anniversary_date)}</strong></span>
-                        </div>
-                      )}
-                    </div>
+                {/* Acciones */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5 mt-auto">
+                  <Link
+                    to={`/admin/ministerios/${min.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary dark:text-church-gold-bright hover:text-blue-900 dark:hover:text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <Settings size={14} />
+                    Panel de Control
+                  </Link>
 
-                    {/* Acciones */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5 mt-auto">
-                      <Link
-                        to={`/admin/ministerios/${min.id}`}
-                        className="text-primary dark:text-church-gold-bright hover:text-blue-900 dark:hover:text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                  <div className="flex items-center gap-1">
+                    {canEditThisRow ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenEdit(min); }}
+                        className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Editar Info General"
                       >
-                        <Settings size={14} />
-                        Panel de Control
-                      </Link>
-
-                      <div className="flex items-center gap-1">
-                        {canEditThisRow ? (
-                          <button
-                            onClick={() => handleOpenEdit(min)}
-                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                            title="Editar Info General"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenEdit(min)}
-                            className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                            title="Ver Detalles"
-                          >
-                            <Eye size={14} />
-                          </button>
-                        )}
-                        {canDeleteGlobal && (
-                          <button
-                            onClick={() => handleDelete(min.id, min.name)}
-                            disabled={actionLoading}
-                            className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                        <Edit2 size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenEdit(min); }}
+                        className="text-gray-400 hover:text-primary dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Ver Detalles"
+                      >
+                        <Eye size={14} />
+                      </button>
+                    )}
+                    {canDeleteGlobal && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(min.id, min.name); }}
+                        disabled={actionLoading}
+                        className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )
-      ) : (
-        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-250 dark:border-white/10">
-          <Users className="mx-auto text-gray-300 mb-4 animate-bounce" size={48} />
-          <h3 className="text-lg font-serif font-bold text-gray-700 dark:text-gray-300">No se encontraron ministerios</h3>
-          <p className="text-gray-450 text-sm mt-1">Prueba a ajustar tu búsqueda o crea un nuevo ministerio.</p>
-        </div>
-      )}
+              </div>
+            </div>
+          );
+        }}
+      />
 
       {/* Modal / Formulario CRUD */}
       {showForm && (
