@@ -182,7 +182,7 @@ export default function StudentDashboard() {
               // Handle Supabase nested array return structures
               const modules: AssignmentModule | undefined = Array.isArray(a.lms_modules) ? a.lms_modules[0] : a.lms_modules;
               const subjects: AssignmentSubject | undefined = modules && Array.isArray(modules.lms_subjects) ? modules.lms_subjects[0] : (modules?.lms_subjects as AssignmentSubject | undefined);
-              const courses = subjects && Array.isArray(subjects.lms_courses) ? subjects.lms_courses[0] : subjects?.lms_courses;
+              const courses: { title: string } | undefined = subjects && Array.isArray(subjects.lms_courses) ? subjects.lms_courses[0] : (subjects?.lms_courses as { title: string } | undefined);
               const courseTitle = courses?.title || 'Curso';
               return {
                 id: a.id,

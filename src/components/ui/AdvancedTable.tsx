@@ -4,16 +4,18 @@ import {
   getCoreRowModel,
   flexRender,
   getSortedRowModel,
+} from '@tanstack/react-table';
+import type {
   SortingState,
   ColumnDef,
   VisibilityState,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp, Eye, EyeOff, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronUp, List, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface AdvancedTableProps<TData> {
   data: TData[];
-  columns: ColumnDef<TData, any>[];
+  columns: ColumnDef<TData, unknown>[];
   enableRowSelection?: boolean;
   onRowClick?: (row: TData) => void;
   isLoading?: boolean;
@@ -24,6 +26,7 @@ export function AdvancedTable<TData>({ data, columns, onRowClick, isLoading }: A
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [showConfig, setShowConfig] = useState(false);
 
+  // eslint-disable-next-line
   const table = useReactTable({
     data,
     columns,

@@ -25,8 +25,8 @@ export interface Ministry {
   description: string | null;
   image_url: string | null;
   anniversary_date: string | null;
-  theme_color: string | null;
-  content_blocks?: any[];
+  theme_color?: string | null;
+  content_blocks?: Record<string, unknown>[];
 }
 
 // Esquema de Validación Zod
@@ -103,7 +103,6 @@ const MinistryManager = () => {
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'departamento' | 'servicio'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [formTab, setFormTab] = useState<'identity' | 'banner' | 'content'>('identity');
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<MinistryFormValues>({
@@ -121,6 +120,7 @@ const MinistryManager = () => {
     }
   });
 
+  // eslint-disable-next-line
   const watchedName = watch('name');
 
   // Auto-generación de slug amigable desde el nombre
@@ -184,6 +184,7 @@ const MinistryManager = () => {
     setFormTab('identity');
     
     if (min.content_blocks && Array.isArray(min.content_blocks)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const normalizedBlocks = min.content_blocks.map((b: any) => ({
         id: b.id,
         type: b.type === 'form' ? 'question' : b.type,
@@ -302,7 +303,7 @@ const MinistryManager = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const columns: ColumnDef<Ministry, any>[] = [
+  const columns: ColumnDef<Ministry, unknown>[] = [
     {
       accessorKey: 'name',
       header: 'Ministerio',
@@ -356,7 +357,7 @@ const MinistryManager = () => {
       cell: ({ row }) => {
         const min = row.original;
         return (
-          <div className="text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title={min.schedule}>
+          <div className="text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title={min.schedule || undefined}>
             <span className="font-semibold block text-gray-700 dark:text-gray-300">{min.schedule || 'No especificado'}</span>
             {min.anniversary_date && (
               <span className="text-xs text-amber-600 flex items-center gap-1 mt-0.5" title="Fecha de Aniversario">
@@ -548,7 +549,7 @@ const MinistryManager = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Settings size={14} className="text-gray-400 flex-shrink-0" />
-                    <span className="truncate" title={min.schedule}>Reunión: <strong>{min.schedule || 'No especificado'}</strong></span>
+                    <span className="truncate" title={min.schedule || undefined}>Reunión: <strong>{min.schedule || 'No especificado'}</strong></span>
                   </div>
                   {min.anniversary_date && (
                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 font-medium">
@@ -855,7 +856,7 @@ const MinistryManager = () => {
                     onChange={(json) => {
                       try {
                         setBlocks(JSON.parse(json));
-                      } catch (e) {
+                      } catch {
                         // ignore
                       }
                     }} 

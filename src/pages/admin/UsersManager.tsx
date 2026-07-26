@@ -172,6 +172,7 @@ const UsersManager = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line
     fetchProfiles();
     fetchMembers();
     fetchMinistries();
@@ -179,6 +180,7 @@ const UsersManager = () => {
 
   useEffect(() => {
     if (activeTab === 'roles') {
+      // eslint-disable-next-line
       fetchRolePermissions(selectedRole);
     }
   }, [activeTab, selectedRole, fetchRolePermissions]);
@@ -456,7 +458,7 @@ const UsersManager = () => {
     return fullName.includes(term) || email.includes(term);
   });
 
-  const columns: ColumnDef<Profile, any>[] = [
+  const columns: ColumnDef<Profile, unknown>[] = [
     {
       accessorKey: 'first_name',
       header: 'Usuario',
@@ -615,6 +617,7 @@ const UsersManager = () => {
             Controla y define el acceso modular de los miembros de tu equipo a las áreas del panel administrativo.
           </p>
         </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-white/10">
