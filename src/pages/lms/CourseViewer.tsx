@@ -5,8 +5,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../config/supabase";
 import { useAuthStore } from "../../store/useAuthStore";
 import { 
-  ArrowLeft, CheckCircle, FileText, 
-  Menu, Send, CheckCircle2, 
+  ArrowLeft, CheckCircle, ChevronRight, FileText, 
+  Menu, Send, 
   User, Loader2, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +26,8 @@ import { CourseGradesTab } from "../../features/lms/CourseGradesTab";
 import { CourseActivitiesTab } from "../../features/lms/CourseActivitiesTab";
 import { CourseClassmatesTab } from "../../features/lms/CourseClassmatesTab";
 
+
+
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
   const { user, role, roles } = useAuthStore();
@@ -36,7 +38,6 @@ export default function CourseViewer() {
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
-  const [resources, setResources] = useState<any[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [badgeAwarded, setBadgeAwarded] = useState(false);
 
@@ -45,17 +46,15 @@ export default function CourseViewer() {
   const [activeTabId, setActiveTabId] = useState<string>("general");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Removed unused collapsed sections state
-
   // Forum State
   const [forumPosts, setForumPosts] = useState<any[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [postingToForum, setPostingToForum] = useState(false);
 
   // Quiz State
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState<number | null>(null);
+  const [, setQuizSubmitted] = useState(false);
+  const [, setQuizScore] = useState<number | null>(null);
+
   // Removed unused previousQuizAttempt state
 
   useEffect(() => {
@@ -240,7 +239,6 @@ export default function CourseViewer() {
   // --- QUIZ ACTIONS ---
   async function fetchQuizAttempts(lessonId: string) {
     setQuizSubmitted(false);
-    setQuizAnswers({});
     setQuizScore(null);
     try {
       const { data, error } = await supabase
@@ -260,52 +258,6 @@ export default function CourseViewer() {
       console.error(err);
     }
   }
-
-  const handleQuizSubmit = async () => {
-    if (!activeLesson?.content) return;
-
-    let parsedQuestions: any[];
-    try {
-      parsedQuestions = JSON.parse(activeLesson.content);
-    } catch {
-      toast.error("Error en el formato del Cuestionario");
-      return;
-    }
-
-    let correctCount = 0;
-    parsedQuestions.forEach((q, idx) => {
-      if (quizAnswers[idx] === q.correct_answer) {
-        correctCount++;
-      }
-    });
-
-    const finalScore = Math.round((correctCount / parsedQuestions.length) * 10); // scale out of 10
-
-    try {
-      const { error } = await supabase.from("lms_lesson_quiz_grades").insert([
-        {
-          lesson_id: activeLesson.id,
-          student_id: user?.id,
-          score: finalScore,
-          max_score: 10,
-          answers: quizAnswers,
-        },
-      ]);
-
-      if (error) throw error;
-
-      setQuizScore(finalScore);
-      setQuizSubmitted(true);
-      toast.success(`Cuestionario calificado: ${finalScore}/10`);
-
-      if (finalScore >= 7) {
-        await toggleLessonCompletion(activeLesson.id, true);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al subir los resultados del test");
-    }
-  };
 
   // --- COMPLETION LOGIC ---
   const toggleLessonCompletion = async (
@@ -349,6 +301,27 @@ export default function CourseViewer() {
     if (lessons.length === 0) return 0;
     const completedCount = Object.values(completions).filter(Boolean).length;
     return Math.round((completedCount / lessons.length) * 100);
+  };
+
+  /** Finds the next lesson in sequence after the current activeLesson */
+  const getNextLesson = () => {
+    if (!activeLesson || lessons.length === 0) return null;
+    const currentIdx = lessons.findIndex((l) => l.id === activeLesson.id);
+    if (currentIdx === -1 || currentIdx >= lessons.length - 1) return null;
+    return lessons[currentIdx + 1];
+  };
+
+  /** Navigate to the next available lesson */
+  const handleNextLesson = () => {
+    const next = getNextLesson();
+    if (next) {
+      const parentModule = modules.find((m) =>
+        lessons.some((l) => l.module_id === m.id && l.id === next.id)
+      );
+      if (parentModule) setActiveTabId(parentModule.id);
+      setActiveLesson(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -1003,26 +976,55 @@ export default function CourseViewer() {
                     )}
                   </div>
 
-                  {/* Mark as Complete Footer */}
-                  <div className="pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="text-xs text-gray-400">
-                      Marca la lección cuando hayas terminado el estudio o las
-                      tareas solicitadas.
+                  {/* Mark as Complete & Next Lesson Footer */}
+                  <div className="pt-6 border-t border-gray-200 dark:border-white/10 space-y-4">
+                    {/* Progress bar */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-gold to-emerald-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${calculateProgress()}%` }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {calculateProgress()}%
+                      </span>
                     </div>
 
-                    <button
-                      onClick={() => toggleLessonCompletion(activeLesson.id)}
-                      className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm ${
-                        completions[activeLesson.id]
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-gold hover:bg-yellow-600 text-white"
-                      }`}
-                    >
-                      <CheckCircle size={16} />
-                      {completions[activeLesson.id]
-                        ? "Marcar como Pendiente"
-                        : "Marcar como Completado"}
-                    </button>
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                      <div className="text-xs text-gray-400">
+                        Marca la lección cuando hayas terminado el estudio o las
+                        tareas solicitadas.
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleLessonCompletion(activeLesson.id)}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm ${
+                            completions[activeLesson.id]
+                              ? "bg-green-600 hover:bg-green-700 text-white"
+                              : "bg-gold hover:bg-yellow-600 text-white"
+                          }`}
+                        >
+                          <CheckCircle size={16} />
+                          {completions[activeLesson.id]
+                            ? "Marcar como Pendiente"
+                            : "Marcar como Completado"}
+                        </button>
+
+                        {getNextLesson() && (
+                          <button
+                            onClick={handleNextLesson}
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white hover:-translate-y-0.5"
+                          >
+                            Siguiente Lección
+                            <ChevronRight size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}

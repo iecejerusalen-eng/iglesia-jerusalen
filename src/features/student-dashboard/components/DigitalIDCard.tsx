@@ -20,7 +20,7 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
 
   if (!isOpen) return null;
 
-  const verificationUrl = `${window.location.origin}/verify/${student.id}`;
+  const verificationUrl = `${window.location.origin}/verify-student/${student.id}`;
 
   const handleDownload = () => {
     // Basic download functionality for the future, perhaps using html2canvas

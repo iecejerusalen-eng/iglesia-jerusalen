@@ -3,17 +3,10 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { 
-  GraduationCap, 
-  User, 
-  Users, 
-  ArrowRight, 
-  BookOpen, 
-  Compass, 
-  Award,
-  Calendar,
-  Loader2
-} from 'lucide-react';
+import { ShinyButton } from '../../components/ui/magicui/shiny-button';
+import { Marquee } from '../../components/ui/magicui/marquee';
+import { Award, BookOpen, Calendar, Compass, GraduationCap, Loader2, User, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
+
 import { AnimeFadeUp, AnimeFlipIn } from '../../components/animations/AnimeWrappers';
 
 const VirtualClassroomLanding = () => {
@@ -198,13 +191,13 @@ const VirtualClassroomLanding = () => {
                   </ul>
                 </div>
                 <div className="pt-8">
-                  <Link
-                    to="/login?redirectTo=/lms/estudiante"
-                    className="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                  <ShinyButton
+                    onClick={() => navigate('/login?redirectTo=/lms/estudiante')}
+                    className="w-full py-3.5"
                   >
                     <span>Ingresar como Estudiante</span>
                     <ArrowRight size={16} />
-                  </Link>
+                  </ShinyButton>
                 </div>
               </div>
             </AnimeFlipIn>
@@ -276,9 +269,44 @@ const VirtualClassroomLanding = () => {
           </div>
         </div>
 
+        {/* Marquee - Logros y Novedades de la Comunidad */}
+        <div className="space-y-4 pt-4">
+          <div className="text-center">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-500 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+              Comunidad en Acción
+            </span>
+            <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white mt-2">
+              Logros y Testimonios Recientes
+            </h3>
+          </div>
+
+          <Marquee pauseOnHover className="[--duration:25s] py-2">
+            {[
+              { name: 'Escuela de Teología', text: '¡12 nuevos egresados en Teología Sistemática I!' },
+              { name: 'Escuela Dominical', text: 'Nuevas guías interactivas disponibles para Jóvenes' },
+              { name: 'Certificación Digital', text: 'Verificación instantánea de diplomas con código QR' },
+              { name: 'Escuela de Cadetes', text: 'Lanzamiento del nivel Conquistadores 2026' },
+            ].map((card, i) => (
+              <div
+                key={i}
+                className="w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs flex items-center gap-3 shrink-0"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gold/15 text-gold border border-gold/30 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">{card.name}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-light leading-snug">{card.text}</p>
+                </div>
+              </div>
+            ))}
+          </Marquee>
+        </div>
+
       </div>
     </div>
   );
 };
 
 export default VirtualClassroomLanding;
+

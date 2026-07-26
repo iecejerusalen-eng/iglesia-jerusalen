@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, LayoutDashboard, Settings, Edit3 } from 'lucide-react';
+import { LMSLandingEditor } from '../../features/lms/components/LMSLandingEditor';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Navigate } from 'react-router-dom';
@@ -77,14 +78,7 @@ export default function LMSAcademicAdmin() {
         )}
         
         {activeTab === 'landing' && (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-200 dark:border-white/10 text-center">
-            <Edit3 className="mx-auto text-gold mb-4" size={48} />
-            <h2 className="text-2xl font-bold mb-2">Editor de Landing Page</h2>
-            <p className="text-gray-500 mb-6">Próximamente: Interfaz visual para modificar el banner, testimonios y secciones de bienvenida del aula virtual.</p>
-            <button className="bg-gold text-white px-6 py-2 rounded-lg font-bold hover:bg-yellow-600 transition-colors">
-              Guardar Cambios
-            </button>
-          </div>
+          <LMSLandingEditor />
         )}
 
         {activeTab === 'terms' && (

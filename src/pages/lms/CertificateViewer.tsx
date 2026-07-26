@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { Award, Printer, Share2, CheckCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface CertificateData {
   id: string;
@@ -197,9 +198,14 @@ export default function CertificateViewer() {
             </div>
 
             <div className="flex flex-col items-center">
-              {/* QR Code Placeholder - In a real app we'd use a QR library */}
               <div className="w-24 h-24 bg-white border border-gray-200 p-1 mb-2 flex items-center justify-center">
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.href)}`} alt="QR Code" className="w-full h-full opacity-80" />
+                <QRCodeSVG
+                  value={window.location.href}
+                  size={85}
+                  level={"H"}
+                  includeMargin={false}
+                  className="w-full h-full opacity-80"
+                />
               </div>
               <p className="text-[10px] text-gray-400">Escanea para verificar</p>
             </div>

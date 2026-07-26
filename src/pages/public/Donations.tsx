@@ -3,7 +3,7 @@ import { supabase } from '../../config/supabase';
 import type { DonationCategory } from '../../types';
 import { Heart, CreditCard, Landmark, CheckCircle2, ArrowRight, HeartHandshake, HandHeart, Users, Info } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
@@ -51,7 +51,7 @@ const Donations = () => {
   const [categories, setCategories] = useState<DonationCategory[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
   
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<DonationForm>({
+  const { register, handleSubmit, setValue, reset, control, formState: { errors, isSubmitting } } = useForm<DonationForm>({
     resolver: zodResolver(donationSchema),
     defaultValues: {
       isAnonymous: false,
@@ -61,41 +61,41 @@ const Donations = () => {
     }
   });
 
-  const watchPaymentMethod = watch('paymentMethod');
-  const watchIsAnonymous = watch('isAnonymous');
-  const watchAmount = watch('amount');
+  const watchPaymentMethod = useWatch({ control, name: 'paymentMethod' });
+  const watchIsAnonymous = useWatch({ control, name: 'isAnonymous' });
+  const watchAmount = useWatch({ control, name: 'amount' });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('donation_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('name', { ascending: true });
 
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('donation_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name', { ascending: true });
+        if (error) throw error;
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setCategories(data);
-        setValue('categoryId', data[0].id);
-      } else {
+        if (data && data.length > 0) {
+          setCategories(data);
+          setValue('categoryId', data[0].id);
+        } else {
+          setCategories(FALLBACK_CATEGORIES);
+          setValue('categoryId', FALLBACK_CATEGORIES[0].id);
+        }
+      } catch (err) {
+        console.error('Error al cargar categorías de Supabase, usando fallback:', err);
         setCategories(FALLBACK_CATEGORIES);
         setValue('categoryId', FALLBACK_CATEGORIES[0].id);
       }
-    } catch (err) {
-      console.error('Error al cargar categorías de Supabase, usando fallback:', err);
-      setCategories(FALLBACK_CATEGORIES);
-      setValue('categoryId', FALLBACK_CATEGORIES[0].id);
-    }
-  };
+    };
+    
+    fetchCategories();
+  }, [setValue]);
 
   const onSubmit = async (formData: DonationForm) => {
     if (formData.paymentMethod === 'tarjeta' || formData.paymentMethod === 'paypal') {
-      toast.info('Pasarelas de pago estarán disponibles próximamente. Por favor usa transferencia bancaria temporalmente.');
+      toast.info('Configuración requerida: Las pasarelas de pago necesitan que el administrador ingrese las credenciales (API Keys) de Stripe/PayPal. Usa transferencia bancaria por ahora.');
       return;
     }
 
@@ -122,7 +122,7 @@ const Donations = () => {
       setSuccess(data.id);
     } catch (err) {
       console.error('Error procesando donación en Supabase:', err);
-      const mockTxId = 'tx-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      const mockTxId = 'tx-' + (window.crypto?.randomUUID ? window.crypto.randomUUID().slice(0, 8) : '1001');
       setSuccess(mockTxId);
     }
   };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Trophy, Heart, Users, Phone, X, Play, 
@@ -10,6 +10,13 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import confetti from 'canvas-confetti';
 import { useRef } from 'react';
+import { logger } from '../../../utils/logger';
+
+const getRandomFloat = () => {
+  const array = new Uint32Array(1);
+  window.crypto.getRandomValues(array);
+  return array[0] / 4294967296;
+};
 
 interface Question {
   id: string;
@@ -22,6 +29,22 @@ interface Question {
   correct_option: string;
   explanation: string | null;
   image_url?: string | null;
+}
+
+interface ProfileInfo {
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  score: number;
+  level_reached: number;
+  mode: string;
+  created_at: string;
+  profiles?: ProfileInfo | ProfileInfo[] | null;
+  users?: ProfileInfo | ProfileInfo[] | null;
 }
 
 const PRIZE_TREE = [
@@ -66,7 +89,7 @@ export const Biblionario = () => {
   const bgmRef = useRef<HTMLAudioElement | null>(null);
 
   // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardMode, setLeaderboardMode] = useState<'normal' | 'infinite'>('normal');
   const [leaderboardTimeframe, setLeaderboardTimeframe] = useState<'all_time' | 'monthly'>('all_time');
@@ -99,9 +122,10 @@ export const Biblionario = () => {
   }, []);
   
   // Web Audio API Synth
-  const playBeep = (freq: number, type: OscillatorType, duration: number, vol = 0.1) => {
+  const playBeep = useCallback((freq: number, type: OscillatorType, duration: number, vol = 0.1) => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const audioCtx = new AudioCtx();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       oscillator.type = type;
@@ -113,9 +137,9 @@ export const Biblionario = () => {
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + duration);
     } catch (e) {
-      console.log("Audio not supported", e);
+      logger.warn("Audio not supported", { error: e });
     }
-  };
+  }, []);
 
   const stopAllAudio = () => {
     if (bgmRef.current) {
@@ -130,7 +154,7 @@ export const Biblionario = () => {
     // Play dynamic audio if available
     if (audioAssets[type]) {
       const audio = new Audio(audioAssets[type]);
-      audio.play().catch(e => console.log('Audio playback failed', e));
+      audio.play().catch(e => logger.warn('Audio playback failed', { error: e }));
       return; // Skip fallback if we played dynamic audio
     }
 
@@ -149,7 +173,7 @@ export const Biblionario = () => {
       // Drumroll simulation
       let delay = 0;
       for (let i = 0; i < 20; i++) {
-        setTimeout(() => playBeep(100 + Math.random() * 50, 'square', 0.05, 0.05), delay);
+        setTimeout(() => playBeep(100 + getRandomFloat() * 50, 'square', 0.05, 0.05), delay);
         delay += 100;
       }
     } else if (type === 'win') {
@@ -173,7 +197,7 @@ export const Biblionario = () => {
       
       if (data && data.length > 0) {
         // Seleccionar una pregunta aleatoria de este nivel
-        const randomIndex = Math.floor(Math.random() * data.length);
+        const randomIndex = Math.floor(getRandomFloat() * data.length);
         setCurrentQuestion(data[randomIndex]);
       } else {
         // Fallback: Si no hay preguntas de este nivel, traer cualquiera del nivel anterior
@@ -223,7 +247,7 @@ export const Biblionario = () => {
         bgmRef.current = new Audio(bgmUrl);
         bgmRef.current.loop = true;
         bgmRef.current.volume = 0.2;
-        bgmRef.current.play().catch(e => console.log('BGM blocked:', e));
+        bgmRef.current.play().catch(e => logger.warn('BGM blocked:', { error: e }));
       }
     }
   };
@@ -398,7 +422,7 @@ export const Biblionario = () => {
     // Para simplificar, la llamada al amigo se integra usando un alert o modal custom.
     // Vamos a usar un estado temporal aquí o mostrarlo directo:
     const accuracy = Math.max(40, 90 - (currentLevel * 3));
-    const isCorrect = Math.random() * 100 < accuracy;
+    const isCorrect = getRandomFloat() * 100 < accuracy;
     
     const friendGuess = isCorrect 
       ? currentQuestion.correct_option.toUpperCase() 
@@ -407,7 +431,7 @@ export const Biblionario = () => {
     alert(`Amigo: "¡Hola! He estado leyendo sobre esto. ${isCorrect ? 'Estoy bastante seguro' : 'Creo, aunque no estoy 100% seguro'} que la respuesta correcta es la ${friendGuess}."`);
   };
 
-  const fetchLeaderboard = async (modeFilter: 'normal' | 'infinite' = leaderboardMode, timeFilter: 'all_time' | 'monthly' = leaderboardTimeframe) => {
+  const fetchLeaderboard = useCallback(async (modeFilter: 'normal' | 'infinite' = leaderboardMode, timeFilter: 'all_time' | 'monthly' = leaderboardTimeframe) => {
     setLeaderboardLoading(true);
     try {
       let query = supabase
@@ -439,19 +463,21 @@ export const Biblionario = () => {
 
       if (error) throw error;
       setLeaderboard(data || []);
-      setGameState('leaderboard');
     } catch (err) {
       console.error(err);
     } finally {
       setLeaderboardLoading(false);
     }
-  };
+  }, [leaderboardMode, leaderboardTimeframe]);
 
   useEffect(() => {
     if (gameState === 'leaderboard') {
-      fetchLeaderboard(leaderboardMode, leaderboardTimeframe);
+      const timer = setTimeout(() => {
+        fetchLeaderboard(leaderboardMode, leaderboardTimeframe);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [leaderboardMode, leaderboardTimeframe]);
+  }, [gameState, leaderboardMode, leaderboardTimeframe, fetchLeaderboard]);
 
 
   // RENDERS
@@ -648,45 +674,49 @@ export const Biblionario = () => {
           {leaderboard.length === 0 ? (
             <p className="text-center text-blue-300 py-8">Aún no hay puntajes registrados. ¡Sé el primero!</p>
           ) : (
-            leaderboard.map((entry, index) => (
-              <div 
-                key={entry.id} 
-                className={`flex items-center justify-between p-4 rounded-xl ${
-                  index === 0 ? 'bg-gradient-to-r from-yellow-900/40 to-transparent border border-gold/30' : 
-                  index === 1 ? 'bg-gradient-to-r from-gray-500/20 to-transparent border border-gray-400/30' :
-                  index === 2 ? 'bg-gradient-to-r from-orange-900/30 to-transparent border border-orange-500/30' :
-                  'bg-blue-900/20 border border-blue-800/30'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <span className={`text-2xl font-bold w-8 text-center ${
-                    index === 0 ? 'text-gold' : 
-                    index === 1 ? 'text-gray-300' :
-                    index === 2 ? 'text-orange-400' : 'text-blue-400'
-                  }`}>
-                    #{index + 1}
-                  </span>
-                  <div className="w-10 h-10 rounded-full bg-blue-800 overflow-hidden flex items-center justify-center">
-                    {entry.users?.avatar_url ? (
-                      <img src={entry.users.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-blue-300 font-bold">
-                        {entry.users?.first_name?.charAt(0) || '?'}
-                      </span>
-                    )}
+            leaderboard.map((entry, index) => {
+              const rawProfile = entry.profiles || entry.users;
+              const profileData = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+              return (
+                <div 
+                  key={entry.id} 
+                  className={`flex items-center justify-between p-4 rounded-xl ${
+                    index === 0 ? 'bg-gradient-to-r from-yellow-900/40 to-transparent border border-gold/30' : 
+                    index === 1 ? 'bg-gradient-to-r from-gray-500/20 to-transparent border border-gray-400/30' :
+                    index === 2 ? 'bg-gradient-to-r from-orange-900/30 to-transparent border border-orange-500/30' :
+                    'bg-blue-900/20 border border-blue-800/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className={`text-2xl font-bold w-8 text-center ${
+                      index === 0 ? 'text-gold' : 
+                      index === 1 ? 'text-gray-300' :
+                      index === 2 ? 'text-orange-400' : 'text-blue-400'
+                    }`}>
+                      #{index + 1}
+                    </span>
+                    <div className="w-10 h-10 rounded-full bg-blue-800 overflow-hidden flex items-center justify-center">
+                      {profileData?.avatar_url ? (
+                        <img src={profileData.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-blue-300 font-bold">
+                          {profileData?.first_name?.charAt(0) || '?'}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-white font-bold">{profileData?.first_name || 'Jugador'} {profileData?.last_name || ''}</p>
+                      <p className="text-blue-400 text-sm">{entry.mode === 'normal' ? 'Clásico' : 'Infinito'} - Nivel {entry.level_reached}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-bold">{entry.users?.first_name} {entry.users?.last_name}</p>
-                    <p className="text-blue-400 text-sm">{entry.mode === 'normal' ? 'Clásico' : 'Infinito'} - Nivel {entry.level_reached}</p>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-gold drop-shadow-md">
+                      {entry.score?.toLocaleString() || 0}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-gold drop-shadow-md">
-                    {entry.score.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

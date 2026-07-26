@@ -143,7 +143,7 @@ export default function TeacherDashboard() {
                 className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-gold shadow-sm"
               >
                 <option value="">Seleccione un curso...</option>
-                {courses.map((course: any) => (
+                {courses.map((course: { id: string; title: string }) => (
                   <option key={course.id} value={course.id}>
                     {course.title}
                   </option>
@@ -170,7 +170,7 @@ export default function TeacherDashboard() {
                 studentsCount={students.length}
                 coursesCount={courses.length}
                 classesToday={classesToday}
-                assignmentsToGrade={submissions.filter((s: any) => !s.grade).length}
+                assignmentsToGrade={submissions.filter((s: { grade?: number }) => !s.grade).length}
                 recentSubmissions={submissions}
                 courses={courses}
                 activities={activities}
@@ -178,7 +178,7 @@ export default function TeacherDashboard() {
             )}
 
             {activeTab === 'classes' && (
-              <ClassesTab />
+              <ClassesTab sessions={sessions} courseId={selectedCourseId} />
             )}
 
             {activeTab === 'calendar' && (
@@ -198,11 +198,11 @@ export default function TeacherDashboard() {
                   students={students}
                   sessions={sessions}
                   groups={groups}
-                  onAddSession={(e: any, title: string, date: string) => {
+                  onAddSession={(e: React.FormEvent, title: string, date: string) => {
                     e.preventDefault();
                     createSessionMutation.mutate({ title, date });
                   }}
-                  onAddGroup={(e: any, name: string, desc: string) => {
+                  onAddGroup={(e: React.FormEvent, name: string, desc: string) => {
                     e.preventDefault();
                     createGroupMutation.mutate({ name, description: desc });
                   }}
@@ -255,11 +255,14 @@ export default function TeacherDashboard() {
                   students={students}
                   announcements={announcements}
                   tutoring={tutoring}
-                  onAddAnnouncement={(e: any, title: any, content: any) => {
+                  onAddAnnouncement={(e: React.FormEvent, title: string, content: string) => {
                     e?.preventDefault?.();
                     addAnnouncement.mutate({ title, content });
                   }}
-                  onAddTutoring={(data: any) => addTutoring.mutate(data)}
+                  onAddTutoring={(e: React.FormEvent, studentId: string, time: string, notes: string) => {
+                    e?.preventDefault?.();
+                    addTutoring.mutate({ studentId, time, notes });
+                  }}
                 />
                 <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-sm">
                   <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white mb-4">

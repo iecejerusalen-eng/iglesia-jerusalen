@@ -4,6 +4,25 @@ import { ADMIN_MODULES } from '../../../config/adminModules';
 import type { UserRole } from '../../../types';
 import type { AuthState } from '../../../store/useAuthStore';
 import { toast } from 'sonner';
+import { logger } from '../../../utils/logger';
+
+import type { AdminPreferences } from '../../../store/useThemeStore';
+
+export interface UserProfile {
+  role?: string | null;
+  roles?: string[] | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  photo_url?: string | null;
+  ministry_id?: string | null;
+  allowed_ministries?: string[] | null;
+  member_id?: string | null;
+  email?: string | null;
+  banned?: boolean;
+  permissions_override?: Record<string, { view: boolean; edit: boolean }> | null;
+  resolved_permissions?: Record<string, { view: boolean; edit: boolean }> | null;
+  admin_preferences?: AdminPreferences | null;
+}
 
 export const defaultFallbackPermissions: Record<string, { view: boolean; edit: boolean }> = ADMIN_MODULES.reduce((acc, m) => {
   acc[m.id] = { view: m.id === 'dashboard', edit: false };
@@ -58,7 +77,7 @@ export async function fetchOrCreateProfile(user: User) {
     // Profile exists — check if email, first_name, or last_name are missing and update them
     const needsUpdate = !data.email || (!data.first_name && firstName) || (!data.last_name && lastName);
     if (needsUpdate) {
-      const updates: Record<string, any> = {};
+      const updates: Record<string, unknown> = {};
       if (!data.email && userEmail) updates.email = userEmail;
       if (!data.first_name && firstName) updates.first_name = firstName;
       if (!data.last_name && lastName) updates.last_name = lastName;
@@ -126,7 +145,7 @@ export async function fetchOrCreateProfile(user: User) {
  */
 export function applyProfile(
   set: (state: Partial<AuthState>) => void,
-  profile: any,
+  profile: UserProfile | null | undefined,
   user: User
 ) {
   if (profile) {
@@ -146,9 +165,10 @@ export function applyProfile(
     });
     
     // Apply admin preferences if available
-    if (profile.admin_preferences) {
+    const adminPrefs = profile.admin_preferences;
+    if (adminPrefs) {
       import('../../../store/useThemeStore').then(({ useThemeStore }) => {
-        useThemeStore.getState().setAdminPreferences(profile.admin_preferences);
+        useThemeStore.getState().setAdminPreferences(adminPrefs);
       });
     }
   } else {
@@ -222,7 +242,7 @@ export const initializeAuthLogic = (
 
     // 2. Listen for future auth changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth Event]', event, session?.user?.email);
+      logger.info('[Auth Event]', { event, email: session?.user?.email });
 
       const currentUser = get().user;
 

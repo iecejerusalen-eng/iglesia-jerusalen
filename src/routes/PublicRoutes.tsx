@@ -53,6 +53,8 @@ const SermonDetail = lazyWithRetry(() => import('../pages/public/SermonDetail'))
 const Birthdays = lazyWithRetry(() => import('../pages/public/Birthdays'));
 const Bible = lazyWithRetry(() => import('../pages/public/Bible'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
+const VerifyStudent = lazyWithRetry(() => import('../pages/public/VerifyStudent'));
+
 
 const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m => ({ default: m.GamesHub })));
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
@@ -91,6 +93,7 @@ export default function PublicRoutes() {
         <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
         <Route path="/recursos/juegos/ahorcado-biblico" element={<Hangman />} />
         <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
+        <Route path="/verify-student/:studentId" element={<VerifyStudent />} />
       </Route>
     </Routes>
   );

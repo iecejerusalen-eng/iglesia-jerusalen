@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -8,7 +8,9 @@ import {
   Calendar, Clock, Users, X, AlertCircle, 
   CheckCircle, PlusCircle, Search, Bookmark, Lock, GraduationCap as PathIcon
 } from 'lucide-react';
-import type { LMSCourse, Study } from '../../types';
+import { ShinyButton } from '../../components/ui/magicui/shiny-button';
+import { BorderBeam } from '../../components/ui/magicui/border-beam';
+import type { LMSCourse, Study, LMSEnrollment } from '../../types';
 import { toast } from 'sonner';
 
 interface CourseCategory {
@@ -30,7 +32,7 @@ export default function ProgramsOverview() {
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   
   // User enrollment / request states
-  const [userEnrollments, setUserEnrollments] = useState<Record<string, any>>({});
+  const [userEnrollments, setUserEnrollments] = useState<Record<string, LMSEnrollment>>({});
   const [userRequests, setUserRequests] = useState<Record<string, string>>({}); // course_id -> status
   const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
   const [courseProgress, setCourseProgress] = useState<Record<string, number>>({});
@@ -41,21 +43,7 @@ export default function ProgramsOverview() {
   const [videoModalUrl, setVideoModalUrl] = useState<string | null>(null);
   const [submittingEnrollment, setSubmittingEnrollment] = useState<string>('');
 
-  useEffect(() => {
-    fetchInitialData();
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (user) {
-      fetchUserEnrollmentsAndRequests();
-    } else {
-      setUserEnrollments({});
-      setUserRequests({});
-      setCourseProgress({});
-    }
-  }, [user, courses]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'studies') {
@@ -89,7 +77,7 @@ export default function ProgramsOverview() {
           .select('course_id');
         
         const counts: Record<string, number> = {};
-        enrollments?.forEach((e: any) => {
+        enrollments?.forEach((e: { course_id: string }) => {
           counts[e.course_id] = (counts[e.course_id] || 0) + 1;
         });
         setEnrollmentCounts(counts);
@@ -99,9 +87,9 @@ export default function ProgramsOverview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
-  const fetchUserEnrollmentsAndRequests = async () => {
+  const fetchUserEnrollmentsAndRequests = useCallback(async () => {
     if (!user) return;
     try {
       // Fetch enrollments
@@ -110,9 +98,9 @@ export default function ProgramsOverview() {
         .select('*')
         .eq('user_id', user.id);
 
-      const enrollMap: Record<string, any> = {};
+      const enrollMap: Record<string, LMSEnrollment> = {};
       enrolls?.forEach(e => {
-        enrollMap[e.course_id] = e;
+        enrollMap[e.course_id] = e as LMSEnrollment;
       });
       setUserEnrollments(enrollMap);
 
@@ -159,7 +147,18 @@ export default function ProgramsOverview() {
     } catch (err) {
       console.error('Error fetching user enrollments/requests:', err);
     }
-  };
+  }, [user, courses]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserEnrollmentsAndRequests();
+    }
+  }, [user, fetchUserEnrollmentsAndRequests]);
+
 
   const handleEnrollRequest = async (courseId: string) => {
     if (!user) {
@@ -208,13 +207,13 @@ export default function ProgramsOverview() {
   // Group courses by categories (Rutas)
   const coursesByCategory = (catName: string) => {
     return courses.filter(c => {
-      const courseCat = (c.lms_course_categories as any)?.name || 'Otros Programas';
+      const courseCat = (c.lms_course_categories as { name?: string } | null)?.name || 'Otros Programas';
       return courseCat === catName;
     });
   };
 
   const displayCategories = [...categories];
-  const hasUncategorized = courses.some(c => !(c.lms_course_categories as any)?.name);
+  const hasUncategorized = courses.some(c => !(c.lms_course_categories as { name?: string } | null)?.name);
   if (hasUncategorized && !displayCategories.some(cat => cat.name === 'Otros Programas')) {
     displayCategories.push({
       id: 'uncategorized',
@@ -359,6 +358,12 @@ export default function ProgramsOverview() {
                               {study.category}
                             </span>
                           </div>
+                          <div className="absolute top-3 right-3">
+                            <span className="px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/25 backdrop-blur-sm flex items-center gap-1">
+                              <BookOpen size={10} />
+                              Lectura Inmediata
+                            </span>
+                          </div>
                         </div>
 
                         {/* Details */}
@@ -494,6 +499,10 @@ export default function ProgramsOverview() {
                                     
                                     {/* Meta Tags */}
                                     <div className="flex flex-wrap gap-2 mt-1.5 text-xxs font-bold text-indigo-600 dark:text-indigo-400">
+                                      <span className="flex items-center gap-1 bg-gold/10 px-2 py-0.5 rounded-md border border-gold/25 text-gold">
+                                        <GraduationCap size={11} />
+                                        Curso Certificado
+                                      </span>
                                       {course.duration && (
                                         <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-100/50">
                                           <Clock size={11} /> {course.duration}
@@ -543,6 +552,10 @@ export default function ProgramsOverview() {
                                 )}
                               </div>
 
+                              {enrolled && (
+                                <BorderBeam duration={10} colorFrom="#10b981" colorTo="#6366f1" size={150} />
+                              )}
+
                               {/* Button Logic */}
                               <div className="pt-6 mt-4 border-t border-gray-100 dark:border-white/5 flex justify-end">
                                 {enrolled ? (
@@ -585,20 +598,20 @@ export default function ProgramsOverview() {
                                     Cupo Completo
                                   </button>
                                 ) : (
-                                  <button
+                                  <ShinyButton
                                     onClick={() => handleEnrollRequest(course.id)}
                                     disabled={submittingEnrollment === course.id}
-                                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                                    className="px-5 py-2.5 bg-indigo-600 text-white font-bold"
                                   >
                                     {submittingEnrollment === course.id ? (
                                       <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                                     ) : (
                                       <>
                                         <Bookmark size={14} />
-                                        Inscríbete
+                                        Inscríbete al Programa
                                       </>
                                     )}
-                                  </button>
+                                  </ShinyButton>
                                 )}
                               </div>
                             </motion.div>

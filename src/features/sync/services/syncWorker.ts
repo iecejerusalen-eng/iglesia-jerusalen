@@ -3,6 +3,7 @@ import { getDb } from '../../../config/localDb';
 import { resolveConflict } from '../../../utils/conflictResolver';
 import { toast } from 'sonner';
 import { pullFromServer } from './syncPull';
+import { logger } from '../../../utils/logger';
 
 export interface SyncQueueItem {
   id: string;
@@ -33,7 +34,7 @@ export const processSyncQueue = async (
       return;
     }
 
-    console.log(`Processing sync queue: ${queue.length} mutations...`);
+    logger.info(`Processing sync queue: ${queue.length} mutations...`);
 
     for (const item of queue) {
       const payload = JSON.parse(item.payload);
@@ -73,7 +74,7 @@ export const processSyncQueue = async (
             const conflict = resolveConflict(localRecord, remoteRecord);
 
             if (conflict.winner === 'remote') {
-              console.log(`Conflict resolved: Server wins for ${item.table_name} id ${item.record_id}`);
+              logger.info(`Conflict resolved: Server wins for ${item.table_name} id ${item.record_id}`);
               toast.warning(`Tus cambios en ${item.table_name} no se aplicaron porque alguien más modificó el registro.`);
               const r = conflict.resolvedRecord;
               

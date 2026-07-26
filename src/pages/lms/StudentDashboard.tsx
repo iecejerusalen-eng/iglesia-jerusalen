@@ -18,10 +18,14 @@ import { GradesOverviewWidget } from '../../features/student-dashboard/component
 import { MyAttendanceWidget } from '../../features/student-dashboard/components/MyAttendanceWidget';
 import { DigitalIDCard } from '../../features/student-dashboard/components/DigitalIDCard';
 import { XPBarWidget } from '../../features/student-dashboard/components/XPBarWidget';
+import { StudentStatsTab } from '../../features/lms/components/StudentStatsTab';
 import { LeaderboardWidget } from '../../features/student-dashboard/components/LeaderboardWidget';
 import { BadgeShowcase } from '../../features/student-dashboard/components/BadgeShowcase';
 import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
+import { NumberTicker } from '../../components/ui/magicui/number-ticker';
+import { BorderBeam } from '../../components/ui/magicui/border-beam';
 import type { PendingTask } from '../../features/student-dashboard/components/PendingTasksWidget';
+
 
 // Define the interface for the enrollment progress object to replace `any`
 interface CourseProgress {
@@ -161,8 +165,7 @@ export default function StudentDashboard() {
 
           const formattedTasks = assignmentsData
             .filter((a) => !submittedIds.has(a.id))
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((a: any) => {
+            .map((a: { id: string; title: string; due_date: string; lms_modules?: { lms_subjects?: { lms_courses?: { title: string } | { title: string }[] } } }) => {
               const courses = a.lms_modules?.lms_subjects?.lms_courses;
               const courseTitle = Array.isArray(courses) ? courses[0]?.title : courses?.title || 'Curso';
               return {
@@ -352,14 +355,17 @@ export default function StudentDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {enrollments.map((enr) => (
+                {enrollments.map((enr, idx) => (
                   <motion.div
                     key={enr.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     whileHover={{ y: -5 }}
-                    className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group flex flex-col"
+                    className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group flex flex-col"
                   >
+                    {idx === 0 && (
+                      <BorderBeam duration={12} colorFrom="#eab308" colorTo="#6366f1" size={160} />
+                    )}
                     <div className="h-48 overflow-hidden relative">
                       <img loading="lazy" 
                         src={enr.lms_courses?.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
@@ -383,8 +389,8 @@ export default function StudentDashboard() {
                       </p>
                       
                       <div className="mt-auto pt-4 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 px-3 py-1 rounded-full">
-                          {enr.completed} / {enr.total} Lecciones
+                        <span className="text-sm font-medium text-slate-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 px-3 py-1 rounded-full flex items-center gap-1">
+                          <NumberTicker value={enr.completed} className="text-slate-700 dark:text-slate-300 font-bold" /> / {enr.total} Lecciones
                         </span>
                         
                         <Link 
@@ -420,11 +426,7 @@ export default function StudentDashboard() {
 
         {/* STATS TAB */}
         {activeTab === 'stats' && (
-          <AnimeFadeUp className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-gray-100 dark:border-white/10 text-center shadow-sm">
-            <BarChart3 className="mx-auto text-gold mb-4" size={48} />
-            <h2 className="text-2xl font-bold mb-2">Estadísticas de Aprendizaje</h2>
-            <p className="text-gray-500">Próximamente: Gráficos de horas de estudio, progreso histórico e insignias ganadas detalladas.</p>
-          </AnimeFadeUp>
+          <StudentStatsTab />
         )}
 
         {/* BADGES TAB */}
