@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronDown, Search } from 'lucide-react';
+import { X, ChevronDown, Search, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
@@ -190,6 +190,17 @@ const Navigation = () => {
             </kbd>
           </button>
           <ThemeToggle />
+          <button 
+            className={`md:hidden p-2 rounded-lg transition-colors cursor-pointer ${
+              isTransparent 
+                ? 'text-white hover:bg-white/10' 
+                : 'text-primary dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10'
+            }`}
+            onClick={() => setIsOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={24} />
+          </button>
         </div>
       </div>
 
