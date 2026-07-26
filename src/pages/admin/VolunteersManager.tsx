@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import type { VolunteerShift, VolunteerAssignment, Ministry } from '../../types';
-import { Shield, Plus, Calendar, Users, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { Shield, Plus, Calendar, Users, Trash2, CheckCircle2, Clock, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function VolunteersManager() {
   const [shifts, setShifts] = useState<VolunteerShift[]>([]);
@@ -23,8 +24,8 @@ export default function VolunteersManager() {
   const loadData = async () => {
     try {
       const [shiftsRes, assignRes, minRes] = await Promise.all([
-        supabase.from('volunteer_shifts').select('*, ministries(name)').order('start_time', { ascending: false }),
-        supabase.from('volunteer_assignments').select('*, members(first_name, last_name)').order('created_at', { ascending: false }),
+        supabase.from('volunteer_shifts').select('*, ministries(name)').order('start_time', { ascending: false }).limit(50),
+        supabase.from('volunteer_assignments').select('*, members(first_name, last_name)').order('created_at', { ascending: false }).limit(100),
         supabase.from('ministries').select('id, name').order('name')
       ]);
 
@@ -44,9 +45,7 @@ export default function VolunteersManager() {
   };
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      loadData();
-    });
+    loadData();
   }, []);
 
   const handleOpenModal = () => {
@@ -115,154 +114,238 @@ export default function VolunteersManager() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+      {/* HEADER */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6"
+      >
         <div>
-          <h1 className="text-3xl font-bold dark:text-white flex items-center gap-3">
+          <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3">
             <Shield className="w-8 h-8 text-indigo-500" /> Voluntariado
           </h1>
-          <p className="text-slate-500 mt-2">Gestiona los turnos y asignaciones de servicio.</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
+            Gestiona los turnos y asignaciones de servicio.
+          </p>
         </div>
         <button
           onClick={handleOpenModal}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2"
+          className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
           <Plus className="w-5 h-5" /> Crear Turno
         </button>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Turnos */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden flex flex-col h-[600px]"
+        >
+          <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-slate-800/50">
+            <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Calendar className="w-5 h-5 text-indigo-500" /> Turnos Programados
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {loading ? <p className="text-center text-slate-500 py-10">Cargando...</p> : shifts.map(shift => {
-              const shiftAssignments = assignments.filter(a => a.shift_id === shift.id);
-              const confirmedCount = shiftAssignments.filter(a => a.status === 'confirmed').length;
-
-              return (
-                <div key={shift.id} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            {loading ? (
+              // SKELETON LOADER
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="border border-gray-200 dark:border-white/10 rounded-xl p-4 animate-pulse">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-slate-900 dark:text-white">{shift.title}</h3>
-                    <button onClick={() => handleDeleteShift(shift.id)} className="text-slate-400 hover:text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="h-5 bg-gray-200 dark:bg-slate-800 rounded w-1/2"></div>
+                    <div className="w-6 h-6 bg-gray-200 dark:bg-slate-800 rounded-lg"></div>
                   </div>
-                  <div className="text-xs text-slate-500 flex flex-col gap-1 mb-3">
-                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {formatDateTime(shift.start_time)} - {new Date(shift.end_time).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</span>
-                    {shift.ministries && <span className="text-indigo-500 font-medium">{shift.ministries.name}</span>}
-                  </div>
-                  
-                  <div className="bg-slate-50 dark:bg-slate-950 rounded-lg p-3">
-                    <div className="flex justify-between items-center text-xs font-semibold mb-2">
-                      <span className="text-slate-500 uppercase tracking-wider">Voluntarios</span>
-                      <span className={`${confirmedCount >= shift.required_volunteers ? 'text-green-500' : 'text-amber-500'}`}>
-                        {confirmedCount} / {shift.required_volunteers}
-                      </span>
-                    </div>
-                    {shiftAssignments.length > 0 ? (
-                      <div className="space-y-2 mt-2">
-                        {shiftAssignments.map(a => (
-                          <div key={a.id} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2 rounded-md">
-                            <span className="dark:text-slate-300">{a.members?.first_name} {a.members?.last_name}</span>
-                            <div className="flex items-center gap-2">
-                              {a.status === 'pending' && (
-                                <>
-                                  <button onClick={() => handleUpdateAssignmentStatus(a.id, 'confirmed')} className="text-green-500 hover:bg-green-50 p-1 rounded"><CheckCircle2 className="w-4 h-4" /></button>
-                                  <button onClick={() => handleUpdateAssignmentStatus(a.id, 'cancelled')} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 className="w-4 h-4" /></button>
-                                </>
-                              )}
-                              {a.status === 'confirmed' && <span className="text-xs font-bold text-green-500 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Confirmado</span>}
-                              {a.status === 'cancelled' && <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">Cancelado</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 text-center py-2">Sin registros aún</p>
-                    )}
-                  </div>
+                  <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-1/3 mb-4"></div>
+                  <div className="h-24 bg-gray-100 dark:bg-slate-950 rounded-lg"></div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))
+            ) : shifts.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-10">No hay turnos programados.</p>
+            ) : (
+              <AnimatePresence>
+                {shifts.map((shift, i) => {
+                  const shiftAssignments = assignments.filter(a => a.shift_id === shift.id);
+                  const confirmedCount = shiftAssignments.filter(a => a.status === 'confirmed').length;
 
-        {/* Panel derecho u otras métricas */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden h-[600px] flex flex-col">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-500" /> Solicitudes Recientes
+                  return (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      key={shift.id} 
+                      className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{shift.title}</h3>
+                        <button onClick={() => handleDeleteShift(shift.id)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1 mb-3">
+                        <span className="flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5 text-indigo-500" /> {formatDateTime(shift.start_time)} - {new Date(shift.end_time).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</span>
+                        {shift.ministries && <span className="text-indigo-500 font-bold ml-5">{shift.ministries.name}</span>}
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-slate-950 rounded-lg p-3 border border-gray-100 dark:border-white/5">
+                        <div className="flex justify-between items-center text-[10px] font-bold mb-2 uppercase tracking-wider">
+                          <span className="text-gray-500 dark:text-gray-400">Voluntarios</span>
+                          <span className={`px-2 py-0.5 rounded-full ${confirmedCount >= shift.required_volunteers ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                            {confirmedCount} / {shift.required_volunteers}
+                          </span>
+                        </div>
+                        {shiftAssignments.length > 0 ? (
+                          <div className="space-y-2 mt-2">
+                            {shiftAssignments.map(a => (
+                              <div key={a.id} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10 p-2 rounded-md shadow-xs">
+                                <span className="dark:text-gray-200 font-medium">{a.members?.first_name} {a.members?.last_name}</span>
+                                <div className="flex items-center gap-1">
+                                  {a.status === 'pending' && (
+                                    <>
+                                      <button onClick={() => handleUpdateAssignmentStatus(a.id, 'confirmed')} className="text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 p-1.5 rounded-md transition-colors cursor-pointer"><CheckCircle2 className="w-4 h-4" /></button>
+                                      <button onClick={() => handleUpdateAssignmentStatus(a.id, 'cancelled')} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-md transition-colors cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+                                    </>
+                                  )}
+                                  {a.status === 'confirmed' && <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-900/50 px-2 py-1 rounded-md uppercase">Confirmado</span>}
+                                  {a.status === 'cancelled' && <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900/50 px-2 py-1 rounded-md uppercase">Cancelado</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 text-center py-2 italic">Aún no hay voluntarios asignados</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Solicitudes Recientes */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col"
+        >
+          <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-slate-800/50">
+            <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-indigo-500" /> Solicitudes Pendientes
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-             {assignments.filter(a => a.status === 'pending').map(a => {
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+             {loading ? (
+                // SKELETON LOADER
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="border border-gray-200 dark:border-white/10 rounded-xl p-4 animate-pulse">
+                    <div className="h-5 bg-gray-200 dark:bg-slate-800 rounded w-1/3 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-2/3 mb-4"></div>
+                    <div className="flex gap-2">
+                       <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded flex-1"></div>
+                       <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded flex-1"></div>
+                    </div>
+                  </div>
+                ))
+             ) : assignments.filter(a => a.status === 'pending').map((a, i) => {
                const shift = shifts.find(s => s.id === a.shift_id);
                return (
-                 <div key={a.id} className="border border-amber-200 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-4">
-                   <div className="font-bold text-slate-900 dark:text-white">{a.members?.first_name} {a.members?.last_name}</div>
-                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">Solicita servir en: <strong>{shift?.title}</strong></div>
-                   <div className="text-xs text-slate-500 mt-1">{shift ? formatDateTime(shift.start_time) : ''}</div>
-                   
-                   <div className="flex gap-2 mt-3">
-                     <button onClick={() => handleUpdateAssignmentStatus(a.id, 'confirmed')} className="flex-1 bg-green-500 text-white text-xs font-bold py-2 rounded-lg">Aprobar</button>
-                     <button onClick={() => handleUpdateAssignmentStatus(a.id, 'cancelled')} className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold py-2 rounded-lg">Rechazar</button>
+                 <motion.div 
+                   initial={{ opacity: 0, scale: 0.95 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   transition={{ delay: i * 0.05 }}
+                   key={a.id} 
+                   className="border border-amber-200 dark:border-amber-900/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 rounded-xl p-4 shadow-sm"
+                 >
+                   <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                     {a.members?.first_name} {a.members?.last_name}
                    </div>
-                 </div>
+                   <div className="text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium">Solicita servir en: <span className="text-indigo-600 dark:text-indigo-400 font-bold">{shift?.title}</span></div>
+                   <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">{shift ? formatDateTime(shift.start_time) : ''}</div>
+                   
+                   <div className="flex gap-2 mt-4">
+                     <button onClick={() => handleUpdateAssignmentStatus(a.id, 'confirmed')} className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 rounded-lg shadow-sm transition-colors cursor-pointer">Aprobar</button>
+                     <button onClick={() => handleUpdateAssignmentStatus(a.id, 'cancelled')} className="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 text-xs font-bold py-2 rounded-lg shadow-sm transition-colors cursor-pointer">Rechazar</button>
+                   </div>
+                 </motion.div>
                );
              })}
-             {assignments.filter(a => a.status === 'pending').length === 0 && (
-               <p className="text-center text-slate-500 py-10">No hay solicitudes pendientes.</p>
+             {!loading && assignments.filter(a => a.status === 'pending').length === 0 && (
+               <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 space-y-3 opacity-60">
+                 <CheckCircle2 className="w-12 h-12" />
+                 <p className="text-sm">Todo al día.<br/>No hay solicitudes pendientes.</p>
+               </div>
              )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 shadow-2xl">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-              <h2 className="text-xl font-bold dark:text-white">Nuevo Turno</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400">✕</button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Título</label>
-                <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2" placeholder="Ej. Ujieres Culto Dominical" />
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-gray-200 dark:border-white/10 shadow-2xl z-10"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-t-2xl">
+                <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                  <Shield className="text-indigo-500 w-5 h-5" />
+                  Nuevo Turno
+                </h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Ministerio (Opcional)</label>
-                <select value={formData.ministry_id || ''} onChange={e => setFormData({...formData, ministry_id: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2">
-                  <option value="">Selecciona un ministerio</option>
-                  {ministries.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Inicio</label>
-                  <input type="datetime-local" required value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2" />
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Título</label>
+                  <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all" placeholder="Ej. Ujieres Culto Dominical" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Fin</label>
-                  <input type="datetime-local" required value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2" />
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ministerio (Opcional)</label>
+                  <select value={formData.ministry_id || ''} onChange={e => setFormData({...formData, ministry_id: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all">
+                    <option value="">Selecciona un ministerio</option>
+                    {ministries.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1 dark:text-slate-300">Voluntarios Requeridos</label>
-                <input type="number" min="1" required value={formData.required_volunteers} onChange={e => setFormData({...formData, required_volunteers: parseInt(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2" />
-              </div>
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-500 font-bold">Cancelar</button>
-                <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold">Guardar</button>
-              </div>
-            </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Inicio</label>
+                    <input type="datetime-local" required value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Fin</label>
+                    <input type="datetime-local" required value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Voluntarios Requeridos</label>
+                  <input type="number" min="1" required value={formData.required_volunteers} onChange={e => setFormData({...formData, required_volunteers: parseInt(e.target.value)})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all" />
+                </div>
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-white/10">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">Cancelar</button>
+                  <button type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer">Guardar Turno</button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

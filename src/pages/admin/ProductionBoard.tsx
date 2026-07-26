@@ -11,6 +11,7 @@ import {
   Layers, Hammer, Move, FileText
 } from 'lucide-react';
 import type { Ministry } from '../../types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ticketSchema = z.object({
   title: z.string().min(1, 'El título es requerido'),
@@ -41,10 +42,10 @@ interface ProductionTicket {
 }
 
 const COLUMNS = [
-  { id: 'backlog', name: 'Reserva / Backlog', color: 'border-t-slate-500 bg-slate-50/50 dark:bg-slate-900/10' },
-  { id: 'todo', name: 'Por Hacer', color: 'border-t-blue-500 bg-blue-50/30 dark:bg-blue-950/10' },
-  { id: 'in_progress', name: 'En Progreso', color: 'border-t-amber-500 bg-amber-50/30 dark:bg-amber-950/10' },
-  { id: 'done', name: 'Completado', color: 'border-t-green-500 bg-green-50/30 dark:bg-green-950/10' }
+  { id: 'backlog', name: 'Reserva / Backlog', color: 'border-t-slate-500 bg-white/40 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300' },
+  { id: 'todo', name: 'Por Hacer', color: 'border-t-blue-500 bg-blue-50/40 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300' },
+  { id: 'in_progress', name: 'En Progreso', color: 'border-t-amber-500 bg-amber-50/40 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' },
+  { id: 'done', name: 'Completado', color: 'border-t-green-500 bg-green-50/40 dark:bg-green-950/40 text-green-700 dark:text-green-300' }
 ] as const;
 
 const ProductionBoard = () => {
@@ -78,7 +79,8 @@ const ProductionBoard = () => {
       const { data: ticketsData, error: ticketsError } = await supabase
         .from('production_tickets')
         .select('*, ministries(name, theme_color)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (ticketsError) throw ticketsError;
       setTickets(ticketsData || []);
@@ -196,24 +198,28 @@ const ProductionBoard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-10 space-y-8">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6"
+      >
         <div className="space-y-1">
           <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <Columns className="text-primary" />
-            Logística de Producción (Kanban)
+            <Columns className="text-primary w-8 h-8" />
+            Producción
           </h1>
           <p className="text-gray-500 dark:text-gray-450 text-sm">
-            Control de materiales y requerimientos de producción gráfica para los ministerios de la iglesia.
+            Control de materiales y requerimientos de producción gráfica.
           </p>
         </div>
         
         <div className="flex items-center gap-2">
           <button
             onClick={fetchData}
-            className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400 transition-colors shadow-sm cursor-pointer"
             title="Refrescar datos"
           >
             <RefreshCw size={18} />
@@ -222,151 +228,183 @@ const ProductionBoard = () => {
           {canEdit && (
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl shadow-md cursor-pointer transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary-hover text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:-translate-y-0.5 cursor-pointer transition-all"
             >
               <Plus size={18} />
               Nuevo Ticket
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-40">
-          <RefreshCw className="animate-spin text-primary" size={32} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+           {Array.from({length: 4}).map((_, i) => (
+             <div key={i} className="rounded-2xl border-t-4 border-gray-200 dark:border-slate-800 bg-white/30 dark:bg-slate-900/30 p-4 h-[500px] animate-pulse">
+                <div className="h-6 bg-gray-200 dark:bg-slate-800 rounded w-1/2 mb-4"></div>
+                <div className="space-y-3">
+                  <div className="h-32 bg-gray-100 dark:bg-slate-800/50 rounded-xl"></div>
+                  <div className="h-32 bg-gray-100 dark:bg-slate-800/50 rounded-xl"></div>
+                </div>
+             </div>
+           ))}
         </div>
       ) : (
         /* Kanban Columns Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-          {COLUMNS.map((col) => {
+          {COLUMNS.map((col, i) => {
             const colTickets = tickets.filter(t => t.status === col.id);
 
             return (
-              <div 
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
                 key={col.id} 
-                className={`rounded-2xl border-t-4 border border-gray-150 dark:border-white/10 p-4 shadow-sm flex flex-col space-y-4 min-h-[500px] ${col.color}`}
+                className={`rounded-2xl border-t-4 border border-gray-150 dark:border-white/10 p-4 shadow-xl backdrop-blur-xl flex flex-col space-y-4 min-h-[600px] ${col.color}`}
               >
                 {/* Column Title */}
-                <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
-                  <h3 className="font-bold text-sm text-gray-750 dark:text-gray-200">{col.name}</h3>
-                  <span className="text-xs bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 font-semibold px-2 py-0.5 rounded-full">
+                <div className="flex justify-between items-center border-b border-gray-200/50 dark:border-white/10 pb-3">
+                  <h3 className="font-bold text-sm tracking-wide">{col.name}</h3>
+                  <span className="text-xs bg-white/60 dark:bg-black/40 border border-gray-200/50 dark:border-white/10 font-bold px-2.5 py-1 rounded-full shadow-sm">
                     {colTickets.length}
                   </span>
                 </div>
 
                 {/* Tickets list */}
-                <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
-                    {colTickets.map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 p-4 shadow-xs hover:shadow-md transition-all space-y-3 relative group"
-                      >
-                        {/* Requester Ministry Tag */}
-                        {ticket.ministries && (
-                          <span 
-                            className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-                            style={{ backgroundColor: ticket.ministries.theme_color || '#d97706' }}
-                          >
-                            {ticket.ministries.name}
-                          </span>
-                        )}
+                <div className="space-y-4 overflow-y-auto max-h-[650px] pr-1 custom-scrollbar pb-10">
+                    <AnimatePresence>
+                      {colTickets.map((ticket) => (
+                        <motion.div
+                          layout
+                          layoutId={ticket.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          key={ticket.id}
+                          className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl border border-gray-200/50 dark:border-white/10 p-4 shadow-sm hover:shadow-xl transition-shadow space-y-3 relative group"
+                        >
+                          {/* Requester Ministry Tag */}
+                          {ticket.ministries && (
+                            <span 
+                              className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm"
+                              style={{ backgroundColor: ticket.ministries.theme_color || '#d97706' }}
+                            >
+                              {ticket.ministries.name}
+                            </span>
+                          )}
 
-                        <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug">{ticket.title}</h4>
-                        {ticket.description && (
-                          <p className="text-xs text-gray-500 dark:text-gray-450 line-clamp-2 leading-relaxed">{ticket.description}</p>
-                        )}
+                          <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug">{ticket.title}</h4>
+                          {ticket.description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-450 line-clamp-2 leading-relaxed">{ticket.description}</p>
+                          )}
 
-                        {/* Specs badges */}
-                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-white/5">
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
-                            <Layers size={10} />
-                            {ticket.material_type}
-                          </span>
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
-                            <Move size={10} />
-                            {ticket.dimensions}
-                          </span>
-                          <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md">
-                            <Hammer size={10} />
-                            {ticket.machinery_required}
-                          </span>
-                        </div>
-
-                        {/* Quick action buttons */}
-                        <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100 dark:border-white/5">
-                          <div className="flex gap-1.5">
-                            {canEdit && (
-                              <>
-                                <button
-                                  onClick={() => moveTicket(ticket, 'left')}
-                                  disabled={col.id === 'backlog'}
-                                  className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 disabled:opacity-30 cursor-pointer"
-                                  title="Mover a la izquierda"
-                                >
-                                  <ArrowLeft size={12} />
-                                </button>
-                                <button
-                                  onClick={() => moveTicket(ticket, 'right')}
-                                  disabled={col.id === 'done'}
-                                  className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 disabled:opacity-30 cursor-pointer"
-                                  title="Mover a la derecha"
-                                >
-                                  <ArrowRight size={12} />
-                                </button>
-                              </>
-                            )}
+                          {/* Specs badges */}
+                          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-gray-100/50 dark:border-white/5">
+                            <span className="flex items-center gap-1 text-[10px] font-semibold bg-gray-50/80 dark:bg-black/30 text-gray-600 dark:text-gray-400 border border-gray-200/50 dark:border-white/5 px-2 py-1 rounded-md">
+                              <Layers size={10} />
+                              {ticket.material_type}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] font-semibold bg-gray-50/80 dark:bg-black/30 text-gray-600 dark:text-gray-400 border border-gray-200/50 dark:border-white/5 px-2 py-1 rounded-md">
+                              <Move size={10} />
+                              {ticket.dimensions}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] font-semibold bg-gray-50/80 dark:bg-black/30 text-gray-600 dark:text-gray-400 border border-gray-200/50 dark:border-white/5 px-2 py-1 rounded-md">
+                              <Hammer size={10} />
+                              {ticket.machinery_required}
+                            </span>
                           </div>
 
-                          {canEdit && (
-                            <button
-                              onClick={() => handleDeleteTicket(ticket.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                              title="Eliminar ticket"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                          {/* Quick action buttons */}
+                          <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100/50 dark:border-white/5 opacity-40 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-1.5">
+                              {canEdit && (
+                                <>
+                                  <button
+                                    onClick={() => moveTicket(ticket, 'left')}
+                                    disabled={col.id === 'backlog'}
+                                    className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800 text-gray-500 dark:text-gray-400 disabled:opacity-30 cursor-pointer shadow-sm bg-gray-50 dark:bg-black/20"
+                                    title="Mover a la izquierda"
+                                  >
+                                    <ArrowLeft size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => moveTicket(ticket, 'right')}
+                                    disabled={col.id === 'done'}
+                                    className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-slate-800 text-gray-500 dark:text-gray-400 disabled:opacity-30 cursor-pointer shadow-sm bg-gray-50 dark:bg-black/20"
+                                    title="Mover a la derecha"
+                                  >
+                                    <ArrowRight size={12} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+
+                            {canEdit && (
+                              <button
+                                onClick={() => handleDeleteTicket(ticket.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                                title="Eliminar ticket"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
 
                   {colTickets.length === 0 && (
-                    <div className="text-center py-12 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-white/50 text-gray-400 text-xs">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-12 border border-dashed border-gray-300 dark:border-white/20 rounded-xl bg-white/20 dark:bg-black/10 text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider"
+                    >
                       No hay tickets
-                    </div>
+                    </motion.div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       )}
 
       {/* CREATE TICKET MODAL */}
+      <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setShowModal(false)}></div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm" 
+              onClick={() => setShowModal(false)}
+            />
             
-            <div
-              className="relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6 animate-zoomIn"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-2xl border border-gray-200 dark:border-white/10 p-6 md:p-8 w-full max-w-lg shadow-2xl z-10 space-y-6"
             >
               <div className="flex justify-between items-center border-b border-gray-150 dark:border-white/10 pb-4">
                 <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                   <FileText className="text-primary" />
                   Nuevo Ticket de Producción
                 </h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer bg-gray-100 dark:bg-slate-800 p-1.5 rounded-full transition-colors">
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit(handleCreateTicket)} className="space-y-4">
+              <form onSubmit={handleSubmit(handleCreateTicket)} className="space-y-5">
                 {/* Solicitante */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Ministerio Solicitante</label>
+                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Ministerio Solicitante</label>
                   <select
                     {...register('ministry_id')}
-                    className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
                     <option value="">Selecciona un ministerio...</option>
                     {ministries.map(min => (
@@ -378,34 +416,34 @@ const ProductionBoard = () => {
 
                 {/* Titulo */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Título del Trabajo</label>
+                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Título del Trabajo</label>
                   <input
                     type="text"
                     {...register('title')}
                     placeholder="Ej: Letrero acrílico para recepción, Banner del campamento"
-                    className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   {errors.title && <p className="text-[11px] text-red-500 font-semibold">{errors.title.message}</p>}
                 </div>
 
                 {/* Descripción */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Descripción / Detalles</label>
+                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Descripción / Detalles</label>
                   <textarea
                     rows={3}
                     {...register('description')}
                     placeholder="Instrucciones especiales, colores, acabados..."
-                    className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all custom-scrollbar"
                   />
                 </div>
 
                 {/* Material & Dimensiones */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Material</label>
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Material</label>
                     <select
                       {...register('material_type')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
                       <option value="madera MDF 3mm">Madera MDF 3mm</option>
                       <option value="madera MDF 6mm">Madera MDF 6mm</option>
@@ -420,12 +458,12 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Medidas</label>
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Medidas</label>
                     <input
                       type="text"
                       {...register('dimensions')}
                       placeholder="Ej: 100x150cm"
-                      className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     />
                     {errors.dimensions && <p className="text-[11px] text-red-500 font-semibold">{errors.dimensions.message}</p>}
                   </div>
@@ -434,10 +472,10 @@ const ProductionBoard = () => {
                 {/* Maquinaria & Estado */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Maquinaria Requerida</label>
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Maquinaria Requerida</label>
                     <select
                       {...register('machinery_required')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
                       <option value="corte láser">Corte Láser</option>
                       <option value="plotter de corte">Plotter de Corte</option>
@@ -449,10 +487,10 @@ const ProductionBoard = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 dark:text-gray-455 uppercase tracking-wider block">Estado Inicial</label>
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Estado Inicial</label>
                     <select
                       {...register('status')}
-                      className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
                       <option value="backlog">Reserva / Backlog</option>
                       <option value="todo">Por Hacer</option>
@@ -462,26 +500,27 @@ const ProductionBoard = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-150 dark:border-white/10">
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-150 dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 font-bold rounded-xl text-gray-600 dark:text-gray-400 text-sm cursor-pointer transition-colors"
+                    className="px-5 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 font-bold rounded-xl text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="px-4 py-2 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-sm shadow-md cursor-pointer transition-all disabled:opacity-50"
+                    className="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl shadow-lg shadow-primary/30 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? 'Guardando...' : 'Crear Ticket'}
                   </button>
                 </div>
               </form>
-            </div>
+            </motion.div>
           </div>
         )}
+      </AnimatePresence>
 
     </div>
   );

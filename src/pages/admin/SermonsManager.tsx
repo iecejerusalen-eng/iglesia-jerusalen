@@ -62,6 +62,12 @@ const SermonsManager = () => {
   const [categories, setCategories] = useState<SermonCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
   const [showForm, setShowForm] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingSermon, setEditingSermon] = useState<Sermon | null>(null);
@@ -95,28 +101,50 @@ const SermonsManager = () => {
   const youtubeId = getYoutubeId(watchedYoutubeUrl);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [page, debouncedSearch]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [sermonsRes, catsRes] = await Promise.all([
-        supabase
-          .from('sermons')
-          .select('*, sermon_categories(*)')
-          .order('date', { ascending: false }),
-        supabase
-          .from('sermon_categories')
-          .select('*')
-          .order('name')
-      ]);
+      const { data: catsData, error: catsError } = await supabase
+        .from('sermon_categories')
+        .select('*')
+        .order('name');
+      if (catsError) throw catsError;
+      setCategories(catsData || []);
 
-      if (sermonsRes.error) throw sermonsRes.error;
-      if (catsRes.error) throw catsRes.error;
+      let query = supabase
+        .from('sermons')
+        .select('*, sermon_categories(*)', { count: 'exact' });
+
+      if (debouncedSearch) {
+        query = query.ilike('title', `%${debouncedSearch}%`);
+      }
+
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data: sermonsData, error: sermonsError, count } = await query
+        .order('date', { ascending: false })
+        .range(from, to);
+
+      if (sermonsError) throw sermonsError;
       
-      setSermons(sermonsRes.data as Sermon[]);
-      setCategories(catsRes.data as SermonCategory[]);
+      setSermons(sermonsData as Sermon[]);
+      if (count !== null) {
+        setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
+      } else {
+        setTotalPages(1);
+      }
     } catch (err: any) {
       console.error('Error fetching data:', err);
       toast.error('Error al cargar datos: ' + err.message);
@@ -279,7 +307,7 @@ const SermonsManager = () => {
 
   // Sub-components for views
   const renderTable = () => (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs overflow-hidden">
+    <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-glass overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -353,7 +381,7 @@ const SermonsManager = () => {
   const renderCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {sermons.map(sermon => (
-        <div key={sermon.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs overflow-hidden flex flex-col transition-transform hover:-translate-y-1">
+        <div key={sermon.id} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-glass overflow-hidden flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
           {sermon.youtube_url ? (
             <div className="aspect-video bg-gray-100 relative">
               <img src={`https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url)}/maxresdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover" />
@@ -416,7 +444,7 @@ const SermonsManager = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                {grouped[catName].map(sermon => (
-                 <div key={sermon.id} className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-white/10 shadow-sm flex gap-4">
+                 <div key={sermon.id} className="p-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-xl border border-white/20 dark:border-white/10 shadow-glass flex gap-4 transition-all hover:bg-white/90 dark:hover:bg-slate-800/90">
                     <div className="w-16 h-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
                       {sermon.youtube_url ? (
                         <img src={`https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url)}/default.jpg`} className="w-full h-full object-cover" />
@@ -453,7 +481,7 @@ const SermonsManager = () => {
     const blanks = Array.from({ length: firstDay === 0 ? 6 : firstDay - 1 }, (_, i) => i); // Adjust if week starts on Monday
 
     return (
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-6 rounded-2xl border border-white/20 dark:border-white/10 shadow-glass">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 capitalize">{monthName}</h3>
           <div className="flex gap-2">
@@ -588,20 +616,33 @@ const SermonsManager = () => {
         ) : (
           <AnimeFadeUp key="list">
             <div className="space-y-4">
-              {/* View Toggles */}
-              <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
-                <button onClick={() => setViewMode('table')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${viewMode === 'table' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <List size={16} /> Tabla
-                </button>
-                <button onClick={() => setViewMode('cards')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${viewMode === 'cards' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <Grid size={16} /> Tarjetas
-                </button>
-                <button onClick={() => setViewMode('categories')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${viewMode === 'categories' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <Folder size={16} /> Categorías
-                </button>
-                <button onClick={() => setViewMode('calendar')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <CalendarIcon size={16} /> Calendario
-                </button>
+              {/* View Toggles & Search */}
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex bg-gray-100/50 dark:bg-slate-800/50 backdrop-blur-sm p-1 rounded-xl w-fit border border-gray-200/50 dark:border-white/5">
+                  <button onClick={() => setViewMode('table')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-800 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                    <List size={16} /> Tabla
+                  </button>
+                  <button onClick={() => setViewMode('cards')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-800 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                    <Grid size={16} /> Tarjetas
+                  </button>
+                  <button onClick={() => setViewMode('categories')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'categories' ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-800 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                    <Folder size={16} /> Categorías
+                  </button>
+                  <button onClick={() => setViewMode('calendar')} className={`px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-800 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                    <CalendarIcon size={16} /> Calendario
+                  </button>
+                </div>
+
+                <div className="relative w-full sm:w-72">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar prédica..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-glass transition-all"
+                  />
+                </div>
               </div>
 
               {loading ? (
@@ -612,9 +653,34 @@ const SermonsManager = () => {
                   {viewMode === 'cards' && renderCards()}
                   {viewMode === 'categories' && renderCategories()}
                   {viewMode === 'calendar' && renderCalendar()}
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-glass">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Página {page} de {totalPages}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                          className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Anterior
+                        </button>
+                        <button
+                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                          disabled={page === totalPages}
+                          className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                <div className="text-center py-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md shadow-glass rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
                   <FileText className="mx-auto text-gray-300 mb-4" size={48} />
                   <h3 className="text-lg font-serif font-bold text-gray-700">No hay prédicas publicadas</h3>
                 </div>

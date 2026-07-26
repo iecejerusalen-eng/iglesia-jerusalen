@@ -288,8 +288,13 @@ const SongsManager = () => {
   const [songStyles, setSongStyles] = useState<SongStyle[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStyle, setFilterStyle] = useState('');
+  
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Modal & Overhaul state
   const [showForm, setShowForm] = useState(false);
@@ -312,23 +317,66 @@ const SongsManager = () => {
     defaultValues: { title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false },
   });
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, filterType, filterStyle]);
+
   const fetchAll = async () => {
     setLoading(true);
-    const [songsRes, typesRes, stylesRes] = await Promise.all([
-      supabase.from('songs').select('*, song_types(*), song_styles(*)').order('title'),
-      supabase.from('song_types').select('*').order('name'),
-      supabase.from('song_styles').select('*').order('name'),
-    ]);
-    if (songsRes.data) setSongs(songsRes.data);
-    if (typesRes.data) setSongTypes(typesRes.data);
-    if (stylesRes.data) setSongStyles(stylesRes.data);
-    setLoading(false);
+    try {
+      // Fetch catalogs only once ideally, but here is fine
+      const [typesRes, stylesRes] = await Promise.all([
+        supabase.from('song_types').select('*').order('name'),
+        supabase.from('song_styles').select('*').order('name'),
+      ]);
+      
+      if (typesRes.data) setSongTypes(typesRes.data);
+      if (stylesRes.data) setSongStyles(stylesRes.data);
+
+      let query = supabase
+        .from('songs')
+        .select('*, song_types(*), song_styles(*)', { count: 'exact' });
+
+      if (debouncedSearch) {
+        query = query.ilike('title', `%${debouncedSearch}%`);
+      }
+      if (filterType) {
+        query = query.eq('type_id', filterType);
+      }
+      if (filterStyle) {
+        query = query.eq('style_id', filterStyle);
+      }
+
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data: songsData, error, count } = await query
+        .order('title')
+        .range(from, to);
+
+      if (error) throw error;
+      
+      if (songsData) setSongs(songsData);
+      if (count !== null) {
+        setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
+      } else {
+        setTotalPages(1);
+      }
+    } catch (err: any) {
+      console.error('Error fetching songs:', err);
+      toast.error('Error al cargar canciones');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => { fetchAll(); }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchAll();
+  }, [page, debouncedSearch, filterType, filterStyle]);
 
   const openCreate = () => {
     setEditingSong(null);
@@ -522,13 +570,8 @@ const SongsManager = () => {
     fetchAll();
   };
 
-  // Filtered songs
-  const filtered = songs.filter((s) => {
-    const matchSearch = !search || s.title.toLowerCase().includes(search.toLowerCase()) || (s.artist || '').toLowerCase().includes(search.toLowerCase());
-    const matchType = !filterType || s.type_id === filterType;
-    const matchStyle = !filterStyle || s.style_id === filterStyle;
-    return matchSearch && matchType && matchStyle;
-  });
+  // Filtered songs computation is removed since we do it server-side
+  const filtered = songs;
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
@@ -602,15 +645,15 @@ const SongsManager = () => {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por título o artista..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg text-sm text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none" />
+            className="w-full pl-9 pr-4 py-2.5 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg text-sm text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none shadow-glass" />
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
+          className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none shadow-glass">
           <option value="">Todos los tipos</option>
           {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
-          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none">
+          className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none shadow-glass">
           <option value="">Todos los estilos</option>
           {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
@@ -628,7 +671,7 @@ const SongsManager = () => {
           <p className="text-sm">Agrega tu primera alabanza al catálogo</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-xs">
+        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl overflow-hidden shadow-glass">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-max">
               <thead className="bg-gray-50 dark:bg-slate-950 border-b border-gray-200 dark:border-white/10">
@@ -690,6 +733,30 @@ const SongsManager = () => {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-white/10">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Página {page} de {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
