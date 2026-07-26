@@ -8,6 +8,7 @@ import { slideInRight, staggerContainer, fadeInUp } from '../../utils/animations
 import ThemeToggle from './ThemeToggle';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useMenuStore } from '../../store/useMenuStore';
+import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
 import type { MenuItem } from '../../services/menuService';
 
 const Navigation = () => {
@@ -47,12 +48,19 @@ const Navigation = () => {
   const isHome = location.pathname === '/';
   const isTransparent = isHome && !isScrolled;
 
-  const topLevelItems = useMemo(() => 
-    items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index),
-  [items]);
+  const topLevelItems = useMemo(() => {
+    const calculated = items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    return calculated.length > 0 ? calculated : DEFAULT_MENU_ITEMS;
+  }, [items]);
 
-  const getChildren = (parentId: string) => 
-    items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+  const getChildren = (parentId: string) => {
+    const children = items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    if (children.length === 0 && topLevelItems === DEFAULT_MENU_ITEMS) {
+        // Fallback para hijos de los items por defecto (no aplica en esta lógica simple pero por seguridad)
+        return [];
+    }
+    return children;
+  };
 
   const isItemActive = (item: MenuItem) => {
     if (item.url !== '#' && item.url !== '' && isPathActive(item.url)) return true;

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useMenuStore } from '../../store/useMenuStore';
+import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
 import * as LucideIcons from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 import type { MenuItem } from '../../services/menuService';
@@ -22,9 +23,10 @@ const MobileBottomNav: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
-  const topLevelItems = useMemo(() => 
-    items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index),
-  [items]);
+  const topLevelItems = useMemo(() => {
+    const calculated = items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    return calculated.length > 0 ? calculated : DEFAULT_MENU_ITEMS;
+  }, [items]);
 
   const getChildren = (parentId: string) => 
     items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
