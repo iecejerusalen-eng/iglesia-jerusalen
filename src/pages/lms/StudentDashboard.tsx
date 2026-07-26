@@ -163,12 +163,25 @@ export default function StudentDashboard() {
 
           const submittedIds = new Set(submissionsData?.map((s) => s.lesson_id) || []);
 
+          interface AssignmentSubject {
+            lms_courses?: { title: string } | { title: string }[];
+          }
+          interface AssignmentModule {
+            lms_subjects?: AssignmentSubject | AssignmentSubject[];
+          }
+          interface AssignmentItem {
+            id: string;
+            title: string;
+            due_date: string;
+            lms_modules?: AssignmentModule | AssignmentModule[];
+          }
+
           const formattedTasks = assignmentsData
             .filter((a) => !submittedIds.has(a.id))
-            .map((a: any) => {
+            .map((a: AssignmentItem) => {
               // Handle Supabase nested array return structures
-              const modules = Array.isArray(a.lms_modules) ? a.lms_modules[0] : a.lms_modules;
-              const subjects = modules && Array.isArray(modules.lms_subjects) ? modules.lms_subjects[0] : modules?.lms_subjects;
+              const modules: AssignmentModule | undefined = Array.isArray(a.lms_modules) ? a.lms_modules[0] : a.lms_modules;
+              const subjects: AssignmentSubject | undefined = modules && Array.isArray(modules.lms_subjects) ? modules.lms_subjects[0] : (modules?.lms_subjects as AssignmentSubject | undefined);
               const courses = subjects && Array.isArray(subjects.lms_courses) ? subjects.lms_courses[0] : subjects?.lms_courses;
               const courseTitle = courses?.title || 'Curso';
               return {

@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useMenuStore } from '../../store/useMenuStore';
 import * as LucideIcons from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
+import type { MenuItem } from '../../services/menuService';
 
 const DynamicIcon = ({ name, active, defaultIcon }: { name?: string, active: boolean, defaultIcon: string }) => {
   const iconName = name && name in LucideIcons ? name : defaultIcon;
-  const IconComponent = (LucideIcons as Record<string, any>)[iconName];
+  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[iconName];
   if (!IconComponent) return <LucideIcons.Circle size={24} className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`} />;
   return <IconComponent size={24} strokeWidth={active ? 2.5 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`} />;
 };
@@ -45,7 +47,7 @@ const MobileBottomNav: React.FC = () => {
     if (!activeSheet) return null;
 
     let sheetTitle = 'Menú';
-    let children: any[] = [];
+    let children: MenuItem[] = [];
 
     if (activeSheet === 'mas') {
       sheetTitle = 'Más opciones';

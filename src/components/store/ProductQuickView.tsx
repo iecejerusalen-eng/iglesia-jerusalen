@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import type { Product } from '../../types';
 import { 
@@ -25,33 +25,32 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Variant states
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [prevProduct, setPrevProduct] = useState(product);
+  const [selectedColor, setSelectedColor] = useState<string | null>(() => {
+    const variants = product?.product_variants || [];
+    const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
+    return availableColors.length > 0 ? availableColors[0].color_name : null;
+  });
+  const [selectedSize, setSelectedSize] = useState<string | null>(() => {
+    const variants = product?.product_variants || [];
+    const availableSizes = Array.from(new Set(variants.filter(v => v.size).map(v => v.size)));
+    return availableSizes.length > 0 ? availableSizes[0] : null;
+  });
   const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState<string | null>(
+    product?.cover_image_url || product?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'
+  );
 
-  useEffect(() => {
-    if (product) {
-      const variants = product.product_variants || [];
-      const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
-      const availableSizes = Array.from(new Set(variants.filter(v => v.size).map(v => v.size)));
-      
-      if (availableColors.length > 0) {
-        setSelectedColor(availableColors[0].color_name);
-      } else {
-        setSelectedColor(null);
-      }
-      
-      if (availableSizes.length > 0) {
-        setSelectedSize(availableSizes[0]);
-      } else {
-        setSelectedSize(null);
-      }
-      
-      setQuantity(1);
-      setActiveImage(product.cover_image_url || product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600');
-    }
-  }, [product]);
+  if (product !== prevProduct) {
+    setPrevProduct(product);
+    const variants = product?.product_variants || [];
+    const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
+    const availableSizes = Array.from(new Set(variants.filter(v => v.size).map(v => v.size)));
+    setSelectedColor(availableColors.length > 0 ? availableColors[0].color_name : null);
+    setSelectedSize(availableSizes.length > 0 ? availableSizes[0] : null);
+    setQuantity(1);
+    setActiveImage(product?.cover_image_url || product?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600');
+  }
 
   const variants = product.product_variants || [];
   const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
