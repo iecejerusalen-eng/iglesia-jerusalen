@@ -137,24 +137,27 @@ export function Globe({
       }
     };
 
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize, { passive: true });
     onResize();
+
+    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 1.25) : 1;
 
     const globe = createGlobe(canvasRef.current!, {
       ...config,
-      width: widthRef.current * 2,
-      height: widthRef.current * 2,
+      devicePixelRatio: config.devicePixelRatio || dpr,
+      mapSamples: config.mapSamples ? Math.min(config.mapSamples, 8000) : 6000,
+      width: widthRef.current * dpr,
+      height: widthRef.current * dpr,
       onRender: (state) => {
-        // Auto slow rotation if user is not dragging
-        if (!pointerInteracting.current && autoRotate) {
+        if (!pointerInteracting.current && autoRotate && !focusCoords) {
           phiRef.current += autoRotateSpeed;
-          rX.set(phiRef.current);
+          state.phi = phiRef.current;
+        } else {
+          state.phi = springX.get();
+          state.theta = springY.get();
         }
-
-        state.phi = springX.get();
-        state.theta = springY.get();
-        state.width = widthRef.current * 2;
-        state.height = widthRef.current * 2;
+        state.width = widthRef.current * dpr;
+        state.height = widthRef.current * dpr;
       },
     });
 
@@ -166,7 +169,7 @@ export function Globe({
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [springX, springY, config, autoRotate, autoRotateSpeed, rX]);
+  }, [springX, springY, config, autoRotate, autoRotateSpeed, focusCoords]);
 
   return (
     <div className={cn("relative aspect-square w-full select-none", className)}>

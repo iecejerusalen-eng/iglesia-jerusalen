@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X, ChevronDown, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,20 +7,27 @@ import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import { slideInRight, staggerContainer, fadeInUp } from '../../utils/animations';
 import ThemeToggle from './ThemeToggle';
 import { useSearchStore } from '../../store/useSearchStore';
+import { useMenuStore } from '../../store/useMenuStore';
+import type { MenuItem } from '../../services/menuService';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Hover states for desktop dropdowns
-  const [isComunidadHovered, setIsComunidadHovered] = useState(false);
-  const [isRecursosHovered, setIsRecursosHovered] = useState(false);
+  // Track hovered item for desktop dropdowns
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   
-  // Toggle states for mobile accordions
-  const [mobileComunidadOpen, setMobileComunidadOpen] = useState(false);
-  const [mobileRecursosOpen, setMobileRecursosOpen] = useState(false);
+  // Track open states for mobile accordions
+  const [openMobileAccordions, setOpenMobileAccordions] = useState<Record<string, boolean>>({});
   
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Dynamic Menu State
+  const { items, fetchMenu } = useMenuStore();
+
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,17 +42,27 @@ const Navigation = () => {
     setIsOpen(false);
   };
 
-  // Helper to check active paths
-  const isPathActive = (path: string) => location.pathname === path;
-  
-  const isComunidadActive = () => 
-    ['/ministerios', '/eventos', '/peticiones', '/cumpleanos', '/misiones'].some(path => location.pathname === path);
-
-  const isRecursosActive = () => 
-    ['/predicas', '/recursos/alabanzas', '/programas', '/recursos/biblia', '/recursos/juegos'].some(path => location.pathname === path);
+  const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   const isHome = location.pathname === '/';
   const isTransparent = isHome && !isScrolled;
+
+  const topLevelItems = useMemo(() => 
+    items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index),
+  [items]);
+
+  const getChildren = (parentId: string) => 
+    items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+
+  const isItemActive = (item: MenuItem) => {
+    if (item.url !== '#' && item.url !== '' && isPathActive(item.url)) return true;
+    const children = getChildren(item.id);
+    return children.some(child => isPathActive(child.url));
+  };
+
+  const toggleMobileAccordion = (id: string) => {
+    setOpenMobileAccordions(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <nav className={`transition-all duration-500 ease-in-out ${
@@ -77,253 +94,78 @@ const Navigation = () => {
         <ul className={`hidden md:flex gap-8 font-semibold text-sm items-center transition-colors duration-500 ${
           isTransparent ? 'text-white/95' : 'text-primary dark:text-gray-200'
         }`}>
-          {/* Inicio */}
-          <li>
-            <Link 
-              to="/" 
-              className={`transition-colors duration-300 ${
-                isTransparent
-                  ? (isPathActive('/') ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isPathActive('/') ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Inicio
-            </Link>
-          </li>
+          {topLevelItems.map((item) => {
+            const children = getChildren(item.id);
+            const hasChildren = children.length > 0;
+            const active = isItemActive(item);
 
-          {/* Nosotros */}
-          <li>
-            <Link 
-              to="/nosotros" 
-              className={`transition-colors duration-300 ${
-                isTransparent
-                  ? (isPathActive('/nosotros') ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isPathActive('/nosotros') ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Nosotros
-            </Link>
-          </li>
+            if (!hasChildren) {
+              return (
+                <li key={item.id}>
+                  <Link 
+                    to={item.url} 
+                    className={`transition-colors duration-300 ${
+                      isTransparent
+                        ? (active ? 'text-gold' : 'hover:text-gold text-white/90')
+                        : (active ? 'text-accent-red' : 'hover:text-accent-red')
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            }
 
-          {/* Comunidad Dropdown */}
-          <li 
-            onMouseEnter={() => setIsComunidadHovered(true)}
-            onMouseLeave={() => setIsComunidadHovered(false)}
-            className="relative py-2"
-          >
-            <button 
-              className={`transition-colors duration-300 flex items-center gap-1 cursor-pointer font-semibold ${
-                isTransparent
-                  ? (isComunidadActive() ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isComunidadActive() ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Comunidad
-              <ChevronDown size={14} className={`transition-transform duration-200 ${isComunidadHovered ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {isComunidadHovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-2 w-52 rounded-xl py-3 z-50 transition-all duration-300 ${
-                    isTransparent 
-                      ? 'bg-slate-950/80 backdrop-blur-md border border-white/10 text-white/90 transform-gpu' 
-                      : 'glass-card text-gray-700 dark:text-gray-300'
+            return (
+              <li 
+                key={item.id}
+                onMouseEnter={() => setHoveredItemId(item.id)}
+                onMouseLeave={() => setHoveredItemId(null)}
+                className="relative py-2"
+              >
+                <button 
+                  className={`transition-colors duration-300 flex items-center gap-1 cursor-pointer font-semibold ${
+                    isTransparent
+                      ? (active ? 'text-gold' : 'hover:text-gold text-white/90')
+                      : (active ? 'text-accent-red' : 'hover:text-accent-red')
                   }`}
                 >
-                  <Link
-                    to="/ministerios"
-                    onClick={() => setIsComunidadHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Ministerios
-                  </Link>
-                  <Link
-                    to="/eventos"
-                    onClick={() => setIsComunidadHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Eventos (Calendario)
-                  </Link>
-                  <Link
-                    to="/peticiones"
-                    onClick={() => setIsComunidadHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Peticiones
-                  </Link>
-                  <Link
-                    to="/cumpleanos"
-                    onClick={() => setIsComunidadHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Cumpleaños 🎂
-                  </Link>
-                  <Link
-                    to="/misiones"
-                    onClick={() => setIsComunidadHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Misiones 🌍
-                  </Link>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </li>
-
-          {/* Recursos Dropdown */}
-          <li 
-            onMouseEnter={() => setIsRecursosHovered(true)}
-            onMouseLeave={() => setIsRecursosHovered(false)}
-            className="relative py-2"
-          >
-            <button 
-              className={`transition-colors duration-300 flex items-center gap-1 cursor-pointer font-semibold ${
-                isTransparent
-                  ? (isRecursosActive() ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isRecursosActive() ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Recursos
-              <ChevronDown size={14} className={`transition-transform duration-200 ${isRecursosHovered ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {isRecursosHovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-2 w-52 rounded-xl py-3 z-50 transition-all duration-300 ${
-                    isTransparent 
-                      ? 'bg-slate-950/80 backdrop-blur-md border border-white/10 text-white/90 transform-gpu' 
-                      : 'glass-card text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  <Link
-                    to="/recursos/biblia"
-                    onClick={() => setIsRecursosHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    La Santa Biblia
-                  </Link>
-                  <Link
-                    to="/predicas"
-                    onClick={() => setIsRecursosHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Prédicas
-                  </Link>
-                  <Link
-                    to="/recursos/alabanzas"
-                    onClick={() => setIsRecursosHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Alabanzas e Himnos
-                  </Link>
-                  <Link
-                    to="/programas"
-                    onClick={() => setIsRecursosHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Programas / Estudios
-                  </Link>
-                  <Link
-                    to="/recursos/juegos"
-                    onClick={() => setIsRecursosHovered(false)}
-                    className={`block px-4 py-2 text-xs font-semibold transition-colors ${
-                      isTransparent 
-                        ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
-                    }`}
-                  >
-                    Juegos Bíblicos 🎮
-                  </Link>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </li>
-
-          {/* Aula Virtual */}
-          <li>
-            <Link 
-              to="/aula-virtual" 
-              className={`transition-colors duration-300 ${
-                isTransparent
-                  ? (isPathActive('/aula-virtual') ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isPathActive('/aula-virtual') ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Aula Virtual
-            </Link>
-          </li>
-
-          {/* Tienda */}
-          <li>
-            <Link 
-              to="/tienda" 
-              className={`transition-colors duration-300 ${
-                isTransparent
-                  ? (isPathActive('/tienda') ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isPathActive('/tienda') ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Tienda
-            </Link>
-          </li>
-
-          {/* Contacto */}
-          <li>
-            <Link 
-              to="/contacto" 
-              className={`transition-colors duration-300 ${
-                isTransparent
-                  ? (isPathActive('/contacto') ? 'text-gold' : 'hover:text-gold text-white/90')
-                  : (isPathActive('/contacto') ? 'text-accent-red' : 'hover:text-accent-red')
-              }`}
-            >
-              Contacto
-            </Link>
-          </li>
+                  {item.label}
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${hoveredItemId === item.id ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {hoveredItemId === item.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className={`absolute left-0 mt-2 w-52 rounded-xl py-3 z-50 transition-all duration-300 ${
+                        isTransparent 
+                          ? 'bg-slate-950/80 backdrop-blur-md border border-white/10 text-white/90 transform-gpu' 
+                          : 'glass-card text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {children.map(child => (
+                        <Link
+                          key={child.id}
+                          to={child.url}
+                          onClick={() => setHoveredItemId(null)}
+                          className={`block px-4 py-2 text-xs font-semibold transition-colors ${
+                            isTransparent 
+                              ? 'hover:bg-white/10 hover:text-gold text-white/80' 
+                              : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+            );
+          })}
         </ul>
 
         {/* Acciones Derecha (ThemeToggle & Search) */}
@@ -355,7 +197,6 @@ const Navigation = () => {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop Blur Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -364,7 +205,6 @@ const Navigation = () => {
               className="fixed inset-0 z-40 bg-black/20 backdrop-blur-xs md:hidden"
             />
 
-            {/* Side Drawer */}
             <motion.div
               variants={slideInRight}
               initial="initial"
@@ -397,229 +237,77 @@ const Navigation = () => {
                   </div>
                 </div>
 
-                {/* Enlaces de Menú Móvil */}
                 <motion.ul 
                   variants={staggerContainer}
                   initial="initial"
                   animate="animate"
                   className="space-y-6 flex flex-col"
                 >
-                  {/* Inicio */}
-                  <motion.li variants={fadeInUp}>
-                    <Link
-                      to="/"
-                      onClick={closeMenu}
-                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
-                        isPathActive('/') ? 'text-accent-red border-accent-red/20' : ''
-                      }`}
-                    >
-                      Inicio
-                    </Link>
-                  </motion.li>
+                  {topLevelItems.map((item) => {
+                    const children = getChildren(item.id);
+                    const hasChildren = children.length > 0;
+                    const active = isItemActive(item);
 
-                  {/* Nosotros */}
-                  <motion.li variants={fadeInUp}>
-                    <Link
-                      to="/nosotros"
-                      onClick={closeMenu}
-                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
-                        isPathActive('/nosotros') ? 'text-accent-red border-accent-red/20' : ''
-                      }`}
-                    >
-                      Nosotros
-                    </Link>
-                  </motion.li>
-
-                  {/* Comunidad Accordion */}
-                  <motion.li variants={fadeInUp}>
-                    <div>
-                      <div className="flex justify-between items-center border-b border-gray-50 dark:border-white/5 py-2">
-                        <span className={`text-lg font-serif font-bold text-primary dark:text-gray-200 ${
-                          isComunidadActive() ? 'text-accent-red' : ''
-                        }`}>
-                          Comunidad
-                        </span>
-                        <button
-                          onClick={() => setMobileComunidadOpen(!mobileComunidadOpen)}
-                          aria-label="Desplegar menú Comunidad"
-                          className="p-2 text-primary hover:text-accent-red cursor-pointer"
-                        >
-                          <ChevronDown size={20} className={`transition-transform duration-200 ${mobileComunidadOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                      </div>
-                      <AnimatePresence>
-                        {mobileComunidadOpen && (
-                          <motion.ul
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="pl-4 space-y-2 mt-2 border-l-2 border-gray-100 overflow-hidden"
+                    if (!hasChildren) {
+                      return (
+                        <motion.li key={item.id} variants={fadeInUp}>
+                          <Link
+                            to={item.url}
+                            onClick={closeMenu}
+                            className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
+                              active ? 'text-accent-red border-accent-red/20' : ''
+                            }`}
                           >
-                            <li>
-                              <Link
-                                to="/ministerios"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Ministerios
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/eventos"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Eventos (Calendario)
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/peticiones"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Peticiones
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/cumpleanos"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Cumpleaños 🎂
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/misiones"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Misiones 🌍
-                              </Link>
-                            </li>
-                          </motion.ul>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.li>
+                            {item.label}
+                          </Link>
+                        </motion.li>
+                      );
+                    }
 
-                  {/* Recursos Accordion */}
-                  <motion.li variants={fadeInUp}>
-                    <div>
-                      <div className="flex justify-between items-center border-b border-gray-50 dark:border-white/5 py-2">
-                        <span className={`text-lg font-serif font-bold text-primary dark:text-gray-200 ${
-                          isRecursosActive() ? 'text-accent-red' : ''
-                        }`}>
-                          Recursos
-                        </span>
-                        <button
-                          onClick={() => setMobileRecursosOpen(!mobileRecursosOpen)}
-                          aria-label="Desplegar menú Recursos"
-                          className="p-2 text-primary hover:text-accent-red cursor-pointer"
-                        >
-                          <ChevronDown size={20} className={`transition-transform duration-200 ${mobileRecursosOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                      </div>
-                      <AnimatePresence>
-                        {mobileRecursosOpen && (
-                          <motion.ul
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="pl-4 space-y-2 mt-2 border-l-2 border-gray-100 overflow-hidden"
-                          >
-                            <li>
-                              <Link
-                                to="/recursos/biblia"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                La Santa Biblia
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/predicas"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Prédicas
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/recursos/alabanzas"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Alabanzas e Himnos
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/programas"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Programas / Estudios
-                              </Link>
-                            </li>
-                            <li>
-                              <Link
-                                to="/recursos/juegos"
-                                onClick={closeMenu}
-                                className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
-                              >
-                                Juegos Bíblicos 🎮
-                              </Link>
-                            </li>
-                          </motion.ul>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.li>
+                    const isAccordionOpen = openMobileAccordions[item.id];
 
-                  {/* Aula Virtual */}
-                  <motion.li variants={fadeInUp}>
-                    <Link
-                      to="/aula-virtual"
-                      onClick={closeMenu}
-                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
-                        isPathActive('/aula-virtual') ? 'text-accent-red border-accent-red/20' : ''
-                      }`}
-                    >
-                      Aula Virtual
-                    </Link>
-                  </motion.li>
-
-                  {/* Tienda */}
-                  <motion.li variants={fadeInUp}>
-                    <Link
-                      to="/tienda"
-                      onClick={closeMenu}
-                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
-                        isPathActive('/tienda') ? 'text-accent-red border-accent-red/20' : ''
-                      }`}
-                    >
-                      Tienda
-                    </Link>
-                  </motion.li>
-
-                  {/* Contacto */}
-                  <motion.li variants={fadeInUp}>
-                    <Link
-                      to="/contacto"
-                      onClick={closeMenu}
-                      className={`text-lg font-serif font-bold text-primary dark:text-gray-200 block hover:text-accent-red transition-colors py-2 border-b border-gray-50 dark:border-white/5 ${
-                        isPathActive('/contacto') ? 'text-accent-red border-accent-red/20' : ''
-                      }`}
-                    >
-                      Contacto
-                    </Link>
-                  </motion.li>
+                    return (
+                      <motion.li key={item.id} variants={fadeInUp}>
+                        <div>
+                          <div className="flex justify-between items-center border-b border-gray-50 dark:border-white/5 py-2">
+                            <span className={`text-lg font-serif font-bold text-primary dark:text-gray-200 ${
+                              active ? 'text-accent-red' : ''
+                            }`}>
+                              {item.label}
+                            </span>
+                            <button
+                              onClick={() => toggleMobileAccordion(item.id)}
+                              className="p-2 text-primary hover:text-accent-red cursor-pointer"
+                            >
+                              <ChevronDown size={20} className={`transition-transform duration-200 ${isAccordionOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                          </div>
+                          <AnimatePresence>
+                            {isAccordionOpen && (
+                              <motion.ul
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="pl-4 space-y-2 mt-2 border-l-2 border-gray-100 overflow-hidden"
+                              >
+                                {children.map(child => (
+                                  <li key={child.id}>
+                                    <Link
+                                      to={child.url}
+                                      onClick={closeMenu}
+                                      className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-accent-red dark:hover:text-gold block py-1"
+                                    >
+                                      {child.label}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </motion.ul>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.li>
+                    );
+                  })}
                 </motion.ul>
               </div>
 

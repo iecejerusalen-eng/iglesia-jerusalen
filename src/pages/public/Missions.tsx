@@ -133,15 +133,15 @@ const MISSION_LOCATIONS: MissionPoint[] = [
 ];
 
 const GLOBE_CONFIG: COBEOptions = {
-  width: 900,
-  height: 900,
+  width: 600,
+  height: 600,
   onRender: () => {},
-  devicePixelRatio: 2,
+  devicePixelRatio: 1.2,
   phi: 1.2,
   theta: 0.18,
   dark: 0,
   diffuse: 0.5,
-  mapSamples: 16000,
+  mapSamples: 6000,
   mapBrightness: 1.35,
   baseColor: [0.96, 0.96, 0.98],
   markerColor: [225 / 255, 29 / 255, 72 / 255], // Red marker

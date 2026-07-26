@@ -169,6 +169,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'diseno'
   },
   {
+    id: 'menu_manager',
+    label: 'Gestor del Menú Principal',
+    name: 'Menú de Navegación',
+    path: '/admin/apariencia/menu',
+    icon: Columns,
+    group: 'diseno'
+  },
+  {
     id: 'button_studio',
     label: 'Estudio de Botones & Glassmorphism',
     name: 'Estudio Botones & Glass',

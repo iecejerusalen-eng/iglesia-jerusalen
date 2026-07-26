@@ -165,9 +165,12 @@ export default function StudentDashboard() {
 
           const formattedTasks = assignmentsData
             .filter((a) => !submittedIds.has(a.id))
-            .map((a: { id: string; title: string; due_date: string; lms_modules?: { lms_subjects?: { lms_courses?: { title: string } | { title: string }[] } } }) => {
-              const courses = a.lms_modules?.lms_subjects?.lms_courses;
-              const courseTitle = Array.isArray(courses) ? courses[0]?.title : courses?.title || 'Curso';
+            .map((a: any) => {
+              // Handle Supabase nested array return structures
+              const modules = Array.isArray(a.lms_modules) ? a.lms_modules[0] : a.lms_modules;
+              const subjects = modules && Array.isArray(modules.lms_subjects) ? modules.lms_subjects[0] : modules?.lms_subjects;
+              const courses = subjects && Array.isArray(subjects.lms_courses) ? subjects.lms_courses[0] : subjects?.lms_courses;
+              const courseTitle = courses?.title || 'Curso';
               return {
                 id: a.id,
                 title: a.title,

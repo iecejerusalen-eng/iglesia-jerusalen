@@ -112,6 +112,7 @@ const ComponentStylesManager = lazyWithRetry(() => import('../pages/admin/Compon
 const ComponentLibrary = lazyWithRetry(() => import('../pages/admin/ComponentLibrary'));
 const OpenResourceBuilder = lazyWithRetry(() => import('../pages/admin/OpenResourceBuilder'));
 const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager'));
+const MenuManager = lazyWithRetry(() => import('../pages/admin/MenuManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
 const MediaVault = lazyWithRetry(() => import('../pages/admin/MediaVault'));
 const InventoryManager = lazyWithRetry(() => import('../pages/admin/InventoryManager'));
@@ -246,6 +247,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="appearance" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/apariencia" element={<AdminSettings />} />
+            <Route path="/admin/apariencia/menu" element={<MenuManager />} />
             <Route path="/admin/componentes" element={<ComponentLibrary />} />
             <Route path="/admin/estilos" element={<ComponentStylesManager />} />
             <Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} />
