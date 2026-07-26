@@ -18,9 +18,11 @@ ALTER TABLE public.public_menu_items ENABLE ROW LEVEL SECURITY;
 
 -- 3. Create RLS Policies
 -- Lectura pública (todos, incluyendo anonimos pueden ver el menú)
+DROP POLICY IF EXISTS "Permitir lectura a todos" ON public.public_menu_items;
 CREATE POLICY "Permitir lectura a todos" ON public.public_menu_items FOR SELECT USING (true);
 
 -- Escritura solo admin
+DROP POLICY IF EXISTS "Permitir escritura a administradores" ON public.public_menu_items;
 CREATE POLICY "Permitir escritura a administradores" ON public.public_menu_items FOR ALL TO authenticated
   USING (
     exists (
