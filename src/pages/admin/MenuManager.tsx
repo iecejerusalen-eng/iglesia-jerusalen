@@ -184,9 +184,15 @@ export default function MenuManager() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-100 flex items-center gap-3">
-          <AlertCircle size={20} />
-          {error}
+        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50 flex flex-col gap-2">
+          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
+            <AlertCircle size={20} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Aviso de sincronización de la base de datos</span>
+          </div>
+          <p className="text-sm">{error}</p>
+          <p className="text-xs opacity-80">
+            💡 <strong>Nota:</strong> Los usuarios públicos continúan viendo el menú por defecto sin ninguna interrupción. Para guardar cambios personalizados en el panel de control, aplica el script SQL <code>20260726000000_dynamic_menu.sql</code> en el SQL Editor de tu proyecto Supabase.
+          </p>
         </div>
       )}
 

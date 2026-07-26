@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { menuService } from '../services/menuService';
+import { menuService, DEFAULT_MENU_ITEMS } from '../services/menuService';
 import type { MenuItem } from '../services/menuService';
 
 interface MenuState {
@@ -14,7 +14,7 @@ interface MenuState {
 }
 
 export const useMenuStore = create<MenuState>((set, get) => ({
-  items: [],
+  items: DEFAULT_MENU_ITEMS,
   isLoading: false,
   error: null,
 
@@ -22,10 +22,11 @@ export const useMenuStore = create<MenuState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await menuService.getMenuItems();
-      set({ items: data, isLoading: false });
+      set({ items: data.length > 0 ? data : DEFAULT_MENU_ITEMS, isLoading: false });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al cargar';
-      set({ error: msg, isLoading: false });
+      // Keep default menu items on error so navigation never breaks
+      set({ items: get().items.length > 0 ? get().items : DEFAULT_MENU_ITEMS, error: msg, isLoading: false });
     }
   },
 
