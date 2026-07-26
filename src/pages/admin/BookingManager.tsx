@@ -24,18 +24,53 @@ export default function BookingManager() {
 
   const loadData = async () => {
     try {
-      const [spacesRes, bookingsRes] = await Promise.all([
-        supabase.from('spaces').select('*').order('name'),
-        supabase.from('space_bookings').select('*, spaces(name), profiles(email, first_name, last_name)').order('start_time', { ascending: false })
-      ]);
+      setLoading(true);
 
-      if (spacesRes.error) throw spacesRes.error;
-      if (bookingsRes.error) throw bookingsRes.error;
+      // 1. Fetch spaces
+      const spacesRes = await supabase.from('spaces').select('*').order('name');
+      if (spacesRes.data) {
+        setSpaces(spacesRes.data);
+      }
 
-      setSpaces(spacesRes.data || []);
-      setBookings(bookingsRes.data || []);
+      // 2. Fetch bookings with fallback for profiles join
+      let bookingsData: SpaceBooking[] = [];
+      const bookingsWithProfiles = await supabase
+        .from('space_bookings')
+        .select('*, spaces(name), profiles(email, first_name, last_name)')
+        .order('start_time', { ascending: false });
+
+      if (!bookingsWithProfiles.error && bookingsWithProfiles.data) {
+        bookingsData = bookingsWithProfiles.data as SpaceBooking[];
+      } else {
+        // Fallback: fetch without profiles join, then manual enrichment
+        const basicBookings = await supabase
+          .from('space_bookings')
+          .select('*, spaces(name)')
+          .order('start_time', { ascending: false });
+
+        if (basicBookings.data) {
+          bookingsData = basicBookings.data as SpaceBooking[];
+          const userIds = Array.from(new Set(bookingsData.map(b => b.user_id).filter(Boolean)));
+          if (userIds.length > 0) {
+            const profilesRes = await supabase
+              .from('profiles')
+              .select('id, email, first_name, last_name')
+              .in('id', userIds);
+
+            if (profilesRes.data) {
+              const profilesMap = new Map(profilesRes.data.map(p => [p.id, p]));
+              bookingsData = bookingsData.map(b => ({
+                ...b,
+                profiles: b.user_id ? profilesMap.get(b.user_id) : undefined
+              }));
+            }
+          }
+        }
+      }
+
+      setBookings(bookingsData);
     } catch (err) {
-      console.error(err);
+      console.error('Error al cargar datos de reservas:', err);
       toast.error('Error al cargar datos');
     } finally {
       setLoading(false);
