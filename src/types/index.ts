@@ -903,3 +903,23 @@ export interface ChurchSettings {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface CredentialVaultItem {
+  id: string;
+  title: string;
+  category: 'redes_sociales' | 'streaming' | 'correos' | 'plataformas' | 'otros';
+  department_id: string | null;
+  platform_name: string;
+  account_handle: string | null;
+  login_url: string | null;
+  username_email: string;
+  password_encrypted: string | null;
+  recovery_email: string | null;
+  security_notes: string | null;
+  assigned_member_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  ministries?: { id: string; name: string } | null;
+  members?: { id: string; first_name: string; last_name: string } | null;
+}

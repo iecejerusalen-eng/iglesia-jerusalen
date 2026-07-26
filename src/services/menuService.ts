@@ -42,14 +42,28 @@ export const menuService = {
 
       if (error || !data || data.length === 0) {
         console.warn('Tabla public_menu_items no encontrada o vacía. Usando menú por defecto:', error?.message);
-        return DEFAULT_MENU_ITEMS;
+        return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
       }
       
-      return data;
+      return menuService.deduplicateItems(data);
     } catch (err) {
       console.warn('Error al obtener elementos del menú, usando fallback:', err);
-      return DEFAULT_MENU_ITEMS;
+      return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
     }
+  },
+
+  deduplicateItems(items: MenuItem[]): MenuItem[] {
+    const seen = new Set<string>();
+    const result: MenuItem[] = [];
+
+    for (const item of items) {
+      const key = `${(item.label || '').trim().toLowerCase()}|${(item.url || '').trim().toLowerCase()}|${item.parent_id || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(item);
+      }
+    }
+    return result;
   },
 
   async addMenuItem(item: Omit<MenuItem, 'id' | 'created_at' | 'updated_at'>): Promise<MenuItem> {

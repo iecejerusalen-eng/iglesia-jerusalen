@@ -28,6 +28,7 @@ import {
   Globe2,
   Building,
   Component,
+  KeyRound,
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -424,6 +425,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Reserva Espacios',
     path: '/admin/reservas',
     icon: Building,
+    group: 'operaciones'
+  },
+  {
+    id: 'credentials_vault',
+    label: 'Bóveda de Credenciales',
+    name: 'Credenciales & Redes',
+    path: '/admin/boveda-credenciales',
+    icon: KeyRound,
     group: 'operaciones'
   }
 ];

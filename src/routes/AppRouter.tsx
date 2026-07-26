@@ -88,6 +88,7 @@ const MinistryDashboard = lazyWithRetry(() => import('../pages/admin/MinistryDas
 const MissionsManager = lazyWithRetry(() => import('../pages/admin/MissionsManager'));
 const VolunteersManager = lazyWithRetry(() => import('../pages/admin/VolunteersManager'));
 const BookingManager = lazyWithRetry(() => import('../pages/admin/BookingManager'));
+const CredentialsVault = lazyWithRetry(() => import('../pages/admin/CredentialsVault'));
 const LogosManager = lazyWithRetry(() => import('../pages/admin/LogosManager'));
 const UsersManager = lazyWithRetry(() => import('../pages/admin/UsersManager'));
 const SettingsManager = lazyWithRetry(() => import('../pages/admin/SettingsManager'));
@@ -206,6 +207,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="missions" />}><Route element={<AdminLayout />}><Route path="/admin/misiones" element={<MissionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="credentials_vault" />}><Route element={<AdminLayout />}><Route path="/admin/boveda-credenciales" element={<CredentialsVault />} /></Route></Route>
         <Route element={<ProtectedRoute module="members" />}><Route element={<AdminLayout />}><Route path="/admin/miembros" element={<MembersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
