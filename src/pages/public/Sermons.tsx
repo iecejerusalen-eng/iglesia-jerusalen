@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, ChevronDown, Check, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
 import type { SermonCategory, Speaker } from '../../types';
 import {
@@ -49,6 +50,8 @@ const Sermons = () => {
   // Filtros seleccionados
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>('');
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const [isPastorsOpen, setIsPastorsOpen] = useState(false);
 
   const fetchSermons = async () => {
     setSermons(prev => {
@@ -169,24 +172,96 @@ const Sermons = () => {
           </AutocompletePopup>
         </Autocomplete>
         
-        {/* Filtros Dropdowns */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-4">
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-glass transition-all"
-          >
-            <option value="">Todas las Categorías</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select 
-            value={selectedSpeaker} 
-            onChange={(e) => setSelectedSpeaker(e.target.value)}
-            className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-glass transition-all"
-          >
-            <option value="">Todos los Pastores</option>
-            {speakers.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)}
-          </select>
+        {/* Filtros Dropdowns y Acordeón */}
+        <div className="mt-4 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <button 
+              onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+              className="w-full sm:w-auto px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
+            >
+              <span className="flex items-center gap-2"><Filter size={16} /> Filtrar por Categoría</span>
+              <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
+                <ChevronDown size={16} className="text-gray-400" />
+              </motion.div>
+            </button>
+
+            {/* Custom Dropdown para Pastores */}
+            <div className="relative w-full sm:w-64 z-20">
+              <button 
+                onClick={() => setIsPastorsOpen(!isPastorsOpen)}
+                className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
+              >
+                <span className="flex items-center gap-2 truncate">
+                  <User size={16} className="text-primary/70 shrink-0" /> 
+                  {selectedSpeaker ? (speakers.find(s => s.id === selectedSpeaker)?.first_name + ' ' + speakers.find(s => s.id === selectedSpeaker)?.last_name) : "Todos los Pastores"}
+                </span>
+                <ChevronDown size={16} className="text-gray-400 shrink-0" />
+              </button>
+              
+              <AnimatePresence>
+                {isPastorsOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-white/10 shadow-xl overflow-hidden py-1 max-h-60 overflow-y-auto"
+                  >
+                    <button 
+                      onClick={() => { setSelectedSpeaker(''); setIsPastorsOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${!selectedSpeaker ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Todos los Pastores
+                      {!selectedSpeaker && <Check size={16} />}
+                    </button>
+                    {speakers.map(s => (
+                      <button 
+                        key={s.id}
+                        onClick={() => { setSelectedSpeaker(s.id); setIsPastorsOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${selectedSpeaker === s.id ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                      >
+                        {s.first_name} {s.last_name}
+                        {selectedSpeaker === s.id && <Check size={16} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {isCategoriesExpanded && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <button 
+                    onClick={() => setSelectedCategory('')}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${!selectedCategory ? 'bg-primary text-white border-primary shadow-md' : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
+                  >
+                    Todas
+                  </button>
+                  {categories.map(c => (
+                    <button 
+                      key={c.id}
+                      onClick={() => setSelectedCategory(selectedCategory === c.id ? '' : c.id)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border hover:-translate-y-0.5`}
+                      style={{ 
+                        backgroundColor: selectedCategory === c.id ? c.color : `${c.color}15`, 
+                        color: selectedCategory === c.id ? '#ffffff' : c.color, 
+                        borderColor: selectedCategory === c.id ? c.color : `${c.color}30` 
+                      }}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
