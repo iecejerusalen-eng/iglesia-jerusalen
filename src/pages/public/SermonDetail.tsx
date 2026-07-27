@@ -74,7 +74,7 @@ const SermonDetail = () => {
       if (isUuid) {
         const { data, error } = await supabase
           .from('sermons')
-          .select('*')
+          .select('*, sermon_categories(*), speakers(*)')
           .eq('id', id)
           .maybeSingle();
 
@@ -244,9 +244,17 @@ const SermonDetail = () => {
             <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 leading-tight">{sermon.title}</h1>
             
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+              {sermon.sermon_categories && (
+                <span 
+                  className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                  style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
+                >
+                  {sermon.sermon_categories.name}
+                </span>
+              )}
               <span className="flex items-center gap-1.5 font-semibold text-gray-750 dark:text-gray-300">
                 <User size={16} className="text-gray-400" />
-                {sermon.pastor_name}
+                {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar size={16} className="text-gray-400" />

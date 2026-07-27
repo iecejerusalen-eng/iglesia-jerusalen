@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, Folder } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
+import type { SermonCategory, Speaker } from '../../types';
 import {
   Autocomplete,
   AutocompleteInput,
@@ -40,6 +41,14 @@ const Sermons = () => {
   const [sermons, setSermons] = useState<Sermon[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Categorias y Pastores para los filtros
+  const [categories, setCategories] = useState<SermonCategory[]>([]);
+  const [speakers, setSpeakers] = useState<Speaker[]>([]);
+  
+  // Filtros seleccionados
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSpeaker, setSelectedSpeaker] = useState<string>('');
 
   const fetchSermons = async () => {
     setSermons(prev => {
@@ -49,8 +58,16 @@ const Sermons = () => {
     try {
       const { data, error } = await supabase
         .from('sermons')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*, sermon_categories(*), speakers(*)')
+        .order('date', { ascending: false });
+
+      // Cargar también categorías y oradores para los filtros
+      const [catsRes, speakersRes] = await Promise.all([
+        supabase.from('sermon_categories').select('*').order('name'),
+        supabase.from('speakers').select('*').order('first_name')
+      ]);
+      if (catsRes.data) setCategories(catsRes.data);
+      if (speakersRes.data) setSpeakers(speakersRes.data);
 
       if (error) throw error;
 
@@ -92,11 +109,17 @@ const Sermons = () => {
     }));
   }, [sermons]);
 
-  const filteredSermons = sermons.filter(s => 
-    s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.pastor_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredSermons = sermons.filter(s => {
+    const matchesSearch = 
+      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.pastor_name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesCategory = selectedCategory ? s.category_id === selectedCategory : true;
+    const matchesSpeaker = selectedSpeaker ? s.speaker_id === selectedSpeaker || s.pastor_name === selectedSpeaker : true;
+    
+    return matchesSearch && matchesCategory && matchesSpeaker;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
@@ -145,6 +168,26 @@ const Sermons = () => {
             </AutocompleteList>
           </AutocompletePopup>
         </Autocomplete>
+        
+        {/* Filtros Dropdowns */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+          <select 
+            value={selectedCategory} 
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-glass transition-all"
+          >
+            <option value="">Todas las Categorías</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select 
+            value={selectedSpeaker} 
+            onChange={(e) => setSelectedSpeaker(e.target.value)}
+            className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-glass transition-all"
+          >
+            <option value="">Todos los Pastores</option>
+            {speakers.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Grid predicas */}
@@ -167,23 +210,44 @@ const Sermons = () => {
                     />
                   )}
 
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {sermon.sermon_categories && (
+                    <span 
+                      className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                      style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
+                    >
+                      {sermon.sermon_categories.name}
+                    </span>
+                  )}
                   <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
                     <Link to={`/predicas/${sermon.id}`}>{sermon.title}</Link>
                   </h2>
                   
                   <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                      <User size={12} />
-                      {sermon.pastor_name}
+                    <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                      <User size={14} className="text-primary/70" />
+                      {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
                     </span>
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar size={12} />
-                      {new Date(sermon.created_at).toLocaleDateString('es-ES', { 
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Calendar size={14} className="text-primary/70" />
+                      {sermon.date || new Date(sermon.created_at).toLocaleDateString('es-ES', { 
                         day: 'numeric', 
                         month: 'long', 
                         year: 'numeric' 
                       })}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+                    {sermon.editors && sermon.editors.length > 0 && (
+                      <span className="flex items-center gap-1.5">
+                        <Edit3 size={12} />
+                        Editado por: {sermon.editors.join(', ')}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={12} />
+                      {new Date(sermon.created_at).toLocaleDateString('es-ES')}
                     </span>
                   </div>
                 </div>

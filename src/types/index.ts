@@ -211,12 +211,26 @@ export interface SermonCategory {
   created_at: string;
 }
 
+export interface Speaker {
+  id: string;
+  member_id: string | null;
+  first_name: string;
+  last_name: string;
+  role: string;
+  photo_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+  members?: Member | null;
+}
+
 export interface Sermon {
   id: string;
   title: string;
   content: string;
   youtube_url: string | null;
   pastor_name: string;
+  speaker_id?: string | null;
   description?: string | null;
   date?: string;
   category_id?: string | null;
@@ -225,6 +239,7 @@ export interface Sermon {
   video_url?: string | null;
   editors?: string[] | null;
   sermon_categories?: SermonCategory | null;
+  speakers?: Speaker | null;
 }
 
 export interface Schedule {

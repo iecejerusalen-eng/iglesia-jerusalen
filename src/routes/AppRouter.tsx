@@ -79,6 +79,7 @@ const CourseViewer = lazyWithRetry(() => import('../pages/lms/CourseViewer'));
 // --- ADMIN PAGES ---
 const DashboardHome = lazyWithRetry(() => import('../pages/admin/DashboardHome'));
 const SermonsManager = lazyWithRetry(() => import('../pages/admin/SermonsManager'));
+const SpeakersManager = lazyWithRetry(() => import('../pages/admin/SpeakersManager'));
 const FinanceDashboard = lazyWithRetry(() => import('../pages/admin/FinanceDashboard'));
 const StoreManager = lazyWithRetry(() => import('../pages/admin/StoreManager'));
 const StoreSettings = lazyWithRetry(() => import('../pages/admin/StoreSettings'));
@@ -213,6 +214,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="speakers" />}><Route element={<AdminLayout />}><Route path="/admin/pastores" element={<SpeakersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="songs" />}><Route element={<AdminLayout />}><Route path="/admin/alabanzas" element={<SongsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="programs" />}>
           <Route element={<AdminLayout />}>

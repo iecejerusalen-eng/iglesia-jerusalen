@@ -244,6 +244,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'eventos_medios'
   },
   {
+    id: 'speakers',
+    label: 'Catálogo de Pastores/Oradores',
+    name: 'Pastores & Oradores',
+    path: '/admin/pastores',
+    icon: UserCog,
+    group: 'eventos_medios'
+  },
+  {
     id: 'songs',
     label: 'Alabanzas (Biblioteca)',
     name: 'Biblioteca Alabanzas',

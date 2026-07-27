@@ -12,7 +12,7 @@ import BlockEditor, { type LessonBlock } from '../../components/admin/BlockEdito
 import { Plus, Edit2, Trash2, X, Loader2, Video, FileText, Search, Grid, List, Folder, Calendar as CalendarIcon, Settings } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
-import type { Sermon, SermonCategory } from '../../types';
+import type { Sermon, SermonCategory, Speaker } from '../../types';
 import { DynamicDataView } from '../../components/ui/DynamicDataView';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -24,6 +24,7 @@ const sermonSchema = z.object({
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
   content: z.string().min(1, 'El contenido del mensaje es obligatorio'),
   category_id: z.string().optional().nullable(),
+  speaker_id: z.string().optional().nullable(),
 });
 
 type SermonForm = z.infer<typeof sermonSchema>;
@@ -62,6 +63,7 @@ const SermonsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
   const [sermons, setSermons] = useState<Sermon[]>([]);
   const [categories, setCategories] = useState<SermonCategory[]>([]);
+  const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -91,6 +93,7 @@ const SermonsManager = () => {
       youtube_url: '',
       content: '',
       category_id: '',
+      speaker_id: '',
     }
   });
 
@@ -126,9 +129,16 @@ const SermonsManager = () => {
       if (catsError) throw catsError;
       setCategories(catsData || []);
 
+      const { data: speakersData, error: speakersError } = await supabase
+        .from('speakers')
+        .select('*')
+        .order('first_name');
+      if (speakersError) console.warn(speakersError);
+      setSpeakers(speakersData || []);
+
       let query = supabase
         .from('sermons')
-        .select('*, sermon_categories(*)', { count: 'exact' });
+        .select('*, sermon_categories(*), speakers(*)', { count: 'exact' });
 
       if (debouncedSearch) {
         query = query.ilike('title', `%${debouncedSearch}%`);
@@ -166,6 +176,7 @@ const SermonsManager = () => {
       youtube_url: '',
       content: '',
       category_id: '',
+      speaker_id: '',
     });
     setShowForm(true);
   };
@@ -179,6 +190,7 @@ const SermonsManager = () => {
       youtube_url: sermon.youtube_url || '',
       content: sermon.content || '',
       category_id: sermon.category_id || '',
+      speaker_id: sermon.speaker_id || '',
     });
     setShowForm(true);
   };
@@ -219,7 +231,16 @@ const SermonsManager = () => {
         content: data.content,
         description: plainTextDescription,
         category_id: data.category_id || null,
+        speaker_id: data.speaker_id || null,
       };
+
+      // Si seleccionaron un speaker, auto-completar pastor_name
+      if (data.speaker_id) {
+        const selectedSpeaker = speakers.find(s => s.id === data.speaker_id);
+        if (selectedSpeaker) {
+          payload.pastor_name = `${selectedSpeaker.first_name} ${selectedSpeaker.last_name}`;
+        }
+      }
 
       if (editingSermon) {
         payload.editors = Array.from(new Set([...(editingSermon.editors || []), currentEditorName]));
@@ -355,15 +376,18 @@ const SermonsManager = () => {
     {
       accessorKey: 'pastor_name',
       header: 'Pastor / Predicador',
-      cell: ({ getValue }) => <span className="font-medium text-gray-700 dark:text-gray-300">{getValue() as string}</span>,
+      cell: ({ row }) => {
+        const sermon = row.original;
+        return <span className="font-medium text-gray-700 dark:text-gray-300">{sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}</span>;
+      }
     },
     {
-      accessorKey: 'created_by_profile',
+      accessorKey: 'editors',
       header: 'Editores',
       cell: ({ getValue }) => {
-        const prof = getValue() as { first_name?: string; last_name?: string } | null;
-        return prof ? (
-          <span className="text-xs text-gray-500 font-semibold">{prof.first_name} {prof.last_name}</span>
+        const editors = getValue() as string[] | null;
+        return editors && editors.length > 0 ? (
+          <span className="text-xs text-gray-500 font-semibold">{editors.join(', ')}</span>
         ) : (
           <span className="text-xs text-gray-400">Sistema</span>
         );
@@ -504,7 +528,9 @@ const SermonsManager = () => {
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-2">{sermon.description || 'Sin resumen disponible.'}</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/10">
               <div>
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{sermon.pastor_name}</p>
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
+                </p>
                 {sermon.editors && sermon.editors.length > 0 && (
                   <p className="text-[10px] text-gray-500 italic mt-0.5">Por: {sermon.editors.join(', ')}</p>
                 )}
@@ -666,10 +692,17 @@ const SermonsManager = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Predicador / Pastor</label>
-                  <input type="text" {...register('pastor_name')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 rounded-xl text-sm" />
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catálogo de Oradores</label>
+                  <select {...register('speaker_id')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none">
+                    <option value="">Selecciona orador (Opcional)</option>
+                    {speakers.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.role})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Predicador (Texto libre)</label>
+                  <input type="text" {...register('pastor_name')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" placeholder="O se llenará solo si eliges arriba..." />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha</label>
@@ -774,7 +807,7 @@ const SermonsManager = () => {
                           </div>
 
                           <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
-                            <p>Predicador: <strong className="text-gray-800 dark:text-gray-200">{sermon.pastor_name}</strong></p>
+                            <p>Predicador: <strong className="text-gray-800 dark:text-gray-200">{sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}</strong></p>
                             <p>Fecha: <span>{sermon.date}</span></p>
                           </div>
 
