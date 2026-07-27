@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
@@ -38,7 +38,7 @@ const SpeakersManager = () => {
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
-  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<SpeakerForm>({
+  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm<SpeakerForm>({
     resolver: zodResolver(speakerSchema),
     defaultValues: {
       first_name: '',
@@ -50,7 +50,10 @@ const SpeakersManager = () => {
     }
   });
 
-  const selectedMemberId = watch('member_id');
+  const selectedMemberId = useWatch({
+    control,
+    name: 'member_id',
+  });
 
   // Auto-fill from member if selected
   useEffect(() => {
