@@ -564,9 +564,16 @@ const SermonsManager = () => {
       <div className="space-y-8">
         {Object.keys(grouped).map(catName => (
           <div key={catName}>
-            <div className="flex items-center gap-2 mb-4">
-              <Folder size={20} className="text-gray-400" />
-              <h3 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">{catName} <span className="text-gray-400 text-sm font-sans font-normal ml-2">({grouped[catName].length})</span></h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Folder size={20} className="text-gray-400" />
+                <h3 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100">{catName} <span className="text-gray-400 text-sm font-sans font-normal ml-2">({grouped[catName].length})</span></h3>
+              </div>
+              {catName !== 'Sin Categoría' && !readOnly && (
+                <button onClick={() => setShowCategoryModal(true)} className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                  <Settings size={14} /> Administrar
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                {grouped[catName].map(sermon => (
@@ -680,12 +687,19 @@ const SermonsManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título de la Prédica</label>
-                  <input type="text" {...register('title')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" />
+                  <input type="text" {...register('title')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm" />
                   {errors.title && <p className="text-accent-red text-xs mt-1">{errors.title.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Categoría</label>
-                  <select {...register('category_id')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoría</label>
+                    {!readOnly && (
+                      <button type="button" onClick={() => setShowCategoryModal(true)} className="text-[10px] text-primary hover:text-blue-900 font-bold flex items-center gap-1">
+                        <Settings size={12} /> Gestionar
+                      </button>
+                    )}
+                  </div>
+                  <select {...register('category_id')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm">
                     <option value="">Sin Categoría</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -694,19 +708,24 @@ const SermonsManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catálogo de Oradores</label>
-                  <select {...register('speaker_id')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none">
-                    <option value="">Selecciona orador (Opcional)</option>
-                    {speakers.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.role})</option>)}
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Predicador / Pastor</label>
+                    <a href="/admin/pastores" target="_blank" className="text-[10px] text-primary hover:text-blue-900 font-bold flex items-center gap-1">
+                      <Edit2 size={12} /> Administrar
+                    </a>
+                  </div>
+                  <select {...register('speaker_id')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm font-medium">
+                    <option value="">Selecciona orador del catálogo...</option>
+                    {speakers.map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} • {s.role}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Predicador (Texto libre)</label>
-                  <input type="text" {...register('pastor_name')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" placeholder="O se llenará solo si eliges arriba..." />
+                  <input type="text" {...register('pastor_name')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm" placeholder="O escribe el nombre si no está en la lista..." />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha</label>
-                  <input type="date" {...register('date')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 rounded-xl text-sm" />
+                  <input type="date" {...register('date')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 rounded-xl text-sm shadow-sm" />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
