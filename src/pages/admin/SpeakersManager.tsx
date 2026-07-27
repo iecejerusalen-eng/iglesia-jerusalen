@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
@@ -38,7 +38,7 @@ const SpeakersManager = () => {
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
-  const { register, handleSubmit, control, watch, reset, setValue, formState: { errors } } = useForm<SpeakerForm>({
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<SpeakerForm>({
     resolver: zodResolver(speakerSchema),
     defaultValues: {
       first_name: '',
@@ -87,9 +87,9 @@ const SpeakersManager = () => {
       } else {
         setMembers(membersData as Member[]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching speakers:', err);
-      toast.error('Error al cargar oradores: ' + err.message);
+      toast.error('Error al cargar oradores: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -146,9 +146,9 @@ const SpeakersManager = () => {
 
       setShowForm(false);
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving speaker:', err);
-      toast.error('Error al guardar: ' + err.message);
+      toast.error('Error al guardar: ' + (err as Error).message);
     } finally {
       setActionLoading(false);
     }
@@ -169,9 +169,9 @@ const SpeakersManager = () => {
         if (error) throw error;
         toast.success('Orador eliminado exitosamente.');
         fetchData();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error deleting speaker:', err);
-        toast.error('Error al eliminar: ' + err.message);
+        toast.error('No se pudo eliminar el registro. ' + (err as Error).message);
       }
     }
   };
@@ -247,8 +247,7 @@ const SpeakersManager = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <AdminHeader 
         title="Catálogo de Pastores y Oradores" 
-        subtitle="Administra los perfiles de quienes imparten prédicas y devocionales"
-        icon={Mic}
+        description="Administra los perfiles de quienes imparten prédicas y devocionales"
       />
 
       {!showForm ? (
@@ -275,6 +274,7 @@ const SpeakersManager = () => {
             columns={columns}
             title="Oradores Registrados"
             defaultView="table"
+            isLoading={loading}
             renderListItem={(speaker) => (
               <div className="flex items-center gap-4 p-4">
                 {speaker.photo_url ? (
@@ -466,7 +466,8 @@ const SpeakersManager = () => {
             setValue('photo_url', url);
             setIsMediaModalOpen(false);
           }}
-          onClose={() => setIsMediaModalOpen(false)}
+          isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
         />
       )}
     </div>
