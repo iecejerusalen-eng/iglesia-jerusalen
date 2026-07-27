@@ -7,6 +7,7 @@ import { ImageGallerySection } from '../../components/public/ImageGallerySection
 import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 
 import OptimizedMedia from '../../components/common/OptimizedMedia';
+import HistoryTabs from '../../components/public/about/HistoryTabs';
 
 import pastorDavidImg from '../../assets/Jerusalén/Pastor David.png';
 import pastoraCorinaImg from '../../assets/Jerusalén/Pastora Corina.png';
@@ -243,133 +244,8 @@ const About = () => {
             if (id === 'about_history') {
               return (
                 <div key={id} id={id}>
-                  <div className="space-y-16">
-                    {/* Historia Denominacional - Paso a Paso */}
-                    <div className="space-y-12">
-                      <div className="text-center max-w-2xl mx-auto space-y-4">
-                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0}>
-                          <h2 className="text-3xl md:text-5xl font-serif font-bold text-primary dark:text-white">
-                            Historia de la Iglesia Cuadrangular
-                          </h2>
-                          <p className="text-gray-500 dark:text-gray-400 mt-4">
-                            Un viaje de fe, pasión y misiones que comenzó en Los Ángeles y se extendió por todo el mundo hasta llegar a nuestra congregación.
-                          </p>
-                        </ScrollReveal>
-                      </div>
-
-                      <div className="relative border-l-2 border-primary/20 ml-4 md:ml-8 space-y-12 pb-8">
-                        {/* Paso 1: Fundación */}
-                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.1} className="relative pl-8 md:pl-12">
-                          <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-primary p-1">
-                            <Cross className="w-5 h-5 text-primary" />
-                          </div>
-                          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 shadow-sm hover:shadow-lg transition-shadow duration-500">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                              <div className="space-y-4 text-left">
-                                <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary font-semibold text-sm">1923 - Los Comienzos</span>
-                                <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100">
-                                  El Ministerio de Aimee Semple McPherson
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">
-                                  La <strong>Iglesia Internacional del Evangelio Cuadrangular</strong> fue fundada en 1923 por la evangelista Aimee Semple McPherson, una mujer adelantada a su tiempo. Con un ministerio marcado por compasión, sanidades milagrosas y una predicación ferviente, inauguró el histórico Templo del Ángelus en Los Ángeles, California. Constituida formalmente en 1927, la iglesia nació bajo el fuego del avivamiento pentecostal.
-                                </p>
-                              </div>
-                              <div className="relative group overflow-hidden rounded-2xl shadow-md">
-                                <OptimizedMedia 
-                                  src={aimeeImg}
-                                  alt="Aimee Semple McPherson"
-                                  className="w-full aspect-[4/3] object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                  <p className="text-white text-sm">Hermana Aimee predicando el Evangelio Cuadrangular.</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </ScrollReveal>
-
-                        {/* Paso 2: La Doctrina */}
-                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.2} className="relative pl-8 md:pl-12">
-                          <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-secondary p-1">
-                            <BookOpen className="w-5 h-5 text-secondary" />
-                          </div>
-                          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 shadow-sm hover:shadow-lg transition-shadow duration-500">
-                            <div className="space-y-4 text-left">
-                              <span className="inline-block py-1 px-3 rounded-full bg-secondary/10 text-secondary font-semibold text-sm">La Doctrina Central</span>
-                              <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100">
-                                Jesucristo: El Mismo Ayer, Hoy y por los Siglos
-                              </h3>
-                              <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">
-                                El corazón de nuestra denominación es la visión que Dios le dio a nuestra fundadora, basada en Hebreos 13:8 y el libro de Ezequiel. Este marco teológico 100% cristocéntrico declara que Jesucristo cumple cuatro roles inmutables para la humanidad:
-                              </p>
-                              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm text-gray-700 dark:text-gray-300">
-                                <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                                  <Cross className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                  <span><strong>Jesucristo, el Salvador:</strong> Murió en la cruz por nuestros pecados, perdonando y transformando vidas.</span>
-                                </li>
-                                <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                                  <Wind className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                                  <span><strong>Jesucristo, el Bautizador:</strong> Llena a los creyentes con el Espíritu Santo para darles poder y servir.</span>
-                                </li>
-                                <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                                  <Activity className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                                  <span><strong>Jesucristo, el Sanador:</strong> Su sacrificio también nos proveyó sanidad física, emocional y espiritual.</span>
-                                </li>
-                                <li className="flex items-start space-x-3 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                                  <Crown className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                                  <span><strong>Jesucristo, el Rey que Viene:</strong> La gloriosa promesa de Su inminente regreso para buscar a su Iglesia.</span>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </ScrollReveal>
-
-                        {/* Paso 3: Expansión y Ecuador */}
-                        <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.3} className="relative pl-8 md:pl-12">
-                          <div className="absolute -left-[17px] top-2 bg-white dark:bg-slate-900 rounded-full border-4 border-primary p-1">
-                            <Globe className="w-5 h-5 text-primary" />
-                          </div>
-                          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 shadow-sm hover:shadow-lg transition-shadow duration-500">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                              <div className="space-y-4 text-left order-2 lg:order-1">
-                                <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary font-semibold text-sm">1956 - Misiones Globales</span>
-                                <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100">
-                                  Expansión Global y Llegada al Ecuador
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">
-                                  La gran pasión de Aimee Semple McPherson no se limitó a Estados Unidos. Rápidamente, la Iglesia Cuadrangular se convirtió en una poderosa fuerza misionera global, estableciendo obras en cada continente con un fuerte énfasis en el evangelismo y la labor social.
-                                </p>
-                                <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base leading-relaxed">
-                                  En <strong>1956</strong>, este mensaje salvador llegó a <strong>Ecuador</strong> gracias a valientes misioneros pioneros. A través de la fe, el sacrificio y la dedicación incansable, comenzaron a establecer las primeras congregaciones en el país. Con el pasar de las décadas, la iglesia en Ecuador ha crecido enormemente, formando una gran familia de iglesias unidas que continúan llevando la esperanza de Jesús a cada ciudad y provincia.
-                                </p>
-                              </div>
-                              <div className="relative group overflow-hidden rounded-2xl shadow-md order-1 lg:order-2">
-                                <OptimizedMedia 
-                                  src="/images/history/foursquare_expansion.png"
-                                  alt="Expansión Global Cuadrangular"
-                                  className="w-full aspect-[4/3] object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                  <p className="text-white text-sm">Un mensaje de fe que cruzó fronteras.</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </ScrollReveal>
-                      </div>
-
-                      {/* Botón para ver la historia completa */}
-                      <div className="flex justify-center mt-12 pb-8">
-                        <button 
-                          onClick={() => setIsHistoryModalOpen(true)}
-                          className="bg-primary hover:bg-blue-900 text-white font-bold py-3.5 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"
-                        >
-                          <BookOpen className="w-5 h-5" />
-                          Ver más
-                        </button>
-                      </div>
-
-                    </div>
+                    {/* Pestañas de Historia Internacional y Nacional */}
+                    <HistoryTabs />
 
                     {/* Historia Local */}
                     <ScrollReveal direction="up" distance={20} duration={1.3} delay={0.4} className="bg-primary text-white rounded-[2.5rem] p-8 md:p-14 shadow-2xl space-y-8 text-left relative overflow-hidden group">
