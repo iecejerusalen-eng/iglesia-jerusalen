@@ -67,10 +67,6 @@ const SpeakersManager = () => {
     }
   }, [selectedMemberId, members, setValue, editingSpeaker]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -97,6 +93,10 @@ const SpeakersManager = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleOpenCreate = () => {
     setEditingSpeaker(null);
