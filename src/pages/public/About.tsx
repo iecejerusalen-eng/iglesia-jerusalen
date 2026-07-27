@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ScrollReveal, StaggerContainer, StaggerItem, HoverCard } from '../../components/animations/MotionWrappers';
-import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, BookOpen, Globe, Activity, Wind, MapPin, X } from 'lucide-react';
+import { Landmark, Compass, Sparkles, Cross, Flame, Droplet, Crown, Activity, MapPin, X } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import { ImageGallerySection } from '../../components/public/ImageGallerySection';
