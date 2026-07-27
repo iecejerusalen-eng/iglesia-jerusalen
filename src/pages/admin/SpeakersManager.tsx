@@ -95,7 +95,10 @@ const SpeakersManager = () => {
   };
 
   useEffect(() => {
-    fetchData(false);
+    const load = async () => {
+      await fetchData(false);
+    };
+    load();
   }, []);
 
   const handleOpenCreate = () => {

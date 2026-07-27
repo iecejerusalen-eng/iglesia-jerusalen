@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, Folder } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
 import type { SermonCategory, Speaker } from '../../types';
