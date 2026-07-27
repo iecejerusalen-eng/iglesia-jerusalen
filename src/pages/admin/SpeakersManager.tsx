@@ -67,8 +67,8 @@ const SpeakersManager = () => {
     }
   }, [selectedMemberId, members, setValue, editingSpeaker]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const { data: speakersData, error: speakersError } = await supabase
         .from('speakers')
@@ -95,7 +95,7 @@ const SpeakersManager = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
   }, []);
 
   const handleOpenCreate = () => {
