@@ -244,6 +244,7 @@ const About = () => {
             if (id === 'about_history') {
               return (
                 <div key={id} id={id}>
+                  <div className="space-y-16">
                     {/* Pestañas de Historia Internacional y Nacional */}
                     <HistoryTabs />
 
