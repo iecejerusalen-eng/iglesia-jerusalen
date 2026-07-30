@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Calendar, Globe, Radio, HeartHandshake, Building2 } from 'lucide-react';
-import OptimizedMedia from '../common/OptimizedMedia';
+import OptimizedMedia from '../../common/OptimizedMedia';
 
 const TIMELINE_DATA = [
   {
