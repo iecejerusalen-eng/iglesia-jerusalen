@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
-import { Package, FolderOpen, ClipboardList, Users, ShieldAlert, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Package, FolderOpen, ClipboardList, Users, ShieldAlert, X, AlertCircle, Loader2, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
+import { BentoGrid, BentoCard } from '../../components/ui/magicui/bento-grid';
+import { NumberTicker } from '../../components/ui/magicui/number-ticker';
 
 import type { Order, OrderStatus } from '../../types';
 import type { DbProduct, StoreCategory, Supplier, Dispute } from '../../features/store/types';
@@ -222,6 +224,52 @@ const StoreManager = () => {
       <AdminHeader title="Gestión de Librería / Store" />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <AnimeFadeUp>
+          {/* Top Metrics BentoGrid */}
+          <BentoGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <BentoCard
+              name="Pedidos Pendientes"
+              description="Esperando verificación de pago"
+              Icon={Clock}
+              className="col-span-1 shadow-xs border border-gray-150 dark:border-white/10"
+              background={<div className="absolute inset-0 bg-amber-500/5 dark:bg-amber-900/10 pointer-events-none" />}
+            >
+              <div className="mt-4">
+                <span className="text-4xl font-extrabold text-amber-600 dark:text-amber-400">
+                  <NumberTicker value={orders.filter(o => o.status === 'pending_payment').length} />
+                </span>
+              </div>
+            </BentoCard>
+
+            <BentoCard
+              name="Productos Sin Stock"
+              description="Productos físicos agotados"
+              Icon={AlertTriangle}
+              className="col-span-1 shadow-xs border border-gray-150 dark:border-white/10"
+              background={<div className="absolute inset-0 bg-red-500/5 dark:bg-red-900/10 pointer-events-none" />}
+            >
+              <div className="mt-4">
+                <span className="text-4xl font-extrabold text-red-600 dark:text-red-400">
+                  <NumberTicker value={products.filter(p => p.type === 'physical' && p.stock === 0).length} />
+                </span>
+              </div>
+            </BentoCard>
+
+            <BentoCard
+              name="Total Vendido (Histórico)"
+              description="Ingresos brutos generados"
+              Icon={TrendingUp}
+              className="col-span-1 shadow-xs border border-gray-150 dark:border-white/10"
+              background={<div className="absolute inset-0 bg-primary/5 pointer-events-none" />}
+            >
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-gray-400">$</span>
+                <span className="text-4xl font-extrabold text-primary">
+                  <NumberTicker value={orders.filter(o => o.status === 'completed' || o.status === 'ready_for_pickup' || o.status === 'paid').reduce((acc, o) => acc + Number(o.total), 0)} decimalPlaces={2} />
+                </span>
+              </div>
+            </BentoCard>
+          </BentoGrid>
+
           {/* Tabs Navigation */}
           <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-white/10 mb-8 pb-4">
             {tabs.map(tab => {

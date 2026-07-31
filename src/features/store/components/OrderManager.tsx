@@ -1,5 +1,6 @@
 import { Eye, Clock, CheckCircle2, Truck, AlertCircle, ClipboardList, X, Download } from 'lucide-react';
-import type { Order, OrderStatus } from '../../../types';
+import type { Order, OrderStatus, OrderItem } from '../../../types';
+import { BorderBeam } from '../../../components/ui/magicui/border-beam';
 
 interface OrderManagerProps {
   orders: Order[];
@@ -236,7 +237,7 @@ const OrderManager = ({
                 <div className="space-y-3">
                   <h4 className="font-bold text-xs text-gray-850 dark:text-white">Artículos Comprados:</h4>
                   <div className="divide-y divide-gray-100 dark:divide-white/10 border border-gray-150 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-                    {selectedOrder.order_items?.map((item: any) => (
+                    {selectedOrder.order_items?.map((item: OrderItem) => (
                       <div key={item.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <img loading="lazy" 
@@ -325,6 +326,9 @@ const OrderManager = ({
                   </>
                 )}
               </div>
+              {selectedOrder.status === 'pending_payment' && selectedOrder.payment_method === 'transfer' && (
+                <BorderBeam size={250} duration={8} colorFrom="#F59E0B" colorTo="#FCD34D" />
+              )}
           </div>
         </div>
       )}
