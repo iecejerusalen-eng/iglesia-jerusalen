@@ -1,5 +1,6 @@
 import { Activity, Sparkles } from 'lucide-react';
 import { AnimeReveal, AnimeFloat } from '../../../components/animations/AnimeWrappers';
+import { BorderBeam } from '../../../components/ui/magicui/border-beam';
 import { BIBLE_VERSES } from '../constants';
 
 interface DashboardHeroProps {
@@ -34,6 +35,7 @@ export const DashboardHero = ({ displayName, membersCount }: DashboardHeroProps)
       {/* Versiculo de la Semana */}
       <AnimeReveal direction="up" delay={150} duration={700}>
         <div className="h-full bg-gradient-to-br from-[#D4AF37]/5 via-white dark:via-slate-900 to-white dark:to-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden group hover:border-gold/30 hover:shadow-xs transition-all duration-300">
+          <BorderBeam size={200} duration={20} delay={0} colorFrom="#D4AF37" colorTo="#FFFFFF" />
           <div className="absolute -top-6 -right-6 text-gold/10 font-serif text-8xl pointer-events-none select-none group-hover:scale-110 transition-transform duration-500">
             “
           </div>

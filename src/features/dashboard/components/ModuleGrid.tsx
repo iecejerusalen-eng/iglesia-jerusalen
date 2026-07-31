@@ -1,6 +1,8 @@
 import { Layers, ArrowRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
+import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
+import { BentoGrid, BentoCard } from '../../../components/ui/magicui/bento-grid';
+import { cn } from '../../../lib/utils';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../../config/adminModules';
 import { usePermissions } from '../../../hooks/usePermissions';
 
@@ -25,75 +27,64 @@ export const ModuleGrid = () => {
       </div>
 
       {/* Grid of groups */}
-      <AnimeStaggerGrid id="modules-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" staggerDelay={60} duration={700}>
+      <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-auto">
         {MODULE_GROUPS.map((group) => {
           const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
+          const isLarge = group.key === 'comunidad' || group.key === 'educacion' || group.key === 'admin';
           
           return (
-            <div 
-              key={group.key} 
-              className="bg-slate-50/50 dark:bg-slate-950/20 border border-gray-150 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:shadow-lg hover:border-gold/30 dark:hover:border-gold/20 hover:bg-white dark:hover:bg-slate-900/40 transition-all duration-300 group relative overflow-hidden"
+            <BentoCard
+              key={group.key}
+              name={group.label}
+              Icon={group.icon}
+              description={group.description}
+              badge={`${groupModules.length} items`}
+              className={cn(
+                "h-auto min-h-[22rem]", 
+                isLarge ? "lg:col-span-2" : "col-span-1"
+              )}
             >
-              <div className="space-y-4">
-                {/* Group Header */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 shadow-3xs flex items-center justify-center text-primary dark:text-white shrink-0 group-hover:text-gold transition-colors duration-300">
-                    <group.icon size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-serif font-bold text-xs sm:text-sm text-gray-800 dark:text-gray-100">{group.label}</h3>
-                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{groupModules.length} items</span>
-                  </div>
-                </div>
-
-                {/* Group Description */}
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                  {group.description}
-                </p>
-
-                {/* Modules List */}
-                <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/5">
-                  {groupModules.map((mod) => {
-                    const hasAccess = hasPermission(mod.id, 'view');
-                    
-                    if (hasAccess) {
-                      return (
-                        <Link
-                          key={mod.path}
-                          to={mod.path}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800/60 text-xs text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-gold font-bold transition-all duration-200 shadow-4xs hover:shadow-3xs border border-transparent hover:border-gray-100 dark:hover:border-white/5 group/link"
-                          style={{ minHeight: '38px' }}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <mod.icon size={14} className="text-gold/80 shrink-0 group-hover/link:scale-110 transition-transform duration-200" />
-                            <span className="truncate">{mod.name}</span>
-                          </div>
-                          <ArrowRight size={12} className="text-gray-300 group-hover/link:text-primary dark:group-hover/link:text-gold group-hover/link:translate-x-0.5 transition-all shrink-0" />
-                        </Link>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={mod.path}
-                          className="flex items-center justify-between p-2 rounded-lg text-xs text-gray-400 dark:text-gray-600 font-medium select-none bg-gray-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent backdrop-blur-xs opacity-65"
-                          style={{ minHeight: '38px' }}
-                          title="No tienes permisos para acceder a esta herramienta"
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <mod.icon size={14} className="opacity-40 shrink-0" />
-                            <span className="truncate">{mod.name}</span>
-                          </div>
-                          <Lock size={10} className="text-gray-400 dark:text-gray-600 shrink-0" />
+              <div className="space-y-1.5 mt-2">
+                {groupModules.map((mod) => {
+                  const hasAccess = hasPermission(mod.id, 'view');
+                  
+                  if (hasAccess) {
+                    return (
+                      <Link
+                        key={mod.path}
+                        to={mod.path}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-800/60 text-xs text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition-all duration-200 shadow-4xs hover:shadow-3xs border border-transparent hover:border-indigo-100 dark:hover:border-white/5 group/link"
+                        style={{ minHeight: '38px' }}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <mod.icon size={14} className="text-indigo-500/80 dark:text-indigo-400/80 shrink-0 group-hover/link:scale-110 transition-transform duration-200" />
+                          <span className="truncate">{mod.name}</span>
                         </div>
-                      );
-                    }
-                  })}
-                </div>
+                        <ArrowRight size={12} className="text-slate-300 group-hover/link:text-indigo-600 dark:group-hover/link:text-indigo-400 group-hover/link:translate-x-0.5 transition-all shrink-0" />
+                      </Link>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={mod.path}
+                        className="flex items-center justify-between p-2 rounded-lg text-xs text-slate-400 dark:text-slate-600 font-medium select-none bg-slate-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent backdrop-blur-xs opacity-65"
+                        style={{ minHeight: '38px' }}
+                        title="No tienes permisos para acceder a esta herramienta"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <mod.icon size={14} className="opacity-40 shrink-0" />
+                          <span className="truncate">{mod.name}</span>
+                        </div>
+                        <Lock size={10} className="text-slate-400 dark:text-slate-600 shrink-0" />
+                      </div>
+                    );
+                  }
+                })}
               </div>
-            </div>
+            </BentoCard>
           );
         })}
-      </AnimeStaggerGrid>
+      </BentoGrid>
     </AnimeFadeUp>
   );
 };

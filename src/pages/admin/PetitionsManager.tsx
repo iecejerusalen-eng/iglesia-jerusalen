@@ -14,10 +14,13 @@ import {
   HeartHandshake, 
   Save, 
   X,
-  AlertTriangle
+  AlertTriangle,
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { BentoGrid, BentoCard } from '../../components/ui/magicui/bento-grid';
+import { BorderBeam } from '../../components/ui/magicui/border-beam';
 
 const PetitionsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
@@ -39,21 +42,6 @@ const PetitionsManager = () => {
   const [editedCategoryName, setEditedCategoryName] = useState('');
   const [categoryDeletingId, setCategoryDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([fetchPetitions(), fetchCategories()]);
-    } catch (err) {
-      console.error('Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchPetitions = async () => {
     try {
       const { data, error } = await supabase
@@ -67,7 +55,7 @@ const PetitionsManager = () => {
 
       if (error) throw error;
       setPetitions(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching petitions:', err);
       toast.error('Error al cargar peticiones');
     }
@@ -82,11 +70,27 @@ const PetitionsManager = () => {
 
       if (error) throw error;
       setCategories(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching categories:', err);
       toast.error('Error al cargar las categorías');
     }
   };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchPetitions(), fetchCategories()]);
+    } catch (err: unknown) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStatusChange = async (petitionId: string, newStatus: 'pendiente' | 'en_oracion' | 'respondida') => {
     if (readOnly) {
@@ -109,7 +113,7 @@ const PetitionsManager = () => {
       toast.success(`Petición marcada como: ${
         newStatus === 'pendiente' ? 'Recibido' : newStatus === 'en_oracion' ? 'En Oración' : 'Respondido'
       }`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error changing status:', err);
       toast.error('Error al cambiar el estado: ' + err.message);
     }
@@ -143,7 +147,7 @@ const PetitionsManager = () => {
 
       setPetitions(prev => prev.filter(p => p.id !== petitionId));
       toast.success('Petición de oración eliminada');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting petition:', err);
       toast.error('Error al eliminar: ' + err.message);
     }
@@ -171,7 +175,7 @@ const PetitionsManager = () => {
       setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       setNewCategoryName('');
       toast.success('Categoría agregada con éxito');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error adding category:', err);
       toast.error('Error al agregar categoría: ' + err.message);
     } finally {
@@ -199,7 +203,7 @@ const PetitionsManager = () => {
       );
       setEditingCategory(null);
       toast.success('Categoría actualizada con éxito');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating category:', err);
       toast.error('Error al actualizar: ' + err.message);
     }
@@ -223,7 +227,7 @@ const PetitionsManager = () => {
       setCategoryDeletingId(null);
       toast.success('Categoría eliminada con éxito');
       fetchPetitions(); // Reload petitions in case category was cascade deleted
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting category:', err);
       toast.error('Error al eliminar la categoría: ' + err.message);
     }
@@ -386,112 +390,105 @@ const PetitionsManager = () => {
               <p className="text-xs text-gray-400">Prueba cambiando los términos de búsqueda o filtros.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredPetitions.map((pet) => (
-                <div
-                  key={pet.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs p-6 hover:shadow-md transition-all duration-200 flex flex-col gap-4"
-                >
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                    {/* User and Category info */}
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">
-                          {pet.profiles?.first_name || pet.profiles?.last_name
-                            ? `${pet.profiles?.first_name || ''} ${pet.profiles?.last_name || ''}`.trim()
-                            : 'Anónimo / Sin nombre'}
-                        </h3>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-xs font-mono text-gray-400">
-                          {pet.profiles?.email || 'Sin correo'}
-                        </span>
+            <BentoGrid className="grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-auto">
+              {filteredPetitions.map((pet) => {
+                const userName = pet.profiles?.first_name || pet.profiles?.last_name
+                  ? `${pet.profiles?.first_name || ''} ${pet.profiles?.last_name || ''}`.trim()
+                  : 'Anónimo / Sin nombre';
+                const userEmail = pet.profiles?.email || 'Sin correo';
+                const catName = pet.petition_categories?.name || 'Necesidades varias';
+
+                return (
+                  <BentoCard
+                    key={pet.id}
+                    name={userName}
+                    description={catName}
+                    Icon={User}
+                    className="col-span-1 border border-gray-150 dark:border-white/10 shadow-xs relative overflow-hidden"
+                    background={<div className="absolute inset-0 bg-white/40 dark:bg-slate-900/40 pointer-events-none" />}
+                  >
+                    <div className="flex flex-col gap-4 mt-2">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-mono text-gray-400">{userEmail}</span>
+                        <div>{getStatusBadge(pet.status)}</div>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
-                          {pet.petition_categories?.name || 'Necesidades varias'}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          {new Date(pet.created_at).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
+
+                      {/* Content */}
+                      <p className="text-gray-750 dark:text-gray-300 text-sm whitespace-pre-line leading-relaxed font-medium bg-gray-50/80 dark:bg-slate-800/80 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                        {pet.content}
+                      </p>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-white/5">
+                        <div className="flex items-center gap-2">
+                          
+                          {/* Enviar a pendiente */}
+                          <button
+                            onClick={() => handleStatusChange(pet.id, 'pendiente')}
+                            disabled={readOnly || pet.status === 'pendiente'}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
+                              pet.status === 'pendiente'
+                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-500 font-extrabold'
+                                : 'bg-white dark:bg-slate-800 hover:bg-gray-50 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10'
+                            }`}
+                            title="Recibido"
+                          >
+                            <Clock size={14} />
+                          </button>
+
+                          {/* Enviar a oración */}
+                          <button
+                            onClick={() => handleStatusChange(pet.id, 'en_oracion')}
+                            disabled={readOnly || pet.status === 'en_oracion'}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
+                              pet.status === 'en_oracion'
+                                ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700/50 font-extrabold'
+                                : 'bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 dark:text-amber-500 border-gray-200 dark:border-white/10'
+                            }`}
+                            title="En Oración"
+                          >
+                            <Flame size={14} className={pet.status === 'en_oracion' ? 'text-amber-500' : 'text-gray-400'} />
+                          </button>
+
+                          {/* Enviar a respondido */}
+                          <button
+                            onClick={() => handleStatusChange(pet.id, 'respondida')}
+                            disabled={readOnly || pet.status === 'respondida'}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
+                              pet.status === 'respondida'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700/50 font-extrabold'
+                                : 'bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border-gray-200 dark:border-white/10'
+                            }`}
+                            title="Respondido"
+                          >
+                            <CheckCircle size={14} className={pet.status === 'respondida' ? 'text-emerald-500' : 'text-gray-400'} />
+                          </button>
+                        </div>
+
+                        {!readOnly && (
+                          <button
+                            onClick={() => handleDeletePetition(pet.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-400 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
+                            title="Eliminar petición"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Badge */}
-                    <div>{getStatusBadge(pet.status)}</div>
-                  </div>
-
-                  {/* Content */}
-                  <p className="text-gray-750 text-sm whitespace-pre-line leading-relaxed font-medium bg-gray-50/50 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                    {pet.content}
-                  </p>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-white/5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 font-semibold mr-1">Marcar como:</span>
-                      
-                      {/* Enviar a pendiente */}
-                      <button
-                        onClick={() => handleStatusChange(pet.id, 'pendiente')}
-                        disabled={readOnly || pet.status === 'pendiente'}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
-                          pet.status === 'pendiente'
-                            ? 'bg-gray-100 text-gray-800 border-gray-300 font-extrabold'
-                            : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'
-                        }`}
-                      >
-                        <Clock size={12} />
-                        Recibido
-                      </button>
-
-                      {/* Enviar a oración */}
-                      <button
-                        onClick={() => handleStatusChange(pet.id, 'en_oracion')}
-                        disabled={readOnly || pet.status === 'en_oracion'}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
-                          pet.status === 'en_oracion'
-                            ? 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold'
-                            : 'bg-white hover:bg-amber-50 text-amber-600 border-gray-200'
-                        }`}
-                      >
-                        <Flame size={12} className={pet.status === 'en_oracion' ? 'text-amber-500' : 'text-gray-400'} />
-                        En Oración
-                      </button>
-
-                      {/* Enviar a respondido */}
-                      <button
-                        onClick={() => handleStatusChange(pet.id, 'respondida')}
-                        disabled={readOnly || pet.status === 'respondida'}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs border cursor-pointer ${
-                          pet.status === 'respondida'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold'
-                            : 'bg-white hover:bg-emerald-50 text-emerald-600 border-gray-200'
-                        }`}
-                      >
-                        <CheckCircle size={12} className={pet.status === 'respondida' ? 'text-emerald-500' : 'text-gray-400'} />
-                        Respondido
-                      </button>
-                    </div>
-
-                    {!readOnly && (
-                      <button
-                        onClick={() => handleDeletePetition(pet.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-200"
-                        title="Eliminar petición"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    {(pet.status === 'pendiente' || pet.status === 'en_oracion') && (
+                      <BorderBeam 
+                        size={150} 
+                        duration={pet.status === 'en_oracion' ? 8 : 12} 
+                        colorFrom={pet.status === 'en_oracion' ? '#F59E0B' : '#94A3B8'} 
+                        colorTo={pet.status === 'en_oracion' ? '#FCD34D' : '#CBD5E1'} 
+                      />
                     )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </BentoCard>
+                );
+              })}
+            </BentoGrid>
           )}
         </>
       ) : (

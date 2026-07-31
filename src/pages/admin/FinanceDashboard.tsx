@@ -13,6 +13,13 @@ import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/common/Skeletons';
 import { toast } from 'sonner';
 
+// Magic UI
+import { BentoGrid, BentoCard } from '../../components/ui/magicui/bento-grid';
+import { NumberTicker } from '../../components/ui/magicui/number-ticker';
+import { Marquee } from '../../components/ui/magicui/marquee';
+import { ShinyButton } from '../../components/ui/magicui/shiny-button';
+import { BorderBeam } from '../../components/ui/magicui/border-beam';
+
 interface CustomTooltipItem {
   color?: string;
   name?: string;
@@ -433,7 +440,10 @@ const FinanceDashboard = () => {
   }, [fetchDonations, fetchCategories, fetchOrders, computeStatsAndChart, dateFilter]);
 
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      await loadData();
+    };
+    init();
   }, [loadData]);
 
   const handleDateFilterChange = (val: '30days' | '90days' | 'year' | 'all') => {
@@ -620,59 +630,98 @@ const FinanceDashboard = () => {
       ) : activeTab === 'metrics' ? (
         /* METRICS AND REVENUE TAB */
         <div className="space-y-6 animate-fadeIn">
+          
+          {/* Real-time Ticker Marquee */}
+          {filteredTransactions.length > 0 && (
+            <div className="relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-gray-150 dark:border-white/10 bg-white/50 dark:bg-slate-800/30 backdrop-blur-md">
+              <Marquee pauseOnHover className="[--duration:40s] py-3">
+                {filteredTransactions.slice(0, 10).map((tx, idx) => (
+                  <div key={idx} className="flex items-center gap-3 px-6 border-r border-gray-200/50 dark:border-white/10 last:border-0">
+                    <div className={`w-2 h-2 rounded-full ${tx.type === 'donation' ? 'bg-primary' : 'bg-emerald-500'}`} />
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                      {tx.name}
+                    </span>
+                    <span className={`font-mono text-sm font-bold ${tx.type === 'donation' ? 'text-primary dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      +${tx.amount.toLocaleString('es-EC', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </Marquee>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-white dark:from-slate-900"></div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-white dark:from-slate-900"></div>
+            </div>
+          )}
+
           {/* KPI Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Total Consolidated */}
-            <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all duration-300 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Ingreso Total</span>
-                <p className="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">${stats.totalIncome.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
-                <div className="text-[9px] text-gray-400 dark:text-gray-500 font-bold mt-1 flex items-center gap-1.5">
+          <BentoGrid className="lg:grid-cols-4 md:grid-cols-2 auto-rows-[12rem] gap-6">
+            <BentoCard
+              name="Ingreso Total"
+              Icon={DollarSign}
+              description="Suma consolidada"
+              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
+              background={<div className="absolute inset-0 bg-green-50/20 dark:bg-green-900/10 pointer-events-none" />}
+            >
+              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
+                <div className="text-3xl font-extrabold text-gray-800 dark:text-white tracking-tight flex items-center">
+                  $<NumberTicker value={stats.totalIncome} decimalPlaces={2} />
+                </div>
+                <div className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-2 flex items-center gap-2">
                   <span className="text-primary dark:text-church-gold-bright">Donaciones: {stats.totalIncome > 0 ? ((stats.donationsTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
                   <span className="text-emerald-600 dark:text-emerald-400">Tienda: {stats.totalIncome > 0 ? ((stats.storeTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-green-50/70 dark:bg-green-900/30 border border-green-100 dark:border-green-500/20 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
-                <DollarSign size={22} />
-              </div>
-            </div>
+              <BorderBeam size={100} duration={12} delay={9} colorFrom="#10B981" colorTo="#34D399" />
+            </BentoCard>
 
-            {/* Total Donations */}
-            <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all duration-300 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Donaciones Recibidas</span>
-                <p className="text-2xl font-extrabold text-primary dark:text-church-gold-bright tracking-tight">${stats.donationsTotal.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 block font-semibold mt-1">Recibos: {stats.donationsCount} | Prom: ${stats.donationsAvg.toFixed(0)}</span>
+            <BentoCard
+              name="Donaciones Recibidas"
+              Icon={Heart}
+              description="Diezmos y Ofrendas"
+              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
+              background={<div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-900/10 pointer-events-none" />}
+            >
+              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
+                <div className="text-3xl font-extrabold text-primary dark:text-church-gold-bright tracking-tight flex items-center">
+                  $<NumberTicker value={stats.donationsTotal} decimalPlaces={2} />
+                </div>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
+                  Recibos: {stats.donationsCount} | Prom: ${stats.donationsAvg.toFixed(0)}
+                </span>
               </div>
-              <div className="w-12 h-12 bg-blue-50/70 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex items-center justify-center text-primary dark:text-church-gold-bright shrink-0">
-                <Heart size={22} />
-              </div>
-            </div>
+            </BentoCard>
 
-            {/* Total Store Sales */}
-            <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all duration-300 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Ventas e-Commerce</span>
-                <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">${stats.storeTotal.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</p>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 block font-semibold mt-1">Pedidos: {stats.storeCount} | Ticket: ${stats.storeAvg.toFixed(0)}</span>
+            <BentoCard
+              name="Ventas e-Commerce"
+              Icon={ShoppingBag}
+              description="Ingresos de la tienda"
+              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
+              background={<div className="absolute inset-0 bg-emerald-50/20 dark:bg-emerald-900/10 pointer-events-none" />}
+            >
+              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
+                <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center">
+                  $<NumberTicker value={stats.storeTotal} decimalPlaces={2} />
+                </div>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
+                  Pedidos: {stats.storeCount} | Ticket: ${stats.storeAvg.toFixed(0)}
+                </span>
               </div>
-              <div className="w-12 h-12 bg-emerald-50/70 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                <ShoppingBag size={22} />
-              </div>
-            </div>
+            </BentoCard>
 
-            {/* Dominant Payment Method */}
-            <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all duration-300 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-1">Canal Dominante</span>
+            <BentoCard
+              name="Canal Dominante"
+              Icon={Tag}
+              description="Método de pago preferido"
+              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
+              background={<div className="absolute inset-0 bg-amber-50/20 dark:bg-amber-900/10 pointer-events-none" />}
+            >
+              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
                 <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 tracking-tight">{stats.paymentMethodDominant}</p>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 block font-semibold mt-1">Volumen: {stats.paymentMethodDominantCount} transacciones</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
+                  Volumen: <NumberTicker value={stats.paymentMethodDominantCount} /> transacciones
+                </span>
               </div>
-              <div className="w-12 h-12 bg-amber-50/50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-500/20 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                <Tag size={22} />
-              </div>
-            </div>
-          </div>
+            </BentoCard>
+          </BentoGrid>
 
           {/* Chart Row: Progress & Share */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -872,25 +921,21 @@ const FinanceDashboard = () => {
                 </h3>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-0.5">Donaciones y ventas registradas en Supabase.</p>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
+              <div className="flex gap-3 w-full sm:w-auto">
+                <ShinyButton
                   onClick={exportExcel}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer flex-1 sm:flex-none justify-center"
-                  title="Exportar a Excel"
+                  shinyColor="#10B981"
+                  className="bg-emerald-600 dark:bg-emerald-700 shadow-emerald-500/30 hover:shadow-emerald-500/50 text-[10px] px-4 py-2 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                 >
-                  <Download size={14} />
-                  Excel
-                </button>
-                <button
-                  type="button"
+                  <Download size={14} /> Excel
+                </ShinyButton>
+                <ShinyButton
                   onClick={exportPDF}
-                  className="bg-red-600 hover:bg-red-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer flex-1 sm:flex-none justify-center"
-                  title="Exportar a PDF"
+                  shinyColor="#EF4444"
+                  className="bg-red-600 dark:bg-red-700 shadow-red-500/30 hover:shadow-red-500/50 text-[10px] px-4 py-2 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                 >
-                  <FileText size={14} />
-                  PDF
-                </button>
+                  <FileText size={14} /> PDF
+                </ShinyButton>
               </div>
             </div>
 

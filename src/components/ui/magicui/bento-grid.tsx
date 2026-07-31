@@ -15,6 +15,7 @@ export interface BentoItemProps {
   badge?: string;
   badgeColor?: string;
   onClick?: () => void;
+  children?: ReactNode;
 }
 
 export function BentoGrid({
@@ -47,6 +48,7 @@ export function BentoCard({
   badge,
   badgeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   onClick,
+  children,
 }: BentoItemProps) {
   return (
     <motion.div
@@ -106,6 +108,12 @@ export function BentoCard({
             <ArrowRight size={14} />
           </button>
         ) : null}
+
+        {children && (
+          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 flex flex-col h-full">
+            {children}
+          </div>
+        )}
       </div>
     </motion.div>
   );
