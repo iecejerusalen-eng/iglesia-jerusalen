@@ -88,7 +88,10 @@ const PetitionsManager = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    const init = async () => {
+      await fetchData();
+    };
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -115,7 +118,7 @@ const PetitionsManager = () => {
       }`);
     } catch (err: unknown) {
       console.error('Error changing status:', err);
-      toast.error('Error al cambiar el estado: ' + err.message);
+      toast.error('Error al cambiar el estado: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -149,7 +152,7 @@ const PetitionsManager = () => {
       toast.success('Petición de oración eliminada');
     } catch (err: unknown) {
       console.error('Error deleting petition:', err);
-      toast.error('Error al eliminar: ' + err.message);
+      toast.error('Error al eliminar: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -177,7 +180,7 @@ const PetitionsManager = () => {
       toast.success('Categoría agregada con éxito');
     } catch (err: unknown) {
       console.error('Error adding category:', err);
-      toast.error('Error al agregar categoría: ' + err.message);
+      toast.error('Error al agregar categoría: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setAddingCategory(false);
     }
@@ -205,7 +208,7 @@ const PetitionsManager = () => {
       toast.success('Categoría actualizada con éxito');
     } catch (err: unknown) {
       console.error('Error updating category:', err);
-      toast.error('Error al actualizar: ' + err.message);
+      toast.error('Error al actualizar: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -229,7 +232,7 @@ const PetitionsManager = () => {
       fetchPetitions(); // Reload petitions in case category was cascade deleted
     } catch (err: unknown) {
       console.error('Error deleting category:', err);
-      toast.error('Error al eliminar la categoría: ' + err.message);
+      toast.error('Error al eliminar la categoría: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
