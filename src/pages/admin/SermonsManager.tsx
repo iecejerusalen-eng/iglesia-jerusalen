@@ -19,12 +19,15 @@ import type { ColumnDef } from '@tanstack/react-table';
 // Zod Validation Schema for Sermon
 const sermonSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
-  pastor_name: z.string().min(1, 'El nombre del predicador es obligatorio'),
+  pastor_name: z.string().optional().nullable(),
   date: z.string().min(1, 'La fecha de la prédica es obligatoria'),
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
   content: z.string().min(1, 'El contenido del mensaje es obligatorio'),
   category_id: z.string().optional().nullable(),
   speaker_id: z.string().optional().nullable(),
+}).refine(data => data.speaker_id || (data.pastor_name && data.pastor_name.trim().length > 0), {
+  message: "Debes seleccionar un orador del catálogo o escribir el nombre del invitado.",
+  path: ["speaker_id"],
 });
 
 type SermonForm = z.infer<typeof sermonSchema>;
@@ -88,7 +91,7 @@ const SermonsManager = () => {
     resolver: zodResolver(sermonSchema),
     defaultValues: {
       title: '',
-      pastor_name: 'Pastor Roberto Gómez',
+      pastor_name: '',
       date: new Date().toISOString().split('T')[0],
       youtube_url: '',
       content: '',
@@ -171,7 +174,7 @@ const SermonsManager = () => {
     setEditingSermon(null);
     reset({
       title: '',
-      pastor_name: 'Pastor Roberto Gómez',
+      pastor_name: '',
       date: new Date().toISOString().split('T')[0],
       youtube_url: '',
       content: '',
@@ -223,24 +226,29 @@ const SermonsManager = () => {
         }
       }
 
-      const payload: Record<string, unknown> = {
+      const currentEditors = editingSermon?.editors || [];
+      const newEditors = Array.from(new Set([...currentEditors, currentEditorName]));
+
+      // Auto-fill pastor_name if speaker is selected
+      let finalPastorName = data.pastor_name || '';
+      if (data.speaker_id) {
+        const speaker = speakers.find(s => s.id === data.speaker_id);
+        if (speaker) {
+          finalPastorName = `${speaker.first_name} ${speaker.last_name}`;
+        }
+      }
+
+      const payload = {
         title: data.title,
-        pastor_name: data.pastor_name,
+        pastor_name: finalPastorName,
         date: data.date,
         youtube_url: data.youtube_url || null,
         content: data.content,
-        description: plainTextDescription,
         category_id: data.category_id || null,
         speaker_id: data.speaker_id || null,
+        description: plainTextDescription.substring(0, 200),
+        editors: newEditors,
       };
-
-      // Si seleccionaron un speaker, auto-completar pastor_name
-      if (data.speaker_id) {
-        const selectedSpeaker = speakers.find(s => s.id === data.speaker_id);
-        if (selectedSpeaker) {
-          payload.pastor_name = `${selectedSpeaker.first_name} ${selectedSpeaker.last_name}`;
-        }
-      }
 
       if (editingSermon) {
         payload.editors = Array.from(new Set([...(editingSermon.editors || []), currentEditorName]));

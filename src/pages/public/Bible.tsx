@@ -43,7 +43,7 @@ interface SearchMeta {
   pageCount: number;
 }
 
-interface BollsVerse {
+export interface BollsVerse {
   pk?: number;
   verse: number;
   text?: string;
@@ -224,34 +224,59 @@ export default function Bible() {
       try {
         const bookIndex = BIBLE_BOOKS.findIndex(b => b.id === bookId);
         if (bookIndex === -1) throw new Error('Libro no encontrado');
+        const currentBookObj = BIBLE_BOOKS[bookIndex];
         const bollsBookId = bookIndex + 1;
         const bollsVersion = version.toUpperCase();
         
-        const url = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${chapterNum}/`;
-        const res = await fetchWithRetry(url);
-        if (!res.ok) throw new Error('No se pudo cargar el capítulo tras varios intentos. Por favor, revisa tu conexión e intenta de nuevo.');
+        let data: ChapterData | null = null;
+
+        try {
+          const url = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${chapterNum}/`;
+          const res = await fetchWithRetry(url, 2, 1000, 5000);
+          if (!res.ok) throw new Error('Bolls API Error');
+          const rawVerses = await res.json();
+          data = {
+            testament: currentBookObj.testament,
+            name: currentBookObj.name,
+            num_chapters: currentBookObj.chapters,
+            chapter: chapterNum,
+            vers: rawVerses.map((v: BollsVerse) => ({
+              id: v.pk || v.verse,
+              number: v.verse,
+              verse: v.text ? v.text.replace(/<[^>]*>?/gm, '') : '',
+              study: null
+            }))
+          };
+        } catch (err) {
+          // Fallback to bible-api.com
+          console.warn('Fallback to bible-api.com due to bolls.life error', err);
+          const fallbackTranslation = version === 'nvi' ? 'nvi' : 'valera'; // bible-api supports valera
+          const fallbackUrl = `https://bible-api.com/${encodeURIComponent(currentBookObj.name)}+${chapterNum}?translation=${fallbackTranslation}`;
+          const fallbackRes = await fetchWithRetry(fallbackUrl, 2, 1000, 5000);
+          if (!fallbackRes.ok) throw new Error('No se pudo cargar el capítulo en ninguna de las fuentes. Verifica tu conexión.', { cause: err });
+          const fallbackRaw = await fallbackRes.json();
+          
+          data = {
+            testament: currentBookObj.testament,
+            name: currentBookObj.name,
+            num_chapters: currentBookObj.chapters,
+            chapter: chapterNum,
+            vers: fallbackRaw.verses.map((v: { verse: number; text: string }) => ({
+              id: v.verse,
+              number: v.verse,
+              verse: v.text ? v.text.replace(/<[^>]*>?/gm, '') : '',
+              study: null
+            }))
+          };
+        }
         
-        const rawVerses = await res.json();
-        const currentBookObj = BIBLE_BOOKS[bookIndex];
-        
-        const data: ChapterData = {
-          testament: currentBookObj.testament,
-          name: currentBookObj.name,
-          num_chapters: currentBookObj.chapters,
-          chapter: chapterNum,
-          vers: rawVerses.map((v: BollsVerse) => ({
-            id: v.pk || v.verse,
-            number: v.verse,
-            verse: v.text ? v.text.replace(/<[^>]*>?/gm, '') : '',
-            study: null
-          }))
-        };
-        
+        if (!data) throw new Error('Data empty');
+
         // Cache the result
         chapterCache.current[cacheKey] = data;
         setChapterData(data);
 
-        // PREFETCH NEXT CHAPTER
+        // PREFETCH NEXT CHAPTER (only via bolls.life for speed, silent fail)
         setTimeout(() => {
           try {
             const nextChapter = chapterNum + 1;
@@ -259,7 +284,7 @@ export default function Bible() {
               const nextCacheKey = `${version}-${bookId}-${nextChapter}`;
               if (!chapterCache.current[nextCacheKey]) {
                 const nextUrl = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${nextChapter}/`;
-                fetchWithRetry(nextUrl, 2, 1000, 6000).then(r => r.json()).then(rawNext => {
+                fetchWithRetry(nextUrl, 1, 1000, 3000).then(r => r.json()).then(rawNext => {
                   chapterCache.current[nextCacheKey] = {
                     testament: currentBookObj.testament,
                     name: currentBookObj.name,
@@ -578,7 +603,7 @@ export default function Bible() {
 
   const getThemeClasses = () => {
     if (theme === 'sepia') return 'bg-[#f4ecd8] text-[#5b4636] [&_*]:border-amber-900/10';
-    if (theme === 'dark') return 'bg-black text-white';
+    if (theme === 'dark') return 'bg-black text-white'; // User explicitly requested dark mode to be darker
     return 'bg-slate-50/50 text-slate-900';
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
@@ -756,7 +781,7 @@ export default function Bible() {
 
                 {/* Pagination */}
                 {searchMeta && searchMeta.pageCount > 1 && (
-                  <div className="flex items-center justify-between bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 px-5 py-3 rounded-2xl shadow-2xs">
+                  <div className="flex items-center justify-between bg-white dark:bg-black border border-gray-150 dark:border-white/10 px-5 py-3 rounded-2xl shadow-2xs">
                     <button
                       disabled={searchPage <= 1}
                       onClick={() => updateRoute({ page: searchPage - 1 })}
@@ -787,7 +812,7 @@ export default function Bible() {
           // ========================================================
           <div className="space-y-6">
             {/* Header controls for chapter navigation */}
-            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-[#070b14]/90 border border-gray-200/50' : 'bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 relative'}`}>
+            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-black/90 border border-gray-200/50' : 'bg-white dark:bg-black border border-gray-150 dark:border-white/10 relative'}`}>
               <button
                 onClick={() => navigateChapter('prev')}
                 className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"

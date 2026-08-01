@@ -43,7 +43,7 @@ const SpeakersManager = () => {
     defaultValues: {
       first_name: '',
       last_name: '',
-      role: 'Pastor',
+      role: 'Pastor Principal',
       bio: '',
       photo_url: '',
       member_id: '',
@@ -106,7 +106,7 @@ const SpeakersManager = () => {
     reset({
       first_name: '',
       last_name: '',
-      role: 'Pastor',
+      role: 'Pastor Principal',
       bio: '',
       photo_url: '',
       member_id: '',
@@ -119,7 +119,7 @@ const SpeakersManager = () => {
     reset({
       first_name: speaker.first_name,
       last_name: speaker.last_name,
-      role: speaker.role || 'Pastor',
+      role: speaker.role || 'Pastor Principal',
       bio: speaker.bio || '',
       photo_url: speaker.photo_url || '',
       member_id: speaker.member_id || '',
@@ -400,12 +400,17 @@ const SpeakersManager = () => {
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Cargo / Rol *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     {...register('role')}
                     className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="Ej. Pastor Principal, Maestro, Líder..."
-                  />
+                  >
+                    <option value="Pastor Principal">Pastor Principal</option>
+                    <option value="Pastor Asociado">Pastor Asociado</option>
+                    <option value="Maestro">Maestro</option>
+                    <option value="Evangelista">Evangelista</option>
+                    <option value="Líder de Ministerio">Líder de Ministerio</option>
+                    <option value="Expositor Invitado">Expositor Invitado</option>
+                  </select>
                   {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>}
                 </div>
 

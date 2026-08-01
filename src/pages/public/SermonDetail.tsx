@@ -276,6 +276,51 @@ const SermonDetail = () => {
           <div className="border-t border-gray-100 dark:border-white/10 pt-6">
             <BlockLessonRenderer content={sermon.content} lessonId={sermon.id} />
           </div>
+
+          {/* Acerca del Expositor */}
+          {sermon.speakers && (
+            <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white mb-4">Acerca del Expositor</h3>
+              <div className="flex flex-col sm:flex-row gap-6 items-start">
+                {sermon.speakers.photo_url ? (
+                  <img 
+                    src={sermon.speakers.photo_url} 
+                    alt={sermon.speakers.first_name} 
+                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-slate-200 dark:border-slate-700"
+                  />
+                ) : (
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <User size={48} />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                      {sermon.speakers.first_name} {sermon.speakers.last_name}
+                    </h4>
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase tracking-wider">
+                      {sermon.speakers.role}
+                    </span>
+                  </div>
+                  {sermon.speakers.bio ? (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {sermon.speakers.bio}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">
+                      No hay biografía disponible para este expositor.
+                    </p>
+                  )}
+                  <Link 
+                    to={`/predicas?speaker=${sermon.speakers.id}`} 
+                    className="inline-block mt-2 text-sm font-bold text-primary dark:text-gold hover:underline"
+                  >
+                    Ver más prédicas de {sermon.speakers.first_name}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Private Sermon Note pad */}

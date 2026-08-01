@@ -299,8 +299,14 @@ const Sermons = () => {
                   </h2>
                   
                   <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                      <User size={14} className="text-primary/70" />
+                    <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
+                      {sermon.speakers?.photo_url ? (
+                        <img src={sermon.speakers.photo_url} alt={sermon.speakers.first_name} className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                          <User size={12} />
+                        </div>
+                      )}
                       {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
                     </span>
                     <span className="flex items-center gap-1.5 font-medium">
