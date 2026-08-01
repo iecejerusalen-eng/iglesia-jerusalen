@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Search, BookOpen, ChevronLeft, ChevronRight, Copy, X, 
   RefreshCw, ZoomIn, ZoomOut, CornerDownRight, 
-  Info, HelpCircle
+  Info, HelpCircle, Play, Square, Settings, Maximize, Minimize, PenTool, Palette, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import type { BibleBook } from '../../config/bibleBooks';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { parseVerseRange } from '../../utils/bibleParser';
+import { useBibleStudy } from '../../hooks/useBibleStudy';
 
 interface Verse {
   verse: string;
@@ -80,6 +81,15 @@ export default function Bible() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(18); // Default 18px
+  const [fontFamily, setFontFamily] = useState<'sans' | 'serif'>('serif');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'sepia'>('light');
+  const [focusMode, setFocusMode] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  // Study Features
+  const { highlights, notes, addHighlight, removeHighlight, saveNote, deleteNote } = useBibleStudy(bookId, chapterNum);
+  const [noteOpenForVerse, setNoteOpenForVerse] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
 
   // Search Results
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -214,6 +224,33 @@ export default function Bible() {
         // Cache the result
         chapterCache.current[cacheKey] = data;
         setChapterData(data);
+
+        // PREFETCH NEXT CHAPTER
+        setTimeout(() => {
+          try {
+            const nextChapter = chapterNum + 1;
+            if (nextChapter <= currentBookObj.chapters) {
+              const nextCacheKey = `${version}-${bookId}-${nextChapter}`;
+              if (!chapterCache.current[nextCacheKey]) {
+                const nextUrl = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${nextChapter}/`;
+                fetch(nextUrl).then(r => r.json()).then(rawNext => {
+                  chapterCache.current[nextCacheKey] = {
+                    testament: currentBookObj.testament,
+                    name: currentBookObj.name,
+                    num_chapters: currentBookObj.chapters,
+                    chapter: nextChapter,
+                    vers: rawNext.map((v: BollsVerse) => ({
+                      id: v.pk || v.verse,
+                      number: v.verse,
+                      verse: v.text ? v.text.replace(/<[^>]*>?/gm, '') : '',
+                      study: null
+                    }))
+                  };
+                }).catch(() => {});
+              }
+            }
+          } catch { /* ignore prefetch errors */ }
+        }, 1000);
       } catch (err) {
         console.error(err);
         const errorMsg = err instanceof Error ? err.message : 'Error de conexión con la API de la Biblia.';
@@ -411,6 +448,39 @@ export default function Bible() {
     }
   };
 
+  // TTS
+  const toggleAudio = () => {
+    if (!chapterData) return;
+    if (isPlayingAudio) {
+      window.speechSynthesis.cancel();
+      setIsPlayingAudio(false);
+      return;
+    }
+    const text = chapterData.vers.map(v => v.verse).join('. ');
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.onend = () => setIsPlayingAudio(false);
+    window.speechSynthesis.speak(utterance);
+    setIsPlayingAudio(true);
+  };
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // Swipe Gestures
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (diff > 50) navigateChapter('next');
+    if (diff < -50) navigateChapter('prev');
+    setTouchStart(null);
+  };
   // Search logic handler
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -480,9 +550,17 @@ export default function Bible() {
     }
   };
 
+  const getThemeClasses = () => {
+    if (theme === 'sepia') return 'bg-[#f4ecd8] text-[#5b4636] [&_*]:border-amber-900/10';
+    if (theme === 'dark') return 'bg-slate-950 text-white';
+    return 'bg-slate-50/50 text-slate-900';
+  };
+  const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
+
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
+    <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses()}`}>
       {/* Banner */}
+      {!focusMode && (
       <div className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden">
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
@@ -500,10 +578,12 @@ export default function Bible() {
           </AnimeFadeUp>
         </div>
       </div>
+      )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <div className={`max-w-6xl mx-auto px-4 py-8 space-y-6 ${focusMode ? 'pt-24' : ''}`}>
         
         {/* Main Controls Panel */}
+        {!focusMode && (
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-4 rounded-3xl shadow-2xs flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Version Select */}
@@ -565,6 +645,7 @@ export default function Bible() {
             </div>
           </form>
         </div>
+        )}
 
         {/* ======================================================== */}
         {/* VIEW 1: SEARCH RESULTS VIEW */}
@@ -680,17 +761,20 @@ export default function Bible() {
           // ========================================================
           <div className="space-y-6">
             {/* Header controls for chapter navigation */}
-            <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 px-4 py-3 rounded-3xl shadow-2xs">
+            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border border-gray-200/50' : 'bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 relative'}`}>
               <button
                 onClick={() => navigateChapter('prev')}
-                className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer"
+                className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
                 title="Capítulo Anterior"
               >
                 <ChevronLeft size={18} />
               </button>
 
-              <h2 className="text-base md:text-lg font-serif font-bold text-gray-800 dark:text-white text-center">
+              <h2 className={`text-base md:text-lg font-bold text-center flex-1 mx-2 flex items-center justify-center gap-2 ${getFontClass()}`}>
                 {currentBook.name} {chapterNum}
+                <button onClick={toggleAudio} className={`p-1.5 rounded-full ${isPlayingAudio ? 'bg-amber-100 text-amber-700 animate-pulse' : 'hover:bg-slate-100 text-slate-400'}`}>
+                   {isPlayingAudio ? <Square size={14} /> : <Play size={14} />}
+                </button>
               </h2>
 
               <div className="flex items-center gap-2">
@@ -715,9 +799,22 @@ export default function Bible() {
                   </button>
                 </div>
 
+                {/* Settings Menu */}
+                <div className="hidden md:flex items-center gap-1 mr-2">
+                   <button onClick={() => setFontFamily(f => f === 'sans' ? 'serif' : 'sans')} className="p-2 border border-gray-200 dark:border-white/5 rounded-full hover:bg-slate-100 text-slate-400" title="Cambiar tipografía">
+                     <Settings size={14} />
+                   </button>
+                   <button onClick={() => setTheme(t => t === 'light' ? 'sepia' : t === 'sepia' ? 'dark' : 'light')} className="p-2 border border-gray-200 dark:border-white/5 rounded-full hover:bg-slate-100 text-slate-400" title="Cambiar tema">
+                     <Palette size={14} />
+                   </button>
+                   <button onClick={() => setFocusMode(!focusMode)} className="p-2 border border-gray-200 dark:border-white/5 rounded-full hover:bg-slate-100 text-slate-400" title="Modo Enfoque">
+                     {focusMode ? <Minimize size={14} /> : <Maximize size={14} />}
+                   </button>
+                </div>
+
                 <button
                   onClick={() => navigateChapter('next')}
-                  className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer"
+                  className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
                   title="Siguiente Capítulo"
                 >
                   <ChevronRight size={18} />
@@ -751,12 +848,16 @@ export default function Bible() {
                 </button>
               </div>
             ) : chapterData ? (
-              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-6 relative">
+              <div 
+                className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-6 relative"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
                 
                 {/* Guide banner for copying instruction */}
                 <div className="text-[10px] text-gray-400 flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-4">
                   <Info size={13} className="text-amber-600 dark:text-gold" />
-                  <span>Consejo: Haz clic en los versículos para seleccionarlos y copiarlos juntos.</span>
+                  <span>Consejo: Haz clic en los versículos para seleccionarlos. Desliza para cambiar de capítulo.</span>
                 </div>
 
                 <div 
@@ -765,10 +866,13 @@ export default function Bible() {
                 >
                   {chapterData.vers.map((v) => {
                     const isSelected = selectedVerses.includes(v.number);
-                    const isHighlighted = highlightedVerses.includes(v.number);
+                    const isSearchHighlighted = highlightedVerses.includes(v.number);
                     const isFirstHighlighted = highlightedVerses.length > 0 && highlightedVerses[0] === v.number;
-                    const isDimmed = highlightedVerses.length > 0 && !isHighlighted;
+                    const isDimmed = highlightedVerses.length > 0 && !isSearchHighlighted;
                     
+                    const userHighlight = highlights.find(h => h.verse === v.number);
+                    const userNote = notes.find(n => n.verse === v.number);
+
                     return (
                       <div 
                         key={v.id} 
@@ -776,12 +880,13 @@ export default function Bible() {
                         className={`group relative py-2 rounded-2xl px-3.5 transition-all duration-500 ${
                           isSelected 
                             ? 'bg-amber-500/10 border-l-4 border-amber-600 dark:border-gold pl-4' 
-                            : isHighlighted 
+                            : isSearchHighlighted 
                             ? 'bg-gradient-to-r from-amber-500/20 to-gold/10 border-l-4 border-amber-500 dark:border-gold pl-4 shadow-xs ring-1 ring-gold/15'
                             : isDimmed 
                             ? 'opacity-35 dark:opacity-25 transition-opacity'
                             : 'hover:bg-slate-50 dark:hover:bg-slate-850/50'
                         }`}
+                        style={userHighlight ? { backgroundColor: userHighlight.color } : {}}
                       >
                         {/* Heading study subtitle */}
                         {v.study && (
@@ -802,15 +907,52 @@ export default function Bible() {
                           </span>
 
                           {/* Verse Text */}
-                          <p 
-                            onClick={() => toggleVerseSelection(v.number)}
-                            className="flex-1 cursor-pointer py-0.5"
-                          >
-                            {v.verse}
-                          </p>
+                          <div className="flex-1 flex flex-col gap-2">
+                            <p 
+                              onClick={() => toggleVerseSelection(v.number)}
+                              className="cursor-pointer py-0.5"
+                            >
+                              {v.verse}
+                            </p>
+                            
+                            {/* Notes Display */}
+                            {userNote && noteOpenForVerse !== v.number && (
+                              <div className="text-xs bg-amber-50 dark:bg-slate-800 p-3 rounded-xl border border-amber-200/30 flex justify-between items-start mt-2">
+                                <p className="italic text-slate-700 dark:text-slate-300 font-sans break-words whitespace-pre-wrap">{userNote.content}</p>
+                                <button onClick={() => setNoteOpenForVerse(v.number)} className="text-amber-600 hover:text-amber-800 px-2 cursor-pointer shrink-0"><PenTool size={14} /></button>
+                              </div>
+                            )}
+
+                            {/* Note Editor */}
+                            {noteOpenForVerse === v.number && (
+                              <div className="mt-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-sans shadow-inner">
+                                <textarea
+                                  autoFocus
+                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm outline-none resize-none focus:ring-2 focus:ring-amber-500/50 transition-shadow"
+                                  rows={3}
+                                  placeholder="Escribe tu nota aquí..."
+                                  value={noteDraft !== '' ? noteDraft : (userNote?.content || '')}
+                                  onChange={(e) => setNoteDraft(e.target.value)}
+                                />
+                                <div className="flex justify-end gap-2 mt-2">
+                                  {userNote && (
+                                    <button onClick={() => { deleteNote(v.number); setNoteOpenForVerse(null); }} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1">
+                                      <Trash2 size={12}/> Borrar
+                                    </button>
+                                  )}
+                                  <button onClick={() => { setNoteOpenForVerse(null); setNoteDraft(''); }} className="text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer">
+                                    Cancelar
+                                  </button>
+                                  <button onClick={() => { saveNote(v.number, noteDraft || userNote?.content || ''); setNoteOpenForVerse(null); setNoteDraft(''); }} className="bg-amber-600 text-white hover:bg-amber-700 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer">
+                                    Guardar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Individual quick copy actions overlay (on hover for desktops) */}
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute right-2 top-1.5 flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 border border-gray-150 dark:border-white/10 rounded-xl px-1.5 py-1 shadow-md scale-90">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute right-2 top-1.5 flex flex-col sm:flex-row items-center gap-1 bg-white/95 dark:bg-slate-900/95 border border-gray-150 dark:border-white/10 rounded-xl px-1.5 py-1 shadow-md scale-90">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -831,6 +973,18 @@ export default function Bible() {
                             >
                               <Copy size={11} />
                               <span className="text-[8px] font-bold">CITA</span>
+                            </button>
+                            {/* Quick Add Note Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNoteDraft(userNote?.content || '');
+                                setNoteOpenForVerse(v.number);
+                              }}
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-lg text-gray-450 hover:text-amber-800 dark:hover:text-gold transition cursor-pointer"
+                              title="Añadir Nota"
+                            >
+                              <PenTool size={11} />
                             </button>
                           </div>
                         </div>
@@ -879,20 +1033,38 @@ export default function Bible() {
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 justify-end mt-2 md:mt-0">
+            {/* Color Palette for highlights (only shows if 1 verse selected for simplicity, or loops for multi-verse) */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mr-2">
+               {['#fef08a', '#fbcfe8', '#bfdbfe', '#bbf7d0', 'transparent'].map(color => (
+                 <button
+                   key={color}
+                   onClick={() => {
+                     selectedVerses.forEach(v => color === 'transparent' ? removeHighlight(v) : addHighlight(v, color));
+                     setSelectedVerses([]);
+                   }}
+                   className="w-5 h-5 rounded-full border border-gray-300 dark:border-gray-600 shadow-sm cursor-pointer transition-transform hover:scale-110 flex items-center justify-center"
+                   style={{ backgroundColor: color === 'transparent' ? '#ffffff' : color }}
+                   title="Resaltar"
+                 >
+                   {color === 'transparent' && <X size={10} className="text-gray-400" />}
+                 </button>
+               ))}
+            </div>
+
             <button
               onClick={() => handleCopySelection(true)}
               className="flex items-center gap-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-850 border border-gray-200 dark:border-white/5 rounded-xl text-[9px] font-bold uppercase transition cursor-pointer text-slate-650 dark:text-gray-300"
             >
               <Copy size={11} />
-              <span>Solo texto</span>
+              <span className="hidden sm:inline">Solo texto</span>
             </button>
             <button
               onClick={() => handleCopySelection(false)}
               className="flex items-center gap-1 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white dark:bg-gold dark:hover:bg-yellow-600 dark:text-slate-900 rounded-xl text-[9px] font-bold uppercase transition cursor-pointer"
             >
               <Copy size={11} />
-              <span>Con cita</span>
+              <span className="hidden sm:inline">Con cita</span>
             </button>
             <button
               onClick={() => setSelectedVerses([])}
