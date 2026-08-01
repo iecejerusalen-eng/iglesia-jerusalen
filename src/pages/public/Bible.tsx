@@ -42,9 +42,18 @@ interface SearchMeta {
   pageCount: number;
 }
 
-interface SearchResponse {
-  data: SearchResult[];
-  meta: SearchMeta;
+interface BollsVerse {
+  pk?: number;
+  verse: number;
+  text?: string;
+}
+
+interface BollsSearchResult {
+  pk?: number;
+  verse: number;
+  text?: string;
+  book: number;
+  chapter: number;
 }
 
 const BIBLE_VERSIONS = [
@@ -94,16 +103,19 @@ export default function Bible() {
   // Sync 'versiculo' query param with highlightedVerse state
   const searchParamsVerse = searchParams.get('versiculo');
   useEffect(() => {
-    if (searchParamsVerse) {
-      const vNums = parseVerseRange(searchParamsVerse);
-      if (vNums.length > 0) {
-        setHighlightedVerses(vNums);
+    const timer = setTimeout(() => {
+      if (searchParamsVerse) {
+        const vNums = parseVerseRange(searchParamsVerse);
+        if (vNums.length > 0) {
+          setHighlightedVerses(vNums);
+        } else {
+          setHighlightedVerses([]);
+        }
       } else {
         setHighlightedVerses([]);
       }
-    } else {
-      setHighlightedVerses([]);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [searchParamsVerse]);
 
   // Scroll dismiss scroll listener
@@ -174,10 +186,30 @@ export default function Bible() {
       setLoading(true);
       setError(null);
       try {
-        const url = `https://bible-api.deno.dev/api/read/${version}/${bookId}/${chapterNum}`;
+        const bookIndex = BIBLE_BOOKS.findIndex(b => b.id === bookId);
+        if (bookIndex === -1) throw new Error('Libro no encontrado');
+        const bollsBookId = bookIndex + 1;
+        const bollsVersion = version.toUpperCase();
+        
+        const url = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${chapterNum}/`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('No se pudo cargar el capítulo. Por favor, intenta de nuevo.');
-        const data: ChapterData = await res.json();
+        
+        const rawVerses = await res.json();
+        const currentBookObj = BIBLE_BOOKS[bookIndex];
+        
+        const data: ChapterData = {
+          testament: currentBookObj.testament,
+          name: currentBookObj.name,
+          num_chapters: currentBookObj.chapters,
+          chapter: chapterNum,
+          vers: rawVerses.map((v: BollsVerse) => ({
+            id: v.pk || v.verse,
+            number: v.verse,
+            verse: v.text ? v.text.replace(/<[^>]*>?/gm, '') : '',
+            study: null
+          }))
+        };
         
         // Cache the result
         chapterCache.current[cacheKey] = data;
@@ -207,12 +239,36 @@ export default function Bible() {
     const fetchSearch = async () => {
       setSearchLoading(true);
       try {
-        const url = `https://bible-api.deno.dev/api/read/${version}/search?q=${encodeURIComponent(searchQuery)}&take=20&page=${searchPage}`;
+        const bollsVersion = version.toUpperCase();
+        const url = `https://bolls.life/search/${bollsVersion}/?search=${encodeURIComponent(searchQuery)}&match_case=false`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Error al buscar pasajes bíblicos.');
-        const data: SearchResponse = await res.json();
-        setSearchResults(data.data || []);
-        setSearchMeta(data.meta || null);
+        const rawData = await res.json();
+        
+        const pageSize = 20;
+        const total = rawData.length;
+        const pageCount = Math.ceil(total / pageSize);
+        const paginatedData = rawData.slice((searchPage - 1) * pageSize, searchPage * pageSize);
+        
+        const mappedResults: SearchResult[] = paginatedData.map((res: BollsSearchResult) => {
+           const bookObj = BIBLE_BOOKS[res.book - 1];
+           return {
+             id: res.pk || Math.random(),
+             number: res.verse,
+             verse: res.text ? res.text.replace(/<[^>]*>?/gm, '') : '',
+             study: null,
+             book: bookObj ? bookObj.name : String(res.book),
+             chapter: res.chapter
+           };
+        });
+
+        setSearchResults(mappedResults);
+        setSearchMeta({
+          page: searchPage,
+          pageSize,
+          total,
+          pageCount
+        });
       } catch (err) {
         console.error(err);
         toast.error('Ocurrió un error al buscar en la Biblia.');
