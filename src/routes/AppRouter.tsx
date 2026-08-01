@@ -68,6 +68,8 @@ const GuessCharacter = lazyWithRetry(() => import('../pages/public/games/GuessCh
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
+const Terms = lazyWithRetry(() => import('../pages/public/Terms').then(m => ({ default: m.Terms })));
+const Privacy = lazyWithRetry(() => import('../pages/public/Privacy').then(m => ({ default: m.Privacy })));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -149,6 +151,8 @@ export default function AppRouter() {
           <Route path="/expositores" element={<Expositores />} />
           <Route path="/misiones" element={<Missions />} />
           <Route path="/contacto" element={<Contact />} />
+          <Route path="/terminos" element={<Terms />} />
+          <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eventos" element={<Events />} />
           <Route path="/peticiones" element={<Petitions />} />
           <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
