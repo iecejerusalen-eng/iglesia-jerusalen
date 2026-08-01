@@ -30,6 +30,8 @@ export interface Petition {
   category_id: string | null;
   content: string;
   status: 'pendiente' | 'en_oracion' | 'respondida';
+  is_public: boolean;
+  prayer_count: number;
   created_at: string;
   profiles?: { first_name: string | null; last_name: string | null; email?: string | null } | null;
   petition_categories?: { name: string } | null;
