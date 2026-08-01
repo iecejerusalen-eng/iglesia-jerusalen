@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, ChevronDown, Check, Filter } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, ChevronDown, Check, Filter, LayoutGrid, List, AlignJustify } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
@@ -53,6 +53,15 @@ const Sermons = () => {
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const [isPastorsOpen, setIsPastorsOpen] = useState(false);
 
+  // Vista actual (Grid, List, Compact)
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>(() => {
+    const saved = localStorage.getItem('sermons_view_mode');
+    return (saved as 'grid' | 'list' | 'compact') || 'grid';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sermons_view_mode', viewMode);
+  }, [viewMode]);
   const fetchSermons = async () => {
     setSermons(prev => {
       if (prev.length === 0) setLoading(true);
@@ -174,16 +183,19 @@ const Sermons = () => {
         
         {/* Filtros Dropdowns y Acordeón */}
         <div className="mt-4 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <button 
-              onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-              className="w-full sm:w-auto px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
-            >
-              <span className="flex items-center gap-2"><Filter size={16} /> Filtrar por Categoría</span>
-              <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
-                <ChevronDown size={16} className="text-gray-400" />
-              </motion.div>
-            </button>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            
+            {/* Filtros Izquierda */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
+              <button 
+                onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+                className="w-full sm:w-auto px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
+              >
+                <span className="flex items-center gap-2"><Filter size={16} /> Filtrar por Categoría</span>
+                <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
+                  <ChevronDown size={16} className="text-gray-400" />
+                </motion.div>
+              </button>
 
             {/* Custom Dropdown para Pastores */}
             <div className="relative w-full sm:w-64 z-20">
@@ -226,6 +238,32 @@ const Sermons = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+          </div>
+            
+          {/* View Mode Toggle Derecha */}
+            <div className="flex items-center gap-1 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-1 rounded-xl border border-white/20 dark:border-white/10 shadow-glass w-full md:w-auto justify-center md:justify-start shrink-0">
+              <button 
+                onClick={() => setViewMode('grid')} 
+                title="Vista Cuadrícula"
+                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')} 
+                title="Vista Lista"
+                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+              >
+                <List size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('compact')} 
+                title="Vista Compacta"
+                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'compact' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+              >
+                <AlignJustify size={18} />
+              </button>
             </div>
           </div>
 
@@ -271,87 +309,131 @@ const Sermons = () => {
           <RefreshCw className="animate-spin text-primary dark:text-white" size={32} />
         </div>
       ) : filteredSermons.length > 0 ? (
-        <AnimeStaggerGrid delay={200} staggerDelay={100} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <AnimeStaggerGrid 
+          delay={200} 
+          staggerDelay={100} 
+          className={
+            viewMode === 'grid' 
+              ? "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start" 
+              : viewMode === 'list'
+                ? "flex flex-col gap-6"
+                : "flex flex-col gap-3"
+          }
+        >
           {filteredSermons.map((sermon) => {
+            const speakerName = sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name;
+            const dateString = sermon.date || new Date(sermon.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            if (viewMode === 'compact') {
+              return (
+                <AnimeHoverCard key={sermon.id}>
+                  <Link to={`/predicas/${sermon.id}`} className="group bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-white/10 p-4 shadow-sm flex items-center justify-between hover:border-primary/50 dark:hover:border-gold/50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      {sermon.sermon_categories && (
+                        <div className="hidden sm:block w-2 h-2 rounded-full" style={{ backgroundColor: sermon.sermon_categories.color }}></div>
+                      )}
+                      <div>
+                        <h2 className="text-[15px] sm:text-base font-serif font-bold text-gray-800 dark:text-white group-hover:text-primary dark:group-hover:text-gold transition-colors line-clamp-1">{sermon.title}</h2>
+                        <div className="flex items-center gap-3 text-[11px] sm:text-xs text-slate-500 mt-1">
+                          <span className="flex items-center gap-1"><User size={12}/>{speakerName}</span>
+                          <span className="flex items-center gap-1"><Calendar size={12}/>{dateString}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-primary dark:text-gold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs sm:text-sm font-bold shrink-0 pl-4">
+                      Ver <ArrowRight size={14} className="hidden sm:block" />
+                    </div>
+                  </Link>
+                </AnimeHoverCard>
+              );
+            }
+
+            // Para Grid y List (se ven igual, solo cambia el layout del contenedor padre y el orden)
             return (
               <AnimeHoverCard key={sermon.id}>
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex flex-col space-y-4 h-full">
-                  {/* Embedded Video Reproductor Sincronizado */}
-                  {sermon.youtube_url && (
-                    <VideoPlayer
-                      youtubeUrl={sermon.youtube_url}
-                      title={sermon.title}
-                      className="mb-2"
-                    />
-                  )}
-
-                <div className="space-y-3">
-                  {sermon.sermon_categories && (
-                    <span 
-                      className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                      style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
-                    >
-                      {sermon.sermon_categories.name}
-                    </span>
-                  )}
-                  <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
-                    <Link to={`/predicas/${sermon.id}`}>{sermon.title}</Link>
-                  </h2>
+                <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex ${viewMode === 'list' ? 'flex-col md:flex-row gap-8' : 'flex-col space-y-4'} h-full`}>
                   
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
-                      {sermon.speakers?.photo_url ? (
-                        <img src={sermon.speakers.photo_url} alt={sermon.speakers.first_name} className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                          <User size={12} />
-                        </div>
-                      )}
-                      {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Calendar size={14} className="text-primary/70" />
-                      {sermon.date || new Date(sermon.created_at).toLocaleDateString('es-ES', { 
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
-                    {sermon.editors && sermon.editors.length > 0 && (
-                      <span className="flex items-center gap-1.5">
-                        <Edit3 size={12} />
-                        Editado por: {sermon.editors.join(', ')}
-                      </span>
+                  {/* Contenedor de Video (En lista toma mitad del ancho) */}
+                  <div className={viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full mb-2 flex flex-col'}>
+                    {sermon.youtube_url ? (
+                      <VideoPlayer
+                        youtubeUrl={sermon.youtube_url}
+                        title={sermon.title}
+                        className={viewMode === 'list' ? 'h-full min-h-[200px]' : ''}
+                      />
+                    ) : (
+                      <div className="w-full aspect-video bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/5">
+                         <Video size={32} className="text-slate-300 dark:text-slate-600" />
+                      </div>
                     )}
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={12} />
-                      {new Date(sermon.created_at).toLocaleDateString('es-ES')}
-                    </span>
+                  </div>
+
+                  {/* Contenido Texto */}
+                  <div className={viewMode === 'list' ? 'w-full md:w-7/12 flex flex-col' : 'w-full flex flex-col flex-1'}>
+                    <div className="space-y-3 flex-1">
+                      {sermon.sermon_categories && (
+                        <span 
+                          className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
+                        >
+                          {sermon.sermon_categories.name}
+                        </span>
+                      )}
+                      <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
+                        <Link to={`/predicas/${sermon.id}`}>{sermon.title}</Link>
+                      </h2>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                        <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
+                          {sermon.speakers?.photo_url ? (
+                            <img src={sermon.speakers.photo_url} alt={sermon.speakers.first_name} className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                              <User size={12} />
+                            </div>
+                          )}
+                          {speakerName}
+                        </span>
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Calendar size={14} className="text-primary/70" />
+                          {dateString}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+                        {sermon.editors && sermon.editors.length > 0 && (
+                          <span className="flex items-center gap-1.5">
+                            <Edit3 size={12} />
+                            Editado por: {sermon.editors.join(', ')}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1.5">
+                          <Clock size={12} />
+                          {new Date(sermon.created_at).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Contenido HTML de TipTap / Vista Previa */}
+                    <div className="prose prose-sm text-slate-600 dark:text-slate-300 max-w-none leading-relaxed border-t border-gray-100 dark:border-white/10 pt-4 mt-4 font-medium">
+                      {sermon.content && sermon.content.trim().startsWith('[') ? (
+                        <p>{sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.'}</p>
+                      ) : (
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(sermon.content || '') }} />
+                      )}
+                    </div>
+
+                    <div className="flex justify-end items-center border-t border-gray-100 dark:border-white/10 pt-4 mt-4">
+                      <Link 
+                        to={`/predicas/${sermon.id}`}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary dark:text-gold hover:text-blue-800 dark:hover:text-gold/80 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-md px-1.5 py-0.5"
+                      >
+                        Ver prédica y tomar notas
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-
-                {/* Contenido HTML de TipTap / Vista Previa */}
-                <div className="prose prose-sm text-slate-600 dark:text-slate-300 max-w-none leading-relaxed border-t border-gray-100 dark:border-white/10 pt-4 font-medium">
-                  {sermon.content && sermon.content.trim().startsWith('[') ? (
-                    <p>{sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.'}</p>
-                  ) : (
-                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(sermon.content || '') }} />
-                  )}
-                </div>
-
-                <div className="flex justify-end items-center border-t border-gray-100 dark:border-white/10 pt-4 mt-2">
-                  <Link 
-                    to={`/predicas/${sermon.id}`}
-                    className="flex items-center gap-1.5 text-xs font-bold text-primary dark:text-gold hover:text-blue-800 dark:hover:text-gold/80 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-md px-1.5 py-0.5"
-                  >
-                    Ver prédica y tomar notas
-                    <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </div>
               </AnimeHoverCard>
             );
           })}
