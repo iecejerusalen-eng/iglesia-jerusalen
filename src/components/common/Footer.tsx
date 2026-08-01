@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { FooterBreadcrumb } from './FooterBreadcrumb';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import { 
-  Mail, Phone, MapPin, Heart, ShieldCheck, Scale
+  Mail, Phone, MapPin, Heart, ShieldCheck, Scale,
+  Users, GraduationCap, Gamepad2, ShoppingBag, Globe, Video
 } from 'lucide-react';
 
 const Footer = () => {
@@ -44,12 +45,24 @@ const Footer = () => {
     }
   ];
 
-  const quickLinks = [
-    { name: 'Quiénes Somos', path: '/nosotros' },
-    { name: 'Ministerios', path: '/ministerios' },
-    { name: 'Sermones', path: '/predicas' },
-    { name: 'Tienda', path: '/tienda' },
-    { name: 'Juegos', path: '/recursos/juegos' },
+  const exploreCategories = [
+    {
+      title: 'La Iglesia',
+      links: [
+        { name: 'Quiénes Somos', path: '/nosotros', icon: Users },
+        { name: 'Ministerios', path: '/ministerios', icon: Heart },
+        { name: 'Misiones', path: '/misiones', icon: Globe },
+      ]
+    },
+    {
+      title: 'Recursos',
+      links: [
+        { name: 'Sermones', path: '/predicas', icon: Video },
+        { name: 'Aula Virtual', path: '/aula-virtual', icon: GraduationCap },
+        { name: 'Juegos', path: '/recursos/juegos', icon: Gamepad2 },
+        { name: 'Tienda', path: '/tienda', icon: ShoppingBag },
+      ]
+    }
   ];
 
   const legalLinks = [
@@ -72,8 +85,8 @@ const Footer = () => {
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 lg:gap-12 mb-12">
           
-          {/* Brand & Identity (Col Span 5) */}
-          <div className="md:col-span-5 flex flex-col space-y-6">
+          {/* Brand & Identity (Col Span 4) */}
+          <div className="md:col-span-4 flex flex-col space-y-6">
             <Link to="/" className="inline-block group focus-visible:outline-none rounded-lg max-w-max">
               <div className="flex items-center gap-4">
                 <img loading="lazy" src={soloLogoColorido} alt="Logo Jerusalén" className="h-12 w-auto drop-shadow-md" />
@@ -111,26 +124,38 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Enlaces Rápidos (Col Span 3) */}
-          <div className="md:col-span-3">
+          {/* Explorar Inteligente (Col Span 5) */}
+          <div className="md:col-span-5">
             <h4 className="font-serif font-bold text-slate-900 dark:text-white mb-6 text-lg">Explorar</h4>
-            <ul className="space-y-4">
-              {quickLinks.map((link) => (
-                <li key={link.path}>
-                  <Link 
-                    to={link.path} 
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 flex items-center gap-2 group"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-indigo-500 transition-colors" />
-                    {link.name}
-                  </Link>
-                </li>
+            <div className="grid grid-cols-2 gap-6">
+              {exploreCategories.map((category) => (
+                <div key={category.title}>
+                  <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-500/80 mb-4">{category.title}</h5>
+                  <ul className="space-y-4">
+                    {category.links.map((link) => {
+                      const Icon = link.icon;
+                      return (
+                        <li key={link.path}>
+                          <Link 
+                            to={link.path} 
+                            className="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 flex items-center gap-2.5 group"
+                          >
+                            <span className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/20 group-hover:text-indigo-500 transition-colors">
+                              <Icon size={14} />
+                            </span>
+                            {link.name}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Contacto & Legal (Col Span 4) */}
-          <div className="md:col-span-4 flex flex-col space-y-8">
+          {/* Contacto & Legal (Col Span 3) */}
+          <div className="md:col-span-3 flex flex-col space-y-8">
             <div>
               <h4 className="font-serif font-bold text-slate-900 dark:text-white mb-6 text-lg">Contacto</h4>
               <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
