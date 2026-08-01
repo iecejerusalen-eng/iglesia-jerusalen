@@ -30,21 +30,21 @@ const games = [
   {
     title: 'Ahorcado Bíblico',
     description: 'Adivina los nombres de personajes, ciudades y libros bíblicos antes de quedarte sin intentos.',
-    image_url: 'https://images.unsplash.com/photo-1515549832467-8783363e19b6?q=80&w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1438283173091-5dbf5c5a3206?q=80&w=800&auto=format&fit=crop',
     slug: 'ahorcado-biblico',
     is_active: true
   },
   {
     title: 'Memorama Bíblico',
     description: 'Entrena tu memoria encontrando las parejas de personajes, objetos y conceptos de la Biblia.',
-    image_url: 'https://images.unsplash.com/photo-1606513542745-976ed960c184?q=80&w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?q=80&w=800&auto=format&fit=crop',
     slug: 'memorama-biblico',
     is_active: true
   },
   {
     title: 'Descubre el Personaje',
     description: 'Adivina qué personaje bíblico se oculta revelando pistas estratégicamente sin agotar tus puntos.',
-    image_url: 'https://images.unsplash.com/photo-1574026362534-118c7c98982a?q=80&w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?q=80&w=800&auto=format&fit=crop',
     slug: 'descubre-el-personaje',
     is_active: true
   }
