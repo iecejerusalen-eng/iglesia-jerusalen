@@ -66,6 +66,32 @@ const BIBLE_VERSIONS = [
   { id: 'rv1995', name: 'Reina Valera 1995 (RV1995)' },
 ];
 
+/**
+ * Helper robusto para peticiones HTTP con reintentos y tiempo límite.
+ */
+const fetchWithRetry = async (url: string, retries = 3, baseDelay = 1000, timeout = 8000): Promise<Response> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(id);
+      
+      if (res.ok) return res;
+      // No reintentar en errores de cliente 4xx (excepto 429 Too Many Requests)
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+        return res;
+      }
+      if (i === retries - 1) return res;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+    }
+    // Exponential backoff
+    await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, i)));
+  }
+  throw new Error("Unreachable");
+};
+
 export default function Bible() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -202,8 +228,8 @@ export default function Bible() {
         const bollsVersion = version.toUpperCase();
         
         const url = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${chapterNum}/`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('No se pudo cargar el capítulo. Por favor, intenta de nuevo.');
+        const res = await fetchWithRetry(url);
+        if (!res.ok) throw new Error('No se pudo cargar el capítulo tras varios intentos. Por favor, revisa tu conexión e intenta de nuevo.');
         
         const rawVerses = await res.json();
         const currentBookObj = BIBLE_BOOKS[bookIndex];
@@ -233,7 +259,7 @@ export default function Bible() {
               const nextCacheKey = `${version}-${bookId}-${nextChapter}`;
               if (!chapterCache.current[nextCacheKey]) {
                 const nextUrl = `https://bolls.life/get-chapter/${bollsVersion}/${bollsBookId}/${nextChapter}/`;
-                fetch(nextUrl).then(r => r.json()).then(rawNext => {
+                fetchWithRetry(nextUrl, 2, 1000, 6000).then(r => r.json()).then(rawNext => {
                   chapterCache.current[nextCacheKey] = {
                     testament: currentBookObj.testament,
                     name: currentBookObj.name,
@@ -278,8 +304,8 @@ export default function Bible() {
       try {
         const bollsVersion = version.toUpperCase();
         const url = `https://bolls.life/search/${bollsVersion}/?search=${encodeURIComponent(searchQuery)}&match_case=false`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Error al buscar pasajes bíblicos.');
+        const res = await fetchWithRetry(url, 3, 1000, 10000); // 10s timeout para búsquedas pesadas
+        if (!res.ok) throw new Error('Error al buscar pasajes bíblicos. La conexión falló o el servidor tardó demasiado.');
         const rawData = await res.json();
         
         const pageSize = 20;
@@ -552,7 +578,7 @@ export default function Bible() {
 
   const getThemeClasses = () => {
     if (theme === 'sepia') return 'bg-[#f4ecd8] text-[#5b4636] [&_*]:border-amber-900/10';
-    if (theme === 'dark') return 'bg-slate-950 text-white';
+    if (theme === 'dark') return 'bg-black text-white';
     return 'bg-slate-50/50 text-slate-900';
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
@@ -584,7 +610,7 @@ export default function Bible() {
         
         {/* Main Controls Panel */}
         {!focusMode && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-4 rounded-3xl shadow-2xs flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 p-4 rounded-3xl shadow-2xs flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Version Select */}
             <div className="flex flex-col gap-1 w-full sm:w-auto">
@@ -592,7 +618,7 @@ export default function Bible() {
               <select
                 value={version}
                 onChange={(e) => updateRoute({ version: e.target.value })}
-                className="text-xs bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-2.5 outline-none dark:text-white font-semibold cursor-pointer min-w-[200px]"
+                className="text-xs bg-slate-50 dark:bg-black border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-2.5 outline-none dark:text-white font-semibold cursor-pointer min-w-[200px]"
               >
                 {BIBLE_VERSIONS.map((v) => (
                   <option key={v.id} value={v.id}>{v.name}</option>
@@ -610,7 +636,7 @@ export default function Bible() {
                     setSelectedBookForChapters(null);
                     setIndexTab(currentBook.testament);
                   }}
-                  className="flex items-center justify-between gap-3 text-xs bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-2.5 outline-none text-primary dark:text-gold font-bold cursor-pointer transition w-full sm:min-w-[180px]"
+                  className="flex items-center justify-between gap-3 text-xs bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-2.5 outline-none text-primary dark:text-gold font-bold cursor-pointer transition w-full sm:min-w-[180px]"
                 >
                   <span className="flex items-center gap-2">
                     <BookOpen size={14} className="text-amber-600 dark:text-gold" />
@@ -631,7 +657,7 @@ export default function Bible() {
                 value={activeSearchInput}
                 onChange={(e) => setActiveSearchInput(e.target.value)}
                 placeholder="Buscar palabras o versículos en la Biblia..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-white/5 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:outline-none dark:text-white font-medium"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-black border border-gray-200 dark:border-white/5 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:outline-none dark:text-white font-medium"
               />
               {activeSearchInput && (
                 <button
@@ -652,7 +678,7 @@ export default function Bible() {
         {/* ======================================================== */}
         {searchQuery ? (
           <div className="space-y-6">
-            <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-4 rounded-2xl">
+            <div className="flex items-center justify-between bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 p-4 rounded-2xl">
               <div>
                 <h2 className="text-sm font-serif font-bold text-gray-800 dark:text-white">
                   Resultados de búsqueda para: <span className="text-amber-700 dark:text-gold">"{searchQuery}"</span>
@@ -671,12 +697,12 @@ export default function Bible() {
             </div>
 
             {searchLoading ? (
-              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-20 flex flex-col justify-center items-center gap-3 animate-pulse">
+              <div className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 rounded-3xl p-20 flex flex-col justify-center items-center gap-3 animate-pulse">
                 <RefreshCw className="animate-spin text-amber-700 dark:text-gold" size={28} />
                 <span className="text-xs text-gray-400 font-semibold">Buscando concordancias bíblicas...</span>
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-16 text-center space-y-4">
+              <div className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 rounded-3xl p-16 text-center space-y-4">
                 <HelpCircle className="mx-auto text-gray-300 dark:text-slate-800 animate-pulse" size={48} />
                 <h4 className="font-bold text-xs text-gray-800 dark:text-white uppercase tracking-wider">
                   Sin resultados
@@ -692,7 +718,7 @@ export default function Bible() {
                   {searchResults.map((res, index) => (
                     <div
                       key={`${res.book}-${res.chapter}-${res.number}-${index}`}
-                      className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-gold/50 transition-all duration-200"
+                      className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-gold/50 transition-all duration-200"
                     >
                       <div className="space-y-1.5 flex-1 pr-4">
                         <span className="text-xxs font-bold text-amber-700 dark:text-gold bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded-lg border border-amber-250/20">
@@ -711,7 +737,7 @@ export default function Bible() {
                       <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto border-t sm:border-t-0 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
                         <button
                           onClick={() => handleCopySingle(res, true, res.book, res.chapter)}
-                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-gray-250/20 text-gray-500 dark:text-gray-400 cursor-pointer"
+                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-800 border border-gray-250/20 text-gray-500 dark:text-gray-400 cursor-pointer"
                           title="Copiar versículo con referencia"
                         >
                           <Copy size={13} />
@@ -730,7 +756,7 @@ export default function Bible() {
 
                 {/* Pagination */}
                 {searchMeta && searchMeta.pageCount > 1 && (
-                  <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 px-5 py-3 rounded-2xl shadow-2xs">
+                  <div className="flex items-center justify-between bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 px-5 py-3 rounded-2xl shadow-2xs">
                     <button
                       disabled={searchPage <= 1}
                       onClick={() => updateRoute({ page: searchPage - 1 })}
@@ -761,10 +787,10 @@ export default function Bible() {
           // ========================================================
           <div className="space-y-6">
             {/* Header controls for chapter navigation */}
-            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-slate-900/90 border border-gray-200/50' : 'bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 relative'}`}>
+            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-[#070b14]/90 border border-gray-200/50' : 'bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 relative'}`}>
               <button
                 onClick={() => navigateChapter('prev')}
-                className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
+                className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
                 title="Capítulo Anterior"
               >
                 <ChevronLeft size={18} />
@@ -779,7 +805,7 @@ export default function Bible() {
 
               <div className="flex items-center gap-2">
                 {/* Font adjustments */}
-                <div className="hidden sm:flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-white/5 mr-2">
+                <div className="hidden sm:flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-black rounded-2xl border border-slate-200 dark:border-white/5 mr-2">
                   <button
                     onClick={() => setFontSize(Math.max(14, fontSize - 2))}
                     className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white cursor-pointer"
@@ -814,7 +840,7 @@ export default function Bible() {
 
                 <button
                   onClick={() => navigateChapter('next')}
-                  className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
+                  className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
                   title="Siguiente Capítulo"
                 >
                   <ChevronRight size={18} />
@@ -824,12 +850,12 @@ export default function Bible() {
 
             {/* Reading Content */}
             {loading ? (
-              <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-28 flex flex-col justify-center items-center gap-3 animate-pulse">
+              <div className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 rounded-3xl p-28 flex flex-col justify-center items-center gap-3 animate-pulse">
                 <RefreshCw className="animate-spin text-amber-700 dark:text-gold" size={32} />
                 <span className="text-xs text-gray-400 font-semibold">Cargando capítulo de las Escrituras...</span>
               </div>
             ) : error ? (
-              <div className="bg-white dark:bg-slate-900 border border-red-200/50 dark:border-red-950/20 rounded-3xl p-16 text-center space-y-4">
+              <div className="bg-white dark:bg-[#070b14] border border-red-200/50 dark:border-red-950/20 rounded-3xl p-16 text-center space-y-4">
                 <div className="mx-auto w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/20 text-red-600 flex items-center justify-center">
                   <X size={24} />
                 </div>
@@ -849,7 +875,7 @@ export default function Bible() {
               </div>
             ) : chapterData ? (
               <div 
-                className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-6 relative"
+                className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-6 relative"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -928,7 +954,7 @@ export default function Bible() {
                               <div className="mt-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-sans shadow-inner">
                                 <textarea
                                   autoFocus
-                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm outline-none resize-none focus:ring-2 focus:ring-amber-500/50 transition-shadow"
+                                  className="w-full bg-white dark:bg-[#070b14] border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm outline-none resize-none focus:ring-2 focus:ring-amber-500/50 transition-shadow"
                                   rows={3}
                                   placeholder="Escribe tu nota aquí..."
                                   value={noteDraft !== '' ? noteDraft : (userNote?.content || '')}
@@ -952,7 +978,7 @@ export default function Bible() {
                           </div>
 
                           {/* Individual quick copy actions overlay (on hover for desktops) */}
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute right-2 top-1.5 flex flex-col sm:flex-row items-center gap-1 bg-white/95 dark:bg-slate-900/95 border border-gray-150 dark:border-white/10 rounded-xl px-1.5 py-1 shadow-md scale-90">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute right-2 top-1.5 flex flex-col sm:flex-row items-center gap-1 bg-white/95 dark:bg-[#070b14]/95 border border-gray-150 dark:border-white/10 rounded-xl px-1.5 py-1 shadow-md scale-90">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -997,7 +1023,7 @@ export default function Bible() {
                 <div className="flex justify-between items-center border-t border-gray-100 dark:border-white/5 pt-6 mt-8">
                   <button
                     onClick={() => navigateChapter('prev')}
-                    className="flex items-center gap-1 px-4 py-2 border border-gray-250/20 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-xl text-xxs font-bold uppercase transition cursor-pointer text-gray-500 dark:text-gray-300"
+                    className="flex items-center gap-1 px-4 py-2 border border-gray-250/20 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-xl text-xxs font-bold uppercase transition cursor-pointer text-gray-500 dark:text-gray-300"
                   >
                     <ChevronLeft size={14} />
                     <span>Anterior</span>
@@ -1007,7 +1033,7 @@ export default function Bible() {
                   </span>
                   <button
                     onClick={() => navigateChapter('next')}
-                    className="flex items-center gap-1 px-4 py-2 border border-gray-250/20 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-xl text-xxs font-bold uppercase transition cursor-pointer text-gray-500 dark:text-gray-300"
+                    className="flex items-center gap-1 px-4 py-2 border border-gray-250/20 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-xl text-xxs font-bold uppercase transition cursor-pointer text-gray-500 dark:text-gray-300"
                   >
                     <span>Siguiente</span>
                     <ChevronRight size={14} />
@@ -1023,7 +1049,7 @@ export default function Bible() {
       {/* FLOATING ACTION BAR FOR MULTI-VERSE COPY */}
       {/* ======================================================== */}
       {selectedVerses.length > 0 && (
-        <div className="fixed bottom-16 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 border border-amber-600/30 dark:border-gold/30 rounded-2xl shadow-xl px-5 py-3.5 flex items-center justify-between gap-4 max-w-lg w-[90%] backdrop-blur-md">
+        <div className="fixed bottom-16 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-[#070b14]/95 border border-amber-600/30 dark:border-gold/30 rounded-2xl shadow-xl px-5 py-3.5 flex items-center justify-between gap-4 max-w-lg w-[90%] backdrop-blur-md">
           <div className="space-y-0.5">
             <p className="text-[11px] font-bold text-slate-800 dark:text-white">
               {selectedVerses.length} {selectedVerses.length === 1 ? 'versículo seleccionado' : 'versículos seleccionados'}
@@ -1054,7 +1080,7 @@ export default function Bible() {
 
             <button
               onClick={() => handleCopySelection(true)}
-              className="flex items-center gap-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-850 border border-gray-200 dark:border-white/5 rounded-xl text-[9px] font-bold uppercase transition cursor-pointer text-slate-650 dark:text-gray-300"
+              className="flex items-center gap-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-850 border border-gray-200 dark:border-white/5 rounded-xl text-[9px] font-bold uppercase transition cursor-pointer text-slate-650 dark:text-gray-300"
             >
               <Copy size={11} />
               <span className="hidden sm:inline">Solo texto</span>
@@ -1083,12 +1109,12 @@ export default function Bible() {
       {isIndexOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsIndexOpen(false)}></div>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsIndexOpen(false)}></div>
           
-          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-150 dark:border-white/10 overflow-hidden z-10 flex flex-col max-h-[85vh]">
+          <div className="relative bg-white dark:bg-[#070b14] rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-150 dark:border-white/10 overflow-hidden z-10 flex flex-col max-h-[85vh]">
             
             {/* Modal Header */}
-            <div className="p-5 border-b border-gray-150 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/20 flex items-center justify-between shrink-0">
+            <div className="p-5 border-b border-gray-150 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <BookOpen className="text-amber-700 dark:text-gold" size={20} />
                 <h3 className="text-base font-serif font-bold text-gray-800 dark:text-white">
@@ -1125,7 +1151,7 @@ export default function Bible() {
                         className={`aspect-square flex items-center justify-center rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                           isCurrent
                             ? 'bg-amber-600 border-amber-600 text-white shadow-md'
-                            : 'border-gray-200 dark:border-white/10 text-gray-650 dark:text-gray-300 bg-white dark:bg-slate-950 hover:border-amber-400 dark:hover:border-gold'
+                            : 'border-gray-200 dark:border-white/10 text-gray-650 dark:text-gray-300 bg-white dark:bg-black hover:border-amber-400 dark:hover:border-gold'
                         }`}
                       >
                         {chap}
@@ -1147,12 +1173,12 @@ export default function Bible() {
                       value={indexSearch}
                       onChange={(e) => setIndexSearch(e.target.value)}
                       placeholder="Filtrar libro (p. ej. Mateo, Juan, 1 Samuel)..."
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-gray-250/20 rounded-xl text-xxs outline-none dark:text-white font-medium"
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-black border border-gray-250/20 rounded-xl text-xxs outline-none dark:text-white font-medium"
                     />
                   </div>
 
                   {/* Testament Tabs */}
-                  <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-white/5 w-fit">
+                  <div className="flex gap-2 p-1 bg-slate-100 dark:bg-black rounded-xl border border-slate-200 dark:border-white/5 w-fit">
                     <button
                       onClick={() => setIndexTab('Antiguo')}
                       className={`px-4 py-1.5 rounded-lg text-xxs font-bold transition-all cursor-pointer ${
