@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -16,7 +16,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**', 'scratch/**'],
   },
   plugins: [
 
@@ -49,19 +49,21 @@ export default defineConfig({
           // { src: '/apple-touch-icon-180x180.png', sizes: '180x180', type: 'image/png' }
         ],
         shortcuts: [
-          { name: 'Eventos', short_name: 'Eventos', url: '/events', description: 'Ver próximos eventos' },
-          { name: 'Sermones', short_name: 'Sermones', url: '/sermons', description: 'Escuchar sermones' },
-          { name: 'Himnario', short_name: 'Himnario', url: '/songs', description: 'Cancionero de la iglesia' }
+          { name: 'Eventos', short_name: 'Eventos', url: '/eventos', description: 'Ver próximos eventos' },
+          { name: 'Sermones', short_name: 'Sermones', url: '/predicas', description: 'Escuchar sermones' },
+          { name: 'Himnario', short_name: 'Himnario', url: '/recursos/alabanzas', description: 'Cancionero de la iglesia' }
         ]
       }
     })
   ],
-  esbuild: {
-    // @ts-expect-error: vite esbuild types might be incomplete
-    drop: ['console', 'debugger'],
-  },
-
   build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

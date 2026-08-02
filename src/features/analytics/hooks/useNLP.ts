@@ -23,7 +23,7 @@ export function useNLP() {
     let aggregation: Widget['aggregation'] = 'count';
     let targetField = '';
     let chartType: Widget['chartType'] = 'bar';
-    let title = query.charAt(0).toUpperCase() + query.slice(1);
+    const title = query.charAt(0).toUpperCase() + query.slice(1);
 
     setTimeout(() => {
       if (query.includes('diezmo') || query.includes('ofrenda') || query.includes('ingreso') || query.includes('donacion')) {

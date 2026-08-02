@@ -8,7 +8,7 @@ interface SendNotificationParams {
   userName: string;
   courseName: string;
   type: 'missing_homework' | 'attendance_alert';
-  extraData?: Record<string, any>;
+  extraData?: Record<string, unknown>;
 }
 
 export function useNotifications() {
@@ -19,7 +19,7 @@ export function useNotifications() {
     try {
       let subject = 'Notificación de la Iglesia Jerusalén';
       let template = 'general_notification';
-      let data: Record<string, any> = {
+      const data: Record<string, unknown> = {
         studentName: params.userName,
         courseName: params.courseName,
       };
@@ -33,7 +33,7 @@ export function useNotifications() {
         template = 'attendance_alert';
       }
 
-      const { data: responseData, error } = await supabase.functions.invoke('send-email', {
+      const { error } = await supabase.functions.invoke('send-email', {
         body: {
           to: params.userEmail,
           subject,
@@ -48,7 +48,7 @@ export function useNotifications() {
 
       toast.success(`Notificación enviada a ${params.userName}`);
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error enviando notificación:', err);
       toast.error('Hubo un error al enviar la notificación. ¿Está configurado Resend?');
       return false;

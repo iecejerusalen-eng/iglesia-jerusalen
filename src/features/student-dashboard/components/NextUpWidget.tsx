@@ -1,21 +1,29 @@
 import { Clock, ArrowRight, PlayCircle, FileText, CheckSquare, FileEdit } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import type { LMSLesson } from '../../../types';
+
+type NextUpType = LMSLesson['type'] | 'pdf';
 
 interface NextUpWidgetProps {
   courseId: string;
   courseTitle: string;
   lessonTitle: string;
-  type: 'video' | 'pdf' | 'quiz' | 'assignment';
+  type: NextUpType;
   timeEstimate?: number;
 }
 
+const TYPE_ICONS: Partial<Record<NextUpType, typeof PlayCircle>> = {
+  video: PlayCircle,
+  video_link: PlayCircle,
+  pdf: FileText,
+  document: FileText,
+  resource: FileText,
+  quiz: CheckSquare,
+  assignment: FileEdit,
+};
+
 export function NextUpWidget({ courseId, courseTitle, lessonTitle, type, timeEstimate }: NextUpWidgetProps) {
-  const TypeIcon = {
-    video: PlayCircle,
-    pdf: FileText,
-    quiz: CheckSquare,
-    assignment: FileEdit
-  }[type] || PlayCircle;
+  const TypeIcon = TYPE_ICONS[type] || PlayCircle;
 
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">

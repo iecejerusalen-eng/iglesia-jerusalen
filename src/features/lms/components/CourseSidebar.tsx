@@ -16,12 +16,12 @@ interface CourseLessonItem {
   order_index: number;
 }
 
-interface CourseSidebarProps {
+interface CourseSidebarProps<TLesson extends CourseLessonItem> {
   modules: CourseModuleItem[];
-  lessons: CourseLessonItem[];
+  lessons: TLesson[];
   completions: Record<string, boolean>;
-  activeLesson: CourseLessonItem | null;
-  onSelectLesson: (lesson: CourseLessonItem) => void;
+  activeLesson: TLesson | null;
+  onSelectLesson: (lesson: TLesson) => void;
   userRoles: string[];
 }
 
@@ -32,7 +32,7 @@ const LESSON_ICONS: Record<string, typeof FileText> = {
   forum: MessageSquare,
 };
 
-export function CourseSidebar({ modules, lessons, completions, activeLesson, onSelectLesson, userRoles }: CourseSidebarProps) {
+export function CourseSidebar<TLesson extends CourseLessonItem>({ modules, lessons, completions, activeLesson, onSelectLesson, userRoles }: CourseSidebarProps<TLesson>) {
   const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
   const canSeeHidden = userRoles.some((role) => ['admin', 'maestro', 'docente', 'teacher'].includes(role));
   const visibleModules = useMemo(() => modules.filter((module) => canSeeHidden || !module.is_hidden), [canSeeHidden, modules]);

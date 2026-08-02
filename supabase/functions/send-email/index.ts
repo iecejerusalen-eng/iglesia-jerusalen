@@ -1,22 +1,32 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://iglesia-jerusalen.web.app",
+  "https://iglesiajerusalen.org"
+];
+
+const getCorsHeaders = (req: Request) => {
+  const origin = req.headers.get("Origin") || "";
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
 };
 
 interface EmailRequest {
   to: string | string[];
   subject: string;
   template: "attendance_alert" | "missing_homework" | "forum_reply" | "general_notification";
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 // Funciones para generar HTML basado en el template
-function generateHtml(template: string, data: Record<string, any>): string {
+function generateHtml(template: string, data: Record<string, unknown>): string {
   const baseStyles = `
     font-family: 'Inter', sans-serif;
     color: #1e293b;
@@ -51,7 +61,7 @@ function generateHtml(template: string, data: Record<string, any>): string {
     margin-top: 20px;
   `;
 
-  let contentHtml = "";
+  let contentHtml: string;
 
   switch (template) {
     case "attendance_alert":
@@ -100,17 +110,55 @@ function generateHtml(template: string, data: Record<string, any>): string {
   `;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Verify role in profiles table
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "director", "teacher", "leader", "pastor"].includes(profile.role)) {
+      return new Response(JSON.stringify({ error: "Forbidden: Insufficient permissions" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     const { to, subject, template, data } = (await req.json()) as EmailRequest;
 
     if (!RESEND_API_KEY) {
       console.warn("No RESEND_API_KEY found, simulating email send.");
-      console.log(\`Simulating email to \${to} - Subject: \${subject}\`);
+      console.log(`Simulating email to ${to} - Subject: ${subject}`);
       return new Response(
         JSON.stringify({ message: "Email simulation successful (No API Key)" }),
         {
@@ -126,7 +174,7 @@ serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: \`Bearer \${RESEND_API_KEY}\`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
         from: "Aula Virtual Jerusalén <aula@jerusalen.edu.ec>", // Debe cambiarse al dominio verificado real
@@ -149,8 +197,8 @@ serve(async (req) => {
         status: 400,
       });
     }
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

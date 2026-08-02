@@ -39,17 +39,12 @@ export default function StickyNav() {
     } else if (cleanPath === '/contacto') {
       list = [
         { id: 'contact_hero', label: 'Contacto', icon: Send },
-        { id: 'contact_info', label: 'Ubicación', icon: MapPin },
+        { id: 'contact_form', label: 'Mensaje', icon: Send },
+        { id: 'contact_map', label: 'Ubicación', icon: MapPin },
       ];
     }
     return list;
   }, [cleanPath]);
-
-  useEffect(() => {
-    if (SECTIONS.length > 0) {
-      setActiveSection(SECTIONS[0].id);
-    }
-  }, [cleanPath, SECTIONS]);
 
   useEffect(() => {
     if (SECTIONS.length === 0) return;

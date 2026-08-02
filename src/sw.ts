@@ -25,19 +25,6 @@ registerRoute(
   })
 )
 
-// Supabase API requests (Network first with cache fallback)
-registerRoute(
-  /^https:\/\/.*supabase\.co\/rest\/.*/i,
-  new NetworkFirst({
-    cacheName: 'supabase-api',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 300 // 5 minutes
-      })
-    ]
-  })
-)
 
 // Images (Cache first, network fallback)
 registerRoute(

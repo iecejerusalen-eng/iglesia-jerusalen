@@ -15,7 +15,23 @@ export default function LMSCourseSettings() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
 
-  const [course, setCourse] = useState<any>({
+  interface CourseFormState {
+    title: string;
+    description: string;
+    format: string;
+    grading_scale: string;
+    is_published: boolean;
+    cover_image_url: string;
+    category_id: string;
+    term_id: string;
+    capacity: number;
+    start_date: string;
+    duration: string;
+    schedule: string;
+    [key: string]: string | number | boolean | null | undefined;
+  }
+
+  const [course, setCourse] = useState<CourseFormState>({
     title: '',
     description: '',
     format: 'weekly',
@@ -31,47 +47,47 @@ export default function LMSCourseSettings() {
   });
 
   useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const { data: catData } = await supabase.from('lms_categories').select('id, name');
+        if (catData) setCategories(catData);
+
+        const { data: termData } = await supabase.from('lms_terms').select('id, name');
+        if (termData) setTerms(termData);
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+      }
+    };
+
+    const fetchCourse = async (courseId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('lms_courses')
+          .select('*')
+          .eq('id', courseId)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setCourse({
+            ...data,
+            start_date: data.start_date ? data.start_date.substring(0, 10) : ''
+          });
+        }
+      } catch (err) {
+        console.error('Error loading course:', err);
+        toast.error('Error al cargar el curso');
+        navigate('/lms/admin');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchMetadata();
     if (!isNew && id) {
       fetchCourse(id);
     }
-  }, [id]);
-
-  const fetchMetadata = async () => {
-    try {
-      const { data: catData } = await supabase.from('lms_categories').select('id, name');
-      if (catData) setCategories(catData);
-      
-      const { data: termData } = await supabase.from('lms_terms').select('id, name');
-      if (termData) setTerms(termData);
-    } catch (error) {
-      console.error('Error fetching metadata:', error);
-    }
-  };
-
-  const fetchCourse = async (courseId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('lms_courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setCourse({
-          ...data,
-          start_date: data.start_date ? data.start_date.substring(0, 10) : ''
-        });
-      }
-    } catch (error) {
-      toast.error('Error al cargar el curso');
-      navigate('/lms/admin');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  }, [id, isNew, navigate]);
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!course.title) {
@@ -108,8 +124,8 @@ export default function LMSCourseSettings() {
         toast.success('Curso actualizado exitosamente');
         navigate(-1);
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Error al guardar el curso');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Error al guardar el curso');
     } finally {
       setSaving(false);
     }

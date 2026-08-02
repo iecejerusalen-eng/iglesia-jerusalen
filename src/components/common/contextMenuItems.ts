@@ -66,7 +66,7 @@ export const CONTEXT_MENU_GROUPS: ContextMenuGroupDef[] = [
       {
         type: 'nav',
         label: 'Aula Virtual',
-        path: '/universidad',
+        path: '/aula-virtual',
         iconKey: 'GraduationCap',
         colorClasses: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
       },

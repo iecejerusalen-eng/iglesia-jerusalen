@@ -91,7 +91,7 @@ async function updateQuestions() {
 
   for (const question of questions) {
     let updated = false;
-    let newQuestion = { ...question };
+    const newQuestion = { ...question };
 
     for (const rule of questionsToUpdate) {
       for (const field of rule.fields) {

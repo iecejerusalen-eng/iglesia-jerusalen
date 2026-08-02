@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../config/supabase";
@@ -26,29 +25,55 @@ import { CourseGradesTab } from "../../features/lms/CourseGradesTab";
 import { CourseActivitiesTab } from "../../features/lms/CourseActivitiesTab";
 import { CourseClassmatesTab } from "../../features/lms/CourseClassmatesTab";
 import { CourseSidebar } from "../../features/lms/components/CourseSidebar";
+import type { LMSCourse, LMSLesson, LMSModule } from '../../types';
 
+interface CourseViewCourse extends LMSCourse {
+  course_code?: string | null;
+  long_description?: string | null;
+}
 
+interface CourseViewLesson extends Omit<LMSLesson, 'settings'> {
+  estimated_minutes?: number | null;
+  settings?: (Record<string, unknown> & { file_url?: string }) | null;
+}
+
+interface ForumPostProfile {
+  first_name: string;
+  last_name: string;
+  photo_url: string | null;
+  role: string | null;
+  roles: string[];
+}
+
+interface ForumPostView {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: ForumPostProfile | null;
+}
 
 export default function CourseViewer() {
   const { id } = useParams<{ id: string }>();
   const { user, role, roles } = useAuthStore();
-  const userRoles = roles || (role ? [role] : []);
+  const userId = user?.id;
+  const userRoles = useMemo(() => roles || (role ? [role] : []), [role, roles]);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [course, setCourse] = useState<any>(null);
-  const [modules, setModules] = useState<any[]>([]);
-  const [lessons, setLessons] = useState<any[]>([]);
+  const [course, setCourse] = useState<CourseViewCourse | null>(null);
+  const [modules, setModules] = useState<LMSModule[]>([]);
+  const [lessons, setLessons] = useState<CourseViewLesson[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [badgeAwarded, setBadgeAwarded] = useState(false);
 
   // Active state
-  const [activeLesson, setActiveLesson] = useState<any>(null);
+  const [activeLesson, setActiveLesson] = useState<CourseViewLesson | null>(null);
   const [activeTabId, setActiveTabId] = useState<string>("general");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Forum State
-  const [forumPosts, setForumPosts] = useState<any[]>([]);
+  const [forumPosts, setForumPosts] = useState<ForumPostView[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [postingToForum, setPostingToForum] = useState(false);
 
@@ -58,34 +83,7 @@ export default function CourseViewer() {
 
   // Removed unused previousQuizAttempt state
 
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (id) {
-      fetchCourseOutline();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user]);
-
-  useEffect(() => {
-    if (activeLesson) {
-      // Fetch data specific to the active lesson type
-      if (activeLesson.type === "forum") {
-        fetchForumPosts(activeLesson.id);
-      }
-      if (activeLesson.type === "assignment") {
-        // No assignment fetch required
-      }
-      if (activeLesson.type === "quiz") {
-        fetchQuizAttempts(activeLesson.id);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLesson]);
-
-  async function fetchCourseOutline() {
+  const fetchCourseOutline = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch course details
@@ -107,7 +105,7 @@ export default function CourseViewer() {
           .from("lms_enrollments")
           .select("*")
           .eq("course_id", id)
-          .eq("user_id", user?.id)
+          .eq("user_id", userId)
           .maybeSingle();
 
         if (!enrollment) {
@@ -166,10 +164,10 @@ export default function CourseViewer() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id, navigate, userId, userRoles]);
 
   // --- FORUM ACTIONS ---
-  async function fetchForumPosts(lessonId: string) {
+  const fetchForumPosts = useCallback(async (lessonId: string) => {
     try {
       const { data: postsData, error: postsError } = await supabase
         .from("lms_lesson_forum_posts")
@@ -179,7 +177,7 @@ export default function CourseViewer() {
 
       if (postsError) throw postsError;
 
-      let mappedPosts: any[] = [];
+      let mappedPosts: ForumPostView[] = [];
       if (postsData && postsData.length > 0) {
         const userIds = [...new Set(postsData.map((p) => p.user_id))];
         const { data: profData, error: profError } = await supabase
@@ -209,7 +207,7 @@ export default function CourseViewer() {
     } catch (err) {
       console.error("Error fetching forum posts:", err);
     }
-  }
+  }, []);
 
   const handlePostToForum = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,7 +236,7 @@ export default function CourseViewer() {
   };
 
   // --- QUIZ ACTIONS ---
-  async function fetchQuizAttempts(lessonId: string) {
+  const fetchQuizAttempts = useCallback(async (lessonId: string) => {
     setQuizSubmitted(false);
     setQuizScore(null);
     try {
@@ -246,7 +244,7 @@ export default function CourseViewer() {
         .from("lms_lesson_quiz_grades")
         .select("*")
         .eq("lesson_id", lessonId)
-        .eq("student_id", user?.id)
+        .eq("student_id", userId)
         .order("completed_at", { ascending: false })
         .maybeSingle();
 
@@ -258,7 +256,35 @@ export default function CourseViewer() {
     } catch (err) {
       console.error(err);
     }
-  }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (id) {
+      const timeoutId = window.setTimeout(() => {
+        void fetchCourseOutline();
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [fetchCourseOutline, id, navigate, user]);
+
+  useEffect(() => {
+    if (!activeLesson) return;
+
+    const timeoutId = window.setTimeout(() => {
+      if (activeLesson.type === "forum") {
+        void fetchForumPosts(activeLesson.id);
+      }
+      if (activeLesson.type === "quiz") {
+        void fetchQuizAttempts(activeLesson.id);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeLesson, fetchForumPosts, fetchQuizAttempts]);
 
   // --- COMPLETION LOGIC ---
   const toggleLessonCompletion = async (
@@ -298,11 +324,11 @@ export default function CourseViewer() {
     }
   };
 
-  const calculateProgress = () => {
+  const calculateProgress = useCallback(() => {
     if (lessons.length === 0) return 0;
     const completedCount = Object.values(completions).filter(Boolean).length;
     return Math.round((completedCount / lessons.length) * 100);
-  };
+  }, [completions, lessons.length]);
 
   /** Finds the next lesson in sequence after the current activeLesson */
   const getNextLesson = () => {
@@ -325,19 +351,12 @@ export default function CourseViewer() {
     }
   };
 
-  useEffect(() => {
-    if (lessons.length > 0 && calculateProgress() === 100 && !badgeAwarded) {
-      awardCompletionBadge();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [completions, lessons.length, badgeAwarded]);
-
-  const awardCompletionBadge = async () => {
+  const awardCompletionBadge = useCallback(async () => {
     try {
       const { data: existingBadge } = await supabase
         .from("lms_student_badges")
         .select("id")
-        .eq("student_id", user?.id)
+        .eq("student_id", userId)
         .eq("course_id", id)
         .eq("badge_name", "Curso Completado")
         .single();
@@ -347,7 +366,7 @@ export default function CourseViewer() {
 
         await supabase.from("lms_student_badges").insert([
           {
-            student_id: user?.id,
+            student_id: userId,
             course_id: id,
             badge_name: "Curso Completado",
             badge_svg: badgeSvg,
@@ -373,7 +392,16 @@ export default function CourseViewer() {
     } catch (error) {
       console.error("Error awarding badge:", error);
     }
-  };
+  }, [id, userId]);
+
+  useEffect(() => {
+    if (lessons.length > 0 && calculateProgress() === 100 && !badgeAwarded) {
+      const timeoutId = window.setTimeout(() => {
+        void awardCompletionBadge();
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [awardCompletionBadge, badgeAwarded, calculateProgress, lessons.length]);
 
   if (loading) {
     return (
@@ -985,7 +1013,7 @@ export default function CourseViewer() {
                                             ? [post.profiles.role]
                                             : []);
                                         const isInstructor = postRoles.some(
-                                          (r: any) =>
+                                          (r: string) =>
                                             [
                                               "admin",
                                               "pastor",

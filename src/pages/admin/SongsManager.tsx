@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,9 +10,11 @@ import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   Plus, Edit3, Trash2, X, Search, Music, ListMusic,
   Tag, Palette as StyleIcon, ChevronDown, ChevronUp,
-  Link as LinkIcon, PlusCircle, ArrowUp, ArrowDown, Sparkles
+  Link as LinkIcon, PlusCircle, ArrowUp, ArrowDown, Sparkles,
+  BookOpenText, Guitar, RotateCcw
 } from 'lucide-react';
 import type { Song, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
+import { isValidChord } from '../../features/songs/utils/songUtils';
 
 const songSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
@@ -25,6 +27,9 @@ const songSchema = z.object({
   style_id: z.string().optional(),
   has_chords: z.boolean(),
 });
+
+type SongFormInput = z.input<typeof songSchema>;
+type SongFormValues = z.output<typeof songSchema>;
 
 
 
@@ -100,9 +105,14 @@ function bracketTextToHtml(text: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   
-  return escaped.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, (_, chord) => {
+  return escaped.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
+    if (!isValidChord(chord)) return match;
     return `<span class="chord-node-wrapper" data-chord-node="true" data-chord="${chord}"></span>`;
   });
+}
+
+function getBracketTokens(text: string): string[] {
+  return [...text.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1].trim());
 }
 
 function compileBlocksToHtml(blocks: SongStructureBlock[]): string {
@@ -294,6 +304,7 @@ const SongsManager = () => {
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const ITEMS_PER_PAGE = 20;
 
   // Modal & Overhaul state
@@ -310,10 +321,8 @@ const SongsManager = () => {
   const [newTypeName, setNewTypeName] = useState('');
   const [newStyleName, setNewStyleName] = useState('');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(songSchema) as any,
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SongFormInput, unknown, SongFormValues>({
+    resolver: zodResolver(songSchema),
     defaultValues: { title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false },
   });
 
@@ -325,7 +334,7 @@ const SongsManager = () => {
     return () => clearTimeout(timer);
   }, [search, filterType, filterStyle]);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch catalogs only once ideally, but here is fine
@@ -333,7 +342,9 @@ const SongsManager = () => {
         supabase.from('song_types').select('*').order('name'),
         supabase.from('song_styles').select('*').order('name'),
       ]);
-      
+
+      if (typesRes.error) throw typesRes.error;
+      if (stylesRes.error) throw stylesRes.error;
       if (typesRes.data) setSongTypes(typesRes.data);
       if (stylesRes.data) setSongStyles(stylesRes.data);
 
@@ -342,7 +353,8 @@ const SongsManager = () => {
         .select('*, song_types(*), song_styles(*)', { count: 'exact' });
 
       if (debouncedSearch) {
-        query = query.ilike('title', `%${debouncedSearch}%`);
+        const safeSearch = debouncedSearch.replace(/[,%()]/g, ' ').trim();
+        if (safeSearch) query = query.or(`title.ilike.%${safeSearch}%,artist.ilike.%${safeSearch}%`);
       }
       if (filterType) {
         query = query.eq('type_id', filterType);
@@ -362,26 +374,27 @@ const SongsManager = () => {
       
       if (songsData) setSongs(songsData);
       if (count !== null) {
+        setTotalItems(count);
         setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
       } else {
+        setTotalItems(songsData?.length ?? 0);
         setTotalPages(1);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching songs:', err);
       toast.error('Error al cargar canciones');
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, filterStyle, filterType, page]);
 
   useEffect(() => {
-    fetchAll();
-  }, [page, debouncedSearch, filterType, filterStyle]);
+    void Promise.resolve().then(fetchAll);
+  }, [fetchAll]);
 
   const openCreate = () => {
     setEditingSong(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    reset({ title: '', artist: '', bpm: undefined as any, type_id: '', style_id: '', has_chords: false });
+    reset({ title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false });
     setLyrics('');
     setDrumStyle('');
     setResourceLinks([]);
@@ -395,8 +408,7 @@ const SongsManager = () => {
     reset({
       title: song.title,
       artist: song.artist || '',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      bpm: song.bpm ?? (undefined as any),
+      bpm: song.bpm ?? undefined,
       type_id: song.type_id || '',
       style_id: song.style_id || '',
       has_chords: song.has_chords,
@@ -409,11 +421,23 @@ const SongsManager = () => {
     setShowForm(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onSubmit = async (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const typedData = data as any;
-    
+  const onSubmit = async (data: SongFormValues) => {
+    const editableText = editorMode === 'structured'
+      ? structureBlocks.map((block) => block.lyrics).join('\n')
+      : htmlToBracketText(lyrics);
+    const bracketTokens = getBracketTokens(editableText);
+    const invalidTokens = [...new Set(bracketTokens.filter((token) => !isValidChord(token)))];
+
+    if (invalidTokens.length > 0) {
+      toast.error(`Acorde no válido: [${invalidTokens[0]}]. Usa encabezados de sección fuera de los corchetes.`);
+      return;
+    }
+
+    if (data.has_chords && bracketTokens.length === 0) {
+      toast.error('La canción está marcada con acordes, pero no contiene ninguno en formato [C].');
+      return;
+    }
+
     // Compile lyrics if in structured mode
     let compiledLyrics = lyrics;
     if (editorMode === 'structured') {
@@ -421,12 +445,12 @@ const SongsManager = () => {
     }
 
     const payload = {
-      title: typedData.title,
-      artist: typedData.artist || null,
-      bpm: typedData.bpm ? Number(typedData.bpm) : null,
-      type_id: typedData.type_id || null,
-      style_id: typedData.style_id || null,
-      has_chords: typedData.has_chords,
+      title: data.title,
+      artist: data.artist || null,
+      bpm: data.bpm ?? null,
+      type_id: data.type_id || null,
+      style_id: data.style_id || null,
+      has_chords: data.has_chords,
       lyrics: compiledLyrics,
       drum_style: drumStyle || null,
       resource_links: resourceLinks,
@@ -572,26 +596,58 @@ const SongsManager = () => {
 
   // Filtered songs computation is removed since we do it server-side
   const filtered = songs;
+  const hasActiveFilters = Boolean(search || filterType || filterStyle);
+
+  const clearCatalogFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setFilterType('');
+    setFilterStyle('');
+    setPage(1);
+  };
 
   return (
-    <div className="max-w-6xl mx-auto pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div className="mx-auto max-w-6xl pb-12">
+      <section className="relative mb-6 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 md:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(199,157,63,0.2),transparent_30%)]" />
+        <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+          <div>
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-church-gold-light">
+              <Music size={13} aria-hidden="true" /> Biblioteca musical
+            </span>
+            <h1 className="font-serif text-3xl font-bold tracking-tight">Alabanzas e Himnos</h1>
+            <p className="mt-2 text-sm text-slate-300">Organiza letras, acordes y recursos del equipo de alabanza.</p>
+          </div>
+          <div className="flex gap-3">
+            <div className="min-w-28 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <BookOpenText className="mb-2 text-church-gold-light" size={18} aria-hidden="true" />
+              <strong className="block text-2xl tabular-nums">{totalItems}</strong>
+              <span className="text-xs text-slate-400">resultados</span>
+            </div>
+            <div className="min-w-28 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <Guitar className="mb-2 text-emerald-400" size={18} aria-hidden="true" />
+              <strong className="block text-2xl tabular-nums">{songs.filter((song) => song.has_chords).length}</strong>
+              <span className="text-xs text-slate-400">con acordes aquí</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <Music className="text-amber-600" size={28} />
-            Alabanzas e Himnos
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-455 mt-1">Gestiona el catálogo de canciones de la iglesia</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Catálogo de canciones</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Página {page} de {totalPages}</p>
         </div>
         {!readOnly && (
           <div className="flex gap-2">
             <button onClick={() => setShowCatalogs(!showCatalogs)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-105 text-gray-700 dark:bg-slate-800 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-sm font-medium border border-gray-200 dark:border-white/5">
+              aria-expanded={showCatalogs}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
               <Tag size={16} /> Catálogos {showCatalogs ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             <button onClick={openCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors cursor-pointer text-sm font-semibold shadow-md">
-              <Plus size={18} /> Nueva Canción
+              className="flex items-center gap-2 rounded-xl bg-church-gold-dark px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-amber-800">
+              <Plus size={18} /> Nueva canción
             </button>
           </div>
         )}
@@ -640,24 +696,27 @@ const SongsManager = () => {
       )}
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <section aria-label="Buscar y filtrar canciones" className="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:flex-row">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por título o artista..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg text-sm text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none shadow-glass" />
+            placeholder="Buscar por título o artista…"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-church-gold-medium focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white" />
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-          className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none shadow-glass">
+          aria-label="Filtrar por tipo"
+          className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-church-gold-medium dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
           <option value="">Todos los tipos</option>
           {songTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)}
-          className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-amber-400 outline-none shadow-glass">
+          aria-label="Filtrar por estilo"
+          className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-church-gold-medium dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
           <option value="">Todos los estilos</option>
           {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-      </div>
+        {hasActiveFilters && <button type="button" onClick={clearCatalogFilters} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-primary hover:bg-slate-50 dark:text-church-gold-light dark:hover:bg-white/5"><RotateCcw size={14} /> Limpiar</button>}
+      </section>
 
       {/* Songs Table */}
       {loading ? (

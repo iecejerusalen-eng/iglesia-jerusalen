@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ea102711-bb05-43b1-b4c3-93ee65e8a2b2",
+    "title": "Cantaré de tu Amor por Siempre",
+    "artist": "Delirious? / Ingrid Rosario",
+    "lyrics": "<p>Sobre los mon<ruby class=\"chord-annotation\" data-chord=\"F\">tes<rt class=\"chord-name\">F</rt></ruby> y el mar,</p><p>tu río corre a<ruby class=\"chord-annotation\" data-chord=\"G\">rrastran<rt class=\"chord-name\">G</rt></ruby>do amor,</p><p>y a<ruby class=\"chord-annotation\" data-chord=\"C\">briré<rt class=\"chord-name\">C</rt></ruby> mi corazón,</p><p>para que me <ruby class=\"chord-annotation\" data-chord=\"Am\">sa<rt class=\"chord-name\">Am</rt></ruby>nes con tu amor...</p><br/><p><strong>Coro:</strong></p><p>Canta<ruby class=\"chord-annotation\" data-chord=\"C\">ré<rt class=\"chord-name\">C</rt></ruby> de tu amor por siem<ruby class=\"chord-annotation\" data-chord=\"Dm\">pre<rt class=\"chord-name\">Dm</rt></ruby>,</p><p>canta<ruby class=\"chord-annotation\" data-chord=\"F\">F</rt></ruby> de tu amor por siem<ruby class=\"chord-annotation\" data-chord=\"G\">pre<rt class=\"chord-name\">G</rt></ruby>...</p>",
+    "has_chords": true,
+    "structure_blocks": []
+  },
+  {
+    "id": "135768e5-6fcf-44dc-94b3-a171acbb7303",
+    "title": "Cuán Grande es Él",
+    "artist": "Tradicional",
+    "lyrics": "[Verse 1]\n[G]Señor, mi Dios, al con[C]templar los cielos,\nEl fir[G]mamento [D]y las estre[G]llas mil,\nAl oír tu voz en el [C]potente trueno\nY ver [G]brillar al [D]sol en su ce[G]nit.\n\n[Chorus]\nMi co[G]razón entona [C]la can[G]ción:\n¡Cuán grande es [Am]Él! [D]¡Cuán grande es [G]Él!\nMi co[G]razón entona [C]la can[G]ción:\n¡Cuán grande es [Am]Él! [D]¡Cuán grande es [G]Él!\n\n[Verse 2]\n[G]Al recorrer los [C]montes y los valles\nY ver las [G]bellas [D]flores [G]al pasar,\nAl escuchar el [C]canto de las aves\nY el mur[G]murar del [D]claro [G]manantial.",
+    "has_chords": true,
+    "structure_blocks": []
+  },
+  {
+    "id": "565a11ee-f378-42e8-9381-ff88cbfd1c82",
+    "title": "Tú estás aquí",
+    "artist": "Jesús Adrián Romero",
+    "lyrics": "[Verse 1]\nAu[G]nque mis ojos no te [D]puedan ver,\nTe puedo sen[Em]tir, sé que estás a[C]quí.\nAu[G]nque mis manos no te [D]puedan tocar,\nMi corazón [Em]te puede adorar, sé que estás a[C]quí.\n\n[Chorus]\nMi Dios tú [G]estás aquí, mi Dios tú [D]estás aquí,\nTú estás a[Em]quí, llenando este lu[C]gar.\n\n[Bridge]\nPrepa[G]rando mi corazón, [D]listo para adorar,\nTú estás a[Em]quí, mi Consolador [C]fiel.",
+    "has_chords": true,
+    "structure_blocks": []
+  }
+]

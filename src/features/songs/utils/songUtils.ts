@@ -17,6 +17,12 @@ export const DRUM_STYLES = [
 const CHORDS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const FLATS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
+const CHORD_PATTERN = /^[A-G](?:#|b)?(?:(?:(?:maj|min|dim|aug|sus|add|m)?(?:2|4|5|6|7|9|11|13)?(?:sus[24]|add(?:2|4|6|9|11|13))?)|(?:(?:2|4|5|6|7|9|11|13)(?:sus[24]|add(?:2|4|6|9|11|13))?))?(?:\/[A-G](?:#|b)?)?$/;
+
+export function isValidChord(chord: string): boolean {
+  return CHORD_PATTERN.test(chord.trim());
+}
+
 export function transposeNote(note: string, steps: number): string {
   if (!note) return note;
   const isFlat = note.includes('b');
@@ -47,8 +53,8 @@ export function transposeChord(chord: string, steps: number): string {
 
 export function getOriginalKey(text: string): string | null {
   if (!text) return null;
-  const match = text.match(/\[([a-zA-Z0-9#/+\-.]+)\]/);
-  if (match && match[1]) {
+  const match = [...text.matchAll(/\[([^\]]+)\]/g)].find((candidate) => isValidChord(candidate[1]));
+  if (match?.[1]) {
     const chordRegex = /^([CDEFGAB][#b]?)/;
     const rootMatch = match[1].match(chordRegex);
     if (rootMatch && rootMatch[1]) {
@@ -127,7 +133,8 @@ export function htmlToBracketText(html: string): string {
 
 export function processBracketText(text: string, transposeAmount: number = 0, nashvilleMode: boolean = false, originalKey: string | null = null): string {
   if (!text) return '';
-  return text.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, (_, chord) => {
+  return text.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
+    if (!isValidChord(chord)) return match;
     let finalChord = chord;
     if (transposeAmount !== 0) {
       finalChord = transposeChord(finalChord, transposeAmount);
@@ -150,7 +157,8 @@ export function bracketTextToHtml(text: string, transposeAmount: number = 0, nas
   
   const lines = escaped.split('\n');
   const processedLines = lines.map(line => {
-    const compiledLine = line.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, (_, chord) => {
+    const compiledLine = line.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
+      if (!isValidChord(chord)) return match;
       let finalChord = chord;
       if (transposeAmount !== 0) {
         finalChord = transposeChord(finalChord, transposeAmount);

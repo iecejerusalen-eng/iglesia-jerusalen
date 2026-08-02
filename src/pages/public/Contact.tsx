@@ -1,369 +1,233 @@
 import { useState } from 'react';
-import { supabase } from '../../config/supabase';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
-import MagneticButton from '../../components/animations/MagneticButton';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Send,
+} from 'lucide-react';
+import { supabase } from '../../config/supabase';
+import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
 
+const CHURCH_ADDRESS = 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Ecuador';
+const CHURCH_PHONE = '+593 98 526 3122';
+const CHURCH_PHONE_LINK = '+593985263122';
+const CHURCH_EMAIL = 'iece_jerusalen@hotmail.com';
+const CHURCH_DESTINATION = { ...JERUSALEN_CHURCH_COORDS, address: CHURCH_ADDRESS };
+
 const contactSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  email: z.string().email('Correo electrónico inválido').min(1, 'El correo es requerido'),
-  subject: z.string().min(1, 'El asunto es requerido'),
-  message: z.string().min(1, 'El mensaje es requerido'),
+  name: z.string().trim().min(2, 'Escribe tu nombre completo').max(80, 'El nombre es demasiado largo'),
+  email: z.string().trim().min(1, 'El correo es requerido').email('Escribe un correo válido').max(160, 'El correo es demasiado largo'),
+  subject: z.string().min(1, 'Selecciona un asunto'),
+  message: z.string().trim().min(10, 'Cuéntanos un poco más en tu mensaje').max(2000, 'El mensaje no puede superar 2000 caracteres'),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-church-gold-medium focus:bg-white focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950';
+
+const getHttpStatus = (value: unknown): number | null => {
+  if (typeof value !== 'object' || value === null || !('context' in value)) return null;
+  const context = Reflect.get(value, 'context');
+  if (typeof context !== 'object' || context === null || !('status' in context)) return null;
+  const status = Reflect.get(context, 'status');
+  return typeof status === 'number' ? status : null;
+};
+
 const Contact = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      subject: 'Consulta General',
-      message: '',
-    }
+    defaultValues: { name: '', email: '', subject: 'Consulta General', message: '' },
   });
 
   const onSubmit = async (data: ContactFormValues) => {
     setLoading(true);
-    setError(null);
+    setSubmitError(null);
 
     try {
-      // Call rate-limiter Edge Function to protect endpoint against spamming
       const { data: limitData, error: limitError } = await supabase.functions.invoke('rate-limiter', {
-        body: { endpoint: 'contacto' }
+        body: { endpoint: 'contacto' },
       });
 
       if (limitError) {
-        const status = limitError.context?.status;
-        if (status === 429) {
-          setError('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-          setLoading(false);
-          return;
+        console.error('No se pudo verificar el límite del formulario de contacto:', limitError);
+        if (getHttpStatus(limitError) === 429) {
+          setSubmitError('Has enviado varios mensajes recientemente. Intenta nuevamente en 15 minutos.');
+        } else {
+          setSubmitError('No pudimos verificar el envío en este momento. Intenta nuevamente más tarde.');
         }
-        console.warn('Rate limiter check failed or not deployed, proceeding:', limitError);
-      } else if (!limitData || !limitData.success) {
-        setError('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-        setLoading(false);
         return;
       }
 
-      // Proceed with inserting the contact message
-      const { error: insertError } = await supabase
-        .from('contact_messages')
-        .insert({
-          name: data.name,
-          email: data.email,
-          subject: data.subject,
-          message: data.message,
-          status: 'unread',
-        });
+      if (!limitData?.success) {
+        setSubmitError('Has enviado varios mensajes recientemente. Intenta nuevamente en 15 minutos.');
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('contact_messages').insert({
+        name: data.name,
+        email: data.email,
+        subject: data.subject,
+        message: data.message,
+        status: 'unread',
+      });
 
       if (insertError) throw insertError;
-      
       setSuccess(true);
       reset();
-    } catch (err: unknown) {
-      console.error('Error enviando mensaje a Supabase:', err);
-      const errorObj = err as { context?: { status?: number }; message?: string };
-      if (errorObj.context?.status === 429 || errorObj.message?.includes('429')) {
-        setError('Límite de solicitudes excedido (5 peticiones cada 15 min). Por favor intenta de nuevo más tarde.');
-      } else {
-        setError('Ocurrió un error al enviar tu mensaje. Por favor intenta más tarde.');
-      }
+    } catch (error: unknown) {
+      console.error('Error enviando el formulario de contacto:', error);
+      setSubmitError('No pudimos enviar tu mensaje. También puedes escribirnos por WhatsApp o correo.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-16">
-      
-      {/* HEADER HERO */}
-      <div id="contact_hero" className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
-          <Mail size={200} />
-        </div>
-        <AnimeZoomIn 
-          className="relative z-10 max-w-3xl space-y-4"
-        >
-          <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-            Canales de Atención
-          </span>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mt-2">Contacto</h1>
-          <p className="text-gray-200 text-base md:text-lg leading-relaxed font-light">
-            ¿Tienes dudas, peticiones de oración, o deseas saber más de nuestras actividades? Ponte en contacto con nosotros, estamos para servirte.
-          </p>
-        </AnimeZoomIn>
-      </div>
-
-      {/* GRID PRINCIPAL (2 Columnas en Desktop) */}
-      <AnimeStaggerGrid 
-        id="contact_info"
-        className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch"
-      >
-        
-        {/* Columna Izquierda: Información de Contacto */}
-        <div className="space-y-6 flex flex-col justify-between">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-primary dark:text-white pb-3 border-b border-gray-100 dark:border-white/10">
-              Información de Contacto
-            </h2>
-            
-            <div className="grid grid-cols-1 gap-4">
-              {/* Tarjeta Dirección */}
-              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
-                <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Dirección</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                    Baquerizo Moreno entre Av. Colón y Tulcán, Milagro 09D1701.
-                  </p>
-                </div>
-              </AnimeHoverCard>
-
-              {/* Tarjeta Secretaría */}
-              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
-                <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Phone size={20} />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Secretaría</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                    +593 98 526 3122 (Hna. Marlene)
-                  </p>
-                </div>
-              </AnimeHoverCard>
-
-              {/* Tarjeta Correo */}
-              <AnimeHoverCard className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 flex gap-4 shadow-xs">
-                <div className="w-10 h-10 bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Mail size={20} />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Correo Electrónico</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                    iece_jerusalen@hotmail.com
-                  </p>
-                </div>
-              </AnimeHoverCard>
+    <div className="bg-slate-50/60 py-6 transition-colors dark:bg-slate-950 md:py-10">
+      <div className="mx-auto max-w-7xl space-y-8 px-4 md:space-y-12 md:px-8">
+        <section id="contact_hero" className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-2xl shadow-slate-950/10 md:px-10 md:py-14">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(199,157,63,0.2),transparent_30%),radial-gradient(circle_at_5%_100%,rgba(59,130,246,0.14),transparent_34%)]" />
+          <AnimeZoomIn className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-church-gold/25 bg-church-gold/10 px-3 py-1.5 text-xs font-semibold text-church-gold-bright">
+                <MessageCircle size={14} aria-hidden="true" /> Estamos para servirte
+              </span>
+              <h1 className="mt-5 font-serif text-4xl font-bold tracking-tight md:text-5xl">Hablemos</h1>
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
+                Escríbenos si necesitas oración, consejería o información sobre nuestras actividades. Queremos acompañarte.
+              </p>
             </div>
-          </div>
-
-          {/* Redes Sociales */}
-          <div className="pt-6 border-t border-gray-100 dark:border-white/10 space-y-4">
-            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Nuestras Redes Sociales</span>
-            <div className="flex gap-4">
-              <AnimeRubberBandHover>
-                <a 
-                  href="https://www.facebook.com/jerusalen.cuadrangular" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-primary dark:text-white dark:hover:text-blue-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
-                  title="Facebook"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
-                  </svg>
-                </a>
-              </AnimeRubberBandHover>
-
-              <AnimeRubberBandHover>
-                <a 
-                  href="https://www.instagram.com/jerusalen_iece/" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
-                  title="Instagram"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                  </svg>
-                </a>
-              </AnimeRubberBandHover>
-
-              <AnimeRubberBandHover>
-                <a 
-                  href="https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-12 h-12 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-650 dark:text-gray-300 hover:text-accent-red dark:hover:text-red-400 border border-gray-200 dark:border-white/10 rounded-2xl flex items-center justify-center shadow-xs transition-colors" 
-                  title="YouTube"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.017 0 12 0 12s0 3.982.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.982 24 12 24 12s0-3.982-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                  </svg>
-                </a>
-              </AnimeRubberBandHover>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <a href={`https://wa.me/${CHURCH_PHONE_LINK.replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/40">
+                <MessageCircle size={18} aria-hidden="true" /> WhatsApp
+              </a>
+              <a href="#contact_form" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20">
+                Enviar mensaje <ArrowRight size={17} aria-hidden="true" />
+              </a>
             </div>
-          </div>
-        </div>
+          </AnimeZoomIn>
+        </section>
 
-        {/* Columna Derecha: Mapa de Ubicación */}
-        <div 
-          className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-4 shadow-sm h-full min-h-[400px] flex flex-col"
-        >
-          <div className="flex-1 rounded-2xl overflow-hidden shadow-xs border border-gray-100 dark:border-white/5 relative h-full">
-            <iframe 
-              src="https://maps.google.com/maps?q=-2.139188,-79.5949891&t=&z=17&ie=UTF8&iwloc=&output=embed"
-              className="absolute inset-0 w-full h-full border-0 dark:invert-[90%] dark:hue-rotate-[180deg] dark:contrast-[85%]"
-              allowFullScreen={true}
-              loading="lazy"
-              // @ts-expect-error credentialless is not yet in React's TS definitions but is supported by the browser
-              credentialless="true"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Mapa Iglesia Jerusalén"
-            ></iframe>
-          </div>
-        </div>
-      </AnimeStaggerGrid>
-
-      {/* FORMULARIO DE MENSAJE (Centrado abajo para conservar funcionalidad) */}
-      <AnimeFadeUp 
-        className="max-w-3xl mx-auto pt-6"
-      >
-        {success ? (
-          <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-8 rounded-3xl text-center space-y-4 shadow-sm py-16">
-            <div className="w-16 h-16 bg-green-50 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 size={36} />
-            </div>
-            <h3 className="font-serif font-bold text-2xl text-gray-800 dark:text-white">¡Mensaje Enviado!</h3>
-            <p className="text-gray-555 dark:text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
-              Gracias por escribirnos. Tu mensaje ha sido enviado a la administración de la iglesia. Te responderemos al correo proporcionado lo antes posible.
-            </p>
-            <MagneticButton>
-              <button
-                onClick={() => setSuccess(false)}
-                className="mt-4 px-6 py-2.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer border border-transparent"
-              >
-                Enviar otro mensaje
-              </button>
-            </MagneticButton>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-10 space-y-6 shadow-xs">
-            <div className="space-y-1">
-              <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-white">
-                Escríbenos tu Mensaje
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500">¿Tienes dudas o necesitas consejería? Déjanos tu mensaje en el buzón.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="name" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tu Nombre</label>
-                <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  {...register('name')}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
-                  placeholder="Ej. Ana de Castro"
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tu Correo</label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  {...register('email')}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
-                  placeholder="Ej. ana@correo.com"
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-              </div>
-            </div>
-
+        <section id="contact_info" className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+          <AnimeFadeUp className="space-y-5 lg:sticky lg:top-28">
             <div>
-              <label htmlFor="subject" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-medium">Asunto</label>
-              <select
-                id="subject"
-                {...register('subject')}
-                className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white dark:bg-slate-900"
-              >
-                <option value="Consulta General">Consulta General</option>
-                <option value="Petición de Oración">Petición de Oración</option>
-                <option value="Consejería Pastoral">Consejería Pastoral</option>
-                <option value="Tienda / Pedidos">Pregunta sobre Tienda / Pedidos</option>
-                <option value="Voluntariado / Servicio">Deseo Servir en Ministerios</option>
-              </select>
-              {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Contacto directo</span>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white">Elige el canal más cómodo</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Te responderemos tan pronto como sea posible durante nuestros horarios de atención.</p>
             </div>
 
-            <div>
-              <label htmlFor="message" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 font-medium">Mensaje</label>
-              <textarea
-                id="message"
-                rows={5}
-                {...register('message')}
-                className="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-white/20 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/30 focus:outline-none dark:text-white"
-                placeholder="Escribe aquí tu petición de oración, consulta o mensaje..."
-              />
-              {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
+            <AnimeStaggerGrid delay={50} staggerDelay={40} className="grid gap-3">
+              <a href={`https://www.google.com/maps/search/?api=1&query=${JERUSALEN_CHURCH_COORDS.lat},${JERUSALEN_CHURCH_COORDS.lng}`} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary dark:bg-blue-950/30 dark:text-blue-300"><MapPin size={19} aria-hidden="true" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-sm text-slate-900 dark:text-white">Visítanos</strong><span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{CHURCH_ADDRESS}</span></span>
+                <ExternalLink size={15} className="mt-1 text-slate-300 transition group-hover:text-church-gold-medium" aria-hidden="true" />
+              </a>
+              <a href={`tel:${CHURCH_PHONE_LINK}`} className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"><Phone size={19} aria-hidden="true" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-sm text-slate-900 dark:text-white">Secretaría</strong><span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{CHURCH_PHONE} · Hna. Marlene</span></span>
+                <ArrowRight size={15} className="mt-1 text-slate-300 transition group-hover:translate-x-1 group-hover:text-church-gold-medium" aria-hidden="true" />
+              </a>
+              <a href={`mailto:${CHURCH_EMAIL}`} className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-church-gold-dark dark:bg-amber-950/30 dark:text-church-gold-light"><Mail size={19} aria-hidden="true" /></span>
+                <span className="min-w-0 flex-1"><strong className="block text-sm text-slate-900 dark:text-white">Correo electrónico</strong><span className="mt-1 block break-all text-xs text-slate-500 dark:text-slate-400">{CHURCH_EMAIL}</span></span>
+                <ArrowRight size={15} className="mt-1 text-slate-300 transition group-hover:translate-x-1 group-hover:text-church-gold-medium" aria-hidden="true" />
+              </a>
+            </AnimeStaggerGrid>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+              <Clock3 size={18} className="text-church-gold-dark dark:text-church-gold-light" aria-hidden="true" />
+              <div><strong className="block text-xs text-slate-900 dark:text-white">Atención por secretaría</strong><span className="text-xs text-slate-500 dark:text-slate-400">Comunícate para confirmar disponibilidad.</span></div>
             </div>
 
-            {error && (
-              <div className="bg-red-50 dark:bg-red-950/20 text-accent-red dark:text-red-400 p-3 rounded-xl text-xs flex items-center gap-1.5 border border-red-100 dark:border-red-900/30">
-                <AlertCircle size={14} />
-                <span>{error}</span>
+            <div className="flex flex-wrap gap-2" aria-label="Redes sociales">
+              {[
+                ['Facebook', 'https://www.facebook.com/jerusalen.cuadrangular'],
+                ['Instagram', 'https://www.instagram.com/jerusalen_iece/'],
+                ['YouTube', 'https://www.youtube.com/channel/UCgzlmsop3KSLpyzz92WQ2Mw'],
+              ].map(([label, href]) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-church-gold/50 hover:text-church-gold-dark dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-church-gold-light">{label}<ExternalLink size={11} aria-hidden="true" /></a>
+              ))}
+            </div>
+          </AnimeFadeUp>
+
+          <div id="contact_form" className="scroll-mt-28">
+            <AnimeFadeUp className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-900/5 dark:border-white/10 dark:bg-slate-900 md:p-8">
+              {success ? (
+              <div role="status" className="flex min-h-[480px] flex-col items-center justify-center px-4 text-center">
+                <span className="flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"><CheckCircle2 size={32} aria-hidden="true" /></span>
+                <h2 className="mt-5 font-serif text-2xl font-bold text-slate-900 dark:text-white">Mensaje enviado</h2>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">Gracias por escribirnos. La administración recibió tu mensaje y responderá al correo proporcionado.</p>
+                <button type="button" onClick={() => setSuccess(false)} className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900">Enviar otro mensaje</button>
               </div>
-            )}
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                <div className="border-b border-slate-100 pb-5 dark:border-white/5">
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Buzón de contacto</span>
+                  <h2 className="mt-2 font-serif text-2xl font-bold text-slate-900 dark:text-white md:text-3xl">Cuéntanos cómo podemos ayudarte</h2>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Todos los campos son obligatorios.</p>
+                </div>
 
-            <div className="pt-2">
-              <MagneticButton className="w-full lg:w-auto">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full lg:w-auto px-8 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-200 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
-                >
-                  {loading ? 'Enviando...' : (
-                    <>
-                      Enviar Mensaje
-                      <Send size={16} />
-                    </>
-                  )}
+                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                  <label className="space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Nombre completo
+                    <input type="text" autoComplete="name" placeholder="Ej. Ana de Castro" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'name-error' : undefined} {...register('name')} className={inputClassName} />
+                    {errors.name && <span id="name-error" className="block text-xs font-medium text-red-600 dark:text-red-400">{errors.name.message}</span>}
+                  </label>
+                  <label className="space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Correo electrónico
+                    <input type="email" autoComplete="email" placeholder="Ej. ana@correo.com" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} {...register('email')} className={inputClassName} />
+                    {errors.email && <span id="email-error" className="block text-xs font-medium text-red-600 dark:text-red-400">{errors.email.message}</span>}
+                  </label>
+                </div>
+
+                <label className="mt-5 block space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Asunto
+                  <select {...register('subject')} className={inputClassName}>
+                    <option value="Consulta General">Consulta general</option>
+                    <option value="Petición de Oración">Petición de oración</option>
+                    <option value="Consejería Pastoral">Consejería pastoral</option>
+                    <option value="Tienda / Pedidos">Tienda o pedidos</option>
+                    <option value="Voluntariado / Servicio">Deseo servir</option>
+                  </select>
+                </label>
+
+                <label className="mt-5 block space-y-2 text-xs font-semibold text-slate-600 dark:text-slate-300">Mensaje
+                  <textarea rows={6} placeholder="Escribe aquí tu consulta o petición…" aria-invalid={Boolean(errors.message)} aria-describedby={errors.message ? 'message-error' : undefined} {...register('message')} className={`${inputClassName} resize-y`} />
+                  {errors.message && <span id="message-error" className="block text-xs font-medium text-red-600 dark:text-red-400">{errors.message.message}</span>}
+                </label>
+
+                {submitError && <div role="alert" className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"><AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span>{submitError}</span></div>}
+
+                <button type="submit" disabled={loading} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                  {loading ? 'Enviando…' : <>Enviar mensaje <Send size={17} aria-hidden="true" /></>}
                 </button>
-              </MagneticButton>
+              </form>
+              )}
+            </AnimeFadeUp>
+          </div>
+        </section>
+
+        <div id="contact_map" className="scroll-mt-28">
+          <AnimeFadeUp className="space-y-5 pb-6">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Ubicación</span>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white">Encuéntranos en Milagro</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Calcula tu ruta o abre las indicaciones directamente en tu aplicación de mapas.</p>
             </div>
-          </form>
-        )}
-      </AnimeFadeUp>
-
-      {/* MAP & ROUTE SECTION */}
-      <AnimeFadeUp className="space-y-4 pt-6">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-            Ubicación & Cómo Llegar
-          </span>
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-white">
-            Encuéntranos en Milagro
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Calcula la mejor ruta desde tu ubicación hasta la Iglesia Jerusalén Central o abre las indicaciones directamente en tu aplicación GPS favorita.
-          </p>
+            <ChurchRouteMap destination={CHURCH_DESTINATION} height="500px" title="Cómo llegar a Iglesia Jerusalén" />
+          </AnimeFadeUp>
         </div>
-
-        <ChurchRouteMap
-          destination={JERUSALEN_CHURCH_COORDS}
-          height="460px"
-          title="Cómo llegar a Iglesia Jerusalén Central"
-        />
-      </AnimeFadeUp>
-
+      </div>
     </div>
   );
 };

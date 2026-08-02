@@ -3,7 +3,7 @@ import { supabase } from '../../../config/supabase';
 import type { Song, SongType, SongStyle } from '../../../types';
 
 export function useSongs() {
-  const { data: songs = [], isLoading: isLoadingSongs } = useQuery<Song[]>({
+  const { data: songs = [], isLoading: isLoadingSongs, isError: isSongsError } = useQuery<Song[]>({
     queryKey: ['songs'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -15,7 +15,7 @@ export function useSongs() {
     }
   });
 
-  const { data: songTypes = [] } = useQuery<SongType[]>({
+  const { data: songTypes = [], isLoading: isLoadingTypes, isError: isTypesError } = useQuery<SongType[]>({
     queryKey: ['song_types'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,7 +27,7 @@ export function useSongs() {
     }
   });
 
-  const { data: songStyles = [] } = useQuery<SongStyle[]>({
+  const { data: songStyles = [], isLoading: isLoadingStyles, isError: isStylesError } = useQuery<SongStyle[]>({
     queryKey: ['song_styles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,6 +43,7 @@ export function useSongs() {
     songs,
     songTypes,
     songStyles,
-    isLoading: isLoadingSongs
+    isLoading: isLoadingSongs || isLoadingTypes || isLoadingStyles,
+    isError: isSongsError || isTypesError || isStylesError,
   };
 }

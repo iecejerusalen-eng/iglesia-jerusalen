@@ -31,6 +31,20 @@ serve(async (req) => {
       })
     }
 
+    // Verify role in profiles table
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "director", "teacher", "student", "leader", "pastor"].includes(profile.role)) {
+      return new Response(JSON.stringify({ error: "Forbidden: Insufficient permissions" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // 2. Parse request
     const { fileName, fileType, courseId, activityId } = await req.json()
 
