@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, Clock, ChevronDown, Check, Filter, LayoutGrid, List, AlignJustify } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, ChevronDown, Check, Filter, LayoutGrid, List, AlignJustify } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
@@ -138,73 +138,79 @@ const Sermons = () => {
       <AnimeFadeUp delay={100} duration={800}>
         
       {/* HEADER HERO */}
-      <div className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white mb-10 shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
-          <Video size={200} />
+      <div className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-16 mb-12 shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden group border border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-slate-900 to-slate-950"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] group-hover:bg-blue-500/30 transition-colors duration-1000"></div>
+        <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-[3s] ease-out">
+          <Video size={320} />
         </div>
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-            Enseñanzas & Mensajes
-          </span>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mt-2">Prédicas y Devocionales</h1>
-          <p className="text-gray-200 text-base md:text-lg leading-relaxed font-light">
+        
+        <div className="relative z-10 max-w-3xl space-y-6">
+          <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-gold shadow-inner">
+            <Video size={14} className="mr-1" /> Enseñanzas & Mensajes
+          </div>
+          <h1 className="text-4xl md:text-6xl font-serif font-extrabold text-white tracking-tight leading-tight drop-shadow-lg">
+            Prédicas y Devocionales
+          </h1>
+          <p className="text-slate-300 text-base md:text-xl leading-relaxed font-light max-w-2xl">
             Repasa las prédicas dominicales, series doctrinales y mensajes de edificación compartidos por nuestros pastores y líderes invitados.
           </p>
         </div>
       </div>
 
-      {/* Buscador inteligente con Autocomplete */}
-      <div className="max-w-md mb-10">
-        <Autocomplete
-          items={autocompleteItems}
-          value={searchQuery}
-          onValueChange={(val) => setSearchQuery(val)}
-          onSelect={(item) => setSearchQuery(item.label)}
-        >
-          <AutocompleteInput
-            placeholder="Buscar sermón por título, contenido o pastor..."
-            showClear
-            showTrigger
-            size="default"
-          />
-          <AutocompletePopup>
-            <AutocompleteEmpty>No se encontraron prédicas con esa búsqueda.</AutocompleteEmpty>
-            <AutocompleteList>
-              <AutocompleteGroup label="Prédicas Sugeridas">
-                {autocompleteItems.map((item) => (
-                  <AutocompleteItem key={item.value} value={item}>
-                    {item.label}
-                  </AutocompleteItem>
-                ))}
-              </AutocompleteGroup>
-            </AutocompleteList>
-          </AutocompletePopup>
-        </Autocomplete>
+      {/* PANEL DE CONTROL: Buscador y Filtros */}
+      <div className="w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
         
-        {/* Filtros Dropdowns y Acordeón */}
-        <div className="mt-4 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            
-            {/* Filtros Izquierda */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
-              <button 
-                onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-                className="w-full sm:w-auto px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between sm:justify-start gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
-              >
-                <span className="flex items-center gap-2"><Filter size={16} /> Filtrar por Categoría</span>
-                <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
-                  <ChevronDown size={16} className="text-gray-400" />
-                </motion.div>
-              </button>
+        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+          {/* Buscador inteligente con Autocomplete */}
+          <div className="w-full lg:w-[28rem] shrink-0 relative z-30">
+            <Autocomplete
+              items={autocompleteItems}
+              value={searchQuery}
+              onValueChange={(val) => setSearchQuery(val)}
+              onSelect={(item) => setSearchQuery(item.label)}
+            >
+              <AutocompleteInput
+                placeholder="Buscar por título, contenido..."
+                showClear
+                showTrigger
+                size="default"
+              />
+              <AutocompletePopup>
+                <AutocompleteEmpty>No se encontraron prédicas con esa búsqueda.</AutocompleteEmpty>
+                <AutocompleteList>
+                  <AutocompleteGroup label="Prédicas Sugeridas">
+                    {autocompleteItems.map((item) => (
+                      <AutocompleteItem key={item.value} value={item}>
+                        {item.label}
+                      </AutocompleteItem>
+                    ))}
+                  </AutocompleteGroup>
+                </AutocompleteList>
+              </AutocompletePopup>
+            </Autocomplete>
+          </div>
+          
+          {/* Filtros Izquierda */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center w-full lg:w-auto relative z-20">
+            <button 
+              onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+              className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md transition-all ${isCategoriesExpanded ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
+            >
+              <span className="flex items-center gap-2"><Filter size={16} /> Categorías</span>
+              <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
+                <ChevronDown size={16} className={isCategoriesExpanded ? 'text-white' : 'text-gray-400'} />
+              </motion.div>
+            </button>
 
             {/* Custom Dropdown para Pastores */}
-            <div className="relative w-full sm:w-64 z-20">
+            <div className="relative w-full sm:w-64">
               <button 
                 onClick={() => setIsPastorsOpen(!isPastorsOpen)}
-                className="w-full px-4 py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 focus:outline-none shadow-glass hover:bg-white/90 dark:hover:bg-slate-800/90 transition-all text-gray-700 dark:text-gray-200"
+                className="w-full px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
               >
                 <span className="flex items-center gap-2 truncate">
-                  <User size={16} className="text-primary/70 shrink-0" /> 
+                  <User size={16} className="text-primary/70 dark:text-gold shrink-0" /> 
                   {selectedSpeaker ? (speakers.find(s => s.id === selectedSpeaker)?.first_name + ' ' + speakers.find(s => s.id === selectedSpeaker)?.last_name) : "Todos los Pastores"}
                 </span>
                 <ChevronDown size={16} className="text-gray-400 shrink-0" />
@@ -216,11 +222,11 @@ const Sermons = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-white/10 shadow-xl overflow-hidden py-1 max-h-60 overflow-y-auto"
+                    className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 max-h-60 overflow-y-auto"
                   >
                     <button 
                       onClick={() => { setSelectedSpeaker(''); setIsPastorsOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${!selectedSpeaker ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${!selectedSpeaker ? 'text-primary dark:text-gold font-bold' : 'text-gray-600 dark:text-gray-300'}`}
                     >
                       Todos los Pastores
                       {!selectedSpeaker && <Check size={16} />}
@@ -229,7 +235,7 @@ const Sermons = () => {
                       <button 
                         key={s.id}
                         onClick={() => { setSelectedSpeaker(s.id); setIsPastorsOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${selectedSpeaker === s.id ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${selectedSpeaker === s.id ? 'text-primary dark:text-gold font-bold' : 'text-gray-600 dark:text-gray-300'}`}
                       >
                         {s.first_name} {s.last_name}
                         {selectedSpeaker === s.id && <Check size={16} />}
@@ -239,68 +245,67 @@ const Sermons = () => {
                 )}
               </AnimatePresence>
             </div>
-          </div>
             
-          {/* View Mode Toggle Derecha */}
-            <div className="flex items-center gap-1 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-1 rounded-xl border border-white/20 dark:border-white/10 shadow-glass w-full md:w-auto justify-center md:justify-start shrink-0">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-xl border border-gray-200 dark:border-white/5 w-full sm:w-auto justify-center sm:justify-start">
               <button 
                 onClick={() => setViewMode('grid')} 
                 title="Vista Cuadrícula"
-                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={16} />
               </button>
               <button 
                 onClick={() => setViewMode('list')} 
                 title="Vista Lista"
-                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
-                <List size={18} />
+                <List size={16} />
               </button>
               <button 
                 onClick={() => setViewMode('compact')} 
                 title="Vista Compacta"
-                className={`p-2 rounded-lg transition-all flex-1 md:flex-none flex justify-center ${viewMode === 'compact' ? 'bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'compact' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
-                <AlignJustify size={18} />
+                <AlignJustify size={16} />
               </button>
             </div>
           </div>
-
-          <AnimatePresence>
-            {isCategoriesExpanded && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <button 
-                    onClick={() => setSelectedCategory('')}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${!selectedCategory ? 'bg-primary text-white border-primary shadow-md' : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
-                  >
-                    Todas
-                  </button>
-                  {categories.map(c => (
-                    <button 
-                      key={c.id}
-                      onClick={() => setSelectedCategory(selectedCategory === c.id ? '' : c.id)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border hover:-translate-y-0.5`}
-                      style={{ 
-                        backgroundColor: selectedCategory === c.id ? c.color : `${c.color}15`, 
-                        color: selectedCategory === c.id ? '#ffffff' : c.color, 
-                        borderColor: selectedCategory === c.id ? c.color : `${c.color}30` 
-                      }}
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
+
+        <AnimatePresence>
+          {isCategoriesExpanded && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200/50 dark:border-white/10 mt-2">
+                <button 
+                  onClick={() => setSelectedCategory('')}
+                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${!selectedCategory ? 'bg-primary text-white border-primary shadow-md' : 'bg-white/50 dark:bg-slate-800/50 text-gray-500 border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-slate-700 hover:-translate-y-0.5'}`}
+                >
+                  Todas
+                </button>
+                {categories.map(c => (
+                  <button 
+                    key={c.id}
+                    onClick={() => setSelectedCategory(selectedCategory === c.id ? '' : c.id)}
+                    className={`px-5 py-2 rounded-full text-xs font-bold transition-all border hover:-translate-y-0.5 shadow-sm`}
+                    style={{ 
+                      backgroundColor: selectedCategory === c.id ? c.color : 'rgba(255,255,255,0.05)', 
+                      color: selectedCategory === c.id ? '#ffffff' : c.color, 
+                      borderColor: selectedCategory === c.id ? c.color : `${c.color}40` 
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Grid predicas */}
@@ -327,21 +332,33 @@ const Sermons = () => {
             if (viewMode === 'compact') {
               return (
                 <AnimeHoverCard key={sermon.id}>
-                  <Link to={`/predicas/${sermon.id}`} className="group bg-white dark:bg-slate-900 rounded-xl border border-gray-150 dark:border-white/10 p-4 shadow-sm flex items-center justify-between hover:border-primary/50 dark:hover:border-gold/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {sermon.sermon_categories && (
-                        <div className="hidden sm:block w-2 h-2 rounded-full" style={{ backgroundColor: sermon.sermon_categories.color }}></div>
+                  <Link to={`/predicas/${sermon.id}`} className="group relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-gray-200/50 dark:border-white/5 p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.2)] flex items-center justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                    {sermon.sermon_categories && (
+                      <div 
+                        className="absolute -left-10 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 pointer-events-none" 
+                        style={{ backgroundColor: sermon.sermon_categories.color }}
+                      ></div>
+                    )}
+                    <div className="relative z-10 flex items-center gap-5">
+                      {sermon.sermon_categories ? (
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/20 shadow-sm" style={{ backgroundColor: `${sermon.sermon_categories.color}15` }}>
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sermon.sermon_categories.color, boxShadow: `0 0 10px ${sermon.sermon_categories.color}` }}></div>
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
+                          <Video size={16} className="text-slate-400" />
+                        </div>
                       )}
                       <div>
-                        <h2 className="text-[15px] sm:text-base font-serif font-bold text-gray-800 dark:text-white group-hover:text-primary dark:group-hover:text-gold transition-colors line-clamp-1">{sermon.title}</h2>
-                        <div className="flex items-center gap-3 text-[11px] sm:text-xs text-slate-500 mt-1">
+                        <h2 className="text-base sm:text-lg font-serif font-bold text-slate-800 dark:text-white group-hover:text-primary dark:group-hover:text-gold transition-colors line-clamp-1">{sermon.title}</h2>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
                           <span className="flex items-center gap-1"><User size={12}/>{speakerName}</span>
                           <span className="flex items-center gap-1"><Calendar size={12}/>{dateString}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-primary dark:text-gold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs sm:text-sm font-bold shrink-0 pl-4">
-                      Ver <ArrowRight size={14} className="hidden sm:block" />
+                    <div className="relative z-10 bg-gray-50 dark:bg-white/5 p-2 rounded-full text-slate-400 group-hover:bg-primary group-hover:text-white dark:group-hover:bg-gold dark:group-hover:text-slate-900 transition-all duration-300 flex items-center justify-center shrink-0 shadow-sm group-hover:shadow-md transform group-hover:scale-110">
+                      <ArrowRight size={16} />
                     </div>
                   </Link>
                 </AnimeHoverCard>
@@ -351,71 +368,71 @@ const Sermons = () => {
             // Para Grid y List (se ven igual, solo cambia el layout del contenedor padre y el orden)
             return (
               <AnimeHoverCard key={sermon.id}>
-                <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm flex ${viewMode === 'list' ? 'flex-col md:flex-row gap-8' : 'flex-col space-y-4'} h-full`}>
+                <div className={`relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2rem] border border-gray-200/50 dark:border-white/5 p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgb(0,0,0,0.4)] hover:-translate-y-2 transition-all duration-500 flex ${viewMode === 'list' ? 'flex-col md:flex-row gap-8' : 'flex-col space-y-6'} h-full group overflow-hidden`}>
                   
+                  {/* Glowing Aura in the background */}
+                  {sermon.sermon_categories && (
+                    <div 
+                      className="absolute -right-20 -top-20 w-64 h-64 rounded-full blur-[80px] opacity-0 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none" 
+                      style={{ backgroundColor: sermon.sermon_categories.color }}
+                    ></div>
+                  )}
+
                   {/* Contenedor de Video (En lista toma mitad del ancho) */}
-                  <div className={viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full mb-2 flex flex-col'}>
-                    {sermon.youtube_url ? (
-                      <VideoPlayer
-                        youtubeUrl={sermon.youtube_url}
-                        title={sermon.title}
-                        className={viewMode === 'list' ? 'h-full min-h-[200px]' : ''}
-                      />
-                    ) : (
-                      <div className="w-full aspect-video bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/5">
-                         <Video size={32} className="text-slate-300 dark:text-slate-600" />
-                      </div>
-                    )}
+                  <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full flex flex-col'}`}>
+                    <div className="relative rounded-[1.5rem] overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/10 bg-slate-100 dark:bg-slate-950 aspect-video group-hover:shadow-lg transition-shadow duration-500">
+                      {sermon.youtube_url ? (
+                        <div className="absolute inset-0">
+                          <VideoPlayer
+                            youtubeUrl={sermon.youtube_url}
+                            title={sermon.title}
+                            className="w-full h-full"
+                          />
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700">
+                          <Video size={48} className="mb-2 opacity-50" />
+                          <span className="text-xs font-semibold uppercase tracking-widest opacity-50">Solo Audio / Texto</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Contenido Texto */}
-                  <div className={viewMode === 'list' ? 'w-full md:w-7/12 flex flex-col' : 'w-full flex flex-col flex-1'}>
-                    <div className="space-y-3 flex-1">
+                  <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-7/12 flex flex-col' : 'w-full flex flex-col flex-1'}`}>
+                    <div className="space-y-4 flex-1">
                       {sermon.sermon_categories && (
                         <span 
-                          className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm"
                           style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
                         >
+                          <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: sermon.sermon_categories.color, boxShadow: `0 0 6px ${sermon.sermon_categories.color}` }}></span>
                           {sermon.sermon_categories.name}
                         </span>
                       )}
-                      <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white hover:text-primary dark:hover:text-gold transition-colors">
-                        <Link to={`/predicas/${sermon.id}`}>{sermon.title}</Link>
+                      
+                      <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-800 dark:text-white group-hover:text-primary dark:group-hover:text-gold transition-colors leading-tight">
+                        <Link to={`/predicas/${sermon.id}`} className="focus:outline-none">{sermon.title}</Link>
                       </h2>
                       
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                        <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-white/5 py-1 px-3 rounded-full border border-slate-200 dark:border-white/5 shadow-sm">
                           {sermon.speakers?.photo_url ? (
-                            <img src={sermon.speakers.photo_url} alt={sermon.speakers.first_name} className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                            <img src={sermon.speakers.photo_url} alt={sermon.speakers.first_name} className="w-5 h-5 rounded-full object-cover" />
                           ) : (
-                            <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                              <User size={12} />
-                            </div>
+                            <User size={14} className="text-primary dark:text-gold" />
                           )}
                           {speakerName}
                         </span>
-                        <span className="flex items-center gap-1.5 font-medium">
-                          <Calendar size={14} className="text-primary/70" />
+                        <span className="flex items-center gap-1.5 font-medium bg-slate-50 dark:bg-white/5 py-1 px-3 rounded-full border border-slate-200 dark:border-white/5 shadow-sm">
+                          <Calendar size={14} className="text-primary/70 dark:text-gold/70" />
                           {dateString}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
-                        {sermon.editors && sermon.editors.length > 0 && (
-                          <span className="flex items-center gap-1.5">
-                            <Edit3 size={12} />
-                            Editado por: {sermon.editors.join(', ')}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1.5">
-                          <Clock size={12} />
-                          {new Date(sermon.created_at).toLocaleDateString('es-ES')}
                         </span>
                       </div>
                     </div>
 
                     {/* Contenido HTML de TipTap / Vista Previa */}
-                    <div className="prose prose-sm text-slate-600 dark:text-slate-300 max-w-none leading-relaxed border-t border-gray-100 dark:border-white/10 pt-4 mt-4 font-medium">
+                    <div className="prose prose-sm text-slate-600 dark:text-slate-300 max-w-none leading-relaxed border-t border-gray-100 dark:border-white/10 pt-5 mt-5 font-medium line-clamp-3">
                       {sermon.content && sermon.content.trim().startsWith('[') ? (
                         <p>{sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.'}</p>
                       ) : (
@@ -423,13 +440,20 @@ const Sermons = () => {
                       )}
                     </div>
 
-                    <div className="flex justify-end items-center border-t border-gray-100 dark:border-white/10 pt-4 mt-4">
+                    <div className="flex justify-between items-center border-t border-gray-100 dark:border-white/10 pt-5 mt-5">
+                      <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                        {sermon.editors && sermon.editors.length > 0 && (
+                          <span className="flex items-center gap-1" title={`Editado por: ${sermon.editors.join(', ')}`}>
+                            <Edit3 size={12} /> Editado
+                          </span>
+                        )}
+                      </div>
                       <Link 
                         to={`/predicas/${sermon.id}`}
-                        className="flex items-center gap-1.5 text-xs font-bold text-primary dark:text-gold hover:text-blue-800 dark:hover:text-gold/80 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-md px-1.5 py-0.5"
+                        className="group/btn flex items-center gap-2 text-xs font-bold text-white bg-primary dark:bg-gold dark:text-slate-900 hover:bg-blue-800 dark:hover:bg-yellow-400 transition-colors focus:outline-none rounded-full px-5 py-2.5 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                       >
-                        Ver prédica y tomar notas
-                        <ArrowRight size={14} />
+                        Profundizar
+                        <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                       </Link>
                     </div>
                   </div>
