@@ -8,6 +8,7 @@ const games = [
     id: 'biblionario',
     title: 'Biblionario',
     description: '¿Quién quiere ser Biblionario? Pon a prueba tu conocimiento bíblico en este clásico juego de preguntas.',
+    image: '/images/games/biblionario_cover.png',
     icon: <TrophyIcon />,
     color: 'from-blue-600 to-indigo-600',
     path: '/recursos/juegos/biblionario'
@@ -24,6 +25,7 @@ const games = [
     id: 'memory',
     title: 'Memorama Bíblico',
     description: 'Encuentra las parejas correctas y demuestra tu agilidad mental y memoria.',
+    image: '/images/games/memory_match_cover.png',
     icon: <BrainCircuit className="w-12 h-12 text-emerald-200" />,
     color: 'from-emerald-600 to-teal-600',
     path: '/recursos/juegos/memorama'
@@ -78,7 +80,11 @@ export const GamesCatalog = () => {
               
               <div className="relative h-full bg-[#110c08]/90 backdrop-blur-sm rounded-[23px] p-8 flex flex-col items-center text-center">
                 <div className="mb-6 transform group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-300">
-                  {game.icon}
+                  {game.image ? (
+                    <img src={game.image} alt={game.title} className="w-48 h-48 object-cover rounded-2xl shadow-lg border border-white/10" />
+                  ) : (
+                    game.icon
+                  )}
                 </div>
                 
                 <h2 className="text-2xl font-bold text-white mb-4">{game.title}</h2>
