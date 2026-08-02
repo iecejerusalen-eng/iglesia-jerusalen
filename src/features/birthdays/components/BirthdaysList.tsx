@@ -6,6 +6,7 @@ import { BirthdaysCalendar } from './BirthdaysCalendar';
 
 interface BirthdaysListProps {
   birthdays: BirthdayInfo[];
+  allBirthdays: BirthdayInfo[];
   viewMode: BirthdayViewMode;
   onCelebrate: (name: string) => void;
   currentCalendarDate: Date;
@@ -14,6 +15,7 @@ interface BirthdaysListProps {
 
 export function BirthdaysList({
   birthdays,
+  allBirthdays,
   viewMode,
   onCelebrate,
   currentCalendarDate,
@@ -23,7 +25,7 @@ export function BirthdaysList({
     return (
       <div className="max-w-7xl mx-auto mt-6">
         <BirthdaysCalendar
-          birthdays={birthdays}
+          birthdays={allBirthdays}
           currentCalendarDate={currentCalendarDate}
           setCurrentCalendarDate={setCurrentCalendarDate}
           onCelebrate={onCelebrate}

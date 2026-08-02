@@ -57,7 +57,20 @@ export default function Birthdays() {
     return list;
   };
 
+  const getCalendarList = (): BirthdayInfo[] => {
+    let list = [...birthdayList];
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(item => 
+        item.member.first_name.toLowerCase().includes(q) ||
+        item.member.last_name.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  };
+
   const filteredBirthdays = getFilteredList();
+  const calendarBirthdays = getCalendarList();
 
   const handleCelebrate = (name: string) => {
     setConfettiRecipients(name);
@@ -134,6 +147,7 @@ export default function Birthdays() {
         ) : (
           <BirthdaysList
             birthdays={filteredBirthdays}
+            allBirthdays={calendarBirthdays}
             viewMode={viewMode}
             onCelebrate={handleCelebrate}
             currentCalendarDate={currentCalendarDate}
