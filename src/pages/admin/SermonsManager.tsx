@@ -22,6 +22,8 @@ const sermonSchema = z.object({
   pastor_name: z.string().optional().nullable(),
   date: z.string().min(1, 'La fecha de la prédica es obligatoria'),
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
+  cover_image_url: z.string().url('Ingresa una URL de imagen válida').or(z.literal('')).optional().nullable(),
+  cover_video_url: z.string().url('Ingresa una URL de video válida').or(z.literal('')).optional().nullable(),
   content: z.string().min(1, 'El contenido del mensaje es obligatorio'),
   category_id: z.string().optional().nullable(),
   speaker_id: z.string().optional().nullable(),
@@ -94,6 +96,8 @@ const SermonsManager = () => {
       pastor_name: '',
       date: new Date().toISOString().split('T')[0],
       youtube_url: '',
+      cover_image_url: '',
+      cover_video_url: '',
       content: '',
       category_id: '',
       speaker_id: '',
@@ -177,6 +181,8 @@ const SermonsManager = () => {
       pastor_name: '',
       date: new Date().toISOString().split('T')[0],
       youtube_url: '',
+      cover_image_url: '',
+      cover_video_url: '',
       content: '',
       category_id: '',
       speaker_id: '',
@@ -191,6 +197,8 @@ const SermonsManager = () => {
       pastor_name: sermon.pastor_name,
       date: sermon.date || new Date().toISOString().split('T')[0],
       youtube_url: sermon.youtube_url || '',
+      cover_image_url: sermon.metadata?.cover_image_url || '',
+      cover_video_url: sermon.metadata?.cover_video_url || '',
       content: sermon.content || '',
       category_id: sermon.category_id || '',
       speaker_id: sermon.speaker_id || '',
@@ -238,7 +246,7 @@ const SermonsManager = () => {
         }
       }
 
-      const payload = {
+      const payload: any = {
         title: data.title,
         pastor_name: finalPastorName,
         date: data.date,
@@ -248,6 +256,11 @@ const SermonsManager = () => {
         speaker_id: data.speaker_id || null,
         description: plainTextDescription.substring(0, 200),
         editors: newEditors,
+        metadata: {
+          ...(editingSermon?.metadata || {}),
+          cover_image_url: data.cover_image_url || null,
+          cover_video_url: data.cover_video_url || null,
+        },
       };
 
       if (editingSermon) {
@@ -512,14 +525,26 @@ const SermonsManager = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {sermons.map(sermon => (
+      {sermons.map(sermon => {
+        const hasVideo = !!sermon.youtube_url || !!sermon.metadata?.cover_video_url;
+        const coverImage = sermon.metadata?.cover_image_url || (sermon.youtube_url ? `https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url)}/maxresdefault.jpg` : null);
+        return (
         <div key={sermon.id} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-glass overflow-hidden flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
-          {sermon.youtube_url ? (
+          {sermon.metadata?.cover_video_url ? (
+            <div className="aspect-video bg-gray-100 relative overflow-hidden">
+               <video src={sermon.metadata.cover_video_url} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                 <Video className="text-white drop-shadow-md" size={32} />
+               </div>
+            </div>
+          ) : coverImage ? (
             <div className="aspect-video bg-gray-100 relative">
-              <img src={`https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url)}/maxresdefault.jpg`} alt="thumbnail" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                <Video className="text-white drop-shadow-md" size={32} />
-              </div>
+              <img src={coverImage} alt="thumbnail" className="w-full h-full object-cover" />
+              {hasVideo && (
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <Video className="text-white drop-shadow-md" size={32} />
+                </div>
+              )}
             </div>
           ) : (
             <div className="aspect-video bg-blue-50 flex items-center justify-center">
@@ -555,7 +580,8 @@ const SermonsManager = () => {
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -744,6 +770,17 @@ const SermonsManager = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Imagen de Portada (Opcional)</label>
+                  <input type="url" {...register('cover_image_url')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm" placeholder="URL de la imagen (ej. Unsplash o Cloudinary)" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Video de Portada (Opcional)</label>
+                  <input type="url" {...register('cover_video_url')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm" placeholder="URL de video mp4 de fondo" />
+                </div>
+              </div>
+
               {youtubeId && (
                 <div className="space-y-2">
                   <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Previsualización</span>
@@ -816,10 +853,12 @@ const SermonsManager = () => {
                       columns={columns}
                       isLoading={loading}
                       defaultView={viewMode === 'cards' ? 'grid' : 'table'}
-                      renderGridItem={(sermon) => (
+                      renderGridItem={(sermon) => {
+                        const hasMedia = !!sermon.youtube_url || !!sermon.metadata?.cover_video_url || !!sermon.metadata?.cover_image_url;
+                        return (
                         <div key={sermon.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-white/10 p-5 space-y-4 shadow-xs hover:shadow-md transition-all">
                           <div className="flex items-center gap-3">
-                            {sermon.youtube_url ? (
+                            {hasMedia ? (
                               <div className="w-10 h-10 bg-red-50 text-accent-red rounded-lg flex items-center justify-center flex-shrink-0">
                                 <Video size={18} />
                               </div>
@@ -857,7 +896,8 @@ const SermonsManager = () => {
                             )}
                           </div>
                         </div>
-                      )}
+                        );
+                      }}
                     />
                   ) : (
                     <>

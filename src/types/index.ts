@@ -239,6 +239,7 @@ export interface Sermon {
   created_at: string;
   thumbnail_url?: string | null;
   video_url?: string | null;
+  metadata?: Record<string, any> | null;
   editors?: string[] | null;
   sermon_categories?: SermonCategory | null;
   speakers?: Speaker | null;

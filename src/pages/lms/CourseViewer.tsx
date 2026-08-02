@@ -377,10 +377,11 @@ export default function CourseViewer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 pt-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-gold" size={40} />
-          <span className="text-sm font-semibold text-gray-500">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex items-center justify-center pt-20 relative overflow-hidden">
+        <div className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] bg-indigo-500/10 dark:bg-indigo-600/20 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
+        <div className="flex flex-col items-center gap-4 relative z-10">
+          <Loader2 className="animate-spin text-indigo-500" size={48} />
+          <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
             Cargando tu aula virtual...
           </span>
         </div>
@@ -391,44 +392,51 @@ export default function CourseViewer() {
   if (!course) return null;
 
   return (
-    <div className="min-h-screen pt-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-gray-150 transition-colors flex flex-col">
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-250 dark:border-white/10 py-4 px-6 sticky top-20 z-20 flex justify-between items-center shadow-xs">
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen pt-20 bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-gray-100 transition-colors flex flex-col relative overflow-hidden">
+      
+      {/* Background Orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-indigo-500/5 dark:bg-indigo-600/10 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-50"></div>
+        <div className="absolute -bottom-[20%] -left-[10%] w-[40vw] h-[40vw] bg-amber-500/5 dark:bg-amber-600/5 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-50"></div>
+      </div>
+
+      <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border-b border-indigo-100 dark:border-white/10 py-4 px-6 sticky top-20 z-20 flex justify-between items-center shadow-sm">
+        <div className="flex items-center gap-4">
           <Link
             to="/lms/estudiante"
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-gray-400 cursor-pointer"
+            className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-gray-500 dark:text-gray-400 cursor-pointer transition-colors"
           >
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-extrabold uppercase tracking-widest block mb-0.5">
               Aula Virtual
             </span>
-            <h1 className="text-base md:text-lg font-bold font-serif line-clamp-1">
+            <h1 className="text-base md:text-lg font-bold font-serif line-clamp-1 text-slate-900 dark:text-white">
               {course.title}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-xs text-gray-400 font-semibold">
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1">
               Tu progreso
             </span>
-            <span className="text-sm font-bold text-slate-800 dark:text-gray-150">
+            <span className="text-sm font-extrabold text-slate-800 dark:text-white">
               {calculateProgress()}% Completado
             </span>
           </div>
-          <div className="w-16 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="w-24 h-2.5 bg-slate-200 dark:bg-slate-800/80 rounded-full overflow-hidden shadow-inner">
             <div
-              className="bg-gold h-full transition-all duration-500"
+              className="bg-gradient-to-r from-indigo-500 to-indigo-400 dark:from-indigo-600 dark:to-indigo-500 h-full transition-all duration-700 ease-out"
               style={{ width: `${calculateProgress()}%` }}
             />
           </div>
 
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 border border-gray-200 dark:border-white/10 rounded-lg lg:hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="p-2.5 border border-indigo-100 dark:border-white/10 rounded-xl lg:hidden cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
           >
             <Menu size={20} />
           </button>
