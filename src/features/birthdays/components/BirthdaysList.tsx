@@ -1,0 +1,49 @@
+import type { BirthdayInfo } from '../hooks/useBirthdays';
+import type { BirthdayViewMode } from './BirthdaysFilters';
+import { BirthdaysCards } from './BirthdaysCards';
+import { BirthdaysTable } from './BirthdaysTable';
+import { BirthdaysCalendar } from './BirthdaysCalendar';
+
+interface BirthdaysListProps {
+  birthdays: BirthdayInfo[];
+  viewMode: BirthdayViewMode;
+  onCelebrate: (name: string) => void;
+  currentCalendarDate: Date;
+  setCurrentCalendarDate: (date: Date) => void;
+}
+
+export function BirthdaysList({
+  birthdays,
+  viewMode,
+  onCelebrate,
+  currentCalendarDate,
+  setCurrentCalendarDate
+}: BirthdaysListProps) {
+  if (viewMode === 'calendar') {
+    return (
+      <div className="max-w-7xl mx-auto mt-6">
+        <BirthdaysCalendar
+          birthdays={birthdays}
+          currentCalendarDate={currentCalendarDate}
+          setCurrentCalendarDate={setCurrentCalendarDate}
+          onCelebrate={onCelebrate}
+        />
+      </div>
+    );
+  }
+
+  if (viewMode === 'table') {
+    return (
+      <div className="max-w-7xl mx-auto mt-6">
+        <BirthdaysTable birthdays={birthdays} onCelebrate={onCelebrate} />
+      </div>
+    );
+  }
+
+  // Cards view
+  return (
+    <div className="max-w-7xl mx-auto mt-6">
+      <BirthdaysCards birthdays={birthdays} onCelebrate={onCelebrate} />
+    </div>
+  );
+}
