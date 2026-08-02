@@ -14,6 +14,7 @@ const VirtualClassroomLanding = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<any[]>([]);
   const [heroContent, setHeroContent] = useState({
     title: 'Aula Virtual',
     subtitle: 'Ecosistema Educativo LMS',
@@ -37,6 +38,14 @@ const VirtualClassroomLanding = () => {
           const features = data.find(d => d.section_key === 'features');
           if (hero?.content) setHeroContent(hero.content as any);
           if (features?.content) setFeaturesContent(features.content as any);
+        }
+        const { data: coursesData } = await supabase.from('lms_courses').select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(6);
+        if (coursesData) {
+          setCourses(coursesData);
+        } else {
+          // Fallback if is_published doesn't exist, just get 6
+          const { data: fallbackCourses } = await supabase.from('lms_courses').select('*').order('created_at', { ascending: false }).limit(6);
+          if (fallbackCourses) setCourses(fallbackCourses);
         }
       } catch (err) {
         console.error('Error fetching landing content:', err);
@@ -242,6 +251,51 @@ const VirtualClassroomLanding = () => {
 
           </div>
         )}
+
+        {/* Public Course Catalog */}
+        <div className="space-y-6 pt-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-gold bg-gold/10 border border-gold/20 px-3 py-1 rounded-full">
+              Catálogo de Cursos
+            </span>
+            <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mt-2">Cursos Disponibles</h2>
+            <p className="text-xs md:text-sm text-gray-500 font-medium">Explora nuestra oferta académica e inscríbete. Requiere iniciar sesión.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course, idx) => (
+              <div key={course.id || idx} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
+                <div className="h-48 overflow-hidden relative bg-slate-100 dark:bg-slate-800">
+                  {course.cover_image_url ? (
+                    <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300">
+                      <BookOpen size={48} />
+                    </div>
+                  )}
+                  <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                    {course.course_code || 'CURSO'}
+                  </div>
+                </div>
+                <div className="p-5 flex flex-col flex-grow">
+                  <h3 className="font-bold font-serif text-lg text-slate-900 dark:text-white line-clamp-2">{course.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-3 flex-grow">
+                    {course.description || 'Sin descripción disponible.'}
+                  </p>
+                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/5 flex justify-between items-center">
+                    <button 
+                      onClick={() => navigate(user ? '/lms/estudiante' : '/login?redirectTo=/lms/estudiante')}
+                      className="text-sm font-bold text-gold hover:text-yellow-600 flex items-center gap-1 transition-colors"
+                    >
+                      {user ? 'Ir al portal' : 'Iniciar sesión para acceder'}
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Features Info Section */}
         <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-8 text-left">

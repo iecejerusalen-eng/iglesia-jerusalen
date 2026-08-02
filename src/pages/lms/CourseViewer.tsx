@@ -25,6 +25,7 @@ import { CourseCalendarTab } from "../../features/lms/CourseCalendarTab";
 import { CourseGradesTab } from "../../features/lms/CourseGradesTab";
 import { CourseActivitiesTab } from "../../features/lms/CourseActivitiesTab";
 import { CourseClassmatesTab } from "../../features/lms/CourseClassmatesTab";
+import { CourseSidebar } from "../../features/lms/components/CourseSidebar";
 
 
 
@@ -434,21 +435,74 @@ export default function CourseViewer() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative">
+        
+        {/* Sidebar (Desktop) */}
+        <div className="hidden lg:block shrink-0 h-full">
+          <CourseSidebar 
+            modules={modules}
+            lessons={lessons}
+            completions={completions}
+            activeLesson={activeLesson}
+            onSelectLesson={setActiveLesson}
+            userRoles={userRoles}
+          />
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: -300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -300 }}
+              className="fixed inset-0 z-50 lg:hidden flex"
+            >
+              <div className="bg-white dark:bg-slate-900 w-80 h-full shadow-2xl relative">
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-white/10 rounded-full"
+                >
+                  <ArrowLeft size={20} className="text-gray-500" />
+                </button>
+                <CourseSidebar 
+                  modules={modules}
+                  lessons={lessons}
+                  completions={completions}
+                  activeLesson={activeLesson}
+                  onSelectLesson={(lesson) => {
+                    setActiveLesson(lesson);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  userRoles={userRoles}
+                />
+              </div>
+              <div 
+                className="flex-1 bg-black/50 backdrop-blur-sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 relative pb-20">
-          <div className="relative w-full h-64 md:h-80 bg-slate-900 overflow-hidden">
+          <div className="relative w-full h-56 md:h-64 bg-slate-900 overflow-hidden">
             {course.cover_image_url ? (
               <img
                 src={course.cover_image_url}
                 alt="Cover"
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
+                className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-900 to-slate-900" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
+            <div className="absolute top-4 right-6 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+              <span className="text-gold font-bold text-xs">{calculateProgress()}% Completado</span>
+            </div>
 
-            <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-6 pb-8">
+            <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-6 pb-6">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                   <span className="px-3 py-1 bg-gold/20 text-gold border border-gold/30 rounded-full text-xs font-bold uppercase tracking-wider mb-4 inline-block">
@@ -475,7 +529,7 @@ export default function CourseViewer() {
                     setActiveTabId("general");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "general" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTabId === "general" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   Información General
                 </button>
@@ -484,7 +538,7 @@ export default function CourseViewer() {
                     setActiveTabId("calendar");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "calendar" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTabId === "calendar" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   Calendario
                 </button>
@@ -493,7 +547,7 @@ export default function CourseViewer() {
                     setActiveTabId("grades");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "grades" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTabId === "grades" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   Calificaciones
                 </button>
@@ -502,7 +556,7 @@ export default function CourseViewer() {
                     setActiveTabId("activities");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "activities" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTabId === "activities" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   Actividades
                 </button>
@@ -511,7 +565,7 @@ export default function CourseViewer() {
                     setActiveTabId("classmates");
                     setActiveLesson(null);
                   }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === "classmates" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTabId === "classmates" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   Compañeros
                 </button>
@@ -529,17 +583,12 @@ export default function CourseViewer() {
                         setActiveTabId(mod.id);
                         setActiveLesson(null);
                       }}
-                      className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all ${activeTabId === mod.id ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                      className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 hidden ${activeTabId === mod.id ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                     >
                       {mod.title || `Módulo ${idx + 1}`}
                     </button>
                   ))}
-                <button
-                  onClick={() => {
-                    setActiveTabId("forums");
-                    setActiveLesson(null);
-                  }}
-                  className={`px-5 py-3 text-sm font-bold whitespace-nowrap rounded-2xl transition-all flex items-center gap-2 ${activeTabId === "forums" ? "bg-gold text-white shadow-md" : "text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTabId === "forums" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   <MessageSquare size={16} /> Foros
                 </button>
@@ -977,10 +1026,14 @@ export default function CourseViewer() {
                   </div>
 
                   {/* Mark as Complete & Next Lesson Footer */}
-                  <div className="pt-6 border-t border-gray-200 dark:border-white/10 space-y-4">
-                    {/* Progress bar */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="sticky bottom-4 z-30 mt-8 pt-4 pb-4 px-6 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4 transition-all">
+                    {/* Progress */}
+                    <div className="flex-1 w-full max-w-sm">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <span className="text-xs font-bold text-slate-700 dark:text-gray-300">Progreso del curso</span>
+                        <span className="text-xs font-bold text-gold ml-auto">{calculateProgress()}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           className="h-full bg-gradient-to-r from-gold to-emerald-500 rounded-full"
                           initial={{ width: 0 }}
@@ -988,42 +1041,32 @@ export default function CourseViewer() {
                           transition={{ duration: 0.8, ease: 'easeOut' }}
                         />
                       </div>
-                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {calculateProgress()}%
-                      </span>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                      <div className="text-xs text-gray-400">
-                        Marca la lección cuando hayas terminado el estudio o las
-                        tareas solicitadas.
-                      </div>
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <button
+                        onClick={() => toggleLessonCompletion(activeLesson.id)}
+                        className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm border ${
+                          completions[activeLesson.id]
+                            ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20"
+                            : "bg-gold hover:bg-yellow-500 text-white border-transparent shadow-gold/20 hover:shadow-gold/40 hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <CheckCircle size={18} className={completions[activeLesson.id] ? "" : "animate-pulse"} />
+                        {completions[activeLesson.id]
+                          ? "Completado"
+                          : "Marcar como Completado"}
+                      </button>
 
-                      <div className="flex items-center gap-2">
+                      {getNextLesson() && (
                         <button
-                          onClick={() => toggleLessonCompletion(activeLesson.id)}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm ${
-                            completions[activeLesson.id]
-                              ? "bg-green-600 hover:bg-green-700 text-white"
-                              : "bg-gold hover:bg-yellow-600 text-white"
-                          }`}
+                          onClick={handleNextLesson}
+                          className="flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-gray-100 border border-transparent hover:-translate-y-0.5"
                         >
-                          <CheckCircle size={16} />
-                          {completions[activeLesson.id]
-                            ? "Marcar como Pendiente"
-                            : "Marcar como Completado"}
+                          Siguiente
+                          <ChevronRight size={18} />
                         </button>
-
-                        {getNextLesson() && (
-                          <button
-                            onClick={handleNextLesson}
-                            className="px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white hover:-translate-y-0.5"
-                          >
-                            Siguiente Lección
-                            <ChevronRight size={16} />
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
