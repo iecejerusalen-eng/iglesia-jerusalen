@@ -204,7 +204,7 @@ const Sermons = () => {
             </button>
 
             {/* Custom Dropdown para Pastores */}
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-64 z-50">
               <button 
                 onClick={() => setIsPastorsOpen(!isPastorsOpen)}
                 className="w-full px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
@@ -378,10 +378,10 @@ const Sermons = () => {
                     ></div>
                   )}
 
-                  {/* Contenedor de Video (En lista toma mitad del ancho) */}
-                  <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full flex flex-col'}`}>
-                    <div className="relative rounded-[1.5rem] overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/10 bg-slate-100 dark:bg-slate-950 aspect-video group-hover:shadow-lg transition-shadow duration-500">
-                      {sermon.youtube_url ? (
+                  {/* Contenedor de Video (Opcional) */}
+                  {sermon.youtube_url && (
+                    <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full flex flex-col'}`}>
+                      <div className="relative rounded-[1.5rem] overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/10 bg-slate-100 dark:bg-slate-950 aspect-video group-hover:shadow-lg transition-shadow duration-500">
                         <div className="absolute inset-0">
                           <VideoPlayer
                             youtubeUrl={sermon.youtube_url}
@@ -389,17 +389,12 @@ const Sermons = () => {
                             className="w-full h-full"
                           />
                         </div>
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700">
-                          <Video size={48} className="mb-2 opacity-50" />
-                          <span className="text-xs font-semibold uppercase tracking-widest opacity-50">Solo Audio / Texto</span>
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Contenido Texto */}
-                  <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-7/12 flex flex-col' : 'w-full flex flex-col flex-1'}`}>
+                  <div className={`relative z-10 ${(viewMode === 'list' && sermon.youtube_url) ? 'w-full md:w-7/12 flex flex-col' : 'w-full flex flex-col flex-1'}`}>
                     <div className="space-y-4 flex-1">
                       {sermon.sermon_categories && (
                         <span 
