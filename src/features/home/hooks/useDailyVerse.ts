@@ -41,8 +41,9 @@ export function useDailyVerse() {
     }
 
     try {
-      // We use rv1960 as default for the verse of the day
-      const url = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
+      // We use rv1960 as default for the verse of the day, wrapped in a CORS proxy
+      const rawUrl = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
+      const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
       const res = await fetch(url);
       
       if (!res.ok) {
@@ -104,7 +105,8 @@ export function useDailyVerse() {
       }
 
       try {
-        const url = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
+        const rawUrl = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
+        const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('API failed');
         
