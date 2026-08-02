@@ -8,19 +8,19 @@ interface AdminHeaderProps {
 
 const AdminHeader = ({ title, description, action }: AdminHeaderProps) => {
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 mb-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-serif font-bold text-primary dark:text-church-gold-bright">
+    <div className="mb-5 flex flex-col gap-3 border-b border-gray-150 pb-4 dark:border-white/10 sm:mb-6 md:flex-row md:items-end md:justify-between md:gap-4">
+      <div className="min-w-0">
+        <h1 className="text-xl font-serif font-bold tracking-tight text-primary dark:text-church-gold-bright sm:text-2xl md:text-3xl">
           {title}
         </h1>
         {description && (
-          <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500 sm:text-sm">
             {description}
           </p>
         )}
       </div>
       {action && (
-        <div className="flex-shrink-0">
+        <div className="w-full flex-shrink-0 [&>*]:w-full sm:w-auto sm:[&>*]:w-auto">
           {action}
         </div>
       )}

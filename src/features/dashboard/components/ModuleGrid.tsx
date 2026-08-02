@@ -10,7 +10,7 @@ export const ModuleGrid = () => {
   const { hasPermission } = usePermissions();
 
   return (
-    <AnimeFadeUp delay={350} duration={850} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-3xl p-6 shadow-2xs space-y-6">
+    <AnimeFadeUp delay={350} duration={850} className="space-y-5 rounded-[1.4rem] border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-6 md:rounded-3xl md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h2 className="text-lg font-serif font-bold text-primary dark:text-white flex items-center gap-2">
@@ -27,7 +27,7 @@ export const ModuleGrid = () => {
       </div>
 
       {/* Grid of groups */}
-      <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-auto">
+      <BentoGrid className="auto-rows-auto grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
         {MODULE_GROUPS.map((group) => {
           const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
           const isLarge = group.key === 'comunidad' || group.key === 'educacion' || group.key === 'admin';
@@ -40,7 +40,7 @@ export const ModuleGrid = () => {
               description={group.description}
               badge={`${groupModules.length} items`}
               className={cn(
-                "h-auto min-h-[22rem]", 
+                "h-auto min-h-0 sm:min-h-[22rem]",
                 isLarge ? "lg:col-span-2" : "col-span-1"
               )}
             >

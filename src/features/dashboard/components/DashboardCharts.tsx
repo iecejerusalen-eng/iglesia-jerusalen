@@ -34,17 +34,17 @@ export const DashboardCharts = ({
   const [skillsTab, setSkillsTab] = useState<'individual' | 'categories'>('categories');
 
   return (
-    <AnimeFadeUp delay={100} duration={800} className="lg:col-span-2 space-y-6">
+    <AnimeFadeUp delay={100} duration={800} className="space-y-5 lg:col-span-2 lg:space-y-6">
       
       {/* Chart Row 1: Service Areas & Skills (categorized/individual tabs) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
         {/* Service Areas */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+        <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-1.5">
             <Layers size={16} className="text-gold" />
             Miembros por Área de Servicio
           </h3>
-          <div className="h-60 mt-2">
+          <div className="mt-2 h-52 sm:h-60">
             {loading ? (
               <ChartSkeleton />
             ) : areasData.length > 0 ? (
@@ -70,7 +70,7 @@ export const DashboardCharts = ({
         </div>
 
         {/* Talent distribution with Category/Individual tabs */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+        <div className="flex flex-col justify-between rounded-2xl border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
               <BookOpen size={16} className="text-gold" />
@@ -99,7 +99,7 @@ export const DashboardCharts = ({
             </div>
           </div>
 
-          <div className="h-60 flex justify-center items-center mt-2">
+          <div className="mt-2 flex h-52 items-center justify-center sm:h-60">
             {loading ? (
               <ChartSkeleton />
             ) : skillsTab === 'categories' ? (
@@ -154,15 +154,15 @@ export const DashboardCharts = ({
       </div>
 
       {/* Chart Row 2: Age Demographics & Baptism Line/Area Progression */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
         
         {/* Age Brackets */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+        <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-1.5">
             <Users size={16} className="text-gold" />
             Rangos de Edad en la Iglesia
           </h3>
-          <div className="h-60 mt-2">
+          <div className="mt-2 h-52 sm:h-60">
             {loading ? (
               <ChartSkeleton />
             ) : ageData.length > 0 ? (
@@ -188,12 +188,12 @@ export const DashboardCharts = ({
         </div>
 
         {/* Baptisms Growth Area Chart */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs relative overflow-hidden flex flex-col justify-between">
+        <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-5">
           <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-1.5">
             <Sparkles size={16} className="text-gold animate-pulse" />
             Historial de Bautismos en Aguas
           </h3>
-          <div className="h-60 mt-2">
+          <div className="mt-2 h-52 sm:h-60">
             {loading ? (
               <ChartSkeleton />
             ) : baptismsData.length > 0 ? (

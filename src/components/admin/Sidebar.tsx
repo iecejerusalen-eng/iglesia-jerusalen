@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay } from 'lucide-react';
+import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay, Search } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
 import { supabase } from '../../config/supabase';
@@ -12,15 +12,15 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
+const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarProps) => {
   const { user, userRole, firstName, lastName } = useAuthStore();
   const { sidebarViewMode, sidebarAccordionMode, sidebarMenuMode, sidebarDefaultClosed, sidebarGridColumns, sidebarGridSort, sidebarCustomOrder } = useThemeStore();
   const { hasPermission } = usePermissions();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
-  const prevPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -102,8 +102,15 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem('admin_sidebar_expanded');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && Object.values(parsed).every((value) => typeof value === 'boolean')) {
+          return parsed as Record<string, boolean>;
+        }
+      }
+    } catch (error) {
+      console.error('No se pudo restaurar el estado del menú administrativo:', error);
+    }
     return {};
   });
 
@@ -117,41 +124,15 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
     }
   };
 
-  // Auto-expand group of active path on mount or path change
-  useEffect(() => {
-    if (prevPathRef.current === location.pathname) return;
-    prevPathRef.current = location.pathname;
-
+  const activeGroupKey = useMemo(() => {
     const activeItem = ADMIN_MODULES.find(item => {
       if (item.path === '/admin') {
         return location.pathname === '/admin';
       }
       return location.pathname.startsWith(item.path);
     });
-
-    if (activeItem) {
-      setExpandedGroups(prev => {
-        if (prev[activeItem.group]) return prev;
-        
-        // Si sidebarDefaultClosed está activo y es el montaje inicial (prev está vacío), NO expandimos
-        if (sidebarDefaultClosed && Object.keys(prev).length === 0) {
-          return prev;
-        }
-
-        let next = { ...prev };
-        
-        // Si es acordeón único, cerramos los demás
-        if (sidebarAccordionMode === 'single') {
-          next = { [activeItem.group]: true };
-        } else {
-          next[activeItem.group] = true;
-        }
-        
-        localStorage.setItem('admin_sidebar_expanded', JSON.stringify(next));
-        return next;
-      });
-    }
-  }, [location.pathname, sidebarAccordionMode, sidebarDefaultClosed]);
+    return activeItem?.group;
+  }, [location.pathname]);
 
   const toggleGroup = (groupKey: string) => {
     setExpandedGroups(prev => {
@@ -172,9 +153,10 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
   const isDrawer = !isMobile && sidebarViewMode === 'drawer';
   
   const sidebarWidthClass = isCollapsed ? 'w-20' : 'w-64';
+  const responsiveWidthClass = isMobile ? 'w-[min(88vw,20rem)]' : sidebarWidthClass;
 
   const sidebarContent = (
-    <div className={`${sidebarWidthClass} bg-primary dark:bg-slate-950 border-r border-transparent dark:border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-[100dvh]'} flex flex-col shadow-xl transition-all duration-500`}>
+    <div className={`${responsiveWidthClass} bg-gradient-to-b from-[#10224c] via-[#0b1938] to-[#071126] dark:from-slate-900 dark:via-slate-950 dark:to-black border-r border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-[100dvh]'} flex flex-col shadow-2xl transition-all duration-300`}>
       {/* Sidebar Header */}
       <div className={`p-5 border-b border-white/10 flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center shrink-0 transition-all duration-500`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
@@ -206,6 +188,32 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
           </button>
         )}
       </div>
+
+      {!isCollapsed && isMobile && onSearchChange && (
+        <div className="shrink-0 border-b border-white/10 px-3 py-3 md:hidden">
+          <label className="relative block">
+            <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              autoFocus
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Buscar herramienta..."
+              className="h-11 w-full rounded-xl border border-white/10 bg-white/10 pl-10 pr-9 text-sm font-semibold text-white outline-none placeholder:text-slate-400 focus:border-gold/50 focus:bg-white/15 focus:ring-4 focus:ring-gold/10"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10"
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </label>
+        </div>
+      )}
       
       {/* Navigation Links */}
       <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar-dark space-y-1 px-3">
@@ -341,7 +349,9 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '' }: SidebarProps) => {
         ) : (
           /* Standard Grouped Collapsible Accordions or Grouped Cards view */
           groupedItems.map((group) => {
-            const isExpanded = sidebarAccordionMode === 'all_open' || !!expandedGroups[group.key];
+            const isExpanded = sidebarAccordionMode === 'all_open'
+              || !!expandedGroups[group.key]
+              || (!sidebarDefaultClosed && activeGroupKey === group.key);
             
             // Check if any sub-item in this group is active
             const hasActiveChild = group.items.some(item => {

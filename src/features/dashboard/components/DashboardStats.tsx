@@ -11,11 +11,11 @@ interface DashboardStatsProps {
 
 export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
   return (
-    <AnimeStaggerGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4" staggerDelay={80} duration={600}>
+    <AnimeStaggerGrid className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" staggerDelay={80} duration={600}>
       {/* Total Members CRM */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+      <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-        <div className="w-12 h-12 rounded-2xl bg-blue-50/70 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50/70 text-primary transition-transform duration-300 group-hover:scale-105 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-church-gold-bright sm:size-12 sm:rounded-2xl">
           <Users size={22} />
         </div>
         <div>
@@ -24,7 +24,7 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
             <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
           ) : (
             <div>
-              <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+          <span className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight sm:text-2xl">
                 <NumberTicker value={stats.membersCount} />
               </span>
               <span className="text-[9px] text-gray-400 block font-semibold mt-0.5">Líderes activos: {stats.leadersCount}</span>
@@ -34,10 +34,10 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
       </div>
 
       {/* Donaciones */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+      <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <BorderBeam size={150} duration={12} delay={1} colorFrom="#f59e0b" colorTo="#d97706" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-        <div className="w-12 h-12 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 text-gold dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-amber-50/70 text-gold transition-transform duration-300 group-hover:scale-105 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400 sm:size-12 sm:rounded-2xl">
           <Heart size={22} />
         </div>
         <div>
@@ -46,7 +46,7 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
             <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
           ) : (
             <div>
-              <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+              <span className="break-all text-xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100 sm:text-2xl">
                 $<NumberTicker value={stats.totalDonationsAmount} />
               </span>
               <span className="text-[9px] text-gray-400 block font-semibold mt-0.5">Donaciones registradas</span>
@@ -56,10 +56,10 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
       </div>
 
       {/* Peticiones */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+      <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <BorderBeam size={150} duration={12} delay={3} colorFrom="#ef4444" colorTo="#dc2626" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-        <div className="w-12 h-12 rounded-2xl bg-rose-50/70 dark:bg-red-950/20 text-accent-red dark:text-red-400 border border-rose-100 dark:border-red-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50/70 text-accent-red transition-transform duration-300 group-hover:scale-105 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400 sm:size-12 sm:rounded-2xl">
           <Activity size={22} />
         </div>
         <div>
@@ -68,7 +68,7 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
             <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
           ) : (
             <div>
-              <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+              <span className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight sm:text-2xl">
                 <NumberTicker value={stats.petitionsCount} />
               </span>
               <span className="text-[9px] text-accent-red block font-bold mt-0.5">Pendientes de oración: {stats.pendingPetitions}</span>
@@ -78,9 +78,9 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
       </div>
 
       {/* Patrimonio e Inventario */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-5 shadow-2xs hover:-translate-y-1.5 hover:shadow-lg hover:border-gold/45 transition-all duration-300 flex items-center gap-4 group cursor-default relative overflow-hidden">
+      <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-        <div className="w-12 h-12 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 text-accent-purple dark:text-purple-400 border border-purple-100 dark:border-purple-900/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-purple-100 bg-purple-50/70 text-accent-purple transition-transform duration-300 group-hover:scale-105 dark:border-purple-900/30 dark:bg-purple-950/20 dark:text-purple-400 sm:size-12 sm:rounded-2xl">
           <Layers size={22} />
         </div>
         <div>
@@ -89,7 +89,7 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
             <div className="h-6 w-16 bg-slate-105 dark:bg-slate-800 animate-pulse rounded mt-1"></div>
           ) : (
             <div>
-              <span className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+              <span className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight sm:text-2xl">
                 <NumberTicker value={stats.inventoryCount} /> <span className="text-sm font-medium text-gray-500">uds</span>
               </span>
               <span className="text-[9px] text-emerald-600 dark:text-emerald-400 block font-bold mt-0.5">

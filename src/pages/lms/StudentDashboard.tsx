@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck, Loader2 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 
-import { CircularProgress } from '../../components/ui/CircularProgress';
 import { StudentCalendar } from '../../features/student-dashboard/components/StudentCalendar';
 import { StudentGrades } from '../../features/student-dashboard/components/StudentGrades';
 import { StudentBadges } from '../../features/student-dashboard/components/StudentBadges';
@@ -23,7 +22,6 @@ import { LeaderboardWidget } from '../../features/student-dashboard/components/L
 import { BadgeShowcase } from '../../features/student-dashboard/components/BadgeShowcase';
 import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
 import { NumberTicker } from '../../components/ui/magicui/number-ticker';
-import { BorderBeam } from '../../components/ui/magicui/border-beam';
 import type { PendingTask } from '../../features/student-dashboard/components/PendingTasksWidget';
 
 
@@ -49,9 +47,26 @@ interface StudentBadgeItem {
   awarded_at: string;
 }
 
+interface ShowcaseBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon_url: string;
+  unlocked_at: string;
+}
+
+type StudentTabId = 'courses' | 'attendance' | 'calendar' | 'grades' | 'badges' | 'stats';
+
+const TAB_ALIASES: Record<string, StudentTabId> = {
+  courses: 'courses', cursos: 'courses', attendance: 'attendance', asistencia: 'attendance',
+  calendar: 'calendar', horario: 'calendar', grades: 'grades', calificaciones: 'grades',
+  badges: 'badges', logros: 'badges', stats: 'stats', estadisticas: 'stats',
+};
+
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [enrollments, setEnrollments] = useState<CourseProgress[]>([]);
   const [badges, setBadges] = useState<StudentBadgeItem[]>([]);
   const [stats, setStats] = useState({
@@ -63,10 +78,9 @@ export default function StudentDashboard() {
     overallProgress: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('courses');
+  const [activeTab, setActiveTab] = useState<StudentTabId>(() => TAB_ALIASES[searchParams.get('tab') || ''] || 'courses');
   const [isIdCardOpen, setIsIdCardOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedBadge, setSelectedBadge] = useState<any>(null);
+  const [selectedBadge, setSelectedBadge] = useState<ShowcaseBadge | null>(null);
 
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
 
@@ -253,15 +267,21 @@ export default function StudentDashboard() {
     return () => clearTimeout(timer);
   }, [user, navigate, fetchDashboardData]);
 
+  const selectTab = (tabId: StudentTabId) => {
+    setActiveTab(tabId);
+    setSearchParams(tabId === 'courses' ? {} : { tab: tabId }, { replace: true });
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24 pb-12 bg-gray-50 dark:bg-[#0B1120]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-gold"></div>
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 bg-[#f7f8fb] pt-20 dark:bg-slate-950">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"><Loader2 className="animate-spin" size={25} /></span>
+        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Organizando tu aula...</p>
       </div>
     );
   }
 
-  const tabs = [
+  const tabs: Array<{ id: StudentTabId; label: string; icon: typeof BookOpen }> = [
     { id: 'courses', label: 'Mis Cursos', icon: BookOpen },
     { id: 'attendance', label: 'Mi Asistencia', icon: UserCheck },
     { id: 'calendar', label: 'Horario', icon: Calendar },
@@ -271,8 +291,8 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-12 bg-gray-50 dark:bg-[#0B1120] text-slate-800 dark:text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <div className="min-h-screen bg-[#f7f8fb] pb-24 pt-24 text-slate-800 dark:bg-slate-950 dark:text-white md:pb-14">
+      <div className="mx-auto mt-3 max-w-7xl px-4 sm:mt-6 sm:px-6 lg:px-8">
         <ProgressHero 
           userFullName={user?.user_metadata?.full_name || 'Estudiante'}
           avatarUrl={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
@@ -286,7 +306,7 @@ export default function StudentDashboard() {
         />
         
         {/* Widgets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-6">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
           {enrollments.length > 0 && (
             <div className="lg:col-span-1">
               <NextUpWidget 
@@ -324,17 +344,18 @@ export default function StudentDashboard() {
       </div>
 
       {/* Top Menu (Tabs) */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 sticky top-[72px] z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-3">
-          <div className="flex overflow-x-auto hide-scrollbar flex-1 items-center bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-2xl gap-1 w-max">
+      <div className="sticky top-[72px] z-20 mt-6 border-y border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-slate-900/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6 lg:px-8">
+          <div className="hide-scrollbar flex flex-1 items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800/60 sm:rounded-2xl sm:p-1.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 font-bold whitespace-nowrap rounded-xl transition-all ${
+                  onClick={() => selectTab(tab.id)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-bold transition-all sm:rounded-xl sm:px-5 sm:text-sm ${
                     isActive 
                       ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-slate-700/50'
@@ -348,20 +369,20 @@ export default function StudentDashboard() {
           </div>
 
           {/* Notification Center */}
-          <div className="pl-6 flex items-center shrink-0 ml-4 hidden sm:flex">
+          <div className="ml-3 flex shrink-0 items-center sm:ml-4 sm:pl-3">
             <NotificationCenter />
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         
         {/* COURSES TAB */}
         {activeTab === 'courses' && (
           <AnimeFadeUp className="space-y-8">
             {enrollments.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-gray-100 dark:border-white/10 shadow-sm">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-12">
                 <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold mb-2">Aún no estás matriculado</h3>
                 <p className="text-gray-500 mb-6 text-lg">Explora nuestros programas académicos y comienza tu formación.</p>
@@ -370,28 +391,28 @@ export default function StudentDashboard() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
                 {enrollments.map((enr, idx) => (
                   <motion.div
                     key={enr.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                    className="relative bg-white dark:bg-slate-800/80 backdrop-blur-xl border border-gray-100 dark:border-white/5 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group flex flex-col sm:flex-row transition-all hover:border-gold/30 hover:shadow-gold/5"
+                    whileHover={{ y: -3 }}
+                    className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition-all hover:border-indigo-200 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 dark:hover:border-indigo-400/30 sm:flex-row"
                   >
                     {/* Image side */}
-                    <div className="w-full sm:w-48 lg:w-56 shrink-0 h-48 sm:h-auto overflow-hidden relative border-b sm:border-b-0 sm:border-r border-gray-100 dark:border-white/5">
+                    <div className="relative h-44 w-full shrink-0 overflow-hidden border-b border-slate-100 dark:border-white/5 sm:h-auto sm:w-48 sm:border-b-0 sm:border-r lg:w-52">
                       <img loading="lazy" 
                         src={enr.lms_courses?.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
                         alt={enr.lms_courses?.title || 'Curso'}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
                     
                     {/* Content side */}
-                    <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex flex-grow flex-col p-5 sm:p-6">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold font-serif text-xl line-clamp-2 text-slate-900 dark:text-white pr-2">
                           {enr.lms_courses?.title || 'Curso Desconocido'}
@@ -416,7 +437,7 @@ export default function StudentDashboard() {
                           
                           <Link 
                             to={`/lms/curso/${enr.course_id}`}
-                            className="flex items-center gap-1 px-4 py-2 bg-gold/10 hover:bg-gold/20 text-gold rounded-xl font-bold text-sm transition-colors group-hover:bg-gold group-hover:text-white"
+                            className="flex min-h-10 items-center gap-1 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-600 hover:text-white dark:bg-indigo-500/10 dark:text-indigo-300"
                           >
                             {enr.progressPercentage === 0 ? 'Comenzar' : enr.progressPercentage === 100 ? 'Repasar' : 'Continuar'}
                             <ChevronRight size={16} />

@@ -38,7 +38,7 @@ const DashboardHome = () => {
   const baptismsData = data?.baptismsData || [];
 
   return (
-    <div className="space-y-8 text-left">
+    <div className="space-y-5 text-left md:space-y-7">
       <DashboardHero 
         displayName={displayName} 
         membersCount={stats.membersCount} 
@@ -49,7 +49,7 @@ const DashboardHome = () => {
         loading={isLoading} 
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         <DashboardCharts 
           loading={isLoading}
           ageData={ageData}
@@ -59,7 +59,7 @@ const DashboardHome = () => {
           baptismsData={baptismsData}
         />
 
-        <AnimeFadeUp delay={250} duration={800} className="space-y-6">
+        <AnimeFadeUp delay={250} duration={800} className="space-y-5 lg:space-y-6">
           <WeeklyAlerts alerts={alerts} />
           <QuickLinks userRoles={userRoles} />
         </AnimeFadeUp>

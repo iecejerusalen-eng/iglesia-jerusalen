@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, MessageSquare, Award, BookMarked, MonitorPlay, LayoutTemplate, Calendar as CalendarIcon, AlertTriangle, CheckSquare } from 'lucide-react';
@@ -76,16 +75,16 @@ export default function TeacherDashboard() {
     );
   }
 
-  const classesToday = sessions.filter((s: any) => {
+  const classesToday = sessions.filter((s) => {
     const today = new Date().toISOString().split('T')[0];
     return s.start_time?.startsWith(today) || s.session_date?.startsWith(today);
   }).length;
 
   return (
-    <div className="min-h-screen pt-24 bg-gray-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-200 flex overflow-hidden">
+    <div className="flex min-h-screen flex-col bg-[#f7f8fb] pt-24 text-slate-800 dark:bg-slate-950 dark:text-slate-200 lg:flex-row lg:overflow-hidden">
       
       {/* Collapsed Icon Menu (Sidebar) */}
-      <nav className="flex flex-col gap-2 py-6 px-3 w-20 hover:w-[280px] transition-all duration-300 ease-in-out bg-white dark:bg-[#0B0F19] border-r border-gray-200 dark:border-white/5 min-h-[calc(100vh-6rem)] sticky top-24 z-20 shrink-0 group overflow-hidden shadow-sm dark:shadow-none">
+      <nav className="hide-scrollbar sticky top-20 z-20 flex w-full shrink-0 gap-1 overflow-x-auto border-b border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-slate-950/95 lg:top-24 lg:h-[calc(100vh-6rem)] lg:w-64 lg:flex-col lg:gap-1.5 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-4">
         {[
           { id: 'overview', label: 'Resumen', icon: LayoutTemplate },
           { id: 'classes', label: 'Mis Clases (Diario)', icon: CheckSquare },
@@ -101,15 +100,16 @@ export default function TeacherDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`group/btn relative flex items-center gap-4 p-3.5 rounded-xl transition-all duration-300 w-full cursor-pointer overflow-hidden ${
+            aria-current={activeTab === tab.id ? 'page' : undefined}
+            className={`relative flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition lg:w-full lg:justify-start lg:gap-3 lg:text-sm ${
               activeTab === tab.id
-                ? 'bg-gold text-white shadow-md shadow-gold/20'
-                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
             }`}
           >
-            <tab.icon className={`w-6 h-6 shrink-0 transition-colors ${activeTab === tab.id ? 'text-white' : ''}`} />
+            <tab.icon className="size-4 shrink-0 lg:size-5" />
             
-            <span className={`whitespace-nowrap font-bold text-sm transition-opacity duration-300 ${activeTab === tab.id ? 'text-white' : ''} opacity-0 group-hover:opacity-100 delay-100`}>
+            <span className="whitespace-nowrap">
               {tab.label}
             </span>
           </button>
@@ -117,15 +117,15 @@ export default function TeacherDashboard() {
       </nav>
 
       {/* Main Content Area */}
-      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-6 w-full h-[calc(100vh-6rem)] overflow-y-auto hide-scrollbar">
+      <div className="hide-scrollbar mx-auto h-auto w-full max-w-7xl flex-1 overflow-y-visible px-4 pb-16 pt-5 sm:px-6 lg:h-[calc(100vh-6rem)] lg:overflow-y-auto lg:px-8 lg:pt-7">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div className="mb-6 flex flex-col gap-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6 md:flex-row md:items-end md:justify-between lg:mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gold/20 rounded-xl flex items-center justify-center text-gold">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
                 <BookMarked size={20} />
               </div>
-              <h1 className="text-3xl md:text-4xl font-black font-serif text-slate-900 dark:text-white tracking-tight">
+              <h1 className="font-serif text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
                 Espacio Docente
               </h1>
             </div>
@@ -134,13 +134,13 @@ export default function TeacherDashboard() {
             </p>
           </div>
 
-          <div className="flex items-end gap-4 min-w-[250px]">
+          <div className="flex w-full items-end gap-3 md:w-auto md:min-w-[280px]">
             <div className="flex-1 flex flex-col gap-2">
               <label className="text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">Seleccionar Curso</label>
               <select
                 value={selectedCourseId}
                 onChange={(e) => setSelectedCourseId(e.target.value)}
-                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 dark:text-white outline-none focus:border-gold shadow-sm"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               >
                 <option value="">Seleccione un curso...</option>
                 {courses.map((course: { id: string; title: string }) => (
@@ -151,7 +151,7 @@ export default function TeacherDashboard() {
               </select>
             </div>
             
-            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl h-[42px] px-2 flex items-center shadow-sm">
+            <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-2 dark:border-white/10 dark:bg-slate-950">
               <NotificationCenter />
             </div>
           </div>

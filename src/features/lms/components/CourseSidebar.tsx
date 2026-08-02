@@ -1,127 +1,122 @@
-import { CheckCircle2, PlayCircle, FileText, HelpCircle, Lock, ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, ChevronDown, FileText, HelpCircle, MessageSquare, PlayCircle } from 'lucide-react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface CourseModuleItem {
+  id: string;
+  title: string;
+  is_hidden?: boolean;
+}
+
+interface CourseLessonItem {
+  id: string;
+  module_id: string;
+  title: string;
+  type: string;
+  order_index: number;
+}
+
 interface CourseSidebarProps {
-  modules: any[];
-  lessons: any[];
+  modules: CourseModuleItem[];
+  lessons: CourseLessonItem[];
   completions: Record<string, boolean>;
-  activeLesson: any | null;
-  onSelectLesson: (lesson: any) => void;
+  activeLesson: CourseLessonItem | null;
+  onSelectLesson: (lesson: CourseLessonItem) => void;
   userRoles: string[];
 }
 
-export function CourseSidebar({
-  modules,
-  lessons,
-  completions,
-  activeLesson,
-  onSelectLesson,
-  userRoles
-}: CourseSidebarProps) {
-  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(
-    modules.reduce((acc, m) => ({ ...acc, [m.id]: true }), {})
-  );
+const LESSON_ICONS: Record<string, typeof FileText> = {
+  video: PlayCircle,
+  video_link: PlayCircle,
+  quiz: HelpCircle,
+  forum: MessageSquare,
+};
+
+export function CourseSidebar({ modules, lessons, completions, activeLesson, onSelectLesson, userRoles }: CourseSidebarProps) {
+  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
+  const canSeeHidden = userRoles.some((role) => ['admin', 'maestro', 'docente', 'teacher'].includes(role));
+  const visibleModules = useMemo(() => modules.filter((module) => canSeeHidden || !module.is_hidden), [canSeeHidden, modules]);
+  const completedLessons = Object.values(completions).filter(Boolean).length;
+  const progress = lessons.length > 0 ? Math.round((completedLessons / lessons.length) * 100) : 0;
 
   const toggleModule = (moduleId: string) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleId]: !prev[moduleId]
-    }));
+    setCollapsedModules((current) => ({ ...current, [moduleId]: !current[moduleId] }));
   };
 
-  const visibleModules = modules.filter(
-    (m) => userRoles.includes("admin") || userRoles.includes("maestro") || !m.is_hidden
-  );
-
   return (
-    <div className="w-full lg:w-72 xl:w-80 shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-white/5 h-full overflow-y-auto hide-scrollbar sticky top-0">
-      <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 backdrop-blur-xl">
-        <h3 className="font-bold font-serif text-lg text-slate-900 dark:text-white">Contenido del curso</h3>
-        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-          {Object.values(completions).filter(Boolean).length} de {lessons.length} completadas
-        </p>
+    <aside className="hide-scrollbar h-full w-full shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-white/5 dark:bg-slate-950 lg:w-72 xl:w-80" aria-label="Contenido del curso">
+      <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 p-4 backdrop-blur-xl dark:border-white/5 dark:bg-slate-950/95 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Ruta de aprendizaje</p>
+            <h2 className="mt-1 font-serif text-lg font-bold text-slate-900 dark:text-white">Contenido del curso</h2>
+          </div>
+          <span className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-black text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">{progress}%</span>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{completedLessons} de {lessons.length} lecciones completadas</p>
       </div>
 
-      <div className="p-3 space-y-2">
-        {visibleModules.map((mod, index) => {
-          const moduleLessons = lessons.filter(l => l.module_id === mod.id).sort((a, b) => a.order_index - b.order_index);
-          const isExpanded = expandedModules[mod.id];
-          
+      <div className="space-y-2 p-3 sm:p-4">
+        {visibleModules.map((module, index) => {
+          const moduleLessons = lessons
+            .filter((lesson) => lesson.module_id === module.id)
+            .sort((a, b) => a.order_index - b.order_index);
+          const isExpanded = !collapsedModules[module.id];
+          const moduleCompleted = moduleLessons.filter((lesson) => completions[lesson.id]).length;
+          const moduleProgress = moduleLessons.length > 0 ? Math.round((moduleCompleted / moduleLessons.length) * 100) : 0;
+
           return (
-            <div key={mod.id} className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
-              <button
-                onClick={() => toggleModule(mod.id)}
-                className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-              >
-                <div>
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2">
-                    {index + 1}. {mod.title}
-                  </h4>
-                  <span className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 block">
-                    {moduleLessons.filter(l => completions[l.id]).length} / {moduleLessons.length}
+            <section key={module.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/80 dark:border-white/5 dark:bg-white/[0.035]">
+              <button type="button" onClick={() => toggleModule(module.id)} className="flex min-h-14 w-full items-center gap-3 p-3.5 text-left transition hover:bg-slate-100 dark:hover:bg-white/5" aria-expanded={isExpanded}>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-xs font-black text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-300">{index + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="line-clamp-2 text-sm font-bold leading-tight text-slate-900 dark:text-white">{module.title}</span>
+                  <span className="mt-1 flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                    {moduleCompleted}/{moduleLessons.length} completadas
+                    <span className="h-1 w-1 rounded-full bg-slate-300" />{moduleProgress}%
                   </span>
-                </div>
-                {isExpanded ? (
-                  <ChevronDown size={18} className="text-slate-400" />
-                ) : (
-                  <ChevronRight size={18} className="text-slate-400" />
-                )}
+                </span>
+                <ChevronDown size={17} className={`shrink-0 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
-              
-              <AnimatePresence>
+
+              <AnimatePresence initial={false}>
                 {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-2 pt-0 space-y-1">
-                      {moduleLessons.map(lesson => {
-                        const isCompleted = completions[lesson.id];
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                    <div className="space-y-1 border-t border-slate-200/80 p-2 dark:border-white/5">
+                      {moduleLessons.map((lesson, lessonIndex) => {
+                        const isCompleted = Boolean(completions[lesson.id]);
                         const isActive = activeLesson?.id === lesson.id;
-                        
-                        let Icon = FileText;
-                        if (lesson.type === 'video') Icon = PlayCircle;
-                        if (lesson.type === 'quiz') Icon = HelpCircle;
-                        if (lesson.type === 'forum') Icon = MessageSquare;
-                        
+                        const Icon = LESSON_ICONS[lesson.type] ?? FileText;
                         return (
                           <button
                             key={lesson.id}
+                            type="button"
                             onClick={() => onSelectLesson(lesson)}
-                            className={`w-full text-left flex items-start gap-3 p-3 rounded-lg transition-colors text-sm ${
-                              isActive 
-                                ? 'bg-gold/10 text-gold font-bold' 
-                                : 'hover:bg-gray-100 dark:hover:bg-white/5 text-slate-700 dark:text-gray-300'
-                            }`}
+                            aria-current={isActive ? 'step' : undefined}
+                            className={`flex min-h-12 w-full items-start gap-3 rounded-xl p-3 text-left text-sm transition ${isActive ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/15' : 'text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-white/5'}`}
                           >
-                            <div className="shrink-0 mt-0.5">
-                              {isCompleted ? (
-                                <CheckCircle2 size={16} className="text-green-500" />
-                              ) : (
-                                <Icon size={16} className={isActive ? 'text-gold' : 'text-slate-400'} />
-                              )}
-                            </div>
-                            <span className="line-clamp-2 flex-1">
-                              {lesson.title}
+                            <span className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15' : isCompleted ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
+                              {isCompleted ? <CheckCircle2 size={14} /> : <Icon size={14} />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className={`block text-[9px] font-extrabold uppercase tracking-wider ${isActive ? 'text-indigo-200' : 'text-slate-400'}`}>Lección {lessonIndex + 1}</span>
+                              <span className="mt-0.5 line-clamp-2 block font-semibold leading-snug">{lesson.title}</span>
                             </span>
                           </button>
                         );
                       })}
-                      {moduleLessons.length === 0 && (
-                        <p className="text-xs text-center text-slate-500 py-3">No hay lecciones en este módulo</p>
-                      )}
+                      {moduleLessons.length === 0 && <p className="py-4 text-center text-xs font-medium text-slate-400">Este módulo aún no tiene lecciones.</p>}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </section>
           );
         })}
       </div>
-    </div>
+    </aside>
   );
 }

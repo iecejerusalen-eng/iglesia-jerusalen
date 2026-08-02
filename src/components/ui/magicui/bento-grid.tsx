@@ -67,7 +67,7 @@ export function BentoCard({
       </div>
 
       {/* Header Badge & Icon */}
-      <div className="relative z-20 p-6 flex justify-between items-start">
+      <div className="relative z-20 flex items-start justify-between p-4 sm:p-6">
         {Icon && (
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-300">
             <Icon size={24} />
@@ -81,8 +81,8 @@ export function BentoCard({
       </div>
 
       {/* Content Body */}
-      <div className="relative z-20 p-6 flex flex-col justify-end gap-2">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+      <div className="relative z-20 flex flex-col justify-end gap-2 p-4 pt-2 sm:p-6 sm:pt-3">
+        <h3 className="text-lg font-bold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400 sm:text-xl">
           {name}
         </h3>
         <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed font-normal">
