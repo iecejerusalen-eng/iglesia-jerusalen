@@ -9,6 +9,23 @@ interface VerseData {
   bookName: string;
 }
 
+const BOLLS_BOOK_MAP: Record<string, number> = {
+  'genesis': 1, 'exodo': 2, 'levitico': 3, 'numeros': 4, 'deuteronomio': 5,
+  'josue': 6, 'jueces': 7, 'rut': 8, '1-samuel': 9, '2-samuel': 10,
+  '1-reyes': 11, '2-reyes': 12, '1-cronicas': 13, '2-cronicas': 14, 'esdras': 15,
+  'nehemias': 16, 'ester': 17, 'job': 18, 'salmos': 19, 'proverbios': 20,
+  'eclesiastes': 21, 'cantares': 22, 'isaias': 23, 'jeremias': 24, 'lamentaciones': 25,
+  'ezequiel': 26, 'daniel': 27, 'oseas': 28, 'joel': 29, 'amos': 30,
+  'abdias': 31, 'jonas': 32, 'miqueas': 33, 'nahum': 34, 'habacuc': 35,
+  'sofonias': 36, 'hageo': 37, 'zacarias': 38, 'malaquias': 39,
+  'mateo': 40, 'marcos': 41, 'lucas': 42, 'juan': 43, 'hechos': 44,
+  'romanos': 45, '1-corintios': 46, '2-corintios': 47, 'galatas': 48, 'efesios': 49,
+  'filipenses': 50, 'colosenses': 51, '1-tesalonicenses': 52, '2-tesalonicenses': 53,
+  '1-timoteo': 54, '2-timoteo': 55, 'tito': 56, 'filemon': 57, 'hebreos': 58,
+  'santiago': 59, '1-pedro': 60, '2-pedro': 61, '1-juan': 62, '2-juan': 63,
+  '3-juan': 64, 'judas': 65, 'apocalipsis': 66
+};
+
 export function useDailyVerse() {
   const [verseData, setVerseData] = useState<VerseData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +58,10 @@ export function useDailyVerse() {
     }
 
     try {
-      // We use rv1960 as default for the verse of the day, wrapped in a CORS proxy
-      const rawUrl = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
-      const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+      const bookIdInt = BOLLS_BOOK_MAP[verseRef.bookId];
+      if (!bookIdInt) throw new Error('Invalid book ID');
+      
+      const url = `https://bolls.life/get-chapter/RV1960/${bookIdInt}/${verseRef.chapter}/`;
       const res = await fetch(url);
       
       if (!res.ok) {
@@ -54,18 +72,18 @@ export function useDailyVerse() {
       
       // Filter the exact verses from the chapter
       const requestedVerses = parseVerseRange(verseRef.verses);
-      const filteredVerses = data.vers.filter((v: { number: number; verse: string }) => requestedVerses.includes(v.number));
+      const filteredVerses = data.filter((v: { verse: number; text: string }) => requestedVerses.includes(v.verse));
       
       if (filteredVerses.length === 0) {
         throw new Error('Verses not found in chapter');
       }
       
-      const combinedText = filteredVerses.map((v: { verse: string }) => v.verse).join(' ');
+      const combinedText = filteredVerses.map((v: { text: string }) => v.text.replace(/<[^>]+>/g, '')).join(' ');
       
       const newVerseData = {
         text: combinedText,
         reference: verseRef.reference,
-        bookName: data.name
+        bookName: verseRef.reference.split(' ')[0] // extract name
       };
       
       localStorage.setItem(cacheKey, JSON.stringify(newVerseData));
@@ -105,23 +123,25 @@ export function useDailyVerse() {
       }
 
       try {
-        const rawUrl = `https://bible-api.deno.dev/api/read/rv1960/${verseRef.bookId}/${verseRef.chapter}`;
-        const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+        const bookIdInt = BOLLS_BOOK_MAP[verseRef.bookId];
+        if (!bookIdInt) throw new Error('Invalid book ID');
+
+        const url = `https://bolls.life/get-chapter/RV1960/${bookIdInt}/${verseRef.chapter}/`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('API failed');
         
         const data = await res.json();
         const requestedVerses = parseVerseRange(verseRef.verses);
-        const filteredVerses = data.vers.filter((v: { number: number; verse: string }) => requestedVerses.includes(v.number));
+        const filteredVerses = data.filter((v: { verse: number; text: string }) => requestedVerses.includes(v.verse));
         
         if (filteredVerses.length === 0) throw new Error('Verses not found in chapter');
         
-        const combinedText = filteredVerses.map((v: { verse: string }) => v.verse).join(' ');
+        const combinedText = filteredVerses.map((v: { text: string }) => v.text.replace(/<[^>]+>/g, '')).join(' ');
         
         const newVerseData = {
           text: combinedText,
           reference: verseRef.reference,
-          bookName: data.name
+          bookName: verseRef.reference.split(' ')[0]
         };
         
         localStorage.setItem(cacheKey, JSON.stringify(newVerseData));
