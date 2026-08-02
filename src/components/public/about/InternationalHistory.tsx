@@ -8,14 +8,14 @@ const TIMELINE_DATA = [
     title: 'El Mensaje Cuadrangular',
     description: 'Durante una campaña de avivamiento en Oakland, California, Aimee Semple McPherson utiliza por primera vez el término "Evangelio Cuadrangular" para describir su mensaje cristocéntrico.',
     icon: <Building2 size={24} />,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Aimee_Semple_McPherson_by_Albert_Witzel.jpg'
+    image: 'https://images.unsplash.com/photo-1438283173091-5dbf5c5a3206?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: '1923',
     title: 'Ángelus Temple y Entrenamiento',
     description: 'En enero, se inaugura el Ángelus Temple en Los Ángeles con capacidad para 5,300 personas. Un mes después, se abre el primer instituto bíblico (hoy Life Pacific University) para capacitar ministros y misioneros.',
     icon: <Building2 size={24} />,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Angelus_Temple.jpg'
+    image: 'https://images.unsplash.com/photo-1548625361-ec853c6e9389?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: '1924',
@@ -28,7 +28,7 @@ const TIMELINE_DATA = [
     title: 'Consolidación Internacional',
     description: 'La organización se incorpora formalmente como la Iglesia Internacional del Evangelio Cuadrangular, contando ya con más de 100 iglesias plantadas y enviando misioneros a Filipinas.',
     icon: <Globe size={24} />,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Aimee_Semple_McPherson-AngelusTemple_Sermon_1923_01.jpg'
+    image: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: '1928',
