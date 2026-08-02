@@ -8,7 +8,7 @@ const TIMELINE_DATA = [
     title: 'El Mensaje Cuadrangular',
     description: 'Durante una campaña de avivamiento en Oakland, California, Aimee Semple McPherson utiliza por primera vez el término "Evangelio Cuadrangular" para describir su mensaje cristocéntrico.',
     icon: <Building2 size={24} />,
-    image: 'https://images.unsplash.com/photo-1438283173091-5dbf5c5a3206?auto=format&fit=crop&q=80&w=1000'
+    image: 'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: '1923',
@@ -21,7 +21,8 @@ const TIMELINE_DATA = [
     year: '1924',
     title: 'Pioneros en Radio y Misiones',
     description: 'Aimee se convierte en la primera mujer en operar una estación de radio (KFSG) para transmitir el evangelio. Simultáneamente, la iglesia envía a sus primeros misioneros a la India.',
-    icon: <Radio size={24} />
+    icon: <Radio size={24} />,
+    image: 'https://images.unsplash.com/photo-1518182170546-076616fd6aa8?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: '1927',
@@ -34,13 +35,15 @@ const TIMELINE_DATA = [
     year: '1928',
     title: 'Obra Social en la Gran Depresión',
     description: 'Se abre el "Commissary" en el Ángelus Temple, proveyendo alimentos, ropa y asistencia a más de 1.5 millones de personas durante la Gran Depresión sin distinción de raza o credo.',
-    icon: <HeartHandshake size={24} />
+    icon: <HeartHandshake size={24} />,
+    image: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=1000'
   },
   {
     year: 'Actualidad',
     title: 'Un Movimiento Global',
     description: 'Hoy, a través de Foursquare Missions International (FMI), la iglesia opera en más de 150 países, con más de 100,000 congregaciones y aproximadamente 8.8 millones de miembros en todo el mundo.',
-    icon: <Globe size={24} />
+    icon: <Globe size={24} />,
+    image: 'https://images.unsplash.com/photo-1511649475669-e288648b2339?auto=format&fit=crop&q=80&w=1000'
   }
 ];
 
