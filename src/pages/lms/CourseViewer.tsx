@@ -588,7 +588,12 @@ export default function CourseViewer() {
                       {mod.title || `Módulo ${idx + 1}`}
                     </button>
                   ))}
-                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTabId === "forums" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
+                  <button
+                    onClick={() => {
+                      setActiveTabId("forums");
+                      setActiveLesson(null);
+                    }}
+                    className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTabId === "forums" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
                 >
                   <MessageSquare size={16} /> Foros
                 </button>
