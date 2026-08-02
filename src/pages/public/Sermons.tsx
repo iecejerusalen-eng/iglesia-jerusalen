@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import type { Sermon } from '../../types';
-import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, ChevronDown, Check, Filter, LayoutGrid, List, AlignJustify } from 'lucide-react';
+import { Calendar, User, Video, RefreshCw, ArrowRight, Edit3, ChevronDown, Check, Filter, LayoutGrid, List, AlignJustify, ArrowUpDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
@@ -52,6 +52,9 @@ const Sermons = () => {
   const [selectedSpeaker, setSelectedSpeaker] = useState<string>('');
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const [isPastorsOpen, setIsPastorsOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  type SortOption = 'newest' | 'oldest' | 'az' | 'za';
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   // Vista actual (Grid, List, Compact)
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>(() => {
@@ -121,17 +124,34 @@ const Sermons = () => {
     }));
   }, [sermons]);
 
-  const filteredSermons = sermons.filter(s => {
-    const matchesSearch = 
-      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.pastor_name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredSermons = useMemo(() => {
+    const result = sermons.filter(s => {
+      const matchesSearch = 
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.pastor_name.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      const matchesCategory = selectedCategory ? s.category_id === selectedCategory : true;
+      const matchesSpeaker = selectedSpeaker ? s.speaker_id === selectedSpeaker || s.pastor_name === selectedSpeaker : true;
       
-    const matchesCategory = selectedCategory ? s.category_id === selectedCategory : true;
-    const matchesSpeaker = selectedSpeaker ? s.speaker_id === selectedSpeaker || s.pastor_name === selectedSpeaker : true;
-    
-    return matchesSearch && matchesCategory && matchesSpeaker;
-  });
+      return matchesSearch && matchesCategory && matchesSpeaker;
+    });
+
+    result.sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (sortBy === 'oldest') {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else if (sortBy === 'az') {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === 'za') {
+        return b.title.localeCompare(a.title);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [sermons, searchQuery, selectedCategory, selectedSpeaker, sortBy]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
@@ -239,6 +259,47 @@ const Sermons = () => {
                       >
                         {s.first_name} {s.last_name}
                         {selectedSpeaker === s.id && <Check size={16} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* Custom Dropdown para Ordenar */}
+            <div className="relative w-full sm:w-56 z-50">
+              <button 
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="w-full px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
+              >
+                <span className="flex items-center gap-2 truncate">
+                  <ArrowUpDown size={16} className="text-primary/70 dark:text-gold shrink-0" /> 
+                  {sortBy === 'newest' ? 'Más recientes' : sortBy === 'oldest' ? 'Más antiguos' : sortBy === 'az' ? 'A - Z' : 'Z - A'}
+                </span>
+                <ChevronDown size={16} className="text-gray-400 shrink-0" />
+              </button>
+              
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 overflow-hidden z-50"
+                  >
+                    {[
+                      { id: 'newest', label: 'Más recientes' },
+                      { id: 'oldest', label: 'Más antiguos' },
+                      { id: 'az', label: 'Alfabético (A-Z)' },
+                      { id: 'za', label: 'Alfabético (Z-A)' },
+                    ].map(option => (
+                      <button 
+                        key={option.id}
+                        onClick={() => { setSortBy(option.id as SortOption); setIsSortOpen(false); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${sortBy === option.id ? 'text-primary dark:text-gold font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                      >
+                        {option.label}
+                        {sortBy === option.id && <Check size={16} />}
                       </button>
                     ))}
                   </motion.div>
