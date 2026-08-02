@@ -70,7 +70,7 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
       {/* Header */}
       <div className="flex border-b border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-800">
         <div className="w-16 border-r border-gray-150 dark:border-white/10 flex-shrink-0" />
-        <div className={`flex-1 grid grid-cols-${days.length} divide-x divide-gray-150 dark:divide-white/10`}>
+        <div className="grid flex-1 divide-x divide-gray-150 dark:divide-white/10" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
           {days.map(date => {
             const isToday = isSameDay(date, new Date());
             return (
@@ -102,7 +102,7 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
         </div>
 
         {/* Days columns */}
-        <div className={`flex-1 grid grid-cols-${days.length} divide-x divide-gray-100 dark:divide-white/5 relative`}>
+        <div className="relative grid flex-1 divide-x divide-gray-100 dark:divide-white/5" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
           {days.map(date => {
             const dateStr = formatDateString(date);
             const dayEvents = events.filter(e => e.start_date === dateStr);
@@ -145,9 +145,11 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
                   const height = Math.max(durationHours * 56, 20); // Min height
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={event.id}
                       onClick={() => onEditEvent(event)}
+                      aria-label={`Editar ${event.title}`}
                       className="event-item absolute left-1 right-1 rounded-lg bg-primary/90 backdrop-blur border border-primary text-white p-1.5 shadow-sm overflow-hidden cursor-pointer hover:bg-blue-600 transition-colors z-10"
                       style={{ top: `${top}px`, height: `${height}px` }}
                     >
@@ -158,7 +160,7 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
                         {event.emoji && <span className="mr-1">{event.emoji}</span>}
                         {event.title}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

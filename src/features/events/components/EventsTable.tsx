@@ -1,7 +1,8 @@
 
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
-import { Loader2, Calendar, Clock, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Calendar, Clock, Edit2, Trash2, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import type { Event as DbEvent } from '../../../types';
+import { formatEventDateRange, formatEventTime } from '../utils/eventPresentation';
 
 interface EventsTableProps {
   events: DbEvent[];
@@ -38,6 +39,7 @@ export default function EventsTable({ events, loading, actionLoading, onEdit, on
             <tr className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider border-b border-gray-150 dark:border-white/10">
               <th className="py-4 px-6">Evento</th>
               <th className="py-4 px-6">Fecha y Horarios</th>
+              <th className="py-4 px-6">Visibilidad</th>
               <th className="py-4 px-6">Ministerio</th>
               <th className="py-4 px-6">Líderes</th>
               <th className="py-4 px-6 text-right">Acciones</th>
@@ -51,7 +53,7 @@ export default function EventsTable({ events, loading, actionLoading, onEdit, on
                     {event.cover_image_url ? (
                       <img loading="lazy"
                         src={event.cover_image_url}
-                        alt={event.title}
+                        alt=""
                         className="w-12 h-10 rounded-lg object-cover border border-gray-100 dark:border-white/5 flex-shrink-0"
                       />
                     ) : (
@@ -71,7 +73,7 @@ export default function EventsTable({ events, loading, actionLoading, onEdit, on
                 <td className="py-4 px-6">
                   <span className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-1">
                     <Calendar size={12} className="text-gold" />
-                    {event.start_date}
+                    {formatEventDateRange(event.start_date, event.end_date)}
                     {event.is_recurring && (
                       <span className="text-[9px] bg-gold/15 text-gold border border-gold/25 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ml-1.5">
                         {event.recurrence_type}
@@ -80,7 +82,13 @@ export default function EventsTable({ events, loading, actionLoading, onEdit, on
                   </span>
                   <span className="text-xs text-gray-400 dark:text-gray-500 block font-bold flex items-center gap-1 mt-0.5">
                     <Clock size={12} className="text-gold" />
-                    {event.start_time || 'Todo el día'}
+                    {formatEventTime(event.start_time, event.end_time)}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${event.is_public !== false ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'}`}>
+                    {event.is_public !== false ? <Eye size={12} /> : <EyeOff size={12} />}
+                    {event.is_public !== false ? 'Público' : 'Borrador'}
                   </span>
                 </td>
                 <td className="py-4 px-6 font-semibold">
@@ -103,17 +111,19 @@ export default function EventsTable({ events, loading, actionLoading, onEdit, on
                 </td>
                 <td className="py-4 px-6 text-right space-x-1.5">
                   <button
+                    type="button"
                     onClick={() => onEdit(event)}
                     className="text-gray-400 hover:text-primary p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                    title="Editar"
+                    aria-label={`Editar ${event.title}`}
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => onDelete(event.id)}
                     disabled={actionLoading}
                     className="text-gray-400 hover:text-accent-red p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Eliminar"
+                    aria-label={`Eliminar ${event.title}`}
                   >
                     <Trash2 size={16} />
                   </button>

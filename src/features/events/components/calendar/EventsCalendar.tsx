@@ -7,7 +7,7 @@ import { addDays } from './dateUtils';
 
 interface EventsCalendarProps {
   events: DbEvent[];
-  onCreateEvent: (date: string, startTime?: string, endTime?: string) => void;
+  onCreateEvent: (date: string, startTime?: string, endTime?: string, endDate?: string) => void;
   onEditEvent: (event: DbEvent) => void;
 }
 
@@ -42,16 +42,16 @@ export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: E
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs">
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg p-1 border border-gray-150 dark:border-white/10">
-            <button onClick={handlePrevious} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-gray-500 dark:text-gray-400">
+            <button type="button" onClick={handlePrevious} aria-label="Periodo anterior" className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-gray-500 dark:text-gray-400">
               <ChevronLeft size={20} />
             </button>
-            <button onClick={handleToday} className="px-3 py-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <button type="button" onClick={handleToday} className="px-3 py-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-sm font-semibold text-gray-700 dark:text-gray-300">
               Hoy
             </button>
-            <button onClick={handleNext} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-gray-500 dark:text-gray-400">
+            <button type="button" onClick={handleNext} aria-label="Periodo siguiente" className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors text-gray-500 dark:text-gray-400">
               <ChevronRight size={20} />
             </button>
           </div>
@@ -65,7 +65,9 @@ export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: E
             {(['day', 'week', 'month', 'custom'] as CalendarViewType[]).map(type => (
               <button
                 key={type}
+                type="button"
                 onClick={() => setViewType(type)}
+                aria-pressed={viewType === type}
                 className={`
                   px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize
                   ${viewType === type 
@@ -98,7 +100,7 @@ export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: E
           <MonthGrid 
             currentDate={currentDate} 
             events={events} 
-            onSelectRange={(start, _end) => onCreateEvent(start)}
+            onSelectRange={(start, end) => onCreateEvent(start, undefined, undefined, end)}
             onEditEvent={onEditEvent}
           />
         )}

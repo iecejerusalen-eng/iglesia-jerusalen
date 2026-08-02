@@ -1,11 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import AdminHeader from '../../components/admin/AdminHeader';
-import { Plus, LayoutGrid, List, Calendar as CalendarIcon, Search, Filter, FileDown } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  CalendarCheck2,
+  Eye,
+  EyeOff,
+  FileDown,
+  Filter,
+  LayoutGrid,
+  List,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
 import type { Event as DbEvent, Profile } from '../../types';
 
 // Feature Components
@@ -21,7 +33,7 @@ type MainViewMode = 'table' | 'grid' | 'calendar';
 const EventsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
   const { user, role, roles } = useAuthStore();
-  const userRoles = roles || (role ? [role] : []);
+  const userRoles = useMemo(() => roles || (role ? [role] : []), [role, roles]);
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [ministries, setMinistries] = useState<{ id: string; name: string }[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
@@ -34,6 +46,7 @@ const EventsManager = () => {
 
   // For pre-filling form from Calendar
   const [initialDate, setInitialDate] = useState<string | undefined>(undefined);
+  const [initialEndDate, setInitialEndDate] = useState<string | undefined>(undefined);
   const [initialStartTime, setInitialStartTime] = useState<string | undefined>(undefined);
   const [initialEndTime, setInitialEndTime] = useState<string | undefined>(undefined);
   // Search and Filters
@@ -41,32 +54,7 @@ const EventsManager = () => {
   const [filterMinistry, setFilterMinistry] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'past'>('all');
 
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        if (profile) setUserProfile(profile);
-      }
-
-      const { data: minData } = await supabase
-        .from('ministries')
-        .select('id, name');
-      setMinistries(minData || []);
-
-      await fetchEvents();
-    } catch (err) {
-      console.error('Error loading initial data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const query = supabase.from('events').select('*, ministries(name, slug)');
       const { data, error } = await query.order('start_date', { ascending: false });
@@ -76,27 +64,51 @@ const EventsManager = () => {
       console.error('Error fetching events:', err);
       toast.error('Error al cargar eventos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
-  };
+  }, []);
+
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const profileRequest = user
+        ? supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+      const ministriesRequest = supabase.from('ministries').select('id, name').order('name');
+      const [profileResult, ministriesResult] = await Promise.all([profileRequest, ministriesRequest]);
+
+      if (profileResult.error) throw profileResult.error;
+      if (ministriesResult.error) throw ministriesResult.error;
+
+      setUserProfile(profileResult.data);
+      setMinistries(ministriesResult.data || []);
+      await fetchEvents();
+    } catch (err: unknown) {
+      console.error('Error loading event manager data:', err);
+      toast.error('No se pudo preparar el gestor de eventos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchEvents, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchInitialData();
+      void fetchInitialData();
     }, 0);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [fetchInitialData]);
 
   const handleOpenCreate = () => {
     setEditingEvent(null);
     setInitialDate(undefined);
+    setInitialEndDate(undefined);
     setInitialStartTime(undefined);
     setInitialEndTime(undefined);
     setShowForm(true);
   };
 
-  const handleCalendarCreate = (date: string, startTime?: string, endTime?: string) => {
+  const handleCalendarCreate = (date: string, startTime?: string, endTime?: string, endDate?: string) => {
     setEditingEvent(null);
     setInitialDate(date);
+    setInitialEndDate(endDate);
     setInitialStartTime(startTime);
     setInitialEndTime(endTime);
     setShowForm(true);
@@ -105,6 +117,7 @@ const EventsManager = () => {
   const handleOpenEdit = (event: DbEvent) => {
     setEditingEvent(event);
     setInitialDate(undefined);
+    setInitialEndDate(undefined);
     setInitialStartTime(undefined);
     setInitialEndTime(undefined);
     setShowForm(true);
@@ -129,7 +142,7 @@ const EventsManager = () => {
 
       if (error) throw error;
       toast.success('Evento eliminado con éxito.');
-      fetchEvents();
+      await fetchEvents();
     } catch (err: unknown) {
       console.error('Error deleting event:', err);
       toast.error('No se pudo eliminar el evento: ' + (err instanceof Error ? err.message : 'Error desconocido'));
@@ -138,34 +151,44 @@ const EventsManager = () => {
     }
   };
 
-  const visibleEvents = events.filter(e => {
+  const visibleEvents = useMemo(() => events.filter((event) => {
     // Permission filter
     if (userRoles.includes('leader') && userProfile?.ministry_id) {
-      if (e.ministry_id !== userProfile.ministry_id) return false;
+      if (event.ministry_id !== userProfile.ministry_id) return false;
     }
 
     // Ministry filter
-    if (filterMinistry !== 'all' && e.ministry_id !== filterMinistry) {
+    if (filterMinistry !== 'all' && event.ministry_id !== filterMinistry) {
       return false;
     }
 
     // Status filter
     if (filterStatus !== 'all') {
       const today = new Date().toISOString().split('T')[0];
-      if (filterStatus === 'upcoming' && e.start_date < today) return false;
-      if (filterStatus === 'past' && e.start_date >= today) return false;
+      if (filterStatus === 'upcoming' && event.end_date < today) return false;
+      if (filterStatus === 'past' && event.end_date >= today) return false;
     }
 
     // Search query filter
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      const matchTitle = e.title.toLowerCase().includes(query);
-      const matchDesc = e.description?.toLowerCase().includes(query) || false;
+      const matchTitle = event.title.toLowerCase().includes(query);
+      const matchDesc = event.description?.toLowerCase().includes(query) || false;
       if (!matchTitle && !matchDesc) return false;
     }
 
     return true;
-  });
+  }), [events, filterMinistry, filterStatus, searchQuery, userProfile, userRoles]);
+
+  const eventStats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      total: events.length,
+      upcoming: events.filter((event) => event.end_date >= today).length,
+      public: events.filter((event) => event.is_public !== false).length,
+      private: events.filter((event) => event.is_public === false).length,
+    };
+  }, [events]);
 
   const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
     const filterLabel = filterStatus !== 'all' 
@@ -180,7 +203,7 @@ const EventsManager = () => {
   };
 
   return (
-    <AnimeFadeUp className="space-y-6 max-w-7xl mx-auto">
+    <AnimeFadeUp className="mx-auto max-w-7xl space-y-6 pb-10">
       <AdminHeader 
         title="Gestor de Eventos" 
         description="Publica, edita y organiza los cultos y actividades especiales en el calendario interactivo."
@@ -212,6 +235,16 @@ const EventsManager = () => {
             </div>
 
             <button
+              type="button"
+              onClick={() => void fetchInitialData()}
+              disabled={loading}
+              aria-label="Actualizar eventos"
+              className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            </button>
+
+            <button
               onClick={() => setShowPdfDialog(true)}
               className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm border border-slate-200 dark:border-white/10"
             >
@@ -230,11 +263,29 @@ const EventsManager = () => {
         }
       />
 
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de eventos">
+        {[
+          { label: 'Total', value: eventStats.total, icon: CalendarIcon, tone: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 dark:text-indigo-300' },
+          { label: 'Próximos', value: eventStats.upcoming, icon: CalendarCheck2, tone: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300' },
+          { label: 'Públicos', value: eventStats.public, icon: Eye, tone: 'text-sky-600 bg-sky-50 dark:bg-sky-500/10 dark:text-sky-300' },
+          { label: 'Borradores', value: eventStats.private, icon: EyeOff, tone: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300' },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
+            <span className={`flex size-10 items-center justify-center rounded-xl ${tone}`}><Icon size={18} /></span>
+            <div>
+              <p className="text-2xl font-black text-slate-950 dark:text-white">{value}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{label}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
       {/* Advanced Search and Filters Toolbar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
+            aria-label="Buscar eventos"
             type="text"
             placeholder="Buscar eventos por título o descripción..."
             value={searchQuery}
@@ -243,7 +294,7 @@ const EventsManager = () => {
           />
         </div>
         
-        <div className="flex w-full sm:w-auto items-center gap-3">
+        <div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center lg:w-auto">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Filter size={16} className="text-gray-400 hidden sm:block" />
             <select
@@ -270,6 +321,7 @@ const EventsManager = () => {
             </select>
           </div>
         </div>
+        <span className="shrink-0 text-xs font-bold text-slate-400">{visibleEvents.length} de {events.length}</span>
       </div>
 
       {/* Main Views Container */}
@@ -308,12 +360,13 @@ const EventsManager = () => {
         <EventFormModal
           editingEvent={editingEvent}
           initialDate={initialDate}
+          initialEndDate={initialEndDate}
           initialStartTime={initialStartTime}
           initialEndTime={initialEndTime}
           onClose={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
-            fetchEvents();
+            void fetchEvents();
           }}
           userRoles={userRoles}
           userProfile={userProfile}

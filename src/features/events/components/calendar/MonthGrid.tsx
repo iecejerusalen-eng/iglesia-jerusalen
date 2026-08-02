@@ -108,13 +108,15 @@ export default function MonthGrid({ currentDate, events, onSelectRange, onEditEv
               
               <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar px-0.5">
                 {dayEvents.map(event => (
-                  <div 
+                  <button
+                    type="button"
                     key={event.id}
                     onClick={() => onEditEvent(event)}
-                    className="event-item truncate px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 text-[10px] rounded border border-blue-100 dark:border-blue-800/50 cursor-pointer hover:shadow-sm transition-all"
+                    aria-label={`Editar ${event.title}`}
+                    className="event-item block w-full truncate rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1 text-left text-[10px] text-primary transition-all hover:border-indigo-300 hover:shadow-sm dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300"
                   >
                     <span className="font-semibold">{event.start_time ? event.start_time : ''}</span> {event.emoji} {event.title}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
