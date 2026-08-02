@@ -159,7 +159,7 @@ const Sermons = () => {
       </div>
 
       {/* PANEL DE CONTROL: Buscador y Filtros */}
-      <div className="w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
+      <div className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
         
         <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
           {/* Buscador inteligente con Autocomplete */}
