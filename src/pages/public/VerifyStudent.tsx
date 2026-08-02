@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ShieldCheck, XCircle, Loader2, ArrowLeft, User, ShieldAlert } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
@@ -10,7 +9,7 @@ interface VerificationResult {
   full_name: string;
   avatar_url: string | null;
   role: string;
-  email: string;
+  email_masked: string | null;
   is_active: boolean;
   verified_at: string;
 }
@@ -42,7 +41,7 @@ export default function VerifyStudent() {
         } else {
           setError(data?.error || 'No se pudo verificar el estudiante o el perfil no existe.');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error verifying student:', err);
         setError('Error de conexión o el ID proporcionado es inválido.');
       } finally {
@@ -116,7 +115,9 @@ export default function VerifyStudent() {
                   </div>
                   
                   <h4 className="text-xl font-black text-slate-900 dark:text-white mb-1">{result.full_name}</h4>
-                  <p className="text-sm text-gray-500 font-medium mb-3">{result.email}</p>
+                  {result.email_masked && (
+                    <p className="text-sm text-gray-500 font-medium mb-3">{result.email_masked}</p>
+                  )}
                   
                   <span className="inline-block px-3 py-1 bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider rounded-full">
                     {result.role === 'student' ? 'Estudiante' : result.role}
