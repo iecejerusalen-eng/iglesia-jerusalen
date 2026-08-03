@@ -66,7 +66,7 @@ export function BirthdaysCalendar({
   };
 
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] overflow-hidden">
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
       {/* Calendar Header Navigator */}
       <div className="flex justify-between items-center p-6 pb-4 border-b border-slate-100 dark:border-white/5">
         <button
@@ -179,11 +179,14 @@ export function BirthdaysCalendar({
               {isSelected && dayBirthdays.length > 0 && (
                 <div
                   ref={popoverRef}
-                  className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl animate-fadeIn origin-top"
-                  style={{ animation: 'fadeScaleIn 200ms ease-out forwards' }}
+                  className={`absolute z-50 top-full mt-2 w-[280px] sm:w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 ${
+                    index % 7 <= 1 ? 'left-0 origin-top-left' : index % 7 >= 5 ? 'right-0 origin-top-right' : 'left-1/2 -translate-x-1/2 origin-top'
+                  }`}
                 >
                   {/* Arrow */}
-                  <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white dark:bg-slate-900 border-l border-t border-slate-200 dark:border-white/15" />
+                  <div className={`absolute -top-1.5 w-3 h-3 rotate-45 bg-white dark:bg-slate-900 border-l border-t border-slate-200 dark:border-white/15 ${
+                    index % 7 <= 1 ? 'left-8' : index % 7 >= 5 ? 'right-8' : 'left-1/2 -translate-x-1/2'
+                  }`} />
 
                   {/* Header */}
                   <div className="flex items-center justify-between p-4 pb-3 border-b border-slate-100 dark:border-white/5">
@@ -262,9 +265,12 @@ export function BirthdaysCalendar({
 
       {/* Inline CSS for popover animation */}
       <style>{`
-        @keyframes fadeScaleIn {
-          from { opacity: 0; transform: translateX(-50%) scale(0.95) translateY(-4px); }
-          to   { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+          animation: fadeIn 200ms ease-out forwards;
         }
       `}</style>
     </div>
