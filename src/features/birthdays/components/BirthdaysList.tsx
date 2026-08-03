@@ -3,6 +3,7 @@ import type { BirthdayViewMode } from './BirthdaysFilters';
 import { BirthdaysCards } from './BirthdaysCards';
 import { BirthdaysTable } from './BirthdaysTable';
 import { BirthdaysCalendar } from './BirthdaysCalendar';
+import { BirthdaysYearView } from './BirthdaysYearView';
 
 interface BirthdaysListProps {
   birthdays: BirthdayInfo[];
@@ -38,6 +39,14 @@ export function BirthdaysList({
     return (
       <div className="max-w-7xl mx-auto mt-6">
         <BirthdaysTable birthdays={birthdays} onCelebrate={onCelebrate} />
+      </div>
+    );
+  }
+
+  if (viewMode === 'year') {
+    return (
+      <div className="max-w-7xl mx-auto mt-6">
+        <BirthdaysYearView birthdays={allBirthdays} onCelebrate={onCelebrate} />
       </div>
     );
   }

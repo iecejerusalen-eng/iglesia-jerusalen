@@ -1,8 +1,8 @@
-import { Search, LayoutGrid, Table, Calendar as CalendarIcon, FileDown } from 'lucide-react';
+import { Search, LayoutGrid, Table, Calendar as CalendarIcon, FileDown, CalendarDays } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 
 export type BirthdayTab = 'hoy' | 'semana' | 'mes';
-export type BirthdayViewMode = 'cards' | 'table' | 'calendar';
+export type BirthdayViewMode = 'cards' | 'table' | 'calendar' | 'year';
 
 interface BirthdaysFiltersProps {
   activeTab: BirthdayTab;
@@ -114,6 +114,18 @@ export function BirthdaysFilters({
               title="Vista Calendario"
             >
               <CalendarIcon size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('year')}
+              aria-pressed={viewMode === 'year'}
+              className={`p-2 rounded-lg transition cursor-pointer ${
+                viewMode === 'year'
+                  ? 'bg-white dark:bg-slate-800 text-primary dark:text-church-gold-light shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'
+              }`}
+              title="Vista Anual"
+            >
+              <CalendarDays size={16} />
             </button>
           </div>
 

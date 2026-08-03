@@ -19,7 +19,7 @@ export interface BirthdayInfo {
 }
 
 export interface PdfExportOptions {
-  viewMode: 'cards' | 'table' | 'calendar' | 'grid';
+  viewMode: 'cards' | 'table' | 'calendar' | 'grid' | 'year';
   orientation: 'portrait' | 'landscape';
   filterLabel?: string;
   calendarMonth?: string;

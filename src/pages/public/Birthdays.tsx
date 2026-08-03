@@ -84,9 +84,13 @@ export default function Birthdays() {
   const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
     const filterLabel = viewMode === 'calendar'
       ? `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`
-      : activeTab === 'hoy' ? 'Hoy' : activeTab === 'semana' ? 'Próximos 7 días' : 'Este Mes';
+      : viewMode === 'year'
+        ? `Año ${new Date().getFullYear()}`
+        : activeTab === 'hoy' ? 'Hoy' : activeTab === 'semana' ? 'Próximos 7 días' : 'Este Mes';
 
-    exportBirthdaysPdf(filteredBirthdays, {
+    const pdfList = (viewMode === 'calendar' || viewMode === 'year') ? calendarBirthdays : filteredBirthdays;
+
+    exportBirthdaysPdf(pdfList, {
       viewMode,
       orientation,
       filterLabel,
