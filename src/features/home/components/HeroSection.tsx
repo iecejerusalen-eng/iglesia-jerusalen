@@ -5,9 +5,8 @@ import { Tv, Music, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
 import { supabase } from '../../../config/supabase';
 import { getYoutubeId } from '../utils';
 import BlockRenderer from '../../../components/public/BlockRenderer';
-import FloatingElements from '../../../components/public/FloatingElements';
 import MagneticButton from '../../../components/animations/MagneticButton';
-import { AnimeParallax, AnimeFloat, AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
+import { AnimeParallax, AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 import fachadaImage from '../../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import type { Song } from '../../../types';
 import { useLiveModeStore } from '../../../store/useLiveModeStore';
@@ -276,51 +275,36 @@ export const HeroSection = ({ sectionData }: HeroSectionProps) => {
   return (
     <div className="relative">
       <section id="hero" className="relative min-h-[90vh] flex items-center justify-center bg-[#071330] text-white overflow-hidden py-24 transition-colors duration-300">
-        <FloatingElements />
         
-        {/* Immersive Background Particles & Glows */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Optimized Immersive Background */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-[#071330]">
           <AnimeParallax
             src={fachadaImage}
             alt="Fachada de la Iglesia Jerusalén"
-            className="filter brightness-[0.7] contrast-[1.05]"
+            className="filter brightness-[0.4] contrast-[1.1] saturate-[1.2]"
           />
 
-          <AnimeFloat
-            x={[-30, 60]}
-            y={[-15, 45]}
-            duration={25000}
-            className="absolute top-1/4 left-1/4 w-[380px] h-[380px] rounded-full bg-blue-500/10 blur-[130px] pointer-events-none"
-          >
-          </AnimeFloat>
-          <AnimeFloat
-            x={[30, -50]}
-            y={[20, -30]}
-            duration={28000}
-            className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] rounded-full bg-amber-500/8 blur-[150px] pointer-events-none"
-          >
-          </AnimeFloat>
+          {/* CSS Hardware Animated Orbs */}
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-500/20 blur-[100px] pointer-events-none animate-slow-pan" />
+          <div className="absolute bottom-[0%] -right-[10%] w-[60%] h-[60%] rounded-full bg-amber-500/15 blur-[120px] pointer-events-none animate-slow-pan" style={{ animationDelay: '-12s' }} />
 
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle, transparent 20%, rgba(7, 19, 48, 0.7) 60%, rgba(7, 19, 48, 0.98) 100%)' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071330] via-[#071330]/50 to-transparent pointer-events-none" />
+          {/* Glass Overlay Mesh */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#071330]/70 via-transparent to-[#071330]/95 pointer-events-none" />
         </div>
 
         {/* Cascading Typography Content */}
         <AnimeStaggerGrid className="relative z-10 max-w-5xl mx-auto px-4 text-center space-y-8 flex flex-col items-center">
           <div>
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/10 to-amber-600/10 text-amber-500 border border-amber-500/40 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-amber-500/5 backdrop-blur-xs select-none">
-              <Sparkles size={14} className="text-amber-500 animate-spin-slow" />
-              <span>{subtitle || 'Una Casa de Restauración y Bendición'}</span>
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-amber-300 px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-xl backdrop-blur-md select-none transition-colors hover:bg-white/10">
+              <Sparkles size={14} className="text-amber-400" />
+              <span className="drop-shadow-sm">{subtitle || 'Una Casa de Restauración y Bendición'}</span>
             </div>
           </div>
 
           <div>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight leading-[1.1] max-w-4xl mx-auto drop-shadow-md">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-black tracking-tight leading-[1.05] max-w-4xl mx-auto drop-shadow-2xl">
               Bienvenido a la <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 font-extrabold drop-shadow-[0_4px_12px_rgba(217,119,6,0.25)]">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-600 font-extrabold filter drop-shadow-[0_4px_16px_rgba(251,191,36,0.3)]">
                 Iglesia Jerusalén
               </span>
             </h1>
@@ -328,42 +312,40 @@ export const HeroSection = ({ sectionData }: HeroSectionProps) => {
 
           {content_blocks && content_blocks.length > 0 ? (
             <div className="w-full max-w-3xl">
-              <div className="text-left bg-slate-900/50 p-8 rounded-3xl border border-white/10 backdrop-blur-md shadow-2xl">
+              <div className="text-left bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-2xl">
                 <BlockRenderer blocks={content_blocks} />
               </div>
             </div>
           ) : (
-            <>
-              <div>
-                <p className="text-slate-250 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-light font-sans tracking-wide">
-                  Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
-                </p>
-              </div>
-
-              <div className="w-full sm:w-auto">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 w-full sm:w-auto">
-                  <MagneticButton>
-                    <Link
-                      to="/nosotros"
-                      className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      Conócenos
-                    </Link>
-                  </MagneticButton>
-                  
-                  <MagneticButton>
-                    <a
-                      href="#schedules"
-                      className="w-full sm:w-auto px-10 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-2xl font-bold backdrop-blur-md transition-all text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                    >
-                      Horarios de Servicio
-                      <ArrowRight size={16} className="text-amber-500 animate-pulse" />
-                    </a>
-                  </MagneticButton>
-                </div>
-              </div>
-            </>
+            <div className="w-full max-w-3xl bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
+              <p className="text-slate-200 text-lg md:text-xl leading-relaxed font-medium font-sans tracking-wide">
+                Somos una congregación de la Iglesia del Evangelio Cuadrangular comprometida con esparcir la Palabra hasta los confines de la tierra, ministrar a las familias y servir a nuestra comunidad.
+              </p>
+            </div>
           )}
+
+          <div className="w-full sm:w-auto pt-6">
+            <div className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto">
+              <MagneticButton>
+                <Link
+                  to="/nosotros"
+                  className="w-full sm:w-auto px-12 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Conócenos
+                </Link>
+              </MagneticButton>
+              
+              <MagneticButton>
+                <a
+                  href="#schedules"
+                  className="w-full sm:w-auto px-12 py-4 bg-white/5 hover:bg-white/15 text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold backdrop-blur-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-black/20 cursor-pointer"
+                >
+                  Horarios de Servicio
+                  <ArrowRight size={16} className="text-amber-400 opacity-80" />
+                </a>
+              </MagneticButton>
+            </div>
+          </div>
         </AnimeStaggerGrid>
 
         {/* Wave Divider */}

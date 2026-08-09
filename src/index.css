@@ -18,6 +18,14 @@
 
   --font-serif: "Playfair Display", serif;
   --font-sans: "Inter", sans-serif;
+
+  --animate-slow-pan: slow-pan 25s ease-in-out infinite;
+  @keyframes slow-pan {
+    0% { transform: translate3d(-5%, -5%, 0) scale(1); }
+    33% { transform: translate3d(5%, 5%, 0) scale(1.05); }
+    66% { transform: translate3d(-2%, 8%, 0) scale(0.95); }
+    100% { transform: translate3d(-5%, -5%, 0) scale(1); }
+  }
 }
 
 @custom-variant dark (&:is(.dark *));
