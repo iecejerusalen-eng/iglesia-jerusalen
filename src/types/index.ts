@@ -6,6 +6,7 @@ export interface Profile {
   last_name: string | null;
   role: UserRole;
   roles?: UserRole[] | null;
+  custom_role_ids?: string[] | null;
   ministry_id?: string | null;
   allowed_ministries?: string[] | null;
   email?: string | null;

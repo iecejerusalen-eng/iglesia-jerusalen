@@ -5,12 +5,15 @@ import type { UserRole } from '../../../types';
 import type { AuthState } from '../../../store/useAuthStore';
 import { toast } from 'sonner';
 import { logger } from '../../../utils/logger';
+import { mergePermissions, normalizePermissions } from '../../access-control/accessControl';
+import type { CustomAccessRole, PermissionMap } from '../../access-control/types';
 
 import type { AdminPreferences } from '../../../store/useThemeStore';
 
 export interface UserProfile {
   role?: string | null;
   roles?: string[] | null;
+  custom_role_ids?: string[] | null;
   first_name?: string | null;
   last_name?: string | null;
   photo_url?: string | null;
@@ -95,13 +98,27 @@ export async function fetchOrCreateProfile(user: User) {
     }
   }
 
-  const resolvedProfile = profileData || { role: 'guest', roles: ['guest'], first_name: null, last_name: null, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: null, banned: false, admin_preferences: {} };
+  const resolvedProfile: UserProfile = profileData || { role: 'guest', roles: ['guest'], custom_role_ids: [], first_name: null, last_name: null, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: null, banned: false, admin_preferences: {} };
+
+  const { data: customAssignment, error: customAssignmentError } = await supabase
+    .from('profiles')
+    .select('custom_role_ids')
+    .eq('id', userId)
+    .single();
+
+  if (customAssignmentError) {
+    logger.error('No se pudieron cargar las asignaciones de roles personalizados:', customAssignmentError);
+    toast.error('No fue posible cargar todas tus asignaciones de acceso.', { id: 'custom-role-assignment-load-error' });
+    resolvedProfile.custom_role_ids = [];
+  } else {
+    resolvedProfile.custom_role_ids = customAssignment?.custom_role_ids ?? [];
+  }
 
   // Resolve active permissions
-  let permissions = resolvedProfile.permissions_override;
+  let permissions: PermissionMap | null | undefined = resolvedProfile.permissions_override;
   if (permissions) {
     // Merge user-specific overrides with defaults to support new modules seamlessly
-    permissions = { ...defaultFallbackPermissions, ...permissions };
+    permissions = { ...defaultFallbackPermissions, ...normalizePermissions(permissions) };
   } else {
     const rolesToLoad = resolvedProfile.roles && resolvedProfile.roles.length > 0
       ? resolvedProfile.roles
@@ -129,6 +146,28 @@ export async function fetchOrCreateProfile(user: User) {
             permissions[modId].view = permissions[modId].view || !!rolePerms[modId]?.view;
             permissions[modId].edit = permissions[modId].edit || !!rolePerms[modId]?.edit;
           }
+        }
+      } else if (roleError) {
+        logger.error('No se pudieron resolver los permisos de los roles del sistema:', roleError);
+        toast.error('No fue posible cargar todos tus permisos de acceso.', { id: 'role-permissions-load-error' });
+      }
+
+      const customRoleIds = resolvedProfile.custom_role_ids ?? [];
+      if (customRoleIds.length > 0) {
+        const { data: customRoleData, error: customRoleError } = await supabase
+          .from('access_roles')
+          .select('permissions')
+          .in('id', customRoleIds)
+          .eq('is_active', true);
+
+        if (customRoleError) {
+          logger.error('No se pudieron resolver los roles personalizados:', customRoleError);
+          toast.error('No fue posible cargar tus roles personalizados.', { id: 'custom-role-load-error' });
+        } else {
+          permissions = mergePermissions(
+            permissions,
+            ...(customRoleData ?? []).map((role) => role.permissions as CustomAccessRole['permissions']),
+          );
         }
       }
     }

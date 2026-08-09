@@ -174,6 +174,33 @@ $$;
 REVOKE ALL ON FUNCTION public.delete_user_by_admin(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_user_by_admin(uuid) TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.delete_access_role(target_role_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NOT public.current_user_is_active_admin() THEN
+    RAISE EXCEPTION 'Operación denegada. Solo los administradores activos pueden eliminar roles.';
+  END IF;
+
+  UPDATE public.profiles
+  SET custom_role_ids = array_remove(custom_role_ids, target_role_id),
+      updated_at = now()
+  WHERE target_role_id = ANY(custom_role_ids);
+
+  DELETE FROM public.access_roles WHERE id = target_role_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'El rol personalizado solicitado no existe.';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.delete_access_role(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.delete_access_role(uuid) TO authenticated;
+
 COMMENT ON TABLE public.access_roles IS
   'Roles personalizados del panel. Sus permisos se suman a los roles del sistema asignados al perfil.';
 COMMENT ON COLUMN public.profiles.custom_role_ids IS
