@@ -32,14 +32,14 @@ CREATE POLICY "Permitir actualizar donaciones a personal financiero"
     EXISTS (
       SELECT 1 FROM public.profiles
       WHERE id = (SELECT auth.uid())
-        AND role IN ('admin', 'superadmin', 'pastor', 'secretary', 'secretaria')
+        AND role::text IN ('admin', 'superadmin', 'pastor', 'secretary', 'secretaria')
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.profiles
       WHERE id = (SELECT auth.uid())
-        AND role IN ('admin', 'superadmin', 'pastor', 'secretary', 'secretaria')
+        AND role::text IN ('admin', 'superadmin', 'pastor', 'secretary', 'secretaria')
     )
   );
 
