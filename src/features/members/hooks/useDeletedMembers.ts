@@ -18,7 +18,7 @@ export const useDeletedMembers = () => {
         console.warn('Local DB failed or timed out, fallback to Supabase:', dbErr);
       }
 
-      let loadedMembers: MemberWithRelations[] = [];
+      let loadedMembers: MemberWithRelations[];
 
       if (cached && cached.length > 0) {
         loadedMembers = cached.map(m => ({

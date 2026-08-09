@@ -728,13 +728,13 @@ const InventoryManager = () => {
                     const totalValue = item.quantity * item.price;
 
                     return (
-                      <tr key={item.id} className="hover:bg-gray-55/40 transition-colors">
+                      <tr key={item.id} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-white/5">
                         <td className="py-3 px-6">
                           <div className="w-10 h-10 rounded-lg border border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center p-1 relative select-none">
                             {item.photo_url ? (
                               <img loading="lazy" src={item.photo_url} alt="" className="max-w-full max-h-full object-contain" />
                             ) : (
-                              <ImageIcon size={16} className="text-gray-300" />
+                              <ImageIcon size={16} className="text-gray-300 dark:text-gray-600" />
                             )}
                             {item.video_url && (
                               <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -744,14 +744,14 @@ const InventoryManager = () => {
                           </div>
                         </td>
                         <td className="py-3 px-6">
-                          <span className="font-bold text-gray-850 block">{item.name}</span>
+                          <span className="font-bold text-slate-900 dark:text-white block text-sm">{item.name}</span>
                           {item.description && (
                             <span className="text-[10px] text-gray-400 font-normal block truncate max-w-[200px]" title={item.description}>
                               {item.description}
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-6 font-semibold text-gray-500 dark:text-gray-450">
+                        <td className="py-3 px-6 font-semibold text-slate-600 dark:text-gray-400 text-xs">
                           {item.inventory_categories?.name || 'Sin categoría'}
                         </td>
                         <td className="py-3 px-6">
@@ -759,13 +759,13 @@ const InventoryManager = () => {
                             {statusLabels[item.status]}
                           </span>
                         </td>
-                        <td className="py-3 px-6 text-center font-bold text-gray-800 dark:text-gray-100">
+                        <td className="py-3 px-6 text-center font-bold text-slate-800 dark:text-gray-200 text-xs">
                           {item.quantity}
                         </td>
-                        <td className="py-3 px-6 text-right font-mono text-gray-600 dark:text-gray-400">
+                        <td className="py-3 px-6 text-right font-mono text-xs text-slate-700 dark:text-gray-300">
                           S/. {item.price.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-6 text-right font-mono font-bold text-gray-800 dark:text-gray-100">
+                        <td className="py-3 px-6 text-right font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
                           S/. {totalValue.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="py-3 px-6 text-gray-400 text-xs font-semibold">
@@ -821,8 +821,8 @@ const InventoryManager = () => {
         )
       ) : (
         <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 shadow-xs">
-          <Package size={52} className="mx-auto text-gray-300 mb-4 opacity-75" />
-          <h3 className="text-lg font-serif font-bold text-gray-750">No se encontraron artículos</h3>
+          <Package size={52} className="mx-auto text-gray-300 dark:text-gray-600 mb-4 opacity-75" />
+          <h3 className="text-lg font-sans font-bold text-slate-900 dark:text-white">No se encontraron artículos</h3>
           <p className="text-gray-400 text-sm mt-1">Intente cambiar los filtros de búsqueda o registre un nuevo artículo.</p>
         </div>
       )}

@@ -28,8 +28,8 @@ export default function LogosManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright">Catálogo de Logos</h1>
-        <p className="text-gray-500 dark:text-gray-450 text-sm">Administra la identidad visual de la iglesia y sus ministerios en un solo lugar.</p>
+        <h1 className="text-2xl font-sans font-bold text-slate-900 dark:text-white">Catálogo de Logos</h1>
+        <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Administra la identidad visual de la iglesia y sus ministerios en un solo lugar.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

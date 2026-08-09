@@ -11,7 +11,7 @@ export const useMembersMutations = () => {
     mutationFn: async (payload: { 
       id: string; 
       editing: boolean; 
-      data: any; 
+      data: Record<string, unknown>; 
       name: string; 
       dni: string | null;
       areas: string[];
@@ -33,7 +33,7 @@ export const useMembersMutations = () => {
       await syncStore.enqueueMutation(
         'member_emails',
         payload.id,
-        'DELETE_BY_MEMBER' as any,
+        'DELETE_BY_MEMBER' as unknown as 'DELETE',
         { member_id: payload.id }
       );
 
@@ -52,7 +52,7 @@ export const useMembersMutations = () => {
       await syncStore.enqueueMutation(
         'member_phones',
         payload.id,
-        'DELETE_BY_MEMBER' as any,
+        'DELETE_BY_MEMBER' as unknown as 'DELETE',
         { member_id: payload.id }
       );
 
@@ -72,7 +72,7 @@ export const useMembersMutations = () => {
         await syncStore.enqueueMutation(
           type,
           payload.id,
-          'DELETE_BY_MEMBER' as any,
+          'DELETE_BY_MEMBER' as unknown as 'DELETE',
           { member_id: payload.id }
         );
         for (const roleId of items) {
@@ -213,7 +213,7 @@ export const useMembersMutations = () => {
         phones: data.additional_phones || []
       });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   };
@@ -221,7 +221,7 @@ export const useMembersMutations = () => {
   const handleDelete = async (id: string, name?: string) => {
     try {
       await deleteMemberMutation.mutateAsync({ id, name });
-    } catch (error) {
+    } catch {
       // Handled in mutation
     }
   };

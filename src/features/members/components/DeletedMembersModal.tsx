@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useDeletedMembers } from '../hooks/useDeletedMembers';
 import { useMembersMutations } from '../hooks/useMembersMutations';
-import { getAvatarUrl } from '../utils/memberUtils';
 
 interface DeletedMembersModalProps {
   onClose: () => void;
@@ -69,11 +68,18 @@ export const DeletedMembersModal = ({ onClose }: DeletedMembersModalProps) => {
                   className="flex items-center justify-between p-4 bg-white/40 dark:bg-slate-800/40 border border-white/30 dark:border-white/5 rounded-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors shadow-sm"
                 >
                   <div className="flex items-center gap-4">
-                    <img
-                      src={getAvatarUrl(member)}
-                      alt={member.first_name}
-                      className="w-12 h-12 rounded-full object-cover border border-white/40 dark:border-white/20"
-                    />
+                    {member.photo_url ? (
+                      <img
+                        loading="lazy"
+                        src={member.photo_url}
+                        alt={`${member.first_name} ${member.last_name}`}
+                        className="w-12 h-12 rounded-full object-cover border border-white/40 dark:border-white/20"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-white/50 dark:bg-slate-800/50 text-slate-700 dark:text-white rounded-full flex items-center justify-center font-bold text-lg border border-white/40 dark:border-white/20">
+                        {member.first_name[0]}{member.last_name[0]}
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-bold text-slate-800 dark:text-white">
                         {member.first_name} {member.last_name}
