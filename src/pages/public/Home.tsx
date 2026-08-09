@@ -44,7 +44,9 @@ const Home = () => {
         <meta property="og:description" content="Bienvenido a la Iglesia Jerusalén. Únete a nuestra comunidad, descubre nuestros ministerios y acompáñanos en nuestros eventos y servicios." />
         <meta property="og:type" content="website" />
       </Helmet>
-      <div className="min-h-screen space-y-16 pb-20">
+      <div className="relative min-h-screen space-y-20 overflow-hidden bg-slate-50 pb-24 transition-colors dark:bg-slate-950 md:space-y-24">
+        <div aria-hidden="true" className="pointer-events-none absolute left-[-12rem] top-[50rem] h-[32rem] w-[32rem] rounded-full bg-amber-300/10 blur-[120px] dark:bg-amber-500/5" />
+        <div aria-hidden="true" className="pointer-events-none absolute right-[-14rem] top-[90rem] h-[36rem] w-[36rem] rounded-full bg-indigo-300/10 blur-[130px] dark:bg-indigo-500/5" />
         {sections.map((section: PageSection) => {
         const { id, section_type, title, subtitle, content_blocks } = section;
 

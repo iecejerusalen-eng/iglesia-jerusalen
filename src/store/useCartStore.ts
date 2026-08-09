@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Product, ProductVariant } from '../types';
+import { getLineSubtotal } from '../features/store/pricing';
 
 export interface CartItem {
   product: Product;
@@ -25,6 +26,8 @@ export const useCartStore = create<CartState>()(
       
       addItem: (product, variant = null, quantity = 1) => {
         const currentItems = get().items;
+        const availableStock = Math.max(0, Number(variant?.stock ?? product.stock ?? 0));
+        if (availableStock === 0) return;
         const existingItemIndex = currentItems.findIndex(item => 
           item.product.id === product.id && 
           ((!item.variant && !variant) || (item.variant?.id === variant?.id))
@@ -32,10 +35,13 @@ export const useCartStore = create<CartState>()(
         
         if (existingItemIndex > -1) {
           const newItems = [...currentItems];
-          newItems[existingItemIndex].quantity += quantity;
+          newItems[existingItemIndex].quantity = Math.min(
+            availableStock,
+            newItems[existingItemIndex].quantity + quantity,
+          );
           set({ items: newItems });
         } else {
-          set({ items: [...currentItems, { product, variant, quantity }] });
+          set({ items: [...currentItems, { product, variant, quantity: Math.min(availableStock, quantity) }] });
         }
       },
       
@@ -59,7 +65,7 @@ export const useCartStore = create<CartState>()(
         const newItems = currentItems.map(item => 
           (item.product.id === productId && 
            ((!item.variant && !variantId) || (item.variant?.id === variantId))) 
-            ? { ...item, quantity } 
+            ? { ...item, quantity: Math.min(Number(item.variant?.stock ?? item.product.stock ?? 0), quantity) }
             : item
         );
         set({ items: newItems });
@@ -73,9 +79,7 @@ export const useCartStore = create<CartState>()(
       
       getTotalPrice: () => {
         return get().items.reduce((total, item) => {
-          const basePrice = Number(item.product.price) || 0;
-          const adjustment = item.variant?.price_adjustment ? Number(item.variant.price_adjustment) : 0;
-          return total + ((basePrice + adjustment) * item.quantity);
+          return total + getLineSubtotal(item.product, item.quantity, item.variant);
         }, 0);
       },
     }),

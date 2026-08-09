@@ -1,14 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { toast } from 'sonner';
-import type { DbProduct, StoreCategory, Supplier } from '../types';
+import type { DbProduct, FormVariant, StoreCategory, Supplier } from '../types';
 import type { Order, OrderStatus } from '../../../types';
 
 export const useStoreMutations = () => {
   const queryClient = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: async ({ product, variants }: { product: Partial<DbProduct>, variants: any[] }) => {
+    mutationFn: async ({ product, variants }: { product: Partial<DbProduct>, variants: FormVariant[] }) => {
       const { data, error } = await supabase
         .from('products')
         .insert([product])
@@ -35,7 +35,7 @@ export const useStoreMutations = () => {
   });
 
   const updateProduct = useMutation({
-    mutationFn: async ({ id, product, variants }: { id: string, product: Partial<DbProduct>, variants: any[] }) => {
+    mutationFn: async ({ id, product, variants }: { id: string, product: Partial<DbProduct>, variants: FormVariant[] }) => {
       const { error } = await supabase
         .from('products')
         .update(product)

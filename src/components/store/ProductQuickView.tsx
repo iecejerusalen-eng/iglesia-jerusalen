@@ -3,13 +3,14 @@ import { useCartStore } from '../../store/useCartStore';
 import type { Product } from '../../types';
 import { 
   ShoppingBag, Plus, Minus,
-  ChevronRight, Star, X, ChevronLeft
+  ChevronRight, BadgePercent, X, ChevronLeft
 } from 'lucide-react';
 import OptimizedMedia from '../common/OptimizedMedia';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import BlockLessonRenderer from '../public/BlockLessonRenderer';
 import MagneticButton from '../animations/MagneticButton';
+import { getPriceTiers, getProductImages, getUnitPrice } from '../../features/store/pricing';
 
 interface ProductQuickViewProps {
   product: Product;
@@ -38,7 +39,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
   });
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState<string | null>(
-    product?.cover_image_url || product?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'
+    getProductImages(product)[0] || '/favicon.svg'
   );
 
   if (product !== prevProduct) {
@@ -49,7 +50,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
     setSelectedColor(availableColors.length > 0 ? availableColors[0].color_name : null);
     setSelectedSize(availableSizes.length > 0 ? availableSizes[0] : null);
     setQuantity(1);
-    setActiveImage(product?.cover_image_url || product?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600');
+    setActiveImage(getProductImages(product)[0] || '/favicon.svg');
   }
 
   const variants = product.product_variants || [];
@@ -64,8 +65,9 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
 
   const matchedVariant = currentVariant || variants.find(v => !selectedColor || v.color_name === selectedColor) || null;
 
-  const finalPrice = Number(product.price) + (matchedVariant?.price_adjustment ? Number(matchedVariant.price_adjustment) : 0);
+  const finalPrice = getUnitPrice(product, quantity, matchedVariant);
   const finalStock = matchedVariant ? matchedVariant.stock : (product.stock || 0);
+  const priceTiers = getPriceTiers(product);
 
   let featuresList: string[] = [];
   if (Array.isArray(product.features)) {
@@ -89,11 +91,8 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
     }, 1500);
   };
 
-  const baseImage = product.cover_image_url || product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600';
-  const galleryImages = [
-    baseImage,
-    ...variants.map(v => v.cloudinary_image_url).filter((url): url is string => !!url)
-  ].filter((value, index, self) => self.indexOf(value) === index);
+  const baseImage = getProductImages(product)[0] || '/favicon.svg';
+  const galleryImages = getProductImages(product, matchedVariant);
 
   const variantImage = matchedVariant?.cloudinary_image_url;
   const displayImage = variantImage || activeImage || baseImage;
@@ -197,12 +196,11 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                     {product.category}
                   </span>
 
-                  <div className="flex items-center gap-0.5 text-yellow-500">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={14} fill="currentColor" className="stroke-none" />
-                    ))}
-                    <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5 font-bold">(5.0)</span>
-                  </div>
+                  {product.sold_count != null && product.sold_count > 0 && (
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      {product.sold_count} vendidos
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="text-2xl md:text-3xl font-extrabold text-primary dark:text-white leading-tight font-serif">
@@ -281,6 +279,22 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {priceTiers.length > 0 && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-500/20 dark:bg-emerald-950/20">
+                    <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                      <BadgePercent size={16} /> Precio por cantidad
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {priceTiers.map((tier) => (
+                        <div key={tier.min_quantity} className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${quantity >= tier.min_quantity ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300'}`}>
+                          <span>{tier.min_quantity}+ unidades</span>
+                          <span>${Number(tier.unit_price).toFixed(2)} c/u</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

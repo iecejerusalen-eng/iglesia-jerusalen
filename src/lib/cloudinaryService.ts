@@ -1,5 +1,26 @@
 import { supabase } from '../config/supabase';
 
+interface CloudinaryImageOptions {
+  width?: number;
+  height?: number;
+  crop?: 'limit' | 'fill';
+}
+
+/** Adds non-destructive Cloudinary delivery transformations to an uploaded image URL. */
+export const getOptimizedCloudinaryImage = (
+  url: string,
+  options: CloudinaryImageOptions = {}
+): string => {
+  if (!url.includes('/image/upload/')) return url;
+
+  const transformations = ['f_auto', 'q_auto'];
+  if (options.crop) transformations.push(`c_${options.crop}`);
+  if (options.width) transformations.push(`w_${options.width}`);
+  if (options.height) transformations.push(`h_${options.height}`);
+
+  return url.replace('/image/upload/', `/image/upload/${transformations.join(',')}/`);
+};
+
 /**
  * Sube un archivo a Cloudinary usando la API REST (Unsigned Upload).
  * @param file - Archivo (File object) a subir.

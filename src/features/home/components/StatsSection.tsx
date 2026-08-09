@@ -13,9 +13,9 @@ interface StatsProps {
 
 export const StatsSection = ({ stats }: StatsProps) => {
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 py-10 transition-colors duration-300 relative z-10">
-      <AnimeZoomIn className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+    <section aria-label="Nuestra comunidad en cifras" className="relative z-10 px-4 md:px-8">
+      <AnimeZoomIn className="mx-auto max-w-7xl">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_18px_60px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 md:grid-cols-5">
           <AnimatedCounter value={stats.members} text="Miembros en la Familia" />
           <AnimatedCounter value={stats.baptized} text="Creyentes Bautizados" />
           <AnimatedCounter value={stats.cells} text="Grupos Familiares (Células)" />
@@ -23,6 +23,6 @@ export const StatsSection = ({ stats }: StatsProps) => {
           <AnimatedCounter value={stats.youth} text="Jóvenes Comprometidos" />
         </div>
       </AnimeZoomIn>
-    </div>
+    </section>
   );
 };

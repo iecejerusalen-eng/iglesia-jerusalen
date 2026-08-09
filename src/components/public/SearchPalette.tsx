@@ -160,7 +160,7 @@ export default function SearchPalette() {
           supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
           supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('ministries').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('products').select('*').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('products').select('id, name, description, price, image_url, category, type, stock, created_at').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('schedules').select('*').or(`title.ilike.%${q}%,day.ilike.%${q}%,description.ilike.%${q}%`).limit(4)
         ]);
 

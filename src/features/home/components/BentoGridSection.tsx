@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom';
-import { PlayCircle, Calendar, Gamepad2, ArrowRight, Heart } from 'lucide-react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  CalendarDays,
+  HeartHandshake,
+  Play,
+  Users,
+} from 'lucide-react';
 import { AnimeFadeUp, AnimeHoverCard } from '../../../components/animations/AnimeWrappers';
 import type { Sermon, Event as DbEvent } from '../../../types';
 import { getYoutubeId } from '../utils';
@@ -9,175 +16,120 @@ interface BentoGridSectionProps {
   nextEvent?: DbEvent;
 }
 
+const formatEventDate = (dateValue: string) => {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('es-EC', {
+    day: 'numeric',
+    month: 'short',
+  });
+};
+
+const getSermonThumbnail = (sermon: Sermon) => {
+  if (sermon.thumbnail_url) return sermon.thumbnail_url;
+  const videoUrl = sermon.youtube_url || sermon.video_url;
+  const youtubeId = videoUrl ? getYoutubeId(videoUrl) : null;
+  return youtubeId ? 'https://img.youtube.com/vi/' + youtubeId + '/maxresdefault.jpg' : null;
+};
+
 export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionProps) => {
-  const formatEventDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-    const formatted = date.toLocaleDateString('es-ES', options).toUpperCase();
-    const parts = formatted.split(' ');
-    return {
-      day: parts[0] || date.getDate().toString(),
-      month: parts[parts.length - 1] || 'ENE'
-    };
-  };
-
-  const getThumbnail = (sermon: Sermon) => {
-    if (sermon.thumbnail_url) return sermon.thumbnail_url;
-    if (sermon.video_url && (sermon.video_url.includes('youtube.com') || sermon.video_url.includes('youtu.be'))) {
-      const id = getYoutubeId(sermon.video_url);
-      if (id) return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
-    }
-    return 'https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=800&q=80';
-  };
-
-  // Metas de donación de ejemplo (esto se conectará a BD en la Fase 2 de Misiones)
-  const currentDonations = 2500;
-  const targetDonations = 5000;
-  const progressPercent = Math.min(Math.round((currentDonations / targetDonations) * 100), 100);
+  const sermonThumbnail = latestSermon ? getSermonThumbnail(latestSermon) : null;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 md:px-8 pt-8 scroll-mt-24">
-      <AnimeFadeUp>
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-2">
-              Ecosistema Jerusalén
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400">
-              Lo más destacado de nuestra comunidad.
-            </p>
-          </div>
-        </div>
-      </AnimeFadeUp>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[200px]">
-        
-        {/* Card Grande: Último Sermón (Ocupa 2 cols y 2 rows en pantallas grandes) */}
-        {latestSermon && (
-          <Link to={`/predicas/${latestSermon.id}`} className="md:col-span-2 md:row-span-2 block group">
-            <AnimeHoverCard className="w-full h-full rounded-3xl overflow-hidden relative border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:border-amber-500/30 transition-all">
-              <div className="absolute inset-0 bg-slate-900">
-                <img 
-                  src={getThumbnail(latestSermon)} 
-                  alt={latestSermon.title}
-                  className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700 group-hover:opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
-              </div>
-              
-              <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
-                <div className="bg-amber-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full self-start mb-3 md:mb-4 uppercase tracking-wider">
-                  Último Mensaje
-                </div>
-                <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2 line-clamp-2">
-                  {latestSermon.title}
-                </h3>
-                <div className="flex items-center gap-4 text-slate-300 text-sm">
-                  <span className="flex items-center gap-1.5 font-medium text-white">
-                    <PlayCircle className="w-5 h-5 text-amber-500" /> Ver Video
-                  </span>
-                  <span>•</span>
-                  <span>{new Date(latestSermon.created_at || '').toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}</span>
-                </div>
-              </div>
-            </AnimeHoverCard>
-          </Link>
-        )}
-
-        {/* Card Mediana: Próximo Evento */}
-        {nextEvent && (
-          <Link to="/eventos" className="md:col-span-1 md:row-span-2 block group">
-            <AnimeHoverCard className="w-full h-full rounded-3xl bg-gradient-to-br from-[#0a1c40] to-slate-950 border border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:shadow-xl hover:border-amber-500/30 transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
-                <Calendar className="w-24 h-24 text-amber-500" />
-              </div>
-              
-              <div>
-                <div className="text-amber-500 text-xs font-bold mb-4 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" /> Próximo Evento
-                </div>
-                
-                {(() => {
-                  const dateObj = formatEventDate(nextEvent.start_date);
-                  return (
-                    <div className="flex gap-4 mb-4">
-                      <div className="bg-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center min-w-[70px] border border-slate-700">
-                        <span className="text-2xl font-serif font-bold text-white leading-none">{dateObj.day}</span>
-                        <span className="text-xs text-amber-500 font-bold uppercase">{dateObj.month}</span>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-white mb-1 line-clamp-2">
-                          {nextEvent.emoji} {nextEvent.title}
-                        </h3>
-                        <p className="text-slate-400 text-xs line-clamp-2">
-                          {nextEvent.description || 'Acompáñanos en este evento especial.'}
-                        </p>
-                      </div>
+    <section aria-labelledby="home-highlights-title" className="relative z-10 -mt-12 px-4 md:px-8">
+      <div className="mx-auto max-w-7xl">
+        <AnimeFadeUp>
+          <div className="rounded-[2rem] border border-white/70 bg-white/75 p-3 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:p-4">
+            <div className="flex flex-col gap-3 lg:grid lg:grid-cols-12 lg:auto-rows-[11.5rem]">
+              <Link
+                to={latestSermon ? '/predicas/' + latestSermon.id : '/predicas'}
+                className="group min-h-[22rem] lg:col-span-6 lg:row-span-2"
+              >
+                <AnimeHoverCard className="relative h-full overflow-hidden rounded-[1.5rem] bg-[#081630] p-7 text-white md:p-9">
+                  {sermonThumbnail && (
+                    <img
+                      src={sermonThumbnail}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-700 group-hover:scale-105 group-hover:opacity-30"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#07132f] via-[#07132f]/75 to-[#07132f]/15" />
+                  <div className="relative flex h-full flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] backdrop-blur-md">
+                        <BookOpen size={13} className="text-amber-400" />
+                        Mensaje reciente
+                      </span>
+                      <span className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 transition group-hover:bg-amber-500">
+                        <Play size={17} fill="currentColor" />
+                      </span>
                     </div>
-                  );
-                })()}
-              </div>
+                    <div className="max-w-lg space-y-3">
+                      <p className="text-xs font-semibold text-amber-300">
+                        {latestSermon?.pastor_name || 'Recursos para crecer en la fe'}
+                      </p>
+                      <h2 id="home-highlights-title" className="font-serif text-3xl font-black leading-tight md:text-4xl">
+                        {latestSermon?.title || 'Explora nuestros últimos mensajes'}
+                      </h2>
+                      <span className="inline-flex items-center gap-2 text-sm font-bold text-white/85">
+                        Escuchar ahora <ArrowUpRight size={16} />
+                      </span>
+                    </div>
+                  </div>
+                </AnimeHoverCard>
+              </Link>
 
-              <div className="flex items-center justify-between mt-auto">
-                <span className="text-xs font-bold text-slate-300">
-                  {nextEvent.start_time ? nextEvent.start_time.substring(0, 5) : 'Todo el día'}
-                </span>
-                <span className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-amber-500 transition-colors">
-                  <ArrowRight className="w-4 h-4 text-white" />
-                </span>
-              </div>
-            </AnimeHoverCard>
-          </Link>
-        )}
+              <Link to="/eventos" className="group min-h-[15rem] lg:col-span-3 lg:row-span-2">
+                <AnimeHoverCard className="relative flex h-full flex-col justify-between overflow-hidden rounded-[1.5rem] border border-amber-200/70 bg-amber-50/90 p-6 dark:border-amber-500/15 dark:bg-amber-950/25">
+                  <div className="absolute -right-12 -top-10 h-36 w-36 rounded-full bg-amber-300/30 blur-3xl" />
+                  <div className="relative flex items-start justify-between">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20">
+                      <CalendarDays size={20} />
+                    </span>
+                    <ArrowUpRight size={18} className="text-amber-700 transition group-hover:-translate-y-1 group-hover:translate-x-1 dark:text-amber-300" />
+                  </div>
+                  <div className="relative space-y-3">
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+                      Próximo encuentro
+                    </span>
+                    <h3 className="font-serif text-2xl font-black leading-tight text-slate-900 dark:text-white">
+                      {nextEvent?.title || 'Consulta nuestro calendario'}
+                    </h3>
+                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      {nextEvent ? formatEventDate(nextEvent.start_date) : 'Actividades para toda la familia'}
+                      {nextEvent?.start_time ? ' · ' + nextEvent.start_time.slice(0, 5) : ''}
+                    </p>
+                  </div>
+                </AnimeHoverCard>
+              </Link>
 
-        {/* Card Pequeña: Meta de Misiones/Donaciones */}
-        <Link to="/donations" className="md:col-span-1 md:row-span-1 block group">
-          <AnimeHoverCard className="w-full h-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-6 flex flex-col justify-between shadow-sm hover:shadow-xl transition-all relative overflow-hidden">
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform">
-              <Heart className="w-32 h-32" />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-rose-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 relative z-10">
-                  <Heart className="w-4 h-4 fill-current" /> Meta Pro-Templo
-                </div>
-                <span className="text-xs font-bold text-slate-500 relative z-10">{progressPercent}%</span>
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-1 relative z-10">
-                ${currentDonations.toLocaleString()} <span className="text-xs font-normal text-slate-500">de ${targetDonations.toLocaleString()}</span>
-              </h3>
-            </div>
-            
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden relative z-10">
-              <div 
-                className="bg-gradient-to-r from-rose-400 to-rose-600 h-2.5 rounded-full"
-                style={{ width: `${progressPercent}%` }}
-              ></div>
-            </div>
-          </AnimeHoverCard>
-        </Link>
+              <Link to="/ministerios" className="group min-h-[11.5rem] lg:col-span-3">
+                <AnimeHoverCard className="flex h-full items-end justify-between overflow-hidden rounded-[1.5rem] border border-indigo-200/60 bg-indigo-50/90 p-6 dark:border-indigo-400/15 dark:bg-indigo-950/30">
+                  <div className="space-y-3">
+                    <Users size={23} className="text-indigo-600 dark:text-indigo-300" />
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Comunidad</p>
+                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Encuentra tu lugar</h3>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={18} className="text-indigo-600 transition group-hover:-translate-y-1 group-hover:translate-x-1 dark:text-indigo-300" />
+                </AnimeHoverCard>
+              </Link>
 
-        {/* Card Pequeña: Juegos / Kids */}
-        <Link to="/recursos/juegos" className="md:col-span-1 md:row-span-1 block group">
-          <AnimeHoverCard className="w-full h-full rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-400/30 p-6 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-500/20 transition-all relative overflow-hidden">
-            <div className="absolute -right-2 -bottom-2 opacity-20 group-hover:scale-110 transition-transform group-hover:rotate-12">
-              <Gamepad2 className="w-24 h-24 text-white" />
+              <Link to="/peticiones" className="group min-h-[11.5rem] lg:col-span-3">
+                <AnimeHoverCard className="flex h-full items-end justify-between overflow-hidden rounded-[1.5rem] border border-rose-200/60 bg-rose-50/90 p-6 dark:border-rose-400/15 dark:bg-rose-950/25">
+                  <div className="space-y-3">
+                    <HeartHandshake size={23} className="text-rose-600 dark:text-rose-300" />
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-rose-600 dark:text-rose-300">Estamos contigo</p>
+                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Podemos orar por ti</h3>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={18} className="text-rose-600 transition group-hover:-translate-y-1 group-hover:translate-x-1 dark:text-rose-300" />
+                </AnimeHoverCard>
+              </Link>
             </div>
-            <div className="relative z-10">
-              <div className="text-white/80 text-xs font-bold mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <Gamepad2 className="w-4 h-4" /> Diversión Familiar
-              </div>
-              <h3 className="text-xl font-bold text-white leading-tight">
-                Juegos<br/>Bíblicos
-              </h3>
-            </div>
-            <div className="relative z-10 mt-auto flex items-center gap-2 text-white/90 text-sm font-medium group-hover:translate-x-1 transition-transform">
-              Jugar ahora <ArrowRight className="w-4 h-4" />
-            </div>
-          </AnimeHoverCard>
-        </Link>
-
+          </div>
+        </AnimeFadeUp>
       </div>
     </section>
   );

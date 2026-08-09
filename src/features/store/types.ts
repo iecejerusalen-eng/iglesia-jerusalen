@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ProductMedia, ProductMetadata, ProductPriceTier } from '../../types';
 
 export const productSchema = z.object({
   name: z.string().min(1, 'El nombre del producto es obligatorio'),
@@ -28,8 +29,17 @@ export interface DbProduct {
   stock: number;
   category: string;
   type?: 'physical' | 'digital';
-  features?: any;
+  features?: unknown;
   cover_image_url?: string | null;
+  thumbnail_url?: string | null;
+  sku?: string | null;
+  cost_price?: number | null;
+  tax_rate?: number;
+  profit_margin?: number | null;
+  sold_count?: number;
+  is_active?: boolean;
+  metadata?: ProductMetadata;
+  product_variants?: FormVariant[];
   created_at: string;
 }
 
@@ -41,7 +51,11 @@ export interface FormVariant {
   cloudinary_image_url: string;
   stock: number;
   price_adjustment: number;
+  sku?: string;
+  metadata?: Record<string, unknown>;
 }
+
+export type { ProductMedia, ProductPriceTier };
 
 export interface Supplier {
   id: string;

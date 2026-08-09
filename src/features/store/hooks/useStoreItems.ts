@@ -9,7 +9,7 @@ export const useProducts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('*, product_variants(*)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 

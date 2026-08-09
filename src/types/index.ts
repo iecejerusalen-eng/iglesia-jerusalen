@@ -49,7 +49,33 @@ export interface ProductVariant {
   cloudinary_image_url: string | null;
   stock: number;
   price_adjustment: number;
+  sku?: string | null;
+  metadata?: Record<string, unknown>;
   created_at?: string;
+}
+
+export interface ProductPriceTier {
+  min_quantity: number;
+  unit_price: number;
+  label?: string;
+}
+
+export interface ProductMedia {
+  id: string;
+  url: string;
+  thumbnail_url?: string;
+  alt?: string;
+  color?: string;
+  sort_order?: number;
+}
+
+export interface ProductMetadata {
+  tags?: string[];
+  attributes?: Record<string, string[]>;
+  specifications?: Record<string, string>;
+  media?: ProductMedia[];
+  price_tiers?: ProductPriceTier[];
+  custom_fields?: Record<string, string | number | boolean>;
 }
 
 export interface ProductDigitalAsset {
@@ -69,6 +95,12 @@ export interface Mission {
   current_amount: number | null;
   image_url: string | null;
   status: 'active' | 'completed' | 'paused';
+  scope?: 'local' | 'national' | 'international';
+  country_code?: string | null;
+  region?: string | null;
+  city?: string | null;
+  is_published?: boolean;
+  metadata?: Record<string, string | number | boolean | string[] | null>;
   start_date: string | null;
   end_date: string | null;
   created_at: string;
@@ -129,6 +161,13 @@ export interface Product {
   price: number;
   discount_price?: number | null;
   promo_tag?: string | null;
+  sku?: string | null;
+  cost_price?: number | null;
+  tax_rate?: number;
+  profit_margin?: number | null;
+  sold_count?: number;
+  is_active?: boolean;
+  thumbnail_url?: string | null;
   image_url: string | null;
   stock: number;
   category: string;
@@ -141,6 +180,7 @@ export interface Product {
   created_at: string;
   product_variants?: ProductVariant[];
   product_digital_assets?: ProductDigitalAsset | null;
+  metadata?: ProductMetadata;
 }
 
 export interface DonationCategory {
@@ -891,6 +931,9 @@ export interface StorePaymentMethod {
   name: string;
   active: boolean;
   fee_percent: number;
+  provider?: 'manual' | 'payphone' | 'paypal' | 'other';
+  mode?: 'disabled' | 'sandbox' | 'live';
+  checkout_label?: string;
 }
 
 export interface StoreShippingMethod {

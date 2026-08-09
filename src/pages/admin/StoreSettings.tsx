@@ -12,6 +12,8 @@ interface StoreSettingsForm {
   shipping_methods: StoreShippingMethod[];
 }
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Error desconocido';
+
 const StoreSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,9 +58,9 @@ const StoreSettings = () => {
           shipping_methods: data.shipping_methods || []
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching store settings:', err);
-      toast.error('Error al cargar la configuración de tienda: ' + err.message);
+      toast.error('Error al cargar la configuración de tienda: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -78,9 +80,9 @@ const StoreSettings = () => {
 
       if (error) throw error;
       toast.success('Configuración de tienda guardada correctamente.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving store settings:', err);
-      toast.error('No se pudo guardar la configuración: ' + err.message);
+      toast.error('No se pudo guardar la configuración: ' + getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -117,11 +119,15 @@ const StoreSettings = () => {
             </div>
             <button
               type="button"
-              onClick={() => appendPayment({ id: `custom_${Date.now()}`, name: '', active: true, fee_percent: 0 })}
+              onClick={() => appendPayment({ id: `custom_${Date.now()}`, name: '', active: true, fee_percent: 0, provider: 'manual', mode: 'disabled' })}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
             >
               <Plus size={16} /> Añadir Método
             </button>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs leading-relaxed text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-200">
+            PayPhone y PayPal quedan preparados como proveedores, pero solo deben activarse cuando sus credenciales estén guardadas como secretos del servidor y exista una función segura que cree y verifique cada pago. Esta pantalla nunca almacena claves privadas.
           </div>
 
           <div className="space-y-4">
@@ -153,6 +159,23 @@ const StoreSettings = () => {
                     className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="0.00"
                   />
+                </div>
+                <div className="w-full sm:w-36">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Proveedor</label>
+                  <select {...register(`payment_methods.${index}.provider`)} className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm">
+                    <option value="manual">Manual</option>
+                    <option value="payphone">PayPhone</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+                <div className="w-full sm:w-32">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Entorno</label>
+                  <select {...register(`payment_methods.${index}.mode`)} className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm">
+                    <option value="disabled">Desactivado</option>
+                    <option value="sandbox">Pruebas</option>
+                    <option value="live">Producción</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                   <label className="flex items-center gap-2 cursor-pointer">

@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import MediaUploader from '../../../components/common/MediaUploader';
-import type { DbProduct, FormVariant, StoreCategory } from '../types';
+import type { DbProduct, FormVariant, ProductMedia, ProductPriceTier, StoreCategory } from '../types';
 import { useStoreMutations } from '../hooks/useStoreMutations';
+import { getOptimizedCloudinaryImage } from '../../../lib/cloudinaryService';
 
 const productSchema = z.object({
   name: z.string().min(1, 'El nombre del producto es obligatorio'),
@@ -20,6 +21,13 @@ const productSchema = z.object({
   features: z.string().optional(),
   drive_link: z.string().url('Ingresa una URL de Google Drive válida').or(z.literal('')),
   instructions: z.string().optional(),
+  sku: z.string().optional(),
+  cost_price: z.number().min(0).optional().nullable(),
+  tax_rate: z.number().min(0).max(100),
+  profit_margin: z.number().min(0).optional().nullable(),
+  sold_count: z.number().int().min(0),
+  is_active: z.boolean(),
+  tags: z.string().optional(),
 });
 
 type ProductFormType = z.infer<typeof productSchema>;
@@ -37,6 +45,8 @@ const ProductForm = ({
 }: ProductFormProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variants, setVariants] = useState<FormVariant[]>([]);
+  const [priceTiers, setPriceTiers] = useState<ProductPriceTier[]>([]);
+  const [gallery, setGallery] = useState<ProductMedia[]>([]);
   
   const mutations = useStoreMutations();
   const actionLoading = mutations.createProduct.isPending || mutations.updateProduct.isPending;
@@ -56,6 +66,13 @@ const ProductForm = ({
       features: '',
       drive_link: '',
       instructions: '',
+      sku: '',
+      cost_price: undefined,
+      tax_rate: 15,
+      profit_margin: undefined,
+      sold_count: 0,
+      is_active: true,
+      tags: '',
     }
   });
 
@@ -86,11 +103,18 @@ const ProductForm = ({
         image_url: editingProduct.image_url || '',
         description: editingProduct.description || '',
         features: featuresStr,
+        sku: editingProduct.sku || '',
+        cost_price: editingProduct.cost_price ?? undefined,
+        tax_rate: editingProduct.tax_rate ?? 15,
+        profit_margin: editingProduct.profit_margin ?? undefined,
+        sold_count: editingProduct.sold_count ?? 0,
+        is_active: editingProduct.is_active ?? true,
+        tags: editingProduct.metadata?.tags?.join(', ') || '',
       });
       setImagePreview(editingProduct.image_url || null);
-      
-      // Need to fetch variants here if editing? 
-      // For now we assume they might be loaded or not handled here in this snippet completely.
+      setVariants(editingProduct.product_variants || []);
+      setPriceTiers(editingProduct.metadata?.price_tiers || []);
+      setGallery(editingProduct.metadata?.media || []);
     }
   }, [editingProduct, reset]);
 
@@ -113,6 +137,24 @@ const ProductForm = ({
       image_url: data.image_url || null,
       description: data.description,
       features: featuresArray,
+      cover_image_url: data.image_url || null,
+      thumbnail_url: data.image_url
+        ? getOptimizedCloudinaryImage(data.image_url, { width: 480, height: 360, crop: 'fill' })
+        : null,
+      sku: data.sku?.trim() || null,
+      cost_price: data.cost_price ?? null,
+      tax_rate: data.tax_rate,
+      profit_margin: data.profit_margin ?? null,
+      sold_count: data.sold_count,
+      is_active: data.is_active,
+      metadata: {
+        ...(editingProduct?.metadata || {}),
+        tags: (data.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
+        media: gallery,
+        price_tiers: priceTiers
+          .filter(tier => tier.min_quantity > 1 && tier.unit_price >= 0)
+          .sort((a, b) => a.min_quantity - b.min_quantity),
+      },
     };
 
     if (editingProduct) {
@@ -197,6 +239,36 @@ const ProductForm = ({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 rounded-2xl border border-amber-200/60 bg-amber-50/40 p-4 dark:border-amber-500/15 dark:bg-amber-950/10">
+          <div>
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">SKU</label>
+            <input {...register('sku')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="BIB-001" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Costo ($)</label>
+            <input type="number" step="0.01" min="0" {...register('cost_price', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">IVA (%)</label>
+            <input type="number" step="0.01" min="0" max="100" {...register('tax_rate', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Margen (%)</label>
+            <input type="number" step="0.01" min="0" {...register('profit_margin', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Vendidos</label>
+            <input type="number" min="0" {...register('sold_count', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+          </div>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tags (separados por coma)</label>
+            <input {...register('tags')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="biblia, estudio, regalo" />
+          </div>
+          <label className="flex items-center gap-3 self-end rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold dark:border-white/10 dark:bg-slate-900">
+            <input type="checkbox" {...register('is_active')} className="h-4 w-4" /> Visible en tienda
+          </label>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tipo de Producto</label>
@@ -231,8 +303,9 @@ const ProductForm = ({
                 allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
                 label="Subir Imagen de Portada"
                 onUploadSuccess={(url) => {
-                  setValue('image_url', url);
-                  setImagePreview(url);
+                  const optimizedUrl = getOptimizedCloudinaryImage(url, { width: 1600, crop: 'limit' });
+                  setValue('image_url', optimizedUrl);
+                  setImagePreview(optimizedUrl);
                 }}
               />
             </div>
@@ -267,6 +340,60 @@ const ProductForm = ({
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-150 p-4 dark:border-white/10">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-bold text-gray-800 dark:text-white">Galería del producto</h4>
+              <p className="text-xs text-gray-500">Sube varias vistas. Se optimizan al servirse y pueden usarse en variantes.</p>
+            </div>
+            <MediaUploader
+              folder="productos/galeria"
+              multiple
+              allowedFormats={['jpg', 'jpeg', 'png', 'webp']}
+              label="Añadir fotos"
+              onUploadSuccess={(url, publicId) => {
+                const optimizedUrl = getOptimizedCloudinaryImage(url, { width: 1600, crop: 'limit' });
+                setGallery(current => [...current, { id: publicId, url: optimizedUrl, alt: watch('name') || 'Producto' }]);
+              }}
+            />
+          </div>
+          {gallery.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {gallery.map((media) => (
+                <div key={media.id} className="group relative aspect-square overflow-hidden rounded-xl border border-gray-150 dark:border-white/10">
+                  <img src={media.url} alt={media.alt || 'Producto'} className="h-full w-full object-cover" />
+                  <button type="button" onClick={() => setGallery(current => current.filter(item => item.id !== media.id))} className="absolute right-1 top-1 rounded-full bg-slate-950/80 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100" aria-label="Eliminar foto">
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-xs text-gray-400">Aún no hay fotos adicionales.</p>}
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 dark:border-blue-500/15 dark:bg-blue-950/10">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-bold text-gray-800 dark:text-white">Precio escalable por cantidad</h4>
+              <p className="text-xs text-gray-500">El mejor precio aplicable se calcula automáticamente en producto y carrito.</p>
+            </div>
+            <button type="button" onClick={() => setPriceTiers(current => [...current, { min_quantity: 2, unit_price: 0, label: '' }])} className="inline-flex items-center gap-1 rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary">
+              <Plus size={14} /> Añadir nivel
+            </button>
+          </div>
+          <div className="space-y-2">
+            {priceTiers.map((tier, index) => (
+              <div key={`${index}-${tier.min_quantity}`} className="grid grid-cols-[1fr_1fr_2fr_auto] gap-2">
+                <input aria-label="Cantidad mínima" type="number" min="2" value={tier.min_quantity} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, min_quantity: Number(event.target.value) } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Cantidad" />
+                <input aria-label="Precio unitario" type="number" min="0" step="0.01" value={tier.unit_price} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, unit_price: Number(event.target.value) } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Precio" />
+                <input aria-label="Etiqueta del nivel" value={tier.label || ''} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Ej. Mayorista" />
+                <button type="button" onClick={() => setPriceTiers(current => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-lg p-2 text-red-500" aria-label="Eliminar nivel"><Trash2 size={16} /></button>
+              </div>
+            ))}
+            {priceTiers.length === 0 && <p className="text-xs text-gray-400">Sin descuentos por volumen.</p>}
           </div>
         </div>
 
@@ -329,13 +456,14 @@ const ProductForm = ({
             </div>
 
             {variants.length > 0 && (
-              <div className="border border-gray-150 dark:border-white/10 rounded-xl overflow-hidden text-xs">
-                <table className="w-full text-left">
+              <div className="border border-gray-150 dark:border-white/10 rounded-xl overflow-x-auto text-xs">
+                <table className="min-w-[900px] w-full text-left">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-150 dark:border-white/10">
                       <th className="py-2.5 px-3">Color</th>
                       <th className="py-2.5 px-3">Hex</th>
                       <th className="py-2.5 px-3">Talla</th>
+                      <th className="py-2.5 px-3">SKU</th>
                       <th className="py-2.5 px-3">Foto</th>
                       <th className="py-2.5 px-3">Stock</th>
                       <th className="py-2.5 px-3">Ajuste Precio</th>
@@ -373,13 +501,22 @@ const ProductForm = ({
                             placeholder="Ej. L"
                           />
                         </td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="text"
+                            value={v.sku || ''}
+                            onChange={(e) => setVariants(prev => prev.map((item, i) => i === idx ? { ...item, sku: e.target.value } : item))}
+                            className="w-24 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
+                            placeholder="SKU"
+                          />
+                        </td>
                         <td className="py-2 px-3 flex items-center gap-2">
                           <MediaUploader
                             folder="productos"
                             allowedFormats={['jpg', 'png', 'webp']}
                             label="Subir"
                             className="py-1 px-2 text-[10px]"
-                            onUploadSuccess={(url) => setVariants(prev => prev.map((item, i) => i === idx ? { ...item, cloudinary_image_url: url } : item))}
+                            onUploadSuccess={(url) => setVariants(prev => prev.map((item, i) => i === idx ? { ...item, cloudinary_image_url: getOptimizedCloudinaryImage(url, { width: 1200, crop: 'limit' }) } : item))}
                           />
                           {v.cloudinary_image_url && (
                             <img loading="lazy" src={v.cloudinary_image_url} alt="Variant" className="w-7 h-7 rounded object-cover" />

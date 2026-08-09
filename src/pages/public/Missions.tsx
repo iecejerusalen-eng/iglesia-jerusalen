@@ -1,481 +1,191 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
+import type { COBEOptions } from 'cobe';
+import {
+  ArrowRight, BookOpen, Church, Compass, Database, Globe2, HandHeart,
+  Languages, Map as MapIcon, MapPin, RefreshCw, ShieldCheck, Sparkles, Users,
+} from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import type { Mission } from '../../types';
-import {
-  Globe2,
-  Target,
-  Users,
-  Church,
-  ArrowRight,
-  Heart,
-  Compass,
-  ChevronRight,
-  HandHeart,
-  X
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
-import { Globe } from '@/components/ui/globe';
-import { type COBEOptions } from 'cobe';
+import { Globe } from '../../components/ui/globe';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { fetchJoshuaProject, formatMissionNumber } from '../../features/missions/joshuaProject';
+import type { JoshuaRecord } from '../../features/missions/types';
 
-export interface MissionPoint {
-  id: string;
-  country: string;
-  flag: string;
-  lat: number;
-  lng: number;
-  title: string;
-  leader: string;
-  description: string;
-  activeProjects: number;
-  members: string;
-  color?: string;
-}
+const explorationLinks = [
+  { to: '/misiones/local', label: 'Misión local', description: 'Obras verificadas en Milagro y nuestra comunidad.', icon: Church, tone: 'emerald' },
+  { to: '/misiones/nacional', label: 'Ecuador', description: 'Proyectos nacionales publicados por la iglesia.', icon: MapPin, tone: 'amber' },
+  { to: '/misiones/continentes', label: 'Continentes', description: 'Panorama mundial y prioridades regionales.', icon: Globe2, tone: 'blue' },
+  { to: '/misiones/paises', label: 'Países', description: 'Contexto demográfico y avance por nación.', icon: MapIcon, tone: 'violet' },
+  { to: '/misiones/pueblos', label: 'Pueblos', description: 'Grupos étnicos para aprender, orar y servir.', icon: Users, tone: 'rose' },
+  { to: '/misiones/idiomas', label: 'Idiomas', description: 'Lenguas y acceso a recursos del evangelio.', icon: Languages, tone: 'cyan' },
+] as const;
 
-const MISSION_LOCATIONS: MissionPoint[] = [
-  {
-    id: 'ecuador',
-    country: 'Ecuador',
-    flag: '🇪🇨',
-    lat: -0.1807,
-    lng: -78.4678,
-    title: 'Células de Crecimiento & Misión Urbana',
-    leader: 'Pr. Esteban Corina & Marlene de Corina',
-    description: 'Nuestra sede central en Milagro coordinando obras de discipulado, comedores comunitarios y escuelas dominicales en Guayas, Pichincha y Manabí.',
-    activeProjects: 4,
-    members: '450+',
-  },
-  {
-    id: 'colombia',
-    country: 'Colombia',
-    flag: '🇨🇴',
-    lat: 4.7110,
-    lng: -74.0721,
-    title: 'Plantación Misionera Bogotá & Cali',
-    leader: 'Misionero Carlos Rodríguez',
-    description: 'Red de apoyo social y formación bíblica para niños y familias vulnerables en sectores periféricos de Bogotá y Cali.',
-    activeProjects: 2,
-    members: '180+',
-  },
-  {
-    id: 'peru',
-    country: 'Perú',
-    flag: '🇵🇪',
-    lat: -12.0464,
-    lng: -77.0428,
-    title: 'Evangelismo Transecuatorial en Lima',
-    leader: 'Hna. Marlene de Corina',
-    description: 'Distribución de alimentos, soporte comunitario y apertura de células de hogar en Lima y Trujillo.',
-    activeProjects: 2,
-    members: '120+',
-  },
-  {
-    id: 'usa',
-    country: 'Estados Unidos',
-    flag: '🇺🇸',
-    lat: 25.7617,
-    lng: -80.1918,
-    title: 'Ministerio Internacional Florida',
-    leader: 'Pr. David Nicola',
-    description: 'Red de apoyo pastoral para familias hispanas inmigrantes, discipulado y enlace de misiones internacionales.',
-    activeProjects: 1,
-    members: '210+',
-  },
-  {
-    id: 'espana',
-    country: 'España',
-    flag: '🇪🇸',
-    lat: 40.4168,
-    lng: -3.7038,
-    title: 'Misión Europa Madrid & Barcelona',
-    leader: 'Misionera Ana de Castro',
-    description: 'Evangelismo universitario, discipulado continuo y siembra de grupos de oración en la región central de España.',
-    activeProjects: 1,
-    members: '95+',
-  },
-  {
-    id: 'chile',
-    country: 'Chile',
-    flag: '🇨🇱',
-    lat: -33.4489,
-    lng: -70.6693,
-    title: 'Proyecto Esperanza Santiago',
-    leader: 'Misionero Roberto Paz',
-    description: 'Obra comunitaria en sectores vulnerables del sur de Santiago con provisión médica básica y talleres comunitarios.',
-    activeProjects: 1,
-    members: '70+',
-  },
-  {
-    id: 'mexico',
-    country: 'México',
-    flag: '🇲🇽',
-    lat: 19.4326,
-    lng: -99.1332,
-    title: 'Misión Juvenil CDMX',
-    leader: 'Hno. Samuel Torres',
-    description: 'Capacitación en artes, música y literatura bíblica para jóvenes y adolescentes de la Ciudad de México.',
-    activeProjects: 1,
-    members: '110+',
-  },
-  {
-    id: 'argentina',
-    country: 'Argentina',
-    flag: '🇦🇷',
-    lat: -34.6037,
-    lng: -58.3816,
-    title: 'Comedor y Apoyo Escolar Buenos Aires',
-    leader: 'Hna. Lucía Benítez',
-    description: 'Asistencia alimentaria diaria a más de 120 niños y talleres educativos para familias.',
-    activeProjects: 1,
-    members: '85+',
-  },
-];
+const toneClasses = {
+  emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+  amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-300',
+  violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-300',
+  rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-300',
+  cyan: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
+};
 
-const GLOBE_CONFIG: COBEOptions = {
-  width: 600,
-  height: 600,
-  onRender: () => {},
-  devicePixelRatio: 1.2,
-  phi: 1.2,
-  theta: 0.18,
-  dark: 0,
-  diffuse: 0.5,
-  mapSamples: 6000,
-  mapBrightness: 1.35,
-  baseColor: [0.96, 0.96, 0.98],
-  markerColor: [225 / 255, 29 / 255, 72 / 255], // Red marker
-  glowColor: [0.98, 0.94, 0.9],
-  markers: MISSION_LOCATIONS.map((p) => ({
-    location: [p.lat, p.lng] as [number, number],
-    size: p.id === 'ecuador' ? 0.08 : 0.05,
-  })),
+const MissionCard = ({ mission }: { mission: Mission }) => {
+  const goal = Number(mission.goal_amount) || 0;
+  const current = Number(mission.current_amount) || 0;
+  const progress = goal > 0 ? Math.min(100, Math.round((current / goal) * 100)) : null;
+
+  return (
+    <article className="group overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 shadow-[0_18px_60px_-38px_rgba(15,23,42,.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+      <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
+        {mission.image_url ? <img src={mission.image_url} alt={mission.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Compass className="text-slate-300" size={42} /></div>}
+        <span className="absolute left-4 top-4 rounded-full border border-white/60 bg-white/85 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-800 backdrop-blur-md">
+          {mission.scope === 'national' ? 'Ecuador' : mission.scope === 'international' ? 'Internacional' : 'Local'}
+        </span>
+      </div>
+      <div className="p-6">
+        <p className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300"><MapPin size={13} /> {mission.location || mission.city || 'Ubicación por confirmar'}</p>
+        <h3 className="mt-3 font-serif text-2xl font-black text-slate-900 dark:text-white">{mission.title}</h3>
+        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{mission.description || 'El equipo de misiones actualizará pronto la descripción de este proyecto.'}</p>
+        {progress != null && (
+          <div className="mt-5">
+            <div className="mb-2 flex justify-between text-[11px] font-bold text-slate-500"><span>Financiamiento registrado</span><span>{progress}%</span></div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-500" style={{ width: `${progress}%` }} /></div>
+          </div>
+        )}
+      </div>
+    </article>
+  );
 };
 
 export default function Missions() {
   const [missions, setMissions] = useState<Mission[]>([]);
-
-  // Selected Country for 3D Globe focus
-  const [selectedPoint, setSelectedPoint] = useState<MissionPoint | null>(MISSION_LOCATIONS[0]);
-  const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
-
-  const loadMissions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('missions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setMissions(data || []);
-    } catch (err) {
-      console.error('Error loading missions:', err);
-    }
-  };
+  const [missionsError, setMissionsError] = useState<string | null>(null);
+  const [dailyPeople, setDailyPeople] = useState<JoshuaRecord | null>(null);
+  const [joshuaError, setJoshuaError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    Promise.resolve().then(() => {
-      loadMissions();
-    });
+    const load = async () => {
+      setLoading(true);
+      const [missionsResult, dailyResult] = await Promise.allSettled([
+        supabase.from('missions').select('*').eq('is_published', true).order('created_at', { ascending: false }),
+        fetchJoshuaProject({ resource: 'daily', limit: 1 }),
+      ]);
+
+      if (missionsResult.status === 'fulfilled' && !missionsResult.value.error) {
+        setMissions((missionsResult.value.data || []) as Mission[]);
+      } else {
+        const message = missionsResult.status === 'rejected' ? String(missionsResult.reason) : missionsResult.value.error?.message;
+        console.error('No se pudieron cargar los proyectos misioneros:', message);
+        setMissionsError('Los proyectos institucionales no están disponibles en este momento.');
+      }
+
+      if (dailyResult.status === 'fulfilled') {
+        setDailyPeople(dailyResult.value.records[0] || null);
+      } else {
+        console.error('No se pudo cargar Joshua Project:', dailyResult.reason);
+        setJoshuaError(dailyResult.reason instanceof Error ? dailyResult.reason.message : 'La fuente internacional no está disponible.');
+      }
+      setLoading(false);
+    };
+    void load();
   }, []);
 
-  const handleSelectCountry = (point: MissionPoint) => {
-    setSelectedPoint(point);
-    setFocusCoords([point.lat, point.lng]);
-  };
-
-  const activeMissions = missions.filter((m) => m.status === 'active');
+  const activeMissions = missions.filter((mission) => mission.status === 'active');
+  const countries = new Set(missions.map((mission) => mission.country_code).filter(Boolean)).size;
+  const markers = missions.flatMap((mission) => {
+    const latitude = mission.metadata?.latitude;
+    const longitude = mission.metadata?.longitude;
+    return typeof latitude === 'number' && typeof longitude === 'number'
+      ? [{ location: [latitude, longitude] as [number, number], size: 0.055 }]
+      : [];
+  });
+  const globeConfig = useMemo<COBEOptions>(() => ({
+    width: 720, height: 720, onRender: () => {}, devicePixelRatio: 1.2,
+    phi: 0.5, theta: 0.2, dark: 1, diffuse: 1.1, mapSamples: 7000,
+    mapBrightness: 2.2, baseColor: [0.04, 0.09, 0.18], markerColor: [0.96, 0.65, 0.15],
+    glowColor: [0.08, 0.18, 0.32], markers,
+  }), [markers]);
 
   return (
     <>
       <Helmet>
-        <title>Misiones Globales | Iglesia Jerusalén</title>
-        <meta
-          name="description"
-          content="Conoce nuestras misiones internacionales, explora el globo 3D interactivo y apoya los proyectos que transforman vidas alrededor del mundo."
-        />
+        <title>Misiones | Iglesia Jerusalén</title>
+        <meta name="description" content="Conoce la obra misionera de Iglesia Jerusalén y explora datos de pueblos, países e idiomas con atribución a Joshua Project." />
       </Helmet>
+      <main className="relative min-h-screen overflow-hidden bg-slate-50 pb-24 dark:bg-slate-950">
+        <div className="pointer-events-none absolute -left-56 top-96 h-[32rem] w-[32rem] rounded-full bg-amber-300/15 blur-[130px]" />
 
-      <div className="bg-surface dark:bg-slate-950 min-h-screen pb-20 space-y-16">
-        
-        {/* ── SECTION 1: HERO HEADER (Limpio y Centrado) ──────────────────────── */}
-        <section className="relative pt-14 pb-10 px-4 bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white overflow-hidden rounded-b-3xl shadow-xl">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(225,29,72,0.15),transparent_70%)] pointer-events-none" />
-          
-          <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-            <AnimeFadeUp>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/20 text-rose-300 font-semibold text-xs uppercase tracking-widest border border-rose-500/30 backdrop-blur-md">
-                <Globe2 className="w-4 h-4 text-rose-400 animate-spin-slow" />
-                Misiones Internacionales
+        <section className="px-4 pt-8 md:px-8 md:pt-12">
+          <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.7rem] border border-white/10 bg-[#07152d] shadow-2xl lg:grid-cols-[1.05fr_.95fr]">
+            <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-300"><Sparkles size={13} /> De Milagro a las naciones</span>
+              <h1 className="mt-7 max-w-3xl font-serif text-5xl font-black leading-[.98] tracking-[-.04em] md:text-7xl">Una iglesia que ora, sirve y envía.</h1>
+              <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-slate-300 md:text-lg">Conoce nuestras obras verificadas y usa información misionera responsable para aprender, interceder y actuar con sabiduría.</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/misiones/pueblos" className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-amber-300">Explorar pueblos <ArrowRight size={16} /></Link>
+                <Link to="/donations" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white backdrop-blur-xl"><HandHeart size={16} /> Apoyar misiones</Link>
               </div>
+            </div>
+            <div className="relative min-h-[25rem] overflow-hidden lg:min-h-[38rem]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,.18),transparent_62%)]" />
+              <Globe config={globeConfig} className="absolute left-1/2 top-1/2 w-[38rem] max-w-none -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-6 left-6 right-6 rounded-2xl border border-white/10 bg-slate-950/55 p-4 text-xs text-slate-300 backdrop-blur-xl"><ShieldCheck className="mr-2 inline text-emerald-300" size={15} />Los marcadores institucionales solo aparecen cuando la administración publica coordenadas apropiadas.</div>
+            </div>
+          </AnimeFadeUp>
+        </section>
 
-              <h1 className="text-4xl md:text-6xl font-serif font-bold leading-tight tracking-tight mt-3">
-                Llevando Luz a{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-rose-400">
-                  Todas las Naciones
-                </span>
-              </h1>
-
-              <p className="text-base md:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed font-light">
-                La iglesia no es solo un edificio, es un movimiento vivo. Explora nuestra obra misionera global, descubre los proyectos activos y únete a la visión del reino.
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-                <a
-                  href="#globo-3d"
-                  className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-rose-600/30 transition flex items-center gap-2"
-                >
-                  <Compass className="w-4 h-4" />
-                  <span>Explorar Globo 3D</span>
-                </a>
-                <Link
-                  to="/donations"
-                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-semibold text-sm backdrop-blur transition flex items-center gap-2"
-                >
-                  <HandHeart className="w-4 h-4 text-amber-400" />
-                  <span>Apoyar Misiones</span>
-                </Link>
-              </div>
-            </AnimeFadeUp>
+        <section className="relative z-10 mx-auto -mt-5 max-w-6xl px-4 md:px-8">
+          <div className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:grid-cols-4">
+            {[
+              ['Proyectos activos', loading ? '—' : String(activeMissions.length)],
+              ['Ámbitos publicados', loading ? '—' : String(new Set(missions.map(m => m.scope || 'local')).size)],
+              ['Países registrados', loading ? '—' : String(countries)],
+              ['Fuente internacional', 'Joshua Project'],
+            ].map(([label, value]) => <div key={label} className="rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/5 dark:bg-slate-950/40"><p className="text-xl font-black text-slate-950 dark:text-white md:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p></div>)}
           </div>
         </section>
 
-        {/* ── SECTION 2: STATS SUMMARY GRID ───────────────────────────────────── */}
-        <section className="max-w-6xl mx-auto px-4">
-          <AnimeStaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 shadow-sm text-center space-y-1 hover:border-rose-500/40 transition">
-              <div className="w-10 h-10 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <Target className="w-5 h-5" />
-              </div>
-              <p className="text-3xl font-serif font-bold text-slate-900 dark:text-white">
-                {activeMissions.length || '8'}
-              </p>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Proyectos Activos
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 shadow-sm text-center space-y-1 hover:border-rose-500/40 transition">
-              <div className="w-10 h-10 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <Globe2 className="w-5 h-5" />
-              </div>
-              <p className="text-3xl font-serif font-bold text-slate-900 dark:text-white">8</p>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Países Alcanzados
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 shadow-sm text-center space-y-1 hover:border-rose-500/40 transition">
-              <div className="w-10 h-10 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <Church className="w-5 h-5" />
-              </div>
-              <p className="text-3xl font-serif font-bold text-slate-900 dark:text-white">11</p>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Iglesias Plantadas
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 shadow-sm text-center space-y-1 hover:border-rose-500/40 transition">
-              <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <Users className="w-5 h-5" />
-              </div>
-              <p className="text-3xl font-serif font-bold text-slate-900 dark:text-white">1,180+</p>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Miembros Impactados
-              </p>
-            </div>
-          </AnimeStaggerGrid>
-        </section>
-
-        {/* ── SECTION 3: DEDICATED INTERACTIVE 3D GLOBE SPOTLIGHT ─────────────── */}
-        <section id="globo-3d" className="max-w-6xl mx-auto px-4 space-y-6">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-              Explorador Interactivo 3D
-            </span>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
-              Nuestra Presencia en el Mundo
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Haz clic en cualquier país o mantén presionado y arrastra para rotar libremente el planeta 360°.
-            </p>
-          </div>
-
-          {/* Country Selection Bar */}
-          <div className="flex flex-wrap items-center justify-center gap-2 py-2">
-            <button
-              onClick={() => setFocusCoords(null)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                focusCoords === null
-                  ? 'bg-gradient-to-r from-rose-600 to-amber-500 text-white shadow-md scale-105'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-rose-400'
-              }`}
-            >
-              <Globe2 className="w-3.5 h-3.5 animate-spin-slow" />
-              <span>Rotación 360°</span>
-            </button>
-
-            {MISSION_LOCATIONS.map((point) => {
-              const isSelected = selectedPoint?.id === point.id && focusCoords !== null;
-              return (
-                <button
-                  key={point.id}
-                  onClick={() => handleSelectCountry(point)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-rose-600 text-white shadow-md scale-105 border-rose-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-rose-400'
-                  }`}
-                >
-                  <span className="text-sm">{point.flag}</span>
-                  <span>{point.country}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Globe Container with Floating Pop-up Card */}
-          <div className="relative rounded-3xl border border-slate-200/80 dark:border-white/10 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-4 md:p-8 shadow-2xl overflow-hidden min-h-[550px] flex flex-col items-center justify-center">
-            
-            {/* Interactive 3D Globe Canvas */}
-            <div className="w-full max-w-[500px] md:max-w-[550px] aspect-square my-auto">
-              <Globe
-                config={GLOBE_CONFIG}
-                interactive={true}
-                focusCoords={focusCoords}
-              />
-            </div>
-
-            {/* Instruction Overlay */}
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-slate-900/80 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-full text-xs text-gray-300 pointer-events-none">
-              <Compass className="w-4 h-4 text-rose-400 animate-spin-slow" />
-              <span>Arrastra con el ratón o dedo para rotar 360°</span>
-            </div>
-
-            {/* Floating Interactive Country Card (Bottom / Right Overlay) */}
-            {selectedPoint && (
-              <div className="absolute bottom-16 md:bottom-4 right-4 left-4 md:left-auto md:w-96 z-30 bg-slate-900/90 border border-white/15 backdrop-blur-xl p-5 rounded-2xl shadow-2xl text-white space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{selectedPoint.flag}</span>
-                    <div>
-                      <h3 className="font-serif font-bold text-lg text-white leading-tight">
-                        {selectedPoint.country}
-                      </h3>
-                      <p className="text-[11px] text-rose-300 font-medium">
-                        {selectedPoint.activeProjects} Proyecto(s) Activo(s)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                      Activo
-                    </span>
-                    <button
-                      onClick={() => setSelectedPoint(null)}
-                      aria-label="Cerrar detalles del país"
-                      className="p-1 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-sm text-amber-300">
-                    {selectedPoint.title}
-                  </h4>
-                  <p className="text-xs text-gray-300 mt-1 leading-relaxed">
-                    {selectedPoint.description}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-gray-400 border-t border-white/10 pt-2">
-                  <span className="flex items-center gap-1 text-gray-300 font-medium">
-                    <Users className="w-3.5 h-3.5 text-rose-400" />
-                    <span>{selectedPoint.members} Alcance</span>
-                  </span>
-                  <span className="truncate max-w-[170px] text-right font-light">
-                    {selectedPoint.leader}
-                  </span>
-                </div>
-
-                <div className="pt-1">
-                  <Link
-                    to="/donations"
-                    className="w-full py-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition"
-                  >
-                    <Heart className="w-3.5 h-3.5 fill-white" />
-                    <span>Apoyar Misión en {selectedPoint.country}</span>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── SECTION 4: MISSIONS LISTING FROM DB ─────────────────────────────── */}
-        <section className="max-w-6xl mx-auto px-4 space-y-8 pt-6">
-          <div className="flex items-end justify-between border-b pb-4 border-slate-200 dark:border-white/10">
-            <div>
-              <span className="text-xs font-bold text-rose-600 uppercase tracking-widest">
-                Catálogo de Obras
-              </span>
-              <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-white mt-1">
-                Proyectos Misioneros Destacados
-              </h2>
-            </div>
-            <Link
-              to="/donations"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700"
-            >
-              <span>Donar a Misiones</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {MISSION_LOCATIONS.slice(0, 6).map((item) => (
-              <AnimeHoverCard
-                key={item.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 p-6 flex flex-col justify-between space-y-4 shadow-sm hover:border-rose-500/50 transition group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl">{item.flag}</span>
-                    <span className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-900/30">
-                      {item.country}
-                    </span>
-                  </div>
-
-                  <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white group-hover:text-rose-600 transition">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-light">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">
-                    Encargado: {item.leader.split('&')[0]}
-                  </span>
-                  <button
-                    onClick={() => handleSelectCountry(item)}
-                    className="text-rose-600 font-bold hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>Ver en Globo</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </AnimeHoverCard>
+        <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
+          <div className="mb-8 max-w-2xl"><p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-600">Centro misionero</p><h2 className="mt-3 font-serif text-4xl font-black text-slate-950 dark:text-white">Explora desde lo cercano hasta lo global</h2></div>
+          <AnimeStaggerGrid className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {explorationLinks.map(({ to, label, description, icon: Icon, tone }) => (
+              <Link key={to} to={to} className="group rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,.6)] backdrop-blur-xl transition hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/70">
+                <div className={`grid h-12 w-12 place-items-center rounded-2xl ${toneClasses[tone]}`}><Icon size={22} /></div>
+                <h3 className="mt-6 font-serif text-2xl font-black text-slate-900 dark:text-white">{label}</h3><p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{description}</p><span className="mt-5 inline-flex items-center gap-2 text-xs font-extrabold text-amber-700 dark:text-amber-300">Abrir sección <ArrowRight size={14} /></span>
+              </Link>
             ))}
           </AnimeStaggerGrid>
         </section>
 
-      </div>
+        <section className="mx-auto mt-20 grid max-w-7xl gap-6 px-4 md:px-8 lg:grid-cols-[.85fr_1.15fr]">
+          <div className="rounded-[2.2rem] border border-white/10 bg-[#0a1932] p-8 text-white shadow-2xl">
+            <div className="flex items-center gap-2 text-amber-300"><Database size={17} /><span className="text-[10px] font-extrabold uppercase tracking-[.18em]">Enfoque de oración</span></div>
+            {dailyPeople ? <>
+              <h2 className="mt-5 font-serif text-4xl font-black">{dailyPeople.name}</h2>
+              <p className="mt-2 text-sm font-bold text-amber-300">{[dailyPeople.country, dailyPeople.continent].filter(Boolean).join(' · ') || 'Contexto global'}</p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-white/5 p-4"><p className="text-2xl font-black">{formatMissionNumber(dailyPeople.population)}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Población estimada</p></div>
+                <div className="rounded-2xl bg-white/5 p-4"><p className="text-2xl font-black">{dailyPeople.evangelicalPercent == null ? 'No disponible' : `${dailyPeople.evangelicalPercent}%`}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Evangélicos estimados</p></div>
+              </div>
+              <Link to="/misiones/pueblos" className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-amber-300">Ver contexto y orar <ArrowRight size={15} /></Link>
+            </> : <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/5 p-5"><p className="font-bold">Fuente internacional pendiente</p><p className="mt-2 text-sm text-slate-300">{joshuaError || 'No se recibió un registro válido.'}</p></div>}
+          </div>
+          <div>
+            <div className="mb-5 flex items-end justify-between"><div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-600">Nuestra iglesia</p><h2 className="mt-2 font-serif text-3xl font-black text-slate-950 dark:text-white">Proyectos publicados</h2></div><Link to="/misiones/local" className="text-xs font-extrabold text-amber-700">Ver todos</Link></div>
+            {missionsError ? <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-800">{missionsError}</div> : missions.length ? <div className="grid gap-5 sm:grid-cols-2">{missions.slice(0, 2).map(mission => <MissionCard key={mission.id} mission={mission} />)}</div> : <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-10 text-center dark:border-white/15 dark:bg-slate-900/50"><RefreshCw className="mx-auto text-slate-300" /><h3 className="mt-4 font-serif text-xl font-black text-slate-900 dark:text-white">Aún no hay proyectos publicados</h3><p className="mt-2 text-sm text-slate-500">La administración puede publicar el primer proyecto sin inventar cifras ni ubicaciones.</p></div>}
+          </div>
+        </section>
+
+        <section className="mx-auto mt-16 max-w-7xl px-4 md:px-8">
+          <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 text-sm leading-relaxed text-slate-600 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-300">
+            <div className="flex items-start gap-3"><BookOpen className="mt-0.5 shrink-0 text-amber-600" size={19} /><div><p className="font-bold text-slate-900 dark:text-white">Cómo interpretar estos datos</p><p className="mt-1">Las poblaciones, porcentajes y escalas son estimaciones para oración, enseñanza e investigación. No deben usarse como localización operativa ni sustituir la verificación con líderes locales.</p><p className="mt-3 text-xs">Datos proporcionados por <a href="https://joshuaproject.net" target="_blank" rel="noreferrer" className="font-extrabold text-amber-700 underline">Joshua Project</a>. Acceso: agosto de 2026.</p></div></div>
+          </div>
+        </section>
+      </main>
     </>
   );
 }

@@ -25,7 +25,13 @@ export default function MissionsManager() {
     goal_amount: 0,
     current_amount: 0,
     status: 'active',
-    image_url: ''
+    image_url: '',
+    scope: 'local',
+    country_code: 'EC',
+    region: '',
+    city: '',
+    is_published: true,
+    metadata: {},
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -80,7 +86,13 @@ export default function MissionsManager() {
         goal_amount: 0,
         current_amount: 0,
         status: 'active',
-        image_url: ''
+        image_url: '',
+        scope: 'local',
+        country_code: 'EC',
+        region: '',
+        city: '',
+        is_published: true,
+        metadata: {},
       });
     }
     setSelectedFile(null);
@@ -104,16 +116,17 @@ export default function MissionsManager() {
         toast.dismiss('upload');
       }
 
+      const { id, ...missionFields } = formData;
       const payload = {
-        ...formData,
+        ...missionFields,
         image_url: finalImageUrl
       };
 
-      if (formData.id) {
+      if (id) {
         const { error } = await supabase
           .from('missions')
           .update(payload)
-          .eq('id', formData.id);
+          .eq('id', id);
         if (error) throw error;
         toast.success('Proyecto actualizado');
       } else {
@@ -408,6 +421,49 @@ export default function MissionsManager() {
                       <option value="paused">Pausado</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ámbito</label>
+                    <select
+                      value={formData.scope || 'local'}
+                      onChange={e => setFormData({ ...formData, scope: e.target.value as NonNullable<Mission['scope']> })}
+                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none"
+                    >
+                      <option value="local">Local</option>
+                      <option value="national">Nacional</option>
+                      <option value="international">Internacional</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Código de país</label>
+                    <input value={formData.country_code || ''} maxLength={2} onChange={e => setFormData({ ...formData, country_code: e.target.value.toUpperCase() })} placeholder="EC" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Provincia / Región</label>
+                    <input value={formData.region || ''} onChange={e => setFormData({ ...formData, region: e.target.value })} placeholder="Guayas" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ciudad</label>
+                    <input value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="Milagro" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Latitud pública</label>
+                    <input type="number" step="any" value={typeof formData.metadata?.latitude === 'number' ? formData.metadata.latitude : ''} onChange={e => setFormData({ ...formData, metadata: { ...formData.metadata, latitude: e.target.value === '' ? null : Number(e.target.value) } })} placeholder="-2.134" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Longitud pública</label>
+                    <input type="number" step="any" value={typeof formData.metadata?.longitude === 'number' ? formData.metadata.longitude : ''} onChange={e => setFormData({ ...formData, metadata: { ...formData.metadata, longitude: e.target.value === '' ? null : Number(e.target.value) } })} placeholder="-79.594" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
+                  </div>
+
+                  <label className="md:col-span-2 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-200">
+                    <input type="checkbox" checked={formData.is_published ?? true} onChange={e => setFormData({ ...formData, is_published: e.target.checked })} className="h-4 w-4" />
+                    Publicar este proyecto en el centro de misiones
+                  </label>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Económica ($)</label>

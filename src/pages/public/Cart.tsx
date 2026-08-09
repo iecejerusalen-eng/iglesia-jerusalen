@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -20,13 +20,23 @@ import {
 } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { getLineTax, getUnitPrice } from '../../features/store/pricing';
+import type { StoreShippingMethod } from '../../types';
+
+interface StoreBankDetails {
+  bank_name: string | null;
+  bank_account: string | null;
+  ruc: string | null;
+}
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Error desconocido';
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
   const { user } = useAuthStore();
   
   const [step, setStep] = useState(1); // 1: Cart, 2: Delivery & Contact, 3: Payment
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('transfer');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
   const [uploadingVoucher, setUploadingVoucher] = useState(false);
@@ -47,6 +57,28 @@ const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bankDetails, setBankDetails] = useState<StoreBankDetails | null>(null);
+  const [shippingMethods, setShippingMethods] = useState<StoreShippingMethod[]>([]);
+
+  useEffect(() => {
+    const fetchBankDetails = async () => {
+      const { data, error: settingsError } = await supabase
+        .from('church_settings')
+        .select('bank_name, bank_account, ruc, shipping_methods')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (settingsError) {
+        console.error('No se pudieron cargar los datos bancarios:', settingsError);
+        setError('No se pudieron cargar los datos bancarios. No realices la transferencia todavía.');
+        return;
+      }
+      setBankDetails(data);
+      setShippingMethods((data?.shipping_methods || []).filter((method: StoreShippingMethod) => method.active));
+    };
+
+    void fetchBankDetails();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -107,9 +139,12 @@ const Cart = () => {
     setLoading(true);
     setError(null);
 
-    const shippingCost = formData.delivery === 'shipping' ? 5.00 : 0.00;
-    const finalTotal = getTotalPrice() + shippingCost;
-    const initialStatus = paymentMethod === 'card' ? 'paid' : 'pending_payment';
+    const shippingCost = formData.delivery === 'shipping'
+      ? shippingMethods.find(method => method.id === 'shipping')?.base_cost ?? 0
+      : shippingMethods.find(method => method.id === 'pickup')?.base_cost ?? 0;
+    const orderTax = items.reduce((total, item) => total + getLineTax(item.product, item.quantity, item.variant), 0);
+    const finalTotal = getTotalPrice() + orderTax + shippingCost;
+    const initialStatus = 'pending_payment';
 
     try {
       // 1. Insert order
@@ -123,6 +158,12 @@ const Cart = () => {
           status: initialStatus,
           payment_method: paymentMethod,
           payment_voucher_url: paymentMethod === 'transfer' ? voucherUrl : null,
+          shipping_recipient_name: formData.name,
+          shipping_phone: formData.phone,
+          shipping_override_address: formData.delivery === 'shipping'
+            ? `${formData.address}, ${formData.city}`
+            : null,
+          shipping_status_notes: `Método de entrega: ${formData.delivery}`,
         })
         .select()
         .single();
@@ -132,31 +173,25 @@ const Cart = () => {
       // 2. Insert order items
       const orderItems = items.map((item) => ({
         order_id: order.id,
-        product_id: item.product.id.startsWith('mock-') ? null : item.product.id, 
-        variant_id: item.variant?.id.startsWith('mock-') ? null : item.variant?.id || null,
+        product_id: item.product.id,
+        variant_id: item.variant?.id || null,
         quantity: item.quantity,
-        price: Number(item.product.price) + (item.variant?.price_adjustment ? Number(item.variant.price_adjustment) : 0),
+        price: getUnitPrice(item.product, item.quantity, item.variant),
       }));
 
-      // Filter out mock IDs for safety, or pass null if DB allows.
-      const realOrderItems = orderItems.filter(item => item.product_id !== null);
-      
-      if (realOrderItems.length > 0) {
+      if (orderItems.length > 0) {
         const { error: itemsError } = await supabase
           .from('order_items')
-          .insert(realOrderItems);
+          .insert(orderItems);
         if (itemsError) throw itemsError;
       }
 
       // 3. Clear cart and set success state
       clearCart();
       setOrderCompleted(order.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error procesando pedido:', err);
-      // Simular éxito para mocks si es que falla la conexión o BD
-      const mockOrderId = 'ord-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      clearCart();
-      setOrderCompleted(mockOrderId);
+      setError(`No se pudo registrar el pedido: ${getErrorMessage(err)}. Tu carrito permanece intacto.`);
     } finally {
       setLoading(false);
     }
@@ -171,9 +206,7 @@ const Cart = () => {
         <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mb-3">¡Pedido Recibido!</h1>
         <p className="text-gray-550 dark:text-gray-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
           Gracias por tu compra. Tu orden <span className="font-mono font-bold text-primary dark:text-white">#{orderCompleted.slice(0, 8).toUpperCase()}</span> ha sido registrada exitosamente. 
-          {paymentMethod === 'transfer' 
-            ? ' Un administrador verificará tu comprobante y autorizará el despacho.'
-            : ' Tu pago ha sido aprobado de forma instantánea.'}
+          Un administrador verificará tu comprobante y autorizará el despacho.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
@@ -214,9 +247,12 @@ const Cart = () => {
     );
   }
 
-  const shippingCost = formData.delivery === 'shipping' ? 5.00 : 0.00;
+  const shippingCost = formData.delivery === 'shipping'
+    ? shippingMethods.find(method => method.id === 'shipping')?.base_cost ?? 0
+    : shippingMethods.find(method => method.id === 'pickup')?.base_cost ?? 0;
   const subtotal = getTotalPrice();
-  const total = subtotal + shippingCost;
+  const taxTotal = items.reduce((sum, item) => sum + getLineTax(item.product, item.quantity, item.variant), 0);
+  const total = subtotal + taxTotal + shippingCost;
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
@@ -491,23 +527,16 @@ const Cart = () => {
                 {/* Toggles de opción de pago */}
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={() => { setPaymentMethod('card'); setError(null); }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                      paymentMethod === 'card'
-                        ? 'border-primary bg-blue-50/30 dark:bg-blue-950/20'
-                        : 'border-gray-250 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
+                    type="button"
+                    disabled
+                    className="cursor-not-allowed rounded-xl border-2 border-dashed border-gray-250 p-4 text-left opacity-65 dark:border-slate-700"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <CreditCard className={paymentMethod === 'card' ? 'text-primary dark:text-white' : 'text-gray-405'} size={20} />
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        paymentMethod === 'card' ? 'border-primary bg-primary' : 'border-gray-300 dark:border-slate-600'
-                      }`}>
-                        {paymentMethod === 'card' && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full" />}
-                      </div>
+                      <CreditCard className="text-gray-405" size={20} />
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-500 dark:bg-slate-800">Próximamente</span>
                     </div>
-                    <span className="block font-bold text-sm text-gray-800 dark:text-white">Tarjeta de Crédito</span>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Procesamiento inmediato</span>
+                    <span className="block font-bold text-sm text-gray-800 dark:text-white">PayPhone / PayPal</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Requiere credenciales de servidor</span>
                   </button>
 
                   <button
@@ -536,7 +565,7 @@ const Cart = () => {
                   <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <p className="text-gray-450 dark:text-gray-400 text-xs flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg">
                       <Info size={14} className="text-primary dark:text-blue-400 shrink-0" />
-                      Demostración: Usa números de tarjeta ficticios para simular la compra.
+                      La pasarela está desactivada hasta configurar PayPhone o PayPal de forma segura en el servidor.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -608,26 +637,18 @@ const Cart = () => {
                   <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-150 dark:border-white/10 space-y-3">
                       <h4 className="font-bold text-sm text-gray-800 dark:text-white">Cuentas Bancarias de la Iglesia:</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
-                          <p className="font-bold text-primary dark:text-white">Banco Pichincha</p>
-                          <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Ahorros</p>
-                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#2201234567</p>
-                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
+                      {bankDetails?.bank_name && bankDetails.bank_account ? (
+                        <div className="rounded-xl border border-gray-100 bg-white p-4 text-xs dark:border-white/10 dark:bg-slate-900">
+                          <p className="font-bold text-primary dark:text-white">{bankDetails.bank_name}</p>
+                          <p className="mt-1 text-gray-500 dark:text-gray-400">Cuenta registrada por la administración</p>
+                          <p className="font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">{bankDetails.bank_account}</p>
+                          {bankDetails.ruc && <p className="mt-1 text-[10px] text-gray-405">RUC: {bankDetails.ruc}</p>}
                         </div>
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
-                          <p className="font-bold text-primary dark:text-white">Banco Guayaquil</p>
-                          <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Corriente</p>
-                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#10987654</p>
-                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
+                      ) : (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-300">
+                          Los datos bancarios aún no están configurados. No realices una transferencia.
                         </div>
-                        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-gray-100 dark:border-white/10">
-                          <p className="font-bold text-primary dark:text-white">Produbanco</p>
-                          <p className="text-gray-500 dark:text-gray-400 mt-1">Cta. Ahorros</p>
-                          <p className="font-mono font-semibold text-gray-700 dark:text-gray-300">#0345678912</p>
-                          <p className="text-[10px] text-gray-405 mt-0.5">Iglesia Jerusalén</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -696,8 +717,8 @@ const Cart = () => {
                 <span>{shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 pb-3 border-b border-gray-100 dark:border-white/10">
-                <span>Impuesto / Transacción</span>
-                <span>Gratis</span>
+                <span>IVA</span>
+                <span>${taxTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold text-gray-800 dark:text-white pt-1">
                 <span>Total Final</span>

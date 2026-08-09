@@ -54,6 +54,7 @@ const SermonDetail = lazyWithRetry(() => import('../pages/public/SermonDetail'))
 const Birthdays = lazyWithRetry(() => import('../pages/public/Birthdays'));
 const Bible = lazyWithRetry(() => import('../pages/public/Bible'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
+const MissionExplorer = lazyWithRetry(() => import('../pages/public/MissionExplorer'));
 const VerifyStudent = lazyWithRetry(() => import('../pages/public/VerifyStudent'));
 
 
@@ -89,6 +90,7 @@ export default function PublicRoutes() {
         <Route path="/plan-lectura" element={<ReadingPlan />} />
         <Route path="/predicas/:id" element={<SermonDetail />} />
         <Route path="/misiones" element={<Missions />} />
+        <Route path="/misiones/:section" element={<MissionExplorer />} />
         <Route path="/cumpleanos" element={<Birthdays />} />
         <Route path="/recursos/biblia" element={<Bible />} />
         <Route path="/recursos/juegos" element={<GamesHub />} />
