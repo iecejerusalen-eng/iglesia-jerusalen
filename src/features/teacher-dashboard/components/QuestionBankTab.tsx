@@ -1,398 +1,178 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, BookOpen, CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../../config/supabase';
-import { useAuthStore } from '../../../store/useAuthStore';
-import { Plus, Edit2, Trash2, Save, X, BookOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+
+type QuestionType = 'multiple_choice' | 'true_false' | 'essay';
 
 interface QuestionBankTabProps {
   courseId: string | null;
-  courses?: any[];
 }
 
 interface Category {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
 }
 
 interface Question {
   id: string;
-  category_id: string;
-  type: 'multiple_choice' | 'true_false' | 'essay';
+  category_id: string | null;
+  type: QuestionType;
   content: string;
-  options: any;
-  correct_answer: any;
+  options: unknown;
+  correct_answer: unknown;
   points: number;
-  explanation: string;
+  explanation: string | null;
 }
 
-export function QuestionBankTab({ courseId, courses }: QuestionBankTabProps) {
-  const { user } = useAuthStore();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface OptionDraft {
+  id: string;
+  text: string;
+}
 
-  // Form states
+const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-gold dark:border-white/10 dark:bg-slate-950 dark:text-white';
+
+export function QuestionBankTab({ courseId }: QuestionBankTabProps) {
+  const queryClient = useQueryClient();
+  const queryKey = ['teacher-question-bank', courseId] as const;
   const [activeTab, setActiveTab] = useState<'questions' | 'categories'>('questions');
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [showAddQuestion, setShowAddQuestion] = useState(false);
-  
-  // New Category Form
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatDesc, setNewCatDesc] = useState('');
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [questionCategoryId, setQuestionCategoryId] = useState('');
+  const [questionType, setQuestionType] = useState<QuestionType>('multiple_choice');
+  const [questionContent, setQuestionContent] = useState('');
+  const [questionPoints, setQuestionPoints] = useState(1);
+  const [questionExplanation, setQuestionExplanation] = useState('');
+  const [options, setOptions] = useState<OptionDraft[]>([
+    { id: crypto.randomUUID(), text: '' },
+    { id: crypto.randomUUID(), text: '' },
+  ]);
+  const [correctOptionId, setCorrectOptionId] = useState('');
+  const [trueFalseAnswer, setTrueFalseAnswer] = useState(true);
 
-  // New Question Form
-  const [newQCategoryId, setNewQCategoryId] = useState('');
-  const [newQType, setNewQType] = useState<'multiple_choice' | 'true_false' | 'essay'>('multiple_choice');
-  const [newQContent, setNewQContent] = useState('');
-  const [newQPoints, setNewQPoints] = useState(1);
-  const [newQExplanation, setNewQExplanation] = useState('');
-
-  useEffect(() => {
-    if (courseId) {
-      loadData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [courseId]);
-
-  const loadData = async () => {
-    if (!courseId) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [catsRes, qRes] = await Promise.all([
-        supabase.from('lms_question_categories').select('*').eq('course_id', courseId).order('name'),
-        supabase.from('lms_questions').select('*').eq('course_id', courseId).order('created_at', { ascending: false })
+  const { data = { categories: [], questions: [] }, isLoading, error } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!courseId) return { categories: [] as Category[], questions: [] as Question[] };
+      const [categoriesResult, questionsResult] = await Promise.all([
+        supabase.from('lms_question_categories').select('id, name, description').eq('course_id', courseId).order('name'),
+        supabase.from('lms_questions').select('id, category_id, type, content, options, correct_answer, points, explanation').eq('course_id', courseId).order('created_at', { ascending: false }),
       ]);
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (questionsResult.error) throw questionsResult.error;
+      return {
+        categories: (categoriesResult.data || []) as Category[],
+        questions: (questionsResult.data || []) as Question[],
+      };
+    },
+    enabled: Boolean(courseId),
+  });
 
-      if (catsRes.error) throw catsRes.error;
-      if (qRes.error) throw qRes.error;
+  const refresh = async () => queryClient.invalidateQueries({ queryKey });
 
-      setCategories(catsRes.data || []);
-      setQuestions(qRes.data || []);
-      
-      if (catsRes.data && catsRes.data.length > 0) {
-        setNewQCategoryId(catsRes.data[0].id);
+  const createCategory = useMutation({
+    mutationFn: async () => {
+      if (!courseId || !categoryName.trim()) throw new Error('Escribe el nombre de la categoría.');
+      const { error: insertError } = await supabase.from('lms_question_categories').insert({
+        course_id: courseId,
+        name: categoryName.trim(),
+        description: categoryDescription.trim() || null,
+      });
+      if (insertError) throw insertError;
+    },
+    onSuccess: async () => {
+      await refresh();
+      setCategoryName('');
+      setCategoryDescription('');
+      setShowCategoryForm(false);
+      toast.success('Categoría creada');
+    },
+    onError: (mutationError) => toast.error(mutationError instanceof Error ? mutationError.message : 'No se pudo crear la categoría'),
+  });
+
+  const createQuestion = useMutation({
+    mutationFn: async () => {
+      if (!courseId || !questionContent.trim()) throw new Error('Escribe el enunciado.');
+      const categoryId = questionCategoryId || data.categories[0]?.id;
+      if (!categoryId) throw new Error('Crea o selecciona una categoría.');
+
+      const cleanOptions = options.filter((option) => option.text.trim()).map((option) => ({ ...option, text: option.text.trim() }));
+      if (questionType === 'multiple_choice' && (cleanOptions.length < 2 || !correctOptionId || !cleanOptions.some((option) => option.id === correctOptionId))) {
+        throw new Error('Agrega al menos dos opciones y marca la respuesta correcta.');
       }
-    } catch (err: any) {
-      console.error('Error loading question bank:', err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleCreateCategory = async () => {
-    if (!courseId || !newCatName) return;
-    try {
-      const { data, error } = await supabase
-        .from('lms_question_categories')
-        .insert([{ course_id: courseId, name: newCatName, description: newCatDesc }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      setCategories([...categories, data]);
-      setShowAddCategory(false);
-      setNewCatName('');
-      setNewCatDesc('');
-      if (!newQCategoryId) setNewQCategoryId(data.id);
-    } catch (err: any) {
-      alert('Error: ' + err.message);
-    }
-  };
+      const { error: insertError } = await supabase.from('lms_questions').insert({
+        course_id: courseId,
+        category_id: categoryId,
+        type: questionType,
+        content: questionContent.trim(),
+        points: questionPoints,
+        explanation: questionExplanation.trim() || null,
+        options: questionType === 'multiple_choice' ? cleanOptions : null,
+        correct_answer: questionType === 'multiple_choice' ? correctOptionId : questionType === 'true_false' ? trueFalseAnswer : null,
+      });
+      if (insertError) throw insertError;
+    },
+    onSuccess: async () => {
+      await refresh();
+      setQuestionContent('');
+      setQuestionExplanation('');
+      setQuestionPoints(1);
+      setOptions([{ id: crypto.randomUUID(), text: '' }, { id: crypto.randomUUID(), text: '' }]);
+      setCorrectOptionId('');
+      setShowQuestionForm(false);
+      toast.success('Pregunta guardada');
+    },
+    onError: (mutationError) => toast.error(mutationError instanceof Error ? mutationError.message : 'No se pudo guardar la pregunta'),
+  });
 
-  const handleCreateQuestion = async () => {
-    if (!courseId || !newQCategoryId || !newQContent) return;
-    try {
-      const { data, error } = await supabase
-        .from('lms_questions')
-        .insert([{
-          course_id: courseId,
-          category_id: newQCategoryId,
-          type: newQType,
-          content: newQContent,
-          points: newQPoints,
-          explanation: newQExplanation,
-          options: newQType === 'multiple_choice' ? [] : null,
-          correct_answer: newQType === 'true_false' ? true : null
-        }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      setQuestions([data, ...questions]);
-      setShowAddQuestion(false);
-      setNewQContent('');
-      setNewQExplanation('');
-      setNewQPoints(1);
-    } catch (err: any) {
-      alert('Error: ' + err.message);
-    }
-  };
+  const deleteQuestion = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: deleteError } = await supabase.from('lms_questions').delete().eq('id', id);
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: async () => { await refresh(); toast.success('Pregunta eliminada'); },
+    onError: () => toast.error('No se pudo eliminar la pregunta'),
+  });
 
-  const handleDeleteQuestion = async (id: string) => {
-    if (!confirm('¿Eliminar pregunta?')) return;
-    try {
-      const { error } = await supabase.from('lms_questions').delete().eq('id', id);
-      if (error) throw error;
-      setQuestions(questions.filter(q => q.id !== id));
-    } catch (err: any) {
-      alert('Error: ' + err.message);
-    }
-  };
+  if (!courseId) return <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white/80 py-14 text-slate-500 backdrop-blur-xl dark:border-white/10 dark:bg-white/5"><BookOpen className="mb-4 opacity-50" size={46} /><p>Selecciona un curso para abrir su banco de preguntas.</p></div>;
+  if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gold" /></div>;
+  if (error) return <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700"><AlertCircle size={20} />No se pudo cargar el banco de preguntas.</div>;
 
-  if (!courseId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-500 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl">
-        <BookOpen className="h-12 w-12 mb-4 opacity-50" />
-        <p>Selecciona un curso para ver su banco de preguntas</p>
-      </div>
-    );
-  }
-
-  if (isLoading) return <div className="p-8 text-center text-white/70">Cargando banco de preguntas...</div>;
+  const selectedCategoryId = questionCategoryId || data.categories[0]?.id || '';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Banco de Preguntas</h2>
-          <p className="text-white/60">Gestiona las preguntas y categorías para tus evaluaciones.</p>
-        </div>
-        <div className="flex space-x-2 bg-black/20 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveTab('questions')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'questions' ? 'bg-gold text-white shadow-lg' : 'text-white/60 hover:text-white'
-            }`}
-          >
-            Preguntas
-          </button>
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'categories' ? 'bg-gold text-white shadow-lg' : 'text-white/60 hover:text-white'
-            }`}
-          >
-            Categorías
-          </button>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-white">Banco de preguntas</h2><p className="text-sm text-slate-500">Preguntas reutilizables y respuestas correctas reales.</p></div>
+        <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-white/5">
+          {(['questions', 'categories'] as const).map((tab) => <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`min-h-10 rounded-lg px-4 text-sm font-bold ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white' : 'text-slate-500'}`}>{tab === 'questions' ? 'Preguntas' : 'Categorías'}</button>)}
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-xl flex items-center">
-          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
-          <p>{error}</p>
-        </div>
-      )}
-
-      {activeTab === 'categories' && (
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-white">Categorías</h3>
-            <button
-              onClick={() => setShowAddCategory(!showAddCategory)}
-              className="flex items-center px-4 py-2 bg-gold hover:bg-gold-light text-white rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Categoría
-            </button>
-          </div>
-
-          {showAddCategory && (
-            <div className="mb-8 p-6 bg-black/20 rounded-xl border border-white/5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">Nombre de la Categoría</label>
-                <input
-                  type="text"
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-gold"
-                  placeholder="Ej. Unidad 1, Matemáticas Básicas..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">Descripción (Opcional)</label>
-                <input
-                  type="text"
-                  value={newCatDesc}
-                  onChange={(e) => setNewCatDesc(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-gold"
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowAddCategory(false)}
-                  className="px-4 py-2 text-white/60 hover:text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateCategory}
-                  disabled={!newCatName}
-                  className="px-6 py-2 bg-gold hover:bg-gold-light text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map(cat => (
-              <div key={cat.id} className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                <h4 className="font-bold text-white mb-1">{cat.name}</h4>
-                <p className="text-sm text-white/60 mb-3">{cat.description || 'Sin descripción'}</p>
-                <div className="text-xs text-gold flex items-center">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  {questions.filter(q => q.category_id === cat.id).length} preguntas
-                </div>
-              </div>
-            ))}
-            {categories.length === 0 && !showAddCategory && (
-              <p className="text-white/40 col-span-full py-4 text-center">No hay categorías. Crea una para empezar.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'questions' && (
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-white">Preguntas</h3>
-            <button
-              onClick={() => {
-                if (categories.length === 0) {
-                  alert('Debes crear al menos una categoría primero.');
-                  setActiveTab('categories');
-                  return;
-                }
-                setShowAddQuestion(!showAddQuestion);
-              }}
-              className="flex items-center px-4 py-2 bg-gold hover:bg-gold-light text-white rounded-xl transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Pregunta
-            </button>
-          </div>
-
-          {showAddQuestion && (
-            <div className="mb-8 p-6 bg-black/20 rounded-xl border border-white/5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">Categoría</label>
-                  <select
-                    value={newQCategoryId}
-                    onChange={(e) => setNewQCategoryId(e.target.value)}
-                    className="w-full bg-[#1a1f36] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-gold"
-                  >
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">Tipo de Pregunta</label>
-                  <select
-                    value={newQType}
-                    onChange={(e: any) => setNewQType(e.target.value)}
-                    className="w-full bg-[#1a1f36] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-gold"
-                  >
-                    <option value="multiple_choice">Opción Múltiple</option>
-                    <option value="true_false">Verdadero o Falso</option>
-                    <option value="essay">Desarrollo / Ensayo</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">Enunciado</label>
-                <textarea
-                  value={newQContent}
-                  onChange={(e) => setNewQContent(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-gold h-24 resize-none"
-                  placeholder="Escribe la pregunta aquí..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">Puntuación</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    value={newQPoints}
-                    onChange={(e) => setNewQPoints(parseFloat(e.target.value))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-gold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">Explicación (Opcional)</label>
-                  <input
-                    type="text"
-                    value={newQExplanation}
-                    onChange={(e) => setNewQExplanation(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-gold"
-                    placeholder="Feedback que verá el alumno"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
-                <button
-                  onClick={() => setShowAddQuestion(false)}
-                  className="px-4 py-2 text-white/60 hover:text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateQuestion}
-                  disabled={!newQContent}
-                  className="px-6 py-2 bg-gold hover:bg-gold-light text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {questions.map(q => {
-              const cat = categories.find(c => c.id === q.category_id);
-              return (
-                <div key={q.id} className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors flex justify-between items-start group">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-black/40 text-white/60">
-                        {q.type === 'multiple_choice' ? 'Múltiple' : q.type === 'true_false' ? 'V/F' : 'Ensayo'}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gold/20 text-gold">
-                        {cat?.name || 'Sin Categoría'}
-                      </span>
-                      <span className="text-xs text-white/50">{q.points} pt(s)</span>
-                    </div>
-                    <p className="text-white font-medium">{q.content}</p>
-                  </div>
-                  <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleDeleteQuestion(q.id)}
-                      className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                      title="Eliminar Pregunta"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            {questions.length === 0 && !showAddQuestion && (
-              <p className="text-white/40 text-center py-8">No hay preguntas en este curso. ¡Agrega la primera!</p>
-            )}
-          </div>
-        </div>
+      {activeTab === 'categories' ? (
+        <section className="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-7">
+          <div className="mb-5 flex items-center justify-between"><h3 className="font-bold text-slate-900 dark:text-white">Categorías</h3><button type="button" onClick={() => setShowCategoryForm((value) => !value)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gold px-4 text-sm font-bold text-white"><Plus size={16} /> Nueva</button></div>
+          {showCategoryForm && <div className="mb-5 grid gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/30 sm:grid-cols-2"><input className={inputClass} value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="Nombre" /><input className={inputClass} value={categoryDescription} onChange={(event) => setCategoryDescription(event.target.value)} placeholder="Descripción" /><button type="button" disabled={createCategory.isPending} onClick={() => createCategory.mutate()} className="min-h-10 rounded-xl bg-indigo-600 px-4 font-bold text-white sm:col-span-2">Guardar categoría</button></div>}
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{data.categories.map((category) => <article key={category.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10"><h4 className="font-bold text-slate-900 dark:text-white">{category.name}</h4><p className="mt-1 text-sm text-slate-500">{category.description || 'Sin descripción'}</p><p className="mt-3 flex items-center gap-1 text-xs font-bold text-gold"><CheckCircle2 size={13} />{data.questions.filter((question) => question.category_id === category.id).length} preguntas</p></article>)}</div>
+        </section>
+      ) : (
+        <section className="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-7">
+          <div className="mb-5 flex items-center justify-between"><h3 className="font-bold text-slate-900 dark:text-white">Preguntas</h3><button type="button" onClick={() => { if (!data.categories.length) { setActiveTab('categories'); setShowCategoryForm(true); toast.info('Primero crea una categoría'); } else setShowQuestionForm((value) => !value); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-gold px-4 text-sm font-bold text-white"><Plus size={16} /> Nueva</button></div>
+          {showQuestionForm && <div className="mb-6 space-y-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/30 sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-2"><select className={inputClass} value={selectedCategoryId} onChange={(event) => setQuestionCategoryId(event.target.value)}>{data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><select className={inputClass} value={questionType} onChange={(event) => setQuestionType(event.target.value as QuestionType)}><option value="multiple_choice">Opción múltiple</option><option value="true_false">Verdadero o falso</option><option value="essay">Desarrollo</option></select></div>
+            <textarea className={`${inputClass} min-h-24`} value={questionContent} onChange={(event) => setQuestionContent(event.target.value)} placeholder="Enunciado de la pregunta" />
+            {questionType === 'multiple_choice' && <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Opciones (marca la correcta)</p>{options.map((option, index) => <div key={option.id} className="flex items-center gap-2"><input type="radio" name="correct-option" checked={correctOptionId === option.id} onChange={() => setCorrectOptionId(option.id)} className="size-4 accent-emerald-500" /><input className={inputClass} value={option.text} onChange={(event) => setOptions((current) => current.map((item) => item.id === option.id ? { ...item, text: event.target.value } : item))} placeholder={`Opción ${index + 1}`} />{options.length > 2 && <button type="button" onClick={() => setOptions((current) => current.filter((item) => item.id !== option.id))} className="rounded-lg p-2 text-red-500"><Trash2 size={16} /></button>}</div>)}<button type="button" onClick={() => setOptions((current) => [...current, { id: crypto.randomUUID(), text: '' }])} className="text-sm font-bold text-indigo-600">+ Agregar opción</button></div>}
+            {questionType === 'true_false' && <select className={inputClass} value={String(trueFalseAnswer)} onChange={(event) => setTrueFalseAnswer(event.target.value === 'true')}><option value="true">Verdadero</option><option value="false">Falso</option></select>}
+            <div className="grid gap-3 sm:grid-cols-[140px_1fr]"><input className={inputClass} type="number" min="0.5" step="0.5" value={questionPoints} onChange={(event) => setQuestionPoints(Number(event.target.value) || 1)} /><input className={inputClass} value={questionExplanation} onChange={(event) => setQuestionExplanation(event.target.value)} placeholder="Explicación o retroalimentación" /></div>
+            <button type="button" disabled={createQuestion.isPending} onClick={() => createQuestion.mutate()} className="min-h-11 w-full rounded-xl bg-indigo-600 font-bold text-white">Guardar pregunta</button>
+          </div>}
+          <div className="space-y-3">{data.questions.map((question) => { const category = data.categories.find((item) => item.id === question.category_id); return <article key={question.id} className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 p-4 dark:border-white/10"><div><div className="mb-2 flex flex-wrap gap-2"><span className="rounded-md bg-indigo-500/10 px-2 py-1 text-[10px] font-black uppercase text-indigo-600">{question.type === 'multiple_choice' ? 'Múltiple' : question.type === 'true_false' ? 'V/F' : 'Desarrollo'}</span><span className="rounded-md bg-gold/10 px-2 py-1 text-[10px] font-black uppercase text-gold">{category?.name || 'Sin categoría'}</span><span className="px-1 py-1 text-xs text-slate-400">{question.points} pts</span></div><p className="font-semibold text-slate-900 dark:text-white">{question.content}</p></div><button type="button" onClick={() => { if (window.confirm('¿Eliminar esta pregunta?')) deleteQuestion.mutate(question.id); }} className="shrink-0 rounded-xl p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 size={17} /></button></article>; })}{!data.questions.length && <p className="py-10 text-center text-slate-500">Todavía no hay preguntas.</p>}</div>
+        </section>
       )}
     </div>
   );

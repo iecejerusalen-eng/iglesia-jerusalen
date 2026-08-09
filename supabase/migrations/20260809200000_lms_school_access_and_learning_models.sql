@@ -37,6 +37,9 @@ ALTER TABLE public.lms_class_sessions
 ALTER TABLE public.lms_lesson_submissions
   ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'submitted';
 
+ALTER TABLE public.lms_lessons
+  ADD COLUMN IF NOT EXISTS due_date timestamptz;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -122,10 +125,16 @@ CREATE INDEX IF NOT EXISTS lms_school_memberships_school_role_idx
   ON public.lms_school_memberships (school_id, role, status);
 CREATE INDEX IF NOT EXISTS lms_school_memberships_level_idx
   ON public.lms_school_memberships (level_id) WHERE level_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS lms_school_memberships_approved_by_idx
+  ON public.lms_school_memberships (approved_by) WHERE approved_by IS NOT NULL;
 CREATE INDEX IF NOT EXISTS lms_school_access_requests_school_status_idx
   ON public.lms_school_access_requests (school_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS lms_school_access_requests_user_idx
   ON public.lms_school_access_requests (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS lms_school_access_requests_level_idx
+  ON public.lms_school_access_requests (requested_level_id) WHERE requested_level_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS lms_school_access_requests_reviewed_by_idx
+  ON public.lms_school_access_requests (reviewed_by) WHERE reviewed_by IS NOT NULL;
 
 -- Conserva el acceso de matrículas y asignaciones docentes que ya existen.
 INSERT INTO public.lms_school_memberships (school_id, user_id, role, status, joined_at)
@@ -149,6 +158,26 @@ ON CONFLICT (school_id, user_id, role) DO NOTHING;
 ALTER TABLE public.lms_school_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lms_school_access_requests ENABLE ROW LEVEL SECURITY;
 
+CREATE SCHEMA IF NOT EXISTS private;
+CREATE OR REPLACE FUNCTION private.is_lms_school_staff(p_school_id uuid, p_roles text[])
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT (SELECT auth.uid()) IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.lms_school_memberships membership
+    WHERE membership.school_id = p_school_id
+      AND membership.user_id = (SELECT auth.uid())
+      AND membership.role = ANY(p_roles)
+      AND membership.status = 'active'
+  );
+$$;
+REVOKE ALL ON FUNCTION private.is_lms_school_staff(uuid, text[]) FROM PUBLIC, anon;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT EXECUTE ON FUNCTION private.is_lms_school_staff(uuid, text[]) TO authenticated;
+
 DROP POLICY IF EXISTS "School memberships visible to participants and managers" ON public.lms_school_memberships;
 CREATE POLICY "School memberships visible to participants and managers"
   ON public.lms_school_memberships FOR SELECT TO authenticated
@@ -164,13 +193,7 @@ CREATE POLICY "School memberships visible to participants and managers"
       WHERE s.id = lms_school_memberships.school_id
         AND s.leader_id = (SELECT auth.uid())
     )
-    OR EXISTS (
-      SELECT 1 FROM public.lms_school_memberships manager_membership
-      WHERE manager_membership.school_id = lms_school_memberships.school_id
-        AND manager_membership.user_id = (SELECT auth.uid())
-        AND manager_membership.role IN ('teacher', 'coordinator')
-        AND manager_membership.status = 'active'
-    )
+    OR (SELECT private.is_lms_school_staff(lms_school_memberships.school_id, ARRAY['teacher', 'coordinator']))
   );
 
 DROP POLICY IF EXISTS "School memberships managed by school authorities" ON public.lms_school_memberships;
@@ -187,6 +210,7 @@ CREATE POLICY "School memberships managed by school authorities"
       WHERE s.id = lms_school_memberships.school_id
         AND s.leader_id = (SELECT auth.uid())
     )
+    OR (SELECT private.is_lms_school_staff(lms_school_memberships.school_id, ARRAY['coordinator']))
   )
   WITH CHECK (
     EXISTS (
@@ -199,6 +223,7 @@ CREATE POLICY "School memberships managed by school authorities"
       WHERE s.id = lms_school_memberships.school_id
         AND s.leader_id = (SELECT auth.uid())
     )
+    OR (SELECT private.is_lms_school_staff(lms_school_memberships.school_id, ARRAY['coordinator']))
   );
 
 DROP POLICY IF EXISTS "Users view own school requests" ON public.lms_school_access_requests;
@@ -216,6 +241,7 @@ CREATE POLICY "Users view own school requests"
       WHERE s.id = lms_school_access_requests.school_id
         AND s.leader_id = (SELECT auth.uid())
     )
+    OR (SELECT private.is_lms_school_staff(lms_school_access_requests.school_id, ARRAY['coordinator']))
   );
 
 DROP POLICY IF EXISTS "Users request school access" ON public.lms_school_access_requests;
@@ -223,7 +249,7 @@ CREATE POLICY "Users request school access"
   ON public.lms_school_access_requests FOR INSERT TO authenticated
   WITH CHECK (
     user_id = (SELECT auth.uid())
-    AND requested_role = 'student'
+    AND requested_role IN ('student', 'teacher')
     AND status = 'pending'
   );
 
@@ -274,6 +300,7 @@ BEGIN
       WHERE s.id = v_request.school_id
         AND s.leader_id = (SELECT auth.uid())
     )
+    OR (SELECT private.is_lms_school_staff(v_request.school_id, ARRAY['coordinator']))
   ) INTO v_authorized;
 
   IF NOT v_authorized THEN
@@ -316,6 +343,112 @@ GRANT EXECUTE ON FUNCTION public.process_lms_school_access_request(uuid, boolean
 
 GRANT SELECT, INSERT, UPDATE ON public.lms_school_access_requests TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.lms_school_memberships TO authenticated;
+
+-- Finaliza un cuestionario y califica en el servidor las preguntas objetivas.
+-- Las preguntas de desarrollo quedan pendientes para revision del docente.
+CREATE OR REPLACE FUNCTION public.submit_lms_quiz_attempt(p_attempt_id uuid)
+RETURNS public.lms_quiz_attempts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_attempt public.lms_quiz_attempts;
+  v_has_essay boolean;
+  v_score numeric(5,2);
+BEGIN
+  IF (SELECT auth.uid()) IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT * INTO v_attempt
+  FROM public.lms_quiz_attempts attempt
+  WHERE attempt.id = p_attempt_id
+  FOR UPDATE;
+
+  IF NOT FOUND OR v_attempt.student_id <> (SELECT auth.uid()) THEN
+    RAISE EXCEPTION 'Quiz attempt not found';
+  END IF;
+
+  IF v_attempt.status <> 'in_progress' THEN
+    RETURN v_attempt;
+  END IF;
+
+  UPDATE public.lms_quiz_answers answer
+  SET is_correct = CASE
+        WHEN question.type IN ('multiple_choice', 'true_false')
+          THEN answer.answer_data = question.correct_answer
+        ELSE NULL
+      END,
+      points_awarded = CASE
+        WHEN question.type IN ('multiple_choice', 'true_false')
+          AND answer.answer_data = question.correct_answer
+          THEN question.points
+        ELSE 0
+      END,
+      updated_at = now()
+  FROM public.lms_questions question
+  JOIN public.lms_quiz_questions quiz_question ON quiz_question.question_id = question.id
+  WHERE answer.attempt_id = p_attempt_id
+    AND quiz_question.lesson_id = v_attempt.lesson_id
+    AND answer.question_id = question.id;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.lms_quiz_questions quiz_question
+    JOIN public.lms_questions question ON question.id = quiz_question.question_id
+    WHERE quiz_question.lesson_id = v_attempt.lesson_id
+      AND question.type = 'essay'
+  ) INTO v_has_essay;
+
+  SELECT COALESCE(SUM(answer.points_awarded), 0)
+  INTO v_score
+  FROM public.lms_quiz_answers answer
+  WHERE answer.attempt_id = p_attempt_id;
+
+  UPDATE public.lms_quiz_attempts attempt
+  SET status = CASE WHEN v_has_essay THEN 'completed' ELSE 'graded' END,
+      score = v_score,
+      completed_at = now()
+  WHERE attempt.id = p_attempt_id
+  RETURNING * INTO v_attempt;
+
+  RETURN v_attempt;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.submit_lms_quiz_attempt(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.submit_lms_quiz_attempt(uuid) TO authenticated;
+
+-- Punto unico de autorizacion para las herramientas que pertenecen a un curso.
+-- Se mantiene en el esquema privado para que las politicas no dependan de datos
+-- enviados por el navegador ni de nombres globales de rol como "maestro".
+CREATE OR REPLACE FUNCTION private.can_manage_lms_course(p_course_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT (SELECT auth.uid()) IS NOT NULL
+    AND (
+      EXISTS (
+        SELECT 1
+        FROM public.profiles profile
+        WHERE profile.id = (SELECT auth.uid())
+          AND profile.role::text IN ('admin', 'pastor', 'editor')
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM public.lms_course_teachers teacher
+        WHERE teacher.course_id = p_course_id
+          AND teacher.user_id = (SELECT auth.uid())
+      )
+    );
+$$;
+
+REVOKE ALL ON FUNCTION private.can_manage_lms_course(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.can_manage_lms_course(uuid) TO authenticated;
 
 -- Los docentes asignados pueden administrar únicamente sus cursos.
 DROP POLICY IF EXISTS "Allow attendance manage" ON public.lms_attendance;
@@ -373,6 +506,164 @@ CREATE POLICY "Course authorities manage class sessions"
       WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor')
     )
   );
+
+DROP POLICY IF EXISTS "Admin manage lms_modules" ON public.lms_modules;
+CREATE POLICY "Course authorities manage modules"
+  ON public.lms_modules FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_subjects subject
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE subject.id = lms_modules.subject_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_subjects subject
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE subject.id = lms_modules.subject_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  );
+
+DROP POLICY IF EXISTS "Admin manage lms_lessons" ON public.lms_lessons;
+CREATE POLICY "Course authorities manage lessons"
+  ON public.lms_lessons FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_modules module
+      JOIN public.lms_subjects subject ON subject.id = module.subject_id
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE module.id = lms_lessons.module_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_modules module
+      JOIN public.lms_subjects subject ON subject.id = module.subject_id
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE module.id = lms_lessons.module_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  );
+
+CREATE POLICY "Course teachers grade lesson submissions"
+  ON public.lms_lesson_submissions FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_lessons lesson
+      JOIN public.lms_modules module ON module.id = lesson.module_id
+      JOIN public.lms_subjects subject ON subject.id = module.subject_id
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE lesson.id = lms_lesson_submissions.lesson_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_lessons lesson
+      JOIN public.lms_modules module ON module.id = lesson.module_id
+      JOIN public.lms_subjects subject ON subject.id = module.subject_id
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE lesson.id = lms_lesson_submissions.lesson_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  );
+
+CREATE POLICY "Course teachers create lesson grade overrides"
+  ON public.lms_lesson_submissions FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.lms_lessons lesson
+      JOIN public.lms_modules module ON module.id = lesson.module_id
+      JOIN public.lms_subjects subject ON subject.id = module.subject_id
+      JOIN public.lms_course_teachers teacher ON teacher.course_id = subject.course_id
+      WHERE lesson.id = lms_lesson_submissions.lesson_id AND teacher.user_id = (SELECT auth.uid())
+    )
+    OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role::text IN ('admin', 'pastor', 'editor'))
+  );
+
+DROP POLICY IF EXISTS "Allow announcements manage" ON public.lms_announcements;
+CREATE POLICY "Course authorities manage announcements"
+  ON public.lms_announcements FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_announcements.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_announcements.course_id)));
+
+DROP POLICY IF EXISTS "Allow tutoring manage" ON public.lms_tutoring_appointments;
+CREATE POLICY "Course authorities manage tutoring"
+  ON public.lms_tutoring_appointments FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_tutoring_appointments.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_tutoring_appointments.course_id)));
+
+DROP POLICY IF EXISTS "Allow integrations manage" ON public.lms_course_integrations;
+CREATE POLICY "Course authorities manage integrations"
+  ON public.lms_course_integrations FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_course_integrations.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_course_integrations.course_id)));
+
+DROP POLICY IF EXISTS "Allow student groups manage" ON public.lms_student_groups;
+CREATE POLICY "Course authorities manage student groups"
+  ON public.lms_student_groups FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_student_groups.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_student_groups.course_id)));
+
+DROP POLICY IF EXISTS "Allow group members manage" ON public.lms_group_members;
+DROP POLICY IF EXISTS "Admin write group members" ON public.lms_group_members;
+CREATE POLICY "Course authorities manage group members"
+  ON public.lms_group_members FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.lms_student_groups student_group
+      WHERE student_group.id = lms_group_members.group_id
+        AND (SELECT private.can_manage_lms_course(student_group.course_id))
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.lms_student_groups student_group
+      WHERE student_group.id = lms_group_members.group_id
+        AND (SELECT private.can_manage_lms_course(student_group.course_id))
+    )
+  );
+
+DROP POLICY IF EXISTS "Teachers and admins can manage resources" ON public.lms_course_resources;
+CREATE POLICY "Course authorities manage resources"
+  ON public.lms_course_resources FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_course_resources.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_course_resources.course_id)));
+
+DROP POLICY IF EXISTS "Admin/Teacher write grades" ON public.lms_grades;
+CREATE POLICY "Course authorities manage grades"
+  ON public.lms_grades FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.lms_enrollments enrollment
+      WHERE enrollment.id = lms_grades.enrollment_id
+        AND (SELECT private.can_manage_lms_course(enrollment.course_id))
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.lms_enrollments enrollment
+      WHERE enrollment.id = lms_grades.enrollment_id
+        AND (SELECT private.can_manage_lms_course(enrollment.course_id))
+    )
+  );
+
+DROP POLICY IF EXISTS "Teachers and Admins can create forums" ON public.lms_forums;
+CREATE POLICY "Course authorities manage forums"
+  ON public.lms_forums FOR ALL TO authenticated
+  USING ((SELECT private.can_manage_lms_course(lms_forums.course_id)))
+  WITH CHECK ((SELECT private.can_manage_lms_course(lms_forums.course_id)));
 
 -- Configuracion base editable. No elimina escuelas ni cursos existentes.
 UPDATE public.lms_schools

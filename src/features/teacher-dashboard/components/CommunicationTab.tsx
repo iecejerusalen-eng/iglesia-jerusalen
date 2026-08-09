@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { MessageSquare, Clock } from 'lucide-react';
+import type { TeacherAnnouncement, TeacherStudent, TutoringWithProfile } from '../hooks/useTeacherData';
 
 interface CommunicationTabProps {
-  students: any[];
-  announcements: any[];
-  tutoring: any[];
+  students: TeacherStudent[];
+  announcements: TeacherAnnouncement[];
+  tutoring: TutoringWithProfile[];
   onAddAnnouncement: (e: React.FormEvent, title: string, content: string) => void;
   onAddTutoring: (e: React.FormEvent, studentId: string, time: string, notes: string) => void;
 }

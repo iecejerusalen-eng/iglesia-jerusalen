@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Users, Calendar, Shield, Plus, PlusCircle, Activity, X } from 'lucide-react';
 import { useSessionAttendance } from '../hooks/useTeacherData';
+import type { TeacherGroup, TeacherSession, TeacherStudent } from '../hooks/useTeacherData';
 
 interface StudentsTabProps {
-  students: any[];
-  sessions: any[];
-  groups: any[];
+  students: TeacherStudent[];
+  sessions: TeacherSession[];
+  groups: TeacherGroup[];
   onAddSession: (e: React.FormEvent, title: string, date: string) => void;
   onAddGroup: (e: React.FormEvent, name: string, desc: string) => void;
   onAttendanceChange: (sessionId: string, studentId: string, status: 'present'|'zoom'|'absent'|'late'|'excused') => void;

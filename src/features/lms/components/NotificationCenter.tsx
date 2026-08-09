@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Bell, Check, Trash2, Info, AlertTriangle, CheckCircle, ChevronRight } from 'lucide-react';
@@ -21,41 +21,7 @@ export function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      
-      // Setup Realtime subscription for new notifications
-      const channel = supabase.channel(`public:lms_notifications:user_id=eq.${user.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'lms_notifications',
-          filter: `user_id=eq.${user.id}`
-        }, (payload) => {
-          setNotifications(prev => [payload.new as Notification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user]);
-
-  // Click outside to close
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user) return;
     try {
       const { data, error } = await supabase
@@ -71,7 +37,42 @@ export function NotificationCenter() {
     } catch (err) {
       console.error('Error fetching notifications:', err);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      const timer = window.setTimeout(() => void fetchNotifications(), 0);
+      
+      // Setup Realtime subscription for new notifications
+      const channel = supabase.channel(`public:lms_notifications:user_id=eq.${user.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'lms_notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          setNotifications(prev => [payload.new as Notification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+        })
+        .subscribe();
+
+      return () => {
+        window.clearTimeout(timer);
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, fetchNotifications]);
+
+  // Click outside to close
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const markAsRead = async (id: string) => {
     try {

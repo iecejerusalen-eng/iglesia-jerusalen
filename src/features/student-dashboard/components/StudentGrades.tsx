@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { Award, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface GradeRecord {
   id: string;
@@ -23,7 +24,11 @@ interface QuizResult {
   completed_at: string;
 }
 
-export function StudentGrades() {
+interface StudentGradesProps {
+  schoolId: string;
+}
+
+export function StudentGrades({ schoolId }: StudentGradesProps) {
   const { user } = useAuthStore();
   const [grades, setGrades] = useState<GradeRecord[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
@@ -35,8 +40,10 @@ export function StudentGrades() {
       try {
         const { data: enrollments, error: enrollError } = await supabase
           .from('lms_enrollments')
-          .select('id, course_id, lms_courses(title)')
-          .eq('user_id', user.id);
+          .select('id, course_id, lms_courses!inner(title, school_id)')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .eq('lms_courses.school_id', schoolId);
 
         if (enrollError) throw enrollError;
         
@@ -91,24 +98,36 @@ export function StudentGrades() {
         setGrades(enrichedGrades);
 
         // Fetch quiz results
-        const { data: quizData, error: quizError } = await supabase
-          .from('lms_quiz_results_view')
-          .select('*')
-          .eq('student_id', user.id)
-          .not('status', 'eq', 'in_progress')
-          .order('completed_at', { ascending: false });
-          
-        if (!quizError && quizData) {
-          setQuizResults(quizData);
+        const courseIds = enrollments.map((enrollment) => enrollment.course_id);
+        const { data: lessons, error: lessonsError } = await supabase
+          .from('lms_lessons')
+          .select('id, lms_modules!inner(lms_subjects!inner(course_id))')
+          .in('lms_modules.lms_subjects.course_id', courseIds);
+        if (lessonsError) throw lessonsError;
+
+        const lessonIds = (lessons || []).map((lesson) => lesson.id);
+        if (lessonIds.length > 0) {
+          const { data: quizData, error: quizError } = await supabase
+            .from('lms_quiz_results_view')
+            .select('*')
+            .eq('student_id', user.id)
+            .in('lesson_id', lessonIds)
+            .not('status', 'eq', 'in_progress')
+            .order('completed_at', { ascending: false });
+          if (quizError) throw quizError;
+          setQuizResults(quizData || []);
+        } else {
+          setQuizResults([]);
         }
       } catch (err) {
         console.error('Error fetching grades:', err);
+        toast.error('No se pudieron cargar tus calificaciones');
       } finally {
         setIsLoading(false);
       }
     }
     fetchGrades();
-  }, [user]);
+  }, [schoolId, user]);
 
   if (isLoading) {
     return (

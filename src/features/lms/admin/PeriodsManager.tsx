@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
-import { Calendar, Plus, Edit3, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Edit3 } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
 
@@ -27,15 +27,16 @@ export function PeriodsManager() {
         
       if (error) throw error;
       setPeriods(data || []);
-    } catch (err: any) {
-      toast.error('Error cargando períodos: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error cargando períodos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPeriods();
+    const timer = window.setTimeout(() => void fetchPeriods(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const toggleStatus = async (id: string, currentStatus: boolean, schoolId: string) => {
@@ -53,8 +54,8 @@ export function PeriodsManager() {
       
       toast.success('Estado del período actualizado');
       fetchPeriods();
-    } catch (err: any) {
-      toast.error('Error: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 

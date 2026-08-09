@@ -1,20 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function LMSDefaultsForm() {
-  const [defaultFormat, setDefaultFormat] = useState('weekly');
-  const [defaultScale, setDefaultScale] = useState('10/10');
-  const [passingGrade, setPassingGrade] = useState('7');
-
-  useEffect(() => {
-    const savedFormat = localStorage.getItem('lms_default_format') || 'weekly';
-    const savedScale = localStorage.getItem('lms_default_scale') || '10/10';
-    const savedPassing = localStorage.getItem('lms_default_passing') || '7';
-    setDefaultFormat(savedFormat);
-    setDefaultScale(savedScale);
-    setPassingGrade(savedPassing);
-  }, []);
+  const [defaultFormat, setDefaultFormat] = useState(() => localStorage.getItem('lms_default_format') || 'weekly');
+  const [defaultScale, setDefaultScale] = useState(() => localStorage.getItem('lms_default_scale') || '10/10');
+  const [passingGrade, setPassingGrade] = useState(() => localStorage.getItem('lms_default_passing') || '7');
 
   const handleSaveDefaults = (e: React.FormEvent) => {
     e.preventDefault();

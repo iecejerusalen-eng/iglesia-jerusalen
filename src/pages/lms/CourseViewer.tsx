@@ -96,19 +96,32 @@ export default function CourseViewer() {
       if (courseError) throw courseError;
       setCourse(courseData);
 
-      // 2. Check if student has enrollment, if not and user does not have lms staff/student roles, block
-      const isLMSStaffOrStudent = userRoles.some(
-        (r) => !["member", "guest"].includes(r),
-      );
-      if (!isLMSStaffOrStudent) {
-        const { data: enrollment } = await supabase
+      // 2. El acceso depende de una matrícula o asignación real al curso.
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      const hasGlobalAcademicAccess = userRoles.some((currentRole) => ['admin', 'pastor', 'editor'].includes(currentRole));
+      if (!hasGlobalAcademicAccess) {
+        const [enrollmentResult, teacherResult] = await Promise.all([
+          supabase
           .from("lms_enrollments")
-          .select("*")
+          .select("id")
           .eq("course_id", id)
           .eq("user_id", userId)
-          .maybeSingle();
+          .eq('status', 'active')
+          .maybeSingle(),
+          supabase
+            .from('lms_course_teachers')
+            .select('id')
+            .eq('course_id', id)
+            .eq('user_id', userId)
+            .maybeSingle(),
+        ]);
+        if (enrollmentResult.error) throw enrollmentResult.error;
+        if (teacherResult.error) throw teacherResult.error;
 
-        if (!enrollment) {
+        if (!enrollmentResult.data && !teacherResult.data) {
           toast.error("No estás matriculado en este curso.");
           navigate("/lms/estudiante");
           return;
@@ -786,7 +799,7 @@ export default function CourseViewer() {
                   className="relative z-10"
                 >
                   <CourseDashboard
-                    module={modules.find((m) => m.id === activeTabId)}
+                    module={modules.find((m) => m.id === activeTabId) ?? null}
                     lessons={lessons}
                     completions={completions}
                     onSelectLesson={setActiveLesson}

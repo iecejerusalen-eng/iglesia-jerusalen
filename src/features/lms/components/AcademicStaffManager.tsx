@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import type { Profile, LMSCourse, LMSTeacherSchedule } from '../../../types';
 import { GraduationCap, BookOpen, Clock, Link2, Plus, Trash2, Edit3, Search, UserCheck, ShieldCheck, Video, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -32,11 +32,7 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
 
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [profilesRes, coursesRes, schedulesRes] = await Promise.all([
@@ -58,7 +54,12 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
     } finally {
       setLoading(false);
     }
-  };
+  }, [formCourseId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   const handleSaveSchedule = async (e: React.FormEvent) => {
     e.preventDefault();

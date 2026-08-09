@@ -9,6 +9,7 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
 
   const addSession = useMutation({
     mutationFn: async ({ title, date }: { title: string; date: string }) => {
+      if (!selectedCourseId) throw new Error('Selecciona un curso antes de crear una sesión.');
       const { data, error } = await supabase
         .from('lms_class_sessions')
         .insert([{ course_id: selectedCourseId, title, session_date: date }])
@@ -28,6 +29,7 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
 
   const addGroup = useMutation({
     mutationFn: async ({ name, description }: { name: string; description: string }) => {
+      if (!selectedCourseId) throw new Error('Selecciona un curso antes de crear un grupo.');
       const { data, error } = await supabase
         .from('lms_student_groups')
         .insert([{ course_id: selectedCourseId, name, description }])
@@ -47,6 +49,7 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
 
   const addAnnouncement = useMutation({
     mutationFn: async ({ title, content }: { title: string; content: string }) => {
+      if (!selectedCourseId || !user?.id) throw new Error('No hay un curso o docente activo.');
       const { data, error } = await supabase
         .from('lms_announcements')
         .insert([{ course_id: selectedCourseId, title, content, created_by: user?.id }])
@@ -66,6 +69,7 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
 
   const addTutoring = useMutation({
     mutationFn: async ({ studentId, time, notes }: { studentId: string; time: string; notes: string }) => {
+      if (!selectedCourseId || !user?.id) throw new Error('No hay un curso o docente activo.');
       const { error } = await supabase
         .from('lms_tutoring_appointments')
         .insert([{ course_id: selectedCourseId, student_id: studentId, teacher_id: user?.id, scheduled_at: new Date(time).toISOString(), notes }])
@@ -92,8 +96,8 @@ export function useTeacherMutations(selectedCourseId: string | undefined) {
     },
     onSuccess: (data) => {
       toast.success('Asistencia registrada');
-      queryClient.setQueryData(['session-attendance', data.sessionId], (old: any) => ({
-        ...old,
+      queryClient.setQueryData<Record<string, 'present' | 'zoom' | 'absent' | 'late' | 'excused'>>(['session-attendance', data.sessionId], (old) => ({
+        ...(old ?? {}),
         [data.studentId]: data.status
       }));
     },

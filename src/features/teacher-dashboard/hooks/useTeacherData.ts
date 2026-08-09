@@ -9,7 +9,72 @@ interface MemberDetails {
   medical_notes: string | null;
 }
 
-interface TutoringWithProfile {
+export interface TeacherStudent {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  emergency_name: string;
+  emergency_phone: string;
+  medical_notes: string;
+}
+
+export interface TeacherSession {
+  id: string;
+  course_id: string;
+  title: string;
+  session_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  status: string;
+  location: string | null;
+  sync_link: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface TeacherGroup {
+  id: string;
+  course_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface TeacherActivity {
+  id: string;
+  module_id: string;
+  title: string;
+  type: string;
+  description: string | null;
+  order_index: number;
+}
+
+export interface TeacherSubmission {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  text_content: string | null;
+  file_url: string | null;
+  grade: number | null;
+  teacher_feedback: string | null;
+  status: string;
+  submitted_at: string;
+  graded_at: string | null;
+  profiles: { first_name: string; last_name: string } | null;
+}
+
+export interface TeacherAnnouncement {
+  id: string;
+  course_id: string;
+  title: string;
+  content: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface TutoringWithProfile {
   id: string;
   course_id: string;
   teacher_id: string;

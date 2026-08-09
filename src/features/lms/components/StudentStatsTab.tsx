@@ -1,39 +1,42 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
-import { Clock, TrendingUp, Trophy, Target } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BookOpen, CheckCircle2, Layers3, TrendingUp } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 
-const mockStudyData = [
-  { name: 'Lun', horas: 2.5, lecciones: 3 },
-  { name: 'Mar', horas: 1.0, lecciones: 1 },
-  { name: 'Mié', horas: 3.5, lecciones: 4 },
-  { name: 'Jue', horas: 0, lecciones: 0 },
-  { name: 'Vie', horas: 4.2, lecciones: 5 },
-  { name: 'Sáb', horas: 1.5, lecciones: 2 },
-  { name: 'Dom', horas: 0.5, lecciones: 1 },
-];
+interface StudentCourseStat {
+  course_id: string;
+  lms_courses?: { title: string } | null;
+  progressPercentage: number;
+  completed: number;
+  total: number;
+}
 
-const mockProgressData = [
-  { mes: 'Ene', progreso: 10 },
-  { mes: 'Feb', progreso: 25 },
-  { mes: 'Mar', progreso: 45 },
-  { mes: 'Abr', progreso: 50 },
-  { mes: 'May', progreso: 75 },
-  { mes: 'Jun', progreso: 90 },
-];
+interface StudentStatsTabProps {
+  courses: StudentCourseStat[];
+}
 
-export function StudentStatsTab() {
+export function StudentStatsTab({ courses }: StudentStatsTabProps) {
+  const completedLessons = courses.reduce((sum, course) => sum + course.completed, 0);
+  const totalLessons = courses.reduce((sum, course) => sum + course.total, 0);
+  const averageProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const chartData = courses.map(course => ({
+    name: course.lms_courses?.title || 'Curso',
+    progreso: Math.round(course.progressPercentage),
+    completadas: course.completed,
+    total: course.total,
+  }));
+
+  const cards = [
+    { icon: BookOpen, label: 'Cursos activos', value: courses.length, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { icon: CheckCircle2, label: 'Lecciones completadas', value: completedLessons, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { icon: Layers3, label: 'Lecciones disponibles', value: totalLessons, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+    { icon: TrendingUp, label: 'Progreso general', value: `${averageProgress}%`, color: 'text-gold', bg: 'bg-gold/10' },
+  ];
+
   return (
     <AnimeFadeUp className="space-y-6">
-      
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { icon: Clock, label: 'Horas Totales', value: '13.2h', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-          { icon: Target, label: 'Lecciones Completadas', value: '16', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-          { icon: TrendingUp, label: 'Racha Actual', value: '3 Días', color: 'text-orange-500', bg: 'bg-orange-500/10' },
-          { icon: Trophy, label: 'Promedio Calificaciones', value: '92/100', color: 'text-gold', bg: 'bg-gold/10' },
-        ].map((stat, idx) => (
-          <div key={idx} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-5 rounded-2xl flex items-center space-x-4 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map(stat => (
+          <div key={stat.label} className="bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl border border-gray-150 dark:border-white/10 p-5 rounded-2xl flex items-center gap-4 shadow-sm">
             <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
               <stat.icon size={24} />
             </div>
@@ -45,51 +48,27 @@ export function StudentStatsTab() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Horas de Estudio (Bar Chart) */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-slate-800 dark:text-white mb-6">Horas de Estudio (Esta semana)</h3>
-          <div className="h-64 w-full">
+      <div className="bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl border border-gray-150 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm">
+        <h3 className="font-bold text-slate-800 dark:text-white">Progreso real por curso</h3>
+        <p className="text-sm text-gray-500 mt-1 mb-6">Calculado con las lecciones publicadas y completadas en esta escuela.</p>
+        {chartData.length === 0 ? (
+          <div className="min-h-52 grid place-items-center text-center text-sm text-gray-500">
+            Todavía no hay cursos asignados para mostrar estadísticas.
+          </div>
+        ) : (
+          <div className="h-72 w-full" role="img" aria-label="Gráfico del progreso por curso">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockStudyData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip 
-                  cursor={{fill: 'rgba(0,0,0,0.05)'}}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="horas" fill="#c39d67" radius={[4, 4, 0, 0]} />
+              <BarChart data={chartData} layout="vertical" margin={{ left: 12, right: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                <XAxis type="number" domain={[0, 100]} unit="%" axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(value) => [`${Number(value)}%`, 'Progreso']} />
+                <Bar dataKey="progreso" fill="#c39d67" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        {/* Progreso Histórico (Area Chart) */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-slate-800 dark:text-white mb-6">Progreso Histórico (Últimos 6 meses)</h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockProgressData}>
-                <defs>
-                  <linearGradient id="colorProgreso" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="mes" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="progreso" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProgreso)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        )}
       </div>
-
     </AnimeFadeUp>
   );
 }

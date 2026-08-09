@@ -1,30 +1,42 @@
 import { useState, useMemo } from 'react';
 import { AlertTriangle, Clock, MessageSquare, Search, ChevronDown, ChevronUp, Bell, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../../../config/supabase';
 import { toast } from 'sonner';
 import { useNotifications } from '../hooks/useNotifications';
+import type { TeacherActivity, TeacherStudent, TeacherSubmission } from '../hooks/useTeacherData';
 
-interface ComplianceTabProps {
-  students: any[];
-  submissions: any[];
-  activities: any[];
-  courseId: string;
+interface PendingActivity {
+  activityId: string;
+  activityTitle: string;
+  type: string;
+  status: 'missing';
 }
 
-export function ComplianceTab({ students, submissions, activities, courseId }: ComplianceTabProps) {
+interface ComplianceItem {
+  student: TeacherStudent;
+  pendingActivities: PendingActivity[];
+  totalPending: number;
+}
+
+interface ComplianceTabProps {
+  students: TeacherStudent[];
+  submissions: TeacherSubmission[];
+  activities: TeacherActivity[];
+}
+
+export function ComplianceTab({ students, submissions, activities }: ComplianceTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const { sendNotification, isSending } = useNotifications();
 
   // Calculate missing assignments
   const complianceData = useMemo(() => {
-    const data: any[] = [];
+    const data: ComplianceItem[] = [];
     
     // Only consider activities of type assignment or quiz
     const gradableActivities = activities.filter(a => a.type === 'assignment' || a.type === 'quiz');
 
     students.forEach(student => {
-      const pendingActivities: any[] = [];
+      const pendingActivities: PendingActivity[] = [];
       
       gradableActivities.forEach(activity => {
         const submission = submissions.find(s => s.student_id === student.id && s.lesson_id === activity.id);
@@ -58,10 +70,14 @@ export function ComplianceTab({ students, submissions, activities, courseId }: C
     `${item.student.first_name} ${item.student.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleNotifyStudent = async (student: any, pendingCount: number) => {
+  const handleNotifyStudent = async (student: TeacherStudent, pendingCount: number) => {
+    if (!student.email) {
+      toast.warning(`No hay un correo registrado para ${student.first_name} ${student.last_name}.`);
+      return;
+    }
     await sendNotification({
       userId: student.id,
-      userEmail: student.email || `${student.first_name.toLowerCase()}@jerusalen.edu.ec`, // Fallback si no está cargado el email en la vista
+      userEmail: student.email,
       userName: `${student.first_name} ${student.last_name}`,
       courseName: 'Aula Virtual',
       type: 'missing_homework',
@@ -75,9 +91,10 @@ export function ComplianceTab({ students, submissions, activities, courseId }: C
     // Para simplificar, notificamos en secuencia (podría paralelizarse)
     let count = 0;
     for (const item of complianceData) {
+      if (!item.student.email) continue;
       const success = await sendNotification({
         userId: item.student.id,
-        userEmail: item.student.email || `${item.student.first_name.toLowerCase()}@jerusalen.edu.ec`,
+        userEmail: item.student.email,
         userName: `${item.student.first_name} ${item.student.last_name}`,
         courseName: 'Aula Virtual',
         type: 'missing_homework',
@@ -196,7 +213,7 @@ export function ComplianceTab({ students, submissions, activities, courseId }: C
                     <div className="pl-14">
                       <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Detalle de Incumplimientos</h5>
                       <div className="space-y-2">
-                        {item.pendingActivities.map((act: any) => (
+                        {item.pendingActivities.map((act) => (
                           <div key={act.activityId} className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 p-3 rounded-xl">
                             <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${act.type === 'quiz' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>

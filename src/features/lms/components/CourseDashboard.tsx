@@ -7,12 +7,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { AnimeFadeUp } from "../../../components/animations/AnimeWrappers";
+import type { ReactNode } from 'react';
+import type { LMSLesson, LMSModule } from '../../../types';
 
 interface CourseDashboardProps {
-  module: any; // LMSModule
-  lessons: any[]; // LMSLesson[]
+  module: LMSModule | null;
+  lessons: LMSLesson[];
   completions: Record<string, boolean>;
-  onSelectLesson: (lesson: any) => void;
+  onSelectLesson: (lesson: LMSLesson) => void;
 }
 
 export function CourseDashboard({
@@ -38,9 +40,9 @@ export function CourseDashboard({
 
   const renderCard = (
     title: string,
-    icon: any,
+    icon: ReactNode,
     colorClass: string,
-    items: any[],
+    items: LMSLesson[],
   ) => {
     if (items.length === 0) return null;
 

@@ -41,6 +41,7 @@ export function CourseForm({ editingCourse: initialCourse, categories, onClose }
   }, []);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
     if (editingCourse.school_id) {
       supabase.from('lms_levels').select('*').eq('school_id', editingCourse.school_id).order('sort_order').then(({ data }) => {
         if (data) setLevels(data as LMSLevel[]);
@@ -48,6 +49,8 @@ export function CourseForm({ editingCourse: initialCourse, categories, onClose }
     } else {
       setLevels([]);
     }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [editingCourse.school_id]);
 
   const handleSaveCourse = async (e: React.FormEvent) => {

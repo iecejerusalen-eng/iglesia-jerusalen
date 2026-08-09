@@ -15,7 +15,6 @@ import { OverviewTab } from '../../features/teacher-dashboard/components/Overvie
 import { QuestionBankTab } from '../../features/teacher-dashboard/components/QuestionBankTab';
 import { ClassesTab } from '../../features/teacher-dashboard/components/ClassesTab';
 import { UniversityCalendar } from '../../features/lms/components/UniversityCalendar';
-import { GroupManager } from '../../features/lms/components/GroupManager';
 import { NotificationCenter } from '../../features/lms/components/NotificationCenter';
 import { ForumManager } from '../../features/lms/components/ForumManager';
 import { SchoolPortalGate } from '../../features/lms/components/SchoolPortalGate';
@@ -192,8 +191,6 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
 
             {activeTab === 'students' && (
               <div className="space-y-6">
-                <GroupManager courseId={selectedCourseId} />
-                <hr className="border-gray-200 dark:border-white/10" />
                 <StudentsTab
                   students={students}
                   sessions={sessions}
@@ -220,13 +217,13 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
                 activities={activities}
                 resources={resources}
                 courseId={selectedCourseId}
+                schoolType={school.school_type}
               />
             )}
 
             {activeTab === 'questions' && (
               <QuestionBankTab
                 courseId={selectedCourseId}
-                courses={courses}
               />
             )}
 
@@ -245,7 +242,6 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
                 students={students}
                 submissions={submissions}
                 activities={activities}
-                courseId={selectedCourseId}
               />
             )}
 

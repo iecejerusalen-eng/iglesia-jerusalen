@@ -84,8 +84,8 @@ export function GlobalSettingsManager() {
         if (data) setSettings(data);
       }
       toast.success('Configuración guardada correctamente');
-    } catch (err: any) {
-      toast.error('Error guardando configuración: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error guardando configuración: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setSaving(false);
     }

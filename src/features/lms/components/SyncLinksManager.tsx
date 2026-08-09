@@ -1,20 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../../config/supabase";
 import { Video, Clock, ExternalLink } from "lucide-react";
+import type { LMSTeacherSchedule } from "../../../types";
 
 interface SyncLinksManagerProps {
   courseId: string;
 }
 
 export function SyncLinksManager({ courseId }: SyncLinksManagerProps) {
-  const [schedules, setSchedules] = useState<any[]>([]);
+  const [schedules, setSchedules] = useState<LMSTeacherSchedule[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSchedules();
-  }, [courseId]);
-
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("lms_teacher_schedules")
@@ -28,7 +25,12 @@ export function SyncLinksManager({ courseId }: SyncLinksManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchSchedules(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSchedules]);
 
   if (loading || schedules.length === 0) return null;
 

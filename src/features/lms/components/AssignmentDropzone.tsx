@@ -12,13 +12,22 @@ interface AssignmentDropzoneProps {
   onSuccess?: () => void;
 }
 
+interface LessonSubmission {
+  id: string;
+  file_url: string | null;
+  grade: number | null;
+  teacher_feedback: string | null;
+  status: string | null;
+  submitted_at: string;
+}
+
 export function AssignmentDropzone({ courseId, lessonId, maxSizeMB = 5, onSuccess }: AssignmentDropzoneProps) {
   const { user } = useAuthStore();
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [existingSubmission, setExistingSubmission] = useState<any>(null);
+  const [existingSubmission, setExistingSubmission] = useState<LessonSubmission | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Constants
@@ -44,7 +53,8 @@ export function AssignmentDropzone({ courseId, lessonId, maxSizeMB = 5, onSucces
   }, [lessonId, user]);
 
   useEffect(() => {
-    loadExistingSubmission();
+    const timer = window.setTimeout(() => void loadExistingSubmission(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadExistingSubmission]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -150,9 +160,9 @@ export function AssignmentDropzone({ courseId, lessonId, maxSizeMB = 5, onSucces
       await loadExistingSubmission();
       if (onSuccess) onSuccess();
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Upload Error:', err);
-      toast.error(err.message || 'Ocurrió un error al entregar la tarea');
+      toast.error(err instanceof Error ? err.message : 'Ocurrió un error al entregar la tarea');
       setProgress(0);
     } finally {
       setUploading(false);

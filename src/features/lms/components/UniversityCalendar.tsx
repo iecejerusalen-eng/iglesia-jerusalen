@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import type { LMSTeacherSchedule, LMSCalendarEvent, LMSCourse } from '../../../types';
 import { Calendar as CalendarIcon, Clock, Video, Plus, ChevronLeft, ChevronRight, Filter, BookOpen, AlertCircle, CheckCircle2, Trash2, MapPin } from 'lucide-react';
@@ -27,6 +27,8 @@ interface DisplayEvent {
   originalEvent?: LMSCalendarEvent;
 }
 
+const DAYS_OF_WEEK_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
 export function UniversityCalendar({ role = 'student', userId, courseId, editable = false }: UniversityCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
@@ -52,17 +54,12 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
   // Detail Drawer state
   const [selectedEvent, setSelectedEvent] = useState<DisplayEvent | null>(null);
 
-  const daysOfWeekEs = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const monthNamesEs = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  useEffect(() => {
-    fetchData();
-  }, [userId, courseId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [coursesRes, schedulesRes, eventsRes] = await Promise.all([
@@ -84,7 +81,12 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
     } finally {
       setLoading(false);
     }
-  };
+  }, [formCourseId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
+  }, [userId, courseId, fetchData]);
 
   // Generate combined display events for the current month / window
   const displayEvents = useMemo(() => {
@@ -121,7 +123,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
     const endWindow = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
 
     for (let d = new Date(startWindow); d <= endWindow; d.setDate(d.getDate() + 1)) {
-      const dayName = daysOfWeekEs[d.getDay()];
+      const dayName = DAYS_OF_WEEK_ES[d.getDay()];
       const dateStr = d.toISOString().split('T')[0];
 
       schedules.forEach(sch => {
@@ -276,7 +278,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm overflow-hidden">
         {/* Days Header */}
         <div className="grid grid-cols-7 border-b border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-slate-800/40 text-center py-3">
-          {daysOfWeekEs.map(d => (
+          {DAYS_OF_WEEK_ES.map(d => (
             <div key={d} className="text-xs font-black uppercase text-gray-400 tracking-wider">
               {d.substring(0, 3)}
             </div>
@@ -348,7 +350,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
     for (let i = 0; i < 7; i++) {
       const d = new Date(curr.setDate(first + i));
       const dateStr = d.toISOString().split('T')[0];
-      weekDays.push({ date: new Date(d), dateStr, dayName: daysOfWeekEs[i] });
+      weekDays.push({ date: new Date(d), dateStr, dayName: DAYS_OF_WEEK_ES[i] });
     }
 
     return (

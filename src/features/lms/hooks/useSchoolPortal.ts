@@ -86,12 +86,10 @@ export function useSchoolPortal(mode: SchoolPortalMode) {
   const requestAccess = useMutation({
     mutationFn: async ({ schoolId, levelId, message }: { schoolId: string; levelId?: string; message?: string }) => {
       if (!user?.id) throw new Error('Debes iniciar sesión para solicitar acceso.');
-      if (mode !== 'student') throw new Error('Las asignaciones docentes deben ser aprobadas por un coordinador.');
-
       const { error } = await supabase.from('lms_school_access_requests').insert({
         school_id: schoolId,
         user_id: user.id,
-        requested_role: 'student',
+        requested_role: mode,
         requested_level_id: levelId || null,
         message: message?.trim() || null,
         status: 'pending',

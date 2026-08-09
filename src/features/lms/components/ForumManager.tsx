@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { MessageSquare, Plus, Trash2, Shield, Lock, Unlock } from 'lucide-react';
@@ -6,14 +6,19 @@ import { toast } from 'sonner';
 
 export function ForumManager({ courseId }: { courseId: string }) {
   const { user } = useAuthStore();
-  const [forums, setForums] = useState<any[]>([]);
+  const [forums, setForums] = useState<Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    is_locked: boolean;
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
 
-  const fetchForums = async () => {
+  const fetchForums = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -29,16 +34,14 @@ export function ForumManager({ courseId }: { courseId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
-    const init = async () => {
-      if (courseId) {
-        await fetchForums();
-      }
-    };
-    init();
-  }, [courseId]);
+    const timer = window.setTimeout(() => {
+      if (courseId) void fetchForums();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [courseId, fetchForums]);
 
   const handleCreateForum = async () => {
     if (!newTitle.trim() || !user) return;
@@ -57,7 +60,7 @@ export function ForumManager({ courseId }: { courseId: string }) {
       setIsCreating(false);
       setNewTitle('');
       setNewDescription('');
-      fetchForums();
+      await fetchForums();
     } catch (err) {
       console.error(err);
       toast.error('Error al crear foro');

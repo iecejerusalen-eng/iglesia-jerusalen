@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import type { LMSSchool, LMSLevel, Profile } from '../../../types';
 import {
@@ -45,17 +45,13 @@ export function SchoolManager() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(null), 4000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [schoolsRes, profilesRes] = await Promise.all([
@@ -63,24 +59,35 @@ export function SchoolManager() {
         supabase.from('profiles').select('id, first_name, last_name, email, role').order('first_name', { ascending: true })
       ]);
 
-      if (schoolsRes.data) setSchools(schoolsRes.data as LMSSchool[]);
-      if (profilesRes.data) setProfiles(profilesRes.data as Profile[]);
+      if (schoolsRes.error) throw schoolsRes.error;
+      if (profilesRes.error) throw profilesRes.error;
+      setSchools((schoolsRes.data ?? []) as LMSSchool[]);
+      setProfiles((profilesRes.data ?? []) as Profile[]);
     } catch (err) {
+      console.error('Error loading LMS schools:', err);
       setNotification({ type: 'error', message: 'Error al cargar escuelas.' });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { void fetchData(); }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchData]);
 
   const fetchLevels = async (schoolId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('lms_levels')
       .select('*')
       .eq('school_id', schoolId)
       .order('sort_order', { ascending: true });
-    if (data) {
-      setLevels(prev => ({ ...prev, [schoolId]: data as LMSLevel[] }));
+    if (error) {
+      console.error('Error loading LMS levels:', error);
+      setNotification({ type: 'error', message: 'No se pudieron cargar los niveles.' });
+      return;
     }
+    setLevels(prev => ({ ...prev, [schoolId]: (data ?? []) as LMSLevel[] }));
   };
 
   const handleToggleExpand = (schoolId: string) => {

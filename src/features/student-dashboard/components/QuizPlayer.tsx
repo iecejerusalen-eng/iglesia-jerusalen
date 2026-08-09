@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Clock, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -14,44 +14,62 @@ interface Question {
   id: string;
   content: string;
   type: 'multiple_choice' | 'true_false' | 'essay';
-  options: string[] | null;
+  options: Array<{ value: string; label: string }> | null;
   points: number;
+}
+
+type AnswerValue = string | boolean;
+
+function normalizeOptions(value: unknown): Array<{ value: string; label: string }> | null {
+  if (!Array.isArray(value)) return null;
+  return value.flatMap((option) => {
+    if (typeof option === 'string') return [{ value: option, label: option }];
+    if (option && typeof option === 'object' && typeof (option as Record<string, unknown>).text === 'string') {
+      const record = option as Record<string, unknown>;
+      return [{ value: String(record.id || record.text), label: String(record.text) }];
+    }
+    return [];
+  });
+}
+
+function normalizeQuestion(value: unknown): Question | null {
+  const item = Array.isArray(value) ? value[0] : value;
+  if (!item || typeof item !== 'object') return null;
+  const record = item as Record<string, unknown>;
+  if (typeof record.id !== 'string' || typeof record.content !== 'string') return null;
+  if (!['multiple_choice', 'true_false', 'essay'].includes(String(record.type))) return null;
+  return {
+    id: record.id,
+    content: record.content,
+    type: record.type as Question['type'],
+    options: normalizeOptions(record.options),
+    points: typeof record.points === 'number' ? record.points : Number(record.points) || 1,
+  };
 }
 
 export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
   const { user } = useAuthStore();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes default
   const [attemptId, setAttemptId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadQuiz();
-  }, [lessonId]);
-
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      handleSubmit(true);
-      return;
-    }
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const loadQuiz = async () => {
+  const loadQuiz = useCallback(async () => {
     if (!user) return;
     try {
       // Create or get active attempt
-      let { data: attempt } = await supabase
+      const { data: existingAttempt, error: existingAttemptError } = await supabase
         .from('lms_quiz_attempts')
         .select('*')
         .eq('lesson_id', lessonId)
         .eq('student_id', user.id)
         .eq('status', 'in_progress')
         .maybeSingle();
+      if (existingAttemptError) throw existingAttemptError;
+      let attempt = existingAttempt;
 
       if (!attempt) {
         const { data: newAttempt, error: attemptError } = await supabase
@@ -63,6 +81,7 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
         if (attemptError) throw attemptError;
         attempt = newAttempt;
       }
+      if (!attempt) throw new Error('No se pudo crear el intento de evaluación.');
       setAttemptId(attempt.id);
 
       // Fetch questions mapping
@@ -79,32 +98,38 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
 
       if (qqError) throw qqError;
 
-      const mappedQuestions = (quizQuestions || []).map(qq => qq.lms_questions).filter(Boolean) as any;
+      const mappedQuestions = (quizQuestions || []).flatMap((item) => {
+        const question = normalizeQuestion(item.lms_questions);
+        return question ? [question] : [];
+      });
       setQuestions(mappedQuestions);
 
       // Load existing answers for this attempt
-      const { data: existingAnswers } = await supabase
+      const { data: existingAnswers, error: answersError } = await supabase
         .from('lms_quiz_answers')
         .select('question_id, answer_data')
         .eq('attempt_id', attempt.id);
+      if (answersError) throw answersError;
 
       if (existingAnswers) {
-        const loadedAnswers: Record<string, any> = {};
+        const loadedAnswers: Record<string, AnswerValue> = {};
         existingAnswers.forEach(a => {
-          loadedAnswers[a.question_id] = a.answer_data;
+          if (typeof a.answer_data === 'string' || typeof a.answer_data === 'boolean') {
+            loadedAnswers[a.question_id] = a.answer_data;
+          }
         });
         setAnswers(loadedAnswers);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading quiz:', err);
       toast.error('Error al cargar la evaluación');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [lessonId, user]);
 
-  const saveAnswer = async (questionId: string, value: any) => {
+  const saveAnswer = async (questionId: string, value: AnswerValue) => {
     if (!attemptId) return;
     setAnswers(prev => ({ ...prev, [questionId]: value }));
     
@@ -124,7 +149,7 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
     }
   };
 
-  const handleSubmit = async (isAutoSubmit = false) => {
+  const handleSubmit = useCallback(async (isAutoSubmit = false) => {
     if (!attemptId) return;
     if (!isAutoSubmit && !confirm('¿Estás seguro de enviar la evaluación? No podrás modificar tus respuestas.')) {
       return;
@@ -132,26 +157,32 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
     
     setIsSubmitting(true);
     try {
-      // Auto-grading logic for multiple choice / true false can go here via edge function
-      // For now, we just mark as completed
-      const { error } = await supabase
-        .from('lms_quiz_attempts')
-        .update({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', attemptId);
+      const { error } = await supabase.rpc('submit_lms_quiz_attempt', { p_attempt_id: attemptId });
 
       if (error) throw error;
       
       toast.success(isAutoSubmit ? 'Tiempo finalizado. Evaluación enviada.' : 'Evaluación enviada con éxito');
       onComplete();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting quiz:', err);
       toast.error('Error al enviar la evaluación');
       setIsSubmitting(false);
     }
-  };
+  }, [attemptId, onComplete]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadQuiz(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadQuiz]);
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      const submitTimer = window.setTimeout(() => void handleSubmit(true), 0);
+      return () => window.clearTimeout(submitTimer);
+    }
+    const timer = window.setInterval(() => setTimeLeft((previous) => previous - 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [handleSubmit, timeLeft]);
 
   if (isLoading) {
     return <div className="text-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold mx-auto"></div></div>;
@@ -204,24 +235,24 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
         <div className="space-y-4">
           {currentQ.type === 'multiple_choice' && (currentQ.options || []).map((opt, i) => (
             <label key={i} className={`flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
-              answers[currentQ.id] === opt 
+              answers[currentQ.id] === opt.value
                 ? 'bg-gold/20 border-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
                 : 'bg-black/20 border-white/10 hover:border-white/30'
             }`}>
               <input 
                 type="radio" 
                 name={currentQ.id} 
-                value={opt}
-                checked={answers[currentQ.id] === opt}
-                onChange={() => saveAnswer(currentQ.id, opt)}
+                value={opt.value}
+                checked={answers[currentQ.id] === opt.value}
+                onChange={() => saveAnswer(currentQ.id, opt.value)}
                 className="hidden"
               />
               <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
-                answers[currentQ.id] === opt ? 'border-gold' : 'border-white/30'
+                answers[currentQ.id] === opt.value ? 'border-gold' : 'border-white/30'
               }`}>
-                {answers[currentQ.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-gold" />}
+                {answers[currentQ.id] === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-gold" />}
               </div>
-              <span className="text-white/90">{opt}</span>
+              <span className="text-white/90">{opt.label}</span>
             </label>
           ))}
 
@@ -253,7 +284,7 @@ export function QuizPlayer({ lessonId, onComplete }: QuizPlayerProps) {
 
           {currentQ.type === 'essay' && (
             <textarea
-              value={answers[currentQ.id] || ''}
+              value={String(answers[currentQ.id] ?? '')}
               onChange={(e) => saveAnswer(currentQ.id, e.target.value)}
               className="w-full h-40 bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none"
               placeholder="Escribe tu respuesta aquí..."

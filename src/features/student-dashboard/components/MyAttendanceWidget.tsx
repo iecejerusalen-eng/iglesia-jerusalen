@@ -1,183 +1,186 @@
-import { useState, useEffect } from 'react';
-import { UserCheck, Calendar, MapPin, CheckCircle, XCircle, AlertCircle, Loader2, Video } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, Calendar, CheckCircle, Loader2, MapPin, UserCheck, Video, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 
-interface AttendanceRecord {
-  id: string;
-  student_id: string;
-  course_id: string;
-  date: string;
-  status: 'present' | 'absent' | 'late' | 'excused';
-  session_type: 'in_person' | 'zoom' | 'other';
-  notes: string | null;
-  lms_courses?: {
-    title: string;
-  };
+type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused' | 'zoom';
+
+interface AttendanceCourse {
+  title: string;
 }
 
-export function MyAttendanceWidget() {
+interface AttendanceSession {
+  title: string;
+  session_date: string;
+  location: string | null;
+  sync_link: string | null;
+  lms_courses?: AttendanceCourse | AttendanceCourse[] | null;
+}
+
+interface AttendanceRow {
+  id: string;
+  status: AttendanceStatus;
+  notes: string | null;
+  lms_class_sessions?: AttendanceSession | AttendanceSession[] | null;
+}
+
+interface AttendanceRecord {
+  id: string;
+  date: string;
+  sessionTitle: string;
+  courseTitle: string;
+  location: string | null;
+  online: boolean;
+  status: AttendanceStatus;
+  notes: string | null;
+}
+
+interface MyAttendanceWidgetProps {
+  schoolId: string;
+}
+
+const EMPTY_SUMMARY = { present: 0, absent: 0, late: 0, excused: 0, zoom: 0, total: 0 };
+
+function firstOf<T>(value: T | T[] | null | undefined): T | undefined {
+  return Array.isArray(value) ? value[0] : value ?? undefined;
+}
+
+export function MyAttendanceWidget({ schoolId }: MyAttendanceWidgetProps) {
   const { user } = useAuthStore();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({
-    present: 0,
-    absent: 0,
-    late: 0,
-    excused: 0,
-    total: 0
-  });
+  const [summary, setSummary] = useState(EMPTY_SUMMARY);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchAttendance() {
-      if (!user) return;
+      if (!user) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from('lms_attendance')
           .select(`
-            *,
-            lms_courses(title)
+            id,
+            status,
+            notes,
+            lms_class_sessions!inner (
+              title,
+              session_date,
+              location,
+              sync_link,
+              lms_courses!inner (title, school_id)
+            )
           `)
           .eq('student_id', user.id)
-          .order('date', { ascending: false });
+          .eq('lms_class_sessions.lms_courses.school_id', schoolId)
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
-        
-        const fetchedRecords = (data as unknown as AttendanceRecord[]) || [];
-        setRecords(fetchedRecords);
 
-        // Calculate summary
-        const sum = fetchedRecords.reduce((acc: { present: number; absent: number; late: number; excused: number; total: number }, curr: AttendanceRecord) => {
-          const status = curr.status as keyof typeof acc;
-          if (acc[status] !== undefined) {
-            acc[status] += 1;
-          }
+        const normalized = ((data || []) as AttendanceRow[]).flatMap((row) => {
+          const session = firstOf(row.lms_class_sessions);
+          if (!session) return [];
+          const course = firstOf(session.lms_courses);
+          return [{
+            id: row.id,
+            date: session.session_date,
+            sessionTitle: session.title,
+            courseTitle: course?.title || 'Clase',
+            location: session.location,
+            online: Boolean(session.sync_link) || row.status === 'zoom',
+            status: row.status,
+            notes: row.notes,
+          } satisfies AttendanceRecord];
+        });
+
+        const totals = normalized.reduce((acc, record) => {
+          acc[record.status] += 1;
           acc.total += 1;
           return acc;
-        }, { present: 0, absent: 0, late: 0, excused: 0, total: 0 });
+        }, { ...EMPTY_SUMMARY });
 
-        setSummary(sum);
-      } catch (err) {
-        console.error('Error fetching attendance:', err);
+        if (!cancelled) {
+          setRecords(normalized);
+          setSummary(totals);
+        }
+      } catch (error) {
+        console.error('Error fetching attendance:', error);
+        if (!cancelled) toast.error('No se pudo cargar tu asistencia');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-    fetchAttendance();
-  }, [user]);
+
+    void fetchAttendance();
+    return () => { cancelled = true; };
+  }, [schoolId, user]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center p-12">
-        <Loader2 className="animate-spin text-gold" size={40} />
-      </div>
-    );
+    return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gold" size={40} /></div>;
   }
 
-  const attendancePercentage = summary.total > 0 
-    ? Math.round(((summary.present + summary.late + summary.excused) / summary.total) * 100) 
+  const attendancePercentage = summary.total > 0
+    ? Math.round(((summary.present + summary.zoom + summary.late + summary.excused) / summary.total) * 100)
     : 100;
 
   return (
     <AnimeFadeUp className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm text-center">
-          <div className="inline-flex p-3 rounded-full bg-emerald-50 text-emerald-600 mb-2">
-            <CheckCircle size={24} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
+        {[
+          { label: 'Presente', value: summary.present + summary.zoom, icon: CheckCircle, tone: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' },
+          { label: 'Faltas', value: summary.absent, icon: XCircle, tone: 'text-red-600 bg-red-50 dark:bg-red-900/30' },
+          { label: 'Atrasos', value: summary.late, icon: AlertCircle, tone: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30' },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="rounded-3xl border border-slate-200 bg-white/85 p-4 text-center shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
+            <span className={`mb-2 inline-flex rounded-full p-3 ${tone}`}><Icon size={24} /></span>
+            <h3 className="text-3xl font-black text-slate-800 dark:text-white">{value}</h3>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 sm:text-sm">{label}</p>
           </div>
-          <h3 className="text-3xl font-black text-slate-800 dark:text-white">{summary.present}</h3>
-          <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Presente</p>
-        </div>
-        
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm text-center">
-          <div className="inline-flex p-3 rounded-full bg-red-50 text-red-600 mb-2">
-            <XCircle size={24} />
-          </div>
-          <h3 className="text-3xl font-black text-slate-800 dark:text-white">{summary.absent}</h3>
-          <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Faltas</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm text-center">
-          <div className="inline-flex p-3 rounded-full bg-orange-50 text-orange-600 mb-2">
-            <AlertCircle size={24} />
-          </div>
-          <h3 className="text-3xl font-black text-slate-800 dark:text-white">{summary.late}</h3>
-          <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Atrasos</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-gold to-yellow-600 p-6 rounded-3xl border border-gold/20 shadow-lg text-center text-white flex flex-col justify-center">
+        ))}
+        <div className="col-span-2 flex flex-col justify-center rounded-3xl border border-gold/20 bg-gradient-to-br from-gold to-yellow-600 p-5 text-center text-white shadow-lg lg:col-span-1">
           <h3 className="text-4xl font-black">{attendancePercentage}%</h3>
-          <p className="text-sm font-bold uppercase tracking-wider opacity-90 mt-1">Asistencia Global</p>
+          <p className="mt-1 text-xs font-bold uppercase tracking-wider opacity-90 sm:text-sm">Asistencia de la escuela</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm overflow-hidden">
-        <div className="p-6 md:p-8 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-sky-50 dark:bg-sky-900/30 rounded-2xl flex items-center justify-center text-sky-600 dark:text-sky-400">
-              <UserCheck size={24} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Registro Detallado</h2>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Historial de asistencia por clase y fecha.</p>
-            </div>
-          </div>
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center gap-3 border-b border-slate-200 p-5 dark:border-white/10 sm:p-8">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400"><UserCheck size={24} /></span>
+          <div><h2 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Registro detallado</h2><p className="text-sm text-gray-500">Historial real por clase y fecha.</p></div>
         </div>
 
-        <div className="overflow-x-auto">
-          {records.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              No hay registros de asistencia todavía.
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50">
-                  <th className="p-4 text-xs font-black uppercase text-gray-400 tracking-wider">Fecha</th>
-                  <th className="p-4 text-xs font-black uppercase text-gray-400 tracking-wider">Curso</th>
-                  <th className="p-4 text-xs font-black uppercase text-gray-400 tracking-wider">Modalidad</th>
-                  <th className="p-4 text-xs font-black uppercase text-gray-400 tracking-wider">Estado</th>
-                  <th className="p-4 text-xs font-black uppercase text-gray-400 tracking-wider">Nota</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                {records.map((record) => (
-                  <tr key={record.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="p-4 text-sm font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-2">
-                      <Calendar size={14} className="text-gray-400" />
-                      {new Date(record.date).toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="p-4 text-sm font-bold text-slate-800 dark:text-white">
-                      {record.lms_courses?.title || 'Curso General'}
-                    </td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
-                        {record.session_type === 'zoom' ? <Video size={12} className="text-blue-500" /> : <MapPin size={12} className="text-emerald-500" />}
-                        {record.session_type === 'zoom' ? 'Zoom' : record.session_type === 'in_person' ? 'Presencial' : 'Otro'}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full uppercase ${
-                        record.status === 'present' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' :
-                        record.status === 'absent' ? 'bg-red-50 text-red-600 dark:bg-red-900/30' :
-                        record.status === 'late' ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/30' :
-                        'bg-blue-50 text-blue-600 dark:bg-blue-900/30'
-                      }`}>
-                        {record.status === 'present' ? 'Presente' : 
-                         record.status === 'absent' ? 'Falta' : 
-                         record.status === 'late' ? 'Atraso' : 'Justificado'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm text-gray-500 italic">
-                      {record.notes || '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        {records.length === 0 ? (
+          <div className="py-14 text-center text-gray-500">No hay registros de asistencia en esta escuela.</div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-white/5">
+            {records.map((record) => (
+              <article key={record.id} className="grid gap-3 p-4 transition hover:bg-slate-50/70 dark:hover:bg-white/[0.03] sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] sm:items-center sm:p-5">
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-slate-900 dark:text-white">{record.sessionTitle}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Calendar size={13} />{new Date(`${record.date}T12:00:00`).toLocaleDateString('es-EC', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} · {record.courseTitle}</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                  {record.online ? <Video size={14} className="text-blue-500" /> : <MapPin size={14} className="text-emerald-500" />}
+                  <span className="truncate">{record.online ? 'En línea' : record.location || 'Presencial'}</span>
+                </div>
+                <span className={`w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${
+                  record.status === 'absent' ? 'bg-red-50 text-red-600 dark:bg-red-900/30' :
+                  record.status === 'late' ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/30' :
+                  record.status === 'excused' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30' :
+                  'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30'
+                }`}>{record.status === 'zoom' ? 'En línea' : record.status === 'present' ? 'Presente' : record.status === 'absent' ? 'Falta' : record.status === 'late' ? 'Atraso' : 'Justificado'}</span>
+                {record.notes && <p className="text-sm italic text-slate-500 sm:col-span-3">{record.notes}</p>}
+              </article>
+            ))}
+          </div>
+        )}
       </div>
     </AnimeFadeUp>
   );

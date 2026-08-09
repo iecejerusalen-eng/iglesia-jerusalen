@@ -92,6 +92,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
     try {
       const { data: enrollData, error: enrollError } = await supabase
         .from('lms_enrollments')
@@ -106,28 +107,31 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
             school_id
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('status', 'active')
         .eq('lms_courses.school_id', school.id);
 
       if (enrollError) throw enrollError;
       
       const coursesWithProgress = await Promise.all((enrollData || []).map(async (enr) => {
-        const { data: totalLessons } = await supabase
+        const { data: totalLessons, error: lessonsError } = await supabase
           .from('lms_lessons')
           .select('id, lms_modules!inner(subject_id, lms_subjects!inner(course_id))')
           .eq('lms_modules.lms_subjects.course_id', enr.course_id);
+
+        if (lessonsError) throw lessonsError;
 
         const total = totalLessons?.length || 0;
         let completed = 0;
         if (totalLessons && totalLessons.length > 0) {
           const lessonIds = totalLessons.map(l => l.id);
-          const { data: progressData } = await supabase
+          const { data: progressData, error: progressError } = await supabase
             .from('lms_lesson_completions')
             .select('is_completed')
-            .eq('student_id', user?.id)
+            .eq('student_id', user.id)
             .in('lesson_id', lessonIds)
             .eq('is_completed', true);
+          if (progressError) throw progressError;
           completed = progressData?.length || 0;
         }
 
@@ -148,18 +152,18 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
 
       setEnrollments(coursesWithProgress);
 
-      const { data: badgesData } = await supabase
+      const { data: badgesData, error: badgesError } = await supabase
         .from('lms_student_badges')
         .select('*')
-        .eq('student_id', user?.id)
+        .eq('student_id', user.id)
         .order('awarded_at', { ascending: false });
-        
-      if (badgesData) setBadges(badgesData);
+      if (badgesError) throw badgesError;
+      setBadges(badgesData || []);
 
       // Fetch pending tasks
       const courseIds = (enrollData || []).map((e) => e.course_id);
       if (courseIds.length > 0) {
-        const { data: assignmentsData } = await supabase
+        const { data: assignmentsData, error: assignmentsError } = await supabase
           .from('lms_lessons')
           .select(`
             id,
@@ -175,15 +179,17 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
           .eq('type', 'assignment')
           .not('due_date', 'is', null)
           .in('lms_modules.lms_subjects.course_id', courseIds);
+        if (assignmentsError) throw assignmentsError;
 
         if (assignmentsData && assignmentsData.length > 0) {
           const assignmentIds = assignmentsData.map((a) => a.id);
           
-          const { data: submissionsData } = await supabase
+          const { data: submissionsData, error: submissionsError } = await supabase
             .from('lms_lesson_submissions')
             .select('lesson_id')
-            .eq('student_id', user?.id)
+            .eq('student_id', user.id)
             .in('lesson_id', assignmentIds);
+          if (submissionsError) throw submissionsError;
 
           const submittedIds = new Set(submissionsData?.map((s) => s.lesson_id) || []);
 
@@ -223,13 +229,17 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
           setPendingTasks([]);
         }
       }
+      else {
+        setPendingTasks([]);
+      }
 
       // Fetch global stats (Gamification)
-      const { data: statsData } = await supabase
+      const { data: statsData, error: statsError } = await supabase
         .from('lms_student_stats')
         .select('*')
-        .eq('student_id', user?.id)
+        .eq('student_id', user.id)
         .maybeSingle();
+      if (statsError) throw statsError;
 
       let overall = 0;
       if (coursesWithProgress.length > 0) {
@@ -238,10 +248,12 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       }
 
       // Get attendance
-      const { data: attendanceData } = await supabase
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from('lms_attendance')
-        .select('status')
-        .eq('student_id', user?.id);
+        .select('status, lms_class_sessions!inner(lms_courses!inner(school_id))')
+        .eq('student_id', user.id)
+        .eq('lms_class_sessions.lms_courses.school_id', school.id);
+      if (attendanceError) throw attendanceError;
         
       let attendancePercentage = 100;
       if (attendanceData && attendanceData.length > 0) {
@@ -399,13 +411,13 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
         {activeTab === 'courses' && (
           <AnimeFadeUp className="space-y-8">
             {enrollments.length === 0 ? (
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-12">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 p-8 text-center shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-12">
                 <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Aún no estás matriculado</h3>
-                <p className="text-gray-500 mb-6 text-lg">Explora nuestros programas académicos y comienza tu formación.</p>
-                <Link to="/programas" className="px-8 py-3 bg-gold text-white rounded-xl font-bold hover:bg-yellow-600 transition-colors inline-block shadow-lg hover:shadow-gold/20 hover:-translate-y-1">
-                  Explorar Programas
-                </Link>
+                <h3 className="mb-2 text-2xl font-bold">Tu acceso ya está activo</h3>
+                <p className="mx-auto mb-6 max-w-xl text-base text-gray-500 sm:text-lg">Todavía no tienes una clase asignada dentro de {school.name}. La coordinación debe ubicarte en el curso, rango o paralelo que te corresponde.</p>
+                <button type="button" onClick={onChangeSchool} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500">
+                  Revisar otras escuelas
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
@@ -476,17 +488,17 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
 
         {/* ATTENDANCE TAB */}
         {activeTab === 'attendance' && (
-          <MyAttendanceWidget />
+          <MyAttendanceWidget schoolId={school.id} />
         )}
 
         {/* GRADES TAB */}
         {activeTab === 'grades' && (
-          <StudentGrades />
+          <StudentGrades schoolId={school.id} />
         )}
 
         {/* STATS TAB */}
         {activeTab === 'stats' && (
-          <StudentStatsTab />
+          <StudentStatsTab courses={enrollments} />
         )}
 
         {/* BADGES TAB */}

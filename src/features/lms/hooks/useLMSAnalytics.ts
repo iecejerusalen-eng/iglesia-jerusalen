@@ -126,7 +126,8 @@ export function useLMSAnalytics() {
   }, []);
 
   useEffect(() => {
-    fetchAnalytics();
+    const timer = window.setTimeout(() => void fetchAnalytics(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchAnalytics]);
 
   return { data, isLoading, error, refetch: fetchAnalytics };

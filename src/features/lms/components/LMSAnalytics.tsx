@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { TrendingUp, Users, Award, BookOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,11 +12,7 @@ export function LMSAnalytics() {
     averageGrade: 0
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       // Basic global counts
@@ -49,7 +45,12 @@ export function LMSAnalytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchAnalytics(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchAnalytics]);
 
   if (loading) {
     return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-gold" size={32} /></div>;

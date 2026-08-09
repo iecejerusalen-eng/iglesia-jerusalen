@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpenCheck,
-  CheckCircle2,
   Clock3,
   GraduationCap,
   Loader2,
@@ -178,22 +177,16 @@ export function SchoolPortalGate({ mode, children }: SchoolPortalGateProps) {
                 </div>
               )}
 
-              {selectedSchool.accessStatus === 'none' && mode === 'student' && (
+              {selectedSchool.accessStatus === 'none' && (
                 <div className="mt-5 border-t border-white/10 pt-5">
                   <label htmlFor="school-request-message" className="text-sm font-bold text-slate-200">Mensaje para los encargados <span className="font-normal text-slate-500">(opcional)</span></label>
-                  <textarea id="school-request-message" value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} rows={3} placeholder="Cuéntanos por qué deseas ingresar o a qué clase perteneces..." className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10" />
+                  <textarea id="school-request-message" value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} rows={3} placeholder={mode === 'teacher' ? 'Cuéntanos en qué clase o rango colaborarás...' : 'Cuéntanos por qué deseas ingresar o a qué clase perteneces...'} className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10" />
                   <button type="button" disabled={requestAccess.isPending} onClick={() => void sendRequest()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60">
                     {requestAccess.isPending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />} Enviar solicitud
                   </button>
                 </div>
               )}
 
-              {selectedSchool.accessStatus === 'none' && mode === 'teacher' && (
-                <div className="mt-5 flex gap-3 rounded-2xl border border-indigo-300/20 bg-indigo-400/10 p-4 text-indigo-100">
-                  <CheckCircle2 className="mt-0.5 shrink-0" size={19} />
-                  <div><p className="font-bold">Se requiere una asignación docente</p><p className="mt-1 text-sm text-indigo-100/70">Un administrador o coordinador debe agregarte a esta escuela y asignarte al menos una clase.</p></div>
-                </div>
-              )}
             </motion.section>
           )}
         </AnimatePresence>

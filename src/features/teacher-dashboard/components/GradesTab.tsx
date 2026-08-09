@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Award, BarChart3, FileDown, Check, X, Search, ChevronRight } from 'lucide-react';
 import { ResponsiveContainer, Cell, PieChart, Pie, Tooltip } from 'recharts';
 import { supabase } from '../../../config/supabase';
@@ -6,13 +6,12 @@ import { toast } from 'sonner';
 
 const COLORS = ['#D4AF37', '#1E3A8A', '#8B5CF6', '#10B981', '#EF4444'];
 
-interface GradesTabProps {
-  students: any[];
-  submissions: any[];
-  finalGrades: any[];
-  courseId: string;
-  activities?: any[];
-}
+interface TeacherStudent { id: string; first_name: string; last_name: string; email: string; }
+interface GradeSubmission { id: string; student_id: string; lesson_id: string; grade: string | number | null; }
+interface FinalGrade { id: string; user_id?: string; enrollment_id: string; final_grade: string | number | null; comments?: string | null; }
+interface GradeActivity { id: string; title: string; type: string; }
+interface RankedStudent extends TeacherStudent { average: number; }
+interface GradesTabProps { students: TeacherStudent[]; submissions: GradeSubmission[]; finalGrades: FinalGrade[]; courseId: string; activities?: GradeActivity[]; }
 
 export function GradesTab({ students, submissions, finalGrades = [], courseId, activities = [] }: GradesTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,38 +25,41 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
 
   // Enrollments mapping
   const [enrollmentsMap, setEnrollmentsMap] = useState<Record<string, string>>({});
-  useMemo(() => {
-    supabase
-      .from('lms_enrollments')
-      .select('id, user_id')
-      .eq('course_id', courseId)
-      .eq('role', 'student')
-      .then(({ data }) => {
-        if (data) {
-          const map: Record<string, string> = {};
-          data.forEach(e => { map[e.user_id] = e.id; });
-          setEnrollmentsMap(map);
-        }
-      });
+  useEffect(() => {
+    let active = true;
+    const loadEnrollments = async () => {
+      const { data, error } = await supabase.from('lms_enrollments').select('id, user_id').eq('course_id', courseId).eq('role', 'student');
+      if (error) {
+        console.error('Error loading grade enrollments:', error);
+        toast.error('No se pudo cargar la relación de estudiantes.');
+        return;
+      }
+      if (!active) return;
+      const map: Record<string, string> = {};
+      data?.forEach((enrollment) => { map[enrollment.user_id] = enrollment.id; });
+      setEnrollmentsMap(map);
+    };
+    void loadEnrollments();
+    return () => { active = false; };
   }, [courseId]);
 
   const { averageGrade, strugglingStudents, highlightStudents, metricsData } = useMemo(() => {
-    const numericFinalGrades = finalGrades.map(fg => parseFloat(fg.final_grade)).filter(g => !isNaN(g));
-    const gradesSource = numericFinalGrades.length > 0 ? numericFinalGrades : submissions.map(s => parseFloat(s.grade || '0')).filter(g => !isNaN(g) && g > 0);
+    const numericFinalGrades = finalGrades.map((grade) => Number(grade.final_grade)).filter((grade) => Number.isFinite(grade));
+    const gradesSource = numericFinalGrades.length > 0 ? numericFinalGrades : submissions.map((submission) => Number(submission.grade || 0)).filter((grade) => Number.isFinite(grade) && grade > 0);
     const avg = gradesSource.length > 0 ? gradesSource.reduce((a, b) => a + b, 0) / gradesSource.length : 0;
     const average = parseFloat(avg.toFixed(1));
 
-    const struggling: any[] = [];
-    const highPerformers: any[] = [];
+    const struggling: RankedStudent[] = [];
+    const highPerformers: RankedStudent[] = [];
 
     students.forEach(s => {
       const fGrade = finalGrades.find(fg => fg.user_id === s.id);
-      let sAvg = 0;
+      let sAvg: number;
       if (fGrade && fGrade.final_grade) {
-        sAvg = parseFloat(fGrade.final_grade);
+        sAvg = Number(fGrade.final_grade);
       } else {
         const sSubmissions = submissions.filter(sub => sub.student_id === s.id);
-        const sGrades = sSubmissions.map(sub => parseFloat(sub.grade || '0')).filter(g => !isNaN(g) && g > 0);
+        const sGrades = sSubmissions.map((submission) => Number(submission.grade || 0)).filter((grade) => Number.isFinite(grade) && grade > 0);
         sAvg = sGrades.length > 0 ? sGrades.reduce((a, b) => a + b, 0) / sGrades.length : 0;
       }
       
@@ -125,8 +127,9 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
       
       toast.success('Calificación actualizada');
       setEditingCell(null);
-    } catch (err: any) {
-      toast.error('Error al calificar: ' + err.message);
+    } catch (err: unknown) {
+      console.error('Error saving activity grade:', err);
+      toast.error('Error al calificar: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setIsSaving(false);
     }
@@ -158,8 +161,9 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
       
       toast.success('Nota final guardada');
       setEditingFinalGrade(null);
-    } catch (err: any) {
-      toast.error('Error al guardar: ' + err.message);
+    } catch (err: unknown) {
+      console.error('Error saving final grade:', err);
+      toast.error('Error al guardar: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setIsSaving(false);
     }
@@ -291,7 +295,7 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
                 filteredStudents.map(std => {
                   const fGrade = finalGrades.find(fg => fg.user_id === std.id);
                   const sSubmissions = submissions.filter(sub => sub.student_id === std.id);
-                  const sGrades = sSubmissions.map(sub => parseFloat(sub.grade || '0')).filter(g => !isNaN(g) && g > 0);
+                  const sGrades = sSubmissions.map((submission) => Number(submission.grade || 0)).filter((grade) => Number.isFinite(grade) && grade > 0);
                   const calcAvg = sGrades.length > 0 ? sGrades.reduce((a, b) => a + b, 0) / sGrades.length : 0;
                   
                   const isEditingFinal = editingFinalGrade === std.id;
@@ -310,13 +314,13 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
                       {activities.map(act => {
                         const sub = getSubmission(std.id, act.id);
                         const isEditingThis = editingCell?.studentId === std.id && editingCell?.activityId === act.id;
-                        const gradeVal = sub?.grade ? parseFloat(sub.grade) : null;
+                        const gradeVal = sub?.grade ? Number(sub.grade) : null;
                         
                         return (
                           <td 
                             key={act.id} 
                             className={`p-2 border-l border-gray-150 dark:border-white/5 text-center cursor-pointer transition-colors ${isEditingThis ? 'bg-gold/10' : 'hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-                            onClick={() => !isEditingThis && handleEditCell(std.id, act.id, sub?.grade || '')}
+                            onClick={() => !isEditingThis && handleEditCell(std.id, act.id, String(sub?.grade ?? ''))}
                           >
                             {isEditingThis ? (
                               <div className="flex flex-col items-center gap-1">
@@ -335,7 +339,7 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
                                   max="10"
                                 />
                                 <div className="flex gap-1">
-                                  <button onClick={(e) => { e.stopPropagation(); handleSaveCell(std.id, act.id); }} className="text-green-600"><Check size={12}/></button>
+                                  <button disabled={isSaving} onClick={(e) => { e.stopPropagation(); handleSaveCell(std.id, act.id); }} className="text-green-600 disabled:opacity-50"><Check size={12}/></button>
                                   <button onClick={(e) => { e.stopPropagation(); setEditingCell(null); }} className="text-red-500"><X size={12}/></button>
                                 </div>
                               </div>
@@ -356,7 +360,7 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
                       {/* Final Grade (Editable) */}
                       <td 
                         className={`p-2 font-mono text-xs font-bold border-l border-gray-300 dark:border-white/10 text-center cursor-pointer ${isEditingFinal ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-blue-50/50 dark:bg-blue-900/5 hover:bg-blue-100 dark:hover:bg-blue-900/20'}`}
-                        onClick={() => !isEditingFinal && (setEditingFinalGrade(std.id), setEditFinal(fGrade?.final_grade || ''))}
+                        onClick={() => !isEditingFinal && (setEditingFinalGrade(std.id), setEditFinal(String(fGrade?.final_grade ?? '')))}
                       >
                         {isEditingFinal ? (
                            <div className="flex flex-col items-center gap-1">
@@ -373,13 +377,13 @@ export function GradesTab({ students, submissions, finalGrades = [], courseId, a
                                placeholder="-"
                              />
                              <div className="flex gap-1">
-                               <button onClick={(e) => { e.stopPropagation(); handleSaveFinalGrade(std.id); }} className="text-blue-600"><Check size={12}/></button>
+                               <button disabled={isSaving} onClick={(e) => { e.stopPropagation(); handleSaveFinalGrade(std.id); }} className="text-blue-600 disabled:opacity-50"><Check size={12}/></button>
                                <button onClick={(e) => { e.stopPropagation(); setEditingFinalGrade(null); }} className="text-red-500"><X size={12}/></button>
                              </div>
                            </div>
                         ) : (
-                          <div className={fGrade?.final_grade ? (parseFloat(fGrade.final_grade) >= 7 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500') : 'text-gray-400'}>
-                            {fGrade?.final_grade ? parseFloat(fGrade.final_grade).toFixed(1) : 'S/N'}
+                          <div className={fGrade?.final_grade ? (Number(fGrade.final_grade) >= 7 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500') : 'text-gray-400'}>
+                            {fGrade?.final_grade ? Number(fGrade.final_grade).toFixed(1) : 'S/N'}
                           </div>
                         )}
                       </td>

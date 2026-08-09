@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import type { LMSSchool } from '../../../types';
 import { School } from 'lucide-react';
@@ -13,11 +13,7 @@ export function SchoolSelector({ value, onChange, className = '' }: SchoolSelect
   const [schools, setSchools] = useState<LMSSchool[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSchools();
-  }, []);
-
-  const fetchSchools = async () => {
+  const fetchSchools = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('lms_schools')
@@ -32,7 +28,12 @@ export function SchoolSelector({ value, onChange, className = '' }: SchoolSelect
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchSchools(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSchools]);
 
   if (loading) {
     return <div className="h-10 w-48 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>;
