@@ -270,7 +270,7 @@ const Petitions = () => {
       <AnimeFadeUp delay={100} duration={800} className="relative z-10 max-w-5xl mx-auto space-y-10">
         
         {/* Header Section */}
-        <div className="text-center space-y-4">
+        <div id="petitions_hero" className="text-center space-y-4 scroll-mt-24">
           <div className="inline-flex p-3 bg-primary/5 rounded-full text-gold border border-gold/10 relative">
             <HeartHandshake size={32} />
           </div>
@@ -284,7 +284,7 @@ const Petitions = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Form Column */}
-          <div className="lg:col-span-5 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-white/10 p-6 sm:p-8 shadow-glass space-y-6">
+          <div id="petitions_form" className="lg:col-span-5 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-white/10 p-6 sm:p-8 shadow-glass space-y-6 scroll-mt-24">
             <div>
               <h2 className="text-xl font-serif font-bold text-primary dark:text-white flex items-center gap-2">
                 <Plus className="text-gold" size={20} />
@@ -369,7 +369,7 @@ const Petitions = () => {
           </div>
 
           {/* List/History Column */}
-          <div className="lg:col-span-7 space-y-6">
+          <div id="petitions_wall" className="lg:col-span-7 space-y-6 scroll-mt-24">
             
             {/* Tabs */}
             <div className="flex bg-gray-200/50 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-fit mx-auto lg:mx-0 shadow-inner">

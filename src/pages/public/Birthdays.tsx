@@ -114,10 +114,14 @@ export default function Birthdays() {
       )}
 
       <div className="relative z-10">
-        <BirthdaysHero todayCount={counts.hoy} weekCount={counts.semana} monthCount={counts.mes} totalCount={birthdayList.length} />
+        <div id="birthdays_hero" className="scroll-mt-24">
+          <BirthdaysHero todayCount={counts.hoy} weekCount={counts.semana} monthCount={counts.mes} totalCount={birthdayList.length} />
+        </div>
 
         <div className="mt-6 space-y-5">
-          <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} />
+          <div id="birthdays_today" className="scroll-mt-24">
+            <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} />
+          </div>
 
           {canManageMessages && (
             <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -134,20 +138,22 @@ export default function Birthdays() {
             {lastUpdated && <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Actualizado {lastUpdated.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>}
           </div>
 
-          {loading ? (
-            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Cargando cumpleaños" aria-busy="true">
-              {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-80 animate-pulse rounded-[1.75rem] border border-white/70 bg-white/60 dark:border-white/10 dark:bg-slate-900/60" />)}
-            </div>
-          ) : error ? (
-            <div role="alert" className="mx-auto max-w-7xl rounded-[2rem] border border-red-200 bg-white/75 px-6 py-14 text-center shadow-sm backdrop-blur-2xl dark:border-red-500/20 dark:bg-slate-900/70">
-              <AlertCircle className="mx-auto text-accent-red" size={40} />
-              <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">No pudimos consultar los cumpleaños</h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">La información no se reemplazó con datos ficticios. Verifica que la migración de cumpleaños públicos esté aplicada y vuelve a intentarlo.</p>
-              <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark"><RefreshCw size={15} /> Reintentar conexión</button>
-            </div>
-          ) : (
-            <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} onMessage={canManageMessages ? handleMessage : undefined} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
-          )}
+          <div id="birthdays_card" className="scroll-mt-24">
+            {loading ? (
+              <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Cargando cumpleaños" aria-busy="true">
+                {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-80 animate-pulse rounded-[1.75rem] border border-white/70 bg-white/60 dark:border-white/10 dark:bg-slate-900/60" />)}
+              </div>
+            ) : error ? (
+              <div role="alert" className="mx-auto max-w-7xl rounded-[2rem] border border-red-200 bg-white/75 px-6 py-14 text-center shadow-sm backdrop-blur-2xl dark:border-red-500/20 dark:bg-slate-900/70">
+                <AlertCircle className="mx-auto text-accent-red" size={40} />
+                <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">No pudimos consultar los cumpleaños</h2>
+                <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">La información no se reemplazó con datos ficticios. Verifica que la migración de cumpleaños públicos esté aplicada y vuelve a intentarlo.</p>
+                <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark"><RefreshCw size={15} /> Reintentar conexión</button>
+              </div>
+            ) : (
+              <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} onMessage={canManageMessages ? handleMessage : undefined} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
+            )}
+          </div>
         </div>
       </div>
 

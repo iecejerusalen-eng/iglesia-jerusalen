@@ -23,6 +23,14 @@ export default function StickyNav() {
 
     let isTicking = false;
 
+    const getElementForSectionId = (id: string): HTMLElement | null => {
+      return (
+        document.getElementById(id) ||
+        document.getElementById(id.replace('system_', 'home_')) ||
+        document.getElementById(id.replace('home_', 'system_'))
+      );
+    };
+
     const handleScroll = () => {
       if (isTicking) return;
       isTicking = true;
@@ -33,7 +41,7 @@ export default function StickyNav() {
         let minDistanceToCenter = Infinity;
 
         sections.forEach((section) => {
-          const element = document.getElementById(section.id);
+          const element = getElementForSectionId(section.id);
           if (element) {
             const rect = element.getBoundingClientRect();
             const visibleTop = Math.max(0, rect.top);
@@ -79,7 +87,10 @@ export default function StickyNav() {
   }, [pathname, sections]);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
+    const element =
+      document.getElementById(id) ||
+      document.getElementById(id.replace('system_', 'home_')) ||
+      document.getElementById(id.replace('home_', 'system_'));
     if (element) {
       const yOffset = -90;
       const y = element.getBoundingClientRect().top + window.scrollY + yOffset;

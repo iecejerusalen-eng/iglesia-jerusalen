@@ -57,12 +57,12 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
     sections: [
       { id: 'home_hero', label: 'Inicio', icon: Home },
       { id: 'home_welcome', label: 'Bienvenida', icon: Info },
-      { id: 'system_schedules', label: 'Horarios', icon: Calendar },
-      { id: 'system_events', label: 'Eventos', icon: Users },
-      { id: 'system_sermons', label: 'Prédicas', icon: BookOpen },
-      { id: 'system_birthdays', label: 'Cumpleaños', icon: Gift },
+      { id: 'home_schedules', label: 'Horarios', icon: Calendar },
+      { id: 'home_events', label: 'Eventos', icon: Users },
+      { id: 'home_sermons', label: 'Prédicas', icon: BookOpen },
+      { id: 'home_birthdays', label: 'Cumpleaños', icon: Gift },
       { id: 'home_donations', label: 'Donaciones', icon: Heart },
-      { id: 'system_gallery', label: 'Galería', icon: Sparkles },
+      { id: 'home_gallery', label: 'Galería', icon: Sparkles },
       { id: 'stats_section', label: 'Impacto', icon: CheckCircle2 },
       { id: 'testimonials_section', label: 'Testimonios', icon: MessageCircle }
     ]
@@ -110,8 +110,7 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
     sections: [
       { id: 'events_hero', label: 'Eventos', icon: Calendar },
       { id: 'events_upcoming', label: 'Próximos Eventos', icon: Sparkles },
-      { id: 'events_calendar', label: 'Calendario', icon: Clock },
-      { id: 'events_locations', label: 'Ubicaciones', icon: MapPin }
+      { id: 'events_calendar', label: 'Calendario', icon: Clock }
     ]
   },
   {
@@ -128,9 +127,8 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
     title: 'Cumpleaños',
     sections: [
       { id: 'birthdays_hero', label: 'Cumpleaños', icon: Gift },
-      { id: 'birthdays_today', label: 'Hoy', icon: Smile },
-      { id: 'birthdays_month', label: 'Mes Actual', icon: Calendar },
-      { id: 'birthdays_card', label: 'Felicitar', icon: Heart }
+      { id: 'birthdays_today', label: 'Filtros y Fechas', icon: Calendar },
+      { id: 'birthdays_card', label: 'Lista de Cumpleañeros', icon: Smile }
     ]
   },
   {

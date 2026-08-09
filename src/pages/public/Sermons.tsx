@@ -179,11 +179,11 @@ const Sermons = () => {
       </div>
 
       {/* PANEL DE CONTROL: Buscador y Filtros */}
-      <div id="sermons_latest" className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
+      <div id="sermons_latest" className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-4 sm:p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-4">
         
-        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+        <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
           {/* Buscador inteligente con Autocomplete */}
-          <div className="w-full lg:w-[28rem] shrink-0 relative z-30">
+          <div className="w-full xl:max-w-md flex-1 relative z-30">
             <Autocomplete
               items={autocompleteItems}
               value={searchQuery}
@@ -211,11 +211,11 @@ const Sermons = () => {
             </Autocomplete>
           </div>
           
-          {/* Filtros Izquierda */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center w-full lg:w-auto relative z-20">
+          {/* Filtros e Iconos de Vista */}
+          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto relative z-20">
             <button 
               onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-              className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md transition-all ${isCategoriesExpanded ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
+              className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 focus:outline-none shadow-sm hover:shadow-md transition-all ${isCategoriesExpanded ? 'bg-primary text-white border-primary' : 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
             >
               <span className="flex items-center gap-2"><Filter size={16} /> Categorías</span>
               <motion.div animate={{ rotate: isCategoriesExpanded ? 180 : 0 }}>
@@ -224,10 +224,10 @@ const Sermons = () => {
             </button>
 
             {/* Custom Dropdown para Pastores */}
-            <div className="relative w-full sm:w-64 z-50">
+            <div className="relative flex-1 sm:flex-none sm:min-w-[180px] z-50">
               <button 
                 onClick={() => setIsPastorsOpen(!isPastorsOpen)}
-                className="w-full px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
               >
                 <span className="flex items-center gap-2 truncate">
                   <User size={16} className="text-primary/70 dark:text-gold shrink-0" /> 
@@ -242,7 +242,7 @@ const Sermons = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 max-h-60 overflow-y-auto"
+                    className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 max-h-60 overflow-y-auto"
                   >
                     <button 
                       onClick={() => { setSelectedSpeaker(''); setIsPastorsOpen(false); }}
@@ -267,10 +267,10 @@ const Sermons = () => {
             </div>
             
             {/* Custom Dropdown para Ordenar */}
-            <div className="relative w-full sm:w-56 z-50">
+            <div className="relative flex-1 sm:flex-none sm:min-w-[160px] z-50">
               <button 
                 onClick={() => setIsSortOpen(!isSortOpen)}
-                className="w-full px-5 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 focus:outline-none shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-gray-700 dark:text-gray-200"
               >
                 <span className="flex items-center gap-2 truncate">
                   <ArrowUpDown size={16} className="text-primary/70 dark:text-gold shrink-0" /> 
@@ -285,7 +285,7 @@ const Sermons = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 overflow-hidden z-50"
+                    className="absolute top-full left-0 w-full mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-xl border border-gray-100 dark:border-white/10 shadow-2xl py-1 overflow-hidden z-50"
                   >
                     {[
                       { id: 'newest', label: 'Más recientes' },
@@ -308,25 +308,25 @@ const Sermons = () => {
             </div>
             
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-xl border border-gray-200 dark:border-white/5 w-full sm:w-auto justify-center sm:justify-start">
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/60 p-1.5 rounded-xl border border-gray-200 dark:border-white/5 shrink-0 ml-auto sm:ml-0">
               <button 
                 onClick={() => setViewMode('grid')} 
                 title="Vista Cuadrícula"
-                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex justify-center ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
                 <LayoutGrid size={16} />
               </button>
               <button 
                 onClick={() => setViewMode('list')} 
                 title="Vista Lista"
-                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex justify-center ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
                 <List size={16} />
               </button>
               <button 
                 onClick={() => setViewMode('compact')} 
                 title="Vista Compacta"
-                className={`p-2 rounded-lg transition-all flex-1 sm:flex-none flex justify-center ${viewMode === 'compact' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
+                className={`p-2 rounded-lg transition-all flex justify-center ${viewMode === 'compact' ? 'bg-white dark:bg-slate-700 text-primary dark:text-gold shadow-sm' : 'text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-gold'}`}
               >
                 <AlignJustify size={16} />
               </button>
