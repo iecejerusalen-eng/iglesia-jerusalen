@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Mission } from '../../types';
 import { Globe, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Target } from 'lucide-react';
@@ -45,7 +45,7 @@ export default function MissionsManager() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  const loadMissions = async () => {
+  const loadMissions = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -69,11 +69,12 @@ export default function MissionsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, page]);
 
   useEffect(() => {
-    loadMissions();
-  }, [debouncedSearch, page]);
+    const timer = window.setTimeout(() => { void loadMissions(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadMissions]);
 
   const handleOpenModal = (mission?: Mission) => {
     if (mission) {

@@ -14,6 +14,8 @@ interface Game {
   is_active: boolean;
 }
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+
 export const GamesManager = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,24 @@ export const GamesManager = () => {
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({ title: '', description: '', image_url: '', slug: '' });
+
+  const fetchGames = async () => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('games')
+        .select('id, title, description, image_url, slug, is_active')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      setGames(data || []);
+      setError(null);
+    } catch (err: unknown) {
+      console.error('Error fetching games:', err);
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const openCreateModal = () => {
     setEditingGame(null);
@@ -46,7 +66,7 @@ export const GamesManager = () => {
       const url = await uploadFileToCloudinary(file, 'games');
       setFormData(prev => ({ ...prev, image_url: url }));
       toast.success('Imagen subida a Cloudinary exitosamente');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al subir imagen:', err);
       toast.error('Error al subir imagen a Cloudinary');
     } finally {
@@ -95,9 +115,9 @@ export const GamesManager = () => {
 
       setIsModalOpen(false);
       fetchGames();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al guardar juego:', err);
-      toast.error('Error al guardar el juego: ' + (err.message || 'Error desconocido'));
+      toast.error('Error al guardar el juego: ' + getErrorMessage(err));
     }
   };
 
@@ -113,32 +133,16 @@ export const GamesManager = () => {
       if (deleteErr) throw deleteErr;
       toast.success('Juego eliminado correctamente');
       fetchGames();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al eliminar juego:', err);
       toast.error('No se pudo eliminar el juego');
     }
   };
 
   useEffect(() => {
-    fetchGames();
+    const timer = window.setTimeout(() => { void fetchGames(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
-
-  const fetchGames = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('games')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setGames(data || []);
-    } catch (err: any) {
-      console.error('Error fetching games:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleGameStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -150,7 +154,7 @@ export const GamesManager = () => {
       if (error) throw error;
       toast.success(`Juego ${!currentStatus ? 'activado' : 'desactivado'}`);
       fetchGames();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error toggling game status:', err);
       toast.error('Error al cambiar estado del juego');
     }

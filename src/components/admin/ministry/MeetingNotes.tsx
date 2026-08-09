@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Loader2, Calendar as CalendarIcon, Edit2, Check, X, FileText } from 'lucide-react';
 import type { MinistryMeetingNote } from '../../../types';
@@ -40,11 +40,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
   const { canEditMinistry } = usePermissions();
   const canEdit = canEditMinistry(ministryId);
 
-  useEffect(() => {
-    void fetchNotes();
-  }, [ministryId]);
-
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -88,7 +84,12 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ministryId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchNotes(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchNotes]);
 
   const handleCreateNew = () => {
     setIsEditing(true);

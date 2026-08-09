@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Search, Loader2 } from 'lucide-react';
 import type { MinistryMember } from '../../../types';
@@ -45,10 +45,6 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
   const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
-    void fetchData();
-  }, [ministryId]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -58,7 +54,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch assigned members
@@ -90,7 +86,12 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [ministryId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();

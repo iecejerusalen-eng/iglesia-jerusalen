@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarDays, Globe, Home, LogOut, Menu, Search, Settings, Users, X } from 'lucide-react';
+import { Globe, LogOut, Menu, Search, Settings, ShieldCheck, X } from 'lucide-react';
 import Sidebar from '../components/admin/Sidebar';
 import CommandMenu from '../components/admin/CommandMenu';
 import soloLogoBlanco from '../assets/Jerusalén/solo logo blanco.svg';
@@ -18,7 +18,7 @@ const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { sidebarViewMode, accentColor } = useThemeStore();
-  const { logout, firstName, photoUrl } = useAuthStore();
+  const { logout, firstName, photoUrl, userRole } = useAuthStore();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,11 +55,15 @@ const AdminLayout = () => {
     navigate('/login');
   };
 
-  const mobileLinks = [
-    { label: 'Inicio', path: '/admin', icon: Home, permission: 'dashboard' },
-    { label: 'Miembros', path: '/admin/miembros', icon: Users, permission: 'members' },
-    { label: 'Eventos', path: '/admin/eventos', icon: CalendarDays, permission: 'events' },
-  ].filter((item) => hasPermission(item.permission, 'view'));
+  const preferredMobileIds = ['dashboard', 'members', 'events'];
+  const mobileLinks = ADMIN_MODULES
+    .filter((module) => hasPermission(module.id, 'view'))
+    .sort((a, b) => {
+      const aIndex = preferredMobileIds.indexOf(a.id);
+      const bIndex = preferredMobileIds.indexOf(b.id);
+      return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+    })
+    .slice(0, 3);
 
   return (
     <div
@@ -121,6 +125,10 @@ const AdminLayout = () => {
             </div>
 
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
+              <div className="hidden items-center gap-2 rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:text-slate-300 xl:flex">
+                <ShieldCheck size={15} className="text-gold" />
+                {userRole ?? 'Sin rol'}
+              </div>
               <button
                 type="button"
                 onClick={() => openNavigation(true)}
@@ -187,7 +195,7 @@ const AdminLayout = () => {
             className={({ isActive }) => `flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold transition-colors ${isActive ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}
           >
             <item.icon size={18} />
-            <span>{item.label}</span>
+            <span className="max-w-full truncate px-1">{item.id === 'dashboard' ? 'Inicio' : item.name}</span>
           </NavLink>
         ))}
         <button

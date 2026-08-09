@@ -107,9 +107,8 @@ const CourseBuilder = () => {
   }, [id, navigate]);
 
   useEffect(() => {
-    if (id) {
-      fetchCourseData();
-    }
+    const timer = window.setTimeout(() => { if (id) void fetchCourseData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [id, fetchCourseData]);
 
   // --- SUBJECT LOGIC ---

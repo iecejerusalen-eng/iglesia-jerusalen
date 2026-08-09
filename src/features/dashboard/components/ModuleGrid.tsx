@@ -1,4 +1,4 @@
-import { Layers, ArrowRight, Lock } from 'lucide-react';
+import { Layers, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { BentoGrid, BentoCard } from '../../../components/ui/magicui/bento-grid';
@@ -22,14 +22,15 @@ export const ModuleGrid = () => {
           </p>
         </div>
         <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-gray-400 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider self-start sm:self-auto">
-          {ADMIN_MODULES.length} Herramientas
+          {ADMIN_MODULES.filter((module) => hasPermission(module.id, 'view')).length} herramientas disponibles
         </span>
       </div>
 
       {/* Grid of groups */}
       <BentoGrid className="auto-rows-auto grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
         {MODULE_GROUPS.map((group) => {
-          const groupModules = ADMIN_MODULES.filter(m => m.group === group.key);
+          const groupModules = ADMIN_MODULES.filter(m => m.group === group.key && hasPermission(m.id, 'view'));
+          if (groupModules.length === 0) return null;
           const isLarge = group.key === 'comunidad' || group.key === 'educacion' || group.key === 'admin';
           
           return (
@@ -45,11 +46,7 @@ export const ModuleGrid = () => {
               )}
             >
               <div className="space-y-1.5 mt-2">
-                {groupModules.map((mod) => {
-                  const hasAccess = hasPermission(mod.id, 'view');
-                  
-                  if (hasAccess) {
-                    return (
+                {groupModules.map((mod) => (
                       <Link
                         key={mod.path}
                         to={mod.path}
@@ -62,24 +59,7 @@ export const ModuleGrid = () => {
                         </div>
                         <ArrowRight size={12} className="text-slate-300 group-hover/link:text-indigo-600 dark:group-hover/link:text-indigo-400 group-hover/link:translate-x-0.5 transition-all shrink-0" />
                       </Link>
-                    );
-                  } else {
-                    return (
-                      <div
-                        key={mod.path}
-                        className="flex items-center justify-between p-2 rounded-lg text-xs text-slate-400 dark:text-slate-600 font-medium select-none bg-slate-100/30 dark:bg-slate-900/10 cursor-not-allowed border border-transparent backdrop-blur-xs opacity-65"
-                        style={{ minHeight: '38px' }}
-                        title="No tienes permisos para acceder a esta herramienta"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <mod.icon size={14} className="opacity-40 shrink-0" />
-                          <span className="truncate">{mod.name}</span>
-                        </div>
-                        <Lock size={10} className="text-slate-400 dark:text-slate-600 shrink-0" />
-                      </div>
-                    );
-                  }
-                })}
+                ))}
               </div>
             </BentoCard>
           );

@@ -5,7 +5,6 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay, Search } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
-import { supabase } from '../../config/supabase';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 interface SidebarProps {
@@ -16,19 +15,17 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarProps) => {
-  const { user, userRole, firstName, lastName } = useAuthStore();
+  const { user, userRole, firstName, lastName, logout } = useAuthStore();
   const { sidebarViewMode, sidebarAccordionMode, sidebarMenuMode, sidebarDefaultClosed, sidebarGridColumns, sidebarGridSort, sidebarCustomOrder } = useThemeStore();
   const { hasPermission } = usePermissions();
   const location = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768); // 768px matches md breakpoint
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
 
@@ -116,8 +113,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      useAuthStore.getState().setUser(null);
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -125,7 +121,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   };
 
   const activeGroupKey = useMemo(() => {
-    const activeItem = ADMIN_MODULES.find(item => {
+    const activeItem = [...ADMIN_MODULES].sort((a, b) => b.path.length - a.path.length).find(item => {
       if (item.path === '/admin') {
         return location.pathname === '/admin';
       }
@@ -444,13 +440,13 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
               <span>Configuración</span>
             </button>
           )}
-          <button 
+          {hasPermission('presentation_editor', 'view') && <button 
             onClick={() => { window.open('/presentacion', '_blank'); if (isMobile) onClose(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
           >
             <MonitorPlay size={18} className="shrink-0 text-blue-400" />
             <span>Ver Presentación</span>
-          </button>
+          </button>}
           <button 
             onClick={() => { navigate('/'); if (isMobile) onClose(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"

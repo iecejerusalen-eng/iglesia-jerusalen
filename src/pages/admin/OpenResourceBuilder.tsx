@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import type { OpenResource, OpenSection, OpenActivity } from '../../types';
@@ -26,13 +26,7 @@ const OpenResourceBuilder = () => {
   const [editingActivity, setEditingActivity] = useState<Partial<OpenActivity> | null>(null);
   const [savingActivity, setSavingActivity] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchResourceData();
-    }
-  }, [id]);
-
-  const fetchResourceData = async () => {
+  const fetchResourceData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch resource
@@ -75,7 +69,12 @@ const OpenResourceBuilder = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { if (id) void fetchResourceData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchResourceData, id]);
 
   // --- SECTION LOGIC ---
   const handleOpenSectionModal = (section?: OpenSection) => {

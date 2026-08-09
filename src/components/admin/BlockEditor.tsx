@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import RichTextEditor from './RichTextEditor';
 import MediaUploader from '../common/MediaUploader';
@@ -163,21 +163,27 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
   const [searchFilter, setSearchFilter] = useState('');
   const [activeCategory, setActiveCategory] = useState('content');
+  const idSequence = useRef(0);
+
+  const createBlockId = () => {
+    idSequence.current += 1;
+    return `block-${blocks.length + 1}-${idSequence.current}`;
+  };
 
   useEffect(() => {
-    try {
+    const timer = window.setTimeout(() => { try {
       if (content && content.trim().startsWith('[')) {
-        const parsed = JSON.parse(content) as LessonBlock[];
-        if (Array.isArray(parsed)) {
-          // eslint-disable-next-line
-          setBlocks(parsed);
+        const parsed: unknown = JSON.parse(content);
+        if (Array.isArray(parsed) && parsed.every((block) => block && typeof block === 'object' && 'id' in block && 'type' in block)) {
+          setBlocks(parsed as LessonBlock[]);
           return;
         }
       }
     } catch (e) {
       console.warn('Failed to parse content as JSON blocks, falling back to legacy HTML block.', e);
     }
-    setBlocks([{ id: 'block-legacy-1', type: 'text', text: content || '' }]);
+    setBlocks([{ id: 'block-legacy-1', type: 'text', text: content || '' }]); }, 0);
+    return () => window.clearTimeout(timer);
   }, [content]);
 
   const updateParent = useCallback((updatedBlocks: LessonBlock[]) => {
@@ -187,7 +193,7 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
 
   const addBlock = (type: BlockType) => {
     const newBlock: LessonBlock = {
-      id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: createBlockId(),
       type,
       text: type === 'text' || type === 'fill_blank'
         ? (type === 'fill_blank' ? 'Porque de tal manera [amo] Dios al mundo que ha dado a su [Hijo] unigénito.' : '')
@@ -232,7 +238,7 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
   const duplicateBlock = (block: LessonBlock) => {
     const duplicate: LessonBlock = {
       ...JSON.parse(JSON.stringify(block)),
-      id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: createBlockId(),
     };
     const idx = blocks.findIndex(b => b.id === block.id);
     const newBlocks = [...blocks];

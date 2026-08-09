@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Loader2, Calendar as CalendarIcon, Save, Info } from 'lucide-react';
 import type { MinistryMember, MemberAvailability } from '../../../types';
@@ -41,11 +41,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
   const { canEditMinistry } = usePermissions();
   const canEdit = canEditMinistry(ministryId);
 
-  useEffect(() => {
-    void fetchData();
-  }, [ministryId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch members of this ministry
@@ -82,11 +78,16 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ministryId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   // When selectedMemberId changes, populate editGrid if it's not 'all'
   useEffect(() => {
-    if (selectedMemberId !== 'all') {
+    const timer = window.setTimeout(() => { if (selectedMemberId !== 'all') {
       const memberAvails = allAvailabilities.filter(a => a.member_id === selectedMemberId);
       const newGrid = new Set<string>();
       
@@ -102,7 +103,8 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
       setEditGrid(newGrid);
     } else {
       setEditGrid(new Set());
-    }
+    } }, 0);
+    return () => window.clearTimeout(timer);
   }, [selectedMemberId, allAvailabilities]);
 
   // Compute heatmap for 'all' mode

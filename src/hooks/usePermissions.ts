@@ -1,17 +1,18 @@
 import { useAuthStore } from '../store/useAuthStore';
+import { useCallback, useMemo } from 'react';
 
 export const usePermissions = () => {
   const { permissions, role, user, ministryId, allowedMinistries, roles } = useAuthStore();
-  const userRoles = roles || (role ? [role] : []);
+  const userRoles = useMemo(() => roles || (role ? [role] : []), [role, roles]);
+  const hasAdministrativeRole = userRoles.some((item) => item === 'admin' || String(item) === 'superadmin');
 
   /**
    * Checks if the current user has permission to view or edit a specific module.
    * Admin role always returns true.
    */
-  const hasPermission = (moduleName: string, action: 'view' | 'edit' = 'view'): boolean => {
+  const hasPermission = useCallback((moduleName: string, action: 'view' | 'edit' = 'view'): boolean => {
     // Admin and Superadmin have total access
-    const rolesStr = userRoles as string[];
-    if (rolesStr.includes('admin') || rolesStr.includes('superadmin')) return true;
+    if (hasAdministrativeRole) return true;
 
     // If not authenticated or permissions not loaded, deny access
     if (!user || !permissions) return false;
@@ -20,16 +21,15 @@ export const usePermissions = () => {
     if (!modulePerm) return false;
 
     return !!modulePerm[action];
-  };
+  }, [hasAdministrativeRole, permissions, user]);
 
   /**
    * Checks if the user is authorized to edit a specific ministry or department.
    * Admins have full access. Leaders have access to their designated ministry.
    * Other roles with general ministries edit permission have access unless restricted by an explicit allowed list.
    */
-  const canEditMinistry = (minId: string): boolean => {
-    const rolesStr = userRoles as string[];
-    if (rolesStr.includes('admin') || rolesStr.includes('superadmin')) return true;
+  const canEditMinistry = useCallback((minId: string): boolean => {
+    if (hasAdministrativeRole) return true;
     if (!user) return false;
 
     // 1. Explicit leader check
@@ -45,14 +45,14 @@ export const usePermissions = () => {
     }
 
     return false;
-  };
+  }, [allowedMinistries, hasAdministrativeRole, hasPermission, ministryId, user, userRoles]);
 
   /**
    * Helper that returns true if the user can only view a module but cannot edit it.
    */
-  const isReadOnly = (moduleName: string): boolean => {
+  const isReadOnly = useCallback((moduleName: string): boolean => {
     return hasPermission(moduleName, 'view') && !hasPermission(moduleName, 'edit');
-  };
+  }, [hasPermission]);
 
   return {
     permissions,
@@ -62,6 +62,6 @@ export const usePermissions = () => {
     hasPermission,
     isReadOnly,
     canEditMinistry,
-    isAdmin: userRoles.includes('admin'),
+    isAdmin: hasAdministrativeRole,
   };
 };

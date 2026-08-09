@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,17 +68,7 @@ const SettingsManager = () => {
     resolver: zodResolver(settingsSchema),
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'catalogs') {
-      fetchCatalogItems(selectedCategory);
-    }
-  }, [activeTab, selectedCategory]);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -118,7 +108,7 @@ const SettingsManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reset]);
 
   const onSubmit = async (data: SettingsForm) => {
     setSaving(true);
@@ -160,6 +150,18 @@ const SettingsManager = () => {
       setCatalogLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchSettings(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (activeTab === 'catalogs') void fetchCatalogItems(selectedCategory);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, selectedCategory]);
 
   const handleAddCatalog = async (e: React.FormEvent) => {
     e.preventDefault();

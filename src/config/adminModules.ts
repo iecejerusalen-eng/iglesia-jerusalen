@@ -336,6 +336,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'comunidad'
   },
   {
+    id: 'members',
+    label: 'Solicitudes CRM',
+    name: 'Solicitudes de Ingreso',
+    path: '/admin/solicitudes',
+    icon: UserCog,
+    group: 'comunidad'
+  },
+  {
     id: 'ministries',
     label: 'Ministerios',
     name: 'Ministerios Activos',

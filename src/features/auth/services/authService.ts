@@ -46,14 +46,19 @@ export async function fetchOrCreateProfile(user: User) {
     .from('profiles')
     .select('role, roles, custom_role_ids, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
   let profileData = data;
 
   const firstName = userMetadata?.first_name || userMetadata?.full_name?.split(' ')[0] || null;
   const lastName = userMetadata?.last_name || userMetadata?.full_name?.split(' ').slice(1).join(' ') || null;
 
-  if (error || !data) {
+  if (error) {
+    logger.error('Error fetching user profile:', error);
+    throw error;
+  }
+
+  if (!data) {
     // Profile doesn't exist — create one with guest role
     const { data: newProfile, error: insertError } = await supabase
       .from('profiles')
@@ -71,7 +76,7 @@ export async function fetchOrCreateProfile(user: User) {
 
     if (insertError) {
       logger.error('Error creating profile:', insertError);
-      profileData = { role: 'guest', roles: ['guest'], first_name: firstName, last_name: lastName, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: userEmail, banned: false, admin_preferences: {} };
+      throw insertError;
     } else {
       profileData = newProfile;
     }
@@ -91,7 +96,9 @@ export async function fetchOrCreateProfile(user: User) {
         .select('role, roles, custom_role_ids, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
         .single();
 
-      if (!updateError && updatedProfile) {
+      if (updateError) {
+        logger.warn('No se pudieron completar los datos básicos del perfil:', updateError);
+      } else if (updatedProfile) {
         profileData = updatedProfile;
       }
     }
@@ -136,7 +143,11 @@ export async function fetchOrCreateProfile(user: User) {
           .select('role, permissions')
           .in('role', rolesToLoad);
         
-        if (!roleError && rolePermData) {
+        if (roleError) {
+          logger.error('Error loading system role permissions:', roleError);
+          throw roleError;
+        }
+        if (rolePermData) {
           for (const row of rolePermData) {
             const rolePerms = row.permissions || {};
             for (const modId of Object.keys(rolePerms)) {
@@ -149,7 +160,8 @@ export async function fetchOrCreateProfile(user: User) {
           }
         }
       } catch (err) {
-        logger.warn('Role permissions table lookup warning:', err);
+        logger.error('Role permissions lookup failed:', err);
+        throw err;
       }
 
       const customRoleIds = resolvedProfile.custom_role_ids ?? [];
@@ -161,14 +173,19 @@ export async function fetchOrCreateProfile(user: User) {
             .in('id', customRoleIds)
             .eq('is_active', true);
 
-          if (!customRoleError && customRoleData) {
+          if (customRoleError) {
+            logger.error('Error loading custom role permissions:', customRoleError);
+            throw customRoleError;
+          }
+          if (customRoleData) {
             permissions = mergePermissions(
               permissions,
               ...(customRoleData ?? []).map((role) => role.permissions as CustomAccessRole['permissions']),
             );
           }
         } catch (err) {
-          logger.warn('Custom access roles table lookup warning:', err);
+          logger.error('Custom access role lookup failed:', err);
+          throw err;
         }
       }
     }
@@ -246,7 +263,8 @@ export const checkSessionLogic = async (set: (state: Partial<AuthState>) => void
       set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
     }
   } catch (error) {
-    console.error('Error checking session:', error);
+    logger.error('Error checking session:', error);
+    toast.error('No se pudo validar tu perfil y permisos. Vuelve a iniciar sesión.');
     set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
   }
 };
@@ -274,8 +292,9 @@ export const initializeAuthLogic = (
         set({ isLoading: false });
       }
     } catch (err) {
-      console.error('Error getting initial session:', err);
-      set({ isLoading: false });
+      logger.error('Error getting initial session:', err);
+      set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null, isLoading: false });
+      toast.error('No se pudo cargar tu perfil y permisos.');
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -302,8 +321,9 @@ export const initializeAuthLogic = (
           }
           applyProfile(set, profile, session.user);
         } catch (err) {
-          console.error('Error in onAuthStateChange profile fetch:', err);
-          set({ isLoading: false });
+          logger.error('Error in onAuthStateChange profile fetch:', err);
+          set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null, isLoading: false });
+          toast.error('No se pudo actualizar tu perfil y permisos.');
         }
       } else {
         set({

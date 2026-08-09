@@ -18,14 +18,15 @@ const LMSQuizBuilder: React.FC<LMSQuizBuilderProps> = ({ content, onChange }) =>
   const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    if (content) {
+    const timer = window.setTimeout(() => { if (content) {
       try {
         const parsed = JSON.parse(content);
         if (parsed.questions) setQuestions(parsed.questions);
       } catch (e) {
         console.error("Error parsing quiz content", e);
       }
-    }
+    } }, 0);
+    return () => window.clearTimeout(timer);
   }, [content]);
 
   // Sync to parent when questions change

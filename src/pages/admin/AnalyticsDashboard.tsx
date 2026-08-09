@@ -87,7 +87,7 @@ export default function AnalyticsDashboard() {
 
           {activeTab === 'forms' && (
             <FormsTab
-              responses={datasets?.formResponses as any || []}
+              responses={datasets?.formResponses || []}
             />
           )}
         </>

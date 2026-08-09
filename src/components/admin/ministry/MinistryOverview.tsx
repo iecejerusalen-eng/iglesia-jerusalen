@@ -45,12 +45,13 @@ export default function MinistryOverview({ ministry, canEdit, onUpdated }: Minis
   });
 
   useEffect(() => {
-    setForm({
+    const timer = window.setTimeout(() => setForm({
       leader_name: ministry.leader_name || '',
       schedule: ministry.schedule || '',
       anniversary_date: ministry.anniversary_date || '',
       theme_color: ministry.theme_color || '#1E3A8A',
-    });
+    }), 0);
+    return () => window.clearTimeout(timer);
   }, [ministry]);
 
   const loadOverview = useCallback(async () => {
@@ -95,7 +96,8 @@ export default function MinistryOverview({ ministry, canEdit, onUpdated }: Minis
   }, [ministry.id]);
 
   useEffect(() => {
-    void loadOverview();
+    const timer = window.setTimeout(() => { void loadOverview(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadOverview]);
 
   const readinessItems = useMemo(() => [

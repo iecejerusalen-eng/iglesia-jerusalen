@@ -6,6 +6,8 @@ import { useMapMutations } from '../../features/strategic-map/hooks/useMapMutati
 import { MapSidebar } from '../../features/strategic-map/components/MapSidebar';
 import { MapVisuals } from '../../features/strategic-map/components/MapVisuals';
 import { MapDetailsPanel } from '../../features/strategic-map/components/MapDetailsPanel';
+import type { MapLayerMouseEvent, MapRef } from 'react-map-gl/maplibre';
+import type { Cell, Member } from '../../types';
 
 const CHURCH_COORDS = { lat: -2.139188, lng: -79.5949891 }; // Iglesia Jerusalén Central (Milagro, Ecuador)
 
@@ -31,12 +33,12 @@ const StrategicMap = () => {
     bearing: 0,
   });
 
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<MapRef | null>(null);
 
   // Detailed view state
   const [selectedItem, setSelectedItem] = useState<{
     type: 'member' | 'cell' | 'church' | 'location';
-    data: any;
+    data: Member | Cell | Record<string, unknown>;
   } | null>(null);
 
   // Measure Tool State
@@ -74,7 +76,7 @@ const StrategicMap = () => {
     return total;
   };
 
-  const handleMapClick = (e: any) => {
+  const handleMapClick = (e: MapLayerMouseEvent) => {
     if (isMeasuring) {
       setMeasurePoints(prev => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
     } else if (isCreatingCellUI) {

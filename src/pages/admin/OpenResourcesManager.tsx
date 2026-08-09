@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { 
@@ -26,11 +26,7 @@ const OpenResourcesManager = () => {
   const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
   const [editingStudy, setEditingStudy] = useState<Partial<Study> | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'open_courses') {
@@ -56,7 +52,12 @@ const OpenResourcesManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   // ── Course (OpenResource) Handlers ────────────────────────────────────
   const handleOpenCourseModal = (resource?: OpenResource) => {
@@ -623,7 +624,7 @@ const OpenResourcesManager = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría del Estudio *</label>
                   <select
                     value={editingStudy.category || 'Generales'}
-                    onChange={(e) => setEditingStudy({ ...editingStudy, category: e.target.value as any })}
+                    onChange={(e) => setEditingStudy({ ...editingStudy, category: e.target.value as Study['category'] })}
                     className="w-full px-4 py-2 bg-gray-55 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-gold"
                   >
                     <option value="Generales">Generales / Devocionales</option>

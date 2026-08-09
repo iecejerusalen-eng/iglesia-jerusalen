@@ -118,7 +118,8 @@ const MediaVault = () => {
   };
 
   useEffect(() => {
-    fetchFiles();
+    const timer = window.setTimeout(() => { void fetchFiles(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,9 +153,9 @@ const MediaVault = () => {
 
       toast.success('Archivo subido correctamente a la bóveda privada');
       fetchFiles();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error uploading file:', err);
-      toast.error(err.message || 'Error al subir el archivo');
+      toast.error(err instanceof Error ? err.message : 'Error al subir el archivo');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
@@ -47,10 +47,11 @@ const inventoryItemSchema = z.object({
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 const getYoutubeId = (url: string): string | null => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : null;
 };
@@ -100,7 +101,7 @@ const InventoryManager = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<InventoryItemFormData>({
+  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: {
       name: '',
@@ -115,12 +116,9 @@ const InventoryManager = () => {
       description: '',
     }
   });
+  const photoUrlValue = useWatch({ control, name: 'photo_url' });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [itemsRes, catsRes] = await Promise.all([
@@ -139,13 +137,18 @@ const InventoryManager = () => {
 
       setItems(itemsRes.data || []);
       setCategories(catsRes.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching inventory data:', err);
-      toast.error('No se pudieron cargar los datos del inventario: ' + err.message);
+      toast.error('No se pudieron cargar los datos del inventario: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   const openCreate = () => {
     if (readOnly) return;
@@ -198,9 +201,9 @@ const InventoryManager = () => {
     try {
       const publicUrl = await uploadFileToCloudinary(file, 'inventory_photos', 'image');
       return publicUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error uploading item photo:', err);
-      toast.error('Error al subir la imagen: ' + err.message);
+      toast.error('Error al subir la imagen: ' + getErrorMessage(err));
       return null;
     } finally {
       setUploading(false);
@@ -252,9 +255,9 @@ const InventoryManager = () => {
 
       setShowForm(false);
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving inventory item:', err);
-      toast.error('Error al guardar artículo: ' + err.message);
+      toast.error('Error al guardar artículo: ' + getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -293,9 +296,9 @@ const InventoryManager = () => {
       if (error) throw error;
       toast.success('Artículo eliminado del inventario.');
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting inventory item:', err);
-      toast.error('Error al eliminar artículo: ' + err.message);
+      toast.error('Error al eliminar artículo: ' + getErrorMessage(err));
     }
   };
 
@@ -317,9 +320,9 @@ const InventoryManager = () => {
       toast.success('Categoría agregada correctamente.');
       setNewCategoryName('');
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error adding category:', err);
-      toast.error('Error al agregar categoría: ' + err.message);
+      toast.error('Error al agregar categoría: ' + getErrorMessage(err));
     }
   };
 
@@ -345,9 +348,9 @@ const InventoryManager = () => {
 
       toast.success('Categoría eliminada con éxito.');
       fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting category:', err);
-      toast.error('Error al eliminar categoría: ' + err.message);
+      toast.error('Error al eliminar categoría: ' + getErrorMessage(err));
     } finally {
       setDeletingCatId(null);
     }
@@ -977,7 +980,7 @@ const InventoryManager = () => {
                 <div className="flex gap-2 mb-3">
                   <input
                     type="url"
-                    value={watch('photo_url') || ''}
+                    value={photoUrlValue || ''}
                     onChange={(e) => setValue('photo_url', e.target.value)}
                     placeholder="URL directa de imagen de stock o presione el Asistente..."
                     className="flex-grow border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -1010,10 +1013,10 @@ const InventoryManager = () => {
                       {selectedFile ? selectedFile.name : 'O suba / arrastre una imagen local para almacenarla en Supabase'}
                     </span>
                   </div>
-                  {(selectedFile || watch('photo_url') || editingItem?.photo_url) && (
+                  {(selectedFile || photoUrlValue || editingItem?.photo_url) && (
                     <div className="w-14 h-14 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gray-50 dark:bg-slate-950 p-1 flex items-center justify-center flex-shrink-0">
                       <img loading="lazy" 
-                        src={selectedFile ? URL.createObjectURL(selectedFile) : (watch('photo_url') || editingItem?.photo_url || '')} 
+                        src={selectedFile ? URL.createObjectURL(selectedFile) : (photoUrlValue || editingItem?.photo_url || '')} 
                         alt="Miniatura" 
                         className="max-w-full max-h-full object-contain" 
                       />

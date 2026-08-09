@@ -42,7 +42,8 @@ export const MemoryEditor = () => {
   };
 
   useEffect(() => {
-    fetchCards();
+    const timer = window.setTimeout(() => { void fetchCards(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

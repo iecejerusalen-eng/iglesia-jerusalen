@@ -15,11 +15,14 @@ interface PluginItem {
   description: string;
   type: 'activity' | 'block' | 'theme' | 'filter';
   status: 'active' | 'inactive';
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   version: string;
   created_at?: string;
   updated_at?: string;
 }
+
+type PluginType = PluginItem['type'];
+const pluginTypes: PluginType[] = ['activity', 'block', 'theme', 'filter'];
 
 export default function PluginManager() {
   const [plugins, setPlugins] = useState<PluginItem[]>([]);
@@ -36,16 +39,12 @@ export default function PluginManager() {
   const [newPluginType, setNewPluginType] = useState<'activity' | 'block' | 'theme' | 'filter'>('activity');
   const [newPluginDesc, setNewPluginDesc] = useState('');
 
-  useEffect(() => {
-    fetchPlugins();
-  }, []);
-
   const fetchPlugins = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('system_plugins')
-        .select('*')
+        .select('id, name, description, type, status, settings, version, created_at, updated_at')
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -57,6 +56,11 @@ export default function PluginManager() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchPlugins(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleToggleStatus = async (plugin: PluginItem) => {
     const nextStatus = plugin.status === 'active' ? 'inactive' : 'active';
@@ -85,8 +89,8 @@ export default function PluginManager() {
     }
   };
 
-  const getPluginTemplate = (pluginName: string, currentSettings: any) => {
-    let base: any = { enabled: true, debug: false };
+  const getPluginTemplate = (pluginName: string, currentSettings: Record<string, unknown>) => {
+    let base: Record<string, unknown> = { enabled: true, debug: false };
     if (currentSettings && typeof currentSettings === 'object' && Object.keys(currentSettings).length > 0) {
       base = { ...currentSettings };
     }
@@ -151,7 +155,7 @@ export default function PluginManager() {
       await usePluginStore.getState().fetchPlugins();
       toast.success('Configuración de extensión guardada');
       setIsSettingsOpen(false);
-    } catch (err) {
+    } catch {
       toast.error('Formato JSON inválido. Revisa la sintaxis.');
     }
   };
@@ -448,7 +452,10 @@ export default function PluginManager() {
                 <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">Tipo de Extensión</label>
                 <select
                   value={newPluginType}
-                  onChange={(e) => setNewPluginType(e.target.value as any)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (pluginTypes.includes(value as PluginType)) setNewPluginType(value as PluginType);
+                  }}
                   className="w-full px-4 py-2 bg-gray-55 dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg outline-none focus:ring-1 focus:ring-gold focus:border-gold text-xs"
                 >
                   <option value="activity">Módulo de Actividad</option>

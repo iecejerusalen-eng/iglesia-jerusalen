@@ -20,6 +20,8 @@ interface PresentationSlide {
   is_active: boolean;
 }
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+
 export const PresentationEditor = () => {
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,10 +48,6 @@ export const PresentationEditor = () => {
     order_index: 0
   });
 
-  useEffect(() => {
-    fetchSlides();
-  }, []);
-
   const fetchSlides = async () => {
     try {
       const { data, error } = await supabase
@@ -67,13 +65,18 @@ export const PresentationEditor = () => {
       }
       setSlides(data || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching slides:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchSlides(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleOpenModal = (slide?: PresentationSlide) => {
     if (slide) {
@@ -148,9 +151,9 @@ export const PresentationEditor = () => {
       
       handleCloseModal();
       fetchSlides();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving slide:', err);
-      toast.error('Error al guardar: ' + err.message);
+      toast.error('Error al guardar: ' + getErrorMessage(err));
     }
   };
 
@@ -166,9 +169,9 @@ export const PresentationEditor = () => {
       if (error) throw error;
       toast.success('Diapositiva eliminada');
       fetchSlides();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting slide:', err);
-      toast.error('Error al eliminar: ' + err.message);
+      toast.error('Error al eliminar: ' + getErrorMessage(err));
     }
   };
 

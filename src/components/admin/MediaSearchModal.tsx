@@ -36,6 +36,44 @@ interface MediaSearchModalProps {
   title?: string;
 }
 
+interface StockImage {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  creator?: string;
+  license?: string;
+  detail_url?: string;
+}
+
+interface ChurchMedia {
+  name: string;
+  url: string;
+  category: string;
+}
+
+interface PageMediaBlock {
+  type?: string;
+  image_url?: string;
+  text?: string;
+  url?: string;
+  caption?: string;
+}
+
+interface WikimediaPage {
+  pageid: number;
+  title: string;
+  imageinfo?: Array<{
+    url?: string;
+    thumburl?: string;
+    user?: string;
+    descriptionurl?: string;
+    extmetadata?: Record<string, { value?: string }>;
+  }>;
+}
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+
 // Preset High Quality Unsplash Images for Church Inventory and pages
 const CURATED_PRESETS = [
   {
@@ -89,7 +127,7 @@ const QUICK_TAGS = ['Biblia', 'Cámara', 'Música', 'Sonido', 'Cocina', 'Café',
 // Helper to extract YouTube video ID
 const getYoutubeId = (url: string): string | null => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : null;
 };
@@ -122,13 +160,13 @@ export default function MediaSearchModal({
 
   // Stock Search states
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<StockImage[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedStockImage, setSelectedStockImage] = useState<any | null>(null);
+  const [selectedStockImage, setSelectedStockImage] = useState<StockImage | null>(null);
 
   // Church Vault & Cloudinary Media states
-  const [churchMedia, setChurchMedia] = useState<any[]>([]);
+  const [churchMedia, setChurchMedia] = useState<ChurchMedia[]>([]);
   const [loadingChurchMedia, setLoadingChurchMedia] = useState(false);
 
   const fetchChurchMedia = async () => {
@@ -174,7 +212,9 @@ export default function MediaSearchModal({
             mediaList.push({ name: `${item.name} (Portada)`, url: item.cover_image_url, category: 'Páginas y Portadas' });
           }
           if (item.content_blocks && Array.isArray(item.content_blocks)) {
-            item.content_blocks.forEach((block: any) => {
+            (item.content_blocks as unknown[]).forEach((value) => {
+              if (!value || typeof value !== 'object') return;
+              const block = value as PageMediaBlock;
               if (block.type === 'image' && block.image_url) {
                 mediaList.push({ name: block.text || 'Imagen de bloque', url: block.image_url, category: 'Páginas y Galerías' });
               } else if (block.url) { // gallery slide
@@ -227,78 +267,83 @@ export default function MediaSearchModal({
     }
   };
 
+  async function fetchVimeoThumbnail(id: string) {
+    setLoadingVimeo(true);
+    setVimeoThumbnailUrl(null);
+    try {
+      const res = await fetch(`https://vimeo.com/api/v2/video/${id}.json`);
+      const data = await res.json() as Array<{ thumbnail_large?: string; thumbnail_medium?: string }>;
+      if (data[0]) {
+        setVimeoThumbnailUrl(data[0].thumbnail_large || data[0].thumbnail_medium || null);
+      }
+    } catch (error: unknown) {
+      console.warn('Failed to fetch Vimeo thumbnail:', getErrorMessage(error));
+    } finally {
+      setLoadingVimeo(false);
+    }
+  }
+
   useEffect(() => {
     if (isOpen && activeTab === 'vault') {
-      fetchChurchMedia();
+      const timer = window.setTimeout(() => { void fetchChurchMedia(); }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [isOpen, activeTab]);
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset state on close
-      setPastedUrl('');
-      setUrlType('unknown');
-      setYoutubeVideoId(null);
-      setVimeoVideoId(null);
-      setImagePreviewError(false);
-      setVimeoThumbnailUrl(null);
-      setSearchQuery('');
-      setSearchResults([]);
-      setSelectedStockImage(null);
-      setSearchError(null);
+      const timer = window.setTimeout(() => {
+        setPastedUrl('');
+        setUrlType('unknown');
+        setYoutubeVideoId(null);
+        setVimeoVideoId(null);
+        setImagePreviewError(false);
+        setVimeoThumbnailUrl(null);
+        setSearchQuery('');
+        setSearchResults([]);
+        setSelectedStockImage(null);
+        setSearchError(null);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [isOpen]);
 
   // Handle link paste analysis
   useEffect(() => {
-    const trimmed = pastedUrl.trim();
-    if (!trimmed) {
-      setUrlType('unknown');
-      setYoutubeVideoId(null);
-      setVimeoVideoId(null);
-      setImagePreviewError(false);
-      setVimeoThumbnailUrl(null);
-      return;
-    }
-
-    const yId = getYoutubeId(trimmed);
-    const vId = getVimeoId(trimmed);
-
-    if (yId && allowedTypes.includes('video')) {
-      setUrlType('youtube');
-      setYoutubeVideoId(yId);
-      setVimeoVideoId(null);
-      setImagePreviewError(false);
-    } else if (vId && allowedTypes.includes('video')) {
-      setUrlType('vimeo');
-      setVimeoVideoId(vId);
-      setYoutubeVideoId(null);
-      setImagePreviewError(false);
-      fetchVimeoThumbnail(vId);
-    } else {
-      // Assume image
-      setUrlType('image');
-      setYoutubeVideoId(null);
-      setVimeoVideoId(null);
-      setImagePreviewError(false);
-    }
-  }, [pastedUrl, allowedTypes]);
-
-  const fetchVimeoThumbnail = async (id: string) => {
-    setLoadingVimeo(true);
-    setVimeoThumbnailUrl(null);
-    try {
-      const res = await fetch(`https://vimeo.com/api/v2/video/${id}.json`);
-      const data = await res.json();
-      if (data && data[0]) {
-        setVimeoThumbnailUrl(data[0].thumbnail_large || data[0].thumbnail_medium || null);
+    const timer = window.setTimeout(() => {
+      const trimmed = pastedUrl.trim();
+      if (!trimmed) {
+        setUrlType('unknown');
+        setYoutubeVideoId(null);
+        setVimeoVideoId(null);
+        setImagePreviewError(false);
+        setVimeoThumbnailUrl(null);
+        return;
       }
-    } catch (e) {
-      console.warn('Failed to fetch Vimeo thumbnail:', e);
-    } finally {
-      setLoadingVimeo(false);
-    }
-  };
+
+      const yId = getYoutubeId(trimmed);
+      const vId = getVimeoId(trimmed);
+
+      if (yId && allowedTypes.includes('video')) {
+        setUrlType('youtube');
+        setYoutubeVideoId(yId);
+        setVimeoVideoId(null);
+        setImagePreviewError(false);
+      } else if (vId && allowedTypes.includes('video')) {
+        setUrlType('vimeo');
+        setVimeoVideoId(vId);
+        setYoutubeVideoId(null);
+        setImagePreviewError(false);
+        void fetchVimeoThumbnail(vId);
+      } else {
+        setUrlType('image');
+        setYoutubeVideoId(null);
+        setVimeoVideoId(null);
+        setImagePreviewError(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [pastedUrl, allowedTypes]);
 
   // Run stock search on Openverse or fallbacks (AllOrigins proxy, Wikimedia Commons, Local Presets)
   const handleSearch = async (queryToUse?: string) => {
@@ -316,15 +361,15 @@ export default function MediaSearchModal({
     try {
       const res = await fetch(`${targetUrl}&format=json`);
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { results?: StockImage[] };
         if (data.results && data.results.length > 0) {
           setSearchResults(data.results);
           setSearching(false);
           return;
         }
       }
-    } catch (e: any) {
-      console.warn('Strategy 1 (Openverse Direct) failed, trying proxy...', e.message);
+    } catch (error: unknown) {
+      console.warn('Strategy 1 (Openverse Direct) failed, trying proxy...', getErrorMessage(error));
     }
 
     // Strategy 2: Openverse via AllOrigins JSON Proxy
@@ -332,9 +377,9 @@ export default function MediaSearchModal({
       const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl + '&format=json')}`;
       const res = await fetch(proxiedUrl);
       if (res.ok) {
-        const wrapper = await res.json();
+        const wrapper = await res.json() as { contents?: string };
         if (wrapper && wrapper.contents) {
-          const data = JSON.parse(wrapper.contents);
+          const data = JSON.parse(wrapper.contents) as { results?: StockImage[] };
           if (data.results && data.results.length > 0) {
             setSearchResults(data.results);
             setSearching(false);
@@ -342,8 +387,8 @@ export default function MediaSearchModal({
           }
         }
       }
-    } catch (e: any) {
-      console.warn('Strategy 2 (Openverse via AllOrigins) failed, trying Wikimedia Commons...', e.message);
+    } catch (error: unknown) {
+      console.warn('Strategy 2 (Openverse via AllOrigins) failed, trying Wikimedia Commons...', getErrorMessage(error));
     }
 
     // Strategy 3: Wikimedia Commons direct search (natively CORS-enabled, no key needed)
@@ -351,7 +396,7 @@ export default function MediaSearchModal({
       const wikimediaUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrnamespace=6&prop=imageinfo&iiprop=url|user|extmetadata|thumburl&iiurlwidth=300&format=json&origin=*`;
       const res = await fetch(wikimediaUrl);
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { query?: { pages?: Record<string, WikimediaPage> } };
         if (data.query && data.query.pages) {
           const pages = data.query.pages;
           const mappedResults = Object.keys(pages).map((key) => {
@@ -386,14 +431,14 @@ export default function MediaSearchModal({
           }
         }
       }
-    } catch (e: any) {
-      console.warn('Strategy 3 (Wikimedia Commons) failed, trying local presets...', e.message);
+    } catch (error: unknown) {
+      console.warn('Strategy 3 (Wikimedia Commons) failed, trying local presets...', getErrorMessage(error));
     }
 
     // Strategy 4: Fallback to preset curated list search as a last resort
     try {
       const lowerQuery = query.toLowerCase();
-      const localResults: any[] = [];
+      const localResults: StockImage[] = [];
       CURATED_PRESETS.forEach(group => {
         group.items.forEach(item => {
           if (item.name.toLowerCase().includes(lowerQuery) || group.category.toLowerCase().includes(lowerQuery)) {
@@ -414,8 +459,8 @@ export default function MediaSearchModal({
         setSearching(false);
         return;
       }
-    } catch (e: any) {
-      console.warn('Strategy 4 (Local Presets) failed:', e.message);
+    } catch (error: unknown) {
+      console.warn('Strategy 4 (Local Presets) failed:', getErrorMessage(error));
     }
 
     // If all strategies failed
@@ -439,7 +484,7 @@ export default function MediaSearchModal({
     onClose();
   };
 
-  const selectStockImage = (img: any) => {
+  const selectStockImage = (img: StockImage) => {
     onSelect(img.url, { thumbnailUrl: img.thumbnail || img.url });
     onClose();
   };
@@ -845,7 +890,7 @@ export default function MediaSearchModal({
               ) : churchMedia.length > 0 ? (
                 <div className="space-y-6">
                   {Object.keys(
-                    churchMedia.reduce((acc: any, item) => {
+                    churchMedia.reduce<Record<string, ChurchMedia[]>>((acc, item) => {
                       if (!acc[item.category]) {
                         acc[item.category] = [];
                       }

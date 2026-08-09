@@ -69,7 +69,8 @@ const LMSLandingEditor = () => {
   };
 
   useEffect(() => {
-    fetchContent();
+    const timer = window.setTimeout(() => { void fetchContent(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSave = async (sectionKey: string, content: HeroContent | FeaturesContent) => {

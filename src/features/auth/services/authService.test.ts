@@ -47,8 +47,8 @@ describe('authService', () => {
       };
 
       // Mock chain: supabase.from().select().eq().single()
-      const mockSingle = vi.fn().mockResolvedValue({ data: mockProfile, error: null });
-      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockMaybeSingle = vi.fn().mockResolvedValue({ data: mockProfile, error: null });
+      const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
       const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
       // Mock role_permissions fetch
@@ -64,13 +64,13 @@ describe('authService', () => {
       const result = await fetchOrCreateProfile(mockUser);
       expect(result.role).toBe('member');
       expect(result.first_name).toBe('John');
-      expect(mockSingle).toHaveBeenCalled();
+      expect(mockMaybeSingle).toHaveBeenCalled();
     });
     
     it('creates guest profile if user does not exist', async () => {
-      // Mock profiles fetch returning error (not found)
-      const mockSelectEqSingle = vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } });
-      const mockEq = vi.fn().mockReturnValue({ single: mockSelectEqSingle });
+      // Mock profiles fetch returning no row
+      const mockSelectEqMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockSelectEqMaybeSingle });
       const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
       
       // Mock upsert
@@ -145,8 +145,8 @@ describe('authService', () => {
         last_name: 'User',
         email: 'banned@test.com'
       };
-      const mockSingle = vi.fn().mockResolvedValue({ data: mockProfile, error: null });
-      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockMaybeSingle = vi.fn().mockResolvedValue({ data: mockProfile, error: null });
+      const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
       const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
       (supabase.from as any).mockImplementation((table: string) => {

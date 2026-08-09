@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Loader2, Calendar as CalendarIcon, Edit2, Globe, Lock } from 'lucide-react';
 import type { Event as DbEvent } from '../../../types';
@@ -25,11 +25,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
   const { canEditMinistry } = usePermissions();
   const canEdit = canEditMinistry(ministryId);
 
-  useEffect(() => {
-    void fetchEvents();
-  }, [ministryId]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -46,7 +42,12 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
     } finally {
       setLoading(false);
     }
-  };
+  }, [ministryId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchEvents(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchEvents]);
 
   const handleCreateNew = () => {
     setIsEditing(true);

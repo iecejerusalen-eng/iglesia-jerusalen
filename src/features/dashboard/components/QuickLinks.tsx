@@ -1,75 +1,46 @@
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ADMIN_MODULES } from '../../../config/adminModules';
+import { usePermissions } from '../../../hooks/usePermissions';
 
-interface QuickLinksProps {
-  userRoles: string[];
-}
+const preferredModuleIds = ['members', 'sermons', 'ministries', 'inventory', 'analytics'];
 
-export const QuickLinks = ({ userRoles }: QuickLinksProps) => {
+export const QuickLinks = () => {
+  const { hasPermission } = usePermissions();
+  const links = preferredModuleIds
+    .map((id) => ADMIN_MODULES.find((module) => module.id === id))
+    .filter((module) => module && hasPermission(module.id, 'view'));
+
+  if (links.length === 0) return null;
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs space-y-4">
-      <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-white/10 pb-2">
-        Enlaces Directos
+    <section className="space-y-4 rounded-2xl border border-gray-150 bg-white/90 p-5 shadow-2xs backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
+      <h3 className="border-b border-gray-100 pb-2 font-serif text-sm font-bold text-gray-800 dark:border-white/10 dark:text-gray-100">
+        Accesos para tu rol
       </h3>
-      
+
       <div className="space-y-2">
-        <Link 
-          to="/admin/miembros" 
-          className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
-        >
-          <div className="text-left">
-            <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Base de Miembros (CRM)</span>
-            <span className="text-[9px] text-gray-400 font-medium">Ver y editar fichas de miembros</span>
-          </div>
-          <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
-        </Link>
-
-        {(userRoles.includes('admin') || userRoles.includes('pastor')) && (
-          <Link 
-            to="/admin/sermones" 
-            className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
+        {links.map((module) => module && (
+          <Link
+            key={module.id}
+            to={module.path}
+            className="group flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-slate-50 p-3 shadow-3xs transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/30 hover:bg-white hover:shadow-xs dark:border-white/5 dark:bg-slate-800 dark:hover:bg-slate-700/60 motion-reduce:transform-none motion-reduce:transition-none"
           >
-            <div className="text-left">
-              <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Prédicas y Sermones</span>
-              <span className="text-[9px] text-gray-400 font-medium">Administrar material y videos</span>
+            <div className="flex min-w-0 items-center gap-3 text-left">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm dark:bg-white/5 dark:text-gold">
+                <module.icon size={16} />
+              </span>
+              <div className="min-w-0">
+                <span className="block truncate text-xs font-bold text-gray-800 transition-colors group-hover:text-primary dark:text-gray-200 dark:group-hover:text-gold">
+                  {module.name}
+                </span>
+                <span className="block text-[9px] font-medium text-gray-400">Abrir herramienta autorizada</span>
+              </div>
             </div>
-            <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
+            <ArrowRight size={14} className="shrink-0 text-gray-400 transition-all group-hover:translate-x-0.5 group-hover:text-primary group-hover:text-gold motion-reduce:transform-none" />
           </Link>
-        )}
-
-        <Link 
-          to="/admin/ministerios" 
-          className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
-        >
-          <div className="text-left">
-            <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Ministerios</span>
-            <span className="text-[9px] text-gray-400 font-medium">Actualizar líderes y horarios</span>
-          </div>
-          <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
-        </Link>
-
-        <Link 
-          to="/admin/inventario" 
-          className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
-        >
-          <div className="text-left">
-            <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Inventario y Stock</span>
-            <span className="text-[9px] text-gray-400 font-medium">Equipos técnicos y recursos</span>
-          </div>
-          <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
-        </Link>
-
-        <Link 
-          to="/admin/analisis" 
-          className="group p-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/5 hover:border-gold/30 hover:bg-white dark:hover:bg-slate-700/60 rounded-xl flex items-center justify-between transition-all duration-300 shadow-3xs hover:-translate-y-0.5 hover:shadow-xs cursor-pointer"
-        >
-          <div className="text-left">
-            <span className="font-bold text-gray-800 dark:text-gray-200 text-xs block group-hover:text-primary dark:group-hover:text-gold transition-colors">Inteligencia de Datos (BI)</span>
-            <span className="text-[9px] text-gray-400 font-medium">Reportes y consultas a medida</span>
-          </div>
-          <ArrowRight size={14} className="text-gray-400 group-hover:text-primary group-hover:text-gold group-hover:translate-x-0.5 transition-all" />
-        </Link>
+        ))}
       </div>
-    </div>
+    </section>
   );
 };

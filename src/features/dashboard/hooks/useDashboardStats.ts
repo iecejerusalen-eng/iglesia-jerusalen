@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
-import type { DashboardMember, DashboardData, WeeklyAlert } from '../types';
+import type { DashboardAccess, DashboardMember, DashboardData, WeeklyAlert } from '../types';
 import { MONTHS, BIBLE_VERSES } from '../constants';
 
 const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
@@ -21,7 +21,7 @@ const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
           name: `${m.first_name} ${m.last_name}`,
           type: 'birthday',
           dateLabel: `${birth.getDate()} de ${MONTHS[birth.getMonth()]}`,
-          verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
+          verse: BIBLE_VERSES[m.id.length % BIBLE_VERSES.length]
         });
       }
     }
@@ -41,7 +41,7 @@ const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
           type: 'faith',
           dateLabel: `${conv.getDate()} de ${MONTHS[conv.getMonth()]}`,
           years: years > 0 ? `${years} años de fe` : 'Aniversario',
-          verse: BIBLE_VERSES[Math.floor(Math.random() * BIBLE_VERSES.length)]
+          verse: BIBLE_VERSES[(m.id.length + 1) % BIBLE_VERSES.length]
         });
       }
     }
@@ -62,7 +62,10 @@ const processChartData = (membersList: DashboardMember[]) => {
     // 1. Age calculation
     if (m.birth_date) {
       const birth = new Date(m.birth_date);
-      const age = today.getFullYear() - birth.getFullYear();
+      let age = today.getFullYear() - birth.getFullYear();
+      const birthdayOccurred = today.getMonth() > birth.getMonth()
+        || (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+      if (!birthdayOccurred) age -= 1;
       ages.push(age);
     }
 
@@ -122,51 +125,57 @@ const processChartData = (membersList: DashboardMember[]) => {
   return { ageData, areasData, talentsData, talentCategoriesData, baptismsData };
 };
 
-export const useDashboardStats = () => {
+export const useDashboardStats = (access: DashboardAccess) => {
   return useQuery<DashboardData>({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', access],
     queryFn: async () => {
-      const [
-        profilesRes,
-        sermonsRes,
-        donationsRes,
-        membersRes,
-        inventoryRes,
-        petitionsRes,
-        ministriesRes
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('sermons').select('*', { count: 'exact', head: true }),
-        supabase.from('donations').select('amount'),
-        supabase.from('members')
-        .select(`
-          *,
-          member_emails(email),
-          member_service_areas(catalog_roles(name)),
-          member_talents(catalog_roles(name)),
-          member_spiritual_gifts(catalog_roles(name))
-        `),
-        supabase.from('inventory_items').select('price, quantity'),
-        supabase.from('petitions').select('status'),
-        supabase.from('ministries').select('*', { count: 'exact', head: true })
+      const [donationsRes, membersRes, inventoryRes, petitionsRes] = await Promise.all([
+        access.finances ? supabase.from('donations').select('amount') : Promise.resolve(null),
+        access.members
+          ? supabase.from('members').select(`
+              id, first_name, last_name, birth_date, conversion_date, baptism_date, is_leader,
+              member_service_areas(catalog_roles(name)),
+              member_talents(catalog_roles(name))
+            `)
+          : Promise.resolve(null),
+        access.inventory ? supabase.from('inventory_items').select('price, quantity') : Promise.resolve(null),
+        access.petitions ? supabase.from('petitions').select('status') : Promise.resolve(null),
       ]);
 
-      const donations = donationsRes.data || [];
+      for (const result of [donationsRes, membersRes, inventoryRes, petitionsRes]) {
+        if (result?.error) throw result.error;
+      }
+
+      const donations = donationsRes?.data || [];
       const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
-      const members: DashboardMember[] = (membersRes.data || []) as unknown as DashboardMember[];
+      const members: DashboardMember[] = (membersRes?.data || []).map((member) => ({
+        id: member.id,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        birth_date: member.birth_date,
+        conversion_date: member.conversion_date,
+        baptism_date: member.baptism_date,
+        is_leader: member.is_leader,
+        member_service_areas: member.member_service_areas?.map((entry) => ({
+          catalog_roles: Array.isArray(entry.catalog_roles) ? entry.catalog_roles[0] ?? null : entry.catalog_roles,
+        })),
+        member_talents: member.member_talents?.map((entry) => ({
+          catalog_roles: Array.isArray(entry.catalog_roles) ? entry.catalog_roles[0] ?? null : entry.catalog_roles,
+        })),
+      }));
       const leadersCount = members.filter(m => m.is_leader).length;
 
-      const inventory = inventoryRes.data || [];
+      const inventory = inventoryRes?.data || [];
       const inventoryCount = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
       const inventoryValue = inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
 
-      const petitions = petitionsRes.data || [];
+      const petitions = petitionsRes?.data || [];
       const petitionsCount = petitions.length;
       const pendingPetitions = petitions.filter(p => p.status === 'pendiente').length;
 
       const stats = {
-        usersCount: profilesRes.count || 0,
-        sermonsCount: sermonsRes.count || 0,
+        usersCount: 0,
+        sermonsCount: 0,
         totalDonationsAmount: totalAmount,
         membersCount: members.length,
         leadersCount,
@@ -174,7 +183,7 @@ export const useDashboardStats = () => {
         inventoryValue,
         petitionsCount,
         pendingPetitions,
-        ministriesCount: ministriesRes.count || 0,
+        ministriesCount: 0,
       };
 
       const alerts = getWeeklyAlerts(members);

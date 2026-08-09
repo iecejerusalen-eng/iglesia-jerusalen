@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
@@ -89,7 +89,7 @@ const SermonsManager = () => {
   // Calendar state
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { register, handleSubmit, control, watch, reset, setValue, formState: { errors } } = useForm<SermonForm>({
+  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm<SermonForm>({
     resolver: zodResolver(sermonSchema),
     defaultValues: {
       title: '',
@@ -109,8 +109,7 @@ const SermonsManager = () => {
     defaultValues: { name: '', description: '', color: '#4F46E5' }
   });
 
-  // eslint-disable-next-line
-  const watchedYoutubeUrl = watch('youtube_url');
+  const watchedYoutubeUrl = useWatch({ control, name: 'youtube_url' });
   const youtubeId = getYoutubeId(watchedYoutubeUrl);
 
   useEffect(() => {
@@ -121,12 +120,7 @@ const SermonsManager = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearch]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const { data: catsData, error: catsError } = await supabase
@@ -172,7 +166,12 @@ const SermonsManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, page]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setEditingSermon(null);
@@ -248,7 +247,7 @@ const SermonsManager = () => {
         }
       }
 
-      const payload: any = {
+      const payload = {
         title: data.title,
         pastor_name: finalPastorName,
         date: data.date,

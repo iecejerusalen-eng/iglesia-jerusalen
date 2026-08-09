@@ -74,3 +74,10 @@ export interface DashboardData {
   talentCategoriesData: TalentCategoryDataPoint[];
   baptismsData: BaptismDataPoint[];
 }
+
+export interface DashboardAccess {
+  members: boolean;
+  finances: boolean;
+  petitions: boolean;
+  inventory: boolean;
+}

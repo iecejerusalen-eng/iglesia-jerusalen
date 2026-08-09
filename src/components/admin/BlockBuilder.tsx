@@ -113,19 +113,21 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
     onChange(updated);
   };
 
-  const updateBlockProperty = (id: string, key: keyof ContentBlock, value: any) => {
+  const updateBlockProperty = <Key extends keyof ContentBlock>(id: string, key: Key, value: ContentBlock[Key]) => {
     if (disabled) return;
     const updated = blocks.map((block) => {
       if (block.id === id) {
         const updatedBlock = { ...block, [key]: value };
         // Sync equivalent fields for retro-compatibility and rendering reliability
-        if (key === 'textContent') updatedBlock.text = value;
-        if (key === 'text') updatedBlock.textContent = value;
-        if (key === 'htmlContent') updatedBlock.html = value;
-        if (key === 'html') updatedBlock.htmlContent = value;
-        if (key === 'imageUrl') updatedBlock.image_url = value;
-        if (key === 'image_url') updatedBlock.imageUrl = value;
-        if (key === 'imageCaption') updatedBlock.text = value;
+        if (typeof value === 'string') {
+          if (key === 'textContent') updatedBlock.text = value;
+          if (key === 'text') updatedBlock.textContent = value;
+          if (key === 'htmlContent') updatedBlock.html = value;
+          if (key === 'html') updatedBlock.htmlContent = value;
+          if (key === 'imageUrl') updatedBlock.image_url = value;
+          if (key === 'image_url') updatedBlock.imageUrl = value;
+          if (key === 'imageCaption') updatedBlock.text = value;
+        }
         return updatedBlock;
       }
       return block;
@@ -157,7 +159,11 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
   };
 
   // Helper functions for Form Questions
-  const updateQuestion = (blockId: string, qId: string, updatedFields: any) => {
+  const updateQuestion = (
+    blockId: string,
+    qId: string,
+    updatedFields: Partial<NonNullable<ContentBlock['formQuestions']>[number]>,
+  ) => {
     if (disabled) return;
     const block = blocks.find(b => b.id === blockId);
     if (!block) return;
@@ -662,7 +668,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                         </label>
                         <select
                           value={block.ctaAlign || 'center'}
-                          onChange={(e) => updateBlockProperty(block.id, 'ctaAlign', e.target.value)}
+                          onChange={(e) => updateBlockProperty(block.id, 'ctaAlign', e.target.value as ContentBlock['ctaAlign'])}
                           disabled={disabled}
                           className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold disabled:bg-slate-50 disabled:text-slate-450"
                         >
@@ -698,7 +704,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                           </label>
                           <select
                             value={block.formType || 'regular'}
-                            onChange={(e) => updateBlockProperty(block.id, 'formType', e.target.value)}
+                            onChange={(e) => updateBlockProperty(block.id, 'formType', e.target.value as ContentBlock['formType'])}
                             disabled={disabled}
                             className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none font-semibold disabled:bg-slate-50"
                           >
@@ -762,7 +768,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
                                     </label>
                                     <select
                                       value={q.type}
-                                      onChange={(e) => updateQuestion(block.id, q.id, { type: e.target.value, options: e.target.value === 'text' ? [] : ['Opción A'] })}
+                                      onChange={(e) => updateQuestion(block.id, q.id, { type: e.target.value as 'text' | 'radio' | 'checkbox', options: e.target.value === 'text' ? [] : ['Opción A'] })}
                                       disabled={disabled}
                                       className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-slate-50"
                                     >

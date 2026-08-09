@@ -2,17 +2,22 @@ import { Users, Heart, Activity, Layers } from 'lucide-react';
 import { AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 import { NumberTicker } from '../../../components/ui/magicui/number-ticker';
 import { BorderBeam } from '../../../components/ui/magicui/border-beam';
-import type { DashboardStats as StatsType } from '../types';
+import type { DashboardAccess, DashboardStats as StatsType } from '../types';
 
 interface DashboardStatsProps {
   stats: StatsType;
   loading: boolean;
+  access: DashboardAccess;
 }
 
-export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
+export const DashboardStats = ({ stats, loading, access }: DashboardStatsProps) => {
+  const visibleCount = Object.values(access).filter(Boolean).length;
+  if (visibleCount === 0) return null;
+
   return (
-    <AnimeStaggerGrid className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" staggerDelay={80} duration={600}>
+    <AnimeStaggerGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4" staggerDelay={80} duration={600}>
       {/* Total Members CRM */}
+      {access.members && (
       <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50/70 text-primary transition-transform duration-300 group-hover:scale-105 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-church-gold-bright sm:size-12 sm:rounded-2xl">
@@ -32,8 +37,10 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
           )}
         </div>
       </div>
+      )}
 
       {/* Donaciones */}
+      {access.finances && (
       <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <BorderBeam size={150} duration={12} delay={1} colorFrom="#f59e0b" colorTo="#d97706" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -54,8 +61,10 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
           )}
         </div>
       </div>
+      )}
 
       {/* Peticiones */}
+      {access.petitions && (
       <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <BorderBeam size={150} duration={12} delay={3} colorFrom="#ef4444" colorTo="#dc2626" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -76,8 +85,10 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
           )}
         </div>
       </div>
+      )}
 
       {/* Patrimonio e Inventario */}
+      {access.inventory && (
       <div className="group relative flex min-w-0 cursor-default flex-col items-start gap-3 overflow-hidden rounded-2xl border border-gray-150 bg-white p-3.5 shadow-2xs transition-all duration-300 hover:border-gold/45 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5 lg:hover:-translate-y-1">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold/40 via-gold to-gold/40 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-purple-100 bg-purple-50/70 text-accent-purple transition-transform duration-300 group-hover:scale-105 dark:border-purple-900/30 dark:bg-purple-950/20 dark:text-purple-400 sm:size-12 sm:rounded-2xl">
@@ -99,6 +110,7 @@ export const DashboardStats = ({ stats, loading }: DashboardStatsProps) => {
           )}
         </div>
       </div>
+      )}
     </AnimeStaggerGrid>
   );
 };

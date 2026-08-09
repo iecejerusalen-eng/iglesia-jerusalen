@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
@@ -37,11 +37,7 @@ const StoreSettings = () => {
     remove: removeShipping 
   } = useFieldArray({ control, name: 'shipping_methods' });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -64,7 +60,12 @@ const StoreSettings = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reset]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchSettings(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSettings]);
 
   const onSubmit = async (data: StoreSettingsForm) => {
     setSaving(true);

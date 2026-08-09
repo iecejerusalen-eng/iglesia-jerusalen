@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Edit2, Trash2, Save, X, Image as ImageIcon, Smile, Search, AlertCircle } from 'lucide-react';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
@@ -29,11 +29,7 @@ export const BiblionarioEditor = () => {
   
   const [formData, setFormData] = useState<Partial<Question>>({});
   
-  useEffect(() => {
-    fetchQuestions();
-  }, [filterLevel]);
-
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -54,7 +50,12 @@ export const BiblionarioEditor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterLevel]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchQuestions(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchQuestions]);
 
   const handleEdit = (q: Question) => {
     setEditingId(q.id);
@@ -153,7 +154,7 @@ export const BiblionarioEditor = () => {
     }
   };
 
-  const FormEditor = () => (
+  const renderFormEditor = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 mb-8">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
         {isAdding ? 'Nueva Pregunta' : 'Editar Pregunta'}
@@ -306,7 +307,7 @@ export const BiblionarioEditor = () => {
             <select
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-900 dark:text-white"
               value={formData.correct_option || 'a'}
-              onChange={(e) => setFormData({ ...formData, correct_option: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, correct_option: e.target.value as Question['correct_option'] })}
             >
               <option value="a">Opción A</option>
               <option value="b">Opción B</option>
@@ -392,7 +393,7 @@ export const BiblionarioEditor = () => {
         </div>
       </div>
 
-      {(isAdding || editingId) && <FormEditor />}
+      {(isAdding || editingId) && renderFormEditor()}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-gray-800/50">
@@ -457,7 +458,7 @@ export const BiblionarioEditor = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
-                        {['a', 'b', 'c', 'd'].map(opt => (
+                        {(['a', 'b', 'c', 'd'] as const).map(opt => (
                           <span
                             key={opt}
                             className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
@@ -465,7 +466,7 @@ export const BiblionarioEditor = () => {
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 ring-1 ring-green-500'
                                 : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                             }`}
-                            title={(q as any)[`option_${opt}`]}
+                            title={q[`option_${opt}`]}
                           >
                             {opt.toUpperCase()}
                           </span>

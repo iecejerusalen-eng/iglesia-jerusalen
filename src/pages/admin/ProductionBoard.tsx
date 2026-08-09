@@ -102,7 +102,8 @@ const ProductionBoard = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => { void fetchData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleCreateTicket = async (data: TicketFormData) => {

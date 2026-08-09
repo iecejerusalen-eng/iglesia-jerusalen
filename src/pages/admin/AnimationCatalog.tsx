@@ -933,7 +933,7 @@ export default function MiGrillaAnimeJS() {
                       <button
                         key={rep.value}
                         onClick={() => {
-                          setCssRepeat(rep.value as any);
+                          setCssRepeat(rep.value as 'once' | 'twice' | 'thrice' | 'infinite');
                           triggerReplay();
                         }}
                         className={`py-2 text-[10px] font-bold uppercase rounded-lg border transition-all cursor-pointer ${

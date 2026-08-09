@@ -3,11 +3,19 @@ import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface HangmanWord {
+  id: string;
+  word: string;
+  hint: string;
+  category: string;
+  difficulty: string;
+}
+
 export const HangmanEditor = () => {
-  const [words, setWords] = useState<any[]>([]);
+  const [words, setWords] = useState<HangmanWord[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingWord, setEditingWord] = useState<any>(null);
+  const [editingWord, setEditingWord] = useState<HangmanWord | null>(null);
   
   // Form State
   const [word, setWord] = useState('');
@@ -15,16 +23,12 @@ export const HangmanEditor = () => {
   const [category, setCategory] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
 
-  useEffect(() => {
-    fetchWords();
-  }, []);
-
   const fetchWords = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('game_hangman_words')
-        .select('*')
+        .select('id, word, hint, category, difficulty')
         .order('category')
         .order('word');
       
@@ -36,6 +40,19 @@ export const HangmanEditor = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchWords(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const resetForm = () => {
+    setEditingWord(null);
+    setWord('');
+    setHint('');
+    setCategory('');
+    setDifficulty('easy');
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -88,15 +105,7 @@ export const HangmanEditor = () => {
     }
   };
 
-  const resetForm = () => {
-    setEditingWord(null);
-    setWord('');
-    setHint('');
-    setCategory('');
-    setDifficulty('easy');
-  };
-
-  const openEdit = (w: any) => {
+  const openEdit = (w: HangmanWord) => {
     setEditingWord(w);
     setWord(w.word);
     setHint(w.hint);

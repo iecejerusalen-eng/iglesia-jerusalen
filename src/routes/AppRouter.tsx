@@ -73,6 +73,7 @@ const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
 const MissionExplorer = lazyWithRetry(() => import('../pages/public/MissionExplorer'));
 const Terms = lazyWithRetry(() => import('../pages/public/Terms').then(m => ({ default: m.Terms })));
 const Privacy = lazyWithRetry(() => import('../pages/public/Privacy').then(m => ({ default: m.Privacy })));
+const CrmOnboarding = lazyWithRetry(() => import('../pages/public/CrmOnboarding'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -139,6 +140,7 @@ const MemoryEditor = lazyWithRetry(() => import('../pages/admin/games/MemoryEdit
 const AudioLibrary = lazyWithRetry(() => import('../pages/admin/games/AudioLibrary').then(m => ({ default: m.AudioLibrary })));
 const DesignCatalog = lazyWithRetry(() => import('../pages/admin/DesignCatalog'));
 const CertificatesManager = lazyWithRetry(() => import('../pages/admin/CertificatesManager'));
+const CrmSubmissions = lazyWithRetry(() => import('../pages/admin/CrmSubmissions'));
 
 export default function AppRouter() {
   return (
@@ -186,6 +188,9 @@ export default function AppRouter() {
           <Route path="/reservas" element={<Bookings />} />
           <Route path="/cert-verify/:hash" element={<CertificateVerification />} />
         </Route>
+        
+        {/* Hidden Public Route */}
+        <Route path="/registro-miembro/ingreso" element={<CrmOnboarding />} />
 
         <Route element={<ProtectedRoute module="dashboard" />}>
           <Route element={<AdminLayout />}>
@@ -230,7 +235,10 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="credentials_vault" />}><Route element={<AdminLayout />}><Route path="/admin/boveda-credenciales" element={<CredentialsVault />} /></Route></Route>
-        <Route element={<ProtectedRoute module="members" />}><Route element={<AdminLayout />}><Route path="/admin/miembros" element={<MembersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="members" />}><Route element={<AdminLayout />}>
+          <Route path="/admin/miembros" element={<MembersManager />} />
+          <Route path="/admin/solicitudes" element={<CrmSubmissions />} />
+        </Route></Route>
         <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>

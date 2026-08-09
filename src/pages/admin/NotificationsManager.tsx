@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatContacts, useChatMutations } from '../../features/chat/hooks';
@@ -72,7 +72,7 @@ export default function NotificationsManager() {
   const { user } = useAuthStore();
   const { data: contactsData } = useChatContacts();
   const { sendBroadcast } = useChatMutations();
-  const ministries = contactsData?.ministries || [];
+  const ministries = useMemo(() => contactsData?.ministries || [], [contactsData?.ministries]);
 
   // Manual message form
   const [recipientGroup, setRecipientGroup] = useState('todos');
@@ -150,7 +150,8 @@ export default function NotificationsManager() {
   }, [scanCelebrants, ministries]);
 
   useEffect(() => {
-    loadData();
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadData]);
 
   const logNotification = async (

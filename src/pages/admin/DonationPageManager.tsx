@@ -100,7 +100,10 @@ export default function DonationPageManager() {
     }
   }, []);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
   const updateConfig = <Key extends keyof DonationPageConfig>(key: Key, value: DonationPageConfig[Key]) => {
     setForm((current) => ({ ...current, config: { ...current.config, [key]: value } }));

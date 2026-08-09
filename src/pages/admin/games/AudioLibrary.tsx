@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Music, Plus, Edit2, Trash2, Search, Play, Square, AlertCircle, Link } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AudioAsset {
   id: string;
@@ -12,6 +13,8 @@ interface AudioAsset {
   created_at: string;
 }
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+
 export const AudioLibrary = () => {
   const [assets, setAssets] = useState<AudioAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +22,7 @@ export const AudioLibrary = () => {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,32 +35,28 @@ export const AudioLibrary = () => {
     file_url: ''
   });
 
-  useEffect(() => {
-    fetchAssets();
-    return () => stopAudio();
-  }, []);
-
   const fetchAssets = async () => {
     try {
       const { data, error } = await supabase
         .from('game_audio_assets')
-        .select('*')
+        .select('id, name, description, category, tags, file_url, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setAssets(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching audio assets:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   const stopAudio = () => {
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.currentTime = 0;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
     setPlayingId(null);
   };
@@ -74,9 +73,20 @@ export const AudioLibrary = () => {
     audio.onended = () => setPlayingId(null);
     audio.play().catch(e => console.error("Error playing audio", e));
     
-    setAudioElement(audio);
+    audioRef.current = audio;
     setPlayingId(id);
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchAssets(); }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,8 +118,10 @@ export const AudioLibrary = () => {
       setEditingAsset(null);
       setFormData({ name: '', description: '', category: 'music', tags: '', file_url: '' });
       fetchAssets();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      setError(message);
+      toast.error(`No se pudo guardar el audio: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -121,8 +133,9 @@ export const AudioLibrary = () => {
       const { error } = await supabase.from('game_audio_assets').delete().eq('id', id);
       if (error) throw error;
       fetchAssets();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      toast.error(`No se pudo eliminar el audio: ${getErrorMessage(err)}`);
     }
   };
 
