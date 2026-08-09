@@ -13,12 +13,15 @@ import {
   MessageCircle,
   Phone,
   Send,
+  Navigation,
+  Compass,
 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
+import { GoogleChurchMap, CHURCH_LOCATION } from '../../components/map/GoogleChurchMap';
 
-const CHURCH_ADDRESS = 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Ecuador';
+const CHURCH_ADDRESS = 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Guayas, Ecuador';
 const CHURCH_PHONE = '+593 98 526 3122';
 const CHURCH_PHONE_LINK = '+593985263122';
 const CHURCH_EMAIL = 'iece_jerusalen@hotmail.com';
@@ -33,7 +36,7 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
-const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-church-gold-medium focus:bg-white focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950';
+const inputClassName = 'w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-church-gold-medium focus:bg-white focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950 font-sans';
 
 const getHttpStatus = (value: unknown): number | null => {
   if (typeof value !== 'object' || value === null || !('context' in value)) return null;
@@ -47,6 +50,8 @@ const Contact = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [mapMode, setMapMode] = useState<'google' | 'route'>('google');
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: '', email: '', subject: 'Consulta General', message: '' },
@@ -96,8 +101,10 @@ const Contact = () => {
   };
 
   return (
-    <div className="bg-slate-50/60 py-6 transition-colors dark:bg-slate-950 md:py-10">
+    <div className="bg-slate-50/60 py-6 transition-colors dark:bg-slate-950 md:py-10 font-sans">
       <div className="mx-auto max-w-7xl space-y-8 px-4 md:space-y-12 md:px-8">
+        
+        {/* Hero Section */}
         <section id="contact_hero" className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-2xl shadow-slate-950/10 md:px-10 md:py-14">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(199,157,63,0.2),transparent_30%),radial-gradient(circle_at_5%_100%,rgba(59,130,246,0.14),transparent_34%)]" />
           <AnimeZoomIn className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -107,7 +114,7 @@ const Contact = () => {
               </span>
               <h1 className="mt-5 font-serif text-4xl font-bold tracking-tight md:text-5xl">Hablemos</h1>
               <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
-                Escríbenos si necesitas oración, consejería o información sobre nuestras actividades. Queremos acompañarte.
+                Escríbenos si necesitas oración, consejería o información sobre nuestras actividades en Milagro, Ecuador. Queremos acompañarte.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -121,6 +128,7 @@ const Contact = () => {
           </AnimeZoomIn>
         </section>
 
+        {/* Contact Information & Direct Channels */}
         <section id="contact_info" className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
           <AnimeFadeUp className="space-y-5 lg:sticky lg:top-28">
             <div>
@@ -130,9 +138,9 @@ const Contact = () => {
             </div>
 
             <AnimeStaggerGrid delay={50} staggerDelay={40} className="grid gap-3">
-              <a href={`https://www.google.com/maps/search/?api=1&query=${JERUSALEN_CHURCH_COORDS.lat},${JERUSALEN_CHURCH_COORDS.lng}`} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+              <a href={CHURCH_LOCATION.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary dark:bg-blue-950/30 dark:text-blue-300"><MapPin size={19} aria-hidden="true" /></span>
-                <span className="min-w-0 flex-1"><strong className="block text-sm text-slate-900 dark:text-white">Visítanos</strong><span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{CHURCH_ADDRESS}</span></span>
+                <span className="min-w-0 flex-1"><strong className="block text-sm text-slate-900 dark:text-white">Visítanos en Milagro</strong><span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{CHURCH_ADDRESS}</span></span>
                 <ExternalLink size={15} className="mt-1 text-slate-300 transition group-hover:text-church-gold-medium" aria-hidden="true" />
               </a>
               <a href={`tel:${CHURCH_PHONE_LINK}`} className="group flex items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:border-church-gold/50 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
@@ -148,8 +156,8 @@ const Contact = () => {
             </AnimeStaggerGrid>
 
             <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-              <Clock3 size={18} className="text-church-gold-dark dark:text-church-gold-light" aria-hidden="true" />
-              <div><strong className="block text-xs text-slate-900 dark:text-white">Atención por secretaría</strong><span className="text-xs text-slate-500 dark:text-slate-400">Comunícate para confirmar disponibilidad.</span></div>
+              <Clock3 size={18} className="text-church-gold-dark dark:text-church-gold-light shrink-0" aria-hidden="true" />
+              <div><strong className="block text-xs text-slate-900 dark:text-white">Atención por secretaría</strong><span className="text-xs text-slate-500 dark:text-slate-400">Comunícate para confirmar disponibilidad de citas y consejería.</span></div>
             </div>
 
             <div className="flex flex-wrap gap-2" aria-label="Redes sociales">
@@ -217,16 +225,52 @@ const Contact = () => {
           </div>
         </section>
 
+        {/* Section: Google Map & Interactive Route Navigation */}
         <div id="contact_map" className="scroll-mt-28">
-          <AnimeFadeUp className="space-y-5 pb-6">
-            <div className="mx-auto max-w-2xl text-center">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Ubicación</span>
-              <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white">Encuéntranos en Milagro</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Calcula tu ruta o abre las indicaciones directamente en tu aplicación de mapas.</p>
+          <AnimeFadeUp className="space-y-6 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200/80 dark:border-white/10 pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Ubicación Oficial</span>
+                <h2 className="mt-1 font-serif text-3xl font-bold text-slate-900 dark:text-white">Iglesia Cuadrangular Jerusalén (Milagro, Ecuador)</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Encuentra nuestra ubicación exacta en Milagro o calcula la ruta desde tu posición.</p>
+              </div>
+
+              {/* Glassmorphic View Toggle */}
+              <div className="flex bg-slate-200/80 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/50 dark:border-white/10 shrink-0">
+                <button
+                  onClick={() => setMapMode('google')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    mapMode === 'google'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Navigation className="w-4 h-4" />
+                  <span>Mapa de Google HD</span>
+                </button>
+                <button
+                  onClick={() => setMapMode('route')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    mapMode === 'route'
+                      ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Compass className="w-4 h-4" />
+                  <span>Calculadora de Ruta</span>
+                </button>
+              </div>
             </div>
-            <ChurchRouteMap destination={CHURCH_DESTINATION} height="500px" title="Cómo llegar a Iglesia Jerusalén" />
+
+            {/* Map Display View */}
+            {mapMode === 'google' ? (
+              <GoogleChurchMap height="520px" />
+            ) : (
+              <ChurchRouteMap destination={CHURCH_DESTINATION} height="520px" title="Navegador de Ruta a Iglesia Jerusalén" />
+            )}
           </AnimeFadeUp>
         </div>
+
       </div>
     </div>
   );
