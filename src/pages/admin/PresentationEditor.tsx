@@ -210,8 +210,8 @@ export const PresentationEditor = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-700 shadow-sm">
-          <AlertCircle className="h-5 w-5" />
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 rounded-2xl flex items-center gap-3 text-amber-700 dark:text-amber-400 shadow-sm text-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="font-medium">{error}</p>
         </div>
       )}

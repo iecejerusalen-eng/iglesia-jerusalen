@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Award } from 'lucide-react';
+import { Plus, Award, Trash2 } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import type { MemberWithRelations } from '../../features/members/utils/schema';
@@ -8,6 +8,7 @@ import { useMembersMutations } from '../../features/members/hooks/useMembersMuta
 import { MemberForm } from '../../features/members/components/MemberForm';
 import { MembersList } from '../../features/members/components/MembersList';
 import { CareersModal } from '../../features/members/components/CareersModal';
+import { DeletedMembersModal } from '../../features/members/components/DeletedMembersModal';
 
 const MembersManager = () => {
   const { data: members = [], isLoading: membersLoading } = useMembers();
@@ -16,6 +17,7 @@ const MembersManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberWithRelations | null>(null);
   const [showCareersModal, setShowCareersModal] = useState(false);
+  const [showDeletedModal, setShowDeletedModal] = useState(false);
 
   const handleOpenCreate = () => {
     setEditingMember(null);
@@ -37,8 +39,16 @@ const MembersManager = () => {
             <div className="flex gap-2 flex-wrap">
               <button
                 type="button"
+                onClick={() => setShowDeletedModal(true)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+              >
+                <Trash2 size={16} className="text-red-500" />
+                Papelera
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowCareersModal(true)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
                 <Award size={16} className="text-primary" />
                 Gestionar Carreras
@@ -78,6 +88,10 @@ const MembersManager = () => {
 
       {showCareersModal && (
         <CareersModal onClose={() => setShowCareersModal(false)} />
+      )}
+
+      {showDeletedModal && (
+        <DeletedMembersModal onClose={() => setShowDeletedModal(false)} />
       )}
     </AnimeFadeUp>
   );

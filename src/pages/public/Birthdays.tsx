@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useWindowSize } from 'react-use';
 import Confetti from 'react-confetti';
-import { AlertCircle, Gift, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Gift, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useBirthdays, type BirthdayInfo, MONTH_NAMES } from '../../features/birthdays/hooks/useBirthdays';
 import { BirthdaysHero } from '../../features/birthdays/components/BirthdaysHero';
 import { BirthdaysFilters, type BirthdayTab, type BirthdayViewMode } from '../../features/birthdays/components/BirthdaysFilters';
 import { BirthdaysList } from '../../features/birthdays/components/BirthdaysList';
+import { BirthdayMessagingCenter } from '../../features/birthdays/components/BirthdayMessagingCenter';
 import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
 import { exportBirthdaysPdf } from '../../utils/calendarPdfExport';
+import { usePermissions } from '../../hooks/usePermissions';
 
 function matchesSearch(item: BirthdayInfo, query: string): boolean {
   const normalized = query.trim().toLocaleLowerCase('es');
@@ -22,6 +24,7 @@ function matchesSearch(item: BirthdayInfo, query: string): boolean {
 
 export default function Birthdays() {
   const { birthdayList, loading, error, lastUpdated, refetch } = useBirthdays();
+  const { user, hasPermission } = usePermissions();
   const { width, height } = useWindowSize();
   const [activeTab, setActiveTab] = useState<BirthdayTab>('semana');
   const [viewMode, setViewMode] = useState<BirthdayViewMode>('cards');
@@ -30,6 +33,9 @@ export default function Birthdays() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiRecipient, setConfettiRecipient] = useState('');
   const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [showMessagingCenter, setShowMessagingCenter] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState<BirthdayInfo | null>(null);
+  const canManageMessages = Boolean(user) && hasPermission('notifications', 'edit');
 
   const counts = useMemo(() => ({
     hoy: birthdayList.filter((item) => item.isToday).length,
@@ -56,6 +62,16 @@ export default function Birthdays() {
     setShowConfetti(true);
     toast.success(`¡Celebramos con alegría la vida de ${name}!`);
     window.setTimeout(() => setShowConfetti(false), 4200);
+  };
+
+  const handleMessage = (birthday: BirthdayInfo) => {
+    setMessageRecipient(birthday);
+    setShowMessagingCenter(true);
+  };
+
+  const closeMessagingCenter = () => {
+    setShowMessagingCenter(false);
+    setMessageRecipient(null);
   };
 
   const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
@@ -103,6 +119,16 @@ export default function Birthdays() {
         <div className="mt-6 space-y-5">
           <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} />
 
+          {canManageMessages && (
+            <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-emerald-500/15 p-2 text-emerald-700 dark:text-emerald-300"><MessageCircle size={18} /></span>
+                <div><p className="text-sm font-bold text-slate-800 dark:text-white">Mensajería de cumpleaños</p><p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">Personaliza una felicitación o prepara una cola para varias personas con teléfono registrado.</p></div>
+              </div>
+              <button type="button" onClick={() => { setMessageRecipient(null); setShowMessagingCenter(true); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-emerald-600/15 transition hover:bg-emerald-700"><MessageCircle size={15} /> Crear felicitaciones</button>
+            </div>
+          )}
+
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-400">
             <span>{loading ? 'Sincronizando con el CRM…' : `${filteredBirthdays.length} resultado${filteredBirthdays.length === 1 ? '' : 's'} en la selección`}</span>
             {lastUpdated && <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Actualizado {lastUpdated.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>}
@@ -120,12 +146,13 @@ export default function Birthdays() {
               <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark"><RefreshCw size={15} /> Reintentar conexión</button>
             </div>
           ) : (
-            <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
+            <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} onMessage={canManageMessages ? handleMessage : undefined} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
           )}
         </div>
       </div>
 
       {showPdfDialog && <CalendarPdfDialog onClose={() => setShowPdfDialog(false)} onExport={handleExportPdf} title="Exportar cumpleaños públicos" />}
+      {showMessagingCenter && canManageMessages && <BirthdayMessagingCenter birthdays={searchedBirthdays} initialBirthday={messageRecipient} onClose={closeMessagingCenter} />}
     </div>
   );
 }

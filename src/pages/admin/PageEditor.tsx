@@ -119,7 +119,7 @@ const PageEditor = () => {
         <button
           type="button"
           onClick={() => refetch()}
-          className="p-2 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-55 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors cursor-pointer"
+          className="p-2 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
           title="Recargar"
         >
           <RefreshCw size={18} />

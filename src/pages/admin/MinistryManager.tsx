@@ -672,24 +672,24 @@ const MinistryManager = () => {
               <div className={formTab === 'identity' ? 'space-y-6 animate-fade-in' : 'hidden'}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nombre del Ministerio</label>
                     <input
                       {...register('name')}
                       type="text"
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                       placeholder="Ej. Dep. Jóvenes"
                     />
                     {errors.name && <p className="text-accent-red text-xs mt-1">{errors.name.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Slug URL</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Slug URL</label>
                     <input
                       {...register('slug')}
                       type="text"
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-gray-50/50 disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                       placeholder="ej-jovenes"
                     />
                     {errors.slug && <p className="text-accent-red text-xs mt-1">{errors.slug.message}</p>}
@@ -698,11 +698,11 @@ const MinistryManager = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Categoría</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Categoría</label>
                     <select
                       {...register('category')}
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80"
                     >
                       <option value="departamento">Departamento</option>
                       <option value="servicio">Servicio</option>
@@ -711,12 +711,12 @@ const MinistryManager = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Líder o Responsable</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Líder o Responsable</label>
                     <input
                       {...register('leader_name')}
                       type="text"
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                       placeholder="Ej. Líderes Juveniles"
                     />
                     {errors.leader_name && <p className="text-accent-red text-xs mt-1">{errors.leader_name.message}</p>}
@@ -725,36 +725,36 @@ const MinistryManager = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Horario de Reunión</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Horario de Reunión</label>
                     <input
                       {...register('schedule')}
                       type="text"
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                       placeholder="Ej. Sábados 7:30pm"
                     />
                     {errors.schedule && <p className="text-accent-red text-xs mt-1">{errors.schedule.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Fecha de Aniversario</label>
                     <input
                       {...register('anniversary_date')}
                       type="date"
                       disabled={isEditingReadOnly}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                     />
                     {errors.anniversary_date && <p className="text-accent-red text-xs mt-1">{errors.anniversary_date.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-455 uppercase tracking-wider mb-1">Color del Tema</label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Color del Tema</label>
                     <div className="flex items-center gap-2">
                       <input
                         {...register('theme_color')}
                         type="color"
                         disabled={isEditingReadOnly}
-                        className="w-10 h-10 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer p-0.5 bg-white dark:bg-slate-900 disabled:bg-gray-55 disabled:cursor-not-allowed"
+                        className="w-10 h-10 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer p-0.5 bg-white dark:bg-slate-900 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed"
                       />
                       <input
                         type="text"
@@ -762,7 +762,7 @@ const MinistryManager = () => {
                         onChange={(e) => setValue('theme_color', e.target.value)}
                         disabled={isEditingReadOnly}
                         placeholder="#1E3A8A"
-                        className="flex-grow px-3 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                        className="flex-grow px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:bg-gray-50 dark:disabled:bg-slate-800/80 disabled:text-gray-400 dark:disabled:text-gray-500"
                       />
                     </div>
                     {errors.theme_color && <p className="text-accent-red text-xs mt-1">{errors.theme_color.message}</p>}

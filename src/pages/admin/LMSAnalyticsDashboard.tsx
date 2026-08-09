@@ -14,16 +14,13 @@ import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/Anime
 const COLORS = ['#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b'];
 
 export default function LMSAnalyticsDashboard() {
-  const { data, isLoading, error } = useLMSAnalytics();
+  const { data, isLoading, error, refetch } = useLMSAnalytics();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Wait a bit to simulate refresh since the hook fetches on mount
-    // In a real app we'd expose a refetch function from the hook
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    await refetch();
+    setRefreshing(false);
   };
 
   if (error) {
@@ -35,30 +32,30 @@ export default function LMSAnalyticsDashboard() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-800 dark:text-gray-100">
+    <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-800 dark:text-gray-100 font-sans">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-4">
           <Link 
             to="/admin/lms"
-            className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm text-slate-700 dark:text-slate-300"
           >
             <ChevronLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold font-serif flex items-center gap-2">
+            <h1 className="text-3xl font-bold font-sans flex items-center gap-2 text-slate-900 dark:text-white">
               <TrendingUp className="text-indigo-500" />
               LMS Analytics
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Métricas de rendimiento y progreso del Aula Virtual.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Métricas de rendimiento y progreso del Aula Virtual.</p>
           </div>
         </div>
         
         <button
           onClick={handleRefresh}
           disabled={isLoading || refreshing}
-          className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+          className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50 text-sm"
         >
-          <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={refreshing ? 'animate-spin text-indigo-500' : ''} />
           Refrescar
         </button>
       </div>
@@ -79,7 +76,7 @@ export default function LMSAnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estudiantes</p>
-                  <p className="text-2xl font-bold">{data.totalStudents}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.totalStudents}</p>
                 </div>
               </div>
             </AnimeFadeUp>
@@ -91,7 +88,7 @@ export default function LMSAnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cursos Activos</p>
-                  <p className="text-2xl font-bold">{data.activeCourses}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.activeCourses}</p>
                 </div>
               </div>
             </AnimeFadeUp>
@@ -103,7 +100,7 @@ export default function LMSAnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Lecciones Comp.</p>
-                  <p className="text-2xl font-bold">{data.totalCompletions}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.totalCompletions}</p>
                 </div>
               </div>
             </AnimeFadeUp>
@@ -115,7 +112,7 @@ export default function LMSAnalyticsDashboard() {
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Promedio Notas</p>
-                  <p className="text-2xl font-bold">{data.averageScore} / 10</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{data.averageScore} / 10</p>
                 </div>
               </div>
             </AnimeFadeUp>
@@ -126,7 +123,7 @@ export default function LMSAnalyticsDashboard() {
             
             {/* Timeline Area Chart */}
             <AnimeFadeUp delay={400} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-150 dark:border-white/10 shadow-sm">
-              <h3 className="font-serif font-bold text-lg mb-6">Actividad de Lecciones (Últimos 30 días)</h3>
+              <h3 className="font-sans font-bold text-lg mb-6 text-slate-900 dark:text-white">Actividad de Lecciones (Últimos 30 días)</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data.completionTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -151,7 +148,7 @@ export default function LMSAnalyticsDashboard() {
 
             {/* Bar Chart Enrollment */}
             <AnimeFadeUp delay={500} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-150 dark:border-white/10 shadow-sm">
-              <h3 className="font-serif font-bold text-lg mb-6">Matrículas por Curso (Top 5)</h3>
+              <h3 className="font-sans font-bold text-lg mb-6 text-slate-900 dark:text-white">Matrículas por Curso (Top 5)</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.enrollmentByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} layout="vertical">

@@ -56,7 +56,7 @@ const MinistriesOverview = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-24 space-y-12 relative z-10">
         
         {/* HEADER HERO */}
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2.5rem] p-8 md:p-14 border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center gap-10">
+        <div id="ministries_hero" className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2.5rem] p-8 md:p-14 border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center gap-10">
           
           <AnimeZoomIn className="flex-1 space-y-6 relative z-10">
             <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">
@@ -116,6 +116,7 @@ const MinistriesOverview = () => {
           </div>
         ) : (
           <motion.div 
+            id="ministries_grid"
             layout
             className={viewMode === 'grid' 
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" 
@@ -196,7 +197,7 @@ const MinistriesOverview = () => {
       </div>
 
       {/* INVITACION A SERVIR */}
-      <div className="mt-24 pb-20 relative max-w-4xl mx-auto text-center px-4">
+      <div id="ministries_volunteer" className="mt-24 pb-20 relative max-w-4xl mx-auto text-center px-4">
         <div className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] rounded-full -z-10"></div>
         <AnimeFadeUp className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 md:p-16 border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
           <Award size={48} className="mx-auto text-amber-500 mb-6 drop-shadow-md" />

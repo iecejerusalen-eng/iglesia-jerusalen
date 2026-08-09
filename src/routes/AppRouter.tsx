@@ -86,6 +86,7 @@ const DashboardHome = lazyWithRetry(() => import('../pages/admin/DashboardHome')
 const SermonsManager = lazyWithRetry(() => import('../pages/admin/SermonsManager'));
 const SpeakersManager = lazyWithRetry(() => import('../pages/admin/SpeakersManager'));
 const FinanceDashboard = lazyWithRetry(() => import('../pages/admin/FinanceDashboard'));
+const DonationPageManager = lazyWithRetry(() => import('../pages/admin/DonationPageManager'));
 const StoreManager = lazyWithRetry(() => import('../pages/admin/StoreManager'));
 const StoreSettings = lazyWithRetry(() => import('../pages/admin/StoreSettings'));
 const OrdersManager = lazyWithRetry(() => import('../pages/admin/OrdersManager'));
@@ -248,7 +249,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="diseno" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="analytics" />}><Route element={<AdminLayout />}><Route path="/admin/analisis" element={<AnalyticsDashboard />} /></Route></Route>
-        <Route element={<ProtectedRoute module="finances" />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /></Route></Route>
+        <Route element={<ProtectedRoute module="finances" />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<DonationPageManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="products" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/productos" element={<StoreManager />} />

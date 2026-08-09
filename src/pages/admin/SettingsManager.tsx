@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import type { SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
@@ -10,7 +10,7 @@ import { useConfirmStore } from '../../store/useConfirmStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
-  Phone, Landmark, Share2, Save, Loader2, 
+  Phone, Landmark, Share2, Save, Loader2, ExternalLink,
   Settings, Tags, Plus, Trash2, Edit2, Check, X 
 } from 'lucide-react';
 import type { CatalogRole } from '../../types';
@@ -36,6 +36,9 @@ const settingsSchema = z.object({
 });
 
 type SettingsForm = z.infer<typeof settingsSchema>;
+type SettingsInput = z.input<typeof settingsSchema>;
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const CATEGORIES = [
   { id: 'Roles', label: 'Roles de Liderazgo' },
@@ -61,8 +64,8 @@ const SettingsManager = () => {
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogRole | null>(null);
   const [editingCatalogName, setEditingCatalogName] = useState('');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsForm>({
-    resolver: zodResolver(settingsSchema) as any,
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsInput, unknown, SettingsForm>({
+    resolver: zodResolver(settingsSchema),
   });
 
   useEffect(() => {
@@ -109,9 +112,9 @@ const SettingsManager = () => {
           global_announcement: data.global_announcement || '',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching settings:', err);
-      toast.error('Error al cargar la configuración: ' + err.message);
+      toast.error('Error al cargar la configuración: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -130,9 +133,9 @@ const SettingsManager = () => {
 
       if (error) throw error;
       toast.success('Configuración guardada correctamente.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving settings:', err);
-      toast.error('No se pudo guardar la configuración: ' + err.message);
+      toast.error('No se pudo guardar la configuración: ' + getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -150,9 +153,9 @@ const SettingsManager = () => {
       
       if (error) throw error;
       setCatalogItems(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading catalog:', err);
-      toast.error('Error al cargar catálogo: ' + err.message);
+      toast.error('Error al cargar catálogo: ' + getErrorMessage(err));
     } finally {
       setCatalogLoading(false);
     }
@@ -174,9 +177,9 @@ const SettingsManager = () => {
       toast.success('Elemento agregado con éxito.');
       setNewCatalogName('');
       fetchCatalogItems(selectedCategory);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error adding catalog item:', err);
-      toast.error('No se pudo agregar el elemento: ' + err.message);
+      toast.error('No se pudo agregar el elemento: ' + getErrorMessage(err));
     }
   };
 
@@ -198,9 +201,9 @@ const SettingsManager = () => {
       toast.success('Elemento actualizado.');
       setEditingCatalogItem(null);
       fetchCatalogItems(selectedCategory);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating catalog item:', err);
-      toast.error('No se pudo actualizar: ' + err.message);
+      toast.error('No se pudo actualizar: ' + getErrorMessage(err));
     }
   };
 
@@ -223,9 +226,9 @@ const SettingsManager = () => {
       if (error) throw error;
       toast.success('Elemento eliminado.');
       fetchCatalogItems(selectedCategory);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting catalog item:', err);
-      toast.error('No se pudo eliminar: ' + err.message);
+      toast.error('No se pudo eliminar: ' + getErrorMessage(err));
     }
   };
 
@@ -276,7 +279,7 @@ const SettingsManager = () => {
         {activeTab === 'settings' ? (
           <AnimeFadeUp key="settings-tab">
             <form 
-              onSubmit={handleSubmit(onSubmit as SubmitHandler<SettingsForm>)} 
+              onSubmit={handleSubmit(onSubmit)} 
               className="space-y-6"
             >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -286,6 +289,10 @@ const SettingsManager = () => {
                   <Phone size={18} className="text-gold" />
                   Información de Contacto
                 </h3>
+                <div className="flex items-start justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs dark:border-blue-500/20 dark:bg-blue-500/10">
+                  <p className="leading-5 text-blue-800 dark:text-blue-200">Estos datos alimentan la página pública. El contenido, destinos y verificaciones se administran en el módulo especializado.</p>
+                  <Link to="/admin/finanzas/donaciones" className="inline-flex shrink-0 items-center gap-1 font-bold text-primary hover:underline dark:text-blue-300">Abrir <ExternalLink size={12} /></Link>
+                </div>
                 
                 <div className="space-y-3">
                   <div>

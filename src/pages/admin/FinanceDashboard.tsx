@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import type { Donation, DonationCategory } from '../../types';
 import { 
@@ -7,7 +8,7 @@ import {
   BarChart
 } from 'recharts';
 import { 
-  Download, Edit2, TrendingUp, DollarSign, Heart, ShoppingBag, Tag, PieChart as PieChartIcon, FileText, XCircle, FolderPlus
+  Download, Edit2, TrendingUp, DollarSign, Heart, ShoppingBag, Tag, PieChart as PieChartIcon, FileText, XCircle, FolderPlus, Settings2
 } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/common/Skeletons';
@@ -574,6 +575,9 @@ const FinanceDashboard = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <Link to="/admin/finanzas/donaciones" className="inline-flex items-center gap-2 rounded-xl border border-church-gold/25 bg-church-gold/10 px-3.5 py-2 text-xs font-bold text-church-gold-dark transition hover:bg-church-gold/15 dark:text-church-gold-light">
+            <Settings2 size={14} /> Página de donaciones
+          </Link>
           {/* Time range filter */}
           {activeTab === 'metrics' && (
             <div className="relative">

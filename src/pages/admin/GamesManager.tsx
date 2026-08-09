@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import { Gamepad2, Edit2, Eye, EyeOff, AlertCircle, Plus, Music, X, Upload } from 'lucide-react';
+import { Gamepad2, Edit2, Eye, EyeOff, AlertCircle, Plus, Music, X, Upload, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 import { toast } from 'sonner';
@@ -20,15 +20,21 @@ export const GamesManager = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [formData, setFormData] = useState({ title: '', description: '', image_url: '' });
+  const [formData, setFormData] = useState({ title: '', description: '', image_url: '', slug: '' });
+
+  const openCreateModal = () => {
+    setEditingGame(null);
+    setFormData({ title: '', description: '', image_url: '', slug: '' });
+    setIsModalOpen(true);
+  };
 
   const openEditModal = (game: Game) => {
     setEditingGame(game);
-    setFormData({ title: game.title, description: game.description, image_url: game.image_url || '' });
-    setIsEditModalOpen(true);
+    setFormData({ title: game.title, description: game.description || '', image_url: game.image_url || '', slug: game.slug || '' });
+    setIsModalOpen(true);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,25 +54,68 @@ export const GamesManager = () => {
     }
   };
 
-  const saveGameChanges = async () => {
-    if (!editingGame) return;
-    try {
-      const { error } = await supabase
-        .from('games')
-        .update({
-          title: formData.title,
-          description: formData.description,
-          image_url: formData.image_url
-        })
-        .eq('id', editingGame.id);
+  const handleSave = async () => {
+    if (!formData.title.trim()) {
+      toast.error('Ingresa un título para el juego');
+      return;
+    }
 
-      if (error) throw error;
-      toast.success('Cambios guardados correctamente');
-      setIsEditModalOpen(false);
+    const generatedSlug = formData.slug.trim() 
+      ? formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-') 
+      : formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    try {
+      if (editingGame) {
+        const { error: updateErr } = await supabase
+          .from('games')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            image_url: formData.image_url,
+            slug: generatedSlug,
+          })
+          .eq('id', editingGame.id);
+
+        if (updateErr) throw updateErr;
+        toast.success('Juego actualizado correctamente');
+      } else {
+        const { error: insertErr } = await supabase
+          .from('games')
+          .insert({
+            title: formData.title,
+            description: formData.description,
+            image_url: formData.image_url,
+            slug: generatedSlug,
+            is_active: true,
+          });
+
+        if (insertErr) throw insertErr;
+        toast.success('Juego creado correctamente');
+      }
+
+      setIsModalOpen(false);
       fetchGames();
     } catch (err: any) {
-      console.error('Error al guardar:', err);
-      toast.error('Error al guardar los cambios');
+      console.error('Error al guardar juego:', err);
+      toast.error('Error al guardar el juego: ' + (err.message || 'Error desconocido'));
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el juego "${title}"?`)) return;
+
+    try {
+      const { error: deleteErr } = await supabase
+        .from('games')
+        .delete()
+        .eq('id', id);
+
+      if (deleteErr) throw deleteErr;
+      toast.success('Juego eliminado correctamente');
+      fetchGames();
+    } catch (err: any) {
+      console.error('Error al eliminar juego:', err);
+      toast.error('No se pudo eliminar el juego');
     }
   };
 
@@ -99,38 +148,40 @@ export const GamesManager = () => {
         .eq('id', id);
 
       if (error) throw error;
+      toast.success(`Juego ${!currentStatus ? 'activado' : 'desactivado'}`);
       fetchGames();
     } catch (err: any) {
       console.error('Error toggling game status:', err);
+      toast.error('Error al cambiar estado del juego');
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Gamepad2 className="h-6 w-6 text-indigo-600" />
-          Gestión de Juegos
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <Gamepad2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          Gestión de Juegos Bíblicos
         </h1>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-200/60 dark:border-indigo-800/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors text-sm font-semibold"
             onClick={() => navigate('/admin/juegos/audio-library')}
           >
             <Music className="h-4 w-4" />
             Biblioteca de Sonidos
           </button>
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            onClick={() => alert('Función de agregar juego próximamente.')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-colors text-sm font-semibold"
+            onClick={openCreateModal}
           >
             <Plus className="h-4 w-4" />
             Nuevo Juego
@@ -139,7 +190,7 @@ export const GamesManager = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 text-red-700 dark:text-red-400">
+        <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl flex items-center gap-3 text-red-700 dark:text-red-400 text-sm">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p>{error}</p>
         </div>
@@ -147,119 +198,147 @@ export const GamesManager = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {games.map((game) => (
-          <div key={game.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src={game.image_url || 'https://via.placeholder.com/400x200?text=Juego'}
-                alt={game.title}
-                className="w-full h-full object-cover transition-transform hover:scale-105"
-              />
-              <div className="absolute top-2 right-2 flex gap-2">
-                <button
-                  onClick={() => toggleGameStatus(game.id, game.is_active)}
-                  className={`p-2 rounded-lg backdrop-blur-sm transition-colors ${
-                    game.is_active 
-                      ? 'bg-green-500/80 text-white hover:bg-green-600' 
-                      : 'bg-gray-500/80 text-white hover:bg-gray-600'
-                  }`}
-                  title={game.is_active ? 'Desactivar' : 'Activar'}
-                >
-                  {game.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-5">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {game.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-                {game.description}
-              </p>
-              
-              <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center">
+          <div key={game.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200/70 dark:border-white/10 overflow-hidden flex flex-col justify-between">
+            <div>
+              <div className="h-48 overflow-hidden relative bg-slate-100 dark:bg-slate-800">
+                <img
+                  src={game.image_url || '/images/games/default.png'}
+                  alt={game.title}
+                  className="w-full h-full object-cover transition-transform hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=Juego+Biblico';
+                  }}
+                />
+                <div className="absolute top-2 right-2 flex gap-2">
                   <button
-                    onClick={() => openEditModal(game)}
-                    className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm mr-4"
+                    onClick={() => toggleGameStatus(game.id, game.is_active)}
+                    className={`p-2 rounded-xl backdrop-blur-md transition-all shadow-md ${
+                      game.is_active 
+                        ? 'bg-emerald-600/90 text-white hover:bg-emerald-700' 
+                        : 'bg-slate-700/90 text-white hover:bg-slate-800'
+                    }`}
+                    title={game.is_active ? 'Desactivar juego' : 'Activar juego'}
                   >
-                    <Edit2 className="h-4 w-4" />
-                    Editar Info
+                    {game.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </button>
                   <button
-                    onClick={() => navigate(`/admin/juegos/${game.slug}`)}
-                    className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm"
+                    onClick={() => handleDelete(game.id, game.title)}
+                    className="p-2 rounded-xl backdrop-blur-md bg-rose-600/90 hover:bg-rose-700 text-white transition-all shadow-md"
+                    title="Eliminar juego"
                   >
-                    <Gamepad2 className="h-4 w-4" />
-                    Administrar
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                
-                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-                  game.is_active 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                }`}>
-                  {game.is_active ? 'Activo' : 'Inactivo'}
-                </span>
+              </div>
+              
+              <div className="p-5">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+                    {game.title}
+                  </h3>
+                  <span className={`px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-full shrink-0 ${
+                    game.is_active 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40' 
+                      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                  }`}>
+                    {game.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
+                  {game.description || 'Sin descripción asignada.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 pt-0">
+              <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-white/5">
+                <button
+                  onClick={() => openEditModal(game)}
+                  className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold text-xs"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  Editar
+                </button>
+                <button
+                  onClick={() => navigate(`/admin/juegos/${game.slug}`)}
+                  className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold text-xs"
+                >
+                  <Gamepad2 className="h-3.5 w-3.5" />
+                  Configurar Preguntas
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Editar Información del Juego</h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <X className="h-6 w-6" />
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-white/10">
+            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {editingGame ? 'Editar Información del Juego' : 'Nuevo Juego Bíblico'}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white p-1 rounded-lg">
+                <X className="h-5 w-5" />
               </button>
             </div>
             
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Título del Juego</label>
                 <input 
                   type="text" 
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                <textarea 
-                  rows={3}
-                  value={formData.description}
-                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                  placeholder="Ej. Quien Quiere Ser Biblionario"
+                  className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Imagen de Portada (Cloudinary)</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Identificador URL (Slug)</label>
+                <input 
+                  type="text" 
+                  value={formData.slug}
+                  onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  placeholder="Ej. quien-quiere-ser-biblionario"
+                  className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Descripción</label>
+                <textarea 
+                  rows={3}
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Explica de qué trata el juego..."
+                  className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm resize-none outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Imagen de Portada (Cloudinary)</label>
                 <div className="flex gap-4 items-start">
-                  <div className="w-32 h-20 rounded-lg bg-gray-100 dark:bg-gray-900 overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                  <div className="w-32 h-20 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-white/10 flex items-center justify-center">
                     {formData.image_url ? (
                       <img src={formData.image_url} alt="Portada" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xs text-gray-400">Sin imagen</span>
+                      <span className="text-xs text-slate-400">Sin portada</span>
                     )}
                   </div>
-                  <div className="flex-grow">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg text-sm transition-colors w-full justify-center border border-gray-300 dark:border-gray-600">
+                  <div className="flex-grow space-y-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors w-full justify-center border border-slate-200 dark:border-white/10">
                       <Upload className="h-4 w-4" />
-                      {uploadingImage ? 'Subiendo...' : 'Subir nueva imagen'}
+                      {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
                       <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
                     </label>
                     <input 
                       type="text" 
                       value={formData.image_url}
                       onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                      className="mt-2 w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full p-2 text-xs border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
                       placeholder="O pega una URL..."
                     />
                   </div>
@@ -267,18 +346,18 @@ export const GamesManager = () => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50">
+            <div className="p-6 border-t border-slate-100 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/50">
               <button 
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-sm font-semibold transition-colors"
               >
                 Cancelar
               </button>
               <button 
-                onClick={saveGameChanges}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                onClick={handleSave}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors text-sm font-bold shadow-md"
               >
-                Guardar Cambios
+                {editingGame ? 'Guardar Cambios' : 'Crear Juego'}
               </button>
             </div>
           </div>

@@ -54,7 +54,7 @@ const Home = () => {
           case 'custom':
             if (id === 'home_hero') {
               return (
-                <div key={id} className="flex flex-col">
+                <div key={id} id={id} className="flex flex-col">
                   <HeroSection sectionData={section} />
                   <BentoGridSection latestSermon={sermons[0]} nextEvent={events[0]} />
                 </div>
@@ -62,64 +62,77 @@ const Home = () => {
             }
             if (id === 'home_welcome') {
               return (
-                <div key={id} className="flex flex-col">
+                <div key={id} id={id} className="flex flex-col">
                   <WelcomeSection sectionData={section} />
                   <DailyVerseSection />
                 </div>
               );
             }
             if (id === 'home_donations') {
-              return <DonationsSection key={id} sectionData={section} />;
+              return (
+                <div key={id} id={id}>
+                  <DonationsSection sectionData={section} />
+                </div>
+              );
             }
-            return <GenericSection key={id} sectionData={section} />;
+            return (
+              <div key={id} id={id}>
+                <GenericSection sectionData={section} />
+              </div>
+            );
 
           case 'system_schedules':
             return (
-              <SchedulesSection 
-                key={id} 
-                sectionData={section} 
-                schedules={schedules} 
-                loading={loadingSchedules} 
-              />
+              <div key={id} id={id}>
+                <SchedulesSection 
+                  sectionData={section} 
+                  schedules={schedules} 
+                  loading={loadingSchedules} 
+                />
+              </div>
             );
 
           case 'system_events':
             return (
-              <EventsSection 
-                key={id} 
-                sectionData={section} 
-                events={events} 
-                loading={loadingEvents} 
-              />
+              <div key={id} id={id}>
+                <EventsSection 
+                  sectionData={section} 
+                  events={events} 
+                  loading={loadingEvents} 
+                />
+              </div>
             );
 
           case 'system_sermons':
             return (
-              <SermonsSection 
-                key={id} 
-                sectionData={section} 
-                sermons={sermons} 
-                loading={loadingSermons} 
-              />
+              <div key={id} id={id}>
+                <SermonsSection 
+                  sectionData={section} 
+                  sermons={sermons} 
+                  loading={loadingSermons} 
+                />
+              </div>
             );
 
           case 'system_birthdays':
             return (
-              <BirthdaysSection 
-                key={id} 
-                sectionData={section} 
-                birthdayMembers={birthdayMembers} 
-              />
+              <div key={id} id={id}>
+                <BirthdaysSection 
+                  sectionData={section} 
+                  birthdayMembers={birthdayMembers} 
+                />
+              </div>
             );
 
           case 'system_gallery':
             return (
-              <ImageGallerySection
-                key={id}
-                title={title || ''}
-                subtitle={subtitle || ''}
-                slides={(content_blocks && content_blocks.length > 0) ? content_blocks : (DEFAULT_SECTIONS.find(s => s.id === 'home_gallery')?.content_blocks || [])}
-              />
+              <div key={id} id={id}>
+                <ImageGallerySection
+                  title={title || ''}
+                  subtitle={subtitle || ''}
+                  slides={(content_blocks && content_blocks.length > 0) ? content_blocks : (DEFAULT_SECTIONS.find(s => s.id === 'home_gallery')?.content_blocks || [])}
+                />
+              </div>
             );
 
           default:
@@ -127,9 +140,13 @@ const Home = () => {
         }
       })}
 
-      <StatsSection stats={stats} />
+      <div id="stats_section">
+        <StatsSection stats={stats} />
+      </div>
       
-      <TestimonialsSection />
+      <div id="testimonials_section">
+        <TestimonialsSection />
+      </div>
 
       <CtaBanner />
       </div>

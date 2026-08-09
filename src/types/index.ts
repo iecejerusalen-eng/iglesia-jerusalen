@@ -201,6 +201,9 @@ export interface Donation {
   payment_method: string;
   status: 'pending' | 'completed' | 'failed';
   created_at: string;
+  admin_notes?: string | null;
+  verified_at?: string | null;
+  verified_by?: string | null;
   donation_categories?: DonationCategory | null;
 }
 
@@ -962,6 +965,7 @@ export interface ChurchSettings {
   de_una_fee_percent?: number;
   payment_methods?: StorePaymentMethod[];
   shipping_methods?: StoreShippingMethod[];
+  donation_page_config?: import('../features/donations/types').DonationPageConfig;
   created_at?: string;
   updated_at?: string;
 }

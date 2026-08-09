@@ -147,6 +147,42 @@ export const useMembersMutations = () => {
     }
   });
 
+  const restoreMemberMutation = useMutation({
+    mutationFn: async (payload: { id: string; name?: string }) => {
+      const syncStore = useSyncStore.getState();
+
+      await syncStore.enqueueMutation(
+        'members',
+        payload.id,
+        'UPDATE',
+        { deleted_at: null }
+      );
+
+      await logAuditEvent(
+        'UPDATE',
+        'members',
+        payload.id,
+        {
+          name: payload.name || 'Desconocido',
+          notes: 'Miembro restaurado de la papelera'
+        }
+      );
+
+      if (syncStore.isOnline) {
+        await syncStore.syncOfflineQueue();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['deleted_members'] });
+      toast.success('Miembro restaurado exitosamente');
+    },
+    onError: (error) => {
+      console.error('Error restoring member:', error);
+      toast.error('Error al restaurar el miembro.');
+    }
+  });
+
   const handleSave = async (
     data: MemberFormType, 
     editingId: string | null, 
@@ -192,7 +228,8 @@ export const useMembersMutations = () => {
 
   return { 
     handleSave, 
-    handleDelete, 
-    isPending: saveMemberMutation.isPending || deleteMemberMutation.isPending 
+    handleDelete,
+    restoreMemberMutation,
+    isPending: saveMemberMutation.isPending || deleteMemberMutation.isPending || restoreMemberMutation.isPending
   };
 };

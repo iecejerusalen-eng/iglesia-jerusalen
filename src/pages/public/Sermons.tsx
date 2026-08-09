@@ -158,7 +158,7 @@ const Sermons = () => {
       <AnimeFadeUp delay={100} duration={800}>
         
       {/* HEADER HERO */}
-      <div className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-16 mb-12 shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden group border border-white/5">
+      <div id="sermons_hero" className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-16 mb-12 shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden group border border-white/5">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-slate-900 to-slate-950"></div>
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] group-hover:bg-blue-500/30 transition-colors duration-1000"></div>
         <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-[3s] ease-out">
@@ -179,7 +179,7 @@ const Sermons = () => {
       </div>
 
       {/* PANEL DE CONTROL: Buscador y Filtros */}
-      <div className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
+      <div id="sermons_latest" className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-6">
         
         <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
           {/* Buscador inteligente con Autocomplete */}
@@ -376,6 +376,7 @@ const Sermons = () => {
         </div>
       ) : filteredSermons.length > 0 ? (
         <AnimeStaggerGrid 
+          id="sermons_archive"
           delay={200} 
           staggerDelay={100} 
           className={

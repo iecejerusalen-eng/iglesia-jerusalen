@@ -1,407 +1,253 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../config/supabase';
-import type { DonationCategory } from '../../types';
-import { Heart, CreditCard, Landmark, CheckCircle2, ArrowRight, HeartHandshake, HandHeart, Users, Info } from 'lucide-react';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Helmet } from 'react-helmet-async';
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Clipboard,
+  Heart,
+  HeartHandshake,
+  Landmark,
+  Loader2,
+  MessageCircle,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import bancoGuayaquilLogo from '../../assets/logos/bancoguayaquil.svg';
-
-const FALLBACK_CATEGORIES: DonationCategory[] = [
-  { id: 'fb-diezmo', name: 'Diezmo', description: 'Aportes regulares de los miembros', is_active: true, created_at: '' },
-  { id: 'fb-ofrenda', name: 'Ofrenda', description: 'Ofrendas voluntarias generales', is_active: true, created_at: '' },
-  { id: 'fb-misiones', name: 'Misiones', description: 'Apoyo a la obra misionera', is_active: true, created_at: '' },
-  { id: 'fb-construccion', name: 'Construcción', description: 'Fondo para mejoras del templo', is_active: true, created_at: '' },
-  { id: 'fb-otros', name: 'Otros', description: 'Otros fines específicos', is_active: true, created_at: '' },
-];
+import { supabase } from '../../config/supabase';
+import { useDonationPageData } from '../../features/donations/hooks/useDonationPageData';
+import { formatWhatsAppLink } from '../../utils/whatsapp';
 
 const donationSchema = z.object({
-  name: z.string().optional(),
-  email: z.string().email('Ingresa un correo electrónico válido'),
-  amount: z.string().min(1, 'Ingresa un monto válido').refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'El monto debe ser mayor a 0'),
-  categoryId: z.string().min(1, 'Selecciona un destino'),
-  paymentMethod: z.enum(['tarjeta', 'transferencia', 'paypal']),
+  name: z.string().trim().max(120, 'El nombre es demasiado largo').optional(),
+  email: z.string().trim().email('Ingresa un correo electrónico válido').max(180),
+  amount: z.string().min(1, 'Ingresa un monto').refine((value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 1 && amount <= 100000;
+  }, 'El monto debe estar entre $1 y $100.000'),
+  categoryId: z.string().uuid('Selecciona un destino válido'),
   isAnonymous: z.boolean(),
-  cardNumber: z.string().optional(),
-  cardName: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCvv: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (!data.isAnonymous && (!data.name || data.name.trim().length === 0)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['name'],
-      message: 'El nombre es obligatorio si no es anónimo',
-    });
-  }
-  if (data.paymentMethod === 'tarjeta') {
-    if (!data.cardNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cardNumber'], message: 'Número requerido' });
-    if (!data.cardName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cardName'], message: 'Nombre requerido' });
-    if (!data.cardExpiry) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cardExpiry'], message: 'Fecha requerida' });
-    if (!data.cardCvv) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cardCvv'], message: 'CVV requerido' });
+  privacyAccepted: z.boolean().refine((accepted) => accepted, 'Debes aceptar el tratamiento de datos'),
+}).superRefine((data, context) => {
+  if (!data.isAnonymous && !data.name) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['name'], message: 'Ingresa tu nombre o selecciona aporte anónimo' });
   }
 });
 
 type DonationForm = z.infer<typeof donationSchema>;
 
-const Donations = () => {
-  const [categories, setCategories] = useState<DonationCategory[]>([]);
-  const [success, setSuccess] = useState<string | null>(null);
-  
+interface DonationReceipt {
+  id: string;
+  amount: number;
+  category: string;
+  donorName: string;
+}
+
+function cleanPhone(phone: string): string {
+  return phone.replace(/[^\d+]/g, '');
+}
+
+export default function Donations() {
+  const { settings, categories, loading, error, refetch } = useDonationPageData();
+  const [receipt, setReceipt] = useState<DonationReceipt | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const { register, handleSubmit, setValue, reset, control, formState: { errors, isSubmitting } } = useForm<DonationForm>({
     resolver: zodResolver(donationSchema),
-    defaultValues: {
-      isAnonymous: false,
-      paymentMethod: 'transferencia',
-      amount: '',
-      categoryId: '',
-    }
+    defaultValues: { amount: '', categoryId: '', isAnonymous: false, privacyAccepted: false },
   });
+  const amount = useWatch({ control, name: 'amount' });
+  const isAnonymous = useWatch({ control, name: 'isAnonymous' });
 
-  const watchPaymentMethod = useWatch({ control, name: 'paymentMethod' });
-  const watchIsAnonymous = useWatch({ control, name: 'isAnonymous' });
-  const watchAmount = useWatch({ control, name: 'amount' });
+  const config = settings?.donation_page_config;
+  const hasBankDetails = Boolean(settings?.bank_name && settings.bank_account && settings.ruc && config?.beneficiary);
+  const canRegister = Boolean(config?.transfer_enabled && hasBankDetails && categories.length > 0);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('donation_categories')
-          .select('*')
-          .eq('is_active', true)
-          .order('name', { ascending: true });
+  const whatsappMessage = useMemo(() => {
+    if (!receipt) return '';
+    return `Hola, deseo reportar mi aporte a la Iglesia Jerusalén.\nReferencia: ${receipt.id.slice(0, 8).toUpperCase()}\nMonto: $${receipt.amount.toFixed(2)}\nDestino: ${receipt.category}\nDonante: ${receipt.donorName}\nAdjunto mi comprobante de transferencia.`;
+  }, [receipt]);
 
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          setCategories(data);
-          setValue('categoryId', data[0].id);
-        } else {
-          setCategories(FALLBACK_CATEGORIES);
-          setValue('categoryId', FALLBACK_CATEGORIES[0].id);
-        }
-      } catch (err) {
-        console.error('Error al cargar categorías de Supabase, usando fallback:', err);
-        setCategories(FALLBACK_CATEGORIES);
-        setValue('categoryId', FALLBACK_CATEGORIES[0].id);
-      }
-    };
-    
-    fetchCategories();
-  }, [setValue]);
-
-  const onSubmit = async (formData: DonationForm) => {
-    if (formData.paymentMethod === 'tarjeta' || formData.paymentMethod === 'paypal') {
-      toast.info('Configuración requerida: Las pasarelas de pago necesitan que el administrador ingrese las credenciales (API Keys) de Stripe/PayPal. Usa transferencia bancaria por ahora.');
-      return;
-    }
-
-    const amountNum = parseFloat(formData.amount);
-    const selectedCategory = categories.find(c => c.id === formData.categoryId);
-    const categoryName = selectedCategory ? selectedCategory.name : 'Donación';
-
+  const copyValue = async (label: string, value: string) => {
     try {
-      const { data, error } = await supabase
-        .from('donations')
-        .insert({
-          donor_name: formData.isAnonymous ? 'Anónimo' : (formData.name || 'Anónimo'),
-          donor_email: formData.email,
-          amount: amountNum,
-          category_id: formData.categoryId.startsWith('fb-') ? null : formData.categoryId,
-          category_name_backup: categoryName,
-          payment_method: formData.paymentMethod,
-          status: 'completed',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      setSuccess(data.id);
-    } catch (err) {
-      console.error('Error procesando donación en Supabase:', err);
-      const mockTxId = 'tx-' + (window.crypto?.randomUUID ? window.crypto.randomUUID().slice(0, 8) : '1001');
-      setSuccess(mockTxId);
+      await navigator.clipboard.writeText(value);
+      setCopiedField(label);
+      toast.success(`${label} copiado.`);
+      window.setTimeout(() => setCopiedField(null), 1800);
+    } catch (caughtError: unknown) {
+      console.error('Error copying donation bank detail:', caughtError);
+      toast.error('No fue posible copiar el dato.');
     }
   };
 
-  if (success) {
+  const onSubmit = async (formData: DonationForm) => {
+    if (!canRegister) {
+      toast.error('Las aportaciones no están disponibles hasta completar la configuración administrativa.');
+      return;
+    }
+
+    const selectedCategory = categories.find((category) => category.id === formData.categoryId);
+    if (!selectedCategory) {
+      toast.error('El destino seleccionado ya no está disponible. Actualiza la página.');
+      return;
+    }
+
+    const numericAmount = Number(formData.amount);
+    const donorName = formData.isAnonymous ? 'Anónimo' : formData.name?.trim() || '';
+    const { data, error: insertError } = await supabase
+      .from('donations')
+      .insert({
+        donor_name: donorName,
+        donor_email: formData.email.trim(),
+        amount: numericAmount,
+        category_id: selectedCategory.id,
+        category_name_backup: selectedCategory.name,
+        payment_method: 'transferencia',
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      console.error('Error registering pending donation:', insertError);
+      toast.error('No pudimos registrar el aporte. No se creó ningún comprobante; inténtalo otra vez.');
+      return;
+    }
+
+    setReceipt({ id: data.id, amount: numericAmount, category: selectedCategory.name, donorName });
+    reset({ amount: '', categoryId: selectedCategory.id, isAnonymous: false, privacyAccepted: false, email: '', name: '' });
+  };
+
+  if (loading) {
+    return <div className="min-h-[70vh] bg-[#f6f7fb] px-4 py-16 dark:bg-slate-950"><div className="mx-auto h-[34rem] max-w-7xl animate-pulse rounded-[2.5rem] border border-white/70 bg-white/60 dark:border-white/10 dark:bg-slate-900/60" /></div>;
+  }
+
+  if (error || !settings || !config) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6">
-        <Helmet>
-          <title>Aportación Exitosa | Iglesia Jerusalén</title>
-        </Helmet>
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full shadow-sm">
-          <CheckCircle2 size={48} />
+      <div className="min-h-[70vh] bg-[#f6f7fb] px-4 py-20 dark:bg-slate-950">
+        <div role="alert" className="mx-auto max-w-2xl rounded-[2rem] border border-red-200 bg-white/80 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-red-500/20 dark:bg-slate-900/80">
+          <AlertCircle className="mx-auto text-red-500" size={42} />
+          <h1 className="mt-4 font-serif text-2xl font-bold text-primary dark:text-white">Donaciones temporalmente no disponibles</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">No mostraremos cuentas, categorías ni confirmaciones de respaldo mientras la conexión administrativa no responda correctamente.</p>
+          <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white"><RefreshCw size={15} /> Reintentar</button>
         </div>
-        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white">¡Muchas Gracias por tu Ofrenda!</h1>
-        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed text-sm">
-          Tu transacción <span className="font-mono font-bold text-primary dark:text-white">#{success}</span> ha sido procesada con éxito. Que el Señor bendiga tu generosidad.
-        </p>
-        <button
-          onClick={() => {
-            setSuccess(null);
-            reset({ amount: '', isAnonymous: false, paymentMethod: 'transferencia' });
-            setValue('categoryId', categories[0]?.id || FALLBACK_CATEGORIES[0].id);
-          }}
-          className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-xs cursor-pointer border border-transparent"
-        >
-          Realizar otra Aportación
-        </button>
+      </div>
+    );
+  }
+
+  if (receipt) {
+    const whatsappUrl = formatWhatsAppLink(settings.phone, undefined, whatsappMessage);
+    return (
+      <div className="relative min-h-[75vh] overflow-hidden bg-[#f6f7fb] px-4 py-16 dark:bg-slate-950">
+        <Helmet><title>Aporte registrado | Iglesia Jerusalén</title></Helmet>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.15),transparent_42%)]" />
+        <div className="relative mx-auto max-w-2xl rounded-[2.5rem] border border-white/80 bg-white/80 p-7 text-center shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80 sm:p-10">
+          <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 ring-8 ring-emerald-500/5"><CheckCircle2 size={42} /></span>
+          <span className="mt-5 inline-flex rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">Pendiente de verificación</span>
+          <h1 className="mt-3 font-serif text-3xl font-bold text-primary dark:text-white">Tu aporte fue registrado</h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-500 dark:text-slate-400">Todavía no está confirmado como recibido. Realiza la transferencia y envía el comprobante para que el equipo administrativo pueda conciliarlo.</p>
+          <div className="mx-auto mt-6 max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left dark:border-white/10 dark:bg-white/5">
+            <div className="flex justify-between gap-4 text-sm"><span className="text-slate-400">Referencia</span><strong className="font-mono text-primary dark:text-white">{receipt.id.slice(0, 8).toUpperCase()}</strong></div>
+            <div className="mt-3 flex justify-between gap-4 text-sm"><span className="text-slate-400">Monto reportado</span><strong className="text-primary dark:text-white">${receipt.amount.toFixed(2)}</strong></div>
+            <div className="mt-3 flex justify-between gap-4 text-sm"><span className="text-slate-400">Destino</span><strong className="text-primary dark:text-white">{receipt.category}</strong></div>
+          </div>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"><MessageCircle size={18} /> Enviar comprobante</a>}
+            <button type="button" onClick={() => setReceipt(null)} className="rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-600 transition hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-slate-300">Registrar otro aporte</button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-16">
+    <div className="relative overflow-hidden bg-[#f6f7fb] px-4 py-8 dark:bg-slate-950 md:px-8 md:py-10">
       <Helmet>
         <title>Donaciones y Ofrendas | Iglesia Jerusalén</title>
-        <meta name="description" content="Apoya el ministerio de la Iglesia Jerusalén a través de donaciones, diezmos y ofrendas voluntarias." />
+        <meta name="description" content="Registra diezmos, ofrendas y donaciones para apoyar la obra de la Iglesia Jerusalén." />
       </Helmet>
+      <div className="pointer-events-none absolute left-[-10rem] top-52 h-96 w-96 rounded-full bg-church-gold/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-9rem] top-[42rem] h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 
-      <div className="bg-gradient-to-r from-primary to-blue-900 rounded-2xl p-8 md:p-12 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
-          <Heart size={200} />
-        </div>
-        <AnimeFadeUp className="relative z-10 max-w-4xl space-y-6">
-          <span className="bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-            Mayordomía Cristiana
-          </span>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mt-2">Conviértete en un Colaborador</h1>
-          <blockquote className="border-l-4 border-gold pl-4 text-gray-200 text-sm md:text-base leading-relaxed italic font-serif">
-            "Y al ver las multitudes, tuvo compasión de ellas; porque estaban desamparadas y dispersas como ovejas que no tienen pastor..."
-            <span className="text-gold font-bold block mt-2 text-xs font-sans not-italic">— Mateo 9:36-38</span>
-          </blockquote>
-        </AnimeFadeUp>
-      </div>
-
-      <section className="space-y-6">
-        <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">Formas de Apoyar</h2>
-        </div>
-        <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <AnimeFadeUp className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between">
-            <div className="space-y-4">
-              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center mx-auto">
-                <HeartHandshake size={28} />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Dar Online</h3>
-              <p className="text-gray-550 dark:text-gray-405 text-xs leading-relaxed">Puedes dar tu contribución voluntaria aquí.</p>
+      <main className="relative mx-auto max-w-7xl space-y-7">
+        <section className="relative overflow-hidden rounded-[2.5rem] border border-white/15 bg-[linear-gradient(135deg,#0b1b42_0%,#173d91_62%,#3157b3_100%)] px-6 py-10 text-white shadow-2xl shadow-blue-950/20 sm:px-10 lg:px-14 lg:py-14">
+          <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full border-[55px] border-white/[0.04]" />
+          <Heart className="pointer-events-none absolute -bottom-12 right-8 text-white/[0.05]" size={260} strokeWidth={1} />
+          <div className="relative grid items-end gap-10 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="max-w-3xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-church-gold/30 bg-church-gold/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-church-gold-light"><Sparkles size={13} /> {config.eyebrow}</span>
+              <h1 className="mt-5 max-w-3xl font-serif text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">{config.title}</h1>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100 sm:text-base">{config.description}</p>
             </div>
-            <div className="text-gold text-xs font-bold uppercase tracking-wider mt-6">Rápido y Seguro</div>
-          </AnimeFadeUp>
-
-          <AnimeFadeUp className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow text-center flex flex-col items-center justify-between">
-            <div className="space-y-4">
-              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center mx-auto">
-                <HandHeart size={28} />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white">Sé un Voluntario</h3>
-              <p className="text-gray-550 dark:text-gray-405 text-xs leading-relaxed">Dios quiere que cumplamos su propósito.</p>
-            </div>
-            <a href="/contacto" className="text-primary dark:text-white hover:text-accent-red text-xs font-bold uppercase tracking-wider mt-6 transition-colors">Quiero Servir →</a>
-          </AnimeFadeUp>
-
-          <AnimeFadeUp className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs hover:shadow-sm transition-shadow flex flex-col items-center justify-between">
-            <div className="space-y-4 w-full">
-              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/30 text-gold rounded-full flex items-center justify-center mx-auto">
-                <Users size={28} />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-gray-800 dark:text-white text-center">Cómo puedes Ayudarnos</h3>
-            </div>
-          </AnimeFadeUp>
-        </AnimeStaggerGrid>
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-        <div className="space-y-6">
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-white pb-3 border-b border-gray-100 dark:border-white/10">Transferencia Bancaria</h2>
-          <div className="bg-gradient-to-br from-primary via-blue-900 to-[#D4AF37] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[300px]">
-            <div className="absolute right-0 bottom-0 opacity-10 flex items-center justify-center pointer-events-none -mr-8 -mb-8">
-              <Landmark size={200} />
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="bg-white/20 text-white border border-white/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">Contribución</span>
-                <Landmark size={28} className="text-gold" />
-              </div>
-              <h3 className="font-serif font-bold text-xl md:text-2xl tracking-widest text-gold">CONTRIBUCIÓN VOLUNTARIA</h3>
-            </div>
-            
-            <div className="space-y-5 mt-8 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 relative z-10 -mx-4 md:mx-0">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider block mb-1">Banco</span>
-                  <img src={bancoGuayaquilLogo} alt="Banco Guayaquil" className="h-10 object-contain bg-white px-3 py-1.5 rounded shadow-sm border border-gray-100" />
-                </div>
-                <div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider block mb-1">Tipo y Cuenta</span>
-                  <span className="font-bold text-sm md:text-lg text-gray-800 dark:text-white">Cta Corriente: 15830697</span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-slate-700">
-                <div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider block mb-1">Beneficiario</span>
-                  <span className="font-bold text-sm md:text-base leading-tight block text-gray-800 dark:text-white">
-                    Iglesia del Evangelio Cuadrangular del Ecuador
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider block mb-1">RUC / CI</span>
-                  <span className="font-bold text-sm md:text-lg block text-gray-800 dark:text-white">0991290382001</span>
-                </div>
-              </div>
-            </div>
+            <blockquote className="rounded-[1.75rem] border border-white/15 bg-white/[0.08] p-5 backdrop-blur-xl sm:p-6">
+              <p className="font-serif text-base italic leading-7 text-white/90">“{config.verse}”</p>
+              <footer className="mt-3 text-xs font-black uppercase tracking-wider text-church-gold-light">— {config.verse_reference}</footer>
+            </blockquote>
           </div>
-          <div className="bg-green-50 dark:bg-green-950/20 text-green-900 dark:text-green-300 border border-green-150 dark:border-green-900/30 rounded-2xl p-6 space-y-4 shadow-xs">
-            <div className="text-xs space-y-1 text-gray-700 dark:text-gray-300">
-              <span className="font-bold block text-sm">Reportar Aportación</span>
-              <p>Envía tu comprobante a nuestra Secretaria al <a href="https://wa.me/593985263122" className="font-bold underline">+593 98 526 3122</a>.</p>
-            </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-5">
+            <article className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/70 sm:p-7">
+              <div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Transferencia bancaria</span><h2 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Datos de la cuenta</h2></div><span className="rounded-2xl bg-primary/8 p-3 text-primary dark:bg-white/5 dark:text-church-gold-light"><Landmark size={22} /></span></div>
+              {hasBankDetails ? (
+                <div className="mt-6 space-y-3">
+                  {[
+                    ['Banco', settings.bank_name],
+                    ['Tipo de cuenta', config.account_type],
+                    ['Número de cuenta', settings.bank_account],
+                    ['Beneficiario', config.beneficiary],
+                    ['RUC / CI', settings.ruc],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-white/5 dark:bg-white/[0.03]">
+                      <div className="min-w-0"><span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">{label}</span><strong className="mt-0.5 block break-words text-sm text-slate-800 dark:text-slate-100">{value}</strong></div>
+                      <button type="button" onClick={() => void copyValue(label, value)} className="shrink-0 rounded-xl p-2 text-slate-400 transition hover:bg-white hover:text-primary dark:hover:bg-white/10" aria-label={`Copiar ${label}`}>{copiedField === label ? <Check size={16} className="text-emerald-500" /> : <Clipboard size={16} />}</button>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="mt-6 rounded-2xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300">La administración debe completar los datos bancarios antes de recibir aportes.</div>}
+            </article>
+
+            <article className="rounded-[2rem] border border-emerald-500/20 bg-emerald-500/[0.06] p-6 backdrop-blur-xl">
+              <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-300" size={20} /><div><h3 className="font-bold text-slate-800 dark:text-white">{config.transparency_title}</h3><p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">{config.transparency_text}</p></div></div>
+            </article>
+
+            {config.volunteer_enabled && <Link to="/contacto" className="group flex items-center justify-between rounded-[1.75rem] border border-slate-200/80 bg-white/60 p-5 backdrop-blur-xl transition hover:border-church-gold/40 hover:bg-white dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-3"><span className="rounded-xl bg-church-gold/10 p-2.5 text-church-gold-dark dark:text-church-gold-light"><HeartHandshake size={19} /></span><div><strong className="block text-sm text-slate-800 dark:text-white">También puedes servir</strong><span className="text-xs text-slate-400">Conoce las oportunidades de voluntariado.</span></div></div><ArrowRight size={17} className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-church-gold-dark" /></Link>}
           </div>
-        </div>
 
-        <div>
-          <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 md:p-8 space-y-6 shadow-sm">
-            <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10">Registrar Aportación</h2>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Selecciona o ingresa un monto</label>
-              <div className="grid grid-cols-4 gap-3 mb-3">
-                {['10', '25', '50', '100'].map((val) => (
-                  <button key={val} type="button" onClick={() => setValue('amount', val)} className={`py-2 rounded-xl text-sm font-semibold transition-all border ${watchAmount === val ? 'bg-primary border-primary text-white shadow-sm ring-2 ring-primary/30 ring-offset-1 dark:ring-offset-slate-900' : 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'}`}>
-                    ${val}
-                  </button>
-                ))}
-              </div>
-              <input type="number" {...register('amount')} className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/20" placeholder="0.00" />
-              {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+          <form onSubmit={handleSubmit(onSubmit)} className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 sm:p-8">
+            <div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[0.18em] text-church-gold-dark dark:text-church-gold-light">Registro seguro</span><h2 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Registrar un aporte</h2><p className="mt-1 text-xs leading-5 text-slate-400">Quedará pendiente hasta que administración verifique el comprobante.</p></div><span className="rounded-2xl bg-church-gold/10 p-3 text-church-gold-dark dark:text-church-gold-light"><Heart size={21} /></span></div>
+
+            <div className="mt-7">
+              <label htmlFor="donation-amount" className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Monto en dólares</label>
+              <div className="mt-2 grid grid-cols-4 gap-2">{config.preset_amounts.slice(0, 4).map((preset) => <button key={preset} type="button" onClick={() => setValue('amount', String(preset), { shouldValidate: true })} className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition ${amount === String(preset) ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-primary/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}>${preset}</button>)}</div>
+              <div className="relative mt-3"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">$</span><input id="donation-amount" type="number" min="1" max="100000" step="0.01" inputMode="decimal" {...register('amount')} className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-9 pr-4 text-lg font-bold text-slate-800 outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-white/5 dark:text-white" placeholder="0.00" /></div>
+              {errors.amount && <p className="mt-1.5 text-xs text-red-500">{errors.amount.message}</p>}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Destino</label>
-              <select {...register('categoryId')} className="w-full px-4 py-2.5 border rounded-xl">
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+            <div className="mt-5"><label htmlFor="donation-category" className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Destino</label><select id="donation-category" {...register('categoryId')} defaultValue="" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-700 outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-slate-800 dark:text-white"><option value="" disabled>Selecciona el destino del aporte</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>{errors.categoryId && <p className="mt-1.5 text-xs text-red-500">{errors.categoryId.message}</p>}{categories.length === 0 && <p className="mt-2 text-xs text-amber-600">No existen destinos activos configurados.</p>}</div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Datos del Donante</p>
-                <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
-                  <input type="checkbox" {...register('isAnonymous')} className="rounded text-primary focus:ring-primary/20" /> Anónimo
-                </label>
-              </div>
+            <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-white/5"><div><span className="block text-sm font-bold text-slate-700 dark:text-slate-200">Aporte anónimo</span><span className="text-[11px] text-slate-400">El equipo financiero conservará el correo para conciliación.</span></div><input type="checkbox" {...register('isAnonymous')} className="h-5 w-5 accent-primary" aria-label="Registrar como anónimo" /></div>
 
-              {!watchIsAnonymous && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="sr-only">Nombre completo</label>
-                    <input
-                      type="text"
-                      {...register('name')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                      placeholder="Nombre completo"
-                    />
-                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="sr-only">Correo electrónico</label>
-                    <input
-                      type="email"
-                      {...register('email')}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                      placeholder="Correo electrónico"
-                    />
-                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-                  </div>
-                </div>
-              )}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">{!isAnonymous && <div><label htmlFor="donor-name" className="sr-only">Nombre completo</label><input id="donor-name" {...register('name')} autoComplete="name" placeholder="Nombre completo" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-white/5 dark:text-white" />{errors.name && <p className="mt-1.5 text-xs text-red-500">{errors.name.message}</p>}</div>}<div className={isAnonymous ? 'sm:col-span-2' : ''}><label htmlFor="donor-email" className="sr-only">Correo electrónico</label><input id="donor-email" type="email" {...register('email')} autoComplete="email" placeholder="Correo para seguimiento" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-white/5 dark:text-white" />{errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>}</div></div>
 
-              {watchIsAnonymous && (
-                <div>
-                  <label htmlFor="anonymousEmail" className="sr-only">Correo para comprobante</label>
-                  <input
-                    type="email"
-                    {...register('email')}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                    placeholder="Correo para enviarte el comprobante"
-                  />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-                </div>
-              )}
-            </div>
+            <div className="mt-5 rounded-2xl border border-blue-200/60 bg-blue-50/60 p-4 dark:border-blue-500/20 dark:bg-blue-500/10"><h3 className="text-xs font-black text-primary dark:text-blue-200">Proceso de transferencia</h3><ol className="mt-2 space-y-1.5">{config.transfer_instructions.map((instruction, index) => <li key={`${instruction}-${index}`} className="flex gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><span className="font-black text-church-gold-dark dark:text-church-gold-light">{index + 1}.</span>{instruction}</li>)}</ol></div>
 
-            <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
-              <p className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Método de Aportación</p>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setValue('paymentMethod', 'transferencia')}
-                  className={`py-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    watchPaymentMethod === 'transferencia'
-                      ? 'bg-primary/5 border-primary text-primary dark:text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-800 border-gray-255 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Landmark size={18} />
-                  Transferencia
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setValue('paymentMethod', 'tarjeta')}
-                  className={`py-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    watchPaymentMethod === 'tarjeta'
-                      ? 'bg-primary/5 border-primary text-primary dark:text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-800 border-gray-255 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <CreditCard size={18} />
-                  Tarjeta de Crédito
-                </button>
-              </div>
-            </div>
+            <label className="mt-5 flex items-start gap-3 text-xs leading-5 text-slate-500 dark:text-slate-400"><input type="checkbox" {...register('privacyAccepted')} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" /><span>Acepto que mis datos sean usados para registrar, verificar y dar seguimiento a este aporte según la <Link to="/privacidad" className="font-bold text-primary hover:underline dark:text-blue-300">política de privacidad</Link>.</span></label>{errors.privacyAccepted && <p className="mt-1.5 text-xs text-red-500">{errors.privacyAccepted.message}</p>}
 
-            {watchPaymentMethod === 'tarjeta' ? (
-              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-300 rounded-xl border border-amber-200 dark:border-amber-900/30 text-xs leading-relaxed space-y-2">
-                <div className="flex items-center gap-2 font-bold">
-                  <Info size={16} />
-                  <span>Integración de Pasarela de Pagos (Stripe / Kushki)</span>
-                </div>
-                <p>Los pagos con tarjeta de crédito están siendo integrados actualmente para Ecuador a través de pasarelas locales o internacionales.</p>
-                <p>Por el momento, te invitamos a utilizar el método de <strong>Transferencia Bancaria</strong>.</p>
-              </div>
-            ) : (
-              <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300 rounded-xl border border-blue-100/50 dark:border-blue-900/30 text-xs leading-relaxed space-y-1">
-                <span className="font-bold block text-blue-900 dark:text-blue-300">Pasos para reportar la transferencia:</span>
-                <p>1. Transfiere el monto ingresado a la cuenta de Banco Guayaquil a la izquierda.</p>
-                <p>2. Registra tus datos arriba y presiona "Registrar Donación".</p>
-                <p>3. Envía el comprobante a nuestra Secretaria por el botón verde de WhatsApp.</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 bg-primary hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl font-medium shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer border border-transparent"
-            >
-              {isSubmitting ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  Registrar Donación {watchAmount && `de $${watchAmount}`}
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
+            <button type="submit" disabled={isSubmitting || !canRegister} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700">{isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Registrando…</> : <>Registrar aporte {amount && `$${amount}`}<ArrowRight size={17} /></>}</button>
+            {!canRegister && <p className="mt-2 text-center text-xs text-amber-600 dark:text-amber-300">El registro se habilitará cuando administración complete cuenta, destinos y transferencia.</p>}
+            <p className="mt-3 text-center text-[10px] leading-4 text-slate-400">Registrar un aporte no mueve dinero ni confirma un pago. La conciliación se realiza después de recibir el comprobante.</p>
           </form>
-        </div>
+        </section>
 
-      </div>
+        {settings.phone && <section className="flex flex-col items-start justify-between gap-4 rounded-[1.75rem] border border-slate-200/70 bg-white/55 p-5 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:flex-row sm:items-center"><div><strong className="text-sm text-slate-800 dark:text-white">¿Necesitas ayuda?</strong><p className="mt-0.5 text-xs text-slate-400">Comunícate con {config.whatsapp_label} para resolver dudas sobre tu aporte.</p></div><a href={formatWhatsAppLink(cleanPhone(settings.phone), undefined, 'Hola, necesito ayuda con una aportación a la Iglesia Jerusalén.')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-xs font-bold text-emerald-700 dark:text-emerald-300"><MessageCircle size={15} /> Contactar por WhatsApp</a></section>}
+      </main>
     </div>
   );
-};
-
-export default Donations;
+}

@@ -843,7 +843,7 @@ const SermonsManager = () => {
               </div>
 
               {loading ? (
-                <div className="flex justify-center items-center py-20 bg-white rounded-2xl"><Loader2 className="animate-spin text-primary" size={32} /></div>
+                <div className="flex justify-center items-center py-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10"><Loader2 className="animate-spin text-primary dark:text-gold" size={32} /></div>
               ) : sermons.length > 0 ? (
                 <>
                   {(viewMode === 'table' || viewMode === 'cards') ? (
@@ -933,8 +933,8 @@ const SermonsManager = () => {
                 </>
               ) : (
                 <div className="text-center py-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md shadow-glass rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
-                  <FileText className="mx-auto text-gray-300 mb-4" size={48} />
-                  <h3 className="text-lg font-serif font-bold text-gray-700">No hay prédicas publicadas</h3>
+                  <FileText className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                  <h3 className="text-lg font-sans font-bold text-gray-700 dark:text-white">No hay prédicas publicadas</h3>
                 </div>
               )}
             </div>
@@ -944,48 +944,48 @@ const SermonsManager = () => {
 
       {/* Modal Categorías */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="font-serif font-bold text-lg">Administrar Categorías</h3>
-                <button onClick={() => setShowCategoryModal(false)} className="text-gray-500 hover:bg-gray-200 p-1 rounded-lg"><X size={20}/></button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+              <div className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-slate-800">
+                <h3 className="font-sans font-bold text-lg text-gray-900 dark:text-white">Administrar Categorías</h3>
+                <button onClick={() => setShowCategoryModal(false)} className="text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-700 p-1 rounded-lg transition-colors"><X size={20}/></button>
               </div>
               <div className="p-6 flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div>
-                    <h4 className="font-bold text-sm text-gray-700 mb-4">{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h4>
+                    <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200 mb-4">{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h4>
                     <form onSubmit={handleSubmitCat(handleSaveCategory)} className="space-y-4">
                        <div>
-                         <label className="block text-xs text-gray-500 mb-1">Nombre</label>
-                         <input type="text" {...registerCat('name')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                         <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nombre</label>
+                         <input type="text" {...registerCat('name')} className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-lg text-sm" />
                        </div>
                        <div>
-                         <label className="block text-xs text-gray-500 mb-1">Descripción</label>
-                         <textarea {...registerCat('description')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" rows={2} />
+                         <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción</label>
+                         <textarea {...registerCat('description')} className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-lg text-sm" rows={2} />
                        </div>
                        <div>
-                         <label className="block text-xs text-gray-500 mb-1">Color (Hex)</label>
+                         <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Color (Hex)</label>
                          <div className="flex gap-2">
-                           <input type="color" {...registerCat('color')} className="w-10 h-10 p-1 border border-gray-200 rounded-lg" />
-                           <input type="text" {...registerCat('color')} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                           <input type="color" {...registerCat('color')} className="w-10 h-10 p-1 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 rounded-lg" />
+                           <input type="text" {...registerCat('color')} className="flex-1 px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-lg text-sm" />
                          </div>
                        </div>
                        <div className="flex gap-2 pt-2">
-                         {editingCategory && <button type="button" onClick={() => { setEditingCategory(null); resetCat(); }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">Cancelar</button>}
-                         <button type="submit" disabled={actionLoading} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold">Guardar</button>
+                         {editingCategory && <button type="button" onClick={() => { setEditingCategory(null); resetCat(); }} className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-300">Cancelar</button>}
+                         <button type="submit" disabled={actionLoading} className="bg-primary dark:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">Guardar</button>
                        </div>
                     </form>
                  </div>
                  <div>
-                    <h4 className="font-bold text-sm text-gray-700 mb-4">Categorías Existentes ({categories.length})</h4>
+                    <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200 mb-4">Categorías Existentes ({categories.length})</h4>
                     <div className="space-y-2">
                        {categories.map(c => (
-                         <div key={c.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
+                         <div key={c.id} className="flex justify-between items-center p-3 border border-gray-100 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800/50">
                             <div className="flex items-center gap-3">
                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color }}></div>
-                               <span className="font-medium text-sm text-gray-800">{c.name}</span>
+                               <span className="font-medium text-sm text-gray-800 dark:text-gray-200">{c.name}</span>
                             </div>
                             <div className="flex gap-1">
-                               <button onClick={() => { setEditingCategory(c); resetCat({ name: c.name, description: c.description || '', color: c.color }); }} className="p-1.5 text-gray-400 hover:text-primary"><Edit2 size={14}/></button>
+                               <button onClick={() => { setEditingCategory(c); resetCat({ name: c.name, description: c.description || '', color: c.color }); }} className="p-1.5 text-gray-400 hover:text-primary dark:hover:text-gold"><Edit2 size={14}/></button>
                                <button onClick={() => handleDeleteCategory(c.id)} className="p-1.5 text-gray-400 hover:text-accent-red"><Trash2 size={14}/></button>
                             </div>
                          </div>

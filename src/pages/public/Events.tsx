@@ -146,7 +146,7 @@ const Events = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 pb-24 pt-24 text-slate-950 dark:bg-slate-950 dark:text-white">
-      <section className="relative overflow-hidden border-b border-slate-200/80 bg-white dark:border-white/5 dark:bg-slate-950">
+      <section id="events_hero" className="relative overflow-hidden border-b border-slate-200/80 bg-white dark:border-white/5 dark:bg-slate-950">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(79,70,229,0.15),transparent_32%),radial-gradient(circle_at_90%_0%,rgba(245,158,11,0.12),transparent_30%)]" />
         <div className="relative mx-auto max-w-7xl px-5 pb-12 pt-16 sm:px-8 sm:pb-16 sm:pt-20">
           <AnimeFadeUp className="grid items-end gap-10 lg:grid-cols-[1fr_auto]">
@@ -198,7 +198,7 @@ const Events = () => {
         ) : (
           <>
             {featuredEvent && (
-              <section aria-labelledby="next-event-heading">
+              <section id="events_upcoming" aria-labelledby="next-event-heading">
                 <div className="mb-5 flex items-end justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">No te lo pierdas</p>
@@ -209,7 +209,7 @@ const Events = () => {
               </section>
             )}
 
-            <section aria-labelledby="events-calendar-heading" className="space-y-6">
+            <section id="events_calendar" aria-labelledby="events-calendar-heading" className="space-y-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">Explora y participa</p>

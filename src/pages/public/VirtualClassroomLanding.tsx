@@ -156,7 +156,7 @@ const VirtualClassroomLanding = () => {
     <div className="relative overflow-hidden bg-[#f7f8fb] text-slate-900 dark:bg-slate-950 dark:text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[44rem] bg-[radial-gradient(circle_at_15%_20%,rgba(79,70,229,0.16),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(212,175,55,0.16),transparent_28%)]" />
 
-      <section className="relative px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:px-8 lg:pb-20">
+      <section id="lms_hero" className="relative px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:px-8 lg:pb-20">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.08fr_.92fr] lg:gap-16">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
             <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/80 px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.16em] text-indigo-700 shadow-sm backdrop-blur dark:border-indigo-400/20 dark:bg-indigo-500/10 dark:text-indigo-300">
@@ -226,7 +226,7 @@ const VirtualClassroomLanding = () => {
         )}
 
         {user && (
-          <section className="flex flex-col gap-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <section id="lms_portals" className="flex flex-col gap-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
                 {photoUrl ? <img src={photoUrl} alt="Perfil" className="h-full w-full object-cover" /> : <User size={24} />}
@@ -246,7 +246,7 @@ const VirtualClassroomLanding = () => {
         )}
 
         {!user && (
-          <section className="grid gap-4 md:grid-cols-2">
+          <section id="lms_portals" className="grid gap-4 md:grid-cols-2">
             {[
               { title: 'Soy estudiante', text: 'Continúa tus cursos, revisa tareas y consulta tu progreso.', icon: BookOpen, href: '/login?redirectTo=/lms/estudiante', action: 'Entrar como estudiante', accent: 'indigo' },
               { title: 'Soy docente', text: 'Organiza contenidos, acompaña estudiantes y administra calificaciones.', icon: GraduationCap, href: '/login?redirectTo=/lms/docente', action: 'Entrar como docente', accent: 'amber' },
@@ -261,7 +261,7 @@ const VirtualClassroomLanding = () => {
           </section>
         )}
 
-        <section>
+        <section id="lms_courses">
           <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Catálogo académico</p>
@@ -295,7 +295,7 @@ const VirtualClassroomLanding = () => {
           ) : null}
         </section>
 
-        <section className="rounded-[2rem] bg-slate-900 p-6 text-white sm:p-8 lg:p-10">
+        <section id="lms_features" className="rounded-[2rem] bg-slate-900 p-6 text-white sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
             <div>
               <span className="flex size-12 items-center justify-center rounded-2xl bg-gold/15 text-gold"><ShieldCheck size={22} /></span>

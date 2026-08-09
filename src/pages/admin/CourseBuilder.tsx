@@ -476,7 +476,7 @@ const CourseBuilder = () => {
                           <div>
                             <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
                               {subject.title}
-                              <span className="text-xs font-normal text-gray-450 dark:text-gray-500">({subjectModules.length} módulos)</span>
+                              <span className="text-xs font-normal text-slate-400 dark:text-gray-500">({subjectModules.length} módulos)</span>
                             </h3>
                             {subject.description && (
                               <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{subject.description}</p>
@@ -533,7 +533,7 @@ const CourseBuilder = () => {
                       {!isSubCollapsed && (
                         <div className="p-4 bg-slate-50/25 dark:bg-slate-900/10 space-y-4">
                           {subjectModules.length === 0 ? (
-                            <div className="text-center py-6 text-sm text-gray-450 dark:text-gray-500 border border-dashed border-gray-200 dark:border-slate-800 rounded-xl">
+                            <div className="text-center py-6 text-sm text-slate-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-slate-800 rounded-xl">
                               No hay módulos en esta materia. ¡Crea uno para organizar las lecciones!
                             </div>
                           ) : (
@@ -608,7 +608,7 @@ const CourseBuilder = () => {
                                   {!isModCollapsed && (
                                     <div className="p-3 bg-white dark:bg-slate-950 space-y-2">
                                       {moduleLessons.length === 0 ? (
-                                        <div className="text-center py-4 text-xs text-gray-450 dark:text-gray-500 border border-dashed border-gray-150 dark:border-slate-800 rounded-lg">
+                                        <div className="text-center py-4 text-xs text-slate-400 dark:text-gray-500 border border-dashed border-gray-150 dark:border-slate-800 rounded-lg">
                                           No hay lecciones. Haz clic en "Lección" para agregar contenidos.
                                         </div>
                                       ) : (
@@ -630,18 +630,18 @@ const CourseBuilder = () => {
                                             </div>
 
                                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <div className="flex gap-0.5 border-r border-gray-250 pr-2 mr-2">
+                                              <div className="flex gap-0.5 border-r border-slate-200 pr-2 mr-2">
                                                 <button 
                                                   onClick={() => moveLesson(moduleObj.id, lIdx, 'up')}
                                                   disabled={lIdx === 0}
-                                                  className="p-1 text-gray-450 hover:text-gold disabled:opacity-30 cursor-pointer"
+                                                  className="p-1 text-slate-400 hover:text-gold disabled:opacity-30 cursor-pointer"
                                                 >
                                                   <ChevronUp size={14} />
                                                 </button>
                                                 <button 
                                                   onClick={() => moveLesson(moduleObj.id, lIdx, 'down')}
                                                   disabled={lIdx === moduleLessons.length - 1}
-                                                  className="p-1 text-gray-450 hover:text-gold disabled:opacity-30 cursor-pointer"
+                                                  className="p-1 text-slate-400 hover:text-gold disabled:opacity-30 cursor-pointer"
                                                 >
                                                   <ChevronDown size={14} />
                                                 </button>
@@ -720,7 +720,7 @@ const CourseBuilder = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
-              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+              <h2 className="text-lg font-bold font-sans text-slate-900 dark:text-white">
                 {editingSubject.id ? 'Editar Materia' : 'Nueva Materia'}
               </h2>
               <button onClick={() => setIsSubjectModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
@@ -730,24 +730,24 @@ const CourseBuilder = () => {
             
             <form onSubmit={handleSaveSubject} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título de la Materia *</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Título de la Materia *</label>
                 <input
                   type="text"
                   required
                   value={editingSubject.title || ''}
                   onChange={(e) => setEditingSubject({ ...editingSubject, title: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Ej. Antiguo Testamento, Historia de la Iglesia"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción Breve (Opcional)</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Descripción Breve (Opcional)</label>
                 <textarea
                   rows={3}
                   value={editingSubject.description || ''}
                   onChange={(e) => setEditingSubject({ ...editingSubject, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Descripción de la materia, objetivos de aprendizaje..."
                 />
               </div>
@@ -756,7 +756,7 @@ const CourseBuilder = () => {
                 <button
                   type="button"
                   onClick={() => setIsSubjectModalOpen(false)}
-                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -779,7 +779,7 @@ const CourseBuilder = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
-              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+              <h2 className="text-lg font-bold font-sans text-slate-900 dark:text-white">
                 {editingModule.id ? 'Editar Módulo' : 'Nuevo Módulo'}
               </h2>
               <button onClick={() => setIsModuleModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
@@ -789,24 +789,24 @@ const CourseBuilder = () => {
             
             <form onSubmit={handleSaveModule} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título del Módulo *</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Título del Módulo *</label>
                 <input
                   type="text"
                   required
                   value={editingModule.title || ''}
                   onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Ej. Semana 1: Pentateuco, Unidad 2"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción o Resumen</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Descripción o Resumen</label>
                 <textarea
                   rows={2}
                   value={editingModule.description || ''}
                   onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Contenido central que se estudiará en este módulo..."
                 />
               </div>
@@ -828,7 +828,7 @@ const CourseBuilder = () => {
                 <button
                   type="button"
                   onClick={() => setIsModuleModalOpen(false)}
-                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -851,7 +851,7 @@ const CourseBuilder = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in border border-gray-150 dark:border-white/10">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-slate-900 z-10">
-              <h2 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
+              <h2 className="text-lg font-bold font-sans text-slate-900 dark:text-white">
                 {editingLesson.id ? 'Editar Lección' : 'Nueva Lección'}
               </h2>
               <button onClick={() => setIsLessonModalOpen(false)} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer">
@@ -862,22 +862,22 @@ const CourseBuilder = () => {
             <form onSubmit={handleSaveLesson} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Título de la Lección *</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Título de la Lección *</label>
                   <input
                     type="text"
                     required
                     value={editingLesson.title || ''}
                     onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                     placeholder="Ej. Lectura Principal: Génesis 1-3"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tipo de Contenido</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tipo de Contenido</label>
                   <select
                     value={editingLesson.type || 'document'}
                     onChange={(e) => setEditingLesson({ ...editingLesson, type: e.target.value as LMSLesson['type'], content: '' })}
-                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none cursor-pointer"
                   >
                     <option value="document">Material de Estudio (Texto/HTML)</option>
                     <option value="video">Reproductor de Video (URL)</option>
@@ -890,12 +890,12 @@ const CourseBuilder = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción de la Actividad (Opcional)</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Descripción de la Actividad (Opcional)</label>
                 <textarea
                   rows={2}
                   value={editingLesson.description || ''}
                   onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Indica qué debe realizar el estudiante en esta lección..."
                 />
               </div>
@@ -904,7 +904,7 @@ const CourseBuilder = () => {
                 <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-2">Contenido de la Lección</label>
                 
                 {editingLesson.type === 'document' && (
-                  <div className="bg-gray-55 dark:bg-slate-955 p-1 rounded-xl border border-gray-200 dark:border-white/5">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-white/5">
                     <RichTextEditor 
                       content={editingLesson.content || ''} 
                       onChange={(html) => setEditingLesson({ ...editingLesson, content: html })} 
@@ -922,14 +922,14 @@ const CourseBuilder = () => {
                       required
                       value={editingLesson.content || ''}
                       onChange={(e) => setEditingLesson({ ...editingLesson, content: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-gray-55 dark:bg-slate-955 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                       placeholder="https://..."
                     />
                   </div>
                 )}
                 
                 {editingLesson.type === 'quiz' && (
-                  <div className="bg-gray-55 dark:bg-slate-955 p-4 rounded-xl border border-gray-250 dark:border-white/5">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-white/5">
                     <LMSQuizBuilder
                       content={editingLesson.content || '[]'}
                       onChange={(jsonContent) => setEditingLesson({ ...editingLesson, content: jsonContent })}
@@ -938,7 +938,7 @@ const CourseBuilder = () => {
                 )}
 
                 {(editingLesson.type === 'assignment' || editingLesson.type === 'forum') && (
-                  <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-xl border border-dashed border-gray-200 dark:border-white/10 text-center">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center">
                     <CheckCircle className="mx-auto text-gold mb-2 opacity-60" size={32} />
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Este tipo de actividad se gestiona de forma interactiva en la vista del alumno (entrega de archivos / foro de mensajes).
@@ -951,7 +951,7 @@ const CourseBuilder = () => {
                 <button
                   type="button"
                   onClick={() => setIsLessonModalOpen(false)}
-                  className="px-4 py-2 border border-gray-250 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

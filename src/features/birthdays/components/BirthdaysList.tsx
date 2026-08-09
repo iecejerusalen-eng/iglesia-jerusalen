@@ -10,6 +10,7 @@ interface BirthdaysListProps {
   allBirthdays: BirthdayInfo[];
   viewMode: BirthdayViewMode;
   onCelebrate: (name: string) => void;
+  onMessage?: (birthday: BirthdayInfo) => void;
   currentCalendarDate: Date;
   setCurrentCalendarDate: (date: Date) => void;
 }
@@ -19,6 +20,7 @@ export function BirthdaysList({
   allBirthdays,
   viewMode,
   onCelebrate,
+  onMessage,
   currentCalendarDate,
   setCurrentCalendarDate
 }: BirthdaysListProps) {
@@ -46,7 +48,7 @@ export function BirthdaysList({
   if (viewMode === 'year') {
     return (
       <div className="max-w-7xl mx-auto mt-6">
-        <BirthdaysYearView birthdays={allBirthdays} onCelebrate={onCelebrate} />
+        <BirthdaysYearView birthdays={allBirthdays} onCelebrate={onCelebrate} onMessage={onMessage} />
       </div>
     );
   }

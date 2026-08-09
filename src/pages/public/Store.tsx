@@ -113,7 +113,7 @@ const Store = () => {
         <div aria-hidden="true" className="pointer-events-none absolute -left-48 top-36 h-96 w-96 rounded-full bg-amber-300/15 blur-[120px] dark:bg-amber-500/5" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-48 top-[44rem] h-[30rem] w-[30rem] rounded-full bg-indigo-300/15 blur-[130px] dark:bg-indigo-500/5" />
 
-        <section className="px-4 pt-8 md:px-8 md:pt-12">
+        <section id="store_hero" className="px-4 pt-8 md:px-8 md:pt-12">
           <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/15 bg-[#081630] shadow-2xl lg:grid-cols-[1.25fr_0.75fr]">
             <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-300">
@@ -148,7 +148,7 @@ const Store = () => {
           </AnimeFadeUp>
         </section>
 
-        <section className="relative z-10 mx-auto mt-8 max-w-7xl px-4 md:px-8">
+        <section id="store_categories" className="relative z-10 mx-auto mt-8 max-w-7xl px-4 md:px-8">
           <div className="rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
               <label className="relative flex-1">
@@ -193,7 +193,7 @@ const Store = () => {
           </div>
         </section>
 
-        <section aria-live="polite" className="relative z-10 mx-auto mt-12 max-w-7xl px-4 md:px-8">
+        <section id="store_catalog" aria-live="polite" className="relative z-10 mx-auto mt-12 max-w-7xl px-4 md:px-8">
           <div className="mb-7 flex items-end justify-between gap-4">
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">Catálogo</p>
