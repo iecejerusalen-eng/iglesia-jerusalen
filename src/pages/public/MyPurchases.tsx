@@ -192,7 +192,7 @@ export default function MyPurchases() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div id="purchases_hero" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 scroll-mt-28">
           <div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">Mis Compras</h1>
             <p className="text-gray-550 dark:text-gray-400 mt-1">Historial de pedidos y acceso a descargas seguras.</p>
@@ -214,7 +214,7 @@ export default function MyPurchases() {
         )}
 
         {orders.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 p-12 text-center">
+          <div id="purchases_active" className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 p-12 text-center scroll-mt-28">
             <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag size={28} />
             </div>
@@ -228,7 +228,7 @@ export default function MyPurchases() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div id="purchases_history" className="space-y-6 scroll-mt-28">
             {orders.map((order) => (
               <AnimeFadeUp 
                 key={order.id}

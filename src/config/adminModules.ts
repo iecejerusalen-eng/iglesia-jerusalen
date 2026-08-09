@@ -302,6 +302,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
+    id: 'editorial',
+    label: 'Páginas & Blogs',
+    name: 'Centro Editorial',
+    path: '/admin/publicaciones',
+    icon: MessageSquare,
+    group: 'educacion'
+  },
+  {
     id: 'lms_enrollments',
     label: 'Matrículas y Solicitudes',
     name: 'Solicitudes Matrícula',

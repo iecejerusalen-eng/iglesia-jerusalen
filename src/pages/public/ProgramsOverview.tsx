@@ -97,7 +97,7 @@ export default function ProgramsOverview() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#f7f8fc] text-slate-950 dark:bg-[#030817] dark:text-white">
-      <section id="programs" className="relative isolate scroll-mt-28 px-4 pb-20 pt-16 sm:px-6 lg:px-8">
+      <section id="programs_hero" className="relative isolate scroll-mt-28 px-4 pb-20 pt-16 sm:px-6 lg:px-8">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,.2),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(245,158,11,.13),transparent_28%)]" />
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#0b1f52] via-[#172f78] to-[#07122f] px-6 py-14 text-white shadow-[0_35px_100px_-35px_rgba(20,45,120,.65)] sm:px-10 lg:px-14">
           <div className="grid items-end gap-10 lg:grid-cols-[1fr_.75fr]">
@@ -132,14 +132,14 @@ export default function ProgramsOverview() {
           </div>
         </div>
 
-        <div id="categories" className="mb-8 grid scroll-mt-28 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div id="programs_categories" className="mb-8 grid scroll-mt-28 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.entries(typeDetails) as Array<[StudyProgramType, (typeof typeDetails)[StudyProgramType]]>).map(([value, details]) => {
             const Icon = details.icon;
             return <button key={value} onClick={() => setType(value)} className="rounded-2xl border border-slate-200 bg-white/65 p-5 text-left transition hover:border-blue-300 dark:border-white/10 dark:bg-white/5"><Icon className="mb-3 text-blue-700 dark:text-amber-300" /><strong className="block text-sm">{details.label}</strong><span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{details.description}</span></button>;
           })}
         </div>
 
-        <div id="catalog" className="scroll-mt-28">
+        <div id="programs_grid" className="scroll-mt-28">
         {compatibilityMode && (
           <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-400/10 dark:text-amber-100">
             <WifiOff className="mt-0.5 shrink-0" size={18} /><p>Mostrando los recursos existentes en modo de compatibilidad. Al instalar la migración, se habilitarán grupos, cohortes, progreso sincronizado y material privado del facilitador.</p>

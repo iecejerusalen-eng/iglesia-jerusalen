@@ -158,7 +158,7 @@ const MinistryDetail = () => {
 
       {/* CABECERA INMERSIVA */}
       <AnimeZoomIn>
-        <div className="relative rounded-3xl overflow-hidden shadow-xl text-white min-h-[300px] md:min-h-[380px] flex flex-col justify-end">
+        <div id="ministry_hero" className="relative rounded-3xl overflow-hidden shadow-xl text-white min-h-[300px] md:min-h-[380px] flex flex-col justify-end scroll-mt-28">
         {/* Imagen de Fondo o Degradado */}
         {ministry.image_url ? (
           <>
@@ -187,7 +187,7 @@ const MinistryDetail = () => {
           </h1>
 
           {/* Información del Líder y Horarios */}
-          <div className="flex flex-wrap gap-x-8 gap-y-4 pt-4 border-t border-white/20 text-sm font-light">
+          <div id="ministry_schedule" className="flex flex-wrap gap-x-8 gap-y-4 pt-4 border-t border-white/20 text-sm font-light scroll-mt-28">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                 <User size={16} className="text-gold" />
@@ -239,7 +239,7 @@ const MinistryDetail = () => {
 
       {/* CONTENIDO DETALLADO */}
       <AnimeFadeUp>
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs">
+        <div id="ministry_vision" className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs scroll-mt-28">
         <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
           Sobre el Ministerio
         </h2>
@@ -257,7 +257,7 @@ const MinistryDetail = () => {
       {/* SECCIÓN DIRECTIVA */}
       {directiva && directiva.length > 0 && (
         <AnimeFadeUp delay={100}>
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6">
+        <div id="ministry_leadership" className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-slate-800 p-8 md:p-12 shadow-xs space-y-6 scroll-mt-28">
           <div className="border-b border-gray-100 dark:border-slate-800 pb-4">
             <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">
               Directiva y Liderazgo
@@ -364,7 +364,7 @@ const MinistryDetail = () => {
 
       {/* SECCIÓN UNIRSE */}
       <AnimeFadeUp>
-        <div className="bg-gray-50/40 dark:bg-slate-800/40 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div id="ministry_join" className="bg-gray-50/40 dark:bg-slate-800/40 rounded-2xl border border-gray-150 dark:border-slate-800 p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 scroll-mt-28">
         <div className="space-y-2 text-center md:text-left">
           <h3 
             style={{ color: ministry.theme_color || '#1E3A8A' }}

@@ -53,6 +53,8 @@ const CertificateViewer = lazyWithRetry(() => import('../pages/lms/CertificateVi
 const VirtualClassroomLanding = lazyWithRetry(() => import('../pages/public/VirtualClassroomLanding'));
 const Presentation = lazyWithRetry(() => import('../pages/public/Presentation').then(m => ({ default: m.Presentation })));
 const ProgramDetail = lazyWithRetry(() => import('../pages/public/ProgramDetail'));
+const EditorialSpacePage = lazyWithRetry(() => import('../pages/public/EditorialSpacePage'));
+const EditorialDocumentPage = lazyWithRetry(() => import('../pages/public/EditorialDocumentPage'));
 const MyPurchases = lazyWithRetry(() => import('../pages/public/MyPurchases'));
 const SundaySchool = lazyWithRetry(() => import('../pages/public/SundaySchool'));
 const ReadingPlan = lazyWithRetry(() => import('../pages/public/ReadingPlan'));
@@ -121,6 +123,8 @@ const ComponentLibrary = lazyWithRetry(() => import('../pages/admin/ComponentLib
 const OpenResourceBuilder = lazyWithRetry(() => import('../pages/admin/OpenResourceBuilder'));
 const StudyProgramsManager = lazyWithRetry(() => import('../pages/admin/StudyProgramsManager'));
 const StudyProgramBuilder = lazyWithRetry(() => import('../pages/admin/StudyProgramBuilder'));
+const EditorialManager = lazyWithRetry(() => import('../pages/admin/EditorialManager'));
+const EditorialWorkspace = lazyWithRetry(() => import('../pages/admin/EditorialWorkspace'));
 const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager'));
 const MenuManager = lazyWithRetry(() => import('../pages/admin/MenuManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
@@ -163,6 +167,8 @@ export default function AppRouter() {
           <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
           <Route path="/programas" element={<ProgramsOverview />} />
           <Route path="/programas/:id" element={<ProgramDetail />} />
+          <Route path="/publicaciones/:spaceSlug" element={<EditorialSpacePage />} />
+          <Route path="/publicaciones/:spaceSlug/:documentId" element={<EditorialDocumentPage />} />
           <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />
           <Route path="/certificados/:id" element={<CertificateViewer />} />
           <Route path="/mis-compras" element={<MyPurchases />} />
@@ -250,6 +256,12 @@ export default function AppRouter() {
           <Route element={<AdminLayout />}>
             <Route path="/admin/programas" element={<StudyProgramsManager />} />
             <Route path="/admin/programas/:id" element={<StudyProgramBuilder />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute module="editorial" />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/publicaciones" element={<EditorialManager />} />
+            <Route path="/admin/publicaciones/:id" element={<EditorialWorkspace />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute module="open_resources" />}>

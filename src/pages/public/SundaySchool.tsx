@@ -123,7 +123,7 @@ const SundaySchool = () => {
       <AnimeFadeUp delay={100} duration={800} className="max-w-6xl mx-auto space-y-10">
         
         {/* Banner */}
-        <div className="bg-gradient-to-r from-amber-700 via-amber-800 to-yellow-900 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden">
+        <div id="sunday_hero" className="bg-gradient-to-r from-amber-700 via-amber-800 to-yellow-900 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden scroll-mt-28">
           <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
             <GraduationCap size={220} />
           </div>
@@ -139,10 +139,10 @@ const SundaySchool = () => {
         </div>
 
         {/* Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div id="sunday_classes" className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start scroll-mt-28">
           
           {/* WebGL Game Simulator Panel */}
-          <div className="lg:col-span-2 space-y-4">
+          <div id="sunday_materials" className="lg:col-span-2 space-y-4 scroll-mt-28">
             <AnimeZoomIn delay={200} duration={600}>
               <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
               <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
@@ -177,7 +177,7 @@ const SundaySchool = () => {
           </div>
 
           {/* Badges sidebar */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
+          <div id="sunday_register" className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6 scroll-mt-28">
             <div className="flex items-center gap-2 border-b border-gray-100 dark:border-white/10 pb-4">
               <Award className="text-amber-600 dark:text-amber-500" size={24} />
               <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white">Tus Logros e Insignias</h2>

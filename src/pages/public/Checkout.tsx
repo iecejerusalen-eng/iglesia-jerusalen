@@ -201,13 +201,13 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
+      <h1 id="checkout_hero" className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center scroll-mt-28">
         <CreditCard className="w-8 h-8 mr-3 text-blue-600" />
         Finalizar Compra
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div id="checkout_form" className="lg:col-span-2 space-y-6 scroll-mt-28">
           <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             
             {/* Método de Pago */}
@@ -344,7 +344,7 @@ export default function Checkout() {
         </div>
 
         {/* Resumen de Orden */}
-        <div className="lg:col-span-1">
+        <div id="checkout_confirm" className="lg:col-span-1 scroll-mt-28">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 sticky top-24">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Resumen de Orden</h2>
             

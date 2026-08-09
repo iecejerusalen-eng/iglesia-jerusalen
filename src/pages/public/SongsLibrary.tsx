@@ -68,25 +68,31 @@ const SongsLibrary = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/70 transition-colors duration-200 dark:bg-slate-950">
-      <SongsHero totalSongs={songs.length} songsWithChords={songs.filter((song) => song.has_chords).length} />
+      <div id="songs_hero" className="scroll-mt-28">
+        <SongsHero totalSongs={songs.length} songsWithChords={songs.filter((song) => song.has_chords).length} />
+      </div>
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:py-10">
-        <SongsFilters
-          search={search} setSearch={(value) => { setSearch(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          viewMode={viewMode} setViewMode={(value) => { setViewMode(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          showFilters={showFilters} setShowFilters={setShowFilters}
-          filterType={filterType} setFilterType={(value) => { setFilterType(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          filterStyle={filterStyle} setFilterStyle={(value) => { setFilterStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          filterDrumStyle={filterDrumStyle} setFilterDrumStyle={(value) => { setFilterDrumStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          filterChords={filterChords} setFilterChords={(value) => { setFilterChords(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          sortBy={sortBy} setSortBy={(value) => { setSortBy(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
-          songTypes={songTypes} songStyles={songStyles}
-          resultCount={sortedSongs.length} activeFilterCount={activeFilterCount} clearFilters={clearFilters}
-        />
-        <SongsList
-          loading={isLoading} error={isError} songs={visibleSongs} totalResults={sortedSongs.length} viewMode={viewMode}
-          hasMore={visibleCount < sortedSongs.length} onShowMore={() => setVisibleCount((count) => count + SONGS_INCREMENT)}
-          onSelectSong={handleSelectSong}
-        />
+        <div id="songs_search" className="scroll-mt-28">
+          <SongsFilters
+            search={search} setSearch={(value) => { setSearch(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            viewMode={viewMode} setViewMode={(value) => { setViewMode(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            showFilters={showFilters} setShowFilters={setShowFilters}
+            filterType={filterType} setFilterType={(value) => { setFilterType(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            filterStyle={filterStyle} setFilterStyle={(value) => { setFilterStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            filterDrumStyle={filterDrumStyle} setFilterDrumStyle={(value) => { setFilterDrumStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            filterChords={filterChords} setFilterChords={(value) => { setFilterChords(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            sortBy={sortBy} setSortBy={(value) => { setSortBy(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            songTypes={songTypes} songStyles={songStyles}
+            resultCount={sortedSongs.length} activeFilterCount={activeFilterCount} clearFilters={clearFilters}
+          />
+        </div>
+        <div id="songs_library" className="scroll-mt-28">
+          <SongsList
+            loading={isLoading} error={isError} songs={visibleSongs} totalResults={sortedSongs.length} viewMode={viewMode}
+            hasMore={visibleCount < sortedSongs.length} onShowMore={() => setVisibleCount((count) => count + SONGS_INCREMENT)}
+            onSelectSong={handleSelectSong}
+          />
+        </div>
       </main>
 
       {selectedSong && (

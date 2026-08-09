@@ -10,7 +10,8 @@ import { usePermissions } from '../../hooks/usePermissions';
 
 type BuilderTab = 'content' | 'groups' | 'settings';
 interface LessonDraft { id?: string; section_id: string; title: string; summary: string; lesson_type: StudyProgramLesson['lesson_type']; content: string; facilitatorContent: string; estimated_minutes: number | null; }
-interface CohortDraft { name: string; description: string; status: StudyCohort['status']; capacity: number | null; starts_on: string; ends_on: string; schedule_text: string; meeting_provider: StudyCohort['meeting_provider']; meeting_url: string; }
+interface CohortDraft { id?: string; name: string; description: string; status: StudyCohort['status']; capacity: number | null; starts_on: string; ends_on: string; schedule_text: string; meeting_provider: StudyCohort['meeting_provider']; meeting_url: string; }
+interface ProfileOption { id: string; first_name: string | null; last_name: string | null; email: string | null; }
 
 const emptyCohort: CohortDraft = { name: '', description: '', status: 'planned', capacity: null, starts_on: '', ends_on: '', schedule_text: '', meeting_provider: 'google_meet', meeting_url: '' };
 const parseBlocks = (value: unknown): string => JSON.stringify(Array.isArray(value) ? value : [], null, 2);
@@ -24,6 +25,9 @@ export default function StudyProgramBuilder() {
   const [sections, setSections] = useState<StudyProgramSection[]>([]);
   const [cohorts, setCohorts] = useState<StudyCohort[]>([]);
   const [memberships, setMemberships] = useState<StudyMembership[]>([]);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+  const [newMemberId, setNewMemberId] = useState('');
+  const [newMemberCohortId, setNewMemberCohortId] = useState('');
   const [tab, setTab] = useState<BuilderTab>('content');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,14 +43,15 @@ export default function StudyProgramBuilder() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [programResult, sectionsResult, cohortsResult, membershipsResult] = await Promise.all([
+    const [programResult, sectionsResult, cohortsResult, membershipsResult, profilesResult] = await Promise.all([
       supabase.from('study_programs').select('*').eq('id', id).single(),
       supabase.from('study_program_sections').select('*, study_program_lessons(*)').eq('program_id', id).order('order_index'),
       supabase.from('study_cohorts').select('*').eq('program_id', id).order('created_at', { ascending: false }),
       supabase.from('study_memberships').select('*, profiles:user_id(first_name, last_name, email)').eq('program_id', id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id,first_name,last_name,email').neq('banned', true).order('first_name').limit(500),
     ]);
     setLoading(false);
-    const firstError = programResult.error ?? sectionsResult.error ?? cohortsResult.error ?? membershipsResult.error;
+    const firstError = programResult.error ?? sectionsResult.error ?? cohortsResult.error ?? membershipsResult.error ?? profilesResult.error;
     if (firstError) {
       console.error('No se pudo cargar el constructor del programa.', firstError);
       toast.error('No se pudo abrir el programa. Verifica que la migración esté instalada.');
@@ -59,6 +64,7 @@ export default function StudyProgramBuilder() {
     })) as StudyProgramSection[]);
     setCohorts((cohortsResult.data ?? []) as StudyCohort[]);
     setMemberships((membershipsResult.data ?? []) as StudyMembership[]);
+    setProfiles((profilesResult.data ?? []) as ProfileOption[]);
   }, [id]);
 
   useEffect(() => {
@@ -148,11 +154,14 @@ export default function StudyProgramBuilder() {
 
   const saveCohort = async (event: React.FormEvent) => {
     event.preventDefault(); if (!cohortDraft || !program || !requireEditAccess()) return;
-    const { meeting_url: meetingUrl, ...publicCohort } = cohortDraft;
-    const { data, error } = await supabase.from('study_cohorts').insert({ ...publicCohort, program_id: program.id, capacity: cohortDraft.capacity || null, starts_on: cohortDraft.starts_on || null, ends_on: cohortDraft.ends_on || null, schedule_text: cohortDraft.schedule_text || null }).select('id').single();
-    if (error) { console.error('No se pudo crear el grupo.', error); toast.error('No se pudo crear el grupo.'); return; }
+    const { id: cohortId, meeting_url: meetingUrl, ...publicCohort } = cohortDraft;
+    const payload = { ...publicCohort, program_id: program.id, capacity: cohortDraft.capacity || null, starts_on: cohortDraft.starts_on || null, ends_on: cohortDraft.ends_on || null, schedule_text: cohortDraft.schedule_text || null };
+    const result = cohortId
+      ? await supabase.from('study_cohorts').update(payload).eq('id', cohortId).select('id').single()
+      : await supabase.from('study_cohorts').insert(payload).select('id').single();
+    if (result.error) { console.error('No se pudo guardar el grupo.', result.error); toast.error('No se pudo guardar el grupo.'); return; }
     if (meetingUrl) {
-      const { error: privateAccessError } = await supabase.from('study_cohort_private_access').insert({ cohort_id: data.id, meeting_url: meetingUrl });
+      const { error: privateAccessError } = await supabase.from('study_cohort_private_access').upsert({ cohort_id: result.data.id, meeting_url: meetingUrl });
       if (privateAccessError) {
         console.error('El grupo se creó, pero no se guardó su enlace privado.', privateAccessError);
         toast.warning('El grupo se creó, pero debes volver a registrar el enlace privado.');
@@ -160,7 +169,15 @@ export default function StudyProgramBuilder() {
         return;
       }
     }
-    toast.success('Grupo creado.'); setCohortDraft(null); await load();
+    toast.success(cohortId ? 'Grupo actualizado.' : 'Grupo creado.'); setCohortDraft(null); await load();
+  };
+
+  const editCohort = async (cohort: StudyCohort) => {
+    const { data, error } = await supabase.from('study_cohort_private_access').select('meeting_url').eq('cohort_id', cohort.id).maybeSingle();
+    if (error) { console.error('No se pudo consultar el enlace privado.', error); toast.error('No se pudo abrir la configuración del grupo.'); return; }
+    setCohortDraft({ id: cohort.id, name: cohort.name, description: cohort.description, status: cohort.status, capacity: cohort.capacity,
+      starts_on: cohort.starts_on ?? '', ends_on: cohort.ends_on ?? '', schedule_text: cohort.schedule_text ?? '',
+      meeting_provider: cohort.meeting_provider, meeting_url: data?.meeting_url ?? '' });
   };
 
   const updateMembership = async (membership: StudyMembership, status: StudyMembership['status']) => {
@@ -182,6 +199,18 @@ export default function StudyProgramBuilder() {
     await load();
   };
 
+  const addMember = async () => {
+    if (!program || !newMemberId || !requireEditAccess()) return;
+    const cohortId = newMemberCohortId || cohorts[0]?.id || null;
+    const { error } = await supabase.from('study_memberships').insert({
+      program_id: program.id, cohort_id: cohortId, user_id: newMemberId,
+      member_role: 'participant', status: 'active', joined_at: new Date().toISOString(),
+    });
+    if (error?.code === '23505') { toast.info('Esta persona ya pertenece al grupo seleccionado.'); return; }
+    if (error) { console.error('No se pudo agregar la integrante.', error); toast.error('No se pudo agregar la integrante.'); return; }
+    setNewMemberId(''); toast.success('Integrante agregada.'); await load();
+  };
+
   const lessonCount = useMemo(() => sections.reduce((total, section) => total + section.lessons.length, 0), [sections]);
   if (loading) return <div className="h-[36rem] animate-pulse rounded-[2rem] bg-slate-200 dark:bg-white/5" />;
   if (!program) return <div className="rounded-3xl border border-red-200 bg-red-50 p-10 text-center text-red-800">No se pudo abrir este programa. Instala la migración pendiente y vuelve a intentarlo.</div>;
@@ -195,12 +224,13 @@ export default function StudyProgramBuilder() {
 
     {tab === 'groups' && <section>
       <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h2 className="font-serif text-2xl font-bold">Grupos y cohortes</h2><p className="mt-1 text-sm text-slate-500">Configura cada grupo con sus fechas, cupos, horario y enlace real de reunión.</p></div><button onClick={() => setCohortDraft(emptyCohort)} disabled={readOnly} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Plus size={17} /> Nuevo grupo</button></div>
+      {!readOnly && cohorts.length > 0 && <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-400/20 dark:bg-blue-400/10"><h3 className="text-sm font-bold">Agregar integrante desde el CRM</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Solo se vinculan cuentas reales registradas; no se crean nombres ficticios.</p><div className="mt-3 grid gap-2 sm:grid-cols-[1fr_15rem_auto]"><select value={newMemberId} onChange={(event) => setNewMemberId(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950"><option value="">Selecciona una persona…</option>{profiles.filter((profile) => !memberships.some((membership) => membership.user_id === profile.id && membership.cohort_id === (newMemberCohortId || cohorts[0]?.id))).map((profile) => <option key={profile.id} value={profile.id}>{`${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || profile.email || 'Usuario'}</option>)}</select><select value={newMemberCohortId || cohorts[0]?.id || ''} onChange={(event) => setNewMemberCohortId(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950">{cohorts.map((cohort) => <option key={cohort.id} value={cohort.id}>{cohort.name}</option>)}</select><button type="button" onClick={() => void addMember()} disabled={!newMemberId} className="rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50">Agregar</button></div></div>}
       {cohorts.length ? <div className="grid gap-4 xl:grid-cols-2">{cohorts.map((cohort) => {
         const cohortMembers = memberships.filter((membership) => membership.cohort_id === cohort.id);
         const pending = cohortMembers.filter((membership) => membership.status === 'pending');
         return <article key={cohort.id} className="rounded-2xl border border-slate-200 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5">
           <div className="flex items-center justify-between"><CalendarDays className="text-blue-700 dark:text-amber-300" /><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase dark:bg-white/10">{cohort.status}</span></div>
-          <h3 className="mt-4 font-serif text-xl font-bold">{cohort.name}</h3><p className="mt-2 text-sm text-slate-500">{cohort.schedule_text || 'Horario pendiente'}</p>
+          <div className="mt-4 flex items-center justify-between gap-3"><h3 className="font-serif text-xl font-bold">{cohort.name}</h3>{!readOnly && <button type="button" onClick={() => void editCohort(cohort)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold dark:border-white/10">Configurar</button>}</div><p className="mt-2 text-sm text-slate-500">{cohort.schedule_text || 'Horario pendiente'}</p>
           <div className="mt-4 flex gap-4 text-xs text-slate-500"><span>{cohort.capacity ? `${cohort.capacity} cupos` : 'Sin límite'}</span><span>{cohortMembers.filter((membership) => membership.status === 'active').length} participantes</span><span>{pending.length} pendientes</span></div>
           {cohortMembers.length > 0 && <div className="mt-5 space-y-2 border-t border-slate-200 pt-4 dark:border-white/10">{cohortMembers.map((membership) => {
             const fullName = `${membership.profiles?.first_name ?? ''} ${membership.profiles?.last_name ?? ''}`.trim() || membership.profiles?.email || 'Miembro de la iglesia';

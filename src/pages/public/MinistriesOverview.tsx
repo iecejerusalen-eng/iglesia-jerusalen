@@ -118,9 +118,9 @@ const MinistriesOverview = () => {
           <motion.div 
             id="ministries_grid"
             layout
-            className={viewMode === 'grid' 
+            className={(viewMode === 'grid' 
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8" 
-              : "flex flex-col gap-6"
+              : "flex flex-col gap-6") + " scroll-mt-28"
             }
           >
             <AnimatePresence>
@@ -197,25 +197,27 @@ const MinistriesOverview = () => {
       </div>
 
       {/* INVITACION A SERVIR */}
-      <div id="ministries_volunteer" className="mt-24 pb-20 relative max-w-4xl mx-auto text-center px-4">
-        <div className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] rounded-full -z-10"></div>
-        <AnimeFadeUp className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 md:p-16 border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
-          <Award size={48} className="mx-auto text-amber-500 mb-6 drop-shadow-md" />
-          <h2 className="text-3xl md:text-4xl font-serif font-black text-slate-900 dark:text-white mb-6">
-            ¡Te invitamos a servir!
-          </h2>
-          <p className="text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-            Tus dones y talentos son valiosos para el cuerpo de Cristo. Si deseas integrarte a alguno de estos ministerios, acércate al líder correspondiente o déjanos un mensaje.
-          </p>
-          <MagneticButton>
-            <Link 
-              to="/contacto"
-              className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-4 rounded-2xl font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 inline-flex items-center gap-2"
-            >
-              Contactar a un líder
-            </Link>
-          </MagneticButton>
-        </AnimeFadeUp>
+      <div id="ministries_volunteer" className="mt-24 pb-20 relative max-w-4xl mx-auto text-center px-4 scroll-mt-28">
+        <div id="ministries_join" className="scroll-mt-28">
+          <div className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] rounded-full -z-10"></div>
+          <AnimeFadeUp className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 md:p-16 border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+            <Award size={48} className="mx-auto text-amber-500 mb-6 drop-shadow-md" />
+            <h2 className="text-3xl md:text-4xl font-serif font-black text-slate-900 dark:text-white mb-6">
+              ¡Te invitamos a servir!
+            </h2>
+            <p className="text-slate-600 dark:text-slate-300 text-lg max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              Tus dones y talentos son valiosos para el cuerpo de Cristo. Si deseas integrarte a alguno de estos ministerios, acércate al líder correspondiente o déjanos un mensaje.
+            </p>
+            <MagneticButton>
+              <Link 
+                to="/contacto"
+                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-4 rounded-2xl font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 inline-flex items-center gap-2"
+              >
+                Contactar a un líder
+              </Link>
+            </MagneticButton>
+          </AnimeFadeUp>
+        </div>
       </div>
 
     </div>

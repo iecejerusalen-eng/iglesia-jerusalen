@@ -257,7 +257,7 @@ const Cart = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
       {/* Indicador de Pasos / Stepper */}
-      <div className="max-w-xl mx-auto mb-10">
+      <div id="cart_hero" className="max-w-xl mx-auto mb-10 scroll-mt-28">
         <div className="flex justify-between items-center relative">
           <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-150 dark:bg-slate-800 -translate-y-1/2 z-0" />
           {[
@@ -302,7 +302,7 @@ const Cart = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Lado Izquierdo: Pasos Dinámicos */}
-        <div className="lg:col-span-8">
+        <div id="cart_items" className="lg:col-span-8 scroll-mt-28">
           <div className="relative">
             {step === 1 && (
               <AnimeFadeUp
@@ -701,7 +701,7 @@ const Cart = () => {
         </div>
 
         {/* Lado Derecho: Resumen de Compra Fijo */}
-        <div className="lg:col-span-4 lg:sticky lg:top-24">
+        <div id="cart_summary" className="lg:col-span-4 lg:sticky lg:top-24 scroll-mt-28">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs">
             <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10">
               Resumen del Pedido

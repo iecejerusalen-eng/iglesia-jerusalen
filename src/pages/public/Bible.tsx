@@ -612,7 +612,7 @@ export default function Bible() {
     <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses()}`}>
       {/* Banner */}
       {!focusMode && (
-      <div className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden">
+      <div id="bible_hero" className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden scroll-mt-28">
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -631,11 +631,11 @@ export default function Bible() {
       </div>
       )}
 
-      <div className={`max-w-6xl mx-auto px-4 py-8 space-y-6 ${focusMode ? 'pt-24' : ''}`}>
+      <div id="bible_reader" className={`max-w-6xl mx-auto px-4 py-8 space-y-6 scroll-mt-28 ${focusMode ? 'pt-24' : ''}`}>
         
         {/* Main Controls Panel - Glassmorphism & Sticky */}
         {!focusMode && (
-        <div className="sticky top-4 z-40 bg-white/70 dark:bg-[#070b14]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300">
+        <div id="bible_selector" className="sticky top-4 z-40 bg-white/70 dark:bg-[#070b14]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300 scroll-mt-28">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Version Select */}
             <div className="flex flex-col gap-1 w-full sm:w-auto">

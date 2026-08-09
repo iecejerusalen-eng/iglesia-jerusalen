@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, ExternalLink, Laptop, LockKeyhole, Play, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, ExternalLink, Laptop, LockKeyhole, MessageSquareText, Play, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
 import { fetchProgramDetail } from '../../features/study-programs/service';
 import type { StudyProgramDetail, StudyProgramLesson } from '../../features/study-programs/types';
+import { fetchEditorialSpace, isEditorialSchemaMissing } from '../../features/editorial/service';
+import type { EditorialSpaceFeed } from '../../features/editorial/types';
 
 const typeLabel = { community_group: 'Grupo en comunidad', self_guided: 'Curso a tu ritmo', facilitated: 'Programa acompañado', downloadable: 'Material descargable' };
 const accessLabel = { public: 'Acceso público', account: 'Requiere una cuenta', approval: 'Ingreso con aprobación', invitation: 'Solo con invitación' };
@@ -33,6 +35,7 @@ export default function ProgramDetail() {
   const [completed, setCompleted] = useState<string[]>([]);
   const [joining, setJoining] = useState(false);
   const [meetingLinks, setMeetingLinks] = useState<Record<string, string>>({});
+  const [editorialFeed, setEditorialFeed] = useState<EditorialSpaceFeed | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -52,6 +55,15 @@ export default function ProgramDetail() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id]);
+
+  useEffect(() => {
+    if (!program || program.source !== 'study_programs') return;
+    let active = true;
+    fetchEditorialSpace(program.slug).then((result) => { if (active) setEditorialFeed(result); }).catch((reason: unknown) => {
+      if (!isEditorialSchemaMissing(reason as { code?: string; message?: string })) console.error('No se pudo cargar la bitácora vinculada.', reason);
+    });
+    return () => { active = false; };
+  }, [program]);
 
   useEffect(() => {
     if (!user || !program || program.source !== 'study_programs' || program.cohorts.length === 0) return;
@@ -120,7 +132,7 @@ export default function ProgramDetail() {
 
   return (
     <main className="min-h-screen bg-[#f7f8fc] text-slate-950 dark:bg-[#030817] dark:text-white">
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#071631] via-[#13327d] to-[#08142d] px-4 py-16 text-white sm:px-6 lg:px-8">
+      <section id="program_hero" className="relative overflow-hidden bg-gradient-to-br from-[#071631] via-[#13327d] to-[#08142d] px-4 py-16 text-white sm:px-6 lg:px-8 scroll-mt-28">
         {program.cover_image_url && <img src={program.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />}
         <div className="absolute inset-0 bg-gradient-to-r from-[#071631] via-[#071631]/90 to-transparent" />
         <div className="relative mx-auto max-w-7xl">
@@ -132,7 +144,7 @@ export default function ProgramDetail() {
               <p className="mt-5 max-w-3xl text-base leading-7 text-blue-100/90 sm:text-lg">{program.summary || program.description}</p>
               <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-blue-100"><span className="flex items-center gap-2"><BookOpen size={17} />{totalLessons} lecciones</span><span className="flex items-center gap-2"><Laptop size={17} />{accessLabel[program.access_type]}</span>{program.duration_label && <span className="flex items-center gap-2"><Clock3 size={17} />{program.duration_label}</span>}</div>
             </div>
-            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-2xl">
+            <div id="program_enroll" className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-2xl scroll-mt-28">
               <div className="flex items-end justify-between"><span className="text-sm text-blue-100">Tu avance</span><strong className="text-3xl">{progress}%</strong></div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${progress}%` }} /></div>
               <button onClick={() => firstLesson && setActiveLesson(firstLesson)} disabled={!firstLesson} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-blue-950 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"><Play size={17} /> {progress ? 'Continuar' : 'Comenzar ahora'}</button>
@@ -143,7 +155,7 @@ export default function ProgramDetail() {
       </section>
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_22rem] lg:px-8">
-        <section>
+        <section id="program_curriculum" className="scroll-mt-28">
           <div className="mb-6"><span className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">Ruta del programa</span><h2 className="mt-2 font-serif text-3xl font-bold">Contenido y actividades</h2></div>
           {program.sections.length ? <div className="space-y-4">{program.sections.map((section, index) => (
             <article key={section.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
@@ -162,9 +174,10 @@ export default function ProgramDetail() {
           ))}</div> : <div className="rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-500 dark:border-white/15">Este programa está publicado, pero todavía no tiene lecciones disponibles.</div>}
         </section>
 
-        <aside className="space-y-5">
+        <aside id="program_docent" className="space-y-5 scroll-mt-28">
           {program.cohorts.length > 0 && <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 font-bold"><Users size={18} className="text-blue-700 dark:text-amber-300" /> Grupos disponibles</div><div className="mt-4 space-y-3">{program.cohorts.map((cohort) => <div key={cohort.id} className="rounded-2xl bg-slate-100 p-4 dark:bg-white/5"><strong className="text-sm">{cohort.name}</strong>{cohort.schedule_text && <span className="mt-2 flex gap-2 text-xs text-slate-500"><CalendarDays size={14} />{cohort.schedule_text}</span>}{meetingLinks[cohort.id] ? <a href={meetingLinks[cohort.id]} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">Entrar a la reunión <ExternalLink size={13} /></a> : <button onClick={() => requestAccess(cohort.id)} className="mt-3 text-xs font-bold text-blue-700 dark:text-amber-300">Solicitar participación</button>}</div>)}</div></div>}
           <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 font-bold"><LockKeyhole size={18} className="text-emerald-600" /> Contenido seguro</div><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Las guías con respuestas y notas internas solo son visibles para facilitadores autorizados. Tu progreso personal se guarda en este dispositivo y se sincroniza al iniciar sesión.</p></div>
+          {editorialFeed && <Link to={`/publicaciones/${editorialFeed.space.slug}`} className="group block rounded-3xl border border-amber-300/30 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:from-amber-300/10 dark:to-white/5"><div className="flex items-center gap-2 font-bold"><MessageSquareText size={18} className="text-amber-600 dark:text-amber-300" /> Bitácora del grupo</div><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-300">Lecturas, anuncios, devocionales y conversaciones. Algunas entradas son exclusivas para integrantes.</p><span className="mt-4 flex items-center gap-1 text-xs font-black text-blue-700 dark:text-amber-300">Ver {editorialFeed.documents.length} publicaciones <ChevronRight size={14} /></span></Link>}
         </aside>
       </div>
 

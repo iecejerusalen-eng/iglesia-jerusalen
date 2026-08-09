@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, BookOpen, Calendar, Clock, FileText, GraduationCap, LayoutDashboard, Loader2, LockKeyhole, RefreshCw, ShieldAlert, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Calendar, Clock, FileText, GraduationCap, LayoutDashboard, Loader2, LockKeyhole, MessageSquareText, RefreshCw, ShieldAlert, Users } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import type { LMSSchool, Ministry } from '../../types';
@@ -12,8 +12,9 @@ import MinistryCalendar from '../../components/admin/ministry/MinistryCalendar';
 import { AcademicStaffManager } from '../../features/lms/components/AcademicStaffManager';
 import { CoursesList } from '../../features/lms/components/CoursesList';
 import { useCourses } from '../../features/lms/hooks/useCourses';
+import MinistryEditorial from '../../components/admin/ministry/MinistryEditorial';
 
-type MinistryTab = 'resumen' | 'miembros' | 'calendario' | 'planificador' | 'actas' | 'escuela';
+type MinistryTab = 'resumen' | 'miembros' | 'calendario' | 'planificador' | 'actas' | 'publicaciones' | 'escuela';
 
 export default function MinistryDashboard() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ export default function MinistryDashboard() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MinistryTab>('resumen');
 
-  const fetchMinistry = async () => {
+  const fetchMinistry = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
@@ -44,11 +45,12 @@ export default function MinistryDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
-    void fetchMinistry();
-  }, [id]);
+    const timer = window.setTimeout(() => { void fetchMinistry(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchMinistry]);
 
   if (loading) {
     return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="animate-spin text-primary" size={32} /></div>;
@@ -82,6 +84,7 @@ export default function MinistryDashboard() {
     { id: 'calendario', label: 'Agenda', icon: Calendar },
     { id: 'planificador', label: 'Disponibilidad', icon: Clock },
     { id: 'actas', label: 'Actas', icon: FileText },
+    { id: 'publicaciones', label: 'Publicaciones', icon: MessageSquareText },
   ];
   if (school) tabs.push({ id: 'escuela', label: 'Escuela académica', icon: GraduationCap });
 
@@ -125,6 +128,7 @@ export default function MinistryDashboard() {
           {activeTab === 'calendario' && <MinistryCalendar ministryId={ministry.id} />}
           {activeTab === 'planificador' && <SmartScheduler ministryId={ministry.id} />}
           {activeTab === 'actas' && <MeetingNotes ministryId={ministry.id} />}
+          {activeTab === 'publicaciones' && <MinistryEditorial ministry={ministry} canEdit={canEdit} />}
           {activeTab === 'escuela' && school && (
             <div className="space-y-8">
               <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-blue-50 p-6 dark:border-indigo-900/50 dark:from-slate-900 dark:to-indigo-950/30 md:flex-row">

@@ -36,14 +36,16 @@ export default function Expositores() {
       <main className="pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <AnimeFadeUp className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold font-serif mb-6 text-slate-900 dark:text-white">
-              Nuestros <span className="text-primary dark:text-gold">Expositores</span>
-            </h1>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Conoce al equipo pastoral y maestros que nos edifican cada semana a través de la predicación y enseñanza de la Palabra de Dios.
-            </p>
-          </AnimeFadeUp>
+          <div id="speakers_hero" className="scroll-mt-28">
+            <AnimeFadeUp className="text-center mb-16">
+              <h1 className="text-4xl md:text-5xl font-bold font-serif mb-6 text-slate-900 dark:text-white">
+                Nuestros <span className="text-primary dark:text-gold">Expositores</span>
+              </h1>
+              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                Conoce al equipo pastoral y maestros que nos edifican cada semana a través de la predicación y enseñanza de la Palabra de Dios.
+              </p>
+            </AnimeFadeUp>
+          </div>
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -57,7 +59,9 @@ export default function Expositores() {
               <h3 className="text-xl font-medium text-slate-500 dark:text-slate-400">Aún no hay expositores registrados</h3>
             </div>
           ) : (
-            <AnimeStaggerGrid>
+            <div id="speakers_list" className="scroll-mt-28">
+              <div id="speakers_featured" className="scroll-mt-28">
+                <AnimeStaggerGrid>
               {speakers.map((speaker) => (
                 <AnimeHoverCard key={speaker.id} className="h-full">
                   <div className="bg-white dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-white/5 rounded-3xl overflow-hidden shadow-glass flex flex-col h-full group relative z-10 transition-colors">
@@ -113,6 +117,8 @@ export default function Expositores() {
                 </AnimeHoverCard>
               ))}
             </AnimeStaggerGrid>
+              </div>
+            </div>
           )}
 
         </div>

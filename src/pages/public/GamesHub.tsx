@@ -50,34 +50,38 @@ export const GamesHub = () => {
       <div className="pt-24 pb-16 min-h-[80vh]">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           
-          <motion.div 
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
-            className="text-center max-w-3xl mx-auto mb-16"
-          >
-            <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl mb-6">
-              <Gamepad2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 dark:text-white mb-6">
-              Juegos Bíblicos
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Diviértete y desafía tus conocimientos sobre la Biblia. ¡Aprende jugando!
-            </p>
-          </motion.div>
+          <div id="games_hero" className="scroll-mt-28">
+            <motion.div 
+              initial="initial"
+              animate="animate"
+              variants={fadeInUp}
+              className="text-center max-w-3xl mx-auto mb-16"
+            >
+              <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl mb-6">
+                <Gamepad2 className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 dark:text-white mb-6">
+                Juegos Bíblicos
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Diviértete y desafía tus conocimientos sobre la Biblia. ¡Aprende jugando!
+              </p>
+            </motion.div>
+          </div>
 
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
           ) : (
-            <motion.div 
-              variants={staggerContainer}
-              initial="initial"
-              animate="animate"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-            >
+            <div id="games_grid" className="scroll-mt-28">
+              <div id="games_leaderboard" className="scroll-mt-28">
+                <motion.div 
+                  variants={staggerContainer}
+                  initial="initial"
+                  animate="animate"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
               {games.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-gray-500">
                   <p>Próximamente agregaremos juegos nuevos. ¡Mantente atento!</p>
@@ -119,6 +123,8 @@ export const GamesHub = () => {
                 ))
               )}
             </motion.div>
+              </div>
+            </div>
           )}
         </div>
       </div>

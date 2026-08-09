@@ -195,7 +195,7 @@ const ReadingPlan = () => {
       <div className="max-w-5xl mx-auto space-y-10">
 
         {/* Banner */}
-        <div className="bg-gradient-to-r from-amber-800 to-amber-950 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden">
+        <div id="reading_hero" className="bg-gradient-to-r from-amber-800 to-amber-950 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden scroll-mt-28">
           <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
             <BookOpen size={220} />
           </div>
@@ -211,7 +211,7 @@ const ReadingPlan = () => {
         </div>
 
         {/* Congregational Progress Bar */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-4 relative overflow-hidden">
+        <div id="reading_today" className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-4 relative overflow-hidden scroll-mt-28">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 p-2.5 rounded-xl">
@@ -244,7 +244,7 @@ const ReadingPlan = () => {
         </div>
 
         {selectedPlan && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div id="reading_tracker" className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start scroll-mt-28">
             
             {/* Sidebar for plan selector & stats */}
             <div className="space-y-6">

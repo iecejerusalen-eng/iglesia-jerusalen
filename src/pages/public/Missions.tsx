@@ -119,7 +119,7 @@ export default function Missions() {
       <main className="relative min-h-screen overflow-hidden bg-slate-50 pb-24 dark:bg-slate-950">
         <div className="pointer-events-none absolute -left-56 top-96 h-[32rem] w-[32rem] rounded-full bg-amber-300/15 blur-[130px]" />
 
-        <section className="px-4 pt-8 md:px-8 md:pt-12">
+        <section id="missions_hero" className="px-4 pt-8 md:px-8 md:pt-12 scroll-mt-28">
           <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.7rem] border border-white/10 bg-[#07152d] shadow-2xl lg:grid-cols-[1.05fr_.95fr]">
             <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-300"><Sparkles size={13} /> De Milagro a las naciones</span>
@@ -149,7 +149,7 @@ export default function Missions() {
           </div>
         </section>
 
-        <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
+        <section id="missions_fields" className="mx-auto mt-20 max-w-7xl px-4 md:px-8 scroll-mt-28">
           <div className="mb-8 max-w-2xl"><p className="text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-600">Centro misionero</p><h2 className="mt-3 font-serif text-4xl font-black text-slate-950 dark:text-white">Explora desde lo cercano hasta lo global</h2></div>
           <AnimeStaggerGrid className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {explorationLinks.map(({ to, label, description, icon: Icon, tone }) => (
@@ -161,8 +161,8 @@ export default function Missions() {
           </AnimeStaggerGrid>
         </section>
 
-        <section className="mx-auto mt-20 grid max-w-7xl gap-6 px-4 md:px-8 lg:grid-cols-[.85fr_1.15fr]">
-          <div className="rounded-[2.2rem] border border-white/10 bg-[#0a1932] p-8 text-white shadow-2xl">
+        <section id="missions_projects" className="mx-auto mt-20 grid max-w-7xl gap-6 px-4 md:px-8 lg:grid-cols-[.85fr_1.15fr] scroll-mt-28">
+          <div id="missions_support" className="rounded-[2.2rem] border border-white/10 bg-[#0a1932] p-8 text-white shadow-2xl scroll-mt-28">
             <div className="flex items-center gap-2 text-amber-300"><Database size={17} /><span className="text-[10px] font-extrabold uppercase tracking-[.18em]">Enfoque de oración</span></div>
             {dailyPeople ? <>
               <h2 className="mt-5 font-serif text-4xl font-black">{dailyPeople.name}</h2>
@@ -180,7 +180,7 @@ export default function Missions() {
           </div>
         </section>
 
-        <section className="mx-auto mt-16 max-w-7xl px-4 md:px-8">
+        <section id="missions_support" className="mx-auto mt-16 max-w-7xl px-4 md:px-8 scroll-mt-28">
           <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 text-sm leading-relaxed text-slate-600 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-300">
             <div className="flex items-start gap-3"><BookOpen className="mt-0.5 shrink-0 text-amber-600" size={19} /><div><p className="font-bold text-slate-900 dark:text-white">Cómo interpretar estos datos</p><p className="mt-1">Las poblaciones, porcentajes y escalas son estimaciones para oración, enseñanza e investigación. No deben usarse como localización operativa ni sustituir la verificación con líderes locales.</p><p className="mt-3 text-xs">Datos proporcionados por <a href="https://joshuaproject.net" target="_blank" rel="noreferrer" className="font-extrabold text-amber-700 underline">Joshua Project</a>. Acceso: agosto de 2026.</p></div></div>
           </div>
