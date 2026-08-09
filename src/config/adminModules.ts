@@ -294,10 +294,10 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
-    id: 'open_resources',
+    id: 'study_programs',
     label: 'Programas y Estudios',
     name: 'Programas & Estudios',
-    path: '/admin/recursos-abiertos',
+    path: '/admin/programas',
     icon: FileText,
     group: 'educacion'
   },

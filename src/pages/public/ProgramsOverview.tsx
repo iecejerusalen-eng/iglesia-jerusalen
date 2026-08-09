@@ -1,655 +1,162 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../config/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  GraduationCap, BookOpen, Download, Eye, Video, 
-  Calendar, Clock, Users, X, AlertCircle, 
-  CheckCircle, PlusCircle, Search, Bookmark, Lock, GraduationCap as PathIcon
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  ArrowRight, BookOpen, CalendarDays, CheckCircle2, Clock3, Download,
+  GraduationCap, Laptop, Search, Sparkles, Users, WifiOff,
 } from 'lucide-react';
-import { ShinyButton } from '../../components/ui/magicui/shiny-button';
-import { BorderBeam } from '../../components/ui/magicui/border-beam';
-import type { LMSCourse, Study, LMSEnrollment } from '../../types';
-import { toast } from 'sonner';
+import { fetchProgramCatalog } from '../../features/study-programs/service';
+import type { StudyProgram, StudyProgramType } from '../../features/study-programs/types';
 
-interface CourseCategory {
-  id: string;
-  name: string;
-  description: string;
+const typeDetails: Record<StudyProgramType, { label: string; description: string; icon: typeof Users }> = {
+  community_group: { label: 'Grupos en comunidad', description: 'Encuentros con facilitador, calendario y acompañamiento.', icon: Users },
+  self_guided: { label: 'A tu ritmo', description: 'Avanza paso a paso sin depender de un horario o docente.', icon: Laptop },
+  facilitated: { label: 'Con acompañamiento', description: 'Contenido flexible con una persona que orienta el proceso.', icon: GraduationCap },
+  downloadable: { label: 'Para descargar', description: 'Guías y materiales que puedes utilizar incluso sin conexión.', icon: Download },
+};
+
+const modalityLabel = {
+  online: 'En línea', in_person: 'Presencial', hybrid: 'Híbrido', offline_package: 'Sin conexión',
+};
+
+function ProgramCard({ program }: { program: StudyProgram }) {
+  const details = typeDetails[program.program_type];
+  const TypeIcon = details.icon;
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group relative flex min-h-[27rem] flex-col overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/75 shadow-[0_24px_70px_-45px_rgba(15,23,42,.45)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_30px_80px_-40px_rgba(37,99,235,.35)] dark:border-white/10 dark:bg-slate-900/65"
+    >
+      <div className="relative h-52 overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900">
+        {program.cover_image_url ? (
+          <img src={program.cover_image_url} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+        ) : (
+          <div className="flex h-full items-center justify-center"><BookOpen className="h-16 w-16 text-white/25" /></div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-950/45 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-md">
+            <TypeIcon size={13} /> {details.label}
+          </span>
+          {program.is_featured && <span className="rounded-full bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-950">Destacado</span>}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col p-6">
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-[11px] font-semibold uppercase tracking-[.12em] text-slate-500 dark:text-slate-400">
+          <span>{program.category}</span><span className="h-1 w-1 rounded-full bg-amber-400" /><span>{program.audience}</span>
+        </div>
+        <h2 className="font-serif text-2xl font-bold leading-tight text-slate-950 transition group-hover:text-blue-700 dark:text-white dark:group-hover:text-amber-300">{program.title}</h2>
+        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{program.summary || program.description}</p>
+        <div className="mt-5 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+          <span className="flex items-center gap-2 rounded-xl bg-slate-100/80 px-3 py-2 dark:bg-white/5"><Laptop size={14} />{modalityLabel[program.modality]}</span>
+          <span className="flex items-center gap-2 rounded-xl bg-slate-100/80 px-3 py-2 dark:bg-white/5"><BookOpen size={14} />{program.lesson_count ?? 0} lecciones</span>
+          {program.duration_label && <span className="col-span-2 flex items-center gap-2 px-1 pt-1"><Clock3 size={14} />{program.duration_label}</span>}
+        </div>
+        <Link to={`/programas/${program.source === 'study_programs' ? program.slug : program.id}`} className="mt-auto flex items-center justify-between border-t border-slate-200 pt-5 font-bold text-blue-700 dark:border-white/10 dark:text-amber-300">
+          Ver programa <ArrowRight size={18} className="transition group-hover:translate-x-1" />
+        </Link>
+      </div>
+    </motion.article>
+  );
 }
 
 export default function ProgramsOverview() {
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-
-  const [activeTab, setActiveTab] = useState<'studies' | 'programs'>('programs');
+  const [programs, setPrograms] = useState<StudyProgram[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Data states
-  const [studies, setStudies] = useState<Study[]>([]);
-  const [courses, setCourses] = useState<LMSCourse[]>([]);
-  const [categories, setCategories] = useState<CourseCategory[]>([]);
-  
-  // User enrollment / request states
-  const [userEnrollments, setUserEnrollments] = useState<Record<string, LMSEnrollment>>({});
-  const [userRequests, setUserRequests] = useState<Record<string, string>>({}); // course_id -> status
-  const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
-  const [courseProgress, setCourseProgress] = useState<Record<string, number>>({});
-
-  // Filter & Search states
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [videoModalUrl, setVideoModalUrl] = useState<string | null>(null);
-  const [submittingEnrollment, setSubmittingEnrollment] = useState<string>('');
-
-  const fetchInitialData = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (activeTab === 'studies') {
-        const { data, error } = await supabase
-          .from('studies')
-          .select('*')
-          .eq('is_published', true)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setStudies(data || []);
-      } else {
-        // Fetch courses and categories
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('lms_courses')
-          .select('*, lms_course_categories(name)')
-          .eq('is_published', true)
-          .order('created_at', { ascending: true });
-        
-        if (coursesError) throw coursesError;
-        setCourses(coursesData || []);
-
-        const { data: catsData } = await supabase
-          .from('lms_course_categories')
-          .select('*')
-          .order('created_at', { ascending: true });
-        setCategories(catsData || []);
-
-        // Fetch enrollment counts
-        const { data: enrollments } = await supabase
-          .from('lms_enrollments')
-          .select('course_id');
-        
-        const counts: Record<string, number> = {};
-        enrollments?.forEach((e: { course_id: string }) => {
-          counts[e.course_id] = (counts[e.course_id] || 0) + 1;
-        });
-        setEnrollmentCounts(counts);
-      }
-    } catch (err) {
-      console.error('Error fetching catalog data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
-
-  const fetchUserEnrollmentsAndRequests = useCallback(async () => {
-    if (!user) return;
-    try {
-      // Fetch enrollments
-      const { data: enrolls } = await supabase
-        .from('lms_enrollments')
-        .select('*')
-        .eq('user_id', user.id);
-
-      const enrollMap: Record<string, LMSEnrollment> = {};
-      enrolls?.forEach(e => {
-        enrollMap[e.course_id] = e as LMSEnrollment;
-      });
-      setUserEnrollments(enrollMap);
-
-      // Fetch enrollment requests
-      const { data: reqs } = await supabase
-        .from('lms_enrollment_requests')
-        .select('*')
-        .eq('user_id', user.id);
-
-      const reqMap: Record<string, string> = {};
-      reqs?.forEach(r => {
-        reqMap[r.course_id] = r.status;
-      });
-      setUserRequests(reqMap);
-
-      // Calculate progress for enrolled courses
-      if (enrolls && enrolls.length > 0 && courses.length > 0) {
-        const progressMap: Record<string, number> = {};
-        for (const enr of enrolls) {
-          // Fetch total activities/lessons
-          const { data: lessons } = await supabase
-            .from('lms_lessons')
-            .select('id, lms_modules!inner(subject_id, lms_subjects!inner(course_id))')
-            .eq('lms_modules.lms_subjects.course_id', enr.course_id);
-          
-          const total = lessons?.length || 0;
-          let completed = 0;
-
-          if (lessons && lessons.length > 0) {
-            const lessonIds = lessons.map(l => l.id);
-            const { data: progressData } = await supabase
-              .from('lms_lesson_completions')
-              .select('is_completed')
-              .eq('student_id', user.id)
-              .in('lesson_id', lessonIds)
-              .eq('is_completed', true);
-            completed = progressData?.length || 0;
-          }
-
-          progressMap[enr.course_id] = total > 0 ? Math.round((completed / total) * 100) : 0;
-        }
-        setCourseProgress(progressMap);
-      }
-    } catch (err) {
-      console.error('Error fetching user enrollments/requests:', err);
-    }
-  }, [user, courses]);
+  const [error, setError] = useState<string | null>(null);
+  const [compatibilityMode, setCompatibilityMode] = useState(false);
+  const [query, setQuery] = useState('');
+  const [type, setType] = useState<'all' | StudyProgramType>('all');
 
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    let active = true;
+    fetchProgramCatalog()
+      .then((result) => {
+        if (!active) return;
+        setPrograms(result.programs);
+        setCompatibilityMode(result.compatibilityMode);
+      })
+      .catch((reason: unknown) => {
+        console.error('No fue posible cargar el catálogo de programas.', reason);
+        if (active) setError('No pudimos cargar los programas en este momento. Inténtalo nuevamente.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserEnrollmentsAndRequests();
-    }
-  }, [user, fetchUserEnrollmentsAndRequests]);
-
-
-  const handleEnrollRequest = async (courseId: string) => {
-    if (!user) {
-      toast.error('Debes iniciar sesión para inscribirte');
-      navigate(`/login?redirectTo=/programas`);
-      return;
-    }
-    setSubmittingEnrollment(courseId);
-    try {
-      const { error } = await supabase
-        .from('lms_enrollment_requests')
-        .insert([{
-          course_id: courseId,
-          user_id: user.id,
-          status: 'pending',
-          notes: 'Solicitud enviada desde catálogo público'
-        }]);
-
-      if (error) {
-        if (error.code === '23505') {
-          toast.warning('Ya tienes una solicitud pendiente para este programa.');
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success('¡Solicitud de inscripción enviada! Un administrador revisará tu solicitud.');
-        fetchUserEnrollmentsAndRequests();
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Error al enviar la solicitud: ' + err.message);
-    } finally {
-      setSubmittingEnrollment('');
-    }
-  };
-
-  // Filters for studies
-  const categoriesList = ['Todos', 'Damas', 'Caballeros', 'Jóvenes', 'Generales'];
-  const filteredStudies = studies.filter(s => {
-    const matchesCategory = selectedCategoryFilter === 'Todos' || s.category === selectedCategoryFilter;
-    const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
-
-  // Group courses by categories (Rutas)
-  const coursesByCategory = (catName: string) => {
-    return courses.filter(c => {
-      const courseCat = (c.lms_course_categories as { name?: string } | null)?.name || 'Otros Programas';
-      return courseCat === catName;
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase('es');
+    return programs.filter((program) => {
+      const matchesType = type === 'all' || program.program_type === type;
+      const haystack = `${program.title} ${program.summary} ${program.category} ${program.audience} ${program.tags.join(' ')}`.toLocaleLowerCase('es');
+      return matchesType && (!normalized || haystack.includes(normalized));
     });
-  };
-
-  const displayCategories = [...categories];
-  const hasUncategorized = courses.some(c => !(c.lms_course_categories as { name?: string } | null)?.name);
-  if (hasUncategorized && !displayCategories.some(cat => cat.name === 'Otros Programas')) {
-    displayCategories.push({
-      id: 'uncategorized',
-      name: 'Otros Programas',
-      description: 'Programas de estudio generales y materias adicionales.'
-    });
-  }
+  }, [programs, query, type]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/30 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
-      
-      {/* Hero */}
-      <div className="relative bg-gradient-to-r from-indigo-850 via-indigo-900 to-slate-900 text-white py-16 px-4 border-b border-indigo-500/10 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-300 via-transparent to-transparent"></div>
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <GraduationCap size={52} className="mx-auto mb-4 text-gold opacity-90 animate-pulse" />
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-3 tracking-tight">Programas y Estudios</h1>
-          <p className="text-indigo-200 text-base md:text-lg max-w-xl mx-auto font-light">
-            Recursos bíblicos gratuitos y rutas guiadas para el crecimiento espiritual de toda la familia.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        
-        {/* Toggle Pestañas (Tabs) */}
-        <div className="flex justify-center mb-10">
-          <div className="bg-gray-150 dark:bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-gray-200 dark:border-white/5 relative">
-            <button
-              onClick={() => { setActiveTab('programs'); setSelectedCategoryFilter('Todos'); setSearchQuery(''); }}
-              className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 relative flex items-center gap-2 cursor-pointer ${
-                activeTab === 'programs' ? 'bg-indigo-650 text-white shadow-md' : 'text-gray-650 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
-              }`}
-            >
-              <PathIcon size={16} />
-              Rutas de Discipulado
-            </button>
-            <button
-              onClick={() => { setActiveTab('studies'); setSelectedCategoryFilter('Todos'); setSearchQuery(''); }}
-              className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 relative flex items-center gap-2 cursor-pointer ${
-                activeTab === 'studies' ? 'bg-indigo-650 text-white shadow-md' : 'text-gray-650 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
-              }`}
-            >
-              <BookOpen size={16} />
-              Explorar Estudios
-            </button>
-          </div>
-        </div>
-
-        {/* CONTENIDO DE ESTUDIOS */}
-        {activeTab === 'studies' && (
-          <div className="space-y-8">
-            {/* Search and Filters Bar */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-xs">
-              {/* Category selector chips */}
-              <div className="flex flex-wrap gap-1.5">
-                {categoriesList.map(cat => {
-                  const getCategoryLabel = (c: string) => {
-                    switch (c) {
-                      case 'Todos': return 'Todos los Recursos';
-                      case 'Damas': return 'Estudios para Damas';
-                      case 'Caballeros': return 'Estudios para Caballeros';
-                      case 'Jóvenes': return 'Jóvenes / Universitarios';
-                      case 'Generales': return 'Generales / Devocionales';
-                      default: return c;
-                    }
-                  };
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategoryFilter(cat)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                        selectedCategoryFilter === cat 
-                          ? 'bg-gold text-white shadow-xs' 
-                          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-450 hover:bg-gray-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {getCategoryLabel(cat)}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Search input */}
-              <div className="relative w-full md:w-72">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar estudio o tema..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-gold/30 dark:focus:ring-gold/25 focus:border-gold transition-all"
-                />
-              </div>
+    <main className="min-h-screen overflow-hidden bg-[#f7f8fc] text-slate-950 dark:bg-[#030817] dark:text-white">
+      <section id="programs" className="relative isolate scroll-mt-28 px-4 pb-20 pt-16 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,.2),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(245,158,11,.13),transparent_28%)]" />
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#0b1f52] via-[#172f78] to-[#07122f] px-6 py-14 text-white shadow-[0_35px_100px_-35px_rgba(20,45,120,.65)] sm:px-10 lg:px-14">
+          <div className="grid items-end gap-10 lg:grid-cols-[1fr_.75fr]">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-amber-200"><Sparkles size={14} /> Crecer juntos</span>
+              <h1 className="mt-6 max-w-3xl font-serif text-4xl font-bold leading-[1.05] sm:text-6xl">Programas para vivir la fe, a tu ritmo o en comunidad.</h1>
+              <p className="mt-6 max-w-2xl text-base leading-7 text-blue-100/85 sm:text-lg">Grupos en vivo, devocionales, lecturas guiadas y cursos gratuitos. Aquí no hay notas ni matrículas académicas: eliges una experiencia y comienzas.</p>
             </div>
-
-            {loading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-              </div>
-            ) : filteredStudies.length === 0 ? (
-              <div className="text-center py-20 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-3xl shadow-xxs">
-                <BookOpen size={56} className="mx-auto mb-3 opacity-20 text-gray-400" />
-                <p className="text-lg font-medium text-gray-500">No se encontraron estudios</p>
-                <p className="text-sm text-gray-400 mt-1">Intenta ajustando los filtros o buscando con otros términos.</p>
-              </div>
-            ) : (
-              <motion.div 
-                layout
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                <AnimatePresence>
-                  {filteredStudies.map((study) => {
-                    const categoryColors: Record<string, string> = {
-                      Damas: 'bg-rose-500/10 text-rose-500 border border-rose-500/25',
-                      Caballeros: 'bg-blue-500/10 text-blue-500 border border-blue-500/25',
-                      Jóvenes: 'bg-purple-500/10 text-purple-500 border border-purple-500/25',
-                      Generales: 'bg-amber-500/10 text-amber-500 border border-amber-500/25'
-                    };
-
-                    return (
-                      <motion.div
-                        key={study.id}
-                        layout
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 flex flex-col group text-left h-full"
-                      >
-                        {/* Cover */}
-                        <div className="h-44 bg-gray-100 dark:bg-slate-800 relative overflow-hidden shrink-0">
-                          {study.cover_image_url ? (
-                            <img loading="lazy" src={study.cover_image_url} alt={study.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900/40 flex items-center justify-center">
-                              <BookOpen size={40} className="text-indigo-300 dark:text-indigo-800" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${categoryColors[study.category] || 'bg-gray-500 text-white'}`}>
-                              {study.category}
-                            </span>
-                          </div>
-                          <div className="absolute top-3 right-3">
-                            <span className="px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/25 backdrop-blur-sm flex items-center gap-1">
-                              <BookOpen size={10} />
-                              Lectura Inmediata
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Details */}
-                        <div className="p-5 flex-1 flex flex-col justify-between">
-                          <div className="space-y-2">
-                            <h3 className="font-serif font-bold text-lg text-slate-850 dark:text-white leading-snug group-hover:text-indigo-650 transition-colors line-clamp-2">
-                              {study.title}
-                            </h3>
-                            {study.description && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 font-light leading-relaxed">
-                                {study.description}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="pt-5 border-t border-gray-100 dark:border-white/5 mt-5 flex flex-wrap gap-2 justify-end">
-                            {study.video_url && (
-                              <button
-                                onClick={() => setVideoModalUrl(study.video_url)}
-                                className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 rounded-lg text-xxs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                                title="Ver video de clase"
-                              >
-                                <Video size={13} />
-                                Video
-                              </button>
-                            )}
-                            
-                            {study.read_now_url && (
-                              <a
-                                href={study.read_now_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-3.5 py-2 bg-gray-100 dark:bg-slate-850 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-lg text-xxs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                              >
-                                <Eye size={13} />
-                                Leer
-                              </a>
-                            )}
-
-                            {study.pdf_url && (
-                              <a
-                                href={study.pdf_url}
-                                download
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-3.5 py-2 bg-gold hover:bg-yellow-600 text-white rounded-lg text-xxs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xxs transition-colors cursor-pointer"
-                              >
-                                <Download size={13} />
-                                PDF
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </div>
-        )}
-
-        {/* CONTENIDO DE PROGRAMAS (RUTAS DE DISCIPULADO) */}
-        {activeTab === 'programs' && (
-          <div className="space-y-12">
-            {loading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-              </div>
-            ) : categories.length === 0 && courses.length === 0 ? (
-              <div className="text-center py-20 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-3xl shadow-xxs">
-                <GraduationCap size={56} className="mx-auto mb-3 opacity-20 text-gray-400" />
-                <p className="text-lg font-medium text-gray-500">No hay programas de discipulado disponibles</p>
-                <p className="text-sm text-gray-400 mt-1">Pronto se anunciarán las próximas fechas de inscripción.</p>
-              </div>
-            ) : (
-              <div className="space-y-16">
-                {displayCategories.map((cat, idx) => {
-                  const catCourses = coursesByCategory(cat.name);
-                  if (catCourses.length === 0) return null;
-
-                  return (
-                    <div key={cat.id} className="space-y-6 text-left relative">
-                      {/* Section Header */}
-                      <div className="border-l-4 border-indigo-600 pl-4 space-y-1">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
-                          {cat.id === 'uncategorized' ? 'Generales / Otros' : `Ruta Nivel ${idx + 1}`}
-                        </span>
-                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
-                          {cat.name}
-                        </h2>
-                        {cat.description && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 font-light max-w-3xl leading-relaxed">
-                            {cat.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Pathways/Timeline layout of courses */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
-                        {catCourses.map((course) => {
-                          const enrolled = !!userEnrollments[course.id];
-                          const requestStatus = userRequests[course.id];
-                          const totalEnrolled = enrollmentCounts[course.id] || 0;
-                          const spotsAvailable = course.capacity ? Math.max(0, course.capacity - totalEnrolled) : 0;
-                          const progress = courseProgress[course.id] || 0;
-
-                          return (
-                            <motion.div
-                              key={course.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between"
-                            >
-                              {/* Background Pattern accent */}
-                              <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50/30 dark:bg-indigo-950/10 rounded-bl-full pointer-events-none -mr-4 -mt-4"></div>
-
-                              <div className="space-y-4">
-                                {/* Header / Cover metadata info */}
-                                <div className="flex gap-4 items-start">
-                                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 shrink-0 overflow-hidden flex items-center justify-center">
-                                    {course.cover_image_url ? (
-                                      <img loading="lazy" src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <GraduationCap size={28} />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <h3 className="font-serif font-bold text-lg text-slate-850 dark:text-white leading-snug">
-                                      {course.title}
-                                    </h3>
-                                    
-                                    {/* Meta Tags */}
-                                    <div className="flex flex-wrap gap-2 mt-1.5 text-xxs font-bold text-indigo-600 dark:text-indigo-400">
-                                      <span className="flex items-center gap-1 bg-gold/10 px-2 py-0.5 rounded-md border border-gold/25 text-gold">
-                                        <GraduationCap size={11} />
-                                        Curso Certificado
-                                      </span>
-                                      {course.duration && (
-                                        <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-100/50">
-                                          <Clock size={11} /> {course.duration}
-                                        </span>
-                                      )}
-                                      {course.schedule && (
-                                        <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-100/50">
-                                          <Calendar size={11} /> {course.schedule}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-light leading-relaxed">
-                                  {course.description || 'Sin descripción detallada del programa.'}
-                                </p>
-
-                                {/* Spots / Capacity Details */}
-                                <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-550 pt-2 border-t border-gray-100 dark:border-white/5">
-                                  <span className="flex items-center gap-1 font-medium">
-                                    <Users size={12} /> matriculados: {totalEnrolled}
-                                  </span>
-                                  {course.capacity ? (
-                                    <span className={`font-semibold ${spotsAvailable > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                                      {spotsAvailable > 0 ? `${spotsAvailable} cupos disponibles` : 'Sin cupos'}
-                                    </span>
-                                  ) : (
-                                    <span className="text-green-600 dark:text-green-400 font-semibold">Cupo libre</span>
-                                  )}
-                                </div>
-
-                                {/* Enrolled Course Progress */}
-                                {enrolled && (
-                                  <div className="pt-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1">
-                                      <span>Tu avance en el aula</span>
-                                      <span>{progress}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5">
-                                      <div 
-                                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000"
-                                        style={{ width: `${progress}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {enrolled && (
-                                <BorderBeam duration={10} colorFrom="#10b981" colorTo="#6366f1" size={150} />
-                              )}
-
-                              {/* Button Logic */}
-                              <div className="pt-6 mt-4 border-t border-gray-100 dark:border-white/5 flex justify-end">
-                                {enrolled ? (
-                                  <Link
-                                    to={`/lms/curso/${course.id}`}
-                                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer"
-                                  >
-                                    <CheckCircle size={14} />
-                                    Ir al Aula
-                                  </Link>
-                                ) : requestStatus === 'pending' ? (
-                                  <button
-                                    disabled
-                                    className="px-5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-gray-200 dark:border-white/5"
-                                  >
-                                    <AlertCircle size={14} />
-                                    Solicitud Pendiente
-                                  </button>
-                                ) : requestStatus === 'rejected' ? (
-                                  <button
-                                    onClick={() => handleEnrollRequest(course.id)}
-                                    disabled={submittingEnrollment === course.id}
-                                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
-                                  >
-                                    {submittingEnrollment === course.id ? (
-                                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
-                                    ) : (
-                                      <>
-                                        <PlusCircle size={14} />
-                                        Re-intentar Inscripción
-                                      </>
-                                    )}
-                                  </button>
-                                ) : course.capacity && spotsAvailable === 0 ? (
-                                  <button
-                                    disabled
-                                    className="px-5 py-2.5 bg-gray-100 dark:bg-slate-800 text-red-400 dark:text-red-500/80 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
-                                  >
-                                    <Lock size={14} />
-                                    Cupo Completo
-                                  </button>
-                                ) : (
-                                  <ShinyButton
-                                    onClick={() => handleEnrollRequest(course.id)}
-                                    disabled={submittingEnrollment === course.id}
-                                    className="px-5 py-2.5 bg-indigo-600 text-white font-bold"
-                                  >
-                                    {submittingEnrollment === course.id ? (
-                                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
-                                    ) : (
-                                      <>
-                                        <Bookmark size={14} />
-                                        Inscríbete al Programa
-                                      </>
-                                    )}
-                                  </ShinyButton>
-                                )}
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-      </div>
-
-      {/* Video Lightbox Modal */}
-      {videoModalUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-4xl aspect-video rounded-3xl overflow-hidden shadow-2xl bg-black border border-white/10">
-            <button
-              onClick={() => setVideoModalUrl(null)}
-              className="absolute top-4 right-4 z-10 p-2 bg-black/60 hover:bg-black/85 text-white rounded-full transition-colors cursor-pointer border border-white/10"
-              title="Cerrar video"
-            >
-              <X size={20} />
-            </button>
-            <iframe
-              src={videoModalUrl}
-              className="w-full h-full border-0"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              title="Video de Estudio"
-            />
+            <div className="grid grid-cols-2 gap-3 rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
+              <div className="rounded-2xl bg-white/10 p-4"><strong className="text-3xl">{programs.length}</strong><span className="mt-1 block text-xs text-blue-100">programas disponibles</span></div>
+              <div className="rounded-2xl bg-white/10 p-4"><strong className="text-3xl">4</strong><span className="mt-1 block text-xs text-blue-100">formas de aprender</span></div>
+              <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-amber-300/10 p-4 text-sm text-amber-100"><CheckCircle2 size={20} /> Contenido gratuito y acompañamiento pastoral</div>
+            </div>
           </div>
         </div>
-      )}
+      </section>
 
-    </div>
+      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="-mt-8 mb-10 rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-900/5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <label className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={19} />
+              <span className="sr-only">Buscar programas</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por tema, audiencia o nombre…" className="h-13 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950" />
+            </label>
+            <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar por tipo de programa">
+              <button onClick={() => setType('all')} className={`shrink-0 rounded-xl px-4 py-3 text-xs font-bold transition ${type === 'all' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300'}`}>Todos</button>
+              {(Object.entries(typeDetails) as Array<[StudyProgramType, (typeof typeDetails)[StudyProgramType]]>).map(([value, details]) => (
+                <button key={value} onClick={() => setType(value)} className={`shrink-0 rounded-xl px-4 py-3 text-xs font-bold transition ${type === value ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300'}`}>{details.label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div id="categories" className="mb-8 grid scroll-mt-28 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(Object.entries(typeDetails) as Array<[StudyProgramType, (typeof typeDetails)[StudyProgramType]]>).map(([value, details]) => {
+            const Icon = details.icon;
+            return <button key={value} onClick={() => setType(value)} className="rounded-2xl border border-slate-200 bg-white/65 p-5 text-left transition hover:border-blue-300 dark:border-white/10 dark:bg-white/5"><Icon className="mb-3 text-blue-700 dark:text-amber-300" /><strong className="block text-sm">{details.label}</strong><span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{details.description}</span></button>;
+          })}
+        </div>
+
+        <div id="catalog" className="scroll-mt-28">
+        {compatibilityMode && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-400/10 dark:text-amber-100">
+            <WifiOff className="mt-0.5 shrink-0" size={18} /><p>Mostrando los recursos existentes en modo de compatibilidad. Al instalar la migración, se habilitarán grupos, cohortes, progreso sincronizado y material privado del facilitador.</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-[27rem] animate-pulse rounded-[2rem] bg-slate-200/70 dark:bg-white/5" />)}</div>
+        ) : error ? (
+          <div className="rounded-3xl border border-red-200 bg-red-50 p-10 text-center text-red-800 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100"><p>{error}</p><button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-red-700 px-5 py-2.5 text-sm font-bold text-white">Reintentar</button></div>
+        ) : filtered.length ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{filtered.map((program) => <ProgramCard key={`${program.source}-${program.id}`} program={program} />)}</div>
+        ) : (
+          <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center dark:border-white/15 dark:bg-white/5"><CalendarDays className="mx-auto mb-4 text-slate-400" size={42} /><h2 className="font-serif text-2xl font-bold">No encontramos programas</h2><p className="mt-2 text-sm text-slate-500">Prueba otro término o selecciona una forma de aprendizaje diferente.</p></div>
+        )}
+        </div>
+      </section>
+    </main>
   );
 }

@@ -224,13 +224,15 @@ const SermonsManager = () => {
                 })
                 .filter(Boolean)
                 .join(' ')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&nbsp/g, ' ')
                 .substring(0, 200);
             }
           } catch {
-            plainTextDescription = data.content.replace(/<[^>]*>/g, '').substring(0, 200);
+            plainTextDescription = data.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&nbsp/g, ' ').substring(0, 200);
           }
         } else {
-          plainTextDescription = data.content.replace(/<[^>]*>/g, '').substring(0, 200);
+          plainTextDescription = data.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&nbsp/g, ' ').substring(0, 200);
         }
       }
 

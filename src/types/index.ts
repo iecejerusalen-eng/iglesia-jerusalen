@@ -116,6 +116,15 @@ export interface VolunteerShift {
   end_time: string;
   ministry_id: string | null;
   required_volunteers: number;
+  category?: string;
+  location?: string | null;
+  effort_level?: 'ligero' | 'moderado' | 'fisico';
+  accessibility_notes?: string | null;
+  skills_needed?: string[];
+  supplies_provided?: boolean;
+  is_published?: boolean;
+  registration_deadline?: string | null;
+  updated_at?: string;
   created_at: string;
   ministries?: { name: string; theme_color?: string } | null;
 }
@@ -283,7 +292,11 @@ export interface Sermon {
   created_at: string;
   thumbnail_url?: string | null;
   video_url?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: {
+    cover_image_url?: string | null;
+    cover_video_url?: string | null;
+    [key: string]: unknown;
+  } | null;
   editors?: string[] | null;
   sermon_categories?: SermonCategory | null;
   speakers?: Speaker | null;

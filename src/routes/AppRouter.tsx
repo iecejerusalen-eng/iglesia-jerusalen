@@ -119,6 +119,8 @@ const OpenResourcesManager = lazyWithRetry(() => import('../pages/admin/OpenReso
 const ComponentStylesManager = lazyWithRetry(() => import('../pages/admin/ComponentStylesManager'));
 const ComponentLibrary = lazyWithRetry(() => import('../pages/admin/ComponentLibrary'));
 const OpenResourceBuilder = lazyWithRetry(() => import('../pages/admin/OpenResourceBuilder'));
+const StudyProgramsManager = lazyWithRetry(() => import('../pages/admin/StudyProgramsManager'));
+const StudyProgramBuilder = lazyWithRetry(() => import('../pages/admin/StudyProgramBuilder'));
 const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager'));
 const MenuManager = lazyWithRetry(() => import('../pages/admin/MenuManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
@@ -237,13 +239,23 @@ export default function AppRouter() {
             <Route path="/admin/lms/matriculas" element={<LMSManager />} />
             <Route path="/admin/lms/landing-editor" element={<LMSLandingEditor />} />
             <Route path="/admin/lms/analytics" element={<LMSAnalyticsDashboard />} />
-            <Route path="/admin/recursos-abiertos" element={<OpenResourcesManager />} />
-            <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
             <Route path="/admin/juegos" element={<GamesManager />} />
             <Route path="/admin/juegos/audio-library" element={<AudioLibrary />} />
             <Route path="/admin/juegos/quien-quiere-ser-biblionario" element={<BiblionarioEditor />} />
             <Route path="/admin/juegos/ahorcado-biblico" element={<HangmanEditor />} />
             <Route path="/admin/juegos/memorama-biblico" element={<MemoryEditor />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute module="study_programs" />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/programas" element={<StudyProgramsManager />} />
+            <Route path="/admin/programas/:id" element={<StudyProgramBuilder />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute module="open_resources" />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/recursos-abiertos" element={<OpenResourcesManager />} />
+            <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute module="diseno" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>

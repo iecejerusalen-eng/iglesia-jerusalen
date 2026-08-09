@@ -62,15 +62,17 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
           <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {sermons.map((sermon) => {
               const hasYoutube = !!sermon.youtube_url;
-              const hasVideoCover = !!sermon.metadata?.cover_video_url;
-              const hasImageCover = !!sermon.metadata?.cover_image_url;
+              const coverVideo = sermon.metadata?.cover_video_url ?? null;
+              const metadataCoverImage = sermon.metadata?.cover_image_url ?? null;
+              const hasVideoCover = !!coverVideo;
+              const hasImageCover = !!metadataCoverImage;
               const hasMedia = hasYoutube || hasVideoCover || hasImageCover;
 
               const coverImage = hasImageCover 
-                ? sermon.metadata!.cover_image_url 
+                ? metadataCoverImage
                 : hasYoutube ? `https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url!)}/mqdefault.jpg` : null;
 
-              const linkHref = hasYoutube ? sermon.youtube_url : (hasVideoCover ? sermon.metadata!.cover_video_url : `/recursos?sermon=${sermon.id}`);
+              const linkHref = hasYoutube ? sermon.youtube_url! : (hasVideoCover ? coverVideo! : `/recursos?sermon=${sermon.id}`);
 
               if (!hasMedia) {
                 return (
@@ -119,7 +121,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
                         
                         {hasVideoCover ? (
                           <video 
-                             src={sermon.metadata!.cover_video_url} 
+                             src={coverVideo!}
                              className="w-full h-full object-cover filter brightness-90 group-hover:brightness-100 transition-all duration-700" 
                              autoPlay muted loop playsInline 
                           />

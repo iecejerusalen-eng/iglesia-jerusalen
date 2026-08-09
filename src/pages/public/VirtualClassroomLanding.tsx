@@ -120,7 +120,12 @@ const VirtualClassroomLanding = () => {
 
         if (parsedHero) setHeroContent(parsedHero);
         if (parsedFeatures) setFeaturesContent(parsedFeatures);
-        setCourses((coursesResult.data ?? []).filter(isPublishedCourse));
+        const uniqueCourses = new Map<string, PublishedCourse>();
+        (coursesResult.data ?? []).filter(isPublishedCourse).forEach((course) => {
+          const key = course.title.trim().toLocaleLowerCase('es');
+          if (!uniqueCourses.has(key)) uniqueCourses.set(key, course);
+        });
+        setCourses([...uniqueCourses.values()]);
       } catch (error) {
         console.error('Error al cargar el Aula Virtual:', error);
         if (isMounted) setLoadError('No pudimos actualizar el catálogo en este momento. Puedes ingresar a tu aula y continuar tus cursos.');
@@ -175,10 +180,10 @@ const VirtualClassroomLanding = () => {
                 {user ? 'Continuar aprendiendo' : 'Entrar al Aula Virtual'}
                 <ArrowRight size={17} />
               </ShinyButton>
-              <Link to="/programas" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-6 text-sm font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
-                Explorar programas
+              <a href="#lms_courses" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-6 text-sm font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
+                Explorar cursos
                 <BookOpen size={17} />
-              </Link>
+              </a>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -268,7 +273,7 @@ const VirtualClassroomLanding = () => {
               <h2 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">Cursos destacados</h2>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Elige una ruta y comienza tu formación.</p>
             </div>
-            <Link to="/programas" className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-300">Ver todos los programas <ArrowRight size={16} /></Link>
+            <button type="button" onClick={() => navigate(studentDestination)} className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-300">Ir a mi aula <ArrowRight size={16} /></button>
           </div>
 
           {courses.length > 0 ? (

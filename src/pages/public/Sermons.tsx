@@ -491,9 +491,9 @@ const Sermons = () => {
                     {/* Contenido HTML de TipTap / Vista Previa */}
                     <div className="prose prose-sm text-slate-600 dark:text-slate-300 max-w-none leading-relaxed border-t border-gray-100 dark:border-white/10 pt-5 mt-5 font-medium line-clamp-3">
                       {sermon.content && sermon.content.trim().startsWith('[') ? (
-                        <p>{sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.'}</p>
+                        <p>{(sermon.description || 'Sermón interactivo por bloques. Haz clic en el enlace de abajo para ver la enseñanza completa.').replace(/&nbsp;/g, ' ').replace(/&nbsp/g, ' ')}</p>
                       ) : (
-                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(sermon.content || '') }} />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((sermon.content || '').replace(/&nbsp;/g, ' ').replace(/&nbsp/g, ' ')) }} />
                       )}
                     </div>
 

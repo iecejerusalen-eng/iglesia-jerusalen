@@ -21,7 +21,6 @@ import {
   CreditCard,
   PackageCheck,
   MessageCircle,
-  HelpCircle,
   Clock,
   Mic,
   Smile,
@@ -145,7 +144,7 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
     ]
   },
   {
-    pathPattern: '^/volunteer-schedule$',
+    pathPattern: '^/mi-horario$',
     title: 'Voluntariado',
     sections: [
       { id: 'volunteer_hero', label: 'Servicio', icon: Heart },

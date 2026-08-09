@@ -139,7 +139,7 @@ export default function LMSManager() {
             <ArrowRight size={14} />
           </button>
           <button 
-            onClick={() => navigate('/admin/recursos-abiertos')}
+            onClick={() => navigate('/admin/programas')}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
           >
             Programas Libres

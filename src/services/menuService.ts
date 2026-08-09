@@ -21,6 +21,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { id: 'default-3-3', label: 'Peticiones', url: '/peticiones', order_index: 30, parent_id: 'default-3', is_visible: true, icon: 'MessageSquare' },
   { id: 'default-3-4', label: 'Cumpleaños 🎂', url: '/cumpleanos', order_index: 40, parent_id: 'default-3', is_visible: true, icon: 'Cake' },
   { id: 'default-3-5', label: 'Misiones 🌍', url: '/misiones', order_index: 50, parent_id: 'default-3', is_visible: true, icon: 'Globe' },
+  { id: 'default-3-6', label: 'Quiero servir', url: '/mi-horario', order_index: 60, parent_id: 'default-3', is_visible: true, icon: 'HandHeart' },
   { id: 'default-4', label: 'Recursos', url: '#', order_index: 40, is_visible: true, icon: 'BookOpen' },
   { id: 'default-4-1', label: 'La Santa Biblia', url: '/recursos/biblia', order_index: 10, parent_id: 'default-4', is_visible: true, icon: 'Book' },
   { id: 'default-4-2', label: 'Prédicas', url: '/predicas', order_index: 20, parent_id: 'default-4', is_visible: true, icon: 'Video' },

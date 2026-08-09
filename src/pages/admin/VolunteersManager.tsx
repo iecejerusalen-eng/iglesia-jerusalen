@@ -5,6 +5,13 @@ import { Shield, Plus, Calendar, Users, Trash2, CheckCircle2, Clock, X } from 'l
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const SERVICE_TEMPLATES: Array<Pick<VolunteerShift, 'title' | 'description' | 'category' | 'effort_level' | 'skills_needed' | 'required_volunteers'>> = [
+  { title: 'Equipo de cocina y refrigerio', description: 'Preparar, servir y dejar en orden el área de alimentos.', category: 'cocina', effort_level: 'moderado', skills_needed: ['Cocina', 'Hospitalidad'], required_volunteers: 4 },
+  { title: 'Jornada de limpieza', description: 'Limpieza y organización de las áreas comunes de la iglesia.', category: 'limpieza', effort_level: 'moderado', skills_needed: ['Orden', 'Limpieza'], required_volunteers: 6 },
+  { title: 'Mantenimiento eléctrico', description: 'Revisión segura de luminarias, conexiones y necesidades eléctricas.', category: 'mantenimiento', effort_level: 'fisico', skills_needed: ['Electricidad'], required_volunteers: 2 },
+  { title: 'Pintura y renovación de espacios', description: 'Preparar superficies, pintar y ordenar los materiales al finalizar.', category: 'pintura', effort_level: 'fisico', skills_needed: ['Pintura', 'Mantenimiento'], required_volunteers: 5 },
+];
+
 export default function VolunteersManager() {
   const [shifts, setShifts] = useState<VolunteerShift[]>([]);
   const [assignments, setAssignments] = useState<VolunteerAssignment[]>([]);
@@ -18,7 +25,12 @@ export default function VolunteersManager() {
     start_time: '',
     end_time: '',
     required_volunteers: 1,
-    ministry_id: ''
+    ministry_id: '',
+    category: 'general',
+    effort_level: 'moderado',
+    skills_needed: [],
+    location: '',
+    is_published: true,
   });
 
   const loadData = async () => {
@@ -45,7 +57,7 @@ export default function VolunteersManager() {
   };
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => loadData());
   }, []);
 
   const handleOpenModal = () => {
@@ -55,7 +67,24 @@ export default function VolunteersManager() {
       start_time: '',
       end_time: '',
       required_volunteers: 1,
-      ministry_id: ''
+      ministry_id: '',
+      category: 'general',
+      effort_level: 'moderado',
+      skills_needed: [],
+      location: '',
+      is_published: true,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenTemplate = (template: typeof SERVICE_TEMPLATES[number]) => {
+    setFormData({
+      ...template,
+      start_time: '',
+      end_time: '',
+      ministry_id: '',
+      location: '',
+      is_published: true,
     });
     setIsModalOpen(true);
   };
@@ -136,6 +165,15 @@ export default function VolunteersManager() {
           <Plus className="w-5 h-5" /> Crear Turno
         </button>
       </motion.div>
+
+      <section className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-500/15 dark:bg-indigo-500/10">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="lg:w-64"><p className="text-xs font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Necesidades frecuentes</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Crea una oportunidad completa en menos pasos.</p></div>
+          <div className="flex flex-1 gap-2 overflow-x-auto pb-1">
+            {SERVICE_TEMPLATES.map((template) => <button key={template.title} type="button" onClick={() => handleOpenTemplate(template)} className="shrink-0 rounded-xl border border-white bg-white/80 px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">{template.title}</button>)}
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Turnos */}
@@ -300,7 +338,7 @@ export default function VolunteersManager() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-gray-200 dark:border-white/10 shadow-2xl z-10"
+              className="relative max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl border border-gray-200 dark:border-white/10 shadow-2xl z-10"
             >
               <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-t-2xl">
                 <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
@@ -315,6 +353,28 @@ export default function VolunteersManager() {
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Título</label>
                   <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all" placeholder="Ej. Ujieres Culto Dominical" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Qué se hará</label>
+                  <textarea required rows={3} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full resize-none bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white outline-none transition-all" placeholder="Explica la tarea, el resultado esperado y cómo estará acompañado el equipo." />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Categoría</label>
+                    <select value={formData.category || 'general'} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 dark:text-white outline-none"><option value="general">Servicio general</option><option value="cocina">Cocina</option><option value="limpieza">Limpieza</option><option value="mantenimiento">Mantenimiento</option><option value="pintura">Pintura</option><option value="ninos">Niños</option><option value="medios">Medios</option><option value="bienvenida">Bienvenida</option></select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Esfuerzo</label>
+                    <select value={formData.effort_level || 'moderado'} onChange={e => setFormData({...formData, effort_level: e.target.value as VolunteerShift['effort_level']})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 dark:text-white outline-none"><option value="ligero">Ligero</option><option value="moderado">Moderado</option><option value="fisico">Físico</option></select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Lugar</label>
+                    <input value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 dark:text-white outline-none" placeholder="Ej. Cocina" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Habilidades útiles <span className="font-normal normal-case">(separadas por coma)</span></label>
+                  <input value={(formData.skills_needed || []).join(', ')} onChange={e => setFormData({...formData, skills_needed: e.target.value.split(',').map(item => item.trim()).filter(Boolean)})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 dark:text-white outline-none" placeholder="Electricidad, pintura, cocina, organización…" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ministerio (Opcional)</label>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Award, Trash2 } from 'lucide-react';
+import { Plus, Award, Trash2, Compass, List } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import type { MemberWithRelations } from '../../features/members/utils/schema';
@@ -9,6 +9,7 @@ import { MemberForm } from '../../features/members/components/MemberForm';
 import { MembersList } from '../../features/members/components/MembersList';
 import { CareersModal } from '../../features/members/components/CareersModal';
 import { DeletedMembersModal } from '../../features/members/components/DeletedMembersModal';
+import { PurposeDashboard } from '../../features/members/components/PurposeDashboard';
 
 const MembersManager = () => {
   const { data: members = [], isLoading: membersLoading } = useMembers();
@@ -18,6 +19,7 @@ const MembersManager = () => {
   const [editingMember, setEditingMember] = useState<MemberWithRelations | null>(null);
   const [showCareersModal, setShowCareersModal] = useState(false);
   const [showDeletedModal, setShowDeletedModal] = useState(false);
+  const [activeView, setActiveView] = useState<'purpose' | 'directory'>('purpose');
 
   const handleOpenCreate = () => {
     setEditingMember(null);
@@ -30,7 +32,7 @@ const MembersManager = () => {
   };
 
   return (
-    <AnimeFadeUp className="space-y-6 max-w-5xl">
+    <AnimeFadeUp className="space-y-6 max-w-[1600px]">
       <AdminHeader 
         title="Base de Datos de Miembros (CRM)" 
         description="Gestiona las fichas personales, hitos espirituales, roles de liderazgo y habilidades/talentos de la congregación."
@@ -66,6 +68,13 @@ const MembersManager = () => {
         }
       />
 
+      {!showForm && (
+        <div className="inline-flex w-full rounded-2xl border border-slate-200/80 bg-white/70 p-1.5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 sm:w-auto">
+          <button type="button" onClick={() => setActiveView('purpose')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition sm:flex-none ${activeView === 'purpose' ? 'bg-primary text-white shadow-lg shadow-primary/15' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'}`}><Compass size={17} /> Mapa de propósito</button>
+          <button type="button" onClick={() => setActiveView('directory')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition sm:flex-none ${activeView === 'directory' ? 'bg-primary text-white shadow-lg shadow-primary/15' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'}`}><List size={17} /> Directorio CRM</button>
+        </div>
+      )}
+
       {showForm ? (
         <MemberForm
           editingMember={editingMember}
@@ -76,6 +85,8 @@ const MembersManager = () => {
             if (success) setShowForm(false);
           }}
         />
+      ) : activeView === 'purpose' ? (
+        <PurposeDashboard members={members} loading={membersLoading} onEdit={handleOpenEdit} />
       ) : (
         <MembersList
           members={members}

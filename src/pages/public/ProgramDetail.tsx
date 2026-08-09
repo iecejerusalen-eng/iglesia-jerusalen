@@ -1,273 +1,182 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowLeft, BookOpen, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, ExternalLink, Laptop, LockKeyhole, Play, Users } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
-import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
-import { BookOpen, ChevronDown, ChevronRight, ArrowLeft, FolderOpen, Video, FileText } from 'lucide-react';
-import type { OpenResource, OpenSection, OpenActivity } from '../../types';
+import { useAuthStore } from '../../store/useAuthStore';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
+import { fetchProgramDetail } from '../../features/study-programs/service';
+import type { StudyProgramDetail, StudyProgramLesson } from '../../features/study-programs/types';
 
-const ProgramDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const [course, setCourse] = useState<OpenResource | null>(null);
-  const [sections, setSections] = useState<OpenSection[]>([]);
-  const [activities, setActivities] = useState<OpenActivity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+const typeLabel = { community_group: 'Grupo en comunidad', self_guided: 'Curso a tu ritmo', facilitated: 'Programa acompañado', downloadable: 'Material descargable' };
+const accessLabel = { public: 'Acceso público', account: 'Requiere una cuenta', approval: 'Ingreso con aprobación', invitation: 'Solo con invitación' };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setLoading(true);
-
-      try {
-        const { data: courseData, error } = await supabase
-          .from('open_resources')
-          .select(`
-            *,
-            open_sections (
-              *,
-              open_activities (*)
-            )
-          `)
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-
-        if (courseData) {
-          const resource = courseData as unknown as OpenResource;
-          setCourse(resource);
-          
-          const fetchedSections = resource.open_sections || [];
-          // Sort sections by order_index
-          const sortedSections = [...fetchedSections].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-          setSections(sortedSections);
-
-          let fetchedActivities: OpenActivity[] = [];
-          sortedSections.forEach(sec => {
-            const secActs = sec.open_activities || [];
-            const sortedActs = [...secActs].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-            fetchedActivities = [...fetchedActivities, ...sortedActs];
-          });
-          setActivities(fetchedActivities);
-
-          // Auto-expand the first section
-          if (fetchedSections.length > 0) {
-            setExpandedSections({ [fetchedSections[0].id]: true });
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching course data:', err);
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [id]);
-
-  const toggleActivity = (activityId: string) => {
-    const isOpening = expandedActivity !== activityId;
-    setExpandedActivity(isOpening ? activityId : null);
-  };
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-slate-950 transition-colors">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
-      </div>
-    );
+const readLocalProgress = (programId: string): string[] => {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(`study-progress-${programId}`) ?? '[]');
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  } catch (error: unknown) {
+    console.warn('No se pudo leer el progreso local del programa.', error);
+    return [];
   }
-
-  if (!course) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-400 bg-surface dark:bg-slate-950">
-        <BookOpen size={56} className="mb-3 opacity-30" />
-        <p className="text-lg font-medium">Programa no encontrado</p>
-        <Link to="/programas" className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mt-2 hover:underline">← Volver a Programas y Estudios</Link>
-      </div>
-    );
-  }
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'video_link': return <Video size={16} className="text-blue-500" />;
-      case 'resource': return <FileText size={16} className="text-emerald-500" />;
-      default: return <BookOpen size={16} className="text-indigo-500" />;
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'video_link': return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/30';
-      case 'resource': return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/30';
-      default: return 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/30';
-    }
-  };
-
-  const renderActivityCard = (activity: OpenActivity) => {
-    return (
-      <AnimeFadeUp
-        key={activity.id}
-        className={`border rounded-xl overflow-hidden transition-colors shadow-xs ${expandedActivity === activity.id ? getActivityColor(activity.type) : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-white/10 hover:border-indigo-200 dark:hover:border-indigo-800'}`}
-      >
-        {/* Activity header */}
-        <button
-          onClick={() => toggleActivity(activity.id)}
-          className="w-full flex items-center gap-4 p-4 text-left cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors"
-        >
-          <span className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-lg flex-shrink-0">
-            {getActivityIcon(activity.type)}
-          </span>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-2">
-              {activity.title}
-            </h3>
-          </div>
-          {expandedActivity === activity.id ? (
-            <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />
-          ) : (
-            <ChevronRight size={18} className="text-gray-400 flex-shrink-0" />
-          )}
-        </button>
-
-        {/* Activity content */}
-        <div className="overflow-hidden transition-all duration-300">
-          {expandedActivity === activity.id && (
-            <AnimeFadeUp className="overflow-hidden">
-              <div className="border-t border-gray-100 dark:border-white/10 bg-slate-50/20 dark:bg-slate-950/20 p-5">
-                {(activity.type === 'video_link' && activity.settings?.video_url) || (activity.type === 'video' && activity.content) ? (
-                  <div className="mb-4 aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
-                    <iframe
-                      src={(activity.settings?.video_url as string) || activity.content || ''}
-                      className="w-full h-full"
-                      allowFullScreen
-                      title="Video de clase"
-                    />
-                  </div>
-                ) : null}
-                {activity.type === 'h5p' && activity.content && (
-                  <div className="mb-4 aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
-                    <iframe
-                      src={activity.content}
-                      className="w-full h-full border-0"
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      title="H5P Interactive Content"
-                    />
-                  </div>
-                )}
-                {activity.content ? (
-                  <BlockLessonRenderer content={activity.content} lessonId={activity.id} />
-                ) : (
-                  <div className="text-sm text-gray-500 italic">No hay contenido de texto adicional.</div>
-                )}
-              </div>
-            </AnimeFadeUp>
-          )}
-        </div>
-      </AnimeFadeUp>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/20 to-white dark:from-slate-950 dark:to-slate-950 transition-colors duration-200">
-      {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-indigo-800 to-indigo-950 text-white overflow-hidden shadow-md">
-        {course.cover_image_url && (
-          <img loading="lazy" src={course.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-xs" />
-        )}
-        <div className="relative max-w-4xl mx-auto px-4 py-16">
-          <Link to="/programas" className="inline-flex items-center gap-1.5 text-indigo-300 hover:text-white text-xs font-semibold uppercase tracking-wider mb-6 transition-colors">
-            <ArrowLeft size={14} /> Volver a Programas y Estudios
-          </Link>
-          <AnimeFadeUp>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold tracking-wider uppercase bg-white/20 px-2 py-0.5 rounded text-white border border-white/30 backdrop-blur-sm">
-                Programa
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3 tracking-tight">{course.title}</h1>
-            {course.description && <p className="text-indigo-200 text-sm md:text-base max-w-2xl font-light leading-relaxed">{course.description}</p>}
-            <div className="flex items-center gap-4 mt-6 text-indigo-300 text-xs">
-              <span className="flex items-center gap-1"><FolderOpen size={13} /> {sections.length} Módulos</span>
-              <span className="flex items-center gap-1"><BookOpen size={13} /> {activities.length} Recursos</span>
-            </div>
-          </AnimeFadeUp>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        
-        {/* Módulos de Estudio */}
-        {sections.length === 0 ? (
-          <div className="text-center py-20 text-gray-400 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-xs">
-            <BookOpen size={48} className="mx-auto mb-3 opacity-20" />
-            <p className="font-medium text-sm">Este programa aún no tiene contenido</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold font-serif text-gray-800 dark:text-gray-100 mb-2">Contenido del Programa</h3>
-            {sections.map((section, modIndex) => {
-              const sectionActivities = activities.filter(a => a.section_id === section.id);
-              const isExpanded = !!expandedSections[section.id];
-
-              return (
-                <div key={section.id} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl p-4 md:p-5 shadow-xs space-y-3">
-                  {/* Section header toggle */}
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-start justify-between text-left cursor-pointer group"
-                  >
-                    <div className="space-y-1 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/50">
-                          Módulo {modIndex + 1}
-                        </span>
-                        <span className="text-xxs text-gray-400 dark:text-gray-500">({sectionActivities.length} recursos)</span>
-                      </div>
-                      <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
-                        {section.title}
-                      </h2>
-                      {section.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-light max-w-2xl leading-normal mt-1">
-                          {section.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-slate-700 transition shadow-xxs flex-shrink-0">
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </div>
-                  </button>
-
-                  {/* Section Activities list */}
-                  <div className="overflow-hidden transition-all duration-300">
-                    {isExpanded && (
-                      <AnimeZoomIn className="overflow-hidden">
-                        <div className="pt-4 space-y-2.5">
-                          {sectionActivities.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic py-2 text-center bg-gray-50 dark:bg-slate-800/50 rounded-lg">No hay recursos en este módulo todavía.</p>
-                          ) : (
-                            sectionActivities.map((activity) => renderActivityCard(activity))
-                          )}
-                        </div>
-                      </AnimeZoomIn>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };
 
-export default ProgramDetail;
+export default function ProgramDetail() {
+  const { id = '' } = useParams<{ id: string }>();
+  const { user } = useAuthStore();
+  const [program, setProgram] = useState<StudyProgramDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [activeLesson, setActiveLesson] = useState<StudyProgramLesson | null>(null);
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [joining, setJoining] = useState(false);
+  const [meetingLinks, setMeetingLinks] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+    fetchProgramDetail(id)
+      .then((result) => {
+        if (!active) return;
+        setProgram(result);
+        if (result) {
+          setCompleted(readLocalProgress(result.id));
+          setExpanded(result.sections[0] ? { [result.sections[0].id]: true } : {});
+        }
+      })
+      .catch((reason: unknown) => {
+        console.error('No fue posible cargar el programa.', reason);
+        if (active) setError('No pudimos cargar este programa.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
+
+  useEffect(() => {
+    if (!user || !program || program.source !== 'study_programs' || program.cohorts.length === 0) return;
+    let active = true;
+    supabase.from('study_cohort_private_access').select('cohort_id, meeting_url').in('cohort_id', program.cohorts.map((cohort) => cohort.id))
+      .then(({ data, error: accessError }) => {
+        if (accessError) { console.error('No se pudieron consultar los enlaces privados del grupo.', accessError); return; }
+        if (!active) return;
+        setMeetingLinks(Object.fromEntries((data ?? []).filter((row) => typeof row.meeting_url === 'string' && row.meeting_url).map((row) => [row.cohort_id, row.meeting_url as string])));
+      });
+    return () => { active = false; };
+  }, [program, user]);
+
+  const totalLessons = program?.sections.reduce((total, section) => total + section.lessons.length, 0) ?? 0;
+  const progress = totalLessons ? Math.round((completed.length / totalLessons) * 100) : 0;
+  const firstLesson = useMemo(() => program?.sections.flatMap((section) => section.lessons)[0] ?? null, [program]);
+
+  const markCompleted = async (lesson: StudyProgramLesson) => {
+    if (!program) return;
+    const next = completed.includes(lesson.id) ? completed.filter((value) => value !== lesson.id) : [...completed, lesson.id];
+    setCompleted(next);
+    localStorage.setItem(`study-progress-${program.id}`, JSON.stringify(next));
+    if (user && program.source === 'study_programs') {
+      const isComplete = next.includes(lesson.id);
+      const { error: progressError } = await supabase.from('study_progress').upsert({
+        user_id: user.id,
+        lesson_id: lesson.id,
+        status: isComplete ? 'completed' : 'in_progress',
+        progress_percent: isComplete ? 100 : 0,
+        completed_at: isComplete ? new Date().toISOString() : null,
+      }, { onConflict: 'user_id,lesson_id' });
+      if (progressError) {
+        console.error('El progreso se guardó localmente, pero no se pudo sincronizar.', progressError);
+        toast.warning('Tu avance quedó guardado en este dispositivo, pero aún no se sincronizó.');
+      }
+    }
+  };
+
+  const requestAccess = async (cohortId?: string) => {
+    if (!program || program.source !== 'study_programs') return;
+    if (!user) {
+      window.location.href = `/login?redirectTo=${encodeURIComponent(`/programas/${id}`)}`;
+      return;
+    }
+    setJoining(true);
+    const automatic = program.access_type === 'public' || program.access_type === 'account';
+    const { error: joinError } = await supabase.from('study_memberships').insert({
+      program_id: program.id, cohort_id: cohortId ?? null, user_id: user.id, member_role: 'participant', status: automatic ? 'active' : 'pending', joined_at: automatic ? new Date().toISOString() : null,
+    });
+    setJoining(false);
+    if (joinError?.code === '23505') toast.info('Ya formas parte de este programa o tienes una solicitud pendiente.');
+    else if (joinError) {
+      console.error('No fue posible registrar la participación.', joinError);
+      toast.error('No pudimos registrar tu solicitud. Inténtalo nuevamente.');
+    } else {
+      toast.success(automatic ? 'Ya puedes comenzar el programa.' : 'Tu solicitud fue enviada para revisión.');
+      if (automatic) {
+        const refreshed = await fetchProgramDetail(id);
+        if (refreshed) setProgram(refreshed);
+      }
+    }
+  };
+
+  if (loading) return <main className="min-h-screen bg-slate-50 px-4 py-20 dark:bg-[#030817]"><div className="mx-auto h-[34rem] max-w-6xl animate-pulse rounded-[2.5rem] bg-slate-200 dark:bg-white/5" /></main>;
+  if (error || !program) return <main className="min-h-screen bg-slate-50 px-4 py-24 text-center dark:bg-[#030817] dark:text-white"><BookOpen className="mx-auto mb-5 text-slate-400" size={52} /><h1 className="font-serif text-3xl font-bold">Programa no disponible</h1><p className="mt-3 text-slate-500">{error ?? 'El programa no existe o todavía no está publicado.'}</p><Link to="/programas" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white"><ArrowLeft size={17} /> Volver a programas</Link></main>;
+
+  return (
+    <main className="min-h-screen bg-[#f7f8fc] text-slate-950 dark:bg-[#030817] dark:text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#071631] via-[#13327d] to-[#08142d] px-4 py-16 text-white sm:px-6 lg:px-8">
+        {program.cover_image_url && <img src={program.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#071631] via-[#071631]/90 to-transparent" />
+        <div className="relative mx-auto max-w-7xl">
+          <Link to="/programas" className="mb-10 inline-flex items-center gap-2 text-sm font-semibold text-blue-100 hover:text-white"><ArrowLeft size={17} /> Todos los programas</Link>
+          <div className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-end">
+            <div>
+              <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-amber-300 px-3 py-1.5 text-slate-950">{typeLabel[program.program_type]}</span><span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{program.category}</span></div>
+              <h1 className="mt-6 max-w-4xl font-serif text-4xl font-bold leading-tight sm:text-6xl">{program.title}</h1>
+              <p className="mt-5 max-w-3xl text-base leading-7 text-blue-100/90 sm:text-lg">{program.summary || program.description}</p>
+              <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-blue-100"><span className="flex items-center gap-2"><BookOpen size={17} />{totalLessons} lecciones</span><span className="flex items-center gap-2"><Laptop size={17} />{accessLabel[program.access_type]}</span>{program.duration_label && <span className="flex items-center gap-2"><Clock3 size={17} />{program.duration_label}</span>}</div>
+            </div>
+            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-2xl">
+              <div className="flex items-end justify-between"><span className="text-sm text-blue-100">Tu avance</span><strong className="text-3xl">{progress}%</strong></div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${progress}%` }} /></div>
+              <button onClick={() => firstLesson && setActiveLesson(firstLesson)} disabled={!firstLesson} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-blue-950 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"><Play size={17} /> {progress ? 'Continuar' : 'Comenzar ahora'}</button>
+              {program.source === 'study_programs' && program.access_type !== 'public' && program.cohorts.length === 0 && <button onClick={() => requestAccess()} disabled={joining} className="mt-2 w-full rounded-2xl border border-white/20 px-5 py-3 text-sm font-bold hover:bg-white/10 disabled:opacity-50">{joining ? 'Procesando…' : program.access_type === 'approval' ? 'Solicitar acceso' : 'Unirme al programa'}</button>}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_22rem] lg:px-8">
+        <section>
+          <div className="mb-6"><span className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">Ruta del programa</span><h2 className="mt-2 font-serif text-3xl font-bold">Contenido y actividades</h2></div>
+          {program.sections.length ? <div className="space-y-4">{program.sections.map((section, index) => (
+            <article key={section.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              <button onClick={() => setExpanded((current) => ({ ...current, [section.id]: !current[section.id] }))} className="flex w-full items-center justify-between gap-4 p-5 text-left">
+                <span><span className="text-[11px] font-black uppercase tracking-widest text-blue-700 dark:text-amber-300">Etapa {index + 1}</span><strong className="mt-1 block font-serif text-xl">{section.title}</strong>{section.description && <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">{section.description}</span>}</span>
+                {expanded[section.id] ? <ChevronDown /> : <ChevronRight />}
+              </button>
+              {expanded[section.id] && <div className="border-t border-slate-200 p-3 dark:border-white/10">{section.lessons.map((lesson, lessonIndex) => (
+                <button key={lesson.id} onClick={() => setActiveLesson(lesson)} className="group flex w-full items-center gap-4 rounded-xl p-3 text-left transition hover:bg-blue-50 dark:hover:bg-white/5">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${completed.includes(lesson.id) ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>{completed.includes(lesson.id) ? <Check size={18} /> : lessonIndex + 1}</span>
+                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm">{lesson.title}</strong><span className="mt-0.5 block text-xs text-slate-500">{lesson.lesson_type === 'devotional' ? 'Devocional' : lesson.lesson_type === 'reading' ? 'Lectura' : lesson.lesson_type === 'activity' ? 'Actividad interactiva' : 'Lección'}{lesson.estimated_minutes ? ` · ${lesson.estimated_minutes} min` : ''}</span></span>
+                  <Play size={16} className="text-blue-700 opacity-0 transition group-hover:opacity-100 dark:text-amber-300" />
+                </button>
+              ))}</div>}
+            </article>
+          ))}</div> : <div className="rounded-3xl border border-dashed border-slate-300 p-12 text-center text-slate-500 dark:border-white/15">Este programa está publicado, pero todavía no tiene lecciones disponibles.</div>}
+        </section>
+
+        <aside className="space-y-5">
+          {program.cohorts.length > 0 && <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 font-bold"><Users size={18} className="text-blue-700 dark:text-amber-300" /> Grupos disponibles</div><div className="mt-4 space-y-3">{program.cohorts.map((cohort) => <div key={cohort.id} className="rounded-2xl bg-slate-100 p-4 dark:bg-white/5"><strong className="text-sm">{cohort.name}</strong>{cohort.schedule_text && <span className="mt-2 flex gap-2 text-xs text-slate-500"><CalendarDays size={14} />{cohort.schedule_text}</span>}{meetingLinks[cohort.id] ? <a href={meetingLinks[cohort.id]} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">Entrar a la reunión <ExternalLink size={13} /></a> : <button onClick={() => requestAccess(cohort.id)} className="mt-3 text-xs font-bold text-blue-700 dark:text-amber-300">Solicitar participación</button>}</div>)}</div></div>}
+          <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 font-bold"><LockKeyhole size={18} className="text-emerald-600" /> Contenido seguro</div><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Las guías con respuestas y notas internas solo son visibles para facilitadores autorizados. Tu progreso personal se guarda en este dispositivo y se sincroniza al iniciar sesión.</p></div>
+        </aside>
+      </div>
+
+      {activeLesson && (
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/80 p-3 backdrop-blur-md sm:p-6" role="dialog" aria-modal="true" aria-label={activeLesson.title}>
+          <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} className="mx-auto min-h-[calc(100vh-1.5rem)] max-w-4xl rounded-[2rem] bg-white p-5 shadow-2xl sm:min-h-0 sm:p-8 dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-5 border-b border-slate-200 pb-5 dark:border-white/10"><div><span className="text-xs font-black uppercase tracking-widest text-blue-700 dark:text-amber-300">{activeLesson.lesson_type}</span><h2 className="mt-1 font-serif text-2xl font-bold">{activeLesson.title}</h2></div><button onClick={() => setActiveLesson(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold dark:border-white/10">Cerrar</button></div>
+            <div className="py-8"><BlockLessonRenderer content={JSON.stringify(activeLesson.content_blocks)} lessonId={activeLesson.id} /></div>
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-between dark:border-white/10"><button onClick={() => setActiveLesson(null)} className="rounded-xl px-5 py-3 text-sm font-bold text-slate-600 dark:text-slate-300">Volver al contenido</button><button onClick={() => markCompleted(activeLesson)} className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white ${completed.includes(activeLesson.id) ? 'bg-slate-600' : 'bg-emerald-600'}`}><Check size={17} />{completed.includes(activeLesson.id) ? 'Marcar como pendiente' : 'Completar lección'}</button></div>
+          </motion.div>
+        </div>
+      )}
+    </main>
+  );
+}
