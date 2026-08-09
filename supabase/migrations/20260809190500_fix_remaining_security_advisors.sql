@@ -33,7 +33,6 @@ ALTER FUNCTION public.verify_student_status(uuid) SECURITY INVOKER;
 
 -- Mover a esquema private (funciones internas que las políticas RLS usan, no disponibles para frontend)
 CREATE SCHEMA IF NOT EXISTS private;
-ALTER FUNCTION public.is_chat_participant(uuid, uuid) SET SCHEMA private;
 
 -- Quitar permisos de ejecución a triggers de base de datos
 REVOKE EXECUTE ON FUNCTION public.protect_profile_access_fields() FROM PUBLIC;
