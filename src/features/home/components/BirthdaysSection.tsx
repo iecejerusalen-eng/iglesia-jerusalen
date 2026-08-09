@@ -1,11 +1,11 @@
 import { Gift, Calendar } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../../components/animations/AnimeWrappers';
 import type { PageSection } from '../types';
-import { getMemberVerse } from '../utils';
+import type { BirthdayMember } from '../types';
 
 interface BirthdaysSectionProps {
   sectionData: PageSection;
-  birthdayMembers: any[];
+  birthdayMembers: BirthdayMember[];
 }
 
 export const BirthdaysSection = ({ sectionData, birthdayMembers }: BirthdaysSectionProps) => {
@@ -70,30 +70,22 @@ export const BirthdaysSection = ({ sectionData, birthdayMembers }: BirthdaysSect
                       </h4>
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500 dark:text-amber-400">
                         <Calendar size={13} />
-                        <span>{new Date(member.birth_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
+                        <span>{new Date(2024, member.birth_month - 1, member.birth_day).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
                       </div>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-850 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
                         <Gift size={11} className="text-amber-500 animate-bounce" />
-                        Cumple {member.ageTurning} años
+                        {member.ministry_name || 'Familia Jerusalén'}
                       </span>
                     </div>
                   </div>
 
                   <div className="border-t border-slate-100 dark:border-white/5 my-4" />
 
-                  {(() => {
-                    const verse = getMemberVerse(member.id);
-                    return (
-                      <div className="flex-grow flex flex-col justify-between text-left">
-                        <p className="text-slate-600 dark:text-slate-400 text-xs italic leading-relaxed font-sans font-light">
-                          "{verse.text}"
-                        </p>
-                        <span className="text-[9px] font-bold text-amber-500 dark:text-amber-450 uppercase tracking-widest mt-2 block text-right font-mono">
-                          — {verse.ref}
-                        </span>
-                      </div>
-                    );
-                  })()}
+                  {member.dedicated_verse && (
+                    <div className="flex-grow text-left">
+                      <p className="text-slate-600 dark:text-slate-400 text-xs italic leading-relaxed font-sans font-light">“{member.dedicated_verse}”</p>
+                    </div>
+                  )}
                 </div>
               </AnimeHoverCard>
             </div>

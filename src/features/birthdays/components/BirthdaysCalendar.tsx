@@ -232,9 +232,7 @@ export function BirthdaysCalendar({
                             <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
                               {item.member.first_name} {item.member.last_name}
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Cumple <span className="font-semibold text-church-gold-dark dark:text-church-gold-light">{item.age} años</span>
-                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.member.ministry_name || 'Familia Jerusalén'}</p>
                           </div>
 
                           {/* Celebrate button */}

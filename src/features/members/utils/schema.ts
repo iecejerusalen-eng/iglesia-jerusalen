@@ -32,6 +32,7 @@ export const memberSchema = z.object({
   last_name: z.string().min(1, 'El apellido es obligatorio'),
   photo_url: z.string().url('Ingresa una URL de foto válida').or(z.literal('')),
   birth_date: z.string().or(z.literal('')),
+  birthday_public: z.boolean().optional(),
   conversion_date: z.string().or(z.literal('')),
   baptism_date: z.string().or(z.literal('')),
   phone: z.string().or(z.literal('')),
@@ -95,6 +96,7 @@ export interface LocalMemberRow {
   first_name: string;
   last_name: string;
   birth_date?: string | null;
+  birthday_public?: boolean;
   conversion_date?: string | null;
   baptism_date?: string | null;
   phone?: string | null;

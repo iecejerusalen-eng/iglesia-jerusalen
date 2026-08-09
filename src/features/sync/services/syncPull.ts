@@ -26,6 +26,7 @@ export const pullFromServer = async () => {
         await tx.objectStore('local_members').put({
             id: m.id, first_name: m.first_name, last_name: m.last_name, photo_url: m.photo_url || null,
             birth_date: m.birth_date || null, conversion_date: m.conversion_date || null,
+            birthday_public: m.birthday_public === true,
             baptism_date: m.baptism_date || null, phone: m.phone || null, dni: m.dni || null,
             address: m.address || null, maps_link: m.maps_link || null, is_leader: m.is_leader ? 1 : 0,
             leadership_role: m.leadership_role || null, ministry_id: m.ministry_id || null, role_id: m.role_id || null,

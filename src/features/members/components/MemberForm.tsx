@@ -56,6 +56,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       last_name: editingMember?.last_name || '',
       photo_url: editingMember?.photo_url || '',
       birth_date: editingMember?.birth_date || '',
+      birthday_public: editingMember?.birthday_public ?? false,
       conversion_date: editingMember?.conversion_date || '',
       baptism_date: editingMember?.baptism_date || '',
       phone: editingMember?.phone || '',
@@ -265,6 +266,20 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                 <input type="date" {...register('birth_date')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" />
               </div>
             </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-church-gold/25 bg-church-gold/[0.06] p-4 transition hover:bg-church-gold/10 dark:border-church-gold/20">
+              <input
+                type="checkbox"
+                {...register('birthday_public')}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span>
+                <span className="block text-sm font-bold text-slate-800 dark:text-white">Mostrar en la página pública de cumpleaños</span>
+                <span className="mt-1 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  Confirma el consentimiento para publicar únicamente nombre, foto, día y mes de cumpleaños, ministerio y versículo dedicado. Nunca se publica el año de nacimiento, edad, teléfono ni información privada del CRM.
+                </span>
+              </span>
+            </label>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>

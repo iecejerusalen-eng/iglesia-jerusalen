@@ -1,22 +1,11 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Event as DbEvent, Member } from '../types';
+import type { Event as DbEvent } from '../types';
+import type { BirthdayInfo } from '../features/birthdays/hooks/useBirthdays';
 import { toast } from 'sonner';
 
 // Import SVG logo as raw text string so jsPDF can parse it
 import logoSvg from '../assets/Jerusalén/solo logo colorido.svg?raw';
-
-export interface BirthdayInfo {
-  member: Member;
-  isToday: boolean;
-  isThisWeek: boolean;
-  isThisMonth: boolean;
-  day: number;
-  month: number;
-  age: number;
-  daysRemaining: number;
-  formattedDate: string;
-}
 
 export interface PdfExportOptions {
   viewMode: 'cards' | 'table' | 'calendar' | 'grid' | 'year';
@@ -397,12 +386,12 @@ export const exportBirthdaysPdf = (birthdays: BirthdayInfo[], options: PdfExport
       const tableData = birthdays.map((b) => [
         sanitizePdfText(`${b.member.first_name} ${b.member.last_name}`),
         sanitizePdfText(b.formattedDate),
-        `${b.age} años`,
+        sanitizePdfText(b.member.ministry_name || 'Familia Jerusalén'),
         b.isToday ? '¡Hoy!' : `En ${b.daysRemaining} días`,
       ]);
 
       autoTable(doc, {
-        head: [['Hermano(a)', 'Fecha', 'Edad a Cumplir', 'Estado']],
+        head: [['Hermano(a)', 'Fecha', 'Ministerio', 'Estado']],
         body: tableData,
         startY: startY,
         theme: 'grid',
@@ -448,11 +437,11 @@ export const exportBirthdaysPdf = (birthdays: BirthdayInfo[], options: PdfExport
         const nameLines = doc.splitTextToSize(name, cardWidth - 16);
         doc.text(nameLines.slice(0, 1), currentX + 10, currentY + 20);
 
-        // Date & Age
+        // Public date (day and month only)
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
         doc.setTextColor(TEXT_MUTED[0], TEXT_MUTED[1], TEXT_MUTED[2]);
-        doc.text(`${sanitizePdfText(b.formattedDate)} • ${b.age} años`, currentX + 10, currentY + 38);
+        doc.text(sanitizePdfText(b.formattedDate), currentX + 10, currentY + 38);
 
         // Status
         doc.setFont('helvetica', 'bold');

@@ -9,6 +9,7 @@ export interface MemberPayload extends BasePayload {
   last_name: string;
   photo_url?: string | null;
   birth_date?: string | null;
+  birthday_public?: boolean;
   conversion_date?: string | null;
   baptism_date?: string | null;
   phone?: string | null;
@@ -107,6 +108,7 @@ export const enqueueMutation = async (
             last_name: m.last_name,
             photo_url: m.photo_url || null,
             birth_date: m.birth_date || null,
+            birthday_public: m.birthday_public === true,
             conversion_date: m.conversion_date || null,
             baptism_date: m.baptism_date || null,
             phone: m.phone || null,

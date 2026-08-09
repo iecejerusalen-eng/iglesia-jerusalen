@@ -2,9 +2,11 @@ export interface BirthdayMember {
   id: string;
   first_name: string;
   last_name: string;
-  birth_date: string;
+  birth_month: number;
+  birth_day: number;
   photo_url?: string | null;
-  ageTurning: number;
+  ministry_name?: string | null;
+  dedicated_verse?: string | null;
 }
 
 export interface PageSection {

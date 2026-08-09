@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useWindowSize } from 'react-use';
 import Confetti from 'react-confetti';
-import { Gift } from 'lucide-react';
+import { AlertCircle, Gift, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useBirthdays, type BirthdayInfo, MONTH_NAMES } from '../../features/birthdays/hooks/useBirthdays';
@@ -11,163 +12,120 @@ import { BirthdaysList } from '../../features/birthdays/components/BirthdaysList
 import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
 import { exportBirthdaysPdf } from '../../utils/calendarPdfExport';
 
+function matchesSearch(item: BirthdayInfo, query: string): boolean {
+  const normalized = query.trim().toLocaleLowerCase('es');
+  if (!normalized) return true;
+  return `${item.member.first_name} ${item.member.last_name} ${item.member.ministry_name || ''}`
+    .toLocaleLowerCase('es')
+    .includes(normalized);
+}
+
 export default function Birthdays() {
-  const { birthdayList, loading } = useBirthdays();
+  const { birthdayList, loading, error, lastUpdated, refetch } = useBirthdays();
   const { width, height } = useWindowSize();
-  
-  // States
   const [activeTab, setActiveTab] = useState<BirthdayTab>('semana');
   const [viewMode, setViewMode] = useState<BirthdayViewMode>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-  
-  // Confetti controls
   const [showConfetti, setShowConfetti] = useState(false);
-  const [confettiRecipients, setConfettiRecipients] = useState<string>('');
-  
-  // PDF controls
+  const [confettiRecipient, setConfettiRecipient] = useState('');
   const [showPdfDialog, setShowPdfDialog] = useState(false);
 
-  // Filter logic
-  const getFilteredList = (): BirthdayInfo[] => {
-    let list = [...birthdayList];
+  const counts = useMemo(() => ({
+    hoy: birthdayList.filter((item) => item.isToday).length,
+    semana: birthdayList.filter((item) => item.isThisWeek).length,
+    mes: birthdayList.filter((item) => item.isThisMonth).length,
+  }), [birthdayList]);
 
-    if (activeTab === 'hoy') {
-      list = list.filter(item => item.isToday);
-    } else if (activeTab === 'semana') {
-      list = list.filter(item => item.isThisWeek || item.isToday);
-    } else if (activeTab === 'mes') {
-      list = list.filter(item => item.isThisMonth);
-    }
+  const searchedBirthdays = useMemo(
+    () => birthdayList.filter((item) => matchesSearch(item, searchQuery)),
+    [birthdayList, searchQuery]
+  );
 
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(item => 
-        item.member.first_name.toLowerCase().includes(q) ||
-        item.member.last_name.toLowerCase().includes(q)
-      );
-    }
-
-    if (activeTab === 'semana') {
-      list.sort((a, b) => a.daysRemaining - b.daysRemaining);
-    } else {
-      list.sort((a, b) => a.day - b.day);
-    }
-
-    return list;
-  };
-
-  const getCalendarList = (): BirthdayInfo[] => {
-    let list = [...birthdayList];
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(item => 
-        item.member.first_name.toLowerCase().includes(q) ||
-        item.member.last_name.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  };
-
-  const filteredBirthdays = getFilteredList();
-  const calendarBirthdays = getCalendarList();
+  const filteredBirthdays = useMemo(() => {
+    const filtered = searchedBirthdays.filter((item) => {
+      if (activeTab === 'hoy') return item.isToday;
+      if (activeTab === 'semana') return item.isThisWeek;
+      return item.isThisMonth;
+    });
+    return filtered.sort((a, b) => activeTab === 'semana' ? a.daysRemaining - b.daysRemaining : a.day - b.day);
+  }, [activeTab, searchedBirthdays]);
 
   const handleCelebrate = (name: string) => {
-    setConfettiRecipients(name);
+    setConfettiRecipient(name);
     setShowConfetti(true);
-    toast.success(`🎉 ¡Enviando felicitaciones y confeti para ${name}!`);
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 4500);
+    toast.success(`¡Celebramos con alegría la vida de ${name}!`);
+    window.setTimeout(() => setShowConfetti(false), 4200);
   };
 
   const handleExportPdf = (orientation: 'portrait' | 'landscape') => {
+    const isCalendarView = viewMode === 'calendar' || viewMode === 'year';
     const filterLabel = viewMode === 'calendar'
       ? `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`
       : viewMode === 'year'
         ? `Año ${new Date().getFullYear()}`
-        : activeTab === 'hoy' ? 'Hoy' : activeTab === 'semana' ? 'Próximos 7 días' : 'Este Mes';
+        : activeTab === 'hoy' ? 'Hoy' : activeTab === 'semana' ? 'Próximos 7 días' : 'Este mes';
 
-    const pdfList = (viewMode === 'calendar' || viewMode === 'year') ? calendarBirthdays : filteredBirthdays;
-
-    exportBirthdaysPdf(pdfList, {
+    exportBirthdaysPdf(isCalendarView ? searchedBirthdays : filteredBirthdays, {
       viewMode,
       orientation,
       filterLabel,
-      calendarMonth: `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`
+      calendarMonth: `${MONTH_NAMES[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`,
     });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/70 transition-colors duration-200 py-10 px-4 md:px-8 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-church-gold/5 dark:from-church-gold/10 to-transparent -z-10"></div>
-      
-      {/* Confetti Explosion Layer */}
+    <div className="relative min-h-screen overflow-hidden bg-[#f5f7fb] px-4 py-8 transition-colors dark:bg-slate-950 md:px-8 md:py-10">
+      <Helmet>
+        <title>Cumpleaños | Iglesia Jerusalén</title>
+        <meta name="description" content="Celebra los cumpleaños de la familia de la Iglesia Jerusalén con información pública autorizada desde nuestro CRM." />
+      </Helmet>
+
+      <div className="pointer-events-none absolute left-[-10rem] top-32 h-96 w-96 rounded-full bg-church-gold/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-8rem] top-[32rem] h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
+
       {showConfetti && (
-        <div className="fixed inset-0 z-[200] pointer-events-none">
-          <Confetti
-            width={width}
-            height={height}
-            recycle={false}
-            numberOfPieces={400}
-            gravity={0.12}
-          />
-          {confettiRecipients && (
-            <div className="absolute inset-x-0 top-1/3 flex justify-center items-center pointer-events-none z-[201] animate-bounce">
-              <div className="bg-white/90 dark:bg-slate-900/90 border-2 border-church-gold-medium backdrop-blur-md px-6 py-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1.5 max-w-sm text-center">
-                <Gift className="text-church-gold-dark dark:text-church-gold-bright animate-wiggle" size={32} />
-                <h4 className="font-serif font-bold text-primary dark:text-white text-base">
-                  ¡Celebrando a un Hermano! 🎉
-                </h4>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Lanzando confeti para celebrar la vida de <span className="text-primary dark:text-church-gold-light font-bold">{confettiRecipients}</span>. ¡Bendiciones!
-                </p>
-              </div>
+        <div className="pointer-events-none fixed inset-0 z-[200]" aria-hidden="true">
+          <Confetti width={width} height={height} recycle={false} numberOfPieces={320} gravity={0.12} />
+          <div className="absolute inset-x-4 top-1/3 flex justify-center">
+            <div className="max-w-sm rounded-3xl border border-church-gold/40 bg-white/90 px-6 py-5 text-center shadow-2xl backdrop-blur-2xl dark:bg-slate-900/90">
+              <Gift className="mx-auto text-church-gold-dark dark:text-church-gold-light" size={30} />
+              <h2 className="mt-2 font-serif text-lg font-bold text-primary dark:text-white">¡Celebramos su vida!</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Que Dios bendiga abundantemente a <strong>{confettiRecipient}</strong>.</p>
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* Hero Section */}
-      <BirthdaysHero />
+      <div className="relative z-10">
+        <BirthdaysHero todayCount={counts.hoy} weekCount={counts.semana} monthCount={counts.mes} totalCount={birthdayList.length} />
 
-      {/* Main Content Area */}
-      <main className="mt-8 space-y-6">
-        <BirthdaysFilters
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onExportPdf={() => setShowPdfDialog(true)}
-        />
+        <div className="mt-6 space-y-5">
+          <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} />
 
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-church-gold-light"></div>
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-400">
+            <span>{loading ? 'Sincronizando con el CRM…' : `${filteredBirthdays.length} resultado${filteredBirthdays.length === 1 ? '' : 's'} en la selección`}</span>
+            {lastUpdated && <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Actualizado {lastUpdated.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>}
           </div>
-        ) : (
-          <BirthdaysList
-            birthdays={filteredBirthdays}
-            allBirthdays={calendarBirthdays}
-            viewMode={viewMode}
-            onCelebrate={handleCelebrate}
-            currentCalendarDate={currentCalendarDate}
-            setCurrentCalendarDate={setCurrentCalendarDate}
-          />
-        )}
-      </main>
 
-      {/* PDF Export Dialog */}
-      {showPdfDialog && (
-        <CalendarPdfDialog
-          onClose={() => setShowPdfDialog(false)}
-          onExport={(orientation) => handleExportPdf(orientation)}
-          title="Exportar Cumpleaños"
-        />
-      )}
+          {loading ? (
+            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Cargando cumpleaños" aria-busy="true">
+              {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-80 animate-pulse rounded-[1.75rem] border border-white/70 bg-white/60 dark:border-white/10 dark:bg-slate-900/60" />)}
+            </div>
+          ) : error ? (
+            <div role="alert" className="mx-auto max-w-7xl rounded-[2rem] border border-red-200 bg-white/75 px-6 py-14 text-center shadow-sm backdrop-blur-2xl dark:border-red-500/20 dark:bg-slate-900/70">
+              <AlertCircle className="mx-auto text-accent-red" size={40} />
+              <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">No pudimos consultar los cumpleaños</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">La información no se reemplazó con datos ficticios. Verifica que la migración de cumpleaños públicos esté aplicada y vuelve a intentarlo.</p>
+              <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark"><RefreshCw size={15} /> Reintentar conexión</button>
+            </div>
+          ) : (
+            <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
+          )}
+        </div>
+      </div>
+
+      {showPdfDialog && <CalendarPdfDialog onClose={() => setShowPdfDialog(false)} onExport={handleExportPdf} title="Exportar cumpleaños públicos" />}
     </div>
   );
 }

@@ -83,6 +83,7 @@ export const processSyncQueue = async (
                     id: item.record_id,
                     first_name: r.first_name, last_name: r.last_name, photo_url: r.photo_url,
                     birth_date: r.birth_date, conversion_date: r.conversion_date, baptism_date: r.baptism_date,
+                    birthday_public: r.birthday_public === true,
                     phone: r.phone, dni: r.dni, address: r.address, maps_link: r.maps_link,
                     is_leader: r.is_leader ? 1 : 0, leadership_role: r.leadership_role,
                     ministry_id: r.ministry_id, role_id: r.role_id, latitude: r.latitude,

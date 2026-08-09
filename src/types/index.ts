@@ -353,6 +353,7 @@ export interface Member {
   last_name: string;
   photo_url: string | null;
   birth_date: string | null;
+  birthday_public?: boolean;
   conversion_date: string | null;
   baptism_date: string | null;
   phone: string | null;

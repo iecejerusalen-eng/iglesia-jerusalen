@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { getDb } from '../../../config/localDb';
-import type { Schedule, Sermon, Event as DbEvent, Member } from '../../../types';
-import type { PageSection } from '../types';
+import type { Schedule, Sermon, Event as DbEvent } from '../../../types';
+import type { BirthdayMember, PageSection } from '../types';
 import { DEFAULT_SECTIONS, FALLBACK_SCHEDULES, MOCK_SERMONS } from '../constants';
-import { isBirthdayInNext7Days, calculateAgeTurning, getBirthdayTimestampInWindow } from '../utils';
+import { isPublicBirthdayMember, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
 
 export const useHomeData = () => {
   const statsQuery = useQuery({
@@ -137,43 +137,18 @@ export const useHomeData = () => {
 
   const birthdaysQuery = useQuery({
     queryKey: ['homeBirthdays'],
-    queryFn: async () => {
-      let data: Partial<Member>[] = [];
-      try {
-        const db = await getDb();
-        const allMembers = await db.getAll('local_members');
-        const localData = allMembers.filter((m: any) => !m.deleted_at && m.birth_date);
-        data = localData || [];
-      } catch (dbErr) {
-        console.warn('Local database query failed, trying Supabase:', dbErr);
-      }
+    queryFn: async (): Promise<BirthdayMember[]> => {
+      const { data, error } = await supabase.rpc('get_public_birthdays');
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error('La fuente pública de cumpleaños devolvió un formato inesperado.');
 
-      if (!data || data.length === 0) {
-        const { data: dbData, error } = await supabase
-          .from('members')
-          .select('id, first_name, last_name, birth_date, photo_url')
-          .is('deleted_at', null)
-          .not('birth_date', 'is', null);
-        if (error) throw error;
-        data = dbData || [];
-      }
-
-      const filtered = data
-        .filter((m) => isBirthdayInNext7Days(m.birth_date!))
-        .map((m) => ({
-          id: m.id!,
-          first_name: m.first_name || '',
-          last_name: m.last_name || '',
-          birth_date: m.birth_date!,
-          photo_url: m.photo_url,
-          ageTurning: calculateAgeTurning(m.birth_date!)
-        }));
-
-      return filtered.sort((a, b) => {
-        const aTime = getBirthdayTimestampInWindow(a.birth_date);
-        const bTime = getBirthdayTimestampInWindow(b.birth_date);
-        return aTime - bTime;
-      });
+      const now = new Date();
+      return data
+        .filter(isPublicBirthdayMember)
+        .map((member) => toBirthdayInfo(member, now))
+        .filter((birthday) => birthday.isThisWeek)
+        .sort((a, b) => a.daysRemaining - b.daysRemaining)
+        .map(({ member }) => member);
     },
     staleTime: 5 * 60 * 1000,
   });

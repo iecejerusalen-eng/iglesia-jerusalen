@@ -1,16 +1,25 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../../config/supabase';
-import type { Member } from '../../../types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '../../../config/supabase';
+
+export interface PublicBirthdayMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  photo_url: string | null;
+  birth_month: number;
+  birth_day: number;
+  ministry_name: string | null;
+  dedicated_verse: string | null;
+}
 
 export interface BirthdayInfo {
-  member: Member;
+  member: PublicBirthdayMember;
   isToday: boolean;
   isThisWeek: boolean;
   isThisMonth: boolean;
   day: number;
   month: number;
-  age: number;
   daysRemaining: number;
   formattedDate: string;
 }
@@ -18,90 +27,95 @@ export interface BirthdayInfo {
 export const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
+] as const;
 
-export const WEEK_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+export const WEEK_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as const;
+
+export function isPublicBirthdayMember(value: unknown): value is PublicBirthdayMember {
+  if (!value || typeof value !== 'object') return false;
+  const row = value as Record<string, unknown>;
+  return typeof row.id === 'string'
+    && typeof row.first_name === 'string'
+    && typeof row.last_name === 'string'
+    && typeof row.birth_month === 'number'
+    && row.birth_month >= 1
+    && row.birth_month <= 12
+    && typeof row.birth_day === 'number'
+    && row.birth_day >= 1
+    && row.birth_day <= 31;
+}
+
+function getBirthdayDate(year: number, month: number, day: number): Date {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return new Date(year, month - 1, Math.min(day, daysInMonth));
+}
+
+export function toBirthdayInfo(member: PublicBirthdayMember, now: Date): BirthdayInfo {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let nextBirthday = getBirthdayDate(today.getFullYear(), member.birth_month, member.birth_day);
+  if (nextBirthday.getTime() < today.getTime()) {
+    nextBirthday = getBirthdayDate(today.getFullYear() + 1, member.birth_month, member.birth_day);
+  }
+
+  const daysRemaining = Math.round((nextBirthday.getTime() - today.getTime()) / 86_400_000);
+  const isToday = member.birth_day === today.getDate() && member.birth_month === today.getMonth() + 1;
+
+  return {
+    member,
+    isToday,
+    isThisWeek: daysRemaining >= 0 && daysRemaining <= 7,
+    isThisMonth: member.birth_month === today.getMonth() + 1,
+    day: member.birth_day,
+    month: member.birth_month,
+    daysRemaining,
+    formattedDate: `${member.birth_day} de ${MONTH_NAMES[member.birth_month - 1]}`,
+  };
+}
 
 export function useBirthdays() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<PublicBirthdayMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .is('deleted_at', null);
+    setError(null);
 
-      if (error) throw error;
-      setMembers(data || []);
-    } catch (err: unknown) {
-      console.error('Error fetching members:', err);
-      toast.error('Error al cargar cumpleañeros: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    try {
+      const { data, error: requestError } = await supabase.rpc('get_public_birthdays');
+      if (requestError) throw requestError;
+
+      if (!Array.isArray(data)) {
+        throw new Error('La fuente de cumpleaños devolvió un formato inesperado.');
+      }
+
+      const invalidRows = data.filter((row) => !isPublicBirthdayMember(row));
+      if (invalidRows.length > 0) {
+        throw new Error(`La fuente de cumpleaños devolvió ${invalidRows.length} registro(s) inválido(s).`);
+      }
+
+      setMembers(data);
+      setLastUpdated(new Date());
+    } catch (caughtError: unknown) {
+      const message = caughtError instanceof Error ? caughtError.message : 'No fue posible consultar el CRM.';
+      console.error('Error loading public birthdays:', caughtError);
+      setMembers([]);
+      setError(message);
+      toast.error('No pudimos cargar los cumpleaños del CRM.');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchMembers();
   }, []);
 
-  const getBirthdayInfo = (member: Member): BirthdayInfo | null => {
-    if (!member.birth_date) return null;
-    
-    // Parse birth date safely avoiding timezone shifts
-    const [year, month, day] = member.birth_date.split('-').map(Number);
-    const today = new Date();
-    
-    const bDay = day;
-    const bMonth = month; // 1-indexed
-    
-    const tDay = today.getDate();
-    const tMonth = today.getMonth() + 1;
-    
-    const isToday = bDay === tDay && bMonth === tMonth;
-    const isThisMonth = bMonth === tMonth;
-    
-    const currentYear = today.getFullYear();
-    const bDateThisYear = new Date(currentYear, bMonth - 1, bDay);
-    
-    // Normalize time to midnight for calculations
-    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
-    let daysRemaining = Math.ceil((bDateThisYear.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // If birthday already occurred this year, calculate for next year
-    if (daysRemaining < 0) {
-      const bDateNextYear = new Date(currentYear + 1, bMonth - 1, bDay);
-      daysRemaining = Math.ceil((bDateNextYear.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
-    }
-    
-    const isThisWeek = daysRemaining >= 0 && daysRemaining <= 7;
-    const age = currentYear - year;
-    const formattedDate = `${bDay} de ${MONTH_NAMES[bMonth - 1]}`;
+  useEffect(() => {
+    void fetchMembers();
+  }, [fetchMembers]);
 
-    return {
-      member,
-      isToday,
-      isThisWeek,
-      isThisMonth,
-      day: bDay,
-      month: bMonth,
-      age,
-      daysRemaining,
-      formattedDate
-    };
-  };
+  const birthdayList = useMemo(
+    () => members.map((member) => toBirthdayInfo(member, new Date())).sort((a, b) => a.daysRemaining - b.daysRemaining),
+    [members]
+  );
 
-  const birthdayList: BirthdayInfo[] = members
-    .map(getBirthdayInfo)
-    .filter(Boolean) as BirthdayInfo[];
-
-  return {
-    birthdayList,
-    loading,
-    refetch: fetchMembers
-  };
+  return { birthdayList, loading, error, lastUpdated, refetch: fetchMembers };
 }

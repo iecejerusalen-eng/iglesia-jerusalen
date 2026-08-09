@@ -24,7 +24,7 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
             <tr>
               <th className="py-4 px-6 font-semibold text-slate-600 dark:text-slate-400">Nombre</th>
               <th className="py-4 px-6 font-semibold text-slate-600 dark:text-slate-400">Fecha</th>
-              <th className="py-4 px-6 font-semibold text-slate-600 dark:text-slate-400">Edad</th>
+              <th className="py-4 px-6 font-semibold text-slate-600 dark:text-slate-400">Ministerio</th>
               <th className="py-4 px-6 font-semibold text-slate-600 dark:text-slate-400">Estado</th>
               <th className="py-4 px-6 text-right font-semibold text-slate-600 dark:text-slate-400">Acción</th>
             </tr>
@@ -58,9 +58,7 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
                           {item.member.first_name} {item.member.last_name}
                           {item.isToday && <Sparkles size={12} className="text-accent-red" />}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {item.member.phone || 'Sin teléfono'}
-                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Información pública autorizada</div>
                       </div>
                     </div>
                   </td>
@@ -68,7 +66,7 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
                     {item.formattedDate}
                   </td>
                   <td className="py-4 px-6 text-slate-600 dark:text-slate-400">
-                    {item.age} años
+                    {item.member.ministry_name || 'Familia Jerusalén'}
                   </td>
                   <td className="py-4 px-6">
                     {item.isToday ? (

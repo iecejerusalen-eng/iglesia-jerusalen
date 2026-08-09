@@ -105,9 +105,7 @@ export function BirthdaysYearView({ birthdays, onCelebrate }: BirthdaysYearViewP
                           <span className={`text-sm font-medium truncate ${item.isToday ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                             {item.member.first_name} {item.member.last_name}
                           </span>
-                          <span className="text-[10px] text-slate-400">
-                            {item.age} años
-                          </span>
+                          <span className="text-[10px] text-slate-400">{item.member.ministry_name || 'Familia Jerusalén'}</span>
                         </div>
                       </div>
                     </div>
