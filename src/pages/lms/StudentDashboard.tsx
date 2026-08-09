@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck, Loader2 } from 'lucide-react';
+import { BookOpen, Award, Calendar, BarChart3, ChevronRight, ShieldCheck, UserCheck, Loader2, School } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
@@ -23,6 +23,8 @@ import { BadgeShowcase } from '../../features/student-dashboard/components/Badge
 import { PendingTasksWidget } from '../../features/student-dashboard/components/PendingTasksWidget';
 import { NumberTicker } from '../../components/ui/magicui/number-ticker';
 import type { PendingTask } from '../../features/student-dashboard/components/PendingTasksWidget';
+import { SchoolPortalGate } from '../../features/lms/components/SchoolPortalGate';
+import type { SchoolPortalSchool } from '../../features/lms/hooks/useSchoolPortal';
 
 
 // Define the interface for the enrollment progress object to replace `any`
@@ -63,7 +65,12 @@ const TAB_ALIASES: Record<string, StudentTabId> = {
   badges: 'badges', logros: 'badges', stats: 'stats', estadisticas: 'stats',
 };
 
-export default function StudentDashboard() {
+interface StudentSchoolDashboardProps {
+  school: SchoolPortalSchool;
+  onChangeSchool: () => void;
+}
+
+function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboardProps) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -91,14 +98,17 @@ export default function StudentDashboard() {
         .select(`
           id,
           course_id,
-          lms_courses (
+          lms_courses!inner (
             id,
             title,
             description,
-            cover_image_url
+            cover_image_url,
+            school_id
           )
         `)
-        .eq('user_id', user?.id);
+        .eq('user_id', user?.id)
+        .eq('status', 'active')
+        .eq('lms_courses.school_id', school.id);
 
       if (enrollError) throw enrollError;
       
@@ -254,7 +264,7 @@ export default function StudentDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [school.id, user]);
 
   useEffect(() => {
     if (!user) {
@@ -293,6 +303,13 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-[#f7f8fb] pb-24 pt-24 text-slate-800 dark:bg-slate-950 dark:text-white md:pb-14">
       <div className="mx-auto mt-3 max-w-7xl px-4 sm:mt-6 sm:px-6 lg:px-8">
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-indigo-200/70 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-indigo-400/15 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"><School size={19} /></span>
+            <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Escuela activa</p><p className="font-bold text-slate-900 dark:text-white">{school.name}</p></div>
+          </div>
+          <button type="button" onClick={onChangeSchool} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Cambiar escuela</button>
+        </div>
         <ProgressHero 
           userFullName={user?.user_metadata?.full_name || 'Estudiante'}
           avatarUrl={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
@@ -500,5 +517,13 @@ export default function StudentDashboard() {
         isNewUnlock={false}
       />
     </div>
+  );
+}
+
+export default function StudentDashboard() {
+  return (
+    <SchoolPortalGate mode="student">
+      {(school, leaveSchool) => <StudentSchoolDashboard school={school} onChangeSchool={leaveSchool} />}
+    </SchoolPortalGate>
   );
 }

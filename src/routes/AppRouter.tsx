@@ -202,6 +202,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<PublicLayout />}>
             <Route path="/lms/estudiante" element={<StudentDashboard />} />
+            <Route path="/lms/docente" element={<TeacherDashboard />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
           </Route>
@@ -210,15 +211,19 @@ export default function AppRouter() {
 
         <Route element={<ProtectedRoute module="programs" />}>
           <Route element={<PublicLayout />}>
-            <Route path="/lms/docente" element={<TeacherDashboard />} />
             <Route path="/lms/admin" element={<LMSAcademicAdmin />} />
-            <Route path="/lms/director" element={<DirectorDashboard />} />
           </Route>
           
           <Route element={<AdminLayout />}>
             <Route path="/admin/lms/course/settings/:id" element={<LMSCourseSettings />} />
             <Route path="/admin/lms/course/:id" element={<CourseBuilder />} />
             <Route path="/admin/lms/gradebook/:id" element={<LMSGradebook />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute module="lms_director" />}>
+          <Route element={<PublicLayout />}>
+            <Route path="/lms/director" element={<DirectorDashboard />} />
           </Route>
         </Route>
 

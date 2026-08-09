@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, ArrowRight, Building2, GraduationCap, Users, FolderOpen, Inbox, Settings, UserCheck, Calendar } from 'lucide-react';
+import { Plus, BookOpen, ArrowRight, Building2, Users, FolderOpen, Inbox, Settings, UserCheck, Calendar, DoorOpen } from 'lucide-react';
 import type { LMSCourse } from '../../types';
 
 import { useCourses } from '../../features/lms/hooks/useCourses';
@@ -19,12 +19,15 @@ import { SchoolManager } from '../../features/lms/components/SchoolManager';
 import { SchoolSelector } from '../../features/lms/components/SchoolSelector';
 import { ParticipantsTable } from '../../features/lms/components/ParticipantsTable';
 import { LMSAnalytics } from '../../features/lms/components/LMSAnalytics';
+import { SchoolAccessRequestsManager } from '../../features/lms/components/SchoolAccessRequestsManager';
+
+type LMSAdminTab = 'schools' | 'school-access' | 'courses' | 'categories' | 'requests' | 'participants' | 'analytics' | 'defaults' | 'staff' | 'calendar';
 
 export default function LMSManager() {
   const location = useLocation();
   const navigate = useNavigate();
-  const initialTab = location.pathname.includes('matriculas') ? 'requests' : 'courses';
-  const [activeTab, setActiveTab] = useState<'schools' | 'courses' | 'categories' | 'requests' | 'participants' | 'analytics' | 'defaults' | 'staff' | 'calendar'>(initialTab);
+  const initialTab: LMSAdminTab = location.pathname.includes('matriculas') ? 'school-access' : 'courses';
+  const [activeTab, setActiveTab] = useState<LMSAdminTab>(initialTab);
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>('all');
 
   const { courses, isLoading: loadingCourses } = useCourses();
@@ -42,7 +45,7 @@ export default function LMSManager() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (location.pathname.includes('matriculas')) {
-        setActiveTab('requests');
+        setActiveTab('school-access');
       } else if (location.pathname === '/admin/lms') {
         setActiveTab('courses');
       }
@@ -167,12 +170,12 @@ export default function LMSManager() {
           <BookOpen size={16} /> Cursos
         </button>
         <button
-          onClick={() => setActiveTab('requests')}
+          onClick={() => setActiveTab('school-access')}
           className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
+            activeTab === 'school-access' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          <GraduationCap size={16} /> Matrículas
+          <DoorOpen size={16} /> Acceso a escuelas
         </button>
         <button
           onClick={() => setActiveTab('participants')}
@@ -196,7 +199,7 @@ export default function LMSManager() {
             activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
-          <Inbox size={16} /> Solicitudes ({requests.length})
+          <Inbox size={16} /> Matrículas de cursos ({requests.length})
         </button>
         <button
           onClick={() => setActiveTab('defaults')}
@@ -276,6 +279,10 @@ export default function LMSManager() {
 
           {activeTab === 'requests' && (
             <EnrollmentRequestsList />
+          )}
+
+          {activeTab === 'school-access' && (
+            <SchoolAccessRequestsManager schoolId={selectedSchoolId} />
           )}
 
           {activeTab === 'defaults' && (

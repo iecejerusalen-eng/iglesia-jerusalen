@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Building2, CalendarDays, Settings2, Users } from 'lucide-react';
-import { SchoolsManager } from '../../features/lms/admin/SchoolsManager';
+import { ShieldCheck, Building2, CalendarDays, Settings2 } from 'lucide-react';
+import { SchoolManager } from '../../features/lms/components/SchoolManager';
 import { PeriodsManager } from '../../features/lms/admin/PeriodsManager';
 import { GlobalSettingsManager } from '../../features/lms/admin/GlobalSettingsManager';
 
@@ -29,9 +29,9 @@ export default function DirectorDashboard() {
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-black text-white font-serif mb-1">
-                Panel Maestro
+                Dirección Académica
               </h1>
-              <p className="text-gray-400 font-medium">Control global del Sistema Integrado de Educación</p>
+              <p className="text-gray-400 font-medium">Supervisión global de escuelas, periodos y políticas académicas</p>
             </div>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function DirectorDashboard() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all whitespace-nowrap min-w-[150px] ${
                   isActive 
                     ? `bg-gray-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm`
@@ -72,7 +72,7 @@ export default function DirectorDashboard() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {activeTab === 'schools' && <SchoolsManager />}
+              {activeTab === 'schools' && <SchoolManager />}
               {activeTab === 'periods' && <PeriodsManager />}
               {activeTab === 'settings' && <GlobalSettingsManager />}
             </motion.div>

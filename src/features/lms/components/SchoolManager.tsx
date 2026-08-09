@@ -5,6 +5,7 @@ import {
   GraduationCap, Plus, Pencil, Trash2, School, Users,
   ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Layers, X, Save
 } from 'lucide-react';
+import BlockEditor from '../../../components/admin/BlockEditor';
 
 /**
  * SchoolManager — Full CRUD for Schools (Escuelas / Facultades) and their Levels.
@@ -28,6 +29,7 @@ export function SchoolManager() {
   const [formLeaderId, setFormLeaderId] = useState('');
   const [formImageUrl, setFormImageUrl] = useState('');
   const [formIsActive, setFormIsActive] = useState(true);
+  const [formSchoolType, setFormSchoolType] = useState<'age_based' | 'rank_based' | 'custom'>('custom');
 
   // Level form state
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
@@ -35,6 +37,10 @@ export function SchoolManager() {
   const [levelSchoolId, setLevelSchoolId] = useState('');
   const [levelName, setLevelName] = useState('');
   const [levelDescription, setLevelDescription] = useState('');
+  const [levelMinAge, setLevelMinAge] = useState('');
+  const [levelMaxAge, setLevelMaxAge] = useState('');
+  const [levelParallel, setLevelParallel] = useState('');
+  const [levelContent, setLevelContent] = useState('[]');
 
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -109,6 +115,7 @@ export function SchoolManager() {
     setFormLeaderId('');
     setFormImageUrl('');
     setFormIsActive(true);
+    setFormSchoolType('custom');
     setIsSchoolModalOpen(true);
   };
 
@@ -121,6 +128,7 @@ export function SchoolManager() {
     setFormLeaderId(school.leader_id || '');
     setFormImageUrl(school.cover_image_url || '');
     setFormIsActive(school.is_active);
+    setFormSchoolType(school.school_type || 'custom');
     setIsSchoolModalOpen(true);
   };
 
@@ -140,6 +148,7 @@ export function SchoolManager() {
       color: formColor,
       leader_id: formLeaderId || null,
       is_active: formIsActive,
+      school_type: formSchoolType,
       updated_at: new Date().toISOString()
     };
 
@@ -182,6 +191,10 @@ export function SchoolManager() {
     setLevelSchoolId(schoolId);
     setLevelName('');
     setLevelDescription('');
+    setLevelMinAge('');
+    setLevelMaxAge('');
+    setLevelParallel('');
+    setLevelContent('[]');
     setIsLevelModalOpen(true);
   };
 
@@ -190,6 +203,10 @@ export function SchoolManager() {
     setLevelSchoolId(level.school_id);
     setLevelName(level.name);
     setLevelDescription(level.description || '');
+    setLevelMinAge(level.min_age?.toString() || '');
+    setLevelMaxAge(level.max_age?.toString() || '');
+    setLevelParallel(level.parallel_code || '');
+    setLevelContent(JSON.stringify(level.content_blocks || []));
     setIsLevelModalOpen(true);
   };
 
@@ -200,14 +217,21 @@ export function SchoolManager() {
       return;
     }
 
-    const payload = {
-      school_id: levelSchoolId,
-      name: levelName.trim(),
-      description: levelDescription.trim() || null,
-      updated_at: new Date().toISOString()
-    };
-
     try {
+      const parsedContent: unknown = JSON.parse(levelContent || '[]');
+      if (!Array.isArray(parsedContent)) throw new Error('El contenido del nivel debe estar compuesto por bloques.');
+      const schoolType = schools.find((school) => school.id === levelSchoolId)?.school_type || 'custom';
+      const payload = {
+        school_id: levelSchoolId,
+        name: levelName.trim(),
+        description: levelDescription.trim() || null,
+        min_age: levelMinAge === '' ? null : Number(levelMinAge),
+        max_age: levelMaxAge === '' ? null : Number(levelMaxAge),
+        parallel_code: levelParallel.trim() || null,
+        level_type: schoolType === 'age_based' ? 'age_range' : schoolType === 'rank_based' ? 'rank' : 'custom',
+        content_blocks: parsedContent,
+        updated_at: new Date().toISOString()
+      };
       if (editingLevel) {
         const { error } = await supabase.from('lms_levels').update(payload).eq('id', editingLevel.id);
         if (error) throw error;
@@ -404,6 +428,12 @@ export function SchoolManager() {
                               <div className="min-w-0">
                                 <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{level.name}</p>
                                 <p className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{level.description || 'Sin descripción'}</p>
+                                {(level.min_age != null || level.max_age != null || level.parallel_code) && (
+                                  <p className="mt-1 text-[10px] font-bold text-indigo-500">
+                                    {level.min_age != null || level.max_age != null ? `${level.min_age ?? 0}–${level.max_age ?? '∞'} años` : ''}
+                                    {level.parallel_code ? ` · Paralelo ${level.parallel_code}` : ''}
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -487,6 +517,15 @@ export function SchoolManager() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Modelo de organización</label>
+                <select value={formSchoolType} onChange={(event) => setFormSchoolType(event.target.value as 'age_based' | 'rank_based' | 'custom')} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-slate-800">
+                  <option value="age_based">Por rangos de edad</option>
+                  <option value="rank_based">Por rangos formativos</option>
+                  <option value="custom">Personalizado</option>
+                </select>
               </div>
 
               <div>
@@ -597,6 +636,19 @@ export function SchoolManager() {
                   placeholder="Descripción del nivel..."
                   className="w-full py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div><label className="mb-1 block text-xs font-bold uppercase text-gray-500">Edad mínima</label><input type="number" min="0" value={levelMinAge} onChange={(event) => setLevelMinAge(event.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-slate-800" /></div>
+                <div><label className="mb-1 block text-xs font-bold uppercase text-gray-500">Edad máxima</label><input type="number" min="0" value={levelMaxAge} onChange={(event) => setLevelMaxAge(event.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-slate-800" /></div>
+                <div><label className="mb-1 block text-xs font-bold uppercase text-gray-500">Paralelo</label><input value={levelParallel} onChange={(event) => setLevelParallel(event.target.value)} placeholder="A, B, C..." className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-slate-800" /></div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Presentación del nivel por bloques</label>
+                <div className="max-h-[42vh] overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-slate-950">
+                  <BlockEditor content={levelContent} onChange={setLevelContent} />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10">

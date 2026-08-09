@@ -655,6 +655,8 @@ export interface LMSSchool {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  school_type?: 'age_based' | 'rank_based' | 'custom';
+  settings?: Record<string, unknown>;
   profiles?: Profile | null;
   lms_levels?: LMSLevel[];
 }
@@ -667,7 +669,43 @@ export interface LMSLevel {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  min_age?: number | null;
+  max_age?: number | null;
+  parallel_code?: string | null;
+  level_type?: string;
+  content_blocks?: unknown[];
+  metadata?: Record<string, unknown>;
   lms_schools?: { name: string } | null;
+}
+
+export type LMSSchoolMemberRole = 'student' | 'teacher' | 'coordinator';
+export type LMSSchoolAccessStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface LMSSchoolMembership {
+  id: string;
+  school_id: string;
+  user_id: string;
+  role: LMSSchoolMemberRole;
+  status: 'active' | 'inactive' | 'graduated';
+  level_id: string | null;
+  approved_by: string | null;
+  joined_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface LMSSchoolAccessRequest {
+  id: string;
+  school_id: string;
+  user_id: string;
+  requested_role: 'student' | 'teacher';
+  requested_level_id: string | null;
+  status: LMSSchoolAccessStatus;
+  message: string | null;
+  decision_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LMSCourse {

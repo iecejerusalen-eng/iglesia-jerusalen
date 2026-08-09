@@ -318,6 +318,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'educacion'
   },
   {
+    id: 'lms_director',
+    label: 'Dirección Académica',
+    name: 'Panel de Dirección Académica',
+    path: '/lms/director',
+    icon: Shield,
+    group: 'educacion'
+  },
+  {
     id: 'games',
     label: 'Juegos Educativos',
     name: 'Juegos Educativos',

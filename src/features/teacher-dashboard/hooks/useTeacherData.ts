@@ -2,244 +2,297 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 
-export function useTeacherData(selectedCourseId: string | undefined, activeTab: string) {
+interface MemberDetails {
+  phone: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  medical_notes: string | null;
+}
+
+interface TutoringWithProfile {
+  id: string;
+  course_id: string;
+  teacher_id: string;
+  student_id: string;
+  scheduled_at: string;
+  duration_minutes: number | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  profiles: { first_name: string; last_name: string } | null;
+}
+
+function memberDetails(value: unknown): MemberDetails | null {
+  const item = Array.isArray(value) ? value[0] : value;
+  if (!item || typeof item !== 'object') return null;
+  const record = item as Record<string, unknown>;
+  return {
+    phone: typeof record.phone === 'string' ? record.phone : null,
+    emergency_contact_name: typeof record.emergency_contact_name === 'string' ? record.emergency_contact_name : null,
+    emergency_contact_phone: typeof record.emergency_contact_phone === 'string' ? record.emergency_contact_phone : null,
+    medical_notes: typeof record.medical_notes === 'string' ? record.medical_notes : null,
+  };
+}
+
+export function useTeacherData(selectedCourseId: string | undefined, activeTab: string, selectedSchoolId: string) {
   const { user, roles, role: primaryRole } = useAuthStore();
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['teacher-profile', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      if (!user?.id) throw new Error('No hay una sesión docente activa.');
+      const { data, error } = await supabase
         .from('profiles')
         .select('role, is_teacher, first_name')
-        .eq('id', user?.id)
-        .single();
+        .eq('id', user.id)
+        .maybeSingle();
+      if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: Boolean(user?.id),
   });
 
-  const userRoles = roles || (primaryRole ? [primaryRole] : []);
-  const isAdmin = userRoles.some(r => ['admin', 'pastor', 'editor'].includes(r));
-  const isTeacher = profile?.is_teacher || userRoles.some(r => ['admin', 'pastor', 'leader', 'editor', 'teacher', 'maestro', 'docente'].includes(r));
+  const userRoles = roles?.length ? roles : primaryRole ? [primaryRole] : [];
+  const isAdmin = userRoles.some((role) => ['admin', 'pastor', 'editor'].includes(role));
+  const isTeacher = Boolean(profile?.is_teacher) || isAdmin || userRoles.some((role) => ['teacher', 'maestro', 'docente'].includes(role));
 
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
-    queryKey: ['teacher-courses', user?.id],
+    queryKey: ['teacher-courses', user?.id, selectedSchoolId, isAdmin],
     queryFn: async () => {
-      let query = supabase.from('lms_courses').select('*');
+      if (!user?.id) throw new Error('No hay una sesión docente activa.');
+      let query = supabase
+        .from('lms_courses')
+        .select('id, title, description, cover_image_url, school_id, level_id, format, grading_scale, is_published, created_at, updated_at')
+        .eq('school_id', selectedSchoolId);
+
       if (!isAdmin) {
-        const { data: assignments } = await supabase
+        const { data: assignments, error: assignmentsError } = await supabase
           .from('lms_course_teachers')
           .select('course_id')
-          .eq('user_id', user?.id);
-        const assignedIds = assignments?.map(a => a.course_id) || [];
+          .eq('user_id', user.id);
+        if (assignmentsError) throw assignmentsError;
+        const assignedIds = assignments?.map((assignment) => assignment.course_id) ?? [];
         if (assignedIds.length === 0) return [];
         query = query.in('id', assignedIds);
       }
-      const { data } = await query;
-      return data || [];
+
+      const { data, error } = await query.order('title', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
     },
-    enabled: !!user?.id && !!profile,
+    enabled: Boolean(user?.id && profile && selectedSchoolId),
   });
 
   const { data: students = [] } = useQuery({
     queryKey: ['course-students', selectedCourseId],
     queryFn: async () => {
-      const { data: enrollments } = await supabase
+      if (!selectedCourseId) return [];
+      const { data: enrollments, error: enrollmentsError } = await supabase
         .from('lms_enrollments')
         .select('user_id')
         .eq('course_id', selectedCourseId)
-        .eq('role', 'student');
-      
+        .eq('role', 'student')
+        .eq('status', 'active');
+      if (enrollmentsError) throw enrollmentsError;
       if (!enrollments?.length) return [];
-      const studentIds = enrollments.map(e => e.user_id);
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          member_id,
-          members:member_id (
-            phone,
-            emergency_contact_name,
-            emergency_contact_phone,
-            medical_notes
-          )
-        `)
-        .in('id', studentIds);
 
-      return enrollments.map((e: any) => {
-        const p = profilesData?.find(p => p.id === e.user_id);
+      const studentIds = enrollments.map((enrollment) => enrollment.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, member_id, members:member_id(phone, emergency_contact_name, emergency_contact_phone, medical_notes)')
+        .in('id', studentIds);
+      if (profilesError) throw profilesError;
+
+      return enrollments.map((enrollment) => {
+        const studentProfile = profilesData?.find((item) => item.id === enrollment.user_id);
+        const member = memberDetails(studentProfile?.members);
         return {
-          id: e.user_id,
-          first_name: p?.first_name || 'Estudiante',
-          last_name: p?.last_name || '',
-          email: p?.email || '',
-          phone: (p?.members as any)?.phone || 'S/N',
-          emergency_name: (p?.members as any)?.emergency_contact_name || 'S/N',
-          emergency_phone: (p?.members as any)?.emergency_contact_phone || 'S/N',
-          medical_notes: (p?.members as any)?.medical_notes || 'Ninguna'
+          id: enrollment.user_id,
+          first_name: studentProfile?.first_name || 'Estudiante',
+          last_name: studentProfile?.last_name || '',
+          email: studentProfile?.email || '',
+          phone: member?.phone || 'S/N',
+          emergency_name: member?.emergency_contact_name || 'S/N',
+          emergency_phone: member?.emergency_contact_phone || 'S/N',
+          medical_notes: member?.medical_notes || 'Ninguna',
         };
       });
     },
-    enabled: !!selectedCourseId,
+    enabled: Boolean(selectedCourseId),
   });
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['course-sessions', selectedCourseId],
     queryFn: async () => {
-      const { data } = await supabase
+      if (!selectedCourseId) return [];
+      const { data, error } = await supabase
         .from('lms_class_sessions')
-        .select('*')
+        .select('id, course_id, title, session_date, start_time, end_time, status, location, sync_link, notes, created_at')
         .eq('course_id', selectedCourseId)
         .order('session_date', { ascending: false });
-      return data || [];
+      if (error) throw error;
+      return data ?? [];
     },
-    enabled: !!selectedCourseId && activeTab === 'students',
+    enabled: Boolean(selectedCourseId) && ['students', 'classes', 'overview'].includes(activeTab),
   });
 
   const { data: groups = [] } = useQuery({
     queryKey: ['course-groups', selectedCourseId],
     queryFn: async () => {
-      const { data } = await supabase
+      if (!selectedCourseId) return [];
+      const { data, error } = await supabase
         .from('lms_student_groups')
-        .select('*')
+        .select('id, course_id, name, description, created_at')
         .eq('course_id', selectedCourseId);
-      return data || [];
+      if (error) throw error;
+      return data ?? [];
     },
-    enabled: !!selectedCourseId && activeTab === 'students',
+    enabled: Boolean(selectedCourseId) && activeTab === 'students',
   });
 
   const { data: planningData = { modules: [], materials: [], activities: [], resources: [] } } = useQuery({
     queryKey: ['course-planning', selectedCourseId],
     queryFn: async () => {
-      const { data: modules } = await supabase
+      if (!selectedCourseId) return { modules: [], materials: [], activities: [], resources: [] };
+      const { data: modules, error: modulesError } = await supabase
         .from('lms_modules')
-        .select('*')
-        .eq('course_id', selectedCourseId)
+        .select('id, subject_id, title, description, order_index, is_hidden, created_at, updated_at, lms_subjects!inner(course_id)')
+        .eq('lms_subjects.course_id', selectedCourseId)
         .order('order_index', { ascending: true });
-      const moduleIds = modules?.map(m => m.id) || [];
+      if (modulesError) throw modulesError;
+      const moduleIds = modules?.map((module) => module.id) ?? [];
       if (moduleIds.length === 0) return { modules: [], materials: [], activities: [], resources: [] };
 
-      const [{ data: materialsData }, { data: evalData }, { data: resourcesData }] = await Promise.all([
-        supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['video', 'pdf', 'zoom']),
-        supabase.from('lms_lessons').select('*').in('module_id', moduleIds).in('type', ['assignment', 'quiz']),
-        supabase.from('lms_course_resources').select('*').eq('course_id', selectedCourseId)
+      const [materialsResult, evaluationsResult, resourcesResult] = await Promise.all([
+        supabase.from('lms_lessons').select('id, module_id, title, type, description, order_index').in('module_id', moduleIds).in('type', ['video', 'pdf', 'zoom', 'document']),
+        supabase.from('lms_lessons').select('id, module_id, title, type, description, order_index').in('module_id', moduleIds).in('type', ['assignment', 'quiz']),
+        supabase.from('lms_course_resources').select('id, course_id, module_id, title, file_url, file_type, file_size, created_by, created_at').eq('course_id', selectedCourseId),
       ]);
-      return { modules: modules || [], materials: materialsData || [], activities: evalData || [], resources: resourcesData || [] };
+      if (materialsResult.error) throw materialsResult.error;
+      if (evaluationsResult.error) throw evaluationsResult.error;
+      if (resourcesResult.error) throw resourcesResult.error;
+
+      return {
+        modules: modules ?? [],
+        materials: materialsResult.data ?? [],
+        activities: evaluationsResult.data ?? [],
+        resources: resourcesResult.data ?? [],
+      };
     },
-    enabled: !!selectedCourseId && activeTab === 'planning',
+    enabled: Boolean(selectedCourseId) && activeTab === 'planning',
   });
 
   const { data: submissions = [] } = useQuery({
     queryKey: ['course-submissions', selectedCourseId],
     queryFn: async () => {
-      const { data: modules } = await supabase
+      if (!selectedCourseId) return [];
+      const { data: modules, error: modulesError } = await supabase
         .from('lms_modules')
-        .select('id')
-        .eq('course_id', selectedCourseId);
-      const moduleIds = modules?.map(m => m.id) || [];
+        .select('id, lms_subjects!inner(course_id)')
+        .eq('lms_subjects.course_id', selectedCourseId);
+      if (modulesError) throw modulesError;
+      const moduleIds = modules?.map((module) => module.id) ?? [];
       if (moduleIds.length === 0) return [];
-      
-      const { data: lessonsData } = await supabase
+
+      const { data: lessonsData, error: lessonsError } = await supabase
         .from('lms_lessons')
-        .select('id, title, type')
+        .select('id')
         .in('module_id', moduleIds)
         .in('type', ['assignment', 'quiz']);
-      const lessonIds = lessonsData?.map(a => a.id) || [];
+      if (lessonsError) throw lessonsError;
+      const lessonIds = lessonsData?.map((lesson) => lesson.id) ?? [];
       if (lessonIds.length === 0) return [];
 
-      const { data: subsData } = await supabase
+      const { data: submissionsData, error: submissionsError } = await supabase
         .from('lms_lesson_submissions')
-        .select('*')
+        .select('id, lesson_id, student_id, text_content, file_url, grade, teacher_feedback, status, submitted_at, graded_at')
         .in('lesson_id', lessonIds);
-      if (!subsData?.length) return [];
+      if (submissionsError) throw submissionsError;
+      if (!submissionsData?.length) return [];
 
-      const studentIds = [...new Set(subsData.map(s => s.student_id))];
-      const { data: profData } = await supabase
+      const studentIds = [...new Set(submissionsData.map((submission) => submission.student_id))];
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
         .in('id', studentIds);
+      if (profilesError) throw profilesError;
 
-      return subsData.map(sub => {
-        const profile = profData?.find(p => p.id === sub.student_id);
+      return submissionsData.map((submission) => {
+        const studentProfile = profilesData?.find((item) => item.id === submission.student_id);
         return {
-          ...sub,
-          profiles: profile ? {
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || ''
-          } : null
+          ...submission,
+          profiles: studentProfile ? { first_name: studentProfile.first_name || '', last_name: studentProfile.last_name || '' } : null,
         };
       });
     },
-    enabled: !!selectedCourseId && activeTab === 'grades',
+    enabled: Boolean(selectedCourseId) && ['grades', 'overview', 'compliance'].includes(activeTab),
   });
 
   const { data: commData = { announcements: [], tutoring: [] } } = useQuery({
     queryKey: ['course-comm', selectedCourseId],
     queryFn: async () => {
-      const [{ data: annData }, { data: tutData }] = await Promise.all([
-        supabase.from('lms_announcements').select('*').eq('course_id', selectedCourseId).order('created_at', { ascending: false }),
-        supabase.from('lms_tutoring_appointments').select('*').eq('course_id', selectedCourseId).order('scheduled_at', { ascending: true })
+      if (!selectedCourseId) return { announcements: [], tutoring: [] };
+      const [announcementsResult, tutoringResult] = await Promise.all([
+        supabase.from('lms_announcements').select('id, course_id, title, content, created_by, created_at').eq('course_id', selectedCourseId).order('created_at', { ascending: false }),
+        supabase.from('lms_tutoring_appointments').select('id, course_id, teacher_id, student_id, scheduled_at, duration_minutes, status, notes, created_at').eq('course_id', selectedCourseId).order('scheduled_at', { ascending: true }),
       ]);
-      
-      let mappedTutoring: any[] = [];
-      if (tutData && tutData.length > 0) {
-        const studentIds = [...new Set(tutData.map(t => t.student_id))];
-        const { data: profData } = await supabase
+      if (announcementsResult.error) throw announcementsResult.error;
+      if (tutoringResult.error) throw tutoringResult.error;
+
+      let mappedTutoring: TutoringWithProfile[] = [];
+      if (tutoringResult.data?.length) {
+        const studentIds = [...new Set(tutoringResult.data.map((appointment) => appointment.student_id))];
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, first_name, last_name')
           .in('id', studentIds);
-        
-        mappedTutoring = tutData.map(t => {
-          const profile = profData?.find(p => p.id === t.student_id);
+        if (profilesError) throw profilesError;
+        mappedTutoring = tutoringResult.data.map((appointment) => {
+          const studentProfile = profilesData?.find((item) => item.id === appointment.student_id);
           return {
-            ...t,
-            profiles: profile ? { first_name: profile.first_name || '', last_name: profile.last_name || '' } : null
+            ...appointment,
+            profiles: studentProfile ? { first_name: studentProfile.first_name || '', last_name: studentProfile.last_name || '' } : null,
           };
         });
       }
 
-      return { announcements: annData || [], tutoring: mappedTutoring };
+      return { announcements: announcementsResult.data ?? [], tutoring: mappedTutoring };
     },
-    enabled: !!selectedCourseId && activeTab === 'comm',
+    enabled: Boolean(selectedCourseId) && activeTab === 'comm',
   });
 
   const { data: finalGrades = [] } = useQuery({
     queryKey: ['course-final-grades', selectedCourseId],
     queryFn: async () => {
-      const { data: enrollments } = await supabase
+      if (!selectedCourseId) return [];
+      const { data: enrollments, error: enrollmentsError } = await supabase
         .from('lms_enrollments')
         .select('id, user_id')
         .eq('course_id', selectedCourseId)
-        .eq('role', 'student');
+        .eq('role', 'student')
+        .eq('status', 'active');
+      if (enrollmentsError) throw enrollmentsError;
+      if (!enrollments?.length) return [];
 
-      if (!enrollments || enrollments.length === 0) return [];
-
-      const enrollmentIds = enrollments.map(e => e.id);
-      
-      const { data: grades } = await supabase
+      const { data: grades, error: gradesError } = await supabase
         .from('lms_grades')
-        .select('*')
-        .in('enrollment_id', enrollmentIds);
+        .select('id, enrollment_id, subject_id, final_grade, comments, graded_by, created_at, updated_at')
+        .in('enrollment_id', enrollments.map((enrollment) => enrollment.id));
+      if (gradesError) throw gradesError;
 
-      return (grades || []).map(grade => {
-        const enrollment = enrollments.find(e => e.id === grade.enrollment_id);
-        return {
-          ...grade,
-          user_id: enrollment?.user_id
-        };
-      });
+      return (grades ?? []).map((grade) => ({
+        ...grade,
+        user_id: enrollments.find((enrollment) => enrollment.id === grade.enrollment_id)?.user_id,
+      }));
     },
-    enabled: !!selectedCourseId && activeTab === 'grades',
+    enabled: Boolean(selectedCourseId) && activeTab === 'grades',
   });
 
   return {
     profile,
     isTeacher,
-    isLoading: isProfileLoading || (isTeacher && isCoursesLoading),
-    courses: courses || [],
+    isLoading: isProfileLoading || isCoursesLoading,
+    courses: courses ?? [],
     students,
     sessions,
     groups,
@@ -259,16 +312,17 @@ export function useSessionAttendance(sessionId: string | undefined) {
     queryKey: ['session-attendance', sessionId],
     queryFn: async () => {
       if (!sessionId) return {};
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('lms_attendance')
         .select('student_id, status')
         .eq('session_id', sessionId);
-      const map: Record<string, 'present' | 'zoom' | 'absent' | 'late' | 'excused'> = {};
-      data?.forEach(item => {
-        map[item.student_id] = item.status;
+      if (error) throw error;
+      const attendance: Record<string, 'present' | 'zoom' | 'absent' | 'late' | 'excused'> = {};
+      data?.forEach((item) => {
+        attendance[item.student_id] = item.status;
       });
-      return map;
+      return attendance;
     },
-    enabled: !!sessionId,
+    enabled: Boolean(sessionId),
   });
 }
