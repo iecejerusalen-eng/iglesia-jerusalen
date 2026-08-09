@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { X, Plus, Trash2, Upload, Loader2, Compass, MapPin, User, Heart, Award, CheckCircle2, Layers, Save } from 'lucide-react';
@@ -49,7 +49,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     ? editingMember.member_phones.map((p) => ({ phone: p.phone, phone_country_code: p.country_code }))
     : [];
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<MemberFormType>({
+  const { register, handleSubmit, control, setValue, getValues, formState: { errors } } = useForm<MemberFormType>({
     resolver: zodResolver(memberSchema),
     defaultValues: {
       first_name: editingMember?.first_name || '',
@@ -86,7 +86,13 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     }
   });
 
-  const hasDisability = watch('has_disability');
+  const hasDisability = useWatch({ control, name: 'has_disability' });
+  const formLat = useWatch({ control, name: 'latitude' });
+  const formLng = useWatch({ control, name: 'longitude' });
+  const educationLevel = useWatch({ control, name: 'education_level' });
+  const isStudying = useWatch({ control, name: 'is_studying' });
+  const isLeader = useWatch({ control, name: 'is_leader' });
+  const ministryId = useWatch({ control, name: 'ministry_id' });
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -152,7 +158,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     
     toast.success(`Coordenadas fijadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     
-    const currentAddress = watch('address');
+    const currentAddress = getValues('address');
     if (!currentAddress || currentAddress.trim() === '') {
       toast.promise(
         handleReverseGeocode(lat, lng).then((res) => {
@@ -187,8 +193,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     onSubmitMember(data, editingMember?.id || null, selectedAreas, selectedTalents, selectedGifts);
   };
 
-  const formLat = watch('latitude');
-  const formLng = watch('longitude');
+  // Variables extraídas usando useWatch arriba para compatibilidad con React Compiler
 
   return (
     <AnimeFadeUp className="bg-white dark:bg-slate-900 rounded-2xl shadow-xs border border-gray-150 dark:border-white/10 p-6 md:p-8 animate-scale-in">
@@ -214,7 +219,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
           <button
             key={t.id}
             type="button"
-            onClick={() => setActiveTab(t.id as any)}
+            onClick={() => setActiveTab(t.id as 'personal' | 'spiritual' | 'leadership' | 'skills')}
             className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === t.id 
                 ? 'border-primary text-primary' 
@@ -489,7 +494,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                     <option value="Doctorado">Doctorado / Ph.D.</option>
                   </select>
                 </div>
-                {['Tercer Grado', 'Cuarto Grado', 'Doctorado'].includes(watch('education_level') || '') && (
+                {['Tercer Grado', 'Cuarto Grado', 'Doctorado'].includes(educationLevel || '') && (
                   <div className="animate-scale-in">
                     <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Título de Tercer Grado / Carrera</label>
                     <select {...register('career_id')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold">
@@ -504,7 +509,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                   <input type="checkbox" id="is_studying" {...register('is_studying')} className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer" />
                   <label htmlFor="is_studying" className="text-xs font-bold text-gray-650 dark:text-gray-400 cursor-pointer">Actualmente estudiando en la Universidad / Tecnológico</label>
                 </div>
-                {watch('is_studying') && (
+                {isStudying && (
                   <div className="pl-6 animate-fadeUp">
                     <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Carrera en curso</label>
                     <select {...register('studying_career_id')} className="w-full max-w-md px-4 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer font-semibold">
@@ -552,7 +557,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                 ¿Este miembro desempeña un rol de liderazgo en la iglesia?
               </label>
             </div>
-            {watch('is_leader') && (
+            {isLeader && (
               <div className="space-y-4 animate-fadeUp">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Departamento / Ministerio</label>
@@ -561,7 +566,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                     {ministries.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
                 </div>
-                {watch('ministry_id') && (
+                {ministryId && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Rol / Cargo</label>
                     <select {...register('role_id')} onChange={(e) => {
