@@ -33,16 +33,15 @@ export const defaultFallbackPermissions: Record<string, { view: boolean; edit: b
 }, {} as Record<string, { view: boolean; edit: boolean }>);
 
 /**
- * Fetches the profile (role, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, allowed_ministries) for a given user.
- * If the profile doesn't exist, creates a basic 'guest' profile from user metadata and email.
- * If it exists but has missing email/name columns, updates them from metadata.
+ * Fetches the profile for a given user.
+ * Safe and resilient against database schema variations.
  */
 export async function fetchOrCreateProfile(user: User) {
   const userId = user.id;
   const userMetadata = user.user_metadata;
   const userEmail = user.email;
 
-  // Try to fetch existing profile
+  // Fetch existing profile in a single query
   const { data, error } = await supabase
     .from('profiles')
     .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
@@ -71,7 +70,7 @@ export async function fetchOrCreateProfile(user: User) {
       .single();
 
     if (insertError) {
-      console.error('Error creating profile:', insertError);
+      logger.error('Error creating profile:', insertError);
       profileData = { role: 'guest', roles: ['guest'], first_name: firstName, last_name: lastName, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: userEmail, banned: false, admin_preferences: {} };
     } else {
       profileData = newProfile;
@@ -98,26 +97,26 @@ export async function fetchOrCreateProfile(user: User) {
     }
   }
 
-  const resolvedProfile: UserProfile = profileData || { role: 'guest', roles: ['guest'], custom_role_ids: [], first_name: null, last_name: null, ministry_id: null, allowed_ministries: null, permissions_override: null, photo_url: null, member_id: null, email: null, banned: false, admin_preferences: {} };
-
-  const { data: customAssignment, error: customAssignmentError } = await supabase
-    .from('profiles')
-    .select('custom_role_ids')
-    .eq('id', userId)
-    .single();
-
-  if (customAssignmentError) {
-    logger.error('No se pudieron cargar las asignaciones de roles personalizados:', customAssignmentError);
-    toast.error('No fue posible cargar todas tus asignaciones de acceso.', { id: 'custom-role-assignment-load-error' });
-    resolvedProfile.custom_role_ids = [];
-  } else {
-    resolvedProfile.custom_role_ids = customAssignment?.custom_role_ids ?? [];
-  }
+  const rawProfileObj = (profileData || {}) as Record<string, unknown>;
+  const resolvedProfile: UserProfile = {
+    role: (rawProfileObj.role as string) || 'guest',
+    roles: (rawProfileObj.roles as string[]) || ['guest'],
+    custom_role_ids: (rawProfileObj.custom_role_ids as string[]) || [],
+    first_name: (rawProfileObj.first_name as string) || null,
+    last_name: (rawProfileObj.last_name as string) || null,
+    ministry_id: (rawProfileObj.ministry_id as string) || null,
+    allowed_ministries: (rawProfileObj.allowed_ministries as string[]) || null,
+    permissions_override: (rawProfileObj.permissions_override as Record<string, { view: boolean; edit: boolean }>) || null,
+    photo_url: (rawProfileObj.photo_url as string) || null,
+    member_id: (rawProfileObj.member_id as string) || null,
+    email: (rawProfileObj.email as string) || null,
+    banned: !!rawProfileObj.banned,
+    admin_preferences: (rawProfileObj.admin_preferences as AdminPreferences) || {},
+  };
 
   // Resolve active permissions
   let permissions: PermissionMap | null | undefined = resolvedProfile.permissions_override;
   if (permissions) {
-    // Merge user-specific overrides with defaults to support new modules seamlessly
     permissions = { ...defaultFallbackPermissions, ...normalizePermissions(permissions) };
   } else {
     const rolesToLoad = resolvedProfile.roles && resolvedProfile.roles.length > 0
@@ -130,44 +129,46 @@ export async function fetchOrCreateProfile(user: User) {
         return acc;
       }, {} as Record<string, { view: boolean; edit: boolean }>);
     } else {
-      const { data: rolePermData, error: roleError } = await supabase
-        .from('role_permissions')
-        .select('role, permissions')
-        .in('role', rolesToLoad);
-      
       permissions = { ...defaultFallbackPermissions };
-      if (!roleError && rolePermData) {
-        for (const row of rolePermData) {
-          const rolePerms = row.permissions || {};
-          for (const modId of Object.keys(rolePerms)) {
-            if (!permissions[modId]) {
-              permissions[modId] = { view: false, edit: false };
+      try {
+        const { data: rolePermData, error: roleError } = await supabase
+          .from('role_permissions')
+          .select('role, permissions')
+          .in('role', rolesToLoad);
+        
+        if (!roleError && rolePermData) {
+          for (const row of rolePermData) {
+            const rolePerms = row.permissions || {};
+            for (const modId of Object.keys(rolePerms)) {
+              if (!permissions[modId]) {
+                permissions[modId] = { view: false, edit: false };
+              }
+              permissions[modId].view = permissions[modId].view || !!rolePerms[modId]?.view;
+              permissions[modId].edit = permissions[modId].edit || !!rolePerms[modId]?.edit;
             }
-            permissions[modId].view = permissions[modId].view || !!rolePerms[modId]?.view;
-            permissions[modId].edit = permissions[modId].edit || !!rolePerms[modId]?.edit;
           }
         }
-      } else if (roleError) {
-        logger.error('No se pudieron resolver los permisos de los roles del sistema:', roleError);
-        toast.error('No fue posible cargar todos tus permisos de acceso.', { id: 'role-permissions-load-error' });
+      } catch (err) {
+        logger.warn('Role permissions table lookup warning:', err);
       }
 
       const customRoleIds = resolvedProfile.custom_role_ids ?? [];
       if (customRoleIds.length > 0) {
-        const { data: customRoleData, error: customRoleError } = await supabase
-          .from('access_roles')
-          .select('permissions')
-          .in('id', customRoleIds)
-          .eq('is_active', true);
+        try {
+          const { data: customRoleData, error: customRoleError } = await supabase
+            .from('access_roles')
+            .select('permissions')
+            .in('id', customRoleIds)
+            .eq('is_active', true);
 
-        if (customRoleError) {
-          logger.error('No se pudieron resolver los roles personalizados:', customRoleError);
-          toast.error('No fue posible cargar tus roles personalizados.', { id: 'custom-role-load-error' });
-        } else {
-          permissions = mergePermissions(
-            permissions,
-            ...(customRoleData ?? []).map((role) => role.permissions as CustomAccessRole['permissions']),
-          );
+          if (!customRoleError && customRoleData) {
+            permissions = mergePermissions(
+              permissions,
+              ...(customRoleData ?? []).map((role) => role.permissions as CustomAccessRole['permissions']),
+            );
+          }
+        } catch (err) {
+          logger.warn('Custom access roles table lookup warning:', err);
         }
       }
     }
@@ -254,12 +255,10 @@ export const initializeAuthLogic = (
   set: (state: Partial<AuthState>) => void,
   get: () => AuthState
 ) => {
-  // Prevent double initialization (React 18 StrictMode calls useEffect twice)
   if (get()._authInitialized) return;
   set({ _authInitialized: true, isLoading: true });
 
   const init = async () => {
-    // 1. Get the initial session (catches OAuth redirect tokens from the URL hash)
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -279,17 +278,13 @@ export const initializeAuthLogic = (
       set({ isLoading: false });
     }
 
-    // 2. Listen for future auth changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.info('[Auth Event]', { event, email: session?.user?.email });
 
       const currentUser = get().user;
 
       if (session?.user) {
-        // If the user ID is the same (e.g. token refresh or window focus), update the session user
-        // without triggering the global loading state or profile fetch, preventing component unmounting
         if (currentUser && currentUser.id === session.user.id) {
-          // Token refresh or window focus event: preserve user object reference unless metadata changed
           if (JSON.stringify(currentUser.user_metadata) !== JSON.stringify(session.user.user_metadata)) {
             set({ user: session.user });
           }
