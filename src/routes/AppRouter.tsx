@@ -190,8 +190,6 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="dashboard" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<DashboardHome />} />
-            <Route path="/admin/animaciones" element={<AnimationCatalog />} />
-            <Route path="/admin/diseno" element={<DesignCatalog />} />
           </Route>
         </Route>
 
@@ -242,16 +240,18 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="programs" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/lms" element={<LMSManager />} />
-            <Route path="/admin/lms/matriculas" element={<LMSManager />} />
             <Route path="/admin/lms/landing-editor" element={<LMSLandingEditor />} />
             <Route path="/admin/lms/analytics" element={<LMSAnalyticsDashboard />} />
-            <Route path="/admin/juegos" element={<GamesManager />} />
-            <Route path="/admin/juegos/audio-library" element={<AudioLibrary />} />
-            <Route path="/admin/juegos/quien-quiere-ser-biblionario" element={<BiblionarioEditor />} />
-            <Route path="/admin/juegos/ahorcado-biblico" element={<HangmanEditor />} />
-            <Route path="/admin/juegos/memorama-biblico" element={<MemoryEditor />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute module="lms_enrollments" />}><Route element={<AdminLayout />}><Route path="/admin/lms/matriculas" element={<LMSManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="games" />}><Route element={<AdminLayout />}>
+          <Route path="/admin/juegos" element={<GamesManager />} />
+          <Route path="/admin/juegos/quien-quiere-ser-biblionario" element={<BiblionarioEditor />} />
+          <Route path="/admin/juegos/ahorcado-biblico" element={<HangmanEditor />} />
+          <Route path="/admin/juegos/memorama-biblico" element={<MemoryEditor />} />
+        </Route></Route>
+        <Route element={<ProtectedRoute module="audio_library" />}><Route element={<AdminLayout />}><Route path="/admin/juegos/audio-library" element={<AudioLibrary />} /></Route></Route>
         <Route element={<ProtectedRoute module="study_programs" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/programas" element={<StudyProgramsManager />} />
@@ -270,32 +270,33 @@ export default function AppRouter() {
             <Route path="/admin/recursos-abiertos/:id" element={<OpenResourceBuilder />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute module="diseno" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>
+        <Route element={<ProtectedRoute module="presentation_editor" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>
+        <Route element={<ProtectedRoute module="design" />}><Route element={<AdminLayout />}><Route path="/admin/diseno" element={<DesignCatalog />} /></Route></Route>
+        <Route element={<ProtectedRoute module="animations" />}><Route element={<AdminLayout />}><Route path="/admin/animaciones" element={<AnimationCatalog />} /></Route></Route>
         <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="analytics" />}><Route element={<AdminLayout />}><Route path="/admin/analisis" element={<AnalyticsDashboard />} /></Route></Route>
         <Route element={<ProtectedRoute module="finances" />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<DonationPageManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="products" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/productos" element={<StoreManager />} />
-            <Route path="/admin/ordenes" element={<OrdersManager />} />
-            <Route path="/admin/pagos-envios" element={<StoreSettings />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute module="orders" />}><Route element={<AdminLayout />}><Route path="/admin/ordenes" element={<OrdersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="store_settings" />}><Route element={<AdminLayout />}><Route path="/admin/pagos-envios" element={<StoreSettings />} /></Route></Route>
         <Route element={<ProtectedRoute module="settings" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/configuracion" element={<SettingsManager />} />
-            <Route path="/admin/extensiones" element={<PluginManager />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute module="plugins" />}><Route element={<AdminLayout />}><Route path="/admin/extensiones" element={<PluginManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="appearance" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/apariencia" element={<AdminSettings />} />
-            <Route path="/admin/apariencia/menu" element={<MenuManager />} />
-            <Route path="/admin/componentes" element={<ComponentLibrary />} />
-            <Route path="/admin/estilos" element={<ComponentStylesManager />} />
-            <Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute module="menu_manager" />}><Route element={<AdminLayout />}><Route path="/admin/apariencia/menu" element={<MenuManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="components" />}><Route element={<AdminLayout />}><Route path="/admin/componentes" element={<ComponentLibrary />} /></Route></Route>
+        <Route element={<ProtectedRoute module="button_studio" />}><Route element={<AdminLayout />}><Route path="/admin/estilos" element={<ComponentStylesManager />} /><Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="users" />}><Route element={<AdminLayout />}><Route path="/admin/usuarios" element={<UsersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="petitions" />}><Route element={<AdminLayout />}><Route path="/admin/peticiones" element={<PetitionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /></Route></Route>

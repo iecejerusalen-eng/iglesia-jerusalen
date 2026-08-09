@@ -44,7 +44,7 @@ export async function fetchOrCreateProfile(user: User) {
   // Fetch existing profile in a single query
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
+    .select('role, roles, custom_role_ids, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
     .eq('id', userId)
     .single();
 
@@ -66,7 +66,7 @@ export async function fetchOrCreateProfile(user: User) {
         roles: ['guest'],
         banned: false
       }, { onConflict: 'id' })
-      .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
+      .select('role, roles, custom_role_ids, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
       .single();
 
     if (insertError) {
@@ -88,7 +88,7 @@ export async function fetchOrCreateProfile(user: User) {
         .from('profiles')
         .update(updates)
         .eq('id', userId)
-        .select('role, roles, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
+        .select('role, roles, custom_role_ids, first_name, last_name, ministry_id, permissions_override, photo_url, member_id, email, banned, allowed_ministries, admin_preferences')
         .single();
 
       if (!updateError && updatedProfile) {
