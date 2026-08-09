@@ -2,7 +2,7 @@
 -- The public API deliberately omits birth year, age, phone and all CRM-only fields.
 
 ALTER TABLE public.members
-  ADD COLUMN IF NOT EXISTS birthday_public boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS birthday_public boolean NOT NULL DEFAULT true;
 
 COMMENT ON COLUMN public.members.birthday_public IS
   'Explicit consent to publish name, photo, birthday day/month and ministry on the public birthday page.';

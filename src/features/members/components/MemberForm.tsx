@@ -56,7 +56,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       last_name: editingMember?.last_name || '',
       photo_url: editingMember?.photo_url || '',
       birth_date: editingMember?.birth_date || '',
-      birthday_public: editingMember?.birthday_public ?? false,
+      birthday_public: editingMember?.birthday_public ?? true,
       conversion_date: editingMember?.conversion_date || '',
       baptism_date: editingMember?.baptism_date || '',
       phone: editingMember?.phone || '',
