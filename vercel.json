@@ -27,7 +27,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "accelerometer=(), browsing-topics=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), geolocation=(self), usb=()"
+          "value": "accelerometer=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), geolocation=(self), usb=()"
         },
         {
           "key": "Strict-Transport-Security",

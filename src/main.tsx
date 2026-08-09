@@ -15,6 +15,12 @@ const queryClient = new QueryClient({
   },
 })
 
+// Fix for Vite/Vercel chunk loading errors (MIME type error)
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('Vite preload error (posible actualización), forzando recarga...', event);
+  window.location.reload();
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

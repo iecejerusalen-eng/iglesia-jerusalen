@@ -633,9 +633,9 @@ export default function Bible() {
 
       <div className={`max-w-6xl mx-auto px-4 py-8 space-y-6 ${focusMode ? 'pt-24' : ''}`}>
         
-        {/* Main Controls Panel */}
+        {/* Main Controls Panel - Glassmorphism & Sticky */}
         {!focusMode && (
-        <div className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 p-4 rounded-3xl shadow-2xs flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="sticky top-4 z-40 bg-white/70 dark:bg-[#070b14]/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Version Select */}
             <div className="flex flex-col gap-1 w-full sm:w-auto">
@@ -812,7 +812,7 @@ export default function Bible() {
           // ========================================================
           <div className="space-y-6">
             {/* Header controls for chapter navigation */}
-            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-2xs z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-md dark:bg-black/90 border border-gray-200/50' : 'bg-white dark:bg-black border border-gray-150 dark:border-white/10 relative'}`}>
+            <div className={`flex flex-wrap items-center justify-between px-4 py-3 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] z-30 transition-all ${focusMode ? 'fixed top-4 left-4 right-4 max-w-6xl mx-auto bg-white/90 backdrop-blur-xl dark:bg-[#070b14]/90 border border-gray-200/50 dark:border-white/10' : 'bg-white/70 dark:bg-black/50 backdrop-blur-md border border-white/40 dark:border-white/10 relative'}`}>
               <button
                 onClick={() => navigateChapter('prev')}
                 className="p-2 border border-gray-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-black dark:hover:bg-slate-900 rounded-full text-slate-600 dark:text-gold transition cursor-pointer shrink-0"
@@ -900,7 +900,7 @@ export default function Bible() {
               </div>
             ) : chapterData ? (
               <div 
-                className="bg-white dark:bg-[#070b14] border border-gray-150 dark:border-white/10 rounded-3xl p-6 md:p-10 shadow-2xs space-y-6 relative"
+                className="bg-white/80 dark:bg-[#070b14]/80 backdrop-blur-md border border-gray-100 dark:border-white/5 rounded-3xl p-6 md:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.2)] space-y-8 relative"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -912,8 +912,8 @@ export default function Bible() {
                 </div>
 
                 <div 
-                  className="space-y-4 font-serif leading-relaxed dark:text-gray-100 selection:bg-gold/20 select-none md:select-text"
-                  style={{ fontSize: `${fontSize}px` }}
+                  className="space-y-6 font-serif leading-relaxed text-gray-800 dark:text-gray-200 selection:bg-amber-500/30 dark:selection:bg-gold/30 select-none md:select-text"
+                  style={{ fontSize: `${fontSize}px`, lineHeight: '1.75' }}
                 >
                   {chapterData.vers.map((v) => {
                     const isSelected = selectedVerses.includes(v.number);
@@ -928,14 +928,14 @@ export default function Bible() {
                       <div 
                         key={v.id} 
                         ref={isFirstHighlighted ? highlightedVerseRef : undefined}
-                        className={`group relative py-2 rounded-2xl px-3.5 transition-all duration-500 ${
+                        className={`group relative py-2.5 rounded-2xl px-3.5 transition-all duration-300 ease-out ${
                           isSelected 
-                            ? 'bg-amber-500/10 border-l-4 border-amber-600 dark:border-gold pl-4' 
+                            ? 'bg-amber-500/15 dark:bg-gold/10 border-l-4 border-amber-600 dark:border-gold pl-4 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]' 
                             : isSearchHighlighted 
                             ? 'bg-gradient-to-r from-amber-500/20 to-gold/10 border-l-4 border-amber-500 dark:border-gold pl-4 shadow-xs ring-1 ring-gold/15'
                             : isDimmed 
                             ? 'opacity-35 dark:opacity-25 transition-opacity'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-850/50'
+                            : 'hover:bg-slate-50/80 dark:hover:bg-white/5'
                         }`}
                         style={userHighlight ? { backgroundColor: userHighlight.color } : {}}
                       >
