@@ -110,7 +110,7 @@ export function BentoCard({
         ) : null}
 
         {children && (
-          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/5 space-y-1.5 flex flex-col h-full">
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-col">
             {children}
           </div>
         )}

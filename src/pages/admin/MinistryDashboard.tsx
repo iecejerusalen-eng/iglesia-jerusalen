@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, BookOpen, Calendar, Clock, FileText, GraduationCap, LayoutDashboard, Loader2, LockKeyhole, RefreshCw, ShieldAlert, Users } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
-import { ArrowLeft, Users, Calendar, Clock, FileText, Settings, ShieldAlert, Loader2, GraduationCap, ArrowRight, BookOpen } from 'lucide-react';
-import type { Ministry, LMSSchool } from '../../types';
+import type { LMSSchool, Ministry } from '../../types';
+import MinistryOverview from '../../components/admin/ministry/MinistryOverview';
 import MinistryMembers from '../../components/admin/ministry/MinistryMembers';
 import SmartScheduler from '../../components/admin/ministry/SmartScheduler';
 import MeetingNotes from '../../components/admin/ministry/MeetingNotes';
@@ -12,173 +13,126 @@ import { AcademicStaffManager } from '../../features/lms/components/AcademicStaf
 import { CoursesList } from '../../features/lms/components/CoursesList';
 import { useCourses } from '../../features/lms/hooks/useCourses';
 
+type MinistryTab = 'resumen' | 'miembros' | 'calendario' | 'planificador' | 'actas' | 'escuela';
+
 export default function MinistryDashboard() {
   const { id } = useParams();
   const { canEditMinistry } = usePermissions();
-
+  const { courses } = useCourses();
   const [ministry, setMinistry] = useState<Ministry | null>(null);
   const [school, setSchool] = useState<LMSSchool | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('detalles');
-
-  useEffect(() => {
-    fetchMinistry();
-  }, [id]);
-
-  const { courses } = useCourses();
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<MinistryTab>('resumen');
 
   const fetchMinistry = async () => {
     if (!id) return;
     setLoading(true);
+    setLoadError(null);
     try {
-      const { data, error } = await supabase
-        .from('ministries')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (error) throw error;
-      setMinistry(data);
-
-      // Check if this ministry has an associated school
-      const { data: schoolData } = await supabase
-        .from('lms_schools')
-        .select('*')
-        .eq('ministry_id', id)
-        .maybeSingle();
-      
-      if (schoolData) {
-        setSchool(schoolData as LMSSchool);
-      }
-    } catch (err) {
-      console.error('Error fetching ministry:', err);
+      const [ministryResult, schoolResult] = await Promise.all([
+        supabase.from('ministries').select('*').eq('id', id).maybeSingle(),
+        supabase.from('lms_schools').select('*').eq('ministry_id', id).maybeSingle(),
+      ]);
+      if (ministryResult.error) throw ministryResult.error;
+      if (schoolResult.error) throw schoolResult.error;
+      setMinistry(ministryResult.data);
+      setSchool(schoolResult.data as LMSSchool | null);
+    } catch (caughtError: unknown) {
+      console.error('Error fetching ministry dashboard:', caughtError);
+      setLoadError(caughtError instanceof Error ? caughtError.message : 'No fue posible cargar el ministerio.');
     } finally {
       setLoading(false);
     }
   };
 
-  const canEdit = canEditMinistry(id || '');
+  useEffect(() => {
+    void fetchMinistry();
+  }, [id]);
 
   if (loading) {
+    return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+  }
+
+  if (loadError) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="animate-spin text-primary" size={32} />
+      <div role="alert" className="rounded-3xl border border-red-200 bg-white/75 px-6 py-16 text-center shadow-sm backdrop-blur-xl dark:border-red-500/20 dark:bg-slate-900/70">
+        <ShieldAlert size={44} className="mx-auto text-red-500" />
+        <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">No pudimos abrir este panel</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500 dark:text-slate-400">{loadError}</p>
+        <button type="button" onClick={() => void fetchMinistry()} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-xs font-bold text-white"><RefreshCw size={15} /> Reintentar</button>
       </div>
     );
   }
 
   if (!ministry) {
     return (
-      <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10">
-        <ShieldAlert size={48} className="mx-auto text-red-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Ministerio no encontrado</h2>
-        <Link to="/admin/ministerios" className="text-primary hover:underline mt-2 inline-block">Volver</Link>
+      <div className="rounded-3xl border border-slate-200 bg-white/75 px-6 py-16 text-center dark:border-white/10 dark:bg-slate-900/70">
+        <ShieldAlert size={44} className="mx-auto text-red-500" />
+        <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">Ministerio no encontrado</h2>
+        <Link to="/admin/ministerios" className="mt-3 inline-block text-sm font-bold text-primary hover:underline">Volver al directorio</Link>
       </div>
     );
   }
 
-  const tabs = [
-    { id: 'detalles', label: 'Información General', icon: Settings },
-    { id: 'miembros', label: 'Miembros', icon: Users },
-    { id: 'calendario', label: 'Calendario Interno', icon: Calendar },
-    { id: 'planificador', label: 'Planificador de Reuniones', icon: Clock },
+  const canEdit = canEditMinistry(ministry.id);
+  const tabs: Array<{ id: MinistryTab; label: string; icon: typeof Users }> = [
+    { id: 'resumen', label: 'Centro de control', icon: LayoutDashboard },
+    { id: 'miembros', label: 'Equipo', icon: Users },
+    { id: 'calendario', label: 'Agenda', icon: Calendar },
+    { id: 'planificador', label: 'Disponibilidad', icon: Clock },
     { id: 'actas', label: 'Actas', icon: FileText },
   ];
-
-  if (school) {
-    tabs.push({ id: 'escuela', label: 'Escuela Académica', icon: GraduationCap });
-  }
+  if (school) tabs.push({ id: 'escuela', label: 'Escuela académica', icon: GraduationCap });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/admin/ministerios" className="p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 transition-colors">
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            {ministry.name}
-            {!canEdit && <span className="bg-gray-100 text-gray-500 dark:text-gray-450 text-xs px-2 py-1 rounded-full uppercase tracking-wider font-semibold border border-gray-200 dark:border-white/10">Solo Lectura</span>}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-450">Panel de control del ministerio/departamento</p>
+    <div className="relative space-y-6">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-primary px-6 py-7 text-white shadow-[0_25px_70px_-35px_rgba(15,23,42,.75)] md:px-8">
+        {ministry.image_url && <img src={ministry.image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-primary/70" />
+        <div className="pointer-events-none absolute -right-20 -top-28 h-64 w-64 rounded-full blur-3xl" style={{ backgroundColor: `${ministry.theme_color || '#C99A49'}55` }} />
+        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <Link to="/admin/ministerios" aria-label="Volver a ministerios" className="rounded-2xl border border-white/15 bg-white/10 p-3 text-white backdrop-blur-xl transition hover:bg-white/20"><ArrowLeft size={20} /></Link>
+            <div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-church-gold-light">
+                <span>{ministry.category === 'departamento' ? 'Departamento' : 'Ministerio de servicio'}</span>
+                {!canEdit && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-1 text-slate-300"><LockKeyhole size={11} /> Solo lectura</span>}
+              </div>
+              <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">{ministry.name}</h1>
+              <p className="mt-2 text-sm text-slate-300">Organiza el equipo, la agenda, los acuerdos y la disponibilidad desde un solo lugar.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs sm:flex">
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-xl"><span className="block text-[10px] uppercase tracking-wider text-slate-400">Responsable</span><strong className="mt-1 block max-w-44 truncate">{ministry.leader_name || 'Por definir'}</strong></div>
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-xl"><span className="block text-[10px] uppercase tracking-wider text-slate-400">Horario</span><strong className="mt-1 block max-w-44 truncate">{ministry.schedule || 'Por definir'}</strong></div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tabs */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-gray-150 dark:border-white/10 scrollbar-hide">
+      <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/60 shadow-[0_20px_65px_-45px_rgba(15,23,42,.55)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/50">
+        <div className="flex overflow-x-auto border-b border-slate-200/70 bg-white/50 p-2 scrollbar-hide dark:border-white/10 dark:bg-slate-900/40" role="tablist" aria-label="Herramientas del ministerio">
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-4 font-medium text-sm whitespace-nowrap transition-colors border-b-2 ${
-                activeTab === tab.id
-                  ? 'border-primary text-primary bg-blue-50/30'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <tab.icon size={18} />
-              {tab.label}
+            <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 whitespace-nowrap rounded-2xl px-5 py-3 text-sm font-bold transition ${activeTab === tab.id ? 'bg-primary text-white shadow-lg shadow-primary/15' : 'text-slate-500 hover:bg-white hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
+              <tab.icon size={17} />{tab.label}
             </button>
           ))}
         </div>
 
-        <div className="p-6">
-          {activeTab === 'detalles' && (
-            <div className="text-gray-600 dark:text-gray-400">
-              <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-gray-100">Detalles del Ministerio</h3>
-              <p>Aquí se mostraría la vista de edición o detalles generales del ministerio.</p>
-              {/* Could embed the MinistryManager form or a summary here */}
-            </div>
-          )}
-
-          {activeTab === 'miembros' && (
-            <MinistryMembers ministryId={ministry.id} />
-          )}
-
-          {activeTab === 'calendario' && (
-            <MinistryCalendar ministryId={ministry.id} />
-          )}
-
-          {activeTab === 'planificador' && (
-            <SmartScheduler ministryId={ministry.id} />
-          )}
-
-          {activeTab === 'actas' && (
-            <MeetingNotes ministryId={ministry.id} />
-          )}
-
+        <div className="p-4 md:p-6">
+          {activeTab === 'resumen' && <MinistryOverview ministry={ministry} canEdit={canEdit} onUpdated={setMinistry} />}
+          {activeTab === 'miembros' && <MinistryMembers ministryId={ministry.id} />}
+          {activeTab === 'calendario' && <MinistryCalendar ministryId={ministry.id} />}
+          {activeTab === 'planificador' && <SmartScheduler ministryId={ministry.id} />}
+          {activeTab === 'actas' && <MeetingNotes ministryId={ministry.id} />}
           {activeTab === 'escuela' && school && (
-            <div className="space-y-8 animate-in fade-in">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-indigo-950/30 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg" style={{ backgroundColor: school.color || '#4F46E5' }}>
-                    {school.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black font-serif text-slate-900 dark:text-white">{school.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Panel administrativo simplificado de la escuela.</p>
-                  </div>
-                </div>
-                <Link to="/admin/lms" className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-md">
-                  Ir al Aula Virtual Central <ArrowRight size={16} />
-                </Link>
+            <div className="space-y-8">
+              <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-blue-50 p-6 dark:border-indigo-900/50 dark:from-slate-900 dark:to-indigo-950/30 md:flex-row">
+                <div className="flex items-center gap-4"><div className="flex h-12 w-12 items-center justify-center rounded-xl text-xl font-bold text-white shadow-lg" style={{ backgroundColor: school.color || '#4F46E5' }}>{school.name.substring(0, 2).toUpperCase()}</div><div><h2 className="font-serif text-xl font-bold text-slate-900 dark:text-white">{school.name}</h2><p className="text-sm text-slate-500 dark:text-slate-400">Administración académica vinculada al departamento.</p></div></div>
+                <Link to="/admin/lms" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-indigo-700">Aula Virtual Central <ArrowRight size={16} /></Link>
               </div>
-
-              <div>
-                <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                  <BookOpen className="text-gold" size={20} /> Cursos de la Escuela
-                </h4>
-                <CoursesList courses={courses.filter(c => c.school_id === school.id)} />
-              </div>
-
-              <div className="pt-8 border-t border-gray-100 dark:border-white/10">
-                <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                  <Users className="text-emerald-500" size={20} /> Plantilla Docente
-                </h4>
-                <AcademicStaffManager schoolId={school.id} />
-              </div>
+              <section><h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-white"><BookOpen className="text-church-gold-medium" size={20} /> Cursos de la escuela</h3><CoursesList courses={courses.filter((course) => course.school_id === school.id)} /></section>
+              <section className="border-t border-slate-200 pt-8 dark:border-white/10"><h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-white"><Users className="text-emerald-500" size={20} /> Plantilla docente</h3><AcademicStaffManager schoolId={school.id} /></section>
             </div>
           )}
         </div>

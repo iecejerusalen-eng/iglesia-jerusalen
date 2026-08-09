@@ -225,7 +225,7 @@ const StoreManager = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         <AnimeFadeUp>
           {/* Top Metrics BentoGrid */}
-          <BentoGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <BentoGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-8 auto-rows-[14rem]">
             <BentoCard
               name="Pedidos Pendientes"
               description="Esperando verificación de pago"
@@ -264,7 +264,7 @@ const StoreManager = () => {
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-gray-400">$</span>
                 <span className="text-4xl font-extrabold text-primary">
-                  <NumberTicker value={orders.filter(o => o.status === 'completed' || o.status === 'ready_for_pickup' || o.status === 'paid').reduce((acc, o) => acc + Number(o.total), 0)} decimalPlaces={2} />
+                  <NumberTicker value={orders.filter(o => o.status === 'completed' || o.status === 'ready_for_pickup' || o.status === 'paid').reduce((acc, o) => acc + Number(o.total || 0), 0)} decimalPlaces={2} />
                 </span>
               </div>
             </BentoCard>

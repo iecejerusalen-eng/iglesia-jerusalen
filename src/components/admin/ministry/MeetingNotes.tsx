@@ -5,6 +5,26 @@ import type { MinistryMeetingNote } from '../../../types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { usePermissions } from '../../../hooks/usePermissions';
 import BlockEditor from '../BlockEditor';
+import { toast } from 'sonner';
+
+function getNotePreview(content: string): string {
+  try {
+    const parsed: unknown = JSON.parse(content || '[]');
+    if (!Array.isArray(parsed)) return content;
+    return parsed
+      .map((block) => {
+        if (!block || typeof block !== 'object') return '';
+        const value = (block as Record<string, unknown>).content;
+        return typeof value === 'string' ? value : '';
+      })
+      .join(' ')
+      .replace(/<[^>]+>/g, '')
+      .trim() || 'Sin contenido de texto.';
+  } catch (parseError: unknown) {
+    console.warn('Meeting note uses legacy plain-text content:', parseError);
+    return content;
+  }
+}
 
 export default function MeetingNotes({ ministryId }: { ministryId: string }) {
   const [notes, setNotes] = useState<MinistryMeetingNote[]>([]);
@@ -21,7 +41,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
   const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
-    fetchNotes();
+    void fetchNotes();
   }, [ministryId]);
 
   const fetchNotes = async () => {
@@ -44,11 +64,12 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       if (notesData.length > 0) {
         const userIds = [...new Set(notesData.map(n => n.created_by).filter(Boolean))];
         if (userIds.length > 0) {
-          const { data: profilesData } = await supabase
+          const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
             .select('id, first_name, last_name')
             .in('id', userIds);
-            
+          if (profilesError) throw profilesError;
+
           if (profilesData) {
             notesData.forEach(note => {
               const profile = profilesData.find(p => p.id === note.created_by);
@@ -63,6 +84,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       setNotes(notesData);
     } catch (err) {
       console.error('Error fetching meeting notes:', err);
+      toast.error('No fue posible cargar las actas del ministerio.');
     } finally {
       setLoading(false);
     }
@@ -91,10 +113,11 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      fetchNotes();
+      toast.success('Acta eliminada.');
+      void fetchNotes();
     } catch (err) {
       console.error('Error deleting note:', err);
-      alert('Error al eliminar acta.');
+      toast.error('No fue posible eliminar el acta.');
     }
   };
 
@@ -126,10 +149,11 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       }
       
       setIsEditing(false);
-      fetchNotes();
+      toast.success(editingNoteId ? 'Acta actualizada.' : 'Acta registrada.');
+      void fetchNotes();
     } catch (err) {
       console.error('Error saving note:', err);
-      alert('Error al guardar acta.');
+      toast.error('No fue posible guardar el acta.');
     }
   };
 
@@ -140,8 +164,8 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
   if (isEditing) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <div className="flex justify-between items-center border-b border-gray-200 pb-4 dark:border-white/10">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
             <FileText className="text-primary" />
             {editingNoteId ? 'Editar Acta' : 'Nueva Acta de Reunión'}
           </h3>
@@ -161,20 +185,20 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 space-y-6">
+        <div className="bg-white/75 p-6 rounded-3xl border border-gray-200 space-y-6 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Fecha de la Reunión</label>
             <input
               type="date"
               value={noteDate}
               onChange={(e) => setNoteDate(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg w-full max-w-xs focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              className="px-4 py-2 border border-gray-200 rounded-xl w-full max-w-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
           </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Contenido (Acuerdos, Asistencia, Temas Tratados)</label>
-            <div className="border border-gray-200 rounded-xl bg-gray-50/30 p-4">
+            <div className="border border-gray-200 rounded-2xl bg-gray-50/30 p-4 dark:border-white/10 dark:bg-slate-950/40">
               <BlockEditor content={noteContent} onChange={setNoteContent} />
             </div>
           </div>
@@ -187,7 +211,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-end">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Actas de Reuniones</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">Actas de reuniones</h3>
           <p className="text-sm text-gray-500">Registra los acuerdos y notas de cada reunión de este ministerio.</p>
         </div>
         {canEdit && (
@@ -202,7 +226,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       </div>
 
       {notes.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
+        <div className="text-center py-16 bg-gray-50 rounded-3xl border border-gray-200 border-dashed dark:border-white/10 dark:bg-slate-900/60">
           <FileText size={48} className="mx-auto text-gray-300 mb-4" />
           <h4 className="text-lg font-bold text-gray-500 mb-1">Sin actas registradas</h4>
           <p className="text-sm text-gray-400 max-w-sm mx-auto">
@@ -212,7 +236,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {notes.map(note => (
-            <div key={note.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow relative group">
+            <div key={note.id} className="bg-white/75 rounded-3xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow relative group backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2 text-primary font-bold">
                   <CalendarIcon size={18} />
@@ -241,18 +265,7 @@ export default function MeetingNotes({ ministryId }: { ministryId: string }) {
               </div>
               
               <div className="text-sm text-gray-600 line-clamp-4 prose prose-sm max-w-none">
-                {/* Parse the blocks to show some text preview */}
-                {(() => {
-                  try {
-                    const blocks = JSON.parse(note.content || '[]');
-                    if (Array.isArray(blocks)) {
-                      return blocks.map(b => b.content).join(' ').replace(/<[^>]+>/g, '') || 'Sin contenido de texto.';
-                    }
-                    return note.content;
-                  } catch {
-                    return note.content;
-                  }
-                })()}
+                {getNotePreview(note.content || '')}
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">

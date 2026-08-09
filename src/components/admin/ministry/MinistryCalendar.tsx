@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Loader2, Calendar as CalendarIcon, Edit2, Globe, Lock } from 'lucide-react';
 import type { Event as DbEvent } from '../../../types';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { toast } from 'sonner';
 
 export default function MinistryCalendar({ ministryId }: { ministryId: string }) {
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -25,7 +26,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
   const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
-    fetchEvents();
+    void fetchEvents();
   }, [ministryId]);
 
   const fetchEvents = async () => {
@@ -41,6 +42,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
       setEvents(data || []);
     } catch (err) {
       console.error('Error fetching ministry events:', err);
+      toast.error('No fue posible cargar la agenda del ministerio.');
     } finally {
       setLoading(false);
     }
@@ -79,16 +81,25 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
         .delete()
         .eq('id', id);
       if (error) throw error;
-      fetchEvents();
+      toast.success('Evento eliminado.');
+      void fetchEvents();
     } catch (err) {
       console.error('Error deleting event:', err);
-      alert('Error al eliminar evento.');
+      toast.error('No fue posible eliminar el evento.');
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit) return;
+    if (endDate && endDate < startDate) {
+      toast.error('La fecha final no puede ser anterior a la fecha inicial.');
+      return;
+    }
+    if (startTime && endTime && startDate === endDate && endTime <= startTime) {
+      toast.error('La hora final debe ser posterior a la hora inicial.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -117,10 +128,11 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
       }
       
       setIsEditing(false);
-      fetchEvents();
+      toast.success(editingEventId ? 'Evento actualizado.' : 'Evento creado.');
+      void fetchEvents();
     } catch (err) {
       console.error('Error saving event:', err);
-      alert('Error al guardar el evento.');
+      toast.error('No fue posible guardar el evento.');
     } finally {
       setSaving(false);
     }
@@ -132,8 +144,8 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
 
   if (isEditing) {
     return (
-      <div className="bg-white p-6 rounded-xl border border-gray-200 animate-fade-in">
-        <h3 className="text-lg font-bold text-gray-800 mb-6">
+      <div className="rounded-3xl border border-white/70 bg-white/75 p-6 backdrop-blur-xl animate-fade-in dark:border-white/10 dark:bg-slate-900/70">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">
           {editingEventId ? 'Editar Evento' : 'Nuevo Evento'}
         </h3>
         <form onSubmit={handleSave} className="space-y-4">
@@ -144,7 +156,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-primary dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
           </div>
           
@@ -154,7 +166,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-primary dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
           </div>
 
@@ -166,7 +178,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
             <div>
@@ -176,7 +188,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
                 required
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
           </div>
@@ -188,7 +200,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
             <div>
@@ -197,12 +209,12 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200 mt-2">
+          <div className="flex items-center gap-3 bg-slate-50/80 p-4 rounded-2xl border border-gray-200 mt-2 dark:border-white/10 dark:bg-slate-950/50">
             <input
               type="checkbox"
               id="isPublic"
@@ -211,7 +223,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
               className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
             />
             <label htmlFor="isPublic" className="flex-1 cursor-pointer">
-              <span className="block font-semibold text-gray-800">Evento Público</span>
+              <span className="block font-semibold text-gray-800 dark:text-white">Evento público</span>
               <span className="text-sm text-gray-500">Si lo marcas, aparecerá en el calendario general de la iglesia. De lo contrario, es solo para el ministerio.</span>
             </label>
           </div>
@@ -242,7 +254,7 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-end">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Calendario Interno</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">Agenda del ministerio</h3>
           <p className="text-sm text-gray-500">Eventos, reuniones o actividades exclusivas de este ministerio.</p>
         </div>
         {canEdit && (
@@ -256,9 +268,9 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
         )}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white/75 border border-gray-200 rounded-3xl overflow-hidden backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+          <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase dark:bg-slate-950/50 dark:text-slate-400">
             <tr>
               <th className="px-4 py-3">Evento</th>
               <th className="px-4 py-3">Fecha y Hora</th>
@@ -275,9 +287,9 @@ export default function MinistryCalendar({ ministryId }: { ministryId: string })
               </tr>
             ) : (
               events.map(ev => (
-                <tr key={ev.id} className="hover:bg-gray-50/50">
+                <tr key={ev.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.03]">
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-gray-800">{ev.title}</span>
+                    <span className="font-semibold text-gray-800 dark:text-white">{ev.title}</span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     <div className="flex items-center gap-2">

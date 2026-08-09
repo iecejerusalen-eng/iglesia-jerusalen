@@ -1,8 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Trash2, Search, Loader2 } from 'lucide-react';
-import type { MinistryMember, Member } from '../../../types';
+import type { MinistryMember } from '../../../types';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { toast } from 'sonner';
+
+interface MinistryMemberInsert {
+  ministry_id: string;
+  role: string;
+  member_id: string;
+}
+
+interface CrmMemberOption {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+}
 
 const PREDEFINED_ROLES = [
   'Coordinador',
@@ -16,7 +30,7 @@ const PREDEFINED_ROLES = [
 
 export default function MinistryMembers({ ministryId }: { ministryId: string }) {
   const [members, setMembers] = useState<MinistryMember[]>([]);
-  const [allMembers, setAllMembers] = useState<Partial<Member>[]>([]);
+  const [allMembers, setAllMembers] = useState<CrmMemberOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [selectedMember, setSelectedMember] = useState('');
@@ -31,7 +45,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
   const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [ministryId]);
 
   useEffect(() => {
@@ -72,6 +86,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
       setAllMembers(allMembersData || []);
     } catch (error) {
       console.error('Error fetching ministry members:', error);
+      toast.error('No fue posible cargar el equipo del ministerio.');
     } finally {
       setLoading(false);
     }
@@ -81,19 +96,16 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
     e.preventDefault();
     if (!canEdit) return;
     
-    const payload: any = {
-      ministry_id: ministryId,
-      role: roleInput
-    };
-    
-    if (selectedMember) {
-      payload.member_id = selectedMember;
-      payload.member_name = memberSearchTerm;
-    } else if (memberSearchTerm.trim()) {
-      payload.member_name = memberSearchTerm.trim();
-    } else {
+    if (!selectedMember) {
+      toast.error('Selecciona una persona registrada en el CRM.');
       return;
     }
+
+    const payload: MinistryMemberInsert = {
+      ministry_id: ministryId,
+      role: roleInput,
+      member_id: selectedMember,
+    };
     
     setAdding(true);
     try {
@@ -103,7 +115,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
         
       if (error) {
         if (error.code === '23505') {
-          alert('Este cargo o miembro ya está registrado.');
+          toast.error('Este miembro ya está registrado en el ministerio.');
         } else {
           throw error;
         }
@@ -111,11 +123,12 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
         setSelectedMember('');
         setMemberSearchTerm('');
         setRoleInput('Vocal 1');
-        fetchData();
+        toast.success('Miembro incorporado al equipo.');
+        void fetchData();
       }
     } catch (err) {
       console.error('Error adding member:', err);
-      alert('Hubo un error al añadir al miembro.');
+      toast.error('No fue posible añadir al miembro.');
     } finally {
       setAdding(false);
     }
@@ -131,10 +144,11 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
         .eq('id', id);
         
       if (error) throw error;
-      fetchData();
+      toast.success('Miembro removido del equipo.');
+      void fetchData();
     } catch (err) {
       console.error('Error removing member:', err);
-      alert('Error al remover.');
+      toast.error('No fue posible remover al miembro.');
     }
   };
 
@@ -175,7 +189,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Buscar miembro de CRM o escribir nombre..."
+                placeholder="Buscar y seleccionar miembro del CRM..."
                 value={memberSearchTerm}
                 onChange={(e) => {
                   setMemberSearchTerm(e.target.value);
@@ -192,7 +206,7 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => handleSelectMember(m.id!, `${m.first_name} ${m.last_name}`)}
+                    onClick={() => handleSelectMember(m.id, `${m.first_name} ${m.last_name}`)}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-55 dark:hover:bg-slate-800 focus:bg-gray-55 dark:focus:bg-slate-800 focus:outline-none text-gray-800 dark:text-gray-100"
                   >
                     {m.first_name} {m.last_name}
@@ -216,11 +230,11 @@ export default function MinistryMembers({ ministryId }: { ministryId: string }) 
           </div>
           <button
             type="submit"
-            disabled={adding || (!selectedMember && !memberSearchTerm.trim())}
+            disabled={adding || !selectedMember}
             className="bg-primary hover:bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors cursor-pointer border border-transparent shadow-xs"
           >
             {adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-            {selectedMember ? 'Vincular Miembro' : 'Añadir por Texto'}
+            Vincular miembro
           </button>
         </form>
       )}

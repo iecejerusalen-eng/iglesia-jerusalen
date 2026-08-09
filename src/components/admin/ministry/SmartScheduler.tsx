@@ -3,6 +3,14 @@ import { supabase } from '../../../config/supabase';
 import { Loader2, Calendar as CalendarIcon, Save, Info } from 'lucide-react';
 import type { MinistryMember, MemberAvailability } from '../../../types';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { toast } from 'sonner';
+
+interface AvailabilityInsert {
+  member_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
 
 const DAYS_OF_WEEK = [
   'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
@@ -34,7 +42,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
   const canEdit = canEditMinistry(ministryId);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [ministryId]);
 
   const fetchData = async () => {
@@ -70,6 +78,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
 
     } catch (err) {
       console.error('Error fetching scheduler data:', err);
+      toast.error('No fue posible cargar la disponibilidad del equipo.');
     } finally {
       setLoading(false);
     }
@@ -166,14 +175,8 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
     if (selectedMemberId === 'all' || !canEdit) return;
     setSaving(true);
     try {
-      // 1. Delete existing for this member
-      await supabase
-        .from('member_availabilities')
-        .delete()
-        .eq('member_id', selectedMemberId);
-
-      // 2. Convert grid to contiguous blocks
-      const inserts: any[] = [];
+      // Convert the visual grid into contiguous database ranges.
+      const inserts: AvailabilityInsert[] = [];
       
       for (let day = 0; day < 7; day++) {
         let blockStart: number | null = null;
@@ -197,18 +200,40 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
         }
       }
 
+      const previousRows: AvailabilityInsert[] = allAvailabilities
+        .filter((availability) => availability.member_id === selectedMemberId)
+        .map((availability) => ({
+          member_id: availability.member_id,
+          day_of_week: availability.day_of_week,
+          start_time: availability.start_time,
+          end_time: availability.end_time,
+        }));
+
+      const deleteResult = await supabase
+        .from('member_availabilities')
+        .delete()
+        .eq('member_id', selectedMemberId);
+      if (deleteResult.error) throw deleteResult.error;
+
       if (inserts.length > 0) {
-        const { error } = await supabase
-          .from('member_availabilities')
-          .insert(inserts);
-        if (error) throw error;
+        const insertResult = await supabase.from('member_availabilities').insert(inserts);
+        if (insertResult.error) {
+          if (previousRows.length > 0) {
+            const restoreResult = await supabase.from('member_availabilities').insert(previousRows);
+            if (restoreResult.error) {
+              console.error('Critical error restoring member availability:', restoreResult.error);
+              throw new Error('No se pudo guardar ni restaurar la disponibilidad anterior. Revisa la base de datos.');
+            }
+          }
+          throw insertResult.error;
+        }
       }
 
-      alert('Disponibilidad guardada correctamente.');
-      fetchData(); // reload
+      toast.success('Disponibilidad guardada correctamente.');
+      void fetchData();
     } catch (err) {
       console.error('Error saving availability:', err);
-      alert('Error al guardar la disponibilidad.');
+      toast.error('No fue posible guardar la disponibilidad.');
     } finally {
       setSaving(false);
     }
@@ -231,7 +256,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Planificador Inteligente</h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">Planificador inteligente</h3>
           <p className="text-sm text-gray-500">
             Descubre los mejores horarios para reunirse o edita la disponibilidad individual.
           </p>
@@ -242,7 +267,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
           <select
             value={selectedMemberId}
             onChange={(e) => setSelectedMemberId(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white min-w-[200px]"
+            className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white min-w-[200px] dark:border-white/10 dark:bg-slate-950 dark:text-white"
           >
             <option value="all">Resumen del Ministerio (Recomendado)</option>
             <optgroup label="Editar Disponibilidad Individual">
@@ -278,20 +303,20 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
       )}
 
       {selectedMemberId === 'all' && topRecommendations.length > 0 && (
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <div className="bg-white/75 p-5 rounded-3xl border border-gray-200 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+          <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
             <span className="text-gold">★</span> Horarios Óptimos Recomendados
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topRecommendations.map((rec, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-150 rounded-lg">
+              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-150 rounded-2xl dark:border-white/5 dark:bg-slate-950/50">
                 <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ${
                   rec.percentage === 100 ? 'bg-green-500' : rec.percentage >= 70 ? 'bg-green-400' : 'bg-green-300'
                 }`}>
                   {rec.percentage}%
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">{DAYS_OF_WEEK[rec.day]}</p>
+                  <p className="text-sm font-bold text-gray-800 dark:text-white">{DAYS_OF_WEEK[rec.day]}</p>
                   <p className="text-xs text-gray-500 font-medium">{rec.hour.toString().padStart(2, '0')}:00</p>
                 </div>
               </div>
@@ -301,7 +326,7 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
       )}
 
       {selectedMemberId === 'all' && heatmap && heatmap.totalMembers === 0 && (
-        <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="text-center py-10 bg-gray-50 rounded-3xl border border-gray-200 dark:border-white/10 dark:bg-slate-900/60">
           <CalendarIcon size={32} className="mx-auto text-gray-400 mb-2" />
           <p className="text-gray-500">No hay miembros en este ministerio aún.</p>
         </div>
@@ -309,8 +334,8 @@ export default function SmartScheduler({ ministryId }: { ministryId: string }) {
 
       {(selectedMemberId !== 'all' || (heatmap && heatmap.totalMembers > 0)) && (
         <div className="overflow-x-auto">
-          <div className="min-w-[800px] border border-gray-200 rounded-xl overflow-hidden bg-white">
-            <div className="grid grid-cols-8 bg-gray-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-500 text-center">
+          <div className="min-w-[800px] border border-gray-200 rounded-3xl overflow-hidden bg-white/75 dark:border-white/10 dark:bg-slate-900/70">
+            <div className="grid grid-cols-8 bg-gray-50 border-b border-gray-200 text-xs uppercase font-semibold text-gray-500 text-center dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-400">
               <div className="p-3 border-r border-gray-200">Hora</div>
               {DAYS_OF_WEEK.map(day => (
                 <div key={day} className="p-3 border-r border-gray-200 last:border-0">{day}</div>
