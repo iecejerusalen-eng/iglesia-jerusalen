@@ -9,11 +9,13 @@ import { SongBlockEditor } from '../../features/songs/components/editor/SongBloc
 import { SongViewer } from '../../features/songs/components/SongViewer';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Edit3, Trash2, X, Search, Music, ListMusic,
   Tag, Palette as StyleIcon, ChevronDown, ChevronUp,
   Link as LinkIcon, PlusCircle, Sparkles,
-  BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star
+  BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star,
+  Loader2, AlertCircle, RefreshCw, MonitorPlay,
 } from 'lucide-react';
 import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
@@ -40,6 +42,13 @@ const songSchema = z.object({
   composers: z.string().optional(),
   copyright_notice: z.string().optional(),
 });
+
+const ADMIN_SONG_CATALOG_COLUMNS = `
+  id, title, artist, bpm, type_id, style_id, has_chords, drum_style,
+  slug, original_key, preferred_accidentals, capo, time_signature,
+  status, published_at, created_at, updated_at, document_version,
+  song_types(id, name, created_at), song_styles(id, name, created_at)
+`;
 
 type SongFormInput = z.input<typeof songSchema>;
 type SongFormValues = z.output<typeof songSchema>;
@@ -73,6 +82,11 @@ function clearEditorDraft(key: string): void {
   } catch (error) {
     console.warn('No fue posible eliminar el borrador local de la canción.', error);
   }
+}
+
+function editorDraftKey(songId: string | null, arrangementId: string | null): string {
+  if (!songId) return 'song-editor-draft:new';
+  return `song-editor-draft:${songId}:${arrangementId ?? 'original'}`;
 }
 
 
@@ -348,14 +362,18 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
 }
 
 const SongsManager = () => {
-  const { isReadOnly } = usePermissions();
+  const navigate = useNavigate();
+  const { isReadOnly, hasPermission } = usePermissions();
   const readOnly = isReadOnly('songs');
+  const canSendToProPresenter = hasPermission('propresenter', 'edit');
   const confirm = useConfirmStore((state) => state.confirm);
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [songTypes, setSongTypes] = useState<SongType[]>([]);
   const [songStyles, setSongStyles] = useState<SongStyle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [openingSongId, setOpeningSongId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -399,7 +417,7 @@ const SongsManager = () => {
 
   useEffect(() => {
     if (!showForm) return;
-    const draftKey = editingSong ? `song-editor-draft:${editingSong.id}` : 'song-editor-draft:new';
+    const draftKey = editorDraftKey(editingSong?.id ?? null, activeArrangementId);
     const timer = window.setTimeout(() => {
       const draft: SongEditorDraft = {
         updatedAt: new Date().toISOString(),
@@ -417,7 +435,7 @@ const SongsManager = () => {
       }
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [drumStyle, editingSong, editorMode, getValues, lyrics, resourceLinks, showForm, structureBlocks, watchedForm]);
+  }, [activeArrangementId, drumStyle, editingSong, editorMode, getValues, lyrics, resourceLinks, showForm, structureBlocks, watchedForm]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -429,6 +447,7 @@ const SongsManager = () => {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       // Fetch catalogs only once ideally, but here is fine
       const [typesRes, stylesRes] = await Promise.all([
@@ -443,7 +462,7 @@ const SongsManager = () => {
 
       let query = supabase
         .from('songs')
-        .select('*, song_types(*), song_styles(*)', { count: 'exact' });
+        .select(ADMIN_SONG_CATALOG_COLUMNS, { count: 'exact' });
 
       if (debouncedSearch) {
         const safeSearch = debouncedSearch.replace(/[,%()]/g, ' ').trim();
@@ -466,19 +485,14 @@ const SongsManager = () => {
       if (error) throw error;
       
       if (songsData) {
-        const songIds = songsData.map((song) => song.id);
-        let arrangementRows: SongArrangement[] = [];
-        if (songIds.length > 0) {
-          const arrangementsResult = await supabase.from('song_arrangements').select('*').in('song_id', songIds).order('name');
-          if (arrangementsResult.error) {
-            const migrationPending = arrangementsResult.error.code === '42P01' || arrangementsResult.error.code === 'PGRST205';
-            if (!migrationPending) throw arrangementsResult.error;
-            console.warn('Falta aplicar la migración de versiones de alabanzas.', arrangementsResult.error);
-          } else {
-            arrangementRows = (arrangementsResult.data as SongArrangement[]) || [];
-          }
-        }
-        setSongs(songsData.map((song) => ({ ...song, song_arrangements: arrangementRows.filter((version) => version.song_id === song.id) })));
+        setSongs((songsData as unknown as Song[]).map((song) => ({
+          ...song,
+          lyrics: '',
+          resource_links: [],
+          structure_blocks: [],
+          composers: [],
+          song_arrangements: [],
+        })));
       }
       if (count !== null) {
         setTotalItems(count);
@@ -489,6 +503,7 @@ const SongsManager = () => {
       }
     } catch (err: unknown) {
       console.error('Error fetching songs:', err);
+      setLoadError(err instanceof Error ? err.message : 'No fue posible cargar el catálogo.');
       toast.error('Error al cargar canciones');
     } finally {
       setLoading(false);
@@ -528,10 +543,30 @@ const SongsManager = () => {
     setActiveArrangementId(null);
     setNewVersionName('');
     setShowForm(true);
-    window.setTimeout(() => restoreEditorDraft('song-editor-draft:new'), 0);
+    window.setTimeout(() => restoreEditorDraft(editorDraftKey(null, null)), 0);
   };
 
-  const openEdit = (song: Song) => {
+  const openEdit = async (songSummary: Song) => {
+    setOpeningSongId(songSummary.id);
+    const [songResult, arrangementsResult] = await Promise.all([
+      supabase.from('songs').select('*, song_types(*), song_styles(*)').eq('id', songSummary.id).single(),
+      supabase.from('song_arrangements').select('*').eq('song_id', songSummary.id).order('is_default', { ascending: false }).order('name'),
+    ]);
+    setOpeningSongId(null);
+    if (songResult.error) {
+      console.error('No se pudo abrir la canción para editarla.', songResult.error);
+      toast.error('No se pudo abrir el documento de la canción.');
+      return;
+    }
+    if (arrangementsResult.error && arrangementsResult.error.code !== '42P01' && arrangementsResult.error.code !== 'PGRST205') {
+      console.error('No se pudieron cargar las versiones de la canción.', arrangementsResult.error);
+      toast.error('No se pudieron cargar las versiones de la canción.');
+      return;
+    }
+    const song = {
+      ...(songResult.data as unknown as Song),
+      song_arrangements: ((arrangementsResult.data ?? []) as unknown as SongArrangement[]),
+    };
     setEditingSong(song);
     reset({
       title: song.title,
@@ -553,11 +588,11 @@ const SongsManager = () => {
     setResourceLinks(song.resource_links || []);
     setStructureBlocks(song.structure_blocks || []);
     setEditorMode(song.structure_blocks && song.structure_blocks.length > 0 ? 'structured' : 'free');
-    setArrangements(song.song_arrangements || []);
+    setArrangements(song.song_arrangements ?? []);
     setActiveArrangementId(null);
     setNewVersionName('');
     setShowForm(true);
-    window.setTimeout(() => restoreEditorDraft(`song-editor-draft:${song.id}`, song.updated_at || song.created_at), 0);
+    window.setTimeout(() => restoreEditorDraft(editorDraftKey(song.id, null), song.updated_at || song.created_at), 0);
   };
 
   const onSubmit = async (data: SongFormValues) => {
@@ -642,7 +677,7 @@ const SongsManager = () => {
       if (error) { console.error('No se pudo crear la canción.', error); toast.error('Error al crear'); return; }
       toast.success('Canción creada');
     }
-    clearEditorDraft(editingSong ? `song-editor-draft:${editingSong.id}` : 'song-editor-draft:new');
+    clearEditorDraft(editorDraftKey(editingSong?.id ?? null, activeArrangementId));
     setShowForm(false);
     void fetchAll();
   };
@@ -718,6 +753,7 @@ const SongsManager = () => {
     setStructureBlocks(arrangement.structure_blocks);
     setEditorMode(arrangement.structure_blocks.length > 0 ? 'structured' : 'free');
     setActiveArrangementId(arrangement.id);
+    window.setTimeout(() => restoreEditorDraft(editorDraftKey(arrangement.song_id, arrangement.id), arrangement.updated_at), 0);
     toast.info(`Editando versión “${arrangement.name}”`);
   };
 
@@ -743,6 +779,7 @@ const SongsManager = () => {
     setStructureBlocks(editingSong.structure_blocks || []);
     setEditorMode(editingSong.structure_blocks?.length ? 'structured' : 'free');
     setActiveArrangementId(null);
+    window.setTimeout(() => restoreEditorDraft(editorDraftKey(editingSong.id, null), editingSong.updated_at || editingSong.created_at), 0);
   };
 
   const createArrangement = async () => {
@@ -1000,7 +1037,14 @@ const SongsManager = () => {
       </section>
 
       {/* Songs Table */}
-      {loading ? (
+      {loadError ? (
+        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-400/20 dark:bg-red-400/10">
+          <AlertCircle className="mx-auto text-red-500" size={30} />
+          <h3 className="mt-3 font-serif text-xl font-bold text-red-900 dark:text-red-200">No pudimos cargar el catálogo</h3>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-red-700 dark:text-red-300">{loadError}</p>
+          <button type="button" onClick={() => void fetchAll()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-2.5 text-sm font-bold text-white"><RefreshCw size={15} /> Reintentar</button>
+        </div>
+      ) : loading ? (
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-600"></div>
         </div>
@@ -1022,7 +1066,8 @@ const SongsManager = () => {
                   <th className="text-left px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 hidden lg:table-cell whitespace-nowrap">Tipo / Estilo</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Batería / Estructura</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Acordes</th>
-                  {!readOnly && <th className="text-right px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Acciones</th>}
+                  <th className="text-center px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Estado</th>
+                  {(!readOnly || canSendToProPresenter) && <th className="text-right px-4 py-3 font-semibold text-gray-650 dark:text-gray-400 whitespace-nowrap">Acciones</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -1056,15 +1101,19 @@ const SongsManager = () => {
                         <span className="text-gray-300 dark:text-gray-600 text-xs">No</span>
                       )}
                     </td>
-                    {!readOnly && (
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${song.status === 'published' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' : song.status === 'review' ? 'bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300' : song.status === 'archived' ? 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'}`}>{song.status === 'published' ? 'Publicado' : song.status === 'review' ? 'En revisión' : song.status === 'archived' ? 'Archivado' : 'Borrador'}</span>
+                    </td>
+                    {(!readOnly || canSendToProPresenter) && (
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => openEdit(song)} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/30 text-gray-500 dark:text-gray-450 hover:text-amber-700 cursor-pointer transition-colors" title="Editar">
-                            <Edit3 size={16} />
-                          </button>
-                          <button onClick={() => deleteSong(song.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-500 dark:text-gray-450 hover:text-red-600 cursor-pointer transition-colors" title="Eliminar">
+                          {canSendToProPresenter && song.status === 'published' && <button type="button" onClick={() => navigate(`/admin/propresenter?song=${song.id}`)} className="p-1.5 rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-gray-400 dark:hover:bg-blue-950/30 dark:hover:text-blue-300" title="Preparar en ProPresenter"><MonitorPlay size={16} /></button>}
+                          {!readOnly && <button onClick={() => void openEdit(song)} disabled={openingSongId !== null} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/30 text-gray-500 dark:text-gray-450 hover:text-amber-700 cursor-pointer transition-colors disabled:cursor-wait disabled:opacity-40" title="Editar">
+                            {openingSongId === song.id ? <Loader2 size={16} className="animate-spin" /> : <Edit3 size={16} />}
+                          </button>}
+                          {!readOnly && <button onClick={() => deleteSong(song.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-500 dark:text-gray-450 hover:text-red-600 cursor-pointer transition-colors" title="Eliminar">
                             <Trash2 size={16} />
-                          </button>
+                          </button>}
                         </div>
                       </td>
                     )}

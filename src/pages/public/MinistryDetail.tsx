@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, Users, AlertCircle } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Users, AlertCircle, ChevronRight, FileText, LockKeyhole } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
 import RichTextRenderer from '../../components/common/RichTextRenderer';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
+import type { MinistryPage } from '../../types/ministryPages';
 const MinistryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const [ministry, setMinistry] = useState<any | null>(null);
   const [logos, setLogos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ministryPages, setMinistryPages] = useState<MinistryPage[]>([]);
 
   // Estados para la visualización de miembros en Cuerpo de Apoyo y Directiva
   const [members, setMembers] = useState<any[]>([]);
@@ -37,6 +39,19 @@ const MinistryDetail = () => {
 
         if (data) {
           setMinistry(data);
+
+          const { data: pagesData, error: pagesError } = await supabase
+            .from('ministry_pages')
+            .select('*')
+            .eq('ministry_id', data.id)
+            .eq('status', 'published')
+            .is('parent_id', null)
+            .order('sort_order', { ascending: true });
+          if (pagesError) {
+            console.error('Error loading ministry pages:', pagesError);
+          } else {
+            setMinistryPages((pagesData || []) as MinistryPage[]);
+          }
           
           // Fetch logos for this ministry
           const { data: logosData, error: logosError } = await supabase
@@ -253,6 +268,35 @@ const MinistryDetail = () => {
         )}
       </div>
       </AnimeFadeUp>
+
+      {ministryPages.length > 0 && (
+        <AnimeFadeUp delay={80}>
+          <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-indigo-50/40 p-6 shadow-sm dark:border-white/10 dark:from-slate-900 dark:to-indigo-950/10 md:p-10">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">Explora este ministerio</span>
+                <h2 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Páginas y recursos</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Conoce sus áreas, materiales, equipos y actividades.</p>
+              </div>
+              <span className="text-xs font-bold text-slate-400">{ministryPages.length} {ministryPages.length === 1 ? 'sección' : 'secciones'}</span>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {ministryPages.map((page) => (
+                <Link key={page.id} to={`/ministerios/${ministry.slug}/${page.slug}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-950">
+                  <div className="relative aspect-[16/8] overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    {page.cover_image_url ? <img src={page.cover_image_url} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center"><FileText className="text-slate-300 dark:text-slate-600" size={32} /></div>}
+                    {page.is_password_protected && <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-slate-950/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-200 backdrop-blur"><LockKeyhole size={10} /> Privado</span>}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3"><h3 className="font-serif text-lg font-bold text-slate-800 transition group-hover:text-primary dark:text-white">{page.title}</h3><ChevronRight className="mt-1 shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-primary" size={17} /></div>
+                    {page.excerpt && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{page.excerpt}</p>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </AnimeFadeUp>
+      )}
 
       {/* SECCIÓN DIRECTIVA */}
       {directiva && directiva.length > 0 && (

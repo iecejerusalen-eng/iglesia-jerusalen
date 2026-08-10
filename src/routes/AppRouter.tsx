@@ -46,6 +46,7 @@ const Donations = lazyWithRetry(() => import('../pages/public/Donations'));
 const About = lazyWithRetry(() => import('../pages/public/About'));
 const MinistriesOverview = lazyWithRetry(() => import('../pages/public/MinistriesOverview'));
 const MinistryDetail = lazyWithRetry(() => import('../pages/public/MinistryDetail'));
+const MinistryPageDetail = lazyWithRetry(() => import('../pages/public/MinistryPageDetail'));
 const Sermons = lazyWithRetry(() => import('../pages/public/Sermons'));
 const Expositores = lazyWithRetry(() => import('../pages/public/Expositores'));
 const Contact = lazyWithRetry(() => import('../pages/public/Contact'));
@@ -163,6 +164,7 @@ export default function AppRouter() {
           <Route path="/nosotros" element={<About />} />
           <Route path="/ministerios" element={<MinistriesOverview />} />
           <Route path="/ministerios/:slug" element={<MinistryDetail />} />
+          <Route path="/ministerios/:slug/*" element={<MinistryPageDetail />} />
           <Route path="/predicas" element={<Sermons />} />
           <Route path="/expositores" element={<Expositores />} />
           <Route path="/misiones" element={<Missions />} />

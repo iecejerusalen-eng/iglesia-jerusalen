@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, BookOpen, Calendar, Clock, FileText, GraduationCap, LayoutDashboard, Loader2, LockKeyhole, MessageSquareText, RefreshCw, ShieldAlert, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Calendar, Clock, Files, FileText, GraduationCap, LayoutDashboard, Loader2, LockKeyhole, MessageSquareText, RefreshCw, ShieldAlert, Users } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import type { LMSSchool, Ministry } from '../../types';
@@ -13,8 +13,9 @@ import { AcademicStaffManager } from '../../features/lms/components/AcademicStaf
 import { CoursesList } from '../../features/lms/components/CoursesList';
 import { useCourses } from '../../features/lms/hooks/useCourses';
 import MinistryEditorial from '../../components/admin/ministry/MinistryEditorial';
+import MinistryPagesEditor from '../../components/admin/ministry/MinistryPagesEditor';
 
-type MinistryTab = 'resumen' | 'miembros' | 'calendario' | 'planificador' | 'actas' | 'publicaciones' | 'escuela';
+type MinistryTab = 'resumen' | 'paginas' | 'miembros' | 'calendario' | 'planificador' | 'actas' | 'publicaciones' | 'escuela';
 
 export default function MinistryDashboard() {
   const { id } = useParams();
@@ -80,6 +81,7 @@ export default function MinistryDashboard() {
   const canEdit = canEditMinistry(ministry.id);
   const tabs: Array<{ id: MinistryTab; label: string; icon: typeof Users }> = [
     { id: 'resumen', label: 'Centro de control', icon: LayoutDashboard },
+    { id: 'paginas', label: 'Páginas', icon: Files },
     { id: 'miembros', label: 'Equipo', icon: Users },
     { id: 'calendario', label: 'Agenda', icon: Calendar },
     { id: 'planificador', label: 'Disponibilidad', icon: Clock },
@@ -124,6 +126,7 @@ export default function MinistryDashboard() {
 
         <div className="p-4 md:p-6">
           {activeTab === 'resumen' && <MinistryOverview ministry={ministry} canEdit={canEdit} onUpdated={setMinistry} />}
+          {activeTab === 'paginas' && <MinistryPagesEditor ministry={ministry} canEdit={canEdit} />}
           {activeTab === 'miembros' && <MinistryMembers ministryId={ministry.id} />}
           {activeTab === 'calendario' && <MinistryCalendar ministryId={ministry.id} />}
           {activeTab === 'planificador' && <SmartScheduler ministryId={ministry.id} />}

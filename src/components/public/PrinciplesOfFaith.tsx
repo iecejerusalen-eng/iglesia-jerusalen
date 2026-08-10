@@ -328,69 +328,43 @@ export default function PrinciplesOfFaith() {
     );
   });
 
-  // ScrollSpy implementation: updates active category menu item as user scrolls
+  const currentCategory = CATEGORIES.find(c => c.id === activeCategory) || CATEGORIES[0];
+
+  // Sync mobile horizontal scrolling list of categories when activeCategory changes
   useEffect(() => {
     if (isSearching) return;
+    const mobileTab = document.getElementById(`tab-m-${activeCategory}`);
+    if (mobileTab && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const containerScrollLeft = container.scrollLeft;
+      const tabRect = mobileTab.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
 
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0
-    };
+      const relativeLeft = tabRect.left - containerRect.left + containerScrollLeft;
+      const targetScroll = relativeLeft - (containerRect.width / 2) + (tabRect.width / 2);
 
-    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id;
-          if (id) {
-            setActiveCategory(id);
-            
-            // Sync mobile horizontal scrolling list of categories
-            const mobileTab = document.getElementById(`tab-m-${id}`);
-            if (mobileTab && scrollContainerRef.current) {
-              const container = scrollContainerRef.current;
-              const containerScrollLeft = container.scrollLeft;
-              const tabRect = mobileTab.getBoundingClientRect();
-              const containerRect = container.getBoundingClientRect();
-              
-              const relativeLeft = tabRect.left - containerRect.left + containerScrollLeft;
-              const targetScroll = relativeLeft - (containerRect.width / 2) + (tabRect.width / 2);
-              
-              container.scrollTo({
-                left: targetScroll,
-                behavior: 'smooth'
-              });
-            }
-          }
-        }
+      container.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
       });
-    };
+    }
+  }, [activeCategory, isSearching]);
 
-    const observer = new IntersectionObserver(handleIntersection, observerOptions);
-
-    CATEGORIES.forEach(cat => {
-      const el = document.getElementById(cat.id);
-      if (el) observer.observe(el);
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [isSearching]);
-
-  // Smooth scroll to selected category section
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      const yOffset = -100; // Header and tabs gap offset
-      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-      setActiveCategory(id);
+  // Handle category selection
+  const handleSelectCategory = (id: string) => {
+    setActiveCategory(id);
+    const container = document.getElementById('principles-section-top');
+    if (container) {
+      const yOffset = -90;
+      const y = container.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      if (window.scrollY > y + 200) {
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
     }
   };
 
   return (
-    <div className="space-y-10 text-left">
+    <div id="principles-section-top" className="space-y-10 text-left">
       {/* 1. Header with Info, Footnote, and Search Bar */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200/60 dark:border-white/10 pb-8">
         <div className="max-w-2xl space-y-3">
@@ -517,7 +491,7 @@ export default function PrinciplesOfFaith() {
                 <button
                   key={cat.id}
                   id={`tab-m-${cat.id}`}
-                  onClick={() => scrollToSection(cat.id)}
+                  onClick={() => handleSelectCategory(cat.id)}
                   className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 border ${
                     activeCategory === cat.id
                       ? 'bg-primary text-white border-primary shadow-xs dark:bg-church-gold-medium dark:border-church-gold-medium'
@@ -540,7 +514,7 @@ export default function PrinciplesOfFaith() {
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => scrollToSection(cat.id)}
+                    onClick={() => handleSelectCategory(cat.id)}
                     className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold transition-all duration-300 border flex items-center justify-between group ${
                       activeCategory === cat.id
                         ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-church-gold-bright border-primary/25 dark:border-church-gold-medium/25 border-l-4 border-l-primary dark:border-l-4 dark:border-l-gold shadow-xxs'
@@ -568,33 +542,36 @@ export default function PrinciplesOfFaith() {
             </div>
           </div>
 
-          {/* C. CONTINUOUS LIST OF 22 PRINCIPLES */}
-          <div className="lg:col-span-9 space-y-16">
-            {CATEGORIES.map((category) => (
-              <section 
-                key={category.id} 
-                id={category.id} 
-                className="space-y-6 scroll-mt-28"
+          {/* C. SINGLE SUBSECTION DISPLAY WITH ANIMATED TRANSITIONS */}
+          <div className="lg:col-span-9 min-h-[400px]">
+            <AnimatePresence mode="wait">
+              <motion.section
+                key={currentCategory.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-6"
               >
                 {/* Category Header */}
                 <div className="border-b border-gray-100 dark:border-slate-800/80 pb-3 flex flex-col md:flex-row md:items-end justify-between gap-3">
                   <div className="space-y-1">
                     <h3 className="text-xl font-serif font-bold text-gray-800 dark:text-white flex items-center gap-2.5">
-                      <span className="h-2 w-2 rounded-full bg-gold-gradient" />
-                      {category.title}
+                      <span className="h-2.5 w-2.5 rounded-full bg-gold-gradient" />
+                      {currentCategory.title}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-light">
-                      {category.description}
+                      {currentCategory.description}
                     </p>
                   </div>
                   <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest font-mono">
-                    {category.principles.length} {category.principles.length === 1 ? 'doctrina' : 'doctrinas'}
+                    {currentCategory.principles.length} {currentCategory.principles.length === 1 ? 'doctrina' : 'doctrinas'}
                   </span>
                 </div>
 
-                {/* Principles Cards Grid within Category */}
+                {/* Principles Cards Grid within Selected Category */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {category.principles.map((principle) => {
+                  {currentCategory.principles.map((principle) => {
                     const IconComponent = iconMap[principle.iconName] || BookOpen;
                     return (
                       <div
@@ -632,8 +609,8 @@ export default function PrinciplesOfFaith() {
                     );
                   })}
                 </div>
-              </section>
-            ))}
+              </motion.section>
+            </AnimatePresence>
           </div>
 
         </div>
