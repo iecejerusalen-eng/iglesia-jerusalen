@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Drum,
   Eye,
   EyeOff,
   FileMusic,
@@ -49,6 +50,7 @@ import { bracketTextToHtml, getOriginalKey, htmlToBracketText } from '../utils/s
 import type { InstrumentType } from '../utils/chordDictionary';
 import { InstrumentChordCard } from './musical/InstrumentChordCard';
 import { SheetMusicViewer } from './musical/SheetMusicViewer';
+import { DrumTabViewer } from './musical/DrumTabViewer';
 import { useToolboxStore } from '../../../store/useToolboxStore';
 import RichTextRenderer from '../../../components/common/RichTextRenderer';
 
@@ -86,6 +88,7 @@ const INSTRUMENTS: Array<{ id: InstrumentType; label: string; icon: typeof Guita
   { id: 'piano', label: 'Piano', icon: KeyboardMusic },
   { id: 'bajo', label: 'Bajo', icon: Music2 },
   { id: 'ukelele', label: 'Ukelele', icon: Guitar },
+  { id: 'bateria', label: 'Batería', icon: Drum },
   { id: 'ninguno', label: 'Sin diagrama', icon: EyeOff },
 ];
 
@@ -381,7 +384,35 @@ export const SongViewer = ({
         {blocks.map((block) => {
           if (block.type === 'musician_note') return <article key={block.id} className="song-section-glass border-l-4 border-l-indigo-400"><span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {block.target_instrument}</span><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{block.content}</p></article>;
           if (block.type === 'rich_text' && (block.audience ?? 'public') === 'public') return <article key={block.id} className="song-section-glass md:col-span-2">{block.title && <h3 className="mb-3 font-serif text-xl font-black text-slate-900 dark:text-white">{block.title}</h3>}<RichTextRenderer html={DOMPurify.sanitize(block.content)} className="text-sm leading-7 text-slate-700 dark:text-slate-200" /></article>;
-          if (block.type === 'tablature') return <article key={block.id} className="song-section-glass md:col-span-2"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><span className="text-[10px] font-black uppercase tracking-wider text-cyan-600">{block.instrument === 'drums' ? 'Drum tab' : `${block.instrument ?? 'guitar'} tab`}</span><h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Tablatura'}</h3></div>{block.tuning && <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500 dark:bg-white/10">Afinación {block.tuning}</span>}</div><div className="overflow-x-auto rounded-xl bg-slate-950 p-4"><pre className="min-w-max font-mono text-xs leading-6 text-emerald-300">{block.content}</pre></div></article>;
+          if (block.type === 'tablature') {
+            if (block.instrument === 'drums') {
+              return (
+                <article key={block.id} className="song-section-glass md:col-span-2">
+                  <DrumTabViewer song={selectedSong} tabContent={block.content} title={block.title} tuning={block.tuning} />
+                </article>
+              );
+            }
+            return (
+              <article key={block.id} className="song-section-glass md:col-span-2">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-600">
+                      {`${block.instrument ?? 'guitar'} tab`}
+                    </span>
+                    <h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Tablatura'}</h3>
+                  </div>
+                  {block.tuning && (
+                    <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500 dark:bg-white/10">
+                      Afinación {block.tuning}
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-x-auto rounded-xl bg-slate-950 p-4">
+                  <pre className="min-w-max font-mono text-xs leading-6 text-emerald-300">{block.content}</pre>
+                </div>
+              </article>
+            );
+          }
           if (block.type === 'media_embed') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-rose-500">Media de ensayo</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.title || 'Referencia multimedia'}</h3><a href={block.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"><Play size={14} /> Abrir recurso</a></article>;
           if (block.type === 'poll') {
             const selected = resourceAnswers[block.id] ?? [];
@@ -493,17 +524,28 @@ export const SongViewer = ({
             <div className="mx-auto max-w-5xl">
               {activeTab === 'resources' ? renderResources() : (
                 <>
-                  {(mode === 'diagrams' || (mode === 'lyrics-chords' && instrument !== 'ninguno' && displayedChords.length > 0)) && (
+                  {(mode === 'diagrams' || (mode === 'lyrics-chords' && instrument !== 'ninguno' && (displayedChords.length > 0 || instrument === 'bateria'))) && (
                     <section className="mb-6 print:hidden">
-                      <div className="mb-3 flex items-center justify-between"><h3 className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400">Acordes · {INSTRUMENTS.find((item) => item.id === instrument)?.label}</h3><button onClick={() => setMode('diagrams')} className="text-[10px] font-bold text-amber-600">Ver todos</button></div>
-                      <div className={`flex gap-3 overflow-x-auto pb-3 ${mode === 'diagrams' ? 'flex-wrap overflow-visible' : ''}`}>{instrument !== 'ninguno' && displayedChords.map((chord) => <InstrumentChordCard key={chord} chord={chord} instrument={instrument} compact={mode !== 'diagrams'} />)}</div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400">
+                          {instrument === 'bateria' ? 'Batería · Visualizador de Ritmo' : `Acordes · ${INSTRUMENTS.find((item) => item.id === instrument)?.label}`}
+                        </h3>
+                        {instrument !== 'bateria' && <button onClick={() => setMode('diagrams')} className="text-[10px] font-bold text-amber-600">Ver todos</button>}
+                      </div>
+                      {instrument === 'bateria' ? (
+                        <DrumTabViewer song={selectedSong} compact={mode !== 'diagrams'} />
+                      ) : (
+                        <div className={`flex gap-3 overflow-x-auto pb-3 ${mode === 'diagrams' ? 'flex-wrap overflow-visible' : ''}`}>
+                          {instrument !== 'ninguno' && displayedChords.map((chord) => <InstrumentChordCard key={chord} chord={chord} instrument={instrument} compact={mode !== 'diagrams'} />)}
+                        </div>
+                      )}
                     </section>
                   )}
                   <div className={`font-${fontFamily}`} style={{ '--song-font-scale': fontSize / 100 } as CSSProperties}>
                     {(mode === 'lyrics' || mode === 'lyrics-chords') && renderLyrics()}
                     {mode === 'chords' && renderChordChart()}
                     {mode === 'score' && renderScores()}
-                    {mode === 'diagrams' && displayedChords.length === 0 && <EmptyState icon={Guitar} title="No se encontraron acordes" description="Revisa el formato de la canción desde el editor." />}
+                    {mode === 'diagrams' && instrument !== 'bateria' && displayedChords.length === 0 && <EmptyState icon={Guitar} title="No se encontraron acordes" description="Revisa el formato de la canción desde el editor." />}
                   </div>
                 </>
               )}

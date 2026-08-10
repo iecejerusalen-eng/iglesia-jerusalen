@@ -1,5 +1,5 @@
 import React from 'react';
-import { Minus, Plus, Settings, Type, Guitar, Piano, LayoutPanelTop, Eye, EyeOff } from 'lucide-react';
+import { Minus, Plus, Settings, Type, Guitar, Piano, LayoutPanelTop, Eye, EyeOff, Drum } from 'lucide-react';
 import type { InstrumentType } from '../../utils/chordDictionary';
 
 interface SongSettingsSidebarProps {
@@ -60,6 +60,7 @@ export function SongSettingsSidebar({
               { id: 'guitarra', label: 'Guitarra', icon: Guitar },
               { id: 'ukelele', label: 'Ukelele', icon: Guitar },
               { id: 'piano', label: 'Piano', icon: Piano },
+              { id: 'bateria', label: 'Batería', icon: Drum },
               { id: 'ninguno', label: 'Ninguno', icon: EyeOff }
             ].map(inst => {
               const Icon = inst.icon;

@@ -6,6 +6,33 @@ import {
 import type { SongStructureBlock, SongBlockType } from '@/types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 
+const DRUM_TEMPLATES = {
+  popRock: `HH|x-x-x-x-x-x-x-x-|x-x-x-x-x-x-x-x-|
+SD|----o-------o---|----o-------o---|
+BD|o-------o-o-----|o-------o-o-----|
+   1 & 2 & 3 & 4 & | 1 & 2 & 3 & 4 &`,
+
+  worship68: `CR|x-----------x---|----------------|
+HH|--x-x-x-x-x---x-|x-x-x-x-x-x-x-x-|
+SD|------o---------|------o---------|
+BD|o---o---o-o-----|o---o---o-o-----|
+   1 2 3 4 5 6     | 1 2 3 4 5 6    `,
+
+  tomGroove: `HH|x---------------|----------------|
+T1|----o-------o---|----o-----------|
+FT|------o---o---o-|------o---o-o---|
+SD|----------------|--------------o-|
+BD|o-o-----o-------|o-o-----o---o---|
+   1 & 2 & 3 & 4 & | 1 & 2 & 3 & 4 &`,
+
+  legend: `# Leyenda de Batería:
+# HH: Hi-Hat (x = cerrado, X = abierto)
+# CR: Crash / RD: Ride
+# SD: Snare / Tarola (o = golpe, f = flam, O = acento)
+# BD: Bass Drum / Bombo (o)
+# T1: Tom Alto / FT: Tom de Piso (Goliat)`
+};
+
 interface Props {
   content?: string; // JSON string of blocks or legacy html
   blocks?: SongStructureBlock[];
@@ -241,25 +268,36 @@ export function SongBlockEditor({
                 </div>
               </div>
 
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                  <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <Info size={11} className="text-amber-600" />
-                    Letra (Inserta corchetes <code className="text-red-500 font-bold">[G]</code> antes de cada palabra)
+              <div className="space-y-2">
+                <div className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+                    <Info size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>Edición de Acordes con Corchetes</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
+                    Coloca los acordes entre corchetes justo antes de cada palabra o sílaba, por ejemplo:
+                    <span className="inline-flex flex-wrap gap-1 items-center ml-1 font-mono font-bold text-amber-950 dark:text-gold bg-amber-200/60 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-300/40">
+                      <span>[C]</span> Cuán grande es <span>[G]</span> Dios, <span>[Am]</span> canta con <span>[F]</span>migo
+                    </span>
                   </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    Insertar Acordes Rápidos:
+                  </span>
                   
                   {/* Quick Chord Insertion Bar */}
                   <div className="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-full">
-                    <span className="text-[9px] font-extrabold uppercase text-amber-600 dark:text-gold mr-1">Insertar:</span>
-                    {['C', 'G', 'D', 'Am', 'Em', 'F', 'Bb', 'A', 'E', 'B7'].map(chord => (
+                    {['C', 'G', 'Am', 'F', 'D', 'Em', 'Bb', 'A', 'E', 'B7'].map(chord => (
                       <button 
                         key={chord}
                         type="button"
                         onClick={() => insertChordToTextarea(block.id, (blockObj.lyrics as string) || '', chord)}
-                        className="px-2 py-0.5 text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-gold hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-slate-950 rounded-lg border border-amber-200/40 transition-colors shadow-2xs cursor-pointer"
+                        className="px-2 py-0.5 text-xs font-mono font-bold bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-gold hover:bg-amber-500 hover:text-white dark:hover:bg-amber-400 dark:hover:text-slate-950 rounded-lg border border-amber-300/50 dark:border-amber-500/30 transition-colors shadow-2xs cursor-pointer"
                         title={`Insertar acorde [${chord}]`}
                       >
-                        {chord}
+                        [{chord}]
                       </button>
                     ))}
                   </div>
@@ -270,7 +308,7 @@ export function SongBlockEditor({
                   value={(blockObj.lyrics as string) || ''}
                   onChange={e => updateBlock(block.id, { lyrics: e.target.value })}
                   rows={5}
-                  placeholder="Escribe la letra de la sección..."
+                  placeholder={`Ejemplo con acordes:\n[C] Cuán grande es [G] Dios\n[Am] Canta con [F]migo\n[C] Cuán grande es [G] Dios`}
                   className="w-full rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-gray-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 leading-loose"
                 />
               </div>
@@ -380,11 +418,134 @@ export function SongBlockEditor({
           {block.type === 'tablature' && (
             <div className="space-y-3">
               <div className="grid gap-3 md:grid-cols-3">
-                <input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título de la tablatura" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" />
-                <select value={block.instrument || 'guitar'} onChange={(event) => updateBlock(block.id, { instrument: event.target.value as Extract<SongStructureBlock, { type: 'tablature' }>['instrument'] })} className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800"><option value="guitar">Guitarra</option><option value="bass">Bajo</option><option value="ukulele">Ukelele</option><option value="drums">Batería / Drum tab</option></select>
-                <input value={block.tuning || ''} onChange={(event) => updateBlock(block.id, { tuning: event.target.value })} placeholder="Afinación: E A D G B E" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" />
+                <div>
+                  <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Título</label>
+                  <input 
+                    value={block.title || ''} 
+                    onChange={(event) => updateBlock(block.id, { title: event.target.value })} 
+                    placeholder="Título de la tablatura" 
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs text-gray-850 dark:text-gray-100 dark:border-white/10 dark:bg-slate-800 outline-none focus:border-amber-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Instrumento</label>
+                  <select 
+                    value={block.instrument || 'guitar'} 
+                    onChange={(event) => {
+                      const inst = event.target.value as Extract<SongStructureBlock, { type: 'tablature' }>['instrument'];
+                      const updates: Partial<SongStructureBlock> = { instrument: inst };
+                      if (inst === 'drums' && (!block.tuning || block.tuning === 'E A D G B E')) {
+                        updates.tuning = 'HH SD BD';
+                      }
+                      updateBlock(block.id, updates);
+                    }} 
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-100 dark:border-white/10 dark:bg-slate-800 outline-none focus:border-amber-400"
+                  >
+                    <option value="guitar">Guitarra 🎸</option>
+                    <option value="bass">Bajo 🎸</option>
+                    <option value="ukulele">Ukelele 🪕</option>
+                    <option value="drums">Batería / Drum tab 🥁</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Afinación / Elementos</label>
+                  <input 
+                    value={block.tuning || ''} 
+                    onChange={(event) => updateBlock(block.id, { tuning: event.target.value })} 
+                    placeholder={block.instrument === 'drums' ? "Elementos: HH SD BD FT CR" : "Afinación: E A D G B E"} 
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs text-gray-850 dark:text-gray-100 dark:border-white/10 dark:bg-slate-800 outline-none focus:border-amber-400" 
+                  />
+                </div>
               </div>
-              <textarea value={block.content} onChange={(event) => updateBlock(block.id, { content: event.target.value })} rows={8} spellCheck={false} className="w-full overflow-x-auto whitespace-pre rounded-xl border border-gray-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-6 text-emerald-300 outline-none dark:border-white/10" placeholder="Escribe la tablatura respetando espacios y líneas" />
+
+              {/* Botones de Plantilla de Batería (1-Clic) & Ayuda para Batería */}
+              {block.instrument === 'drums' && (
+                <div className="bg-slate-900/60 p-3 rounded-xl border border-cyan-500/30 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5">
+                      <Drum size={14} className="text-cyan-400 shrink-0" />
+                      Botones de Plantilla de Batería (1-Clic):
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newContent = block.content && block.content.trim().length > 0 
+                            ? `${block.content.trimEnd()}\n\n${DRUM_TEMPLATES.popRock}` 
+                            : DRUM_TEMPLATES.popRock;
+                          updateBlock(block.id, { content: newContent });
+                        }}
+                        className="px-2.5 py-1 text-xs font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 hover:bg-cyan-900 rounded-lg transition-colors cursor-pointer"
+                        title="Insertar patrón de batería 4/4 Pop/Rock"
+                      >
+                        + Plantilla 4/4 Pop/Rock
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newContent = block.content && block.content.trim().length > 0 
+                            ? `${block.content.trimEnd()}\n\n${DRUM_TEMPLATES.worship68}` 
+                            : DRUM_TEMPLATES.worship68;
+                          updateBlock(block.id, { content: newContent });
+                        }}
+                        className="px-2.5 py-1 text-xs font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 hover:bg-cyan-900 rounded-lg transition-colors cursor-pointer"
+                        title="Insertar patrón de batería 6/8 Worship"
+                      >
+                        + Plantilla 6/8 Worship
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newContent = block.content && block.content.trim().length > 0 
+                            ? `${block.content.trimEnd()}\n\n${DRUM_TEMPLATES.tomGroove}` 
+                            : DRUM_TEMPLATES.tomGroove;
+                          updateBlock(block.id, { content: newContent });
+                        }}
+                        className="px-2.5 py-1 text-xs font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/60 hover:bg-cyan-900 rounded-lg transition-colors cursor-pointer"
+                        title="Insertar patrón de batería Tom Groove"
+                      >
+                        + Plantilla Tom Groove
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newContent = block.content && block.content.trim().length > 0 
+                            ? `${DRUM_TEMPLATES.legend}\n\n${block.content}` 
+                            : DRUM_TEMPLATES.legend;
+                          updateBlock(block.id, { content: newContent });
+                        }}
+                        className="px-2.5 py-1 text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                        title="Insertar leyenda de nomenclatura de batería"
+                      >
+                        + Insertar Leyenda (HH, SD, BD)
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
+                    <Info size={13} className="text-cyan-400 shrink-0" />
+                    <span>
+                      Usa la fuente monoespaciada para mantener los golpes alineados verticalmente. Las letras indican las partes de la batería (<strong>HH</strong> = Hi-Hat, <strong>SD</strong> = Snare/Tarola, <strong>BD</strong> = Bass Drum/Bombo).
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Contenido de la Tablatura</label>
+                <textarea 
+                  value={block.content} 
+                  onChange={(event) => updateBlock(block.id, { content: event.target.value })} 
+                  rows={8} 
+                  spellCheck={false} 
+                  className="w-full overflow-x-auto whitespace-pre rounded-xl border border-gray-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-6 text-emerald-300 outline-none dark:border-white/10 focus:ring-1 focus:ring-cyan-500" 
+                  placeholder={
+                    block.instrument === 'drums' 
+                      ? "HH|x-x-x-x-x-x-x-x-|\nSD|----o-------o---|\nBD|o-------o-o-----|\n   1 & 2 & 3 & 4 & " 
+                      : "Escribe la tablatura respetando espacios y líneas (fuente monoespaciada font-mono)"
+                  } 
+                />
+              </div>
             </div>
           )}
 

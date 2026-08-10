@@ -2,7 +2,7 @@ import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
 import ukuleleDb from '@tombatossals/chords-db/lib/ukulele.json';
 import { Chord } from '@tonaljs/tonal';
 
-export type InstrumentType = 'guitarra' | 'electrica' | 'ukelele' | 'piano' | 'bajo' | 'ninguno';
+export type InstrumentType = 'guitarra' | 'electrica' | 'ukelele' | 'piano' | 'bajo' | 'bateria' | 'ninguno';
 
 interface ChordDatabasePosition {
   frets: number[];
@@ -120,7 +120,7 @@ function resolveDatabaseEntry(chordName: string, instrument: 'guitarra' | 'elect
 
 export function getChordVariationCount(chordName: string, instrument: InstrumentType): number {
   if (instrument === 'piano' || instrument === 'bajo') return 1;
-  if (instrument === 'ninguno') return 0;
+  if (instrument === 'ninguno' || instrument === 'bateria') return 0;
   return resolveDatabaseEntry(chordName, instrument)?.positions.length ?? 0;
 }
 
