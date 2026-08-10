@@ -150,7 +150,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                     )}
 
                     {item.imageUrl ? (
-                      <div className="h-56 overflow-hidden relative">
+                      <div className="h-56 shrink-0 overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
                         <img 
                           src={item.imageUrl} 
@@ -165,7 +165,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                         </div>
                       </div>
                     ) : (
-                      <div className={`p-6 pb-4 relative z-20 ${activeTab === 'books' ? 'pl-10' : ''}`}>
+                      <div className={`p-6 pb-4 shrink-0 relative z-20 ${activeTab === 'books' ? 'pl-10' : ''}`}>
                          {activeTab === 'books' && (
                            <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-[10px] uppercase font-bold tracking-widest text-white/80 shadow-sm">
                              {item.testament === 'Antiguo Testamento' ? 'AT' : 'NT'}
@@ -180,7 +180,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                       </div>
                     )}
                     
-                    <div className={`p-5 pt-4 relative z-20 flex-1 flex flex-col justify-between bg-gradient-to-b from-transparent to-black/60 ${activeTab === 'books' ? 'pl-10' : ''}`}>
+                    <div className={`p-5 pt-4 relative z-20 flex-grow flex flex-col justify-between bg-gradient-to-b from-transparent to-black/60 ${activeTab === 'books' ? 'pl-10' : ''}`}>
                       <p className="text-white/70 text-sm line-clamp-3 mb-6 leading-relaxed">
                         {item.historicalContext || item.significance || item.description}
                       </p>
