@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Book, Users, Map, X, Search, ChevronRight, Info } from 'lucide-react';
 import { bibleBooks, bibleCharacters, biblePlaces } from '../../../config/bibleIndexesData';
+import type { BibleCharacter, BiblePlace, BibleBookInfo } from '../../../config/bibleIndexesData';
 
 type TabType = 'books' | 'characters' | 'locations';
+type BibleIndexItem = Partial<BibleCharacter> & Partial<BiblePlace> & Partial<BibleBookInfo> & { id: string, name: string, description?: string };
 
 interface BibleIndexesProps {
   onClose: () => void;
@@ -13,9 +15,9 @@ interface BibleIndexesProps {
 export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexesProps) {
   const [activeTab, setActiveTab] = useState<TabType>('books');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<BibleIndexItem | null>(null);
 
-  const getActiveData = () => {
+  const getActiveData = (): BibleIndexItem[] => {
     switch (activeTab) {
       case 'books': return bibleBooks;
       case 'characters': return bibleCharacters;
@@ -40,11 +42,9 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
     return colors[group] || 'from-gray-500/40 to-gray-900/40 border-gray-500/30';
   };
 
-  const filteredData = getActiveData().filter((item: any) => {
-    const searchTarget = (
-      item.name + ' ' + 
-      (item.description || item.historicalContext || item.significance || '')
-    ).toLowerCase();
+  const filteredData = getActiveData().filter((item: BibleIndexItem) => {
+    const context = 'historicalContext' in item ? item.historicalContext : 'significance' in item ? item.significance : '';
+    const searchTarget = (item.name + ' ' + context).toLowerCase();
     return searchTarget.includes(searchTerm.toLowerCase());
   });
 
@@ -124,7 +124,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                   <p>No se encontraron resultados para "{searchTerm}"</p>
                 </motion.div>
               ) : (
-                filteredData.map((item: any) => (
+                filteredData.map((item: BibleIndexItem) => (
                   <motion.div
                     key={item.id}
                     layout
@@ -134,7 +134,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                     onClick={() => setSelectedItem(item)}
                     className={`group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 ${
                       activeTab === 'books' 
-                        ? `bg-gradient-to-br ${getBookColor(item.group)} border` 
+                        ? `bg-gradient-to-br ${getBookColor(item.group || '')} border` 
                         : 'bg-white/5 border border-white/10 hover:border-white/30'
                     }`}
                   >

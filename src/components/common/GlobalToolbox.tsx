@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, type PointerEvent as ReactPointerEvent, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useRef, type PointerEvent as ReactPointerEvent, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { 
@@ -40,17 +40,13 @@ export default function GlobalToolbox() {
   })));
   const { role } = useAuthStore();
   const location = useLocation();
+  const toolboxPosition = store.position;
+  const setToolboxPosition = store.setPosition;
   const panelRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
   const dragFrameRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
-    };
-  }, []);
-
-  const clampPosition = (x: number, y: number) => {
+  const clampPosition = useCallback((x: number, y: number) => {
     const panel = panelRef.current;
     const width = panel?.offsetWidth ?? (store.isMinimized ? 220 : 340);
     const height = panel?.offsetHeight ?? 90;
@@ -58,7 +54,27 @@ export default function GlobalToolbox() {
       x: Math.max(8, Math.min(window.innerWidth - width - 8, x)),
       y: Math.max(8, Math.min(window.innerHeight - height - 8, y)),
     };
-  };
+  }, [store.isMinimized]);
+
+  useEffect(() => {
+    return () => {
+      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const keepInsideViewport = () => {
+      if (!toolboxPosition || !panelRef.current) return;
+      const next = clampPosition(toolboxPosition.x, toolboxPosition.y);
+      if (next.x !== toolboxPosition.x || next.y !== toolboxPosition.y) setToolboxPosition(next);
+    };
+    const frame = window.requestAnimationFrame(keepInsideViewport);
+    window.addEventListener('resize', keepInsideViewport, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', keepInsideViewport);
+    };
+  }, [clampPosition, setToolboxPosition, toolboxPosition]);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const panel = panelRef.current?.getBoundingClientRect();

@@ -9,8 +9,6 @@ export interface BibleCharacter {
   interestingFacts: string[];
   imageUrl?: string;
   firstMention: string;
-  imageUrl?: string;
-  imageUrl?: string;
 }
 
 export interface BiblePlace {
@@ -21,6 +19,7 @@ export interface BiblePlace {
   keyEvents: string[];
   interestingFacts: string[];
   firstMention: string;
+  imageUrl?: string;
 }
 
 export interface BibleBookInfo {

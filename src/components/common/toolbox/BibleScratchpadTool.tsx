@@ -24,7 +24,7 @@ export function BibleScratchpadTool() {
           const p = parsed[0];
           finalQuery = `${p.bookId}${p.chapter ? ' ' + p.chapter : ''}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
         }
-      } catch (e) {
+      } catch {
         // Fallback to original raw query
         finalQuery = query;
       }

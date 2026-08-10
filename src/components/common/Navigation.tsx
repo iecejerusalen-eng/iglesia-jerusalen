@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import ThemeToggle from './ThemeToggle';
@@ -13,9 +13,8 @@ import type { MenuItem } from '../../services/menuService';
 const Navigation = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [hidden, setHidden] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
-  const lastScrollY = useRef(0);
 
   // Dynamic Menu State
   const { items, fetchMenu } = useMenuStore();
@@ -24,26 +23,18 @@ const Navigation = () => {
     fetchMenu();
   }, [fetchMenu]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      setIsScrolled(currentScrollY > 50);
+  const { scrollY } = useScroll();
 
-      // Ocultar al hacer scroll hacia abajo, mostrar al subir
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        setIsVisible(true);
-      }
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50);
 
-      lastScrollY.current = currentScrollY;
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    const previous = scrollY.getPrevious();
+    if (previous !== undefined && latest > previous && latest > 100) {
+      setHidden(true);
+    } else {
+      setHidden(false);
+    }
+  });
 
   const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
@@ -71,11 +62,19 @@ const Navigation = () => {
   };
 
   return (
-    <nav className={`transition-all duration-500 ease-in-out ${
+    <motion.nav 
+      variants={{
+        visible: { y: 0 },
+        hidden: { y: "-100%" }
+      }}
+      animate={hidden ? "hidden" : "visible"}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className={` ${
       isTransparent 
-        ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50 transform-none' 
-        : `glass-nav sticky top-0 z-50 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'}`
-    }`}>
+        ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50' 
+        : 'glass-nav sticky top-0 z-50'
+    }`}
+    >
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         <Link 
           to="/" 
@@ -196,7 +195,7 @@ const Navigation = () => {
           <ThemeToggle />
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 };
 

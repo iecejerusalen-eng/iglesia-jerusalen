@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
-  ChevronDown,
   Compass,
   Crown,
   Cross,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import type { Speaker } from '../../types';
+import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.png';
 import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.png';
 import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
@@ -84,14 +84,7 @@ const history: Record<HistoryKey, { label: string; icon: typeof MapPin; eyebrow:
   },
 };
 
-const principles = [
-  ['La Biblia', 'Creemos que la Biblia es inspirada por Dios y guía segura para nuestra fe y práctica.'],
-  ['La Trinidad', 'Adoramos a un solo Dios: Padre, Hijo y Espíritu Santo, eternamente uno.'],
-  ['La salvación', 'La salvación es por gracia, mediante la fe en Jesucristo y su obra redentora.'],
-  ['El Espíritu Santo', 'El Espíritu Santo transforma, capacita y forma en nosotros el carácter de Cristo.'],
-  ['La iglesia', 'La iglesia es una familia que adora, discipula, sirve y anuncia las buenas noticias.'],
-  ['La esperanza', 'Esperamos la resurrección y el regreso de Jesús con una esperanza viva.'],
-];
+
 
 const fallbackLeaders: Speaker[] = [
   { id: 'pastor-david', member_id: null, first_name: 'David', last_name: 'Nicola', role: 'Pastor Principal', leadership_roles: ['Predicación', 'Discipulado'], is_public: true, display_order: 0, photo_url: '/assets/Jerusalén/Pastor David.png', bio: 'Guiando a la congregación con pasión por la Palabra y cuidado espiritual.', created_at: '', updated_at: '' },
@@ -120,7 +113,6 @@ function GlassCard({ children, className = '' }: { children: ReactNode; classNam
 
 const About = () => {
   const [activeHistory, setActiveHistory] = useState<HistoryKey>('local');
-  const [openPrinciple, setOpenPrinciple] = useState(0);
   const [leaders, setLeaders] = useState<Speaker[]>(fallbackLeadersWithPhotos);
   const [content, setContent] = useState<PageContent | null>(null);
   const [contentError, setContentError] = useState(false);
@@ -202,7 +194,7 @@ const About = () => {
 
         <section id="pilares" className="scroll-mt-24 py-16"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Nuestra identidad</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Los Pilares Cuadrangulares</h2></div><p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">Cuatro expresiones de una misma esperanza: Jesús sigue siendo suficiente.</p></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{pillars.map((pillar, index) => { const Icon = pillar.icon; return <motion.article key={pillar.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }} className="group rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_15px_45px_-30px_rgba(35,51,84,0.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/60"><div className={`mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${pillar.color} text-white shadow-lg`}><Icon size={23} /></div><h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">{pillar.title}</h3><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{pillar.description}</p><span className="mt-6 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">{pillar.reference}</span></motion.article>; })}</div></section>
 
-        <section id="principios" className="scroll-mt-24 py-4"><div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Lo que creemos</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Principios de la fe</h2><p className="mt-4 leading-7 text-slate-600 dark:text-slate-400">Una síntesis clara para conocer nuestra fe sin recorrer una página interminable. Abre cada principio para leer más.</p></div><GlassCard className="divide-y divide-slate-200/70 overflow-hidden dark:divide-white/10">{principles.map(([title, description], index) => <div key={title}><button className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left" onClick={() => setOpenPrinciple(openPrinciple === index ? -1 : index)} aria-expanded={openPrinciple === index}><span className="flex items-center gap-3 font-semibold text-slate-800 dark:text-white"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400/15 text-xs text-amber-700 dark:text-amber-300">{String(index + 1).padStart(2, '0')}</span>{title}</span><ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform ${openPrinciple === index ? 'rotate-180' : ''}`} /></button>{openPrinciple === index && <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="px-5 pb-5 pl-[4.25rem] text-sm leading-7 text-slate-600 dark:text-slate-400">{description}</motion.p>}</div>)}</GlassCard></div></section>
+        <section id="principios" className="scroll-mt-24 py-8"><PrinciplesOfFaith /></section>
 
         <section id="liderazgo" className="scroll-mt-24 py-16"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Personas que sirven</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Liderazgo de la iglesia</h2><p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-400">Perfiles administrados desde el catálogo de pastores y vinculados al CRM.</p></div><a href="/admin/pastores" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Editar liderazgo <ArrowRight size={16} /></a></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{leaders.map((leader) => <GlassCard key={leader.id} className="overflow-hidden"><div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">{leader.photo_url ? <img src={leader.photo_url} alt={`Foto de ${leader.first_name} ${leader.last_name}`} className="h-full w-full object-cover object-top transition duration-700 hover:scale-105" /> : <div className="flex h-full items-center justify-center text-slate-300"><Users size={52} /></div>}</div><div className="p-6"><span className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600">{leader.role}</span><h3 className="mt-2 font-serif text-2xl font-bold text-slate-900 dark:text-white">{leader.first_name} {leader.last_name}</h3>{leader.bio && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{leader.bio}</p>}{leader.member_id && <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"><Users size={13} /> Perfil CRM vinculado</span>}</div></GlassCard>)}</div></section>
         </div>
