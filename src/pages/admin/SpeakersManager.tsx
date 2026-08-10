@@ -141,8 +141,12 @@ const SpeakersManager = () => {
       };
 
       if (editingSpeaker) {
-        const { error } = await supabase.from('speakers').update(payload).eq('id', editingSpeaker.id);
+        const { data: updateResult, error } = await supabase.from('speakers').update(payload).eq('id', editingSpeaker.id).select();
         if (error) throw error;
+        
+        if (!updateResult || updateResult.length === 0) {
+          throw new Error("La actualización falló silenciosamente (0 filas afectadas). Verifica tus permisos de administrador.");
+        }
         
         // Sincronizar automáticamente el nombre en todas las prédicas (sermons) asociadas a este orador
         const updatedPastorName = `${payload.first_name} ${payload.last_name}`.trim();
