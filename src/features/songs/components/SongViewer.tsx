@@ -95,10 +95,10 @@ export const SongViewer = ({
   const copyChords = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b: Record<string, unknown>) => {
-        let blockStr = `[${((b.label as string) || '').toUpperCase()}]\n`;
-        if (b.melody || b.melody_guide) blockStr += `(Guía: ${(b.melody || b.melody_guide) as string})\n`;
-        blockStr += `${processBracketText((b.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey)}\n`;
+      result = song.structure_blocks.map((b: any) => {
+        let blockStr = `[${(b.label || '').toUpperCase()}]\n`;
+        if (b.melody || b.melody_guide) blockStr += `(Guía: ${b.melody || b.melody_guide})\n`;
+        blockStr += `${processBracketText(b.lyrics || '', transposeAmount, nashvilleMode, originalKey)}\n`;
         return blockStr;
       }).join('\n');
     } else {
@@ -112,9 +112,9 @@ export const SongViewer = ({
   const copyOnlyLyrics = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b: Record<string, unknown>) => {
-        let blockStr = `[${((b.label as string) || '').toUpperCase()}]\n`;
-        const cleanLyrics = ((b.lyrics as string) || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
+      result = song.structure_blocks.map((b: any) => {
+        let blockStr = `[${(b.label || '').toUpperCase()}]\n`;
+        const cleanLyrics = (b.lyrics || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
         blockStr += `${cleanLyrics}\n`;
         return blockStr;
       }).join('\n');
@@ -574,9 +574,9 @@ export const SongViewer = ({
                   {selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0 ? (
                     /* STRUCTURED RENDERING */
                     <div className="space-y-6">
-                      {selectedSong.structure_blocks.map((block: Record<string, unknown>) => (
+                      {selectedSong.structure_blocks.map((block: any) => (
                         <div 
-                          key={block.id as string} 
+                          key={block.id} 
                           className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
                         >
                           <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
@@ -587,17 +587,17 @@ export const SongViewer = ({
                                 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
                             }`}>
-                              {(block.label as string) || 'Sección'}
+                              {block.label || 'Sección'}
                             </span>
                             {(block.melody || block.melody_guide) && (
                               <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
-                                <Info size={10} /> {(block.melody || block.melody_guide) as string}
+                                <Info size={10} /> {block.melody || block.melody_guide}
                               </span>
                             )}
                           </div>
                           <div 
                             className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml((block.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                           />
                         </div>
                       ))}
