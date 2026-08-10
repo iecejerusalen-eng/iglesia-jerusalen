@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS public.propresenter_connections (
   computer_name text,
   app_version text,
   device_token_hash text,
+  device_token_issued_at timestamptz,
   last_seen_at timestamptz,
   last_error text,
   is_enabled boolean NOT NULL DEFAULT true,
@@ -65,6 +66,10 @@ CREATE TABLE IF NOT EXISTS public.propresenter_commands (
 
 CREATE INDEX IF NOT EXISTS propresenter_connections_enabled_idx
   ON public.propresenter_connections (is_enabled, last_seen_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS propresenter_connections_device_token_idx
+  ON public.propresenter_connections (device_token_hash)
+  WHERE device_token_hash IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS propresenter_commands_pending_idx
   ON public.propresenter_commands (connection_id, status, created_at);

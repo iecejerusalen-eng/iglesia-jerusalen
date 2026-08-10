@@ -52,6 +52,16 @@ interface SongOption {
   bpm: number | null;
 }
 
+interface CommandRecord {
+  id: string;
+  connection_id: string;
+  command_type: CommandType;
+  status: 'pending' | 'sent' | 'acknowledged' | 'failed' | 'cancelled';
+  error_message: string | null;
+  created_at: string;
+  acknowledged_at: string | null;
+}
+
 const modeMeta: Record<ConnectionMode, { label: string; description: string; accent: string }> = {
   alpha: { label: 'Alpha / Key-Fill', description: 'Salida transparente para switcher, SDI o gráficos.', accent: 'from-amber-400 to-orange-500' },
   ndi: { label: 'NDI con alpha', description: 'Overlay transparente por red local.', accent: 'from-sky-400 to-blue-600' },
@@ -78,14 +88,20 @@ const hashPairingCode = async (value: string) => {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 };
 
-const createPairingCode = () => `JER-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+const createPairingCode = () => {
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return `JER-${Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('')}`;
+};
 
 const ProPresenterManager = () => {
-  const { isReadOnly, hasPermission } = usePermissions();
+  const { isReadOnly, hasPermission, user } = usePermissions();
   const readOnly = isReadOnly('propresenter');
   const canView = hasPermission('propresenter', 'view');
   const [tab, setTab] = useState<PanelTab>('overview');
   const [connections, setConnections] = useState<ProPresenterConnection[]>([]);
+  const [commands, setCommands] = useState<CommandRecord[]>([]);
   const [songs, setSongs] = useState<SongOption[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [selectedSongId, setSelectedSongId] = useState('');
@@ -102,9 +118,10 @@ const ProPresenterManager = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [connectionResult, songsResult] = await Promise.all([
+    const [connectionResult, songsResult, commandResult] = await Promise.all([
       supabase.from('propresenter_connections').select('id, name, mode, description, computer_name, app_version, last_seen_at, last_error, is_enabled, created_at').order('created_at', { ascending: false }),
       supabase.from('songs').select('id, title, original_key, bpm').order('title').limit(80),
+      supabase.from('propresenter_commands').select('id, connection_id, command_type, status, error_message, created_at, acknowledged_at').order('created_at', { ascending: false }).limit(20),
     ]);
 
     if (connectionResult.error) {
@@ -115,6 +132,8 @@ const ProPresenterManager = () => {
       setSelectedConnectionId((current) => current || loaded[0]?.id || '');
     }
     if (!songsResult.error) setSongs((songsResult.data ?? []) as SongOption[]);
+    if (commandResult.error) toast.error(`No se pudo cargar la cola de comandos: ${commandResult.error.message}`);
+    else setCommands((commandResult.data ?? []) as CommandRecord[]);
     setLoading(false);
   }, []);
 
@@ -125,6 +144,36 @@ const ProPresenterManager = () => {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [canView, loadData]);
+
+  useEffect(() => {
+    if (!canView) return undefined;
+    const channel = supabase
+      .channel('propresenter-manager-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'propresenter_connections' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setConnections((current) => current.filter((connection) => connection.id !== String(payload.old.id)));
+          return;
+        }
+        const next = payload.new as ProPresenterConnection;
+        setConnections((current) => {
+          const exists = current.some((connection) => connection.id === next.id);
+          return exists ? current.map((connection) => connection.id === next.id ? { ...connection, ...next } : connection) : [next, ...current];
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'propresenter_commands' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setCommands((current) => current.filter((command) => command.id !== String(payload.old.id)));
+          return;
+        }
+        const next = payload.new as CommandRecord;
+        setCommands((current) => {
+          const exists = current.some((command) => command.id === next.id);
+          return exists ? current.map((command) => command.id === next.id ? { ...command, ...next } : command) : [next, ...current].slice(0, 20);
+        });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [canView]);
 
   const createConnection = async () => {
     if (readOnly || !newConnection.name.trim()) {
@@ -139,6 +188,7 @@ const ProPresenterManager = () => {
       mode: newConnection.mode,
       description: newConnection.description.trim(),
       device_token_hash: tokenHash,
+      created_by: user?.id ?? null,
     }).select('id, name, mode, description, computer_name, app_version, last_seen_at, last_error, is_enabled, created_at').single();
     setBusy(false);
     if (error) {
@@ -170,15 +220,19 @@ const ProPresenterManager = () => {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from('propresenter_commands').insert({
+    const { data, error } = await supabase.from('propresenter_commands').insert({
       connection_id: selectedConnection.id,
       command_type: commandType,
       payload,
       status: 'pending',
-    });
+      requested_by: user?.id ?? null,
+    }).select('id, connection_id, command_type, status, error_message, created_at, acknowledged_at').single();
     setBusy(false);
     if (error) toast.error(`No se pudo enviar la orden: ${error.message}`);
-    else toast.success('Orden enviada a la cola local.');
+    else {
+      if (data) setCommands((current) => [data as CommandRecord, ...current].slice(0, 20));
+      toast.success('Orden enviada a la cola local.');
+    }
   };
 
   const selectedSong = songs.find((song) => song.id === selectedSongId) ?? null;
@@ -231,7 +285,7 @@ const ProPresenterManager = () => {
         <>
           {tab === 'overview' && <OverviewTab connections={connections} onNew={() => setShowCreate(true)} onSelect={(id) => { setSelectedConnectionId(id); setTab('control'); }} />}
           {tab === 'connections' && <ConnectionsTab connections={connections} selectedId={selectedConnection?.id ?? ''} readOnly={readOnly} onNew={() => setShowCreate(true)} onSelect={setSelectedConnectionId} onDelete={(connection) => void removeConnection(connection)} />}
-          {tab === 'control' && <ControlTab connections={connections} selectedConnection={selectedConnection} selectedSong={selectedSong} selectedSongId={selectedSongId} songs={songs} readOnly={readOnly} busy={busy} onSelectConnection={setSelectedConnectionId} onSelectSong={setSelectedSongId} onSend={sendCommand} />}
+          {tab === 'control' && <ControlTab connections={connections} selectedConnection={selectedConnection} selectedSong={selectedSong} selectedSongId={selectedSongId} songs={songs} commands={commands} readOnly={readOnly} busy={busy} onSelectConnection={setSelectedConnectionId} onSelectSong={setSelectedSongId} onSend={sendCommand} />}
           {tab === 'settings' && <SettingsTab readOnly={readOnly} />}
         </>
       )}
@@ -258,9 +312,10 @@ const ConnectionsTab = ({ connections, selectedId, readOnly, onNew, onSelect, on
   <section className={`${glassPanel} p-5 sm:p-6`}><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-gold">Acceso controlado por roles</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Computadoras autorizadas</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Concede el módulo “Panel ProPresenter” desde Usuarios & Permisos a los editores de producción.</p></div><button type="button" onClick={onNew} disabled={readOnly} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-black text-white shadow-lg shadow-primary/20 disabled:opacity-40"><Plus size={15} /> Registrar computadora</button></div><div className="mt-6 grid gap-3 lg:grid-cols-2">{connections.map((connection) => { const online = isOnline(connection.last_seen_at); return <article key={connection.id} className={`rounded-2xl border p-4 transition ${selectedId === connection.id ? 'border-blue-400 bg-blue-50/60 shadow-lg shadow-blue-500/10 dark:border-blue-400/50 dark:bg-blue-950/20' : 'border-slate-200/70 bg-white/55 dark:border-white/10 dark:bg-white/5'}`}><div className="flex items-start gap-3"><span className={`flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br ${modeMeta[connection.mode].accent} text-white`}><MonitorPlay size={20} /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h4 className="truncate text-sm font-black text-slate-800 dark:text-white">{connection.name}</h4><span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${online ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}><Circle size={7} fill="currentColor" />{online ? 'Online' : 'Offline'}</span></div><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{connection.computer_name || 'Esperando al conector local'} · {modeMeta[connection.mode].label}</p></div><button type="button" onClick={() => onDelete(connection)} disabled={readOnly} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30" aria-label={`Eliminar ${connection.name}`}><Trash2 size={15} /></button></div><div className="mt-4 grid grid-cols-2 gap-2 text-[11px]"><div className="rounded-xl bg-slate-100/80 p-2.5 dark:bg-white/5"><span className="block text-slate-400">Último contacto</span><strong className="mt-1 block text-slate-700 dark:text-slate-200">{formatLastSeen(connection.last_seen_at)}</strong></div><div className="rounded-xl bg-slate-100/80 p-2.5 dark:bg-white/5"><span className="block text-slate-400">Versión</span><strong className="mt-1 block text-slate-700 dark:text-slate-200">{connection.app_version || 'Pendiente'}</strong></div></div>{connection.last_error && <p className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-2.5 text-[11px] text-red-700 dark:bg-red-400/10 dark:text-red-300"><AlertTriangle size={14} className="mt-0.5 shrink-0" />{connection.last_error}</p>}<button type="button" onClick={() => onSelect(connection.id)} className="mt-4 inline-flex items-center gap-1 text-xs font-black text-primary dark:text-sky-300">Abrir control <ChevronRight size={14} /></button></article>; })}{connections.length === 0 && <div className="lg:col-span-2"><EmptyState onNew={onNew} /></div>}</div></section>
 );
 
-const ControlTab = ({ connections, selectedConnection, selectedSong, selectedSongId, songs, readOnly, busy, onSelectConnection, onSelectSong, onSend }: { connections: ProPresenterConnection[]; selectedConnection: ProPresenterConnection | null; selectedSong: SongOption | null; selectedSongId: string; songs: SongOption[]; readOnly: boolean; busy: boolean; onSelectConnection: (id: string) => void; onSelectSong: (id: string) => void; onSend: (command: CommandType, payload?: Record<string, string | number | boolean | null>) => Promise<void> }) => {
+const ControlTab = ({ connections, selectedConnection, selectedSong, selectedSongId, songs, commands, readOnly, busy, onSelectConnection, onSelectSong, onSend }: { connections: ProPresenterConnection[]; selectedConnection: ProPresenterConnection | null; selectedSong: SongOption | null; selectedSongId: string; songs: SongOption[]; commands: CommandRecord[]; readOnly: boolean; busy: boolean; onSelectConnection: (id: string) => void; onSelectSong: (id: string) => void; onSend: (command: CommandType, payload?: Record<string, string | number | boolean | null>) => Promise<void> }) => {
   const online = isOnline(selectedConnection?.last_seen_at ?? null);
-  return <div className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]"><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-gold"><SlidersHorizontal size={14} /> Control en vivo</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Selecciona una salida</h3><label className="mt-5 block text-xs font-bold text-slate-500">Computadora</label><select value={selectedConnection?.id ?? ''} onChange={(event) => onSelectConnection(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una conexión…</option>{connections.map((connection) => <option key={connection.id} value={connection.id}>{connection.name} · {modeMeta[connection.mode].label}</option>)}</select>{selectedConnection && <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/55 p-4 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 text-sm font-black text-slate-800 dark:text-white"><Circle size={9} fill={online ? '#10b981' : '#94a3b8'} className={online ? 'text-emerald-500' : 'text-slate-400'} />{online ? 'Conector en línea' : 'Conector esperando conexión'}</div><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{modeMeta[selectedConnection.mode].description}</p><button type="button" disabled={readOnly || busy} onClick={() => void onSend('test_connection')} className={`${softButton} mt-4 w-full`}><Wifi size={14} /> Probar conexión</button></div>}{!selectedConnection && <EmptyState />}</section><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Orden actual</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Enviar contenido</h3></div><span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-[10px] font-black uppercase text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><Radio size={13} /> Cola segura</span></div><div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]"><select value={selectedSongId} onChange={(event) => onSelectSong(event.target.value)} className="h-12 rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una alabanza…</option>{songs.map((song) => <option key={song.id} value={song.id}>{song.title}</option>)}</select><button type="button" disabled={!selectedSong || readOnly || busy || !selectedConnection} onClick={() => void onSend('sync_service', { song_id: selectedSong?.id ?? null })} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-xs font-black text-white shadow-lg shadow-primary/20 disabled:opacity-40"><RefreshCw size={15} /> Sincronizar</button></div>{selectedSong && <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500"><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">Tonalidad: <strong>{selectedSong.original_key || '—'}</strong></span><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">{selectedSong.bpm || '—'} BPM</span></div>}<div className="mt-6 grid gap-3 sm:grid-cols-2"><ActionButton icon={Play} label="Solo letra" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_lyrics', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={Sparkles} label="Letra + acordes" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_chords', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={ChevronRight} label="Siguiente slide" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('next_slide')} /><ActionButton icon={ChevronRight} label="Slide anterior" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('previous_slide')} /><ActionButton icon={Pause} label="Limpiar salida" danger disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('clear_output')} /></div><div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 dark:border-white/15 dark:bg-white/5"><p className="flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-200"><ShieldCheck size={15} className="text-emerald-500" /> Todas las órdenes quedan registradas</p><p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">El conector local las ejecutará cuando esté emparejado. Si la computadora está offline, quedan pendientes y no se pierden.</p></div></section></div>;
+  const visibleCommands = commands.filter((command) => !selectedConnection || command.connection_id === selectedConnection.id).slice(0, 5);
+  return <div className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]"><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-gold"><SlidersHorizontal size={14} /> Control en vivo</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Selecciona una salida</h3><label className="mt-5 block text-xs font-bold text-slate-500">Computadora</label><select value={selectedConnection?.id ?? ''} onChange={(event) => onSelectConnection(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una conexión…</option>{connections.map((connection) => <option key={connection.id} value={connection.id}>{connection.name} · {modeMeta[connection.mode].label}</option>)}</select>{selectedConnection && <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/55 p-4 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 text-sm font-black text-slate-800 dark:text-white"><Circle size={9} fill={online ? '#10b981' : '#94a3b8'} className={online ? 'text-emerald-500' : 'text-slate-400'} />{online ? 'Conector en línea' : 'Conector esperando conexión'}</div><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{modeMeta[selectedConnection.mode].description}</p><button type="button" disabled={readOnly || busy} onClick={() => void onSend('test_connection')} className={`${softButton} mt-4 w-full`}><Wifi size={14} /> Probar conexión</button></div>}{!selectedConnection && <EmptyState />}</section><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Orden actual</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Enviar contenido</h3></div><span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-[10px] font-black uppercase text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><Radio size={13} /> Cola segura</span></div><div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]"><select value={selectedSongId} onChange={(event) => onSelectSong(event.target.value)} className="h-12 rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una alabanza…</option>{songs.map((song) => <option key={song.id} value={song.id}>{song.title}</option>)}</select><button type="button" disabled={!selectedSong || readOnly || busy || !selectedConnection} onClick={() => void onSend('sync_service', { song_id: selectedSong?.id ?? null })} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-xs font-black text-white shadow-lg shadow-primary/20 disabled:opacity-40"><RefreshCw size={15} /> Sincronizar</button></div>{selectedSong && <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500"><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">Tonalidad: <strong>{selectedSong.original_key || '—'}</strong></span><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">{selectedSong.bpm || '—'} BPM</span></div>}<div className="mt-6 grid gap-3 sm:grid-cols-2"><ActionButton icon={Play} label="Solo letra" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_lyrics', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={Sparkles} label="Letra + acordes" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_chords', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={ChevronRight} label="Siguiente slide" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('next_slide')} /><ActionButton icon={ChevronRight} label="Slide anterior" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('previous_slide')} /><ActionButton icon={Pause} label="Limpiar salida" danger disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('clear_output')} /></div><div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 dark:border-white/15 dark:bg-white/5"><p className="flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-200"><ShieldCheck size={15} className="text-emerald-500" /> Todas las órdenes quedan registradas</p><p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">El conector local las ejecutará cuando esté emparejado. Si la computadora está offline, quedan pendientes y no se pierden.</p></div><div className="mt-5 border-t border-slate-200/70 pt-4 dark:border-white/10"><div className="flex items-center justify-between"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Últimas órdenes</p><span className="text-[10px] text-slate-400">actualización en vivo</span></div><div className="mt-3 space-y-2">{visibleCommands.map((command) => <div key={command.id} className="flex items-center gap-2 rounded-xl bg-slate-50/80 px-3 py-2 text-[11px] dark:bg-white/5"><span className={`size-2 rounded-full ${command.status === 'acknowledged' ? 'bg-emerald-500' : command.status === 'failed' ? 'bg-red-500' : command.status === 'sent' ? 'bg-blue-500' : 'bg-amber-400'}`} /><span className="min-w-0 flex-1 truncate font-bold text-slate-600 dark:text-slate-300">{command.command_type.replaceAll('_', ' ')}</span><span className="text-slate-400">{command.status}</span></div>)}{visibleCommands.length === 0 && <p className="text-xs text-slate-400">Todavía no hay órdenes para esta conexión.</p>}</div></div></section></div>;
 };
 
 const ActionButton = ({ icon: Icon, label, onClick, disabled, danger = false }: { icon: typeof Play; label: string; onClick: () => void; disabled: boolean; danger?: boolean }) => <button type="button" disabled={disabled} onClick={onClick} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition hover:-translate-y-0.5 disabled:opacity-40 ${danger ? 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300' : 'border-slate-200 bg-white/80 text-slate-700 hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200'}`}><Icon size={16} />{label}</button>;

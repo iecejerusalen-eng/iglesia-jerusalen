@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, Copy, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { parseBibleReferences } from '../../../utils/bibleParser';
 
 export function BibleScratchpadTool() {
   const [query, setQuery] = useState('');
@@ -16,8 +17,15 @@ export function BibleScratchpadTool() {
     setLoading(true);
     setResult(null);
     try {
+      let finalQuery = query;
+      const parsed = parseBibleReferences(query);
+      if (parsed.length > 0 && parsed[0].bookId) {
+        const p = parsed[0];
+        finalQuery = `${p.bookId} ${p.chapter}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
+      }
+
       // Usando bible-api.com con la traducción Valera (RV1909) por defecto
-      const url = `https://bible-api.com/${encodeURIComponent(query)}?translation=valera`;
+      const url = `https://bible-api.com/${encodeURIComponent(finalQuery)}?translation=valera`;
       const res = await fetch(url);
       
       if (!res.ok) {
