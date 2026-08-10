@@ -7,18 +7,42 @@ import BlockRenderer from '../../components/public/BlockRenderer';
 import RichTextRenderer from '../../components/common/RichTextRenderer';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
+import type { LessonBlock } from '../../components/admin/BlockEditor';
+import type { Logo, Ministry } from '../../types';
 import type { MinistryPage } from '../../types/ministryPages';
+
+interface PublicMember {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  photo_url: string | null;
+  is_leader?: boolean | null;
+  leadership_role?: string | null;
+  phone?: string | null;
+  phone_country_code?: string | null;
+}
+
+interface MinistryLeadership {
+  id: string;
+  role: string;
+  member_id: string | null;
+  member_name: string | null;
+  members: PublicMember | null;
+}
+
+type MinistryDetailData = Ministry & { content_blocks?: LessonBlock[] };
+
 const MinistryDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [ministry, setMinistry] = useState<any | null>(null);
-  const [logos, setLogos] = useState<any[]>([]);
+  const [ministry, setMinistry] = useState<MinistryDetailData | null>(null);
+  const [logos, setLogos] = useState<Logo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ministryPages, setMinistryPages] = useState<MinistryPage[]>([]);
 
   // Estados para la visualización de miembros en Cuerpo de Apoyo y Directiva
-  const [members, setMembers] = useState<any[]>([]);
-  const [directiva, setDirectiva] = useState<any[]>([]);
+  const [members, setMembers] = useState<PublicMember[]>([]);
+  const [directiva, setDirectiva] = useState<MinistryLeadership[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
 
@@ -88,7 +112,7 @@ const MinistryDetail = () => {
               const valB = idxB === -1 ? 99 : idxB;
               return valA - valB;
             });
-            setDirectiva(sortedDirectiva);
+            setDirectiva(sortedDirectiva as MinistryLeadership[]);
           }
 
           // Fetch members if it is Cuerpo de Apoyo
@@ -101,7 +125,7 @@ const MinistryDetail = () => {
               .order('last_name', { ascending: true });
             
             if (!membersError && membersData) {
-              setMembers(membersData);
+              setMembers(membersData as PublicMember[]);
             } else if (membersError) {
               console.error('Error al cargar miembros para cuerpo de apoyo:', membersError.message);
             }
@@ -110,9 +134,9 @@ const MinistryDetail = () => {
         } else {
           setError('No se encontró el ministerio');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching ministry details:', err);
-        setError(err.message || 'Error al cargar los detalles del ministerio');
+        setError(err instanceof Error ? err.message : 'Error al cargar los detalles del ministerio');
       } finally {
         setIsLoading(false);
       }
@@ -239,7 +263,7 @@ const MinistryDetail = () => {
                           day: 'numeric',
                           month: 'long'
                         });
-                      } catch (e) {
+                      } catch {
                         return ministry.anniversary_date;
                       }
                     })()}
@@ -454,14 +478,14 @@ const MinistryDetail = () => {
               const publicUrl = supabase.storage.from('logos').getPublicUrl(logo.storage_path).data.publicUrl;
               const isRenderable = ['png', 'svg', 'webp', 'jpg', 'jpeg'].includes(logo.format.toLowerCase());
               
-              const colorModeLabels: any = {
+              const colorModeLabels: Record<string, string> = {
                 color: 'Full Color',
                 blanco_y_negro: 'Blanco y Negro',
                 blanco_solido: 'Blanco Sólido',
                 negro_solido: 'Negro Sólido'
               };
 
-              const variantLabels: any = {
+              const variantLabels: Record<string, string> = {
                 cuadrado: 'Cuadrado (1:1)',
                 circular: 'Circular',
                 vertical: 'Vertical / Apilado',
