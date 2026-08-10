@@ -14,7 +14,6 @@ import {
   Landmark,
   Maximize2,
   MapPin,
-  Sparkles,
   Users,
   X,
 } from 'lucide-react';
@@ -187,18 +186,7 @@ const About = () => {
       <div className="pointer-events-none absolute -left-36 top-16 h-80 w-80 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
       <div className="pointer-events-none absolute -right-32 top-[38rem] h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl dark:bg-indigo-500/10" />
 
-      <div className="relative mx-auto grid max-w-6xl gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="h-fit lg:sticky lg:top-24">
-          <GlassCard className="p-3">
-            <div className="flex items-center gap-2 px-3 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400"><Sparkles size={15} className="text-amber-500" /> Nosotros</div>
-            <nav aria-label="Secciones de Nosotros" className="grid gap-1">
-              {[['historia', 'Historia'], ['pilares', 'Pilares'], ['principios', 'Principios de fe'], ['liderazgo', 'Liderazgo']].map(([id, label], index) => <a key={id} href={`#${id}`} className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-primary dark:text-slate-300 dark:hover:bg-white/10"><span className="flex size-7 items-center justify-center rounded-full bg-amber-400/15 text-[10px] font-black text-amber-700 dark:text-amber-300">0{index + 1}</span>{label}</a>)}
-            </nav>
-            <div className="mt-3 rounded-2xl bg-slate-950 p-4 text-white dark:bg-white/10"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">Una familia</p><p className="mt-2 text-xs leading-5 text-slate-300">Conoce nuestras raíces, nuestra fe y las personas que sirven.</p></div>
-          </GlassCard>
-        </aside>
-        <div className="min-w-0">
-
+      <div className="relative mx-auto max-w-6xl">
         <section className="relative mb-14 flex min-h-[560px] items-center justify-center overflow-hidden rounded-[2.25rem] border border-white/15 bg-slate-950 px-5 py-14 text-center text-white shadow-[0_32px_90px_-36px_rgba(15,23,42,.9)] sm:px-10 lg:px-14">
           <img src={churchFacadePhoto} alt="Fachada de la Iglesia Jerusalén" className="absolute inset-0 h-full w-full scale-[1.02] object-cover opacity-35" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,8,23,.72),rgba(7,21,47,.88)_55%,rgba(2,8,23,.96)),radial-gradient(circle_at_50%_20%,rgba(245,180,54,.22),transparent_38%)]" />
@@ -240,8 +228,7 @@ const About = () => {
 
         <section id="principios" className="scroll-mt-24 py-8"><PrinciplesOfFaith /></section>
 
-        <section id="liderazgo" className="scroll-mt-24 py-16"><div className="mx-auto mb-8 max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Personas que sirven</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Liderazgo de la iglesia</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Pastores que acompañan, enseñan y sirven a nuestra comunidad. Sus perfiles se administran desde el catálogo de liderazgo vinculado al CRM.</p><a href="/admin/pastores" className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Editar liderazgo <ArrowRight size={16} /></a></div><div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">{leaders.map((leader) => <GlassCard key={leader.id} className="group overflow-hidden"><div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">{leader.photo_url ? <img src={leader.photo_url} alt={`Foto de ${leader.first_name} ${leader.last_name}`} loading="lazy" className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-slate-300"><Users size={52} /></div>}</div><div className="p-6 text-center"><span className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-600">{leader.role}</span><h3 className="mt-2 font-serif text-2xl font-bold text-slate-900 dark:text-white">{leader.first_name} {leader.last_name}</h3>{leader.bio && <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">{leader.bio}</p>}{leader.member_id && <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"><Users size={13} /> Perfil CRM vinculado</span>}</div></GlassCard>)}</div></section>
-        </div>
+        </section>
       </div>
       <AnimatePresence>{historyModal && <HistoryModal historyKey={historyModal} onChange={setHistoryModal} onClose={() => setHistoryModal(null)} />}</AnimatePresence>
     </main>
