@@ -132,7 +132,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     onClick={() => setSelectedItem(item)}
-                    className={`min-h-[260px] h-full group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-500 hover:scale-[1.03] hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.2)] flex flex-col ${
+                    className={`min-h-[360px] group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-500 hover:scale-[1.03] hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.2)] flex flex-col ${
                       activeTab === 'books' 
                         ? `bg-gradient-to-br ${getBookColor(item.group || '')} border shadow-lg` 
                         : 'bg-black/40 border border-white/10 hover:border-amber-500/30 hover:bg-black/60 shadow-xl'
@@ -150,7 +150,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                     )}
 
                     {item.imageUrl ? (
-                      <div className="h-56 shrink-0 overflow-hidden relative">
+                      <div className="h-48 shrink-0 overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
                         <img 
                           src={item.imageUrl} 

@@ -4,9 +4,11 @@ import { HelpCircle, Star, Award, RotateCcw, ChevronRight, Trophy, Lock, User, S
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '../../../config/supabase';
 
 // --- Data ---
 type Character = {
+  id?: string;
   name: string;
   options: string[];
   clues: string[];

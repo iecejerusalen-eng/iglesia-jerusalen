@@ -14,7 +14,15 @@ interface HangmanWord {
   category: string;
 }
 
+interface HangmanLeaderboardEntry {
+  id: string;
+  score: number;
+  words_guessed: number;
+  profiles: { first_name: string | null; last_name: string | null; avatar_url: string | null } | null;
+}
+
 const ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+const normalizeForGuess = (value: string) => value.toLocaleUpperCase('es').replaceAll('Á', 'A').replaceAll('É', 'E').replaceAll('Í', 'I').replaceAll('Ó', 'O').replaceAll('Ú', 'U').replaceAll('Ü', 'U');
 
 // Dibujo del ahorcado paso a paso usando SVG
 const HANGMAN_PARTS = [
@@ -55,20 +63,20 @@ export const Hangman = () => {
   const [wordsGuessed, setWordsGuessed] = useState(0);
   
   // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<HangmanLeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const fetchWords = async () => {
     try {
       const { data, error } = await supabase
-        .from('biblical_words')
-        .select('*');
+        .from('game_hangman_words')
+        .select('id,word,hint,category');
       
       if (error) throw error;
       if (data && data.length > 0) {
-        setWords(data);
-        const randomWord = data[Math.floor(Math.random() * data.length)];
-        setCurrentWord(randomWord);
+        const shuffled = [...data].sort(() => Math.random() - 0.5) as HangmanWord[];
+        setWords(shuffled);
+        setCurrentWord(shuffled[0]);
       }
     } catch (error) {
       console.error('Error fetching words:', error);
@@ -114,7 +122,7 @@ export const Hangman = () => {
     newGuessed.add(uppercaseLetter);
     setGuessedLetters(newGuessed);
     
-    const normalizedWord = currentWord.word.toUpperCase();
+    const normalizedWord = normalizeForGuess(currentWord.word);
     
     if (!normalizedWord.includes(uppercaseLetter)) {
       const newMistakes = mistakes + 1;
@@ -187,7 +195,7 @@ export const Hangman = () => {
         .limit(20);
 
       if (error) throw error;
-      setLeaderboard(data || []);
+      setLeaderboard((data ?? []) as HangmanLeaderboardEntry[]);
       setGameState('leaderboard');
     } catch (err) {
       console.error(err);
@@ -331,8 +339,8 @@ export const Hangman = () => {
   const renderPlaying = () => {
     if (!currentWord) return <div className="text-center py-20 text-amber-200">Cargando...</div>;
 
-    const normalizedWord = currentWord.word.toUpperCase();
-    const wordLetters = normalizedWord.split('');
+    const normalizedWord = normalizeForGuess(currentWord.word);
+    const wordLetters = currentWord.word.toLocaleUpperCase('es').split('');
 
     return (
       <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto items-center lg:items-start">
@@ -384,8 +392,9 @@ export const Hangman = () => {
                 return <div key={`space-${index}`} className="w-4 md:w-8"></div>;
               }
               
-              const isGuessed = guessedLetters.has(letter) || gameState === 'gameover' || gameState === 'won';
-              const isMissed = gameState === 'gameover' && !guessedLetters.has(letter);
+              const guessableLetter = normalizeForGuess(letter);
+              const isGuessed = guessedLetters.has(guessableLetter) || gameState === 'gameover' || gameState === 'won';
+              const isMissed = gameState === 'gameover' && !guessedLetters.has(guessableLetter);
               
               return (
                 <div 

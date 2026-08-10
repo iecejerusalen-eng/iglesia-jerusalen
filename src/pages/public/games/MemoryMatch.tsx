@@ -24,8 +24,7 @@ interface LeaderboardEntry {
   time_seconds: number;
   moves: number;
   created_at: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  profiles?: any;
+  profiles: { first_name: string | null; last_name: string | null; avatar_url: string | null } | null;
 }
 
 export const MemoryMatch = () => {
@@ -70,15 +69,15 @@ export const MemoryMatch = () => {
       // Fetch pairs from Supabase
       const { data, error } = await supabase
         .from('game_memory_cards')
-        .select('*')
-        .limit(8); // Get up to 8 pairs (16 cards)
+        .select('id,pair_name,image_url');
         
       if (error) throw error;
       
       if (data && data.length > 0) {
         // Create duplicate pairs
         const pairs: MemoryCard[] = [];
-        data.forEach((item) => {
+        const roundCards = [...data].sort(() => Math.random() - 0.5).slice(0, 8);
+        roundCards.forEach((item) => {
           pairs.push({
             id: item.id,
             pair_name: item.pair_name,
@@ -211,7 +210,7 @@ export const MemoryMatch = () => {
         .limit(20);
 
       if (error) throw error;
-      setLeaderboard(data || []);
+      setLeaderboard((data ?? []) as LeaderboardEntry[]);
       setGameState('leaderboard');
     } catch (err) {
       console.error(err);
