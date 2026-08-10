@@ -143,7 +143,20 @@ const SpeakersManager = () => {
       if (editingSpeaker) {
         const { error } = await supabase.from('speakers').update(payload).eq('id', editingSpeaker.id);
         if (error) throw error;
-        toast.success('Orador actualizado con éxito.');
+        
+        // Sincronizar automáticamente el nombre en todas las prédicas (sermons) asociadas a este orador
+        const updatedPastorName = `${payload.first_name} ${payload.last_name}`.trim();
+        const { error: sermonsError } = await supabase
+          .from('sermons')
+          .update({ pastor_name: updatedPastorName })
+          .eq('speaker_id', editingSpeaker.id);
+          
+        if (sermonsError) {
+          console.error('Error synchronizing sermon pastor names:', sermonsError);
+          toast.error('Orador actualizado, pero hubo un error sincronizando las prédicas.');
+        } else {
+          toast.success('Orador y prédicas sincronizadas con éxito.');
+        }
       } else {
         const { error } = await supabase.from('speakers').insert(payload);
         if (error) throw error;
