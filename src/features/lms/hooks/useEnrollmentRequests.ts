@@ -62,32 +62,12 @@ export function useEnrollmentRequests() {
 
   const processRequest = useMutation({
     mutationFn: async ({ request, approve }: { request: EnrollmentRequest; approve: boolean }) => {
-      if (approve) {
-        // Insert student enrollment
-        const { error: enrollError } = await supabase
-          .from('lms_enrollments')
-          .insert([{
-            course_id: request.course_id,
-            user_id: request.user_id,
-            role: 'student'
-          }]);
-        if (enrollError) throw enrollError;
-        
-        // Update request status to approved
-        const { error: reqError } = await supabase
-          .from('lms_enrollment_requests')
-          .update({ status: 'approved' })
-          .eq('id', request.id);
-        if (reqError) throw reqError;
-        
-      } else {
-        // Update request status to rejected
-        const { error: reqError } = await supabase
-          .from('lms_enrollment_requests')
-          .update({ status: 'rejected' })
-          .eq('id', request.id);
-        if (reqError) throw reqError;
-      }
+      const { error } = await supabase.rpc('process_lms_course_enrollment_request', {
+        p_request_id: request.id,
+        p_approve: approve,
+        p_decision_note: null,
+      });
+      if (error) throw error;
 
       await logAuditEvent('ENROLLMENT_PROCESS', 'lms_enrollment_requests', request.id, {
         course_id: request.course_id,
@@ -99,10 +79,12 @@ export function useEnrollmentRequests() {
     },
     onSuccess: (_, { approve }) => {
       queryClient.invalidateQueries({ queryKey: ['lms-enrollment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['public-lms-school-catalog'] });
       toast.success(approve ? 'Matrícula aprobada e inscrita con éxito' : 'Matrícula rechazada');
     },
-    onError: () => {
-      toast.error('Error al procesar la solicitud');
+    onError: (error) => {
+      console.error('Error al procesar la solicitud de matrícula:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al procesar la solicitud');
     }
   });
 

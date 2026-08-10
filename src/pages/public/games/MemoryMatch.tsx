@@ -210,7 +210,15 @@ export const MemoryMatch = () => {
         .limit(20);
 
       if (error) throw error;
-      setLeaderboard((data ?? []) as LeaderboardEntry[]);
+      const entries = (data ?? []).map((entry): LeaderboardEntry => ({
+        id: String(entry.id),
+        score: Number(entry.score),
+        time_seconds: Number(entry.time_seconds),
+        moves: Number(entry.moves),
+        created_at: String(entry.created_at),
+        profiles: Array.isArray(entry.profiles) ? entry.profiles[0] ?? null : entry.profiles
+      }));
+      setLeaderboard(entries);
       setGameState('leaderboard');
     } catch (err) {
       console.error(err);

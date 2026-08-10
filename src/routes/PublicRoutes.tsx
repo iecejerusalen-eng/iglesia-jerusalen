@@ -62,6 +62,7 @@ const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m =
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
+const GuessCharacter = lazyWithRetry(() => import('../pages/public/games/GuessCharacter').then(m => ({ default: m.GuessCharacter })));
 
 export default function PublicRoutes() {
   return (
@@ -98,6 +99,7 @@ export default function PublicRoutes() {
         <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
         <Route path="/recursos/juegos/ahorcado-biblico" element={<Hangman />} />
         <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
+        <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
         <Route path="/verify-student/:studentId" element={<VerifyStudent />} />
       </Route>
     </Routes>

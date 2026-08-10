@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Trophy, X, Play, RefreshCw, Info } from 'lucide-react';
@@ -84,7 +84,8 @@ export const Hangman = () => {
   };
 
   useEffect(() => {
-    fetchWords();
+    const timer = window.setTimeout(() => { void fetchWords(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const startGame = () => {
@@ -112,37 +113,7 @@ export const Hangman = () => {
     setGameState('playing');
   };
 
-  const handleGuess = (letter: string) => {
-    if (gameState !== 'playing' || !currentWord) return;
-    
-    const uppercaseLetter = letter.toUpperCase();
-    if (guessedLetters.has(uppercaseLetter)) return;
-    
-    const newGuessed = new Set(guessedLetters);
-    newGuessed.add(uppercaseLetter);
-    setGuessedLetters(newGuessed);
-    
-    const normalizedWord = normalizeForGuess(currentWord.word);
-    
-    if (!normalizedWord.includes(uppercaseLetter)) {
-      const newMistakes = mistakes + 1;
-      setMistakes(newMistakes);
-      
-      if (newMistakes >= HANGMAN_PARTS.length) {
-        endGame();
-      }
-    } else {
-      // Check if won
-      const isWon = normalizedWord.split('').every(c => c === ' ' || newGuessed.has(c));
-      if (isWon) {
-        setTimeout(() => {
-          handleWinRound();
-        }, 500);
-      }
-    }
-  };
-
-  const handleWinRound = () => {
+  const handleWinRound = useCallback(() => {
     confetti({
       particleCount: 100,
       spread: 70,
@@ -153,9 +124,9 @@ export const Hangman = () => {
     setScore(s => s + 100);
     setWordsGuessed(w => w + 1);
     setGameState('won');
-  };
+  }, []);
 
-  const endGame = async () => {
+  const endGame = useCallback(async () => {
     setGameState('gameover');
     
     if (user && (score > 0 || wordsGuessed > 0)) {
@@ -173,7 +144,35 @@ export const Hangman = () => {
         console.error(err);
       }
     }
-  };
+  }, [score, user, wordsGuessed]);
+
+  const handleGuess = useCallback((letter: string) => {
+    if (gameState !== 'playing' || !currentWord) return;
+
+    const uppercaseLetter = letter.toUpperCase();
+    if (guessedLetters.has(uppercaseLetter)) return;
+
+    const newGuessed = new Set(guessedLetters);
+    newGuessed.add(uppercaseLetter);
+    setGuessedLetters(newGuessed);
+
+    const normalizedWord = normalizeForGuess(currentWord.word);
+
+    if (!normalizedWord.includes(uppercaseLetter)) {
+      const newMistakes = mistakes + 1;
+      setMistakes(newMistakes);
+
+      if (newMistakes >= HANGMAN_PARTS.length) {
+        void endGame();
+      }
+      return;
+    }
+
+    const isWon = normalizedWord.split('').every(character => character === ' ' || newGuessed.has(character));
+    if (isWon) {
+      window.setTimeout(handleWinRound, 500);
+    }
+  }, [currentWord, endGame, gameState, guessedLetters, handleWinRound, mistakes]);
 
   const fetchLeaderboard = async () => {
     setLeaderboardLoading(true);
@@ -195,7 +194,13 @@ export const Hangman = () => {
         .limit(20);
 
       if (error) throw error;
-      setLeaderboard((data ?? []) as HangmanLeaderboardEntry[]);
+      const entries = (data ?? []).map((entry): HangmanLeaderboardEntry => ({
+        id: String(entry.id),
+        score: Number(entry.score),
+        words_guessed: Number(entry.words_guessed),
+        profiles: Array.isArray(entry.profiles) ? entry.profiles[0] ?? null : entry.profiles
+      }));
+      setLeaderboard(entries);
       setGameState('leaderboard');
     } catch (err) {
       console.error(err);
@@ -217,7 +222,7 @@ export const Hangman = () => {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, guessedLetters, currentWord]);
+  }, [gameState, handleGuess]);
 
   const renderMenu = () => (
     <motion.div 

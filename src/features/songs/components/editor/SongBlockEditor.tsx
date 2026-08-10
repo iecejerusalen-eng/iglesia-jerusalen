@@ -116,19 +116,19 @@ export function SongBlockEditor({
     } else if (type === 'sheet_music') {
       newBlock = { ...newBlock, title: 'Partitura / Acordes', notation_type: 'abc', abc_code: 'X:1\nT:Melodía\nM:4/4\nK:G\nG2 B2 d2 g2 |' };
     } else if (type === 'media_embed') {
-      newBlock = { ...newBlock, title: 'Video o Audio de Ensayo', provider: 'youtube', url: '' };
+      newBlock = { ...newBlock, title: 'Video o Audio de Ensayo', provider: 'youtube', url: '', audience: 'public' };
     } else if (type === 'musician_note') {
-      newBlock = { ...newBlock, target_instrument: 'General', content: '' };
+      newBlock = { ...newBlock, target_instrument: 'General', content: '', audience: 'team' };
     } else if (type === 'tablature') {
-      newBlock = { ...newBlock, title: 'Tablatura', instrument: 'guitar', tuning: 'E A D G B E', content: 'e|-----------------|\nB|-----------------|\nG|---0---2---0-----|\nD|-----------------|\nA|-----------------|\nE|-----------------|' };
+      newBlock = { ...newBlock, title: 'Tablatura', instrument: 'guitar', tuning: 'E A D G B E', content: 'e|-----------------|\nB|-----------------|\nG|---0---2---0-----|\nD|-----------------|\nA|-----------------|\nE|-----------------|', audience: 'public' };
     } else if (type === 'rich_text') {
       newBlock = { ...newBlock, title: 'Recurso', content: '<p>Escribe aquí el contenido del recurso.</p>', audience: 'public' };
     } else if (type === 'poll') {
-      newBlock = { ...newBlock, question: '¿Qué versión prepararemos?', options: ['Versión original', 'Versión acústica'], allow_multiple: false };
+      newBlock = { ...newBlock, question: '¿Qué versión prepararemos?', options: ['Versión original', 'Versión acústica'], allow_multiple: false, audience: 'team' };
     } else if (type === 'question') {
-      newBlock = { ...newBlock, question: 'Pregunta para el equipo', helper_text: '', answer_type: 'long' };
+      newBlock = { ...newBlock, question: 'Pregunta para el equipo', helper_text: '', answer_type: 'long', audience: 'team' };
     } else if (type === 'link_collection') {
-      newBlock = { ...newBlock, title: 'Enlaces de ensayo', links: [{ id: createBlockId(), label: 'Referencia', url: '', description: '' }] };
+      newBlock = { ...newBlock, title: 'Enlaces de ensayo', links: [{ id: createBlockId(), label: 'Referencia', url: '', description: '' }], audience: 'public' };
     }
 
     updateParent([...activeBlocks, newBlock as unknown as SongStructureBlock]);
@@ -198,6 +198,18 @@ export function SongBlockEditor({
             {block.type === 'lyrics' && <span className="font-bold text-gray-700 dark:text-gray-200 text-xs">— {(blockObj.label as string) || 'Sección'}</span>}
           </div>
           <div className="flex items-center gap-1">
+            {!['lyrics', 'chord_diagram', 'sheet_music'].includes(block.type) && (
+              <select
+                value={block.audience ?? 'public'}
+                onChange={(event) => updateBlock(block.id, { audience: event.target.value as 'public' | 'team' })}
+                disabled={disabled}
+                className="mr-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[9px] font-bold text-slate-600 outline-none dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
+                aria-label={`Visibilidad del bloque ${block.type}`}
+              >
+                <option value="public">Público</option>
+                <option value="team">Solo equipo</option>
+              </select>
+            )}
             <button type="button" onClick={() => moveBlock(index, 'up')} disabled={index === 0 || disabled} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 disabled:opacity-30 cursor-pointer" title="Subir">
               <ArrowUp size={15} />
             </button>
@@ -551,7 +563,7 @@ export function SongBlockEditor({
 
           {block.type === 'rich_text' && (
             <div className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-[1fr_10rem]"><input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título del recurso" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" /><select value={block.audience || 'public'} onChange={(event) => updateBlock(block.id, { audience: event.target.value as 'public' | 'team' })} className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800"><option value="public">Público</option><option value="team">Sólo equipo</option></select></div>
+              <input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título del recurso" className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" />
               <RichTextEditor content={block.content} onChange={(content) => updateBlock(block.id, { content })} disabled={disabled} />
             </div>
           )}

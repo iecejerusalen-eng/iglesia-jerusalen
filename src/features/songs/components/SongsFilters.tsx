@@ -47,7 +47,7 @@ export const SongsFilters = ({
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar título, artista o letra…"
+          placeholder="Buscar por título o artista…"
           className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-church-gold-medium focus:bg-white focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950"
         />
       </label>
@@ -103,7 +103,7 @@ export const SongsFilters = ({
           </label>
           <label className="space-y-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Contenido
             <select value={filterChords} onChange={(event) => setFilterChords(event.target.value as ChordsFilter)} className={selectClassName}>
-              <option value="all">Letra y acordes</option>
+              <option value="all">Todo el contenido</option>
               <option value="yes">Con acordes</option>
               <option value="no">Solo letra</option>
             </select>

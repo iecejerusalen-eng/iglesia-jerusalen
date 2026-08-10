@@ -1,230 +1,189 @@
-import { useState } from 'react';
-import { BookOpen, Copy, Loader2, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { BookOpen, Clock3, Copy, ExternalLink, Loader2, Search, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseBibleReferences, parseVerseRange } from '../../../utils/bibleParser';
-import { BIBLE_BOOKS } from '../../../config/bibleBooks';
+import {
+  BibleLookupError,
+  type BibleHistoryItem,
+  type BiblePassageResult,
+  buildBibleChapterUrl,
+  loadBibleHistory,
+  lookupBiblePassage,
+  saveBibleHistory,
+} from './content/bibleLookup';
 
-// Mapa de traducción de libros a inglés para fallback en bible-api.com
-const BIBLE_ENGLISH_NAMES: Record<string, string> = {
-  'genesis': 'Genesis',
-  'exodo': 'Exodus',
-  'levitico': 'Leviticus',
-  'numeros': 'Numbers',
-  'deuteronomio': 'Deuteronomy',
-  'josue': 'Joshua',
-  'jueces': 'Judges',
-  'rut': 'Ruth',
-  '1-samuel': '1 Samuel',
-  '2-samuel': '2 Samuel',
-  '1-reyes': '1 Kings',
-  '2-reyes': '2 Kings',
-  '1-cronicas': '1 Chronicles',
-  '2-cronicas': '2 Chronicles',
-  'esdras': 'Ezra',
-  'nehemias': 'Nehemiah',
-  'ester': 'Esther',
-  'job': 'Job',
-  'salmos': 'Psalms',
-  'proverbios': 'Proverbs',
-  'eclesiastes': 'Ecclesiastes',
-  'cantares': 'Song of Solomon',
-  'isaias': 'Isaiah',
-  'jeremias': 'Jeremiah',
-  'lamentaciones': 'Lamentations',
-  'ezequiel': 'Ezekiel',
-  'daniel': 'Daniel',
-  'oseas': 'Hosea',
-  'joel': 'Joel',
-  'amos': 'Amos',
-  'abdias': 'Obadiah',
-  'jonas': 'Jonah',
-  'miqueas': 'Micah',
-  'nahum': 'Nahum',
-  'habacuc': 'Habakkuk',
-  'sofonias': 'Zephaniah',
-  'hageo': 'Haggai',
-  'zacarias': 'Zechariah',
-  'malaquias': 'Malachi',
-  'mateo': 'Matthew',
-  'marcos': 'Mark',
-  'lucas': 'Luke',
-  'juan': 'John',
-  'hechos': 'Acts',
-  'romanos': 'Romans',
-  '1-corintios': '1 Corinthians',
-  '2-corintios': '2 Corinthians',
-  'galatas': 'Galatians',
-  'efesios': 'Ephesians',
-  'filipenses': 'Philippians',
-  'colosenses': 'Colossians',
-  '1-tesalonicenses': '1 Thessalonians',
-  '2-tesalonicenses': '2 Thessalonians',
-  '1-timoteo': '1 Timothy',
-  '2-timoteo': '2 Timothy',
-  'tito': 'Titus',
-  'filemon': 'Philemon',
-  'hebreos': 'Hebrews',
-  'santiago': 'James',
-  '1-pedro': '1 Peter',
-  '2-pedro': '2 Peter',
-  '1-juan': '1 John',
-  '2-juan': '2 John',
-  '3-juan': '3 John',
-  'judas': 'Jude',
-  'apocalipsis': 'Revelation'
-};
-
-interface BollsVerse {
-  pk?: number;
-  verse: number;
-  text: string;
+function lookupErrorMessage(error: unknown): string {
+  if (error instanceof BibleLookupError) return error.message;
+  return 'No pudimos completar la búsqueda. Inténtalo nuevamente.';
 }
 
 export function BibleScratchpadTool() {
+  const [initialHistory] = useState(loadBibleHistory);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ reference: string; text: string } | null>(null);
-  
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!query.trim()) return;
-    
+  const [result, setResult] = useState<BiblePassageResult | null>(null);
+  const [history, setHistory] = useState<BibleHistoryItem[]>(initialHistory.items);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [storageWarning, setStorageWarning] = useState<string | null>(initialHistory.error
+    ? 'El historial guardado no está disponible en este dispositivo.'
+    : null);
+  const activeRequest = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (initialHistory.error) console.error('No se pudo leer el historial bíblico.', initialHistory.error);
+    return () => activeRequest.current?.abort();
+  }, [initialHistory.error]);
+
+  const runSearch = async (searchQuery: string) => {
+    const normalizedQuery = searchQuery.trim();
+    if (!normalizedQuery) return;
+
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setLoading(true);
-    setResult(null);
+    setErrorMessage(null);
 
     try {
-      const parsed = parseBibleReferences(query);
-      
-      if (!parsed.length || !parsed[0].bookId) {
-        throw new Error('Formato no reconocido');
-      }
-
-      const p = parsed[0];
-      const bookIndex = BIBLE_BOOKS.findIndex(b => b.id === p.bookId);
-      if (bookIndex === -1) {
-        throw new Error('Libro no encontrado');
-      }
-
-      const bookObj = BIBLE_BOOKS[bookIndex];
-      const bollsBookId = bookIndex + 1;
-      const chapterNum = p.chapter || '1';
-
-      // 1. Intentar consulta principal mediante bolls.life API (Reina Valera RVR1960 con soporte CORS)
+      const passage = await lookupBiblePassage(normalizedQuery, controller.signal);
+      if (controller.signal.aborted) return;
+      setResult(passage);
+      if (passage.storageWarning) setStorageWarning(passage.storageWarning);
+      setQuery(normalizedQuery);
+      const item = { query: normalizedQuery, reference: passage.reference, searchedAt: new Date().toISOString() };
       try {
-        const bollsUrl = `https://bolls.life/get-chapter/RVR1960/${bollsBookId}/${chapterNum}/`;
-        const res = await fetch(bollsUrl);
-        
-        if (res.ok) {
-          const rawVerses: BollsVerse[] = await res.json();
-          let filteredVerses: BollsVerse[] = rawVerses;
-          let displayRef = `${bookObj.name} ${chapterNum}`;
-
-          if (p.verses) {
-            const requestedVerses = parseVerseRange(p.verses);
-            if (requestedVerses.length > 0) {
-              filteredVerses = rawVerses.filter(v => requestedVerses.includes(v.verse));
-              displayRef += `:${p.verses.replace(/\s+/g, '')}`;
-            }
-          } else {
-            // Si solo se busca el capítulo (ej. "Juan 3"), mostrar los primeros 3 versículos por defecto
-            filteredVerses = rawVerses.slice(0, 3);
-            displayRef += ` (v. 1-${filteredVerses.length})`;
-          }
-
-          if (filteredVerses.length > 0) {
-            const cleanText = filteredVerses
-              .map(v => `${v.verse > 1 ? `${v.verse}. ` : ''}${v.text.replace(/<[^>]*>?/gm, '').trim()}`)
-              .join(' ');
-
-            setResult({
-              reference: `${displayRef} (RVR1960)`,
-              text: cleanText
-            });
-            return;
-          }
-        }
-      } catch (bollsErr) {
-        console.warn('Fallback a bible-api.com debido a fallo en bolls.life', bollsErr);
+        saveBibleHistory(item);
+        setHistory((current) => [item, ...current.filter((entry) => entry.query.toLocaleLowerCase('es') !== normalizedQuery.toLocaleLowerCase('es'))].slice(0, 8));
+      } catch (storageError: unknown) {
+        console.error('No se pudo guardar el historial bíblico.', storageError);
+        setStorageWarning('El pasaje se encontró, pero no se pudo guardar en el historial.');
       }
-
-      // 2. Fallback secundario a bible-api.com traduciendo el libro a inglés para evitar 404/CORS
-      const englishBook = BIBLE_ENGLISH_NAMES[p.bookId] || p.bookId;
-      const fallbackQuery = `${englishBook} ${chapterNum}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
-      const fallbackUrl = `https://bible-api.com/${encodeURIComponent(fallbackQuery)}?translation=valera`;
-      
-      const fallbackRes = await fetch(fallbackUrl);
-      if (!fallbackRes.ok) {
-        throw new Error('No se encontró el versículo');
-      }
-
-      const fallbackData = await fallbackRes.json();
-      const cleanRef = `${bookObj.name} ${chapterNum}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
-      setResult({
-        reference: `${cleanRef} (RV1909)`,
-        text: fallbackData.text.trim()
-      });
-
-    } catch {
-      toast.error('No pudimos encontrar ese pasaje. Intenta con un formato como "Juan 3:16".');
+    } catch (error: unknown) {
+      if (error instanceof BibleLookupError && error.code === 'aborted') return;
+      console.error('La búsqueda bíblica no se pudo completar.', error);
+      const message = lookupErrorMessage(error);
+      setResult(null);
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setLoading(false);
+      }
     }
   };
 
-  const copyToClipboard = () => {
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    void runSearch(query);
+  };
+
+  const copyToClipboard = async () => {
     if (!result) return;
-    const textToCopy = `"${result.text}" — ${result.reference}`;
-    navigator.clipboard.writeText(textToCopy);
-    toast.success('Versículo copiado al portapapeles');
+    try {
+      await navigator.clipboard.writeText(`“${result.text}” — ${result.reference} (${result.translationName})`);
+      toast.success('Pasaje copiado al portapapeles');
+    } catch (error: unknown) {
+      console.error('No se pudo copiar el pasaje al portapapeles.', error);
+      toast.error('No se pudo copiar. Revisa el permiso del portapapeles.');
+    }
   };
 
   return (
     <div className="px-4 pb-5 pt-2">
-      <div className="mb-6 flex items-center justify-center gap-2 text-white/40">
-        <BookOpen size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Bíblia Rápida</span>
+      <div className="mb-4 flex items-center justify-center gap-2 text-white/60">
+        <BookOpen size={17} aria-hidden="true" />
+        <span className="text-xs font-bold uppercase tracking-[0.18em]">Biblia rápida</span>
       </div>
 
-      <form onSubmit={handleSearch} className="mb-5 flex gap-2">
+      <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+        <label htmlFor="toolbox-bible-query" className="sr-only">Referencia bíblica</label>
         <input
-          type="text"
+          id="toolbox-bible-query"
+          type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => setQuery(event.target.value)}
           placeholder="Ej: Juan 3:16"
-          className="flex-1 rounded-2xl border border-white/[0.05] bg-white/[0.03] px-4 py-3 text-sm text-white shadow-inner outline-none transition-all focus:border-amber-500/30 focus:bg-white/[0.06] focus:ring-4 focus:ring-amber-500/10 placeholder:text-white/20"
+          autoComplete="off"
+          className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white shadow-inner outline-none transition focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 placeholder:text-white/35"
         />
         <button
           type="submit"
-          disabled={loading || !query}
-          className="group relative flex items-center justify-center overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-amber-400/20 px-4 text-amber-400 shadow-[0_4px_12px_rgba(251,191,36,0.15)] transition-all hover:scale-[1.02] hover:border-amber-500/40 hover:from-amber-500/30 hover:to-amber-400/30 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+          disabled={loading || !query.trim()}
+          aria-label={loading ? 'Buscando pasaje' : 'Buscar pasaje'}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-400/15 text-amber-300 transition hover:bg-amber-400/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:pointer-events-none disabled:opacity-40"
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} className="transition-transform group-hover:scale-110" />}
-          <div className="absolute -left-[100%] top-0 h-full w-[50%] skew-x-12 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent transition-all duration-700 group-hover:left-[200%]" />
+          {loading ? <Loader2 size={19} className="animate-spin" aria-hidden="true" /> : <Search size={19} aria-hidden="true" />}
         </button>
       </form>
 
+      {errorMessage && (
+        <div role="alert" className="mb-4 flex gap-2 rounded-xl border border-rose-400/25 bg-rose-400/10 p-3 text-xs leading-relaxed text-rose-100">
+          <WifiOff size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       {result && (
-        <div className="rounded-[1.5rem] border border-white/[0.05] bg-white/[0.02] p-4 text-left shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)]">
-          <p className="mb-4 max-h-36 overflow-y-auto pr-2 text-sm italic leading-relaxed text-white/70 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-            "{result.text}"
+        <article className="rounded-3xl border border-white/10 bg-white/[0.035] p-4 text-left shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)]">
+          <p className="mb-4 max-h-40 overflow-y-auto pr-2 text-sm italic leading-relaxed text-white/80 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+            “{result.text}”
           </p>
-          <div className="flex items-center justify-between border-t border-white/[0.06] pt-3">
-            <span className="text-[10px] font-bold tracking-wide text-amber-400">{result.reference}</span>
-            <button 
-              onClick={copyToClipboard}
-              className="flex items-center gap-1.5 rounded-lg border border-white/[0.05] bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-bold text-white/50 transition-all hover:bg-white/[0.08] hover:text-white"
-            >
-              <Copy size={12} /> COPIAR
-            </button>
+          <div className="border-t border-white/10 pt-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <strong className="text-xs text-amber-300">{result.reference}</strong>
+              <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[11px] text-white/60" title={`ID: ${result.translationId}`}>
+                {result.translationName}
+              </span>
+              {result.fromCache && <span className="text-[11px] text-emerald-300">Disponible sin conexión</span>}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void copyToClipboard()}
+                className="flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-white/70 transition hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
+                <Copy size={15} aria-hidden="true" /> Copiar
+              </button>
+              <a
+                href={buildBibleChapterUrl(result)}
+                className="flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 text-center text-xs font-semibold text-amber-200 transition hover:bg-amber-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
+                <ExternalLink size={15} aria-hidden="true" /> Ver capítulo
+              </a>
+            </div>
           </div>
-        </div>
+        </article>
       )}
-      
-      {!result && !loading && (
-        <div className="py-8 text-center text-xs font-medium text-white/30">
-          Escribe una referencia bíblica <br /> para buscarla al instante.
-        </div>
+
+      {!result && !loading && !errorMessage && (
+        <p className="py-5 text-center text-xs font-medium leading-relaxed text-white/45">
+          Escribe una referencia bíblica para buscarla al instante.
+        </p>
       )}
+
+      {history.length > 0 && (
+        <section className="mt-4 border-t border-white/10 pt-3" aria-labelledby="bible-history-title">
+          <h3 id="bible-history-title" className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-white/55">
+            <Clock3 size={14} aria-hidden="true" /> Búsquedas recientes
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {history.slice(0, 4).map((item) => (
+              <button
+                key={`${item.query}-${item.searchedAt}`}
+                type="button"
+                onClick={() => void runSearch(item.query)}
+                title={item.reference}
+                className="max-w-full truncate rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
+                {item.query}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {storageWarning && <p role="status" className="mt-3 text-xs leading-relaxed text-amber-200/80">{storageWarning}</p>}
+      <div className="sr-only" role="status" aria-live="polite">{loading ? 'Buscando pasaje bíblico' : result ? `${result.reference} encontrado` : ''}</div>
     </div>
   );
 }

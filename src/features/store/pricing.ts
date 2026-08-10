@@ -46,7 +46,7 @@ export const getProductImages = (product: Product, variant?: ProductVariant | nu
   const mediaUrls = product.metadata?.media
     ?.map((item) => item.url)
     .filter((url): url is string => Boolean(url)) || [];
-  const candidates = [
+  const rawCandidates = [
     variant?.cloudinary_image_url,
     product.cover_image_url,
     product.thumbnail_url,
@@ -54,5 +54,15 @@ export const getProductImages = (product: Product, variant?: ProductVariant | nu
     ...mediaUrls,
   ].filter((url): url is string => Boolean(url));
 
-  return [...new Set(candidates)];
+  const mappedCandidates = rawCandidates.map((img) => {
+    if (img.includes('unsplash') || !img) {
+      const name = (product.name || '').toLowerCase();
+      if (name.includes('camiseta')) return '/products/camiseta-jerusalen.jpg';
+      if (name.includes('biblia')) return '/products/biblia-estudio.jpg';
+      if (name.includes('taza')) return '/products/taza-jerusalen.jpg';
+    }
+    return img;
+  });
+
+  return [...new Set(mappedCandidates)];
 };

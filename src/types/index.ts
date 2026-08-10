@@ -485,6 +485,7 @@ export type SongBlockType =
 export interface BaseSongBlock {
   id: string;
   type: SongBlockType;
+  audience?: 'public' | 'team';
   section_type?: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'solo' | 'otro';
   label?: string;
   lyrics?: string;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import DOMPurify from 'dompurify';
 import {
   ArrowDownToLine,
@@ -168,11 +168,13 @@ export const SongViewer = ({
   const [autoScrollProgress, setAutoScrollProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTools, setShowTools] = useState(true);
+  const [showMobileTools, setShowMobileTools] = useState(false);
   const [resourceAnswers, setResourceAnswers] = useState<Record<string, string[]>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const lastFrameRef = useRef<number | null>(null);
+  const lastProgressUpdateRef = useRef(0);
 
   const sourceText = useMemo(
     () => getSongChordText(selectedSong.structure_blocks, legacyText(selectedSong)),
@@ -200,12 +202,13 @@ export const SongViewer = ({
   }), [accidentalPreference, originalKey, selectedSong, sourceText, transposeAmount]);
   const scores = useMemo(() => manualScores(selectedSong.structure_blocks), [selectedSong.structure_blocks]);
   const structuredLyrics = useMemo(() => lyricsBlocks(selectedSong), [selectedSong]);
-  const musicTools = useToolboxStore();
+  const loadSongTempo = useToolboxStore((state) => state.loadSongTempo);
+  const openTool = useToolboxStore((state) => state.open);
 
-  const close = () => {
+  const close = useCallback(() => {
     if (onClose) onClose();
     else setSelectedSong(null);
-  };
+  }, [onClose, setSelectedSong]);
 
   useEffect(() => {
     try {
@@ -224,6 +227,7 @@ export const SongViewer = ({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       lastFrameRef.current = null;
+      lastProgressUpdateRef.current = 0;
       return;
     }
     const pixelsPerSecond = 4 + autoScrollSpeed * 0.72;
@@ -231,7 +235,10 @@ export const SongViewer = ({
       if (lastFrameRef.current !== null && scrollRef.current) {
         scrollRef.current.scrollTop += ((time - lastFrameRef.current) / 1000) * pixelsPerSecond;
         const maxScroll = scrollRef.current.scrollHeight - scrollRef.current.clientHeight;
-        setAutoScrollProgress(maxScroll > 0 ? Math.min(100, (scrollRef.current.scrollTop / maxScroll) * 100) : 100);
+        if (time - lastProgressUpdateRef.current >= 120 || scrollRef.current.scrollTop >= maxScroll - 1) {
+          setAutoScrollProgress(maxScroll > 0 ? Math.min(100, (scrollRef.current.scrollTop / maxScroll) * 100) : 100);
+          lastProgressUpdateRef.current = time;
+        }
         if (maxScroll > 0 && scrollRef.current.scrollTop >= maxScroll - 1) setAutoScrollActive(false);
       }
       lastFrameRef.current = time;
@@ -251,8 +258,11 @@ export const SongViewer = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
-      if (event.key === 'Escape') close();
+      if (event.target instanceof HTMLElement && event.target.closest('button,a,input,textarea,select,[contenteditable="true"]')) return;
+      if (event.key === 'Escape') {
+        if (showMobileTools) setShowMobileTools(false);
+        else close();
+      }
       if (event.key === ' ') {
         event.preventDefault();
         setAutoScrollActive((active) => !active);
@@ -262,7 +272,7 @@ export const SongViewer = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [close, showMobileTools]);
 
   const toggleFullscreen = async () => {
     try {
@@ -377,7 +387,7 @@ export const SongViewer = ({
 
   const renderResources = () => {
     const links = (selectedSong.resource_links ?? []).filter((link) => (link.visibility ?? 'public') === 'public');
-    const blocks = (selectedSong.structure_blocks ?? []).filter((block) => block.type !== 'lyrics' && block.type !== 'sheet_music' && block.type !== 'chord_diagram');
+    const blocks = (selectedSong.structure_blocks ?? []).filter((block) => block.type !== 'lyrics' && block.type !== 'sheet_music' && block.type !== 'chord_diagram' && (block.audience ?? 'public') === 'public');
     if (!links.length && !blocks.length) return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Agrega texto, enlaces, notas por instrumento, preguntas, encuestas o tablaturas desde el editor por bloques." />;
     return (
       <div className="grid gap-4 md:grid-cols-2">
@@ -487,6 +497,7 @@ export const SongViewer = ({
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button onClick={() => setShowTools((value) => !value)} className="header-icon-button hidden lg:grid" aria-label="Mostrar u ocultar herramientas"><Settings2 size={17} /></button>
+                <button onClick={() => setShowMobileTools(true)} className="header-icon-button lg:hidden" aria-label="Abrir herramientas musicales"><Settings2 size={17} /></button>
                 <button onClick={() => void shareSong()} className="header-icon-button" aria-label="Compartir"><Share2 size={17} /></button>
                 <button onClick={() => void toggleFullscreen()} className="header-icon-button hidden sm:grid" aria-label="Pantalla completa">{isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>
                 <button onClick={close} className="header-icon-button" aria-label="Cerrar"><X size={19} /></button>
@@ -503,7 +514,7 @@ export const SongViewer = ({
                 <button onClick={() => setTransposeAmount((value) => value + 1)} className="transpose-button" aria-label="Subir semitono"><Plus size={14} /></button>
               </div>
               {capo && usesCapoShapes ? <span className="toolbar-chip">Capo {capo} · forma {transposeNote(originalKey || 'C', chordTransposeAmount, accidentalPreference, originalKey)}</span> : null}
-              {selectedSong.bpm ? <button onClick={() => { musicTools.loadSongTempo(selectedSong.bpm ?? 80, selectedSong.time_signature, selectedSong.title); toast.success(`${selectedSong.bpm} BPM enviados al metrónomo`); }} className="toolbar-chip border-amber-200/70 text-amber-700 dark:text-amber-300"><Send size={13} /> Mandar {selectedSong.bpm} BPM</button> : <button onClick={() => musicTools.open('metronome')} className="toolbar-chip"><Music2 size={13} /> Metrónomo</button>}
+              {selectedSong.bpm ? <button onClick={() => { loadSongTempo(selectedSong.bpm ?? 80, selectedSong.time_signature, selectedSong.title); toast.success(`${selectedSong.bpm} BPM enviados al metrónomo`); }} className="toolbar-chip border-amber-200/70 text-amber-700 dark:text-amber-300"><Send size={13} /> Mandar {selectedSong.bpm} BPM</button> : <button onClick={() => openTool('metronome')} className="toolbar-chip"><Music2 size={13} /> Metrónomo</button>}
               <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5"><button onClick={() => setAutoScrollActive((active) => !active)} className={`transpose-button ${autoScrollActive ? 'bg-indigo-100 text-indigo-700' : ''}`} aria-label={autoScrollActive ? 'Pausar autoscroll' : 'Iniciar autoscroll'}>{autoScrollActive ? <Pause size={13} /> : <ArrowDownToLine size={14} />}</button><input type="range" min="5" max="100" value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(Number(event.target.value))} className="w-20 accent-indigo-500" aria-label="Velocidad del autoscroll" /><span className="w-7 text-[9px] font-black text-slate-400">{Math.round(autoScrollProgress)}%</span><button onClick={() => { if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }); setAutoScrollProgress(0); }} className="transpose-button" aria-label="Volver arriba"><ArrowUpToLine size={13} /></button></div>
               <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
               <button onClick={() => void copyText(false)} className="toolbar-chip"><Copy size={13} /> Copiar</button>
@@ -552,6 +563,31 @@ export const SongViewer = ({
             </div>
           </main>
         </div>
+
+        {showMobileTools && (
+          <div className="absolute inset-0 z-40 flex items-end bg-slate-950/45 p-3 backdrop-blur-sm lg:hidden print:hidden" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShowMobileTools(false)}>
+            <section className="max-h-[82dvh] w-full overflow-y-auto rounded-[1.75rem] border border-white/70 bg-white/95 p-4 shadow-2xl dark:border-white/10 dark:bg-slate-950/95" role="dialog" aria-modal="true" aria-labelledby="mobile-song-tools-title">
+              <div className="flex items-center justify-between gap-3">
+                <div><p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-600">Espacio musical</p><h3 id="mobile-song-tools-title" className="mt-0.5 font-serif text-xl font-black text-slate-900 dark:text-white">Herramientas de lectura</h3></div>
+                <button type="button" onClick={() => setShowMobileTools(false)} className="header-icon-button" aria-label="Cerrar herramientas"><X size={18} /></button>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <div><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Vista</p><div className="grid grid-cols-3 gap-2">{MODES.map((item) => <ModeButton key={item.id} active={mode === item.id} label={item.label} icon={item.icon} onClick={() => setMode(item.id)} />)}</div></div>
+                <div><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Instrumento</p><div className="grid grid-cols-3 gap-2">{INSTRUMENTS.map((item) => <ModeButton key={item.id} active={instrument === item.id} label={item.label} icon={item.icon} onClick={() => setInstrument(item.id)} />)}</div></div>
+
+                {usesCapoShapes && <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2"><button onClick={() => setCapo((value) => Math.max(0, value - 1))} className="tool-icon-button" aria-label="Bajar capo"><Minus size={14} /></button><div className="flex-1 text-center"><span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">Capo</span><strong className="text-lg text-amber-700 dark:text-amber-300">{capo ? `Traste ${capo}` : 'Sin capo'}</strong></div><button onClick={() => setCapo((value) => Math.min(12, value + 1))} className="tool-icon-button" aria-label="Subir capo"><Plus size={14} /></button></div></div>}
+
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 dark:border-white/10 dark:bg-white/5"><button onClick={() => setFontSize((value) => Math.max(70, value - 10))} className="tool-icon-button" aria-label="Reducir texto"><Minus size={15} /></button><span className="flex-1 text-center text-xs font-black text-slate-700 dark:text-slate-200">Texto {fontSize}%</span><button onClick={() => setFontSize((value) => Math.min(180, value + 10))} className="tool-icon-button" aria-label="Aumentar texto"><Plus size={15} /></button></div>
+                  <select value={fontFamily} onChange={(event) => setFontFamily(event.target.value as 'mono' | 'serif' | 'sans')} className="song-select w-28" aria-label="Tipografía"><option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Mono</option></select>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">{(['auto', 'sharp', 'flat'] as AccidentalPreference[]).map((value) => <button key={value} onClick={() => setAccidentalPreference(value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black uppercase ${accidentalPreference === value ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>{value === 'auto' ? 'Auto' : value === 'sharp' ? '♯' : '♭'}</button>)}<button onClick={() => setNashvilleMode((value) => !value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>Nashville</button></div>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
 
       <style>{`

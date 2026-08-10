@@ -142,6 +142,7 @@ const GamesManager = lazyWithRetry(() => import('../pages/admin/GamesManager').t
 const BiblionarioEditor = lazyWithRetry(() => import('../pages/admin/games/BiblionarioEditor').then(m => ({ default: m.BiblionarioEditor })));
 const HangmanEditor = lazyWithRetry(() => import('../pages/admin/games/HangmanEditor').then(m => ({ default: m.HangmanEditor })));
 const MemoryEditor = lazyWithRetry(() => import('../pages/admin/games/MemoryEditor').then(m => ({ default: m.MemoryEditor })));
+const GuessCharacterEditor = lazyWithRetry(() => import('../pages/admin/games/GuessCharacterEditor').then(m => ({ default: m.GuessCharacterEditor })));
 const AudioLibrary = lazyWithRetry(() => import('../pages/admin/games/AudioLibrary').then(m => ({ default: m.AudioLibrary })));
 const DesignCatalog = lazyWithRetry(() => import('../pages/admin/DesignCatalog'));
 const CertificatesManager = lazyWithRetry(() => import('../pages/admin/CertificatesManager'));
@@ -273,6 +274,7 @@ export default function AppRouter() {
           <Route path="/admin/juegos/quien-quiere-ser-biblionario" element={<BiblionarioEditor />} />
           <Route path="/admin/juegos/ahorcado-biblico" element={<HangmanEditor />} />
           <Route path="/admin/juegos/memorama-biblico" element={<MemoryEditor />} />
+          <Route path="/admin/juegos/descubre-el-personaje" element={<GuessCharacterEditor />} />
         </Route></Route>
         <Route element={<ProtectedRoute module="audio_library" />}><Route element={<AdminLayout />}><Route path="/admin/juegos/audio-library" element={<AudioLibrary />} /></Route></Route>
         <Route element={<ProtectedRoute module="study_programs" />}>

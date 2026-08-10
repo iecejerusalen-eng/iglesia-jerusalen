@@ -268,7 +268,7 @@ export const GamesManager = () => {
                   className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold text-xs"
                 >
                   <Gamepad2 className="h-3.5 w-3.5" />
-                  Configurar Preguntas
+                  Configurar contenido
                 </button>
               </div>
             </div>

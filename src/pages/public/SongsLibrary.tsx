@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSongs } from '../../features/songs/hooks/useSongs';
+import { AlertCircle, Loader2, RefreshCw, X } from 'lucide-react';
+import { useSongDetails, useSongs } from '../../features/songs/hooks/useSongs';
 import { SongsHero } from '../../features/songs/components/SongsHero';
 import { SongsFilters, type ChordsFilter, type SongSort, type SongViewMode } from '../../features/songs/components/SongsFilters';
 import { SongsList } from '../../features/songs/components/SongsList';
@@ -33,11 +34,12 @@ const SongsLibrary = () => {
   const [showChords, setShowChords] = useState(true);
   const [fontFamily, setFontFamily] = useState<'mono' | 'serif' | 'sans'>('sans');
   const [activeTab, setActiveTab] = useState<'lyrics' | 'resources'>('lyrics');
+  const deferredSearch = useDeferredValue(search);
 
   const sortedSongs = useMemo(() => {
-    const query = normalizeText(search.trim());
+    const query = normalizeText(deferredSearch.trim());
     const filtered = songs.filter((song) => {
-      const searchableText = normalizeText(`${song.title} ${song.artist || ''} ${song.lyrics || ''}`);
+      const searchableText = normalizeText(`${song.title} ${song.artist || ''}`);
       return (!query || searchableText.includes(query))
         && (!filterType || song.type_id === filterType)
         && (!filterStyle || song.style_id === filterStyle)
@@ -53,14 +55,20 @@ const SongsLibrary = () => {
       if (sortBy === 'newest') return new Date(second.created_at).getTime() - new Date(first.created_at).getTime();
       return new Date(first.created_at).getTime() - new Date(second.created_at).getTime();
     });
-  }, [filterChords, filterDrumStyle, filterStyle, filterType, search, songs, sortBy]);
+  }, [deferredSearch, filterChords, filterDrumStyle, filterStyle, filterType, songs, sortBy]);
 
   const activeFilterCount = [filterType, filterStyle, filterDrumStyle, filterChords !== 'all'].filter(Boolean).length;
   const visibleSongs = sortedSongs.slice(0, visibleCount);
   const routeSong = useMemo(() => songSlug
     ? songs.find((song) => (song.slug || slugifySongTitle(song.title)) === songSlug) ?? null
     : null, [songSlug, songs]);
-  const selectedSong = routeSong ?? selectedSongState;
+  const selectedSongSummary = routeSong ?? selectedSongState;
+  const {
+    data: selectedSong,
+    isLoading: isLoadingSongDetails,
+    isError: isSongDetailsError,
+    refetch: retrySongDetails,
+  } = useSongDetails(selectedSongSummary?.id ?? null);
   const clearFilters = () => {
     setSearch('');
     setFilterType('');
@@ -68,6 +76,7 @@ const SongsLibrary = () => {
     setFilterDrumStyle('');
     setFilterChords('all');
     setSortBy('title-asc');
+    setVisibleCount(INITIAL_VISIBLE_SONGS);
   };
   const handleSelectSong = (song: Song) => {
     setSelectedSongState(song);
@@ -108,8 +117,29 @@ const SongsLibrary = () => {
         </div>
       </main>
 
+      {selectedSongSummary && isLoadingSongDetails && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={`Cargando ${selectedSongSummary.title}`}>
+          <div className="relative w-full max-w-sm rounded-3xl border border-white/70 bg-white/90 p-7 text-center shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/90">
+            <button type="button" onClick={closeViewer} className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10" aria-label="Cerrar"><X size={18} /></button>
+            <Loader2 className="mx-auto animate-spin text-church-gold-dark" size={30} />
+            <h2 className="mt-4 font-serif text-xl font-bold text-slate-900 dark:text-white">Preparando el espacio musical</h2>
+            <p className="mt-2 truncate text-sm text-slate-500 dark:text-slate-400">{selectedSongSummary.title}</p>
+          </div>
+        </div>
+      )}
+      {selectedSongSummary && isSongDetailsError && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="song-detail-error-title">
+          <div className="relative w-full max-w-md rounded-3xl border border-red-200/80 bg-white/95 p-7 text-center shadow-2xl dark:border-red-400/20 dark:bg-slate-950/95">
+            <button type="button" onClick={closeViewer} className="absolute right-4 top-4 rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10" aria-label="Cerrar"><X size={18} /></button>
+            <AlertCircle className="mx-auto text-red-500" size={32} />
+            <h2 id="song-detail-error-title" className="mt-4 font-serif text-xl font-bold text-slate-900 dark:text-white">No pudimos abrir esta alabanza</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">El catálogo sigue disponible. Comprueba tu conexión e intenta cargar el contenido otra vez.</p>
+            <button type="button" onClick={() => void retrySongDetails()} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white"><RefreshCw size={15} /> Reintentar</button>
+          </div>
+        </div>
+      )}
       {selectedSong && (
-        <SongViewer selectedSong={selectedSong} setSelectedSong={setSelectedSongState} onClose={closeViewer} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SongViewer key={selectedSong.id} selectedSong={selectedSong} setSelectedSong={setSelectedSongState} onClose={closeViewer} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
     </div>
   );

@@ -14,6 +14,16 @@ type Character = {
   clues: string[];
 };
 
+type CharacterRow = {
+  id: string;
+  name: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  clues: unknown;
+};
+
 const charactersDb: Character[] = [
   {
     name: 'Moisés',
@@ -114,8 +124,113 @@ const charactersDb: Character[] = [
       'Interpretaba sueños y visiones.',
       'Fui echado al foso de los leones y salí ileso.'
     ]
+  },
+  {
+    name: 'Rut',
+    options: ['Ana', 'Rut', 'Noemí', 'Raquel'],
+    clues: [
+      'Quedé viuda en tierra de Moab.',
+      'Decidí acompañar a mi suegra a Belén.',
+      'Trabajé recogiendo espigas en un campo.',
+      'Me casé con Booz y fui bisabuela del rey David.'
+    ]
+  },
+  {
+    name: 'Abraham',
+    options: ['Isaac', 'Jacob', 'Abraham', 'Lot'],
+    clues: [
+      'Dios me llamó a salir de mi tierra y mi parentela.',
+      'Recibí la promesa de una descendencia numerosa.',
+      'Mi esposa se llamaba Sara.',
+      'Soy conocido como padre de la fe.'
+    ]
+  },
+  {
+    name: 'Josué',
+    options: ['Caleb', 'Josué', 'Gedeón', 'Samuel'],
+    clues: [
+      'Fui ayudante de Moisés.',
+      'Estuve entre los doce espías enviados a Canaán.',
+      'Guié al pueblo de Israel después de Moisés.',
+      'Vi caer los muros de Jericó.'
+    ]
+  },
+  {
+    name: 'Débora',
+    options: ['Jael', 'Ester', 'Débora', 'Miriam'],
+    clues: [
+      'Viví durante el período de los jueces.',
+      'Era profetisa en Israel.',
+      'Juzgaba al pueblo bajo una palmera.',
+      'Acompañé a Barac en la victoria contra Sísara.'
+    ]
+  },
+  {
+    name: 'Elías',
+    options: ['Eliseo', 'Isaías', 'Elías', 'Jeremías'],
+    clues: [
+      'Dios me alimentó por medio de cuervos.',
+      'Desafié a los profetas de Baal en el monte Carmelo.',
+      'Oré y descendió fuego del cielo.',
+      'Fui llevado al cielo en un torbellino.'
+    ]
+  },
+  {
+    name: 'Samuel',
+    options: ['Natán', 'Samuel', 'Saúl', 'Elí'],
+    clues: [
+      'Mi madre Ana oró por un hijo.',
+      'Serví en el tabernáculo desde niño.',
+      'Dios me llamó durante la noche.',
+      'Ungí como reyes a Saúl y a David.'
+    ]
+  },
+  {
+    name: 'Juan el Bautista',
+    options: ['Juan el Bautista', 'Juan el apóstol', 'Santiago', 'Andrés'],
+    clues: [
+      'Mi padre fue el sacerdote Zacarías.',
+      'Prediqué en el desierto de Judea.',
+      'Preparé el camino del Señor.',
+      'Bauticé a Jesús en el río Jordán.'
+    ]
+  },
+  {
+    name: 'Marta',
+    options: ['María Magdalena', 'Marta', 'Lidia', 'Dorcas'],
+    clues: [
+      'Vivía en Betania.',
+      'Mis hermanos eran María y Lázaro.',
+      'Recibí a Jesús en mi casa.',
+      'Confesé que Jesús es el Cristo antes de la resurrección de mi hermano.'
+    ]
+  },
+  {
+    name: 'Zaqueo',
+    options: ['Nicodemo', 'Mateo', 'Bartimeo', 'Zaqueo'],
+    clues: [
+      'Vivía en Jericó.',
+      'Era jefe de los publicanos.',
+      'Era de baja estatura.',
+      'Subí a un sicómoro para ver a Jesús.'
+    ]
+  },
+  {
+    name: 'Timoteo',
+    options: ['Tito', 'Silas', 'Timoteo', 'Marcos'],
+    clues: [
+      'Mi madre se llamaba Eunice y mi abuela Loida.',
+      'Conocí las Escrituras desde la niñez.',
+      'Acompañé a Pablo en sus viajes.',
+      'Recibí dos cartas pastorales que llevan mi nombre.'
+    ]
   }
 ];
+
+const parseClues = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4);
+};
 
 // Shuffle helper
 const shuffleArray = <T,>(array: T[]) => {
@@ -128,7 +243,13 @@ const shuffleArray = <T,>(array: T[]) => {
 };
 
 export const GuessCharacter = () => {
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [characters, setCharacters] = useState<Character[]>(() =>
+    shuffleArray(charactersDb).slice(0, 10).map(character => ({
+      ...character,
+      options: shuffleArray(character.options)
+    }))
+  );
+  const [availableCharacters, setAvailableCharacters] = useState<Character[]>(charactersDb);
   const [currentIndex, setCurrentIndex] = useState(0);
   
   // Scoring
@@ -140,9 +261,9 @@ export const GuessCharacter = () => {
   const [gameOver, setGameOver] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const startGame = useCallback(() => {
+  const resetGame = useCallback((pool: Character[]) => {
     // Select 10 random characters
-    setCharacters(shuffleArray(charactersDb).slice(0, 10).map(c => ({
+    setCharacters(shuffleArray(pool).slice(0, 10).map(c => ({
       ...c,
       options: shuffleArray(c.options)
     })));
@@ -155,9 +276,45 @@ export const GuessCharacter = () => {
     setShowSuccess(false);
   }, []);
 
+  const startGame = useCallback(() => {
+    resetGame(availableCharacters);
+  }, [availableCharacters, resetGame]);
+
   useEffect(() => {
-    startGame();
-  }, [startGame]);
+    let isActive = true;
+
+    const loadCharacters = async () => {
+      const { data, error } = await supabase
+        .from('game_guess_characters')
+        .select('id, name, option_a, option_b, option_c, option_d, clues')
+        .eq('is_active', true)
+        .order('name');
+
+      if (!isActive) return;
+
+      if (error) {
+        console.error('No se pudieron cargar los personajes administrables:', error);
+        resetGame(charactersDb);
+        return;
+      }
+
+      const remoteCharacters = ((data ?? []) as CharacterRow[])
+        .map((row): Character => ({
+          id: row.id,
+          name: row.name,
+          options: [row.option_a, row.option_b, row.option_c, row.option_d],
+          clues: parseClues(row.clues)
+        }))
+        .filter(character => character.clues.length === 4 && character.options.includes(character.name));
+
+      const pool = remoteCharacters.length >= 10 ? remoteCharacters : charactersDb;
+      setAvailableCharacters(pool);
+      resetGame(pool);
+    };
+
+    void loadCharacters();
+    return () => { isActive = false; };
+  }, [resetGame]);
 
   const currentCharacter = characters[currentIndex];
 

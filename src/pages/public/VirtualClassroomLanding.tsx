@@ -6,12 +6,12 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  CalendarDays,
   CheckCircle2,
   Clock3,
   GraduationCap,
   Loader2,
   Play,
+  School,
   ShieldCheck,
   Sparkles,
   User,
@@ -20,7 +20,7 @@ import {
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ShinyButton } from '../../components/ui/magicui/shiny-button';
-import type { LMSCourse } from '../../types';
+import { PublicSchoolCatalog } from '../../features/lms/components/PublicSchoolCatalog';
 
 interface LandingHeroContent {
   title: string;
@@ -36,11 +36,6 @@ interface LandingFeature {
 interface LandingFeaturesContent {
   items: LandingFeature[];
 }
-
-type PublishedCourse = Pick<
-  LMSCourse,
-  'id' | 'title' | 'description' | 'cover_image_url' | 'duration' | 'schedule'
->;
 
 const DEFAULT_HERO: LandingHeroContent = {
   title: 'Aprende. Crece. Sirve.',
@@ -77,20 +72,11 @@ function parseFeaturesContent(value: unknown): LandingFeaturesContent | null {
   return items.length > 0 ? { items } : null;
 }
 
-function isPublishedCourse(value: unknown): value is PublishedCourse {
-  return isRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.title === 'string'
-    && (value.description === null || typeof value.description === 'string')
-    && (value.cover_image_url === null || typeof value.cover_image_url === 'string');
-}
-
 const VirtualClassroomLanding = () => {
   const { user, userRole, firstName, lastName, logout, photoUrl } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [courses, setCourses] = useState<PublishedCourse[]>([]);
   const [heroContent, setHeroContent] = useState<LandingHeroContent>(DEFAULT_HERO);
   const [featuresContent, setFeaturesContent] = useState<LandingFeaturesContent>(DEFAULT_FEATURES);
 
@@ -99,18 +85,9 @@ const VirtualClassroomLanding = () => {
 
     const fetchContent = async () => {
       try {
-        const [contentResult, coursesResult] = await Promise.all([
-          supabase.from('lms_landing_content').select('section_key, content'),
-          supabase
-            .from('lms_courses')
-            .select('id, title, description, cover_image_url, duration, schedule')
-            .eq('is_published', true)
-            .order('created_at', { ascending: false })
-            .limit(6),
-        ]);
+        const contentResult = await supabase.from('lms_landing_content').select('section_key, content');
 
         if (contentResult.error) throw contentResult.error;
-        if (coursesResult.error) throw coursesResult.error;
         if (!isMounted) return;
 
         const heroSection = contentResult.data?.find((section) => section.section_key === 'hero');
@@ -120,12 +97,6 @@ const VirtualClassroomLanding = () => {
 
         if (parsedHero) setHeroContent(parsedHero);
         if (parsedFeatures) setFeaturesContent(parsedFeatures);
-        const uniqueCourses = new Map<string, PublishedCourse>();
-        (coursesResult.data ?? []).filter(isPublishedCourse).forEach((course) => {
-          const key = course.title.trim().toLocaleLowerCase('es');
-          if (!uniqueCourses.has(key)) uniqueCourses.set(key, course);
-        });
-        setCourses([...uniqueCourses.values()]);
       } catch (error) {
         console.error('Error al cargar el Aula Virtual:', error);
         if (isMounted) setLoadError('No pudimos actualizar el catálogo en este momento. Puedes ingresar a tu aula y continuar tus cursos.');
@@ -180,9 +151,9 @@ const VirtualClassroomLanding = () => {
                 {user ? 'Continuar aprendiendo' : 'Entrar al Aula Virtual'}
                 <ArrowRight size={17} />
               </ShinyButton>
-              <a href="#lms_courses" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-6 text-sm font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
-                Explorar cursos
-                <BookOpen size={17} />
+              <a href="#lms_schools" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-6 text-sm font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
+                Explorar escuelas
+                <School size={17} />
               </a>
             </div>
 
@@ -230,6 +201,8 @@ const VirtualClassroomLanding = () => {
           </div>
         )}
 
+        <PublicSchoolCatalog />
+
         {user && (
           <section id="lms_portals" className="flex flex-col gap-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-6 scroll-mt-28">
             <div className="flex min-w-0 items-center gap-4">
@@ -265,40 +238,6 @@ const VirtualClassroomLanding = () => {
             ))}
           </section>
         )}
-
-        <section id="lms_courses" className="scroll-mt-28">
-          <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Catálogo académico</p>
-              <h2 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">Cursos destacados</h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Elige una ruta y comienza tu formación.</p>
-            </div>
-            <button type="button" onClick={() => navigate(studentDestination)} className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-300">Ir a mi aula <ArrowRight size={16} /></button>
-          </div>
-
-          {courses.length > 0 ? (
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course, index) => (
-                <motion.article key={course.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05 }} className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
-                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    {course.cover_image_url ? <img src={course.cover_image_url} alt={course.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center"><BookOpen size={42} className="text-slate-300 dark:text-slate-600" /></div>}
-                    <span className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur dark:bg-slate-950/85 dark:text-indigo-300">Curso virtual</span>
-                  </div>
-                  <div className="p-5">
-                    <h3 className="line-clamp-2 font-serif text-xl font-bold">{course.title}</h3>
-                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{course.description || 'Formación bíblica organizada para avanzar paso a paso.'}</p>
-                    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-white/5">
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-500"><CalendarDays size={14} />{course.duration || course.schedule || 'Acceso flexible'}</span>
-                      <button type="button" onClick={() => navigate(studentDestination)} className="flex size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-500/10 dark:text-indigo-300" aria-label={`Acceder a ${course.title}`}><ArrowRight size={17} /></button>
-                    </div>
-                  </div>
-                </motion.article>
-              ))}
-            </div>
-          ) : !loadError ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center dark:border-white/15"><BookOpen className="mx-auto text-slate-300" size={36} /><p className="mt-3 text-sm font-semibold text-slate-500">Próximamente publicaremos nuevos cursos.</p></div>
-          ) : null}
-        </section>
 
         <section id="lms_features" className="rounded-[2rem] bg-slate-900 p-6 text-white sm:p-8 lg:p-10 scroll-mt-28">
           <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
