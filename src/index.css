@@ -292,9 +292,10 @@
 
 /* ── Activity Components: 3D Dice ── */
 .dice-scene {
-  perspective: 600px;
+  perspective: 700px;
   width: 120px;
   height: 120px;
+  position: relative;
 }
 
 .dice-cube {
@@ -302,55 +303,50 @@
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.15, 1);
-}
-
-.dice-cube.rolling {
-  animation: dice-roll 1.8s cubic-bezier(0.2, 0.8, 0.15, 1) forwards;
+  will-change: transform;
 }
 
 .dice-face {
   position: absolute;
   inset: 0;
-  display: grid;
-  border-radius: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(145deg, #fbbf24, #f59e0b);
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.08);
-}
-
-:is(.dark) .dice-face {
-  background: linear-gradient(145deg, #b45309, #92400e);
-  border-color: rgba(255, 255, 255, 0.15);
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .dice-face--1 { transform: rotateY(0deg)   translateZ(60px); }
 .dice-face--2 { transform: rotateY(180deg) translateZ(60px); }
-.dice-face--3 { transform: rotateY(90deg)  translateZ(60px); }
-.dice-face--4 { transform: rotateY(-90deg) translateZ(60px); }
-.dice-face--5 { transform: rotateX(90deg)  translateZ(60px); }
-.dice-face--6 { transform: rotateX(-90deg) translateZ(60px); }
+.dice-face--3 { transform: rotateY(-90deg) translateZ(60px); }
+.dice-face--4 { transform: rotateY(90deg)  translateZ(60px); }
+.dice-face--5 { transform: rotateX(-90deg) translateZ(60px); }
+.dice-face--6 { transform: rotateX(90deg)  translateZ(60px); }
 
-.dice-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 -1px 3px rgba(0, 0, 0, 0.1);
-  justify-self: center;
-  align-self: center;
+@keyframes dice-toss {
+  0%   { transform: translateY(0) scale(1); }
+  25%  { transform: translateY(-70px) scale(1.08); }
+  50%  { transform: translateY(-25px) scale(1.03); }
+  75%  { transform: translateY(-6px) scale(1.01); }
+  100% { transform: translateY(0) scale(1); }
 }
 
-:is(.dark) .dice-dot {
-  background: #fef3c7;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 -1px 3px rgba(0, 0, 0, 0.15);
+@keyframes shadow-pulse {
+  0%   { transform: scale(1); opacity: 0.6; }
+  25%  { transform: scale(0.4); opacity: 0.2; }
+  50%  { transform: scale(0.75); opacity: 0.45; }
+  75%  { transform: scale(0.92); opacity: 0.55; }
+  100% { transform: scale(1); opacity: 0.6; }
 }
 
-@keyframes dice-roll {
-  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-  25%  { transform: rotateX(520deg) rotateY(200deg) rotateZ(100deg); }
-  50%  { transform: rotateX(900deg) rotateY(450deg) rotateZ(200deg); }
-  75%  { transform: rotateX(1200deg) rotateY(700deg) rotateZ(280deg); }
+.dice-tossing {
+  animation: dice-toss 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.dice-shadow-tossing {
+  animation: shadow-pulse 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 /* ── Activity Components: Glassmorphism Card ── */
