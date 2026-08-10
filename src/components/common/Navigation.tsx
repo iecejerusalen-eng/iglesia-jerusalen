@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,7 +13,9 @@ import type { MenuItem } from '../../services/menuService';
 const Navigation = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const lastScrollY = useRef(0);
 
   // Dynamic Menu State
   const { items, fetchMenu } = useMenuStore();
@@ -24,9 +26,21 @@ const Navigation = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const currentScrollY = window.scrollY;
+      
+      setIsScrolled(currentScrollY > 50);
+
+      // Ocultar al hacer scroll hacia abajo, mostrar al subir
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
     };
-    window.addEventListener('scroll', handleScroll);
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -59,8 +73,8 @@ const Navigation = () => {
   return (
     <nav className={`transition-all duration-500 ease-in-out ${
       isTransparent 
-        ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50' 
-        : 'glass-nav sticky top-0 z-50'
+        ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50 transform-none' 
+        : `glass-nav sticky top-0 z-50 transform ${isVisible ? 'translate-y-0' : '-translate-y-full'}`
     }`}>
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         <Link 

@@ -16,6 +16,7 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
 import PublicEventCard from '../../features/events/components/PublicEventCard';
 import EventDetailsDialog from '../../features/events/components/EventDetailsDialog';
+import CalendarEventBadge from '../../features/events/components/CalendarEventBadge';
 import {
   compareEventsChronologically,
   eventOccursOnDate,
@@ -287,9 +288,11 @@ const Events = () => {
                           </div>
                           <div className="mt-2 space-y-1.5">
                             {dayEvents.slice(0, 3).map((event) => (
-                              <button key={event.id} type="button" onClick={() => setSelectedEvent(event)} className="block w-full truncate rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1.5 text-left text-[10px] font-bold text-indigo-950 transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-400/10 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20">
-                                {event.start_time?.slice(0, 5) && <span className="mr-1 opacity-60">{event.start_time.slice(0, 5)}</span>}{event.emoji} {event.title}
-                              </button>
+                              <CalendarEventBadge 
+                                key={event.id} 
+                                event={event} 
+                                onClick={() => setSelectedEvent(event)} 
+                              />
                             ))}
                             {dayEvents.length > 3 && <p className="px-2 text-[9px] font-black text-slate-400">+{dayEvents.length - 3} más</p>}
                           </div>
