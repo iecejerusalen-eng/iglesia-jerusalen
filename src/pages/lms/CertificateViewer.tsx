@@ -31,28 +31,128 @@ export default function CertificateViewer() {
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const isUuid = (str: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
     const fetchCertificate = async (certId: string) => {
       try {
-        // Intentionally allowing unauthenticated access based on RLS
-        const { data, error } = await supabase
-          .from('lms_certificates')
-          .select(`
-            *,
-            courses:course_id (
-              title, 
-              description,
-              schools:school_id (name, color, cover_image_url)
-            ),
-            profiles:user_id (full_name, doc_id)
-          `)
-          .eq('id', certId)
-          .single();
-          
-        if (error) throw error;
-        setCertificate(data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let certResult: Record<string, any> | null = null;
+
+        // 1. Query lms_certificates first
+        try {
+          let query = supabase
+            .from('lms_certificates')
+            .select(`
+              id,
+              grade,
+              issued_at,
+              code_url,
+              courses:course_id (
+                title, 
+                description,
+                schools:school_id (name, color, cover_image_url)
+              ),
+              profiles:user_id (full_name, first_name, last_name, doc_id)
+            `);
+
+          if (isUuid(certId)) {
+            query = query.or(`id.eq.${certId},code_url.eq.${certId}`);
+          } else {
+            query = query.eq('code_url', certId);
+          }
+
+          const { data, error } = await query.maybeSingle();
+          if (!error && data) {
+            certResult = data;
+          }
+        } catch (e) {
+          console.warn('Query lms_certificates fallback:', e);
+        }
+
+        // 2. Fallback to lms_certificates_issued
+        if (!certResult) {
+          try {
+            let queryIssued = supabase
+              .from('lms_certificates_issued')
+              .select(`
+                id,
+                issue_date,
+                validation_hash,
+                courses:course_id (
+                  title, 
+                  description,
+                  schools:school_id (name, color, cover_image_url)
+                ),
+                profiles:student_id (full_name, first_name, last_name, doc_id)
+              `);
+
+            if (isUuid(certId)) {
+              queryIssued = queryIssued.or(`id.eq.${certId},validation_hash.eq.${certId}`);
+            } else {
+              queryIssued = queryIssued.eq('validation_hash', certId);
+            }
+
+            const { data: issuedData, error: issuedError } = await queryIssued.maybeSingle();
+            if (!issuedError && issuedData) {
+              certResult = {
+                id: issuedData.id,
+                issued_at: issuedData.issue_date,
+                courses: issuedData.courses,
+                profiles: issuedData.profiles,
+                validation_hash: issuedData.validation_hash,
+              };
+            }
+          } catch (e) {
+            console.warn('Query lms_certificates_issued fallback:', e);
+          }
+        }
+
+        if (certResult) {
+          const profileObj = Array.isArray(certResult.profiles)
+            ? certResult.profiles[0]
+            : certResult.profiles;
+          const courseObj = Array.isArray(certResult.courses)
+            ? certResult.courses[0]
+            : certResult.courses;
+          const schoolObj =
+            courseObj && Array.isArray(courseObj.schools)
+              ? courseObj.schools[0]
+              : courseObj?.schools;
+
+          const fullName = profileObj?.full_name
+            ? profileObj.full_name
+            : `${profileObj?.first_name || ''} ${profileObj?.last_name || ''}`.trim() || 'Estudiante';
+
+          setCertificate({
+            id: certResult.id || certId,
+            grade: certResult.grade ? Number(certResult.grade) : undefined,
+            issued_at: certResult.issued_at || new Date().toISOString(),
+            courses: courseObj
+              ? {
+                  title: courseObj.title || 'Curso',
+                  description: courseObj.description || '',
+                  schools: schoolObj
+                    ? {
+                        name: schoolObj.name || '',
+                        color: schoolObj.color || '#D4AF37',
+                        cover_image_url: schoolObj.cover_image_url || '',
+                      }
+                    : undefined,
+                }
+              : undefined,
+            profiles: {
+              full_name: fullName,
+              doc_id: profileObj?.doc_id || '',
+            },
+          });
+        } else {
+          setCertificate(null);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching certificate:', err);
         toast.error('Certificado no encontrado o inválido');
+        setCertificate(null);
       } finally {
         setLoading(false);
       }

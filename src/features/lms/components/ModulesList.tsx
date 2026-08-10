@@ -40,17 +40,19 @@ export function ModulesList({
   };
 
   const handleMoveModule = async (index: number, direction: 'up' | 'down') => {
-    const newModules = [...modules];
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= newModules.length) return;
+    if (swapIndex < 0 || swapIndex >= modules.length) return;
 
-    const tempOrder = newModules[index].order;
-    newModules[index].order = newModules[swapIndex].order;
-    newModules[swapIndex].order = tempOrder;
+    const currentModule = { ...modules[index] };
+    const swapModule = { ...modules[swapIndex] };
+
+    const tempOrder = currentModule.order;
+    currentModule.order = swapModule.order;
+    swapModule.order = tempOrder;
 
     await updateModuleOrders.mutateAsync([
-      { id: newModules[index].id, order: newModules[index].order },
-      { id: newModules[swapIndex].id, order: newModules[swapIndex].order }
+      { id: currentModule.id, order: currentModule.order },
+      { id: swapModule.id, order: swapModule.order }
     ]);
   };
 
@@ -74,8 +76,8 @@ export function ModulesList({
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= groupLessons.length) return;
 
-    const currentLesson = groupLessons[index];
-    const swapLesson = groupLessons[swapIndex];
+    const currentLesson = { ...groupLessons[index] };
+    const swapLesson = { ...groupLessons[swapIndex] };
     
     await updateLessonOrders.mutateAsync([
       { id: currentLesson.id, order: swapLesson.order },
@@ -88,7 +90,7 @@ export function ModulesList({
       <div className="text-center py-24 text-gray-400 border-2 border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-2xl flex flex-col items-center justify-center p-6 shadow-xxs">
         <ChevronRight size={36} className="mb-2 opacity-20 rotate-90 lg:rotate-0" />
         <p className="font-semibold text-sm text-gray-700 dark:text-gray-300">Ningún Programa Seleccionado</p>
-        <p className="text-xs text-gray-450 mt-1 max-w-xs leading-normal">Elige un estudio de la columna izquierda para estructurar sus volúmenes y contenidos.</p>
+        <p className="text-xs text-gray-400 mt-1 max-w-xs leading-normal">Elige un estudio de la columna izquierda para estructurar sus volúmenes y contenidos.</p>
       </div>
     );
   }
@@ -138,24 +140,24 @@ export function ModulesList({
                   <span className="text-[9px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900/50">
                     Módulo {modIndex + 1}
                   </span>
-                  <span className="text-[10px] text-gray-405 dark:text-gray-400">({moduleLessons.length} lecciones)</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-400">({moduleLessons.length} lecciones)</span>
                 </div>
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm mt-1">{module.title}</h3>
-                {module.description && <p className="text-xxs text-gray-405 dark:text-gray-400 font-light mt-0.5 leading-normal">{module.description}</p>}
+                {module.description && <p className="text-xxs text-gray-400 dark:text-gray-400 font-light mt-0.5 leading-normal">{module.description}</p>}
               </div>
 
               {!readOnly && (
                 <div className="flex items-center gap-1">
                   <button onClick={() => handleMoveModule(modIndex, 'up')} disabled={modIndex === 0}
-                    className="p-1 rounded-lg hover:bg-slate-105 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowUp size={13} /></button>
+                    className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowUp size={13} /></button>
                   <button onClick={() => handleMoveModule(modIndex, 'down')} disabled={modIndex === modules.length - 1}
-                    className="p-1 rounded-lg hover:bg-slate-105 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowDown size={13} /></button>
+                    className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-gray-400 disabled:opacity-20 cursor-pointer transition-colors"><ArrowDown size={13} /></button>
                   <button onClick={() => onEditModule(module)}
-                    className="p-1 rounded-lg hover:bg-indigo-55 dark:hover:bg-indigo-950/30 text-gray-450 dark:text-gray-400 hover:text-indigo-650 cursor-pointer transition-colors"><Edit3 size={13} /></button>
+                    className="p-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/30 text-gray-400 dark:text-gray-400 hover:text-indigo-600 cursor-pointer transition-colors"><Edit3 size={13} /></button>
                   <button onClick={() => handleDeleteModule(module.id)}
-                    className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-455 dark:text-gray-400 hover:text-red-650 cursor-pointer transition-colors"><Trash2 size={13} /></button>
+                    className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 dark:text-gray-400 hover:text-red-600 cursor-pointer transition-colors"><Trash2 size={13} /></button>
                   <button onClick={() => onCreateLesson(module.id)}
-                    className="ml-1 flex items-center gap-0.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-105 dark:hover:bg-indigo-955/60 hover:text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer">
+                    className="ml-1 flex items-center gap-0.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 hover:text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer">
                     <Plus size={10} /> Lección
                   </button>
                 </div>
@@ -165,13 +167,13 @@ export function ModulesList({
             <div className="pl-4 md:pl-6 space-y-2">
               {moduleLessons.length === 0 ? (
                 <div className="text-center py-4 bg-white/60 dark:bg-slate-950/30 border border-dashed border-gray-200 dark:border-white/10 rounded-xl">
-                  <p className="text-xxs text-gray-450 dark:text-gray-400 italic">Sin lecciones vinculadas a este módulo.</p>
+                  <p className="text-xxs text-gray-400 dark:text-gray-400 italic">Sin lecciones vinculadas a este módulo.</p>
                 </div>
               ) : (
                 moduleLessons.map((lesson, index) => (
                   <div key={lesson.id} className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-xl p-3 flex items-center justify-between hover:border-indigo-150 transition-colors shadow-xxs">
                     <div className="flex items-center gap-2.5 min-w-0 pr-4">
-                      <span className="w-5 h-5 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-650 dark:text-indigo-400 rounded-md text-[10px] font-bold">{index + 1}</span>
+                      <span className="w-5 h-5 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-md text-[10px] font-bold">{index + 1}</span>
                       <span className="font-medium text-gray-750 dark:text-gray-200 text-xs truncate">{lesson.title}</span>
                       {lesson.teacher_content && (
                         <span className="text-[9px] bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/55 text-purple-700 dark:text-purple-400 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
@@ -186,7 +188,7 @@ export function ModulesList({
                         <button onClick={() => onEditLesson(lesson)}
                           className="p-1 rounded hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
                         <button onClick={() => handleDeleteLesson(lesson.id)}
-                          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-450 dark:text-gray-400 hover:text-red-655 cursor-pointer"><Trash2 size={12} /></button>
+                          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 dark:text-gray-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
                       </div>
                     )}
                   </div>
@@ -207,7 +209,7 @@ export function ModulesList({
             {standaloneLessons.map((lesson, index) => (
               <div key={lesson.id} className="bg-slate-50/40 dark:bg-slate-900/40 border border-gray-150 dark:border-white/10 rounded-xl p-3 flex items-center justify-between hover:border-indigo-150 transition-colors shadow-xxs">
                 <div className="flex items-center gap-2.5 min-w-0 pr-4">
-                  <span className="w-5 h-5 flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-450 rounded-md text-[10px] font-bold">{index + 1}</span>
+                  <span className="w-5 h-5 flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 rounded-md text-[10px] font-bold">{index + 1}</span>
                   <span className="font-medium text-gray-750 dark:text-gray-200 text-xs truncate">{lesson.title}</span>
                   {lesson.teacher_content && (
                     <span className="text-[9px] bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 text-purple-700 dark:text-purple-400 font-bold px-1 py-0 rounded-md shrink-0">+ Guía Maestro</span>
@@ -222,7 +224,7 @@ export function ModulesList({
                     <button onClick={() => onEditLesson(lesson)}
                       className="p-1 rounded hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 text-gray-400 hover:text-indigo-600 cursor-pointer"><Edit3 size={12} /></button>
                     <button onClick={() => handleDeleteLesson(lesson.id)}
-                      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-450 dark:text-gray-400 hover:text-red-650 cursor-pointer"><Trash2 size={12} /></button>
+                      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 dark:text-gray-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
                   </div>
                 )}
               </div>

@@ -8,6 +8,7 @@ interface UniversityCalendarProps {
   role?: 'student' | 'teacher' | 'admin';
   userId?: string;
   courseId?: string;
+  schoolId?: string;
   editable?: boolean;
 }
 
@@ -24,16 +25,31 @@ interface DisplayEvent {
   location?: string | null;
   description?: string | null;
   isRecurring?: boolean;
+  attendanceStatus?: string | null;
   originalEvent?: LMSCalendarEvent;
 }
 
 const DAYS_OF_WEEK_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-export function UniversityCalendar({ role = 'student', userId, courseId, editable = false }: UniversityCalendarProps) {
+interface ClassSessionItem {
+  id: string;
+  course_id?: string;
+  session_date?: string;
+  title?: string;
+  start_time?: string;
+  end_time?: string;
+  lms_courses?: { title?: string };
+  sync_link?: string;
+  location?: string;
+}
+
+export function UniversityCalendar({ role = 'student', userId, courseId, schoolId = 'all', editable = false }: UniversityCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
   const [schedules, setSchedules] = useState<LMSTeacherSchedule[]>([]);
   const [dbEvents, setDbEvents] = useState<LMSCalendarEvent[]>([]);
+  const [classSessions, setClassSessions] = useState<ClassSessionItem[]>([]);
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, string>>({});
   const [courses, setCourses] = useState<LMSCourse[]>([]);
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>(courseId || 'all');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
@@ -62,46 +78,80 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [coursesRes, schedulesRes, eventsRes] = await Promise.all([
-        supabase.from('lms_courses').select('*').order('title', { ascending: true }),
-        supabase.from('lms_teacher_schedules').select('*, lms_courses(title)'),
-        supabase.from('lms_calendar_events').select('*, lms_courses(title)')
-      ]);
+      let coursesQuery = supabase.from('lms_courses').select('*').order('title', { ascending: true });
+      if (courseId) coursesQuery = coursesQuery.eq('id', courseId);
+      else if (schoolId !== 'all') coursesQuery = coursesQuery.eq('school_id', schoolId);
+      const coursesRes = await coursesQuery;
+      if (coursesRes.error) throw coursesRes.error;
 
-      if (coursesRes.data) {
-        setCourses(coursesRes.data as LMSCourse[]);
-        if (coursesRes.data.length > 0 && !formCourseId) {
-          setFormCourseId(coursesRes.data[0].id);
-        }
+      const visibleCourses = (coursesRes.data ?? []) as LMSCourse[];
+      const visibleCourseIds = visibleCourses.map(course => course.id);
+      setCourses(visibleCourses);
+
+      if (visibleCourseIds.length === 0) {
+        setSchedules([]);
+        setDbEvents([]);
+        setClassSessions([]);
+        setAttendanceMap({});
+        return;
       }
-      if (schedulesRes.data) setSchedules(schedulesRes.data as LMSTeacherSchedule[]);
-      if (eventsRes.data) setDbEvents(eventsRes.data as LMSCalendarEvent[]);
+
+      if (!visibleCourseIds.includes(formCourseId)) setFormCourseId(visibleCourseIds[0]);
+
+      const [schedulesRes, eventsRes, sessionsRes] = await Promise.all([
+        supabase.from('lms_teacher_schedules').select('*, lms_courses(title)').in('course_id', visibleCourseIds),
+        supabase.from('lms_calendar_events').select('*, lms_courses(title)').in('course_id', visibleCourseIds),
+        supabase.from('lms_class_sessions').select('*, lms_courses(title)').in('course_id', visibleCourseIds).order('session_date', { ascending: true }),
+      ]);
+      if (schedulesRes.error) throw schedulesRes.error;
+      if (eventsRes.error) throw eventsRes.error;
+      if (sessionsRes.error) throw sessionsRes.error;
+      setSchedules((schedulesRes.data ?? []) as LMSTeacherSchedule[]);
+      setDbEvents((eventsRes.data ?? []) as LMSCalendarEvent[]);
+      setClassSessions((sessionsRes.data ?? []) as ClassSessionItem[]);
+
+      if (userId && (sessionsRes.data?.length ?? 0) > 0) {
+        const { data: attData, error: attendanceError } = await supabase
+          .from('lms_attendance')
+          .select('class_session_id, status')
+          .eq('student_id', userId)
+          .in('class_session_id', (sessionsRes.data ?? []).map(session => session.id));
+        if (attendanceError) throw attendanceError;
+        if (attData) {
+          const map: Record<string, string> = {};
+          attData.forEach((a) => {
+            if (a.class_session_id) map[a.class_session_id] = a.status;
+          });
+          setAttendanceMap(map);
+        }
+      } else {
+        setAttendanceMap({});
+      }
     } catch (err) {
       console.error('Error fetching calendar data:', err);
     } finally {
       setLoading(false);
     }
-  }, [formCourseId]);
+  }, [courseId, formCourseId, schoolId, userId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchData(), 0);
     return () => window.clearTimeout(timer);
-  }, [userId, courseId, fetchData]);
+  }, [fetchData]);
 
   // Generate combined display events for the current month / window
   const displayEvents = useMemo(() => {
     const list: DisplayEvent[] = [];
 
-    // 1. Map DB static events
+    // 1. Map DB static events (Parse dates safely without UTC offset shift)
     dbEvents.forEach(ev => {
       if (selectedCourseFilter !== 'all' && ev.course_id !== selectedCourseFilter) return;
       if (selectedTypeFilter !== 'all' && ev.event_type !== selectedTypeFilter) return;
 
-      const startDateObj = new Date(ev.start_date);
-      const endDateObj = new Date(ev.end_date);
-      const dateStr = startDateObj.toISOString().split('T')[0];
-      const startTime = startDateObj.toTimeString().substring(0, 5);
-      const endTime = endDateObj.toTimeString().substring(0, 5);
+      const dateStr = ev.start_date ? ev.start_date.split('T')[0] : '';
+      if (!dateStr) return;
+      const startTime = ev.start_date.includes('T') ? ev.start_date.split('T')[1].substring(0, 5) : '00:00';
+      const endTime = ev.end_date && ev.end_date.includes('T') ? ev.end_date.split('T')[1].substring(0, 5) : '23:59';
 
       list.push({
         id: `ev-${ev.id}`,
@@ -118,13 +168,39 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
       });
     });
 
-    // 2. Map recurring weekly schedules across the current viewing month (prev 10 days to next 40 days)
+    // 2. Map LMS Class Sessions with Attendance Status Badges
+    classSessions.forEach((cs) => {
+      if (selectedCourseFilter !== 'all' && cs.course_id !== selectedCourseFilter) return;
+      if (selectedTypeFilter !== 'all' && selectedTypeFilter !== 'class') return;
+
+      const dateStr = cs.session_date ? cs.session_date.split('T')[0] : '';
+      if (!dateStr) return;
+
+      list.push({
+        id: `cs-${cs.id}`,
+        title: cs.title || 'Clase Presencial / Virtual',
+        type: 'class',
+        dateStr,
+        startTime: cs.start_time ? cs.start_time.substring(0, 5) : '08:00',
+        endTime: cs.end_time ? cs.end_time.substring(0, 5) : '10:00',
+        courseTitle: cs.lms_courses?.title || 'Materia',
+        courseId: cs.course_id || '',
+        meetLink: cs.sync_link,
+        location: cs.location || 'Aula Virtual',
+        isRecurring: false,
+        attendanceStatus: attendanceMap[cs.id] || null
+      });
+    });
+
+    // 3. Map recurring weekly schedules across the current viewing month safely
     const startWindow = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
     const endWindow = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
 
     for (let d = new Date(startWindow); d <= endWindow; d.setDate(d.getDate() + 1)) {
       const dayName = DAYS_OF_WEEK_ES[d.getDay()];
-      const dateStr = d.toISOString().split('T')[0];
+      const mStr = String(d.getMonth() + 1).padStart(2, '0');
+      const dStr = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${d.getFullYear()}-${mStr}-${dStr}`;
 
       schedules.forEach(sch => {
         if (selectedCourseFilter !== 'all' && sch.course_id !== selectedCourseFilter) return;
@@ -135,8 +211,8 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
             title: sch.shift_name || 'Clase Sincrónica',
             type: 'class',
             dateStr,
-            startTime: sch.start_time,
-            endTime: sch.end_time,
+            startTime: sch.start_time ? sch.start_time.substring(0, 5) : '08:00',
+            endTime: sch.end_time ? sch.end_time.substring(0, 5) : '10:00',
             courseTitle: sch.lms_courses?.title || 'Materia Online',
             courseId: sch.course_id,
             meetLink: sch.meet_link,
@@ -148,7 +224,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
     }
 
     return list.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.startTime.localeCompare(b.startTime));
-  }, [dbEvents, schedules, currentDate, selectedCourseFilter, selectedTypeFilter]);
+  }, [dbEvents, classSessions, attendanceMap, schedules, currentDate, selectedCourseFilter, selectedTypeFilter]);
 
   // Calendar Navigation
   const handlePrev = () => {
@@ -192,6 +268,25 @@ export function UniversityCalendar({ role = 'student', userId, courseId, editabl
       case 'live_session': return 'Sesión En Vivo';
       default: return 'Evento';
     }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _renderAttendanceBadge = (status?: string | null) => {
+    if (!status) return null;
+    const labels: Record<string, { label: string; cls: string }> = {
+      present: { label: 'Presente', cls: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300' },
+      zoom: { label: 'En línea', cls: 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300' },
+      late: { label: 'Atraso', cls: 'bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 border-orange-300' },
+      absent: { label: 'Falta', cls: 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border-red-300' },
+      excused: { label: 'Justificado', cls: 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300' },
+    };
+    const item = labels[status];
+    if (!item) return null;
+    return (
+      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black border uppercase tracking-wider ml-1 ${item.cls}`}>
+        {item.label}
+      </span>
+    );
   };
 
   const handleCreateEvent = async (e: React.FormEvent) => {

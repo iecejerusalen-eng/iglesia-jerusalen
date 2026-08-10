@@ -44,59 +44,49 @@ const CourseBuilder = () => {
   const fetchCourseData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch course
-      const { data: courseData, error: courseError } = await supabase
-        .from('lms_courses')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (courseError) throw courseError;
-      setCourse(courseData);
-
-      // 2. Fetch subjects
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from('lms_subjects')
-        .select('*')
-        .eq('course_id', id)
-        .order('order_index', { ascending: true });
-        
-      if (subjectsError) throw subjectsError;
-      const sortedSubjects = subjectsData || [];
-      setSubjects(sortedSubjects);
-
-      // 3. Fetch modules if subjects exist
-      if (sortedSubjects.length > 0) {
-        const subjectIds = sortedSubjects.map(s => s.id);
-        const { data: modulesData, error: modulesError } = await supabase
-          .from('lms_modules')
+      const [courseRes, hierarchyRes] = await Promise.all([
+        supabase
+          .from('lms_courses')
           .select('*')
-          .in('subject_id', subjectIds)
-          .order('order_index', { ascending: true });
-          
-        if (modulesError) throw modulesError;
-        const sortedModules = modulesData || [];
-        setModules(sortedModules);
+          .eq('id', id)
+          .single(),
+        supabase
+          .from('lms_subjects')
+          .select('*, lms_modules(*, lms_lessons(*))')
+          .eq('course_id', id)
+          .order('order_index', { ascending: true })
+      ]);
 
-        // 4. Fetch lessons if modules exist
-        if (sortedModules.length > 0) {
-          const moduleIds = sortedModules.map(m => m.id);
-          const { data: lessonsData, error: lessonsError } = await supabase
-            .from('lms_lessons')
-            .select('*')
-            .in('module_id', moduleIds)
-            .order('order_index', { ascending: true });
-            
-          if (lessonsError) throw lessonsError;
-          setLessons(lessonsData || []);
-        } else {
-          setLessons([]);
+      if (courseRes.error) throw courseRes.error;
+      if (hierarchyRes.error) throw hierarchyRes.error;
+
+      setCourse(courseRes.data as LMSCourse);
+
+      const rawSubjects = hierarchyRes.data || [];
+      const allModules: LMSModule[] = [];
+      const allLessons: LMSLesson[] = [];
+
+      const cleanedSubjects = rawSubjects.map((sub: Record<string, unknown>) => {
+        const { lms_modules, ...subjectData } = sub;
+        if (Array.isArray(lms_modules)) {
+          const sortedMods = [...lms_modules].sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0));
+          sortedMods.forEach((mod: Record<string, unknown>) => {
+            const { lms_lessons, ...moduleData } = mod;
+            allModules.push(moduleData as unknown as LMSModule);
+            if (Array.isArray(lms_lessons)) {
+              const sortedLess = [...lms_lessons].sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0));
+              sortedLess.forEach((les: Record<string, unknown>) => {
+                allLessons.push(les as unknown as LMSLesson);
+              });
+            }
+          });
         }
-      } else {
-        setModules([]);
-        setLessons([]);
-      }
-      
+        return subjectData as unknown as LMSSubject;
+      });
+
+      setSubjects(cleanedSubjects);
+      setModules(allModules);
+      setLessons(allLessons);
     } catch (err) {
       console.error('Error fetching course data:', err);
       toast.error('Error al cargar la estructura del curso.');
@@ -107,8 +97,12 @@ const CourseBuilder = () => {
   }, [id, navigate]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { if (id) void fetchCourseData(); }, 0);
-    return () => window.clearTimeout(timer);
+    if (id) {
+      const timer = setTimeout(() => {
+        void fetchCourseData();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
   }, [id, fetchCourseData]);
 
   // --- SUBJECT LOGIC ---
@@ -298,19 +292,45 @@ const CourseBuilder = () => {
     setIsLessonModalOpen(true);
   };
 
+  const handleLessonTypeChange = (newType: LMSLesson['type']) => {
+    if (!editingLesson) return;
+    const currentType = editingLesson.type || 'document';
+    if (currentType === newType) return;
+
+    if (editingLesson.content && editingLesson.content.trim() !== '') {
+      const confirmed = window.confirm(
+        '¿Estás seguro de cambiar el tipo de lección? Se borrará el borrador actual.'
+      );
+      if (!confirmed) return;
+    }
+    setEditingLesson({ ...editingLesson, type: newType, content: '' });
+  };
+
   const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLesson?.title || !editingLesson?.module_id) return;
     
     setSavingLesson(true);
     try {
+      const finalSettings = { ...(editingLesson.settings || {}) };
+      if (editingLesson.type === 'quiz' && editingLesson.content) {
+        try {
+          const parsed = JSON.parse(editingLesson.content);
+          if (parsed) {
+            finalSettings.questions = parsed.questions || parsed;
+          }
+        } catch (e) {
+          console.warn('Could not parse quiz content into settings:', e);
+        }
+      }
+
       if (editingLesson.id) {
         const { error } = await supabase.from('lms_lessons').update({
           title: editingLesson.title,
           description: editingLesson.description,
           type: editingLesson.type,
           content: editingLesson.content,
-          settings: editingLesson.settings,
+          settings: finalSettings,
           updated_at: new Date().toISOString()
         }).eq('id', editingLesson.id);
         if (error) throw error;
@@ -322,7 +342,7 @@ const CourseBuilder = () => {
           type: editingLesson.type,
           description: editingLesson.description,
           content: editingLesson.content,
-          settings: editingLesson.settings,
+          settings: finalSettings,
           order_index: editingLesson.order_index
         }]);
         if (error) throw error;
@@ -875,7 +895,7 @@ const CourseBuilder = () => {
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tipo de Contenido</label>
                   <select
                     value={editingLesson.type || 'document'}
-                    onChange={(e) => setEditingLesson({ ...editingLesson, type: e.target.value as LMSLesson['type'], content: '' })}
+                    onChange={(e) => handleLessonTypeChange(e.target.value as LMSLesson['type'])}
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none cursor-pointer"
                   >
                     <option value="document">Material de Estudio (Texto/HTML)</option>
@@ -894,7 +914,7 @@ const CourseBuilder = () => {
                   rows={2}
                   value={editingLesson.description || ''}
                   onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-gold focus:outline-none"
                   placeholder="Indica qué debe realizar el estudiante en esta lección..."
                 />
               </div>
@@ -930,8 +950,22 @@ const CourseBuilder = () => {
                 {editingLesson.type === 'quiz' && (
                   <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-white/5">
                     <LMSQuizBuilder
-                      content={editingLesson.content || '[]'}
-                      onChange={(jsonContent) => setEditingLesson({ ...editingLesson, content: jsonContent })}
+                      content={editingLesson.content || '{"questions":[]}'}
+                      onChange={(jsonContent) => {
+                        let parsedQs: unknown = [];
+                        try {
+                          const parsed = JSON.parse(jsonContent);
+                          parsedQs = parsed.questions || parsed;
+                        } catch { /* ignore parse errors */ }
+                        setEditingLesson({
+                          ...editingLesson,
+                          content: jsonContent,
+                          settings: {
+                            ...(editingLesson.settings || {}),
+                            questions: parsedQs,
+                          },
+                        });
+                      }}
                     />
                   </div>
                 )}

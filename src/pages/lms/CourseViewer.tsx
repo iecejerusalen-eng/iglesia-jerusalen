@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { 
   ArrowLeft, CheckCircle, ChevronRight, FileText, 
   Menu, Send, 
-  User, Loader2, MessageSquare
+  User, Loader2, MessageSquare, Award
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -66,6 +66,7 @@ export default function CourseViewer() {
   const [lessons, setLessons] = useState<CourseViewLesson[]>([]);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [badgeAwarded, setBadgeAwarded] = useState(false);
+  const [certificateId, setCertificateId] = useState<string | null>(null);
 
   // Active state
   const [activeLesson, setActiveLesson] = useState<CourseViewLesson | null>(null);
@@ -81,7 +82,7 @@ export default function CourseViewer() {
   const [, setQuizSubmitted] = useState(false);
   const [, setQuizScore] = useState<number | null>(null);
 
-  // Removed unused previousQuizAttempt state
+  const [isLegacyCourse, setIsLegacyCourse] = useState(false);
 
   const fetchCourseOutline = useCallback(async () => {
     setLoading(true);
@@ -105,12 +106,12 @@ export default function CourseViewer() {
       if (!hasGlobalAcademicAccess) {
         const [enrollmentResult, teacherResult] = await Promise.all([
           supabase
-          .from("lms_enrollments")
-          .select("id")
-          .eq("course_id", id)
-          .eq("user_id", userId)
-          .eq('status', 'active')
-          .maybeSingle(),
+            .from("lms_enrollments")
+            .select("id")
+            .eq("course_id", id)
+            .eq("user_id", userId)
+            .or('status.eq.active,status.is.null')
+            .maybeSingle(),
           supabase
             .from('lms_course_teachers')
             .select('id')
@@ -128,7 +129,63 @@ export default function CourseViewer() {
         }
       }
 
-      // 3. Fetch subjects
+      // 3. Fetch user completions on mount
+      const [lessonCompRes, actCompRes] = await Promise.all([
+        supabase
+          .from("lms_lesson_completions")
+          .select("lesson_id, is_completed")
+          .eq("student_id", userId),
+        supabase
+          .from("lms_activity_completions")
+          .select("activity_id, is_completed")
+          .eq("student_id", userId),
+      ]);
+
+      const compMap: Record<string, boolean> = {};
+      if (lessonCompRes.data) {
+        for (const item of lessonCompRes.data) {
+          if (item.is_completed && item.lesson_id) {
+            compMap[item.lesson_id] = true;
+          }
+        }
+      }
+      if (actCompRes.data) {
+        for (const item of actCompRes.data) {
+          if (item.is_completed && item.activity_id) {
+            compMap[item.activity_id] = true;
+          }
+        }
+      }
+      setCompletions(compMap);
+
+      // Check existing certificate for this student and course
+      try {
+        const { data: existingCert } = await supabase
+          .from("lms_certificates")
+          .select("id, code_url")
+          .eq("course_id", id)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (existingCert) {
+          setCertificateId(existingCert.id || existingCert.code_url);
+        } else {
+          const { data: existingIssued } = await supabase
+            .from("lms_certificates_issued")
+            .select("id, validation_hash")
+            .eq("course_id", id)
+            .eq("student_id", userId)
+            .maybeSingle();
+
+          if (existingIssued) {
+            setCertificateId(existingIssued.id || existingIssued.validation_hash);
+          }
+        }
+      } catch (certCheckErr) {
+        console.error("Error checking existing certificate:", certCheckErr);
+      }
+
+      // 4. Fetch subjects (4-tier model)
       const { data: subjectsData } = await supabase
         .from("lms_subjects")
         .select("*")
@@ -136,12 +193,12 @@ export default function CourseViewer() {
         .order("order_index", { ascending: true });
 
       const fetchedSubjects = subjectsData || [];
-      // setSubjects(fetchedSubjects); // Assuming setSubjects is defined elsewhere
 
       if (fetchedSubjects.length > 0) {
+        setIsLegacyCourse(false);
         const subjectIds = fetchedSubjects.map((s) => s.id);
 
-        // 4. Fetch modules
+        // Fetch modules
         const { data: modulesData } = await supabase
           .from("lms_modules")
           .select("*")
@@ -154,19 +211,69 @@ export default function CourseViewer() {
         if (fetchedModules.length > 0) {
           const moduleIds = fetchedModules.map((m) => m.id);
 
-          // 5. Fetch lessons
+          // Fetch lessons
           const { data: lessonsData } = await supabase
             .from("lms_lessons")
             .select("*")
             .in("module_id", moduleIds)
             .order("order_index", { ascending: true });
 
-          const fetchedLessons = lessonsData || [];
+          const fetchedLessons = (lessonsData || []) as CourseViewLesson[];
           setLessons(fetchedLessons);
 
-          // Auto-select first lesson
           if (fetchedLessons.length > 0) {
             setActiveLesson(fetchedLessons[0]);
+          }
+        }
+      } else {
+        // Fallback to PACIE/weekly section model (lms_sections & lms_activities)
+        setIsLegacyCourse(true);
+        const { data: sectionsData } = await supabase
+          .from("lms_sections")
+          .select("*")
+          .eq("course_id", id)
+          .order("order_index", { ascending: true });
+
+        const fetchedSections = sectionsData || [];
+        const syntheticModules: LMSModule[] = fetchedSections.map((sec) => ({
+          id: sec.id,
+          subject_id: sec.course_id,
+          title: sec.title,
+          description: sec.description,
+          order_index: sec.order_index,
+          is_hidden: false,
+          created_at: sec.created_at,
+          updated_at: sec.created_at,
+        }));
+        setModules(syntheticModules);
+
+        if (fetchedSections.length > 0) {
+          const sectionIds = fetchedSections.map((s) => s.id);
+          const { data: activitiesData } = await supabase
+            .from("lms_activities")
+            .select("*")
+            .in("section_id", sectionIds)
+            .order("order_index", { ascending: true });
+
+          const fetchedActivities = activitiesData || [];
+          const syntheticLessons: CourseViewLesson[] = fetchedActivities.map((act) => ({
+            id: act.id,
+            module_id: act.section_id,
+            title: act.title,
+            type: act.type as CourseViewLesson['type'],
+            content: act.content,
+            description: act.description,
+            settings: act.settings as Record<string, unknown> & { file_url?: string },
+            metadata: act.metadata as Record<string, unknown> | null,
+            order_index: act.order_index,
+            created_at: act.created_at,
+            updated_at: act.updated_at,
+          }));
+
+          setLessons(syntheticLessons);
+
+          if (syntheticLessons.length > 0) {
+            setActiveLesson(syntheticLessons[0]);
           }
         }
       }
@@ -304,33 +411,115 @@ export default function CourseViewer() {
     lessonId: string,
     forceStatus?: boolean,
   ) => {
+    if (!userId) return;
     const currentStatus = completions[lessonId] || false;
     const targetStatus =
       forceStatus !== undefined ? forceStatus : !currentStatus;
 
     try {
-      if (targetStatus) {
-        const { error } = await supabase.from("lms_student_progress").upsert([
-          {
-            lesson_id: lessonId,
-            user_id: user?.id,
-            is_completed: true,
-          },
-        ]);
+      if (isLegacyCourse) {
+        const { error } = await supabase.from("lms_activity_completions").upsert(
+          [
+            {
+              activity_id: lessonId,
+              student_id: userId,
+              is_completed: targetStatus,
+              completed_at: new Date().toISOString(),
+            },
+          ],
+          { onConflict: "activity_id,student_id" }
+        );
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("lms_student_progress")
-          .delete()
-          .eq("lesson_id", lessonId)
-          .eq("user_id", user?.id);
+        const { error } = await supabase.from("lms_lesson_completions").upsert(
+          [
+            {
+              lesson_id: lessonId,
+              student_id: userId,
+              is_completed: targetStatus,
+              completed_at: new Date().toISOString(),
+            },
+          ],
+          { onConflict: "lesson_id,student_id" }
+        );
         if (error) throw error;
       }
 
       setCompletions((prev) => ({ ...prev, [lessonId]: targetStatus }));
-      toast.success(
-        targetStatus ? "Lección completada" : "Lección marcada como pendiente",
-      );
+
+      // Real XP & Streaks Gamification
+      if (targetStatus && !currentStatus) {
+        try {
+          const { data: currentStats } = await supabase
+            .from("lms_student_stats")
+            .select("*")
+            .eq("student_id", userId)
+            .maybeSingle();
+
+          const now = new Date();
+          const todayStr = now.toISOString().split("T")[0];
+
+          let newXp = 25;
+          let newStreak = 1;
+          let maxStreak = 1;
+
+          if (currentStats) {
+            newXp = (currentStats.xp_total || 0) + 25;
+            const lastActivity = currentStats.last_activity_date
+              ? new Date(currentStats.last_activity_date).toISOString().split("T")[0]
+              : null;
+
+            if (lastActivity === todayStr) {
+              newStreak = currentStats.current_streak || 1;
+            } else {
+              const yesterday = new Date(now);
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+              if (lastActivity === yesterdayStr) {
+                newStreak = (currentStats.current_streak || 0) + 1;
+              } else {
+                newStreak = 1;
+              }
+            }
+            maxStreak = Math.max(currentStats.longest_streak || 0, newStreak);
+          }
+
+          const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+
+          await supabase.from("lms_student_stats").upsert(
+            [
+              {
+                student_id: userId,
+                xp_total: newXp,
+                level: newLevel,
+                current_streak: newStreak,
+                longest_streak: maxStreak,
+                last_activity_date: now.toISOString(),
+                updated_at: now.toISOString(),
+              },
+            ],
+            { onConflict: "student_id" }
+          );
+
+          await supabase.from("lms_xp_logs").insert([
+            {
+              student_id: userId,
+              action_type: "lesson_completed",
+              xp_amount: 25,
+              reference_id: lessonId,
+            },
+          ]);
+
+          toast.success("¡+25 XP ganados! Lección completada 🎉");
+        } catch (xpErr) {
+          console.error("Error updating XP and streak:", xpErr);
+        }
+      } else {
+        toast.success(
+          targetStatus ? "Lección completada" : "Lección marcada como pendiente",
+        );
+      }
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar el progreso");
@@ -365,6 +554,7 @@ export default function CourseViewer() {
   };
 
   const awardCompletionBadge = useCallback(async () => {
+    if (!userId || !id) return;
     try {
       const { data: existingBadge } = await supabase
         .from("lms_student_badges")
@@ -372,7 +562,7 @@ export default function CourseViewer() {
         .eq("student_id", userId)
         .eq("course_id", id)
         .eq("badge_name", "Curso Completado")
-        .single();
+        .maybeSingle();
 
       if (!existingBadge) {
         const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gold w-full h-full"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>`;
@@ -402,8 +592,69 @@ export default function CourseViewer() {
         );
       }
       setBadgeAwarded(true);
+
+      // Auto-Certificate Trigger
+      let existingCertId: string | null = null;
+      const { data: existingCert } = await supabase
+        .from("lms_certificates")
+        .select("id, code_url")
+        .eq("course_id", id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingCert) {
+        existingCertId = existingCert.id || existingCert.code_url;
+      } else {
+        const { data: existingIssued } = await supabase
+          .from("lms_certificates_issued")
+          .select("id, validation_hash")
+          .eq("course_id", id)
+          .eq("student_id", userId)
+          .maybeSingle();
+
+        if (existingIssued) {
+          existingCertId = existingIssued.id || existingIssued.validation_hash;
+        }
+      }
+
+      if (!existingCertId) {
+        const validationHash = `CERT-${id.slice(0, 8)}-${userId.slice(0, 8)}-${Date.now()}`;
+
+        const { data: newCert } = await supabase
+          .from("lms_certificates")
+          .insert([
+            {
+              user_id: userId,
+              course_id: id,
+              grade: 100,
+              code_url: validationHash,
+              issued_at: new Date().toISOString(),
+            },
+          ])
+          .select("id")
+          .maybeSingle();
+
+        const { data: newIssued } = await supabase
+          .from("lms_certificates_issued")
+          .insert([
+            {
+              student_id: userId,
+              course_id: id,
+              validation_hash: validationHash,
+              issue_date: new Date().toISOString(),
+            },
+          ])
+          .select("id")
+          .maybeSingle();
+
+        existingCertId = newCert?.id || newIssued?.id || validationHash;
+      }
+
+      if (existingCertId) {
+        setCertificateId(existingCertId);
+      }
     } catch (error) {
-      console.error("Error awarding badge:", error);
+      console.error("Error awarding badge/certificate:", error);
     }
   }, [id, userId]);
 
@@ -460,6 +711,15 @@ export default function CourseViewer() {
         </div>
 
         <div className="flex items-center gap-6">
+          {certificateId && (
+            <Link
+              to={`/certificados/${certificateId}`}
+              className="px-3.5 py-1.5 bg-gold hover:bg-yellow-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            >
+              <Award size={16} />
+              Ver Certificado
+            </Link>
+          )}
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1">
               Tu progreso
@@ -637,12 +897,16 @@ export default function CourseViewer() {
                       {mod.title || `Módulo ${idx + 1}`}
                     </button>
                   ))}
-                  <button
-                    onClick={() => {
-                      setActiveTabId("forums");
-                      setActiveLesson(null);
-                    }}
-                    className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTabId === "forums" ? "border-gold text-gold" : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"}`}
+                <button
+                  onClick={() => {
+                    setActiveTabId("forums");
+                    setActiveLesson(null);
+                  }}
+                  className={`px-4 py-3 text-sm font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${
+                    activeTabId === "forums" || activeTabId === "forum"
+                      ? "border-gold text-gold"
+                      : "border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-gray-200"
+                  }`}
                 >
                   <MessageSquare size={16} /> Foros
                 </button>
@@ -654,9 +918,9 @@ export default function CourseViewer() {
           <div className="max-w-7xl mx-auto px-4 py-8 relative">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 dark:bg-indigo-400/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
             <AnimatePresence mode="wait">
-              {!activeLesson && activeTabId === "forum" && (
+              {!activeLesson && (activeTabId === "forum" || activeTabId === "forums") && (
                 <motion.div
-                  key="forum-tab"
+                  key="forums-tab"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -703,6 +967,15 @@ export default function CourseViewer() {
                           <p className="text-sm text-gray-500">
                             {Object.values(completions).filter(Boolean).length} de {lessons.length} lecciones completadas
                           </p>
+                          {certificateId && (
+                            <Link
+                              to={`/certificados/${certificateId}`}
+                              className="mt-4 w-full py-2 bg-gold hover:bg-yellow-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                            >
+                              <Award size={16} />
+                              Ver Certificado
+                            </Link>
+                          )}
                         </div>
                         
                         {(() => {
@@ -727,18 +1000,6 @@ export default function CourseViewer() {
                   <div className="mt-8">
                     <Leaderboard courseId={id || ""} />
                   </div>
-                </motion.div>
-              )}
-
-              {activeTabId === "forums" && (
-                <motion.div
-                  key="forums-tab"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="relative z-10"
-                >
-                  <ForumViewer courseId={id || ""} />
                 </motion.div>
               )}
 
@@ -790,7 +1051,7 @@ export default function CourseViewer() {
                 </motion.div>
               )}
 
-              {!activeLesson && activeTabId !== "general" && activeTabId !== "forums" && activeTabId !== "calendar" && activeTabId !== "grades" && activeTabId !== "activities" && activeTabId !== "classmates" && (
+              {!activeLesson && activeTabId !== "general" && activeTabId !== "forums" && activeTabId !== "forum" && activeTabId !== "calendar" && activeTabId !== "grades" && activeTabId !== "activities" && activeTabId !== "classmates" && (
                 <motion.div
                   key="dashboard-tab"
                   initial={{ opacity: 0, y: 20 }}
@@ -835,11 +1096,11 @@ export default function CourseViewer() {
                       )}
                       <button
                         onClick={() => {
-                          setActiveTabId('forum');
+                          setActiveTabId('forums');
                           if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-colors flex items-center gap-3 ${
-                          activeTabId === 'forum' ? 'bg-gold/10 text-gold' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                          activeTabId === 'forum' || activeTabId === 'forums' ? 'bg-gold/10 text-gold' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                         }`}
                       >
                         <MessageSquare size={18} />
@@ -1098,19 +1359,29 @@ export default function CourseViewer() {
                     </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                      <button
-                        onClick={() => toggleLessonCompletion(activeLesson.id)}
-                        className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm border ${
-                          completions[activeLesson.id]
-                            ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20"
-                            : "bg-gold hover:bg-yellow-500 text-white border-transparent shadow-gold/20 hover:shadow-gold/40 hover:-translate-y-0.5"
-                        }`}
-                      >
-                        <CheckCircle size={18} className={completions[activeLesson.id] ? "" : "animate-pulse"} />
-                        {completions[activeLesson.id]
-                          ? "Completado"
-                          : "Marcar como Completado"}
-                      </button>
+                      {certificateId && calculateProgress() === 100 ? (
+                        <Link
+                          to={`/certificados/${certificateId}`}
+                          className="flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md bg-gold hover:bg-yellow-500 text-white border-transparent hover:-translate-y-0.5"
+                        >
+                          <Award size={18} />
+                          Ver Certificado
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => toggleLessonCompletion(activeLesson.id)}
+                          className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold tracking-wide transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm border ${
+                            completions[activeLesson.id]
+                              ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20"
+                              : "bg-gold hover:bg-yellow-500 text-white border-transparent shadow-gold/20 hover:shadow-gold/40 hover:-translate-y-0.5"
+                          }`}
+                        >
+                          <CheckCircle size={18} className={completions[activeLesson.id] ? "" : "animate-pulse"} />
+                          {completions[activeLesson.id]
+                            ? "Completado"
+                            : "Marcar como Completado"}
+                        </button>
+                      )}
 
                       {getNextLesson() && (
                         <button

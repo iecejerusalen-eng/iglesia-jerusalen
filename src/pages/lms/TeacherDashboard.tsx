@@ -29,6 +29,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [selectedSessionIdForAttendance, setSelectedSessionIdForAttendance] = useState('');
 
   // Fetch data with custom hooks
   const {
@@ -44,6 +45,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
     announcements,
     tutoring,
     finalGrades,
+    pendingAttendanceCount = 0,
     isLoading
   } = useTeacherData(selectedCourseId, activeTab, school.id);
 
@@ -173,11 +175,19 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
                 recentSubmissions={submissions}
                 courses={courses}
                 activities={activities}
+                pendingAttendanceCount={pendingAttendanceCount}
               />
             )}
 
             {activeTab === 'classes' && (
-              <ClassesTab sessions={sessions} courseId={selectedCourseId} />
+              <ClassesTab 
+                sessions={sessions} 
+                courseId={selectedCourseId} 
+                onTakeAttendance={(sessionId) => {
+                  setSelectedSessionIdForAttendance(sessionId);
+                  setActiveTab('students');
+                }}
+              />
             )}
 
             {activeTab === 'calendar' && (
@@ -195,6 +205,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
                   students={students}
                   sessions={sessions}
                   groups={groups}
+                  initialSessionId={selectedSessionIdForAttendance}
                   onAddSession={(e: React.FormEvent, title: string, date: string) => {
                     e.preventDefault();
                     createSessionMutation.mutate({ title, date });

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import type { Profile, LMSCourse, LMSTeacherSchedule } from '../../../types';
-import { GraduationCap, BookOpen, Clock, Link2, Plus, Trash2, Edit3, Search, UserCheck, ShieldCheck, Video, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, Link2, Plus, Trash2, Edit3, Search, UserCheck, ShieldCheck, Video, Calendar } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
+import { toast } from 'sonner';
 
 interface AcademicStaffManagerProps {
   schoolId?: string;
@@ -27,8 +28,6 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
   const [formEndTime, setFormEndTime] = useState('10:30');
   const [formMeetLink, setFormMeetLink] = useState('');
   const [formRoom, setFormRoom] = useState('Aula Virtual / Meet');
-
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -57,15 +56,64 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
   }, [formCourseId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void fetchData(), 0);
-    return () => window.clearTimeout(timer);
+    const timer = setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchData]);
 
   const handleSaveSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTeacherId || !formCourseId || !formShiftName) {
-      setNotification({ type: 'error', message: 'Por favor completa todos los campos obligatorios.' });
+      toast.error('Por favor completa todos los campos obligatorios.');
       return;
+    }
+
+    if (formEndTime <= formStartTime) {
+      toast.error('La hora de fin debe ser posterior a la hora de inicio.');
+      return;
+    }
+
+    // Check teacher schedule conflict
+    const teacherConflict = schedules.find(sch => {
+      if (editingSchedule && sch.id === editingSchedule.id) return false;
+      if (sch.teacher_id !== formTeacherId) return false;
+      if (sch.day_of_week !== formDayOfWeek) return false;
+      return formStartTime < sch.end_time && formEndTime > sch.start_time;
+    });
+
+    if (teacherConflict) {
+      const conflictCourse = courses.find(c => c.id === teacherConflict.course_id);
+      toast.error(
+        `Conflicto de horario: El docente ya tiene clase asignada (${conflictCourse?.title || 'materia'}) el ${formDayOfWeek} (${teacherConflict.start_time} - ${teacherConflict.end_time}).`
+      );
+      return;
+    }
+
+    // Check room schedule conflict (for non-virtual rooms)
+    const isVirtualRoom = (room?: string | null) => {
+      if (!room) return true;
+      const r = room.toLowerCase().trim();
+      return r === '' || r.includes('virtual') || r.includes('meet') || r.includes('zoom');
+    };
+
+    const targetRoom = formRoom.trim() || 'Virtual / Meet';
+
+    if (!isVirtualRoom(targetRoom)) {
+      const roomConflict = schedules.find(sch => {
+        if (editingSchedule && sch.id === editingSchedule.id) return false;
+        if (!sch.room_or_location || isVirtualRoom(sch.room_or_location)) return false;
+        if (sch.room_or_location.toLowerCase().trim() !== targetRoom.toLowerCase()) return false;
+        if (sch.day_of_week !== formDayOfWeek) return false;
+        return formStartTime < sch.end_time && formEndTime > sch.start_time;
+      });
+
+      if (roomConflict) {
+        toast.error(
+          `Conflicto de aula: "${targetRoom}" ya está ocupada el ${formDayOfWeek} (${roomConflict.start_time} - ${roomConflict.end_time}).`
+        );
+        return;
+      }
     }
 
     try {
@@ -77,7 +125,7 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
         start_time: formStartTime,
         end_time: formEndTime,
         meet_link: formMeetLink || null,
-        room_or_location: formRoom || 'Virtual / Meet'
+        room_or_location: targetRoom
       };
 
       if (editingSchedule) {
@@ -98,13 +146,13 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
         .from('lms_course_teachers')
         .upsert({ course_id: formCourseId, user_id: formTeacherId, role: 'teacher' }, { onConflict: 'course_id,user_id' });
 
-      setNotification({ type: 'success', message: 'Turno y carga docente configurados con éxito.' });
+      toast.success('Turno y carga docente configurados con éxito.');
       setIsModalOpen(false);
       setEditingSchedule(null);
       fetchData();
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al guardar el turno.';
-      setNotification({ type: 'error', message: errorMsg });
+      toast.error(errorMsg);
     }
   };
 
@@ -113,11 +161,11 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
     try {
       const { error } = await supabase.from('lms_teacher_schedules').delete().eq('id', id);
       if (error) throw error;
-      setNotification({ type: 'success', message: 'Turno eliminado correctamente.' });
+      toast.success('Turno eliminado correctamente.');
       setSchedules(schedules.filter(s => s.id !== id));
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al eliminar el turno.';
-      setNotification({ type: 'error', message: errorMsg });
+      toast.error(errorMsg);
     }
   };
 
@@ -184,15 +232,6 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
           </button>
         </div>
       </div>
-
-      {notification && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 ${
-          notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800'
-        }`}>
-          {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" /> : <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400" />}
-          <span className="text-sm font-medium">{notification.message}</span>
-        </div>
-      )}
 
       {/* Filters Bar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm">
@@ -329,7 +368,7 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
               >
                 ✕
               </button>
@@ -441,13 +480,13 @@ export function AcademicStaffManager({ schoolId = 'all' }: AcademicStaffManagerP
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-200"
+                  className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-200 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-600/20 transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
                 >
                   {editingSchedule ? 'Guardar Cambios' : 'Asignar Docente'}
                 </button>

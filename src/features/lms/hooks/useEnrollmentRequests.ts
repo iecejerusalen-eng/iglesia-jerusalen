@@ -10,7 +10,7 @@ export interface EnrollmentRequest {
   status: 'pending' | 'approved' | 'rejected';
   notes: string;
   created_at: string;
-  lms_courses?: { title: string };
+  lms_courses?: { title: string; school_id?: string | null };
   profiles?: { first_name: string; last_name: string; email: string };
 }
 
@@ -24,7 +24,7 @@ export function useEnrollmentRequests() {
         .from('lms_enrollment_requests')
         .select(`
           *,
-          lms_courses(title)
+          lms_courses(title, school_id)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });

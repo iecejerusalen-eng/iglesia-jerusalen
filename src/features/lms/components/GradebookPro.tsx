@@ -21,6 +21,7 @@ interface GBActivity {
   type: string;
   weighting: number;
   section_id?: string;
+  sourceType?: 'activity' | 'lesson';
 }
 
 interface GBSubmission {
@@ -32,7 +33,40 @@ interface GBSubmission {
   status?: string;
   file_url?: string;
   text_content?: string;
+  submitted_at?: string;
+  sourceType?: 'activity' | 'lesson';
 }
+
+function safeParseGrade(grade: string | number | null | undefined): number {
+  if (grade === null || grade === undefined || grade === '') return 0;
+  if (typeof grade === 'number') {
+    return isNaN(grade) ? 0 : grade;
+  }
+  const str = String(grade).trim();
+  if (!str) return 0;
+  
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    const num = parseFloat(parts[0]);
+    const den = parseFloat(parts[1]);
+    if (!isNaN(num) && !isNaN(den) && den > 0) {
+      return (num / den) * 100;
+    }
+  }
+  
+  const cleaned = str.replace('%', '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+const getFileUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = import.meta.env.VITE_R2_PUBLIC_URL || '';
+  const cleanBase = baseUrl.replace(/\/+$/, '');
+  const cleanUrl = url.replace(/^\/+/, '');
+  return cleanBase ? `${cleanBase}/${cleanUrl}` : cleanUrl;
+};
 
 export function GradebookPro({ courseId }: GradebookProProps) {
   const [loading, setLoading] = useState(true);
@@ -55,6 +89,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
     const loadData = async () => {
       setLoading(true);
       try {
+        // 1. Fetch Students
         const { data: enrollments, error: enrollError } = await supabase
           .from('lms_enrollments')
           .select(`
@@ -65,28 +100,111 @@ export function GradebookPro({ courseId }: GradebookProProps) {
           .eq('role', 'student');
         
         if (enrollError) throw enrollError;
-        setStudents((enrollments?.map(e => e.profiles) as unknown as GBStudent[]) || []);
+        setStudents((enrollments?.map(e => e.profiles).filter(Boolean) as unknown as GBStudent[]) || []);
 
-        const { data: fetchedActivities, error: actError } = await supabase
-          .from('lms_activities')
-          .select('id, title, type, weighting, section_id')
-          .in('type', ['assignment', 'quiz', 'forum']) 
-          .gt('weighting', 0) 
-          .order('order_index', { ascending: true });
+        // 2. Fetch Sections for current courseId first (CRITICAL BUG FIX)
+        const { data: sectionsData, error: secError } = await supabase
+          .from('lms_sections')
+          .select('id')
+          .eq('course_id', courseId);
 
-        if (actError) throw actError;
-        setActivities((fetchedActivities as GBActivity[]) || []);
+        if (secError) throw secError;
+        const sectionIds = (sectionsData || []).map(s => s.id);
 
-        if (fetchedActivities && fetchedActivities.length > 0) {
-          const actIds = fetchedActivities.map(a => a.id);
-          const { data: fetchedSubmissions, error: subError } = await supabase
-            .from('lms_assignment_submissions')
-            .select('*')
-            .in('activity_id', actIds);
+        let fetchedActivities: GBActivity[] = [];
+        if (sectionIds.length > 0) {
+          const { data: actData, error: actError } = await supabase
+            .from('lms_activities')
+            .select('id, title, type, weighting, section_id')
+            .in('section_id', sectionIds)
+            .in('type', ['assignment', 'quiz', 'forum']) 
+            .gt('weighting', 0) 
+            .order('order_index', { ascending: true });
 
-          if (subError) throw subError;
-          setSubmissions((fetchedSubmissions as GBSubmission[]) || []);
+          if (actError) throw actError;
+          fetchedActivities = (actData || []).map(a => ({ ...a, sourceType: 'activity' as const }));
         }
+
+        // 3. Fetch Lessons (type = 'assignment') for dual model support
+        let fetchedLessonActivities: GBActivity[] = [];
+        const { data: subjectsData } = await supabase
+          .from('lms_subjects')
+          .select('id')
+          .eq('course_id', courseId);
+
+        const subjectIds = (subjectsData || []).map(s => s.id);
+        if (subjectIds.length > 0) {
+          const { data: modulesData } = await supabase
+            .from('lms_modules')
+            .select('id')
+            .in('subject_id', subjectIds);
+
+          const moduleIds = (modulesData || []).map(m => m.id);
+          if (moduleIds.length > 0) {
+            const { data: lessonsData, error: lessonError } = await supabase
+              .from('lms_lessons')
+              .select('id, title, type, order_index')
+              .in('module_id', moduleIds)
+              .eq('type', 'assignment')
+              .order('order_index', { ascending: true });
+
+            if (lessonError) throw lessonError;
+            fetchedLessonActivities = (lessonsData || []).map(l => ({
+              id: l.id,
+              title: l.title,
+              type: l.type,
+              weighting: 10,
+              sourceType: 'lesson' as const
+            }));
+          }
+        }
+
+        const combinedActivities = [...fetchedActivities, ...fetchedLessonActivities];
+        setActivities(combinedActivities);
+
+        // 4. Fetch Submissions for activities & lessons
+        const actIds = fetchedActivities.map(a => a.id);
+        const lessonIds = fetchedLessonActivities.map(l => l.id);
+
+        const [actSubRes, lessonSubRes] = await Promise.all([
+          actIds.length > 0
+            ? supabase.from('lms_assignment_submissions').select('*').in('activity_id', actIds)
+            : Promise.resolve({ data: [], error: null }),
+          lessonIds.length > 0
+            ? supabase.from('lms_lesson_submissions').select('*').in('lesson_id', lessonIds)
+            : Promise.resolve({ data: [], error: null })
+        ]);
+
+        if (actSubRes.error) throw actSubRes.error;
+        if (lessonSubRes.error) throw lessonSubRes.error;
+
+        const actSubs: GBSubmission[] = (actSubRes.data || []).map(s => ({
+          id: s.id,
+          student_id: s.student_id,
+          activity_id: s.activity_id,
+          grade: s.grade,
+          teacher_feedback: s.teacher_feedback,
+          status: s.status,
+          file_url: s.file_url,
+          text_content: s.text_content,
+          submitted_at: s.submitted_at,
+          sourceType: 'activity' as const
+        }));
+
+        const lessonSubs: GBSubmission[] = (lessonSubRes.data || []).map(s => ({
+          id: s.id,
+          student_id: s.student_id,
+          activity_id: s.lesson_id,
+          grade: s.grade,
+          teacher_feedback: s.teacher_feedback,
+          status: s.status,
+          file_url: s.file_url,
+          text_content: s.text_content,
+          submitted_at: s.submitted_at,
+          sourceType: 'lesson' as const
+        }));
+
+        setSubmissions([...actSubs, ...lessonSubs]);
       } catch (err) {
         console.error(err);
         toast.error('Error al cargar la libreta de calificaciones');
@@ -101,15 +219,49 @@ export function GradebookPro({ courseId }: GradebookProProps) {
   }, [courseId]);
 
   const fetchData = async () => {
-    // This is used by handleSaveGrade
     try {
-      const { data: fetchedSubmissions, error: subError } = await supabase
-        .from('lms_assignment_submissions')
-        .select('*')
-        .in('activity_id', activities.map(a => a.id));
+      const actIds = activities.filter(a => a.sourceType !== 'lesson').map(a => a.id);
+      const lessonIds = activities.filter(a => a.sourceType === 'lesson').map(a => a.id);
 
-      if (subError) throw subError;
-      setSubmissions((fetchedSubmissions as GBSubmission[]) || []);
+      const [actSubRes, lessonSubRes] = await Promise.all([
+        actIds.length > 0
+          ? supabase.from('lms_assignment_submissions').select('*').in('activity_id', actIds)
+          : Promise.resolve({ data: [], error: null }),
+        lessonIds.length > 0
+          ? supabase.from('lms_lesson_submissions').select('*').in('lesson_id', lessonIds)
+          : Promise.resolve({ data: [], error: null })
+      ]);
+
+      if (actSubRes.error) throw actSubRes.error;
+      if (lessonSubRes.error) throw lessonSubRes.error;
+
+      const actSubs: GBSubmission[] = (actSubRes.data || []).map(s => ({
+        id: s.id,
+        student_id: s.student_id,
+        activity_id: s.activity_id,
+        grade: s.grade,
+        teacher_feedback: s.teacher_feedback,
+        status: s.status,
+        file_url: s.file_url,
+        text_content: s.text_content,
+        submitted_at: s.submitted_at,
+        sourceType: 'activity' as const
+      }));
+
+      const lessonSubs: GBSubmission[] = (lessonSubRes.data || []).map(s => ({
+        id: s.id,
+        student_id: s.student_id,
+        activity_id: s.lesson_id,
+        grade: s.grade,
+        teacher_feedback: s.teacher_feedback,
+        status: s.status,
+        file_url: s.file_url,
+        text_content: s.text_content,
+        submitted_at: s.submitted_at,
+        sourceType: 'lesson' as const
+      }));
+
+      setSubmissions([...actSubs, ...lessonSubs]);
     } catch (err) {
       console.error(err);
     }
@@ -134,19 +286,36 @@ export function GradebookPro({ courseId }: GradebookProProps) {
     setSavingGrade(true);
     
     try {
-      const payload = {
-        activity_id: selectedActivity.id,
-        student_id: selectedStudent.id,
-        grade: gradeInput,
-        teacher_feedback: feedbackInput,
-        graded_at: new Date().toISOString()
-      };
+      if (selectedActivity.sourceType === 'lesson') {
+        const payload = {
+          lesson_id: selectedActivity.id,
+          student_id: selectedStudent.id,
+          grade: gradeInput,
+          teacher_feedback: feedbackInput,
+          graded_at: new Date().toISOString()
+        };
 
-      const { error } = await supabase
-        .from('lms_assignment_submissions')
-        .upsert(payload);
+        const { error } = await supabase
+          .from('lms_lesson_submissions')
+          .upsert(payload, { onConflict: 'lesson_id,student_id' });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const payload = {
+          activity_id: selectedActivity.id,
+          student_id: selectedStudent.id,
+          grade: gradeInput,
+          teacher_feedback: feedbackInput,
+          graded_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('lms_assignment_submissions')
+          .upsert(payload);
+
+        if (error) throw error;
+      }
+
       toast.success('Calificación guardada exitosamente');
       await fetchData(); // Refresh
       setIsPanelOpen(false);
@@ -162,16 +331,10 @@ export function GradebookPro({ courseId }: GradebookProProps) {
     let total = 0;
     activities.forEach(act => {
       const sub = getSubmission(studentId, act.id);
-      if (sub && sub.grade) {
-        // Assume grade is out of 10 or 100, weighting is percentage (0-100)
-        // If grade is a string, try to parse it
-        const numericGrade = parseFloat(sub.grade?.toString() || '');
-        if (!isNaN(numericGrade)) {
-          // If grade scale is 10/10, multiply by weight% / 10
-          // If weight is 30(%), and grade is 10, total += (10/10) * 30 = 30 points of 100
-          // For simplicity, let's assume numericGrade is out of 10
-          total += (numericGrade / 10) * (act.weighting || 0);
-        }
+      if (sub && sub.grade !== null && sub.grade !== undefined && sub.grade !== '') {
+        const numericGrade = safeParseGrade(sub.grade);
+        const normalizedGrade = numericGrade > 10 ? numericGrade / 100 : numericGrade / 10;
+        total += normalizedGrade * (act.weighting || 0);
       }
     });
     return total.toFixed(2);
@@ -244,20 +407,21 @@ export function GradebookPro({ courseId }: GradebookProProps) {
                   
                   {activities.map(act => {
                     const sub = getSubmission(student.id, act.id);
+                    const hasGrade = sub?.grade !== null && sub?.grade !== undefined && sub?.grade !== '';
                     return (
                       <td key={act.id} className="p-3 border-r border-gray-100 dark:border-white/5 text-center">
                         <button
                           onClick={() => openGradingPanel(student, act)}
                           className={`w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1 hover:ring-2 hover:ring-gold/50 ${
-                            sub?.grade 
+                            hasGrade
                               ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' 
                               : sub 
                                 ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                                 : 'bg-gray-50 text-gray-400 dark:bg-slate-800 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
                         >
-                          {sub?.grade || (sub ? 'Pendiente' : '-')}
-                          {sub && !sub.grade && <Edit2 size={12} className="ml-1" />}
+                          {hasGrade ? sub.grade : (sub ? 'Pendiente' : '-')}
+                          {sub && !hasGrade && <Edit2 size={12} className="ml-1" />}
                         </button>
                       </td>
                     );
@@ -308,7 +472,7 @@ export function GradebookPro({ courseId }: GradebookProProps) {
                   <div className="space-y-4">
                     {activeSubmission.file_url && (
                       <a 
-                        href={`${import.meta.env.VITE_R2_PUBLIC_URL}/${activeSubmission.file_url}`}
+                        href={getFileUrl(activeSubmission.file_url)}
                         target="_blank" 
                         rel="noreferrer"
                         className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl hover:border-gold transition-colors"
@@ -373,3 +537,4 @@ export function GradebookPro({ courseId }: GradebookProProps) {
     </div>
   );
 }
+

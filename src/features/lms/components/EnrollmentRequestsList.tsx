@@ -1,8 +1,18 @@
 import { Check, Ban } from 'lucide-react';
 import { useEnrollmentRequests } from '../hooks/useEnrollmentRequests';
 
-export function EnrollmentRequestsList() {
+interface EnrollmentRequestsListProps {
+  selectedSchoolId?: string;
+  schoolId?: string;
+}
+
+export function EnrollmentRequestsList({ selectedSchoolId, schoolId }: EnrollmentRequestsListProps) {
+  const activeSchoolId = selectedSchoolId || schoolId || 'all';
   const { requests, processRequest } = useEnrollmentRequests();
+
+  const filteredRequests = activeSchoolId === 'all'
+    ? requests
+    : requests.filter(req => req.lms_courses?.school_id === activeSchoolId);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
@@ -18,12 +28,12 @@ export function EnrollmentRequestsList() {
             </tr>
           </thead>
           <tbody>
-            {requests.length === 0 ? (
+            {filteredRequests.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-gray-500">No hay solicitudes de matrícula pendientes.</td>
               </tr>
             ) : (
-              requests.map(req => (
+              filteredRequests.map(req => (
                 <tr key={req.id} className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50/50 transition-colors">
                   <td className="p-4">
                     <p className="font-bold text-sm text-slate-850 dark:text-white">

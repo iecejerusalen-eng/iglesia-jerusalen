@@ -7,6 +7,7 @@ interface StudentsTabProps {
   students: TeacherStudent[];
   sessions: TeacherSession[];
   groups: TeacherGroup[];
+  initialSessionId?: string;
   onAddSession: (e: React.FormEvent, title: string, date: string) => void;
   onAddGroup: (e: React.FormEvent, name: string, desc: string) => void;
   onAttendanceChange: (sessionId: string, studentId: string, status: 'present'|'zoom'|'absent'|'late'|'excused') => void;
@@ -16,11 +17,28 @@ export function StudentsTab({
   students,
   sessions,
   groups,
+  initialSessionId,
   onAddSession,
   onAddGroup,
   onAttendanceChange
 }: StudentsTabProps) {
-  const [selectedSession, setSelectedSession] = useState<string>(sessions.length > 0 ? sessions[0].id : '');
+  const [selectedSession, setSelectedSession] = useState<string>(
+    initialSessionId && sessions.some((s) => s.id === initialSessionId)
+      ? initialSessionId
+      : sessions.length > 0
+      ? sessions[0].id
+      : ''
+  );
+
+  React.useEffect(() => {
+    if (initialSessionId && sessions.some((s) => s.id === initialSessionId)) {
+      const timer = setTimeout(() => {
+        setSelectedSession(initialSessionId);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialSessionId, sessions]);
+
   const { data: attendanceMap = {} } = useSessionAttendance(selectedSession);
 
   const [isAddSessionOpen, setIsAddSessionOpen] = useState(false);

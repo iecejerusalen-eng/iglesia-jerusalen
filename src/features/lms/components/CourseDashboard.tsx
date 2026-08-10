@@ -29,13 +29,13 @@ export function CourseDashboard({
 
   // Group lessons by type for the pedagogical cards
   const syncClasses = moduleLessons.filter(
-    (l) => l.type === "video" || l.type === "resource",
+    (l) => l.type === "video" || l.type === "video_link",
   );
   const assignments = moduleLessons.filter((l) => l.type === "assignment");
   const quizzes = moduleLessons.filter((l) => l.type === "quiz");
   const forums = moduleLessons.filter((l) => l.type === "forum");
   const materials = moduleLessons.filter(
-    (l) => l.type === "document" || l.type === "h5p",
+    (l) => l.type === "document" || l.type === "resource" || l.type === "h5p" || l.type === "h5p_embed",
   );
 
   const renderCard = (

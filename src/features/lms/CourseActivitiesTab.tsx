@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Clock, CheckCircle, Loader2, Eye } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -38,37 +38,72 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchActivities() {
+  const fetchActivities = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
+      let assignments: { id: string; title: string; module_id: string; settings?: Record<string, unknown> }[] = [];
+      let moduleMap: Record<string, string> = {};
+
       // 1. Fetch subjects
       const { data: subjects } = await supabase.from('lms_subjects').select('id').eq('course_id', courseId);
-      if (!subjects || subjects.length === 0) return;
-      const subjectIds = subjects.map(s => s.id);
-
-      // 2. Fetch modules
-      const { data: modules } = await supabase.from('lms_modules').select('id, title').in('subject_id', subjectIds);
-      if (!modules || modules.length === 0) return;
-      const moduleIds = modules.map(m => m.id);
       
-      const moduleMap = modules.reduce((acc, curr) => {
-        acc[curr.id] = curr.title;
-        return acc;
-      }, {} as Record<string, string>);
+      if (subjects && subjects.length > 0) {
+        const subjectIds = subjects.map(s => s.id);
+        const { data: modules } = await supabase.from('lms_modules').select('id, title').in('subject_id', subjectIds);
+        if (!modules || modules.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const moduleIds = modules.map(m => m.id);
+        moduleMap = modules.reduce((acc, curr) => {
+          acc[curr.id] = curr.title;
+          return acc;
+        }, {} as Record<string, string>);
 
-      // 3. Fetch lessons of type assignment
-      const { data: assignments, error: lessonsError } = await supabase
-        .from('lms_lessons')
-        .select('*')
-        .in('module_id', moduleIds)
-        .eq('type', 'assignment');
+        const { data: lessons, error: lessonsError } = await supabase
+          .from('lms_lessons')
+          .select('*')
+          .in('module_id', moduleIds)
+          .eq('type', 'assignment');
 
-      if (lessonsError) throw lessonsError;
+        if (lessonsError) throw lessonsError;
+        assignments = (lessons || []).map(l => ({
+          id: l.id,
+          title: l.title,
+          module_id: l.module_id,
+          settings: l.settings as Record<string, unknown> | undefined,
+        }));
+      } else {
+        // Fallback: lms_sections -> lms_activities
+        const { data: sections } = await supabase.from('lms_sections').select('id, title').eq('course_id', courseId);
+        if (!sections || sections.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const sectionIds = sections.map(s => s.id);
+        moduleMap = sections.reduce((acc, curr) => {
+          acc[curr.id] = curr.title;
+          return acc;
+        }, {} as Record<string, string>);
 
-      // 4. Fetch submissions for this student
-      const lessonIds = (assignments || []).map(a => a.id);
+        const { data: acts, error: actsError } = await supabase
+          .from('lms_activities')
+          .select('*')
+          .in('section_id', sectionIds)
+          .eq('type', 'assignment');
+
+        if (actsError) throw actsError;
+        assignments = (acts || []).map(a => ({
+          id: a.id,
+          title: a.title,
+          module_id: a.section_id,
+          settings: a.settings as Record<string, unknown> | undefined,
+        }));
+      }
+
+      // Fetch submissions for this student
+      const lessonIds = assignments.map(a => a.id);
       let submissions: Submission[] = [];
       
       if (lessonIds.length > 0) {
@@ -80,7 +115,7 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
         submissions = subs || [];
       }
 
-      const mappedActivities = (assignments || []).map(assignment => {
+      const mappedActivities = assignments.map(assignment => {
         const submission = submissions.find(s => s.lesson_id === assignment.id);
         
         let status = 'pending';
@@ -95,14 +130,13 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
           }
         }
         
-        // assignment.metadata or settings might contain dueDate
-        const dueDate = assignment.settings?.dueDate || null; 
+        const dueDate = assignment.settings?.dueDate as string | undefined || null; 
 
         return {
           id: assignment.id,
           title: assignment.title,
           module: moduleMap[assignment.module_id] || 'Módulo General',
-          dueDate: dueDate || new Date(Date.now() + 86400000 * 7).toISOString(), // Mock next week if no date
+          dueDate: dueDate || new Date(Date.now() + 86400000 * 7).toISOString(),
           status,
           grade,
           type: 'assignment'
@@ -115,14 +149,14 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
     } finally {
       setLoading(false);
     }
-  }
-  
-  const handleFetchActivities = () => {
-    fetchActivities();
-  };
-  
-  handleFetchActivities();
   }, [courseId, user]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchActivities();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchActivities]);
 
   const filteredActivities = filter === 'all' 
     ? activities 
@@ -245,12 +279,9 @@ export function CourseActivitiesTab({ courseId }: CourseActivitiesTabProps) {
         activity={selectedActivity}
         courseId={courseId}
         onSuccess={() => {
-          // Refresh list to update status
           setIsModalOpen(false);
-          // fetchActivities relies on useEffect, but since we didn't export it, 
-          // a quick hack is to let the user see the change, or we could trigger a reload.
-          // For now, we update the local state optimistically or reload.
-          window.location.reload(); 
+          setSelectedActivity(null);
+          void fetchActivities();
         }}
       />
     </div>

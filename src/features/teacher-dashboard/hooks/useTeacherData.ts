@@ -353,6 +353,30 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     enabled: Boolean(selectedCourseId) && activeTab === 'grades',
   });
 
+  const { data: pendingAttendanceCount = 0 } = useQuery({
+    queryKey: ['pending-attendance-count', selectedCourseId, sessions.map((s) => s.id).join(',')],
+    queryFn: async () => {
+      if (!selectedCourseId || sessions.length === 0) return 0;
+      const sessionIds = sessions.map((s) => s.id);
+      const { data: attendanceRecords, error } = await supabase
+        .from('lms_attendance')
+        .select('session_id')
+        .in('session_id', sessionIds);
+
+      if (error) throw error;
+      const sessionsWithAttendance = new Set(attendanceRecords?.map((a) => a.session_id) ?? []);
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const pending = sessions.filter((s) => {
+        const sDate = s.session_date ? s.session_date.split('T')[0] : '';
+        return sDate <= todayStr && !sessionsWithAttendance.has(s.id);
+      });
+
+      return pending.length;
+    },
+    enabled: Boolean(selectedCourseId) && ['overview', 'classes', 'students'].includes(activeTab),
+  });
+
   return {
     profile,
     isTeacher,
@@ -369,6 +393,7 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
     announcements: commData.announcements,
     tutoring: commData.tutoring,
     finalGrades,
+    pendingAttendanceCount,
   };
 }
 

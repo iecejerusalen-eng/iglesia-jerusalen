@@ -27,6 +27,7 @@ interface OverviewTabProps {
   recentSubmissions: Submission[];
   courses?: Course[];
   activities?: Activity[];
+  pendingAttendanceCount?: number;
 }
 
 export function OverviewTab({
@@ -36,12 +37,11 @@ export function OverviewTab({
   assignmentsToGrade,
   recentSubmissions,
   courses = [],
-  activities = []
+  activities = [],
+  pendingAttendanceCount = 0
 }: OverviewTabProps) {
   
   // Calculate graded vs total for activities
-  // As an approximation, total submissions expected = studentsCount (per course)
-  // Let's filter active activities (e.g. recent 5)
   const activeActivities = activities.slice(0, 6);
 
   return (
@@ -74,7 +74,7 @@ export function OverviewTab({
             <div className="w-10 h-10 bg-slate-800/50 text-amber-400 rounded-xl flex items-center justify-center mb-4 backdrop-blur-sm">
               <Users size={18} />
             </div>
-            <p className="font-extrabold text-3xl text-white font-mono tracking-tight">0</p>
+            <p className="font-extrabold text-3xl text-white font-mono tracking-tight">{pendingAttendanceCount}</p>
             <p className="text-[11px] uppercase tracking-wider font-bold text-slate-400 mt-1">Asist. Ptes.</p>
           </div>
 
@@ -102,13 +102,14 @@ export function OverviewTab({
               <p className="text-sm text-gray-500 py-8 text-center">No hay actividades pendientes en este momento.</p>
             ) : (
               activeActivities.map(activity => {
-                // Approximate grading logic (for visual demo, in reality we count submissions with grades)
-                const activitySubmissions = recentSubmissions.filter(s => s.activity_id === activity.id);
-                const gradedCount = activitySubmissions.filter(s => s.grade).length;
-                const totalStudentsForCourse = studentsCount; // fallback
+                const activitySubmissions = recentSubmissions.filter(
+                  s => (s.activity_id && s.activity_id === activity.id) || (s.lesson_id && s.lesson_id === activity.id)
+                );
+                const gradedCount = activitySubmissions.filter(s => s.grade !== null && s.grade !== undefined).length;
+                const totalExpected = studentsCount > 0 ? studentsCount : activitySubmissions.length;
                 
-                const ratio = `${gradedCount}/${totalStudentsForCourse || activitySubmissions.length || 29}`;
-                const isFullyGraded = gradedCount >= (totalStudentsForCourse || activitySubmissions.length || 29);
+                const ratio = `${gradedCount}/${totalExpected}`;
+                const isFullyGraded = totalExpected > 0 && gradedCount >= totalExpected;
 
                 return (
                   <div key={activity.id} className="group flex items-center justify-between p-4 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-white/5">

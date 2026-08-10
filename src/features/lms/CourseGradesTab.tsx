@@ -36,25 +36,51 @@ export function CourseGradesTab({ courseId }: CourseGradesTabProps) {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Fetch subjects & modules & lessons
+      // 1. Fetch subjects & modules & lessons (or fallback to sections & activities)
+      let assignmentLessons: { id: string; title: string; type: string }[] = [];
+      let quizLessons: { id: string; title: string; type: string }[] = [];
+      let forumLessons: { id: string; title: string; type: string }[] = [];
+
       const { data: subjects } = await supabase.from('lms_subjects').select('id').eq('course_id', courseId);
-      if (!subjects || subjects.length === 0) return;
-      const subjectIds = subjects.map(s => s.id);
 
-      const { data: modules } = await supabase.from('lms_modules').select('id, title').in('subject_id', subjectIds);
-      if (!modules || modules.length === 0) return;
-      const moduleIds = modules.map(m => m.id);
+      if (subjects && subjects.length > 0) {
+        const subjectIds = subjects.map(s => s.id);
+        const { data: modules } = await supabase.from('lms_modules').select('id, title').in('subject_id', subjectIds);
+        if (!modules || modules.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const moduleIds = modules.map(m => m.id);
 
-      const { data: lessons, error: lessonsError } = await supabase
-        .from('lms_lessons')
-        .select('*')
-        .in('module_id', moduleIds);
+        const { data: lessons, error: lessonsError } = await supabase
+          .from('lms_lessons')
+          .select('*')
+          .in('module_id', moduleIds);
 
-      if (lessonsError) throw lessonsError;
+        if (lessonsError) throw lessonsError;
 
-      const assignmentLessons = lessons?.filter(l => l.type === 'assignment') || [];
-      const quizLessons = lessons?.filter(l => l.type === 'quiz') || [];
-      const forumLessons = lessons?.filter(l => l.type === 'forum') || [];
+        assignmentLessons = lessons?.filter(l => l.type === 'assignment') || [];
+        quizLessons = lessons?.filter(l => l.type === 'quiz') || [];
+        forumLessons = lessons?.filter(l => l.type === 'forum') || [];
+      } else {
+        // Fallback: lms_sections -> lms_activities
+        const { data: sections } = await supabase.from('lms_sections').select('id').eq('course_id', courseId);
+        if (!sections || sections.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const sectionIds = sections.map(s => s.id);
+        const { data: activities, error: activitiesError } = await supabase
+          .from('lms_activities')
+          .select('*')
+          .in('section_id', sectionIds);
+
+        if (activitiesError) throw activitiesError;
+
+        assignmentLessons = activities?.filter(a => a.type === 'assignment') || [];
+        quizLessons = activities?.filter(a => a.type === 'quiz') || [];
+        forumLessons = activities?.filter(a => a.type === 'forum') || [];
+      }
 
       // 2. Fetch grades data
       const [subsRes, quizRes, forumRes] = await Promise.all([

@@ -4,11 +4,18 @@ import { useConfirmStore } from '../../../store/useConfirmStore';
 
 interface CategoriesListProps {
   onEditCategory: (category: CategoryItem) => void;
+  selectedSchoolId?: string;
+  schoolId?: string;
 }
 
-export function CategoriesList({ onEditCategory }: CategoriesListProps) {
+export function CategoriesList({ onEditCategory, selectedSchoolId, schoolId }: CategoriesListProps) {
+  const activeSchoolId = selectedSchoolId || schoolId || 'all';
   const { categories, deleteCategory } = useCategories();
   const confirm = useConfirmStore((state) => state.confirm);
+
+  const filteredCategories = activeSchoolId === 'all'
+    ? categories
+    : categories.filter(cat => !cat.school_id || cat.school_id === activeSchoolId);
 
   const handleDeleteCategory = async (id: string) => {
     const confirmed = await confirm({
@@ -34,12 +41,12 @@ export function CategoriesList({ onEditCategory }: CategoriesListProps) {
             </tr>
           </thead>
           <tbody>
-            {categories.length === 0 ? (
+            {filteredCategories.length === 0 ? (
               <tr>
                 <td colSpan={3} className="p-8 text-center text-gray-500">No hay categorías configuradas.</td>
               </tr>
             ) : (
-              categories.map(cat => (
+              filteredCategories.map(cat => (
                 <tr key={cat.id} className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="p-4 font-bold text-sm text-gray-900 dark:text-white">{cat.name}</td>
                   <td className="p-4 text-xs text-gray-600 dark:text-gray-400">{cat.description || 'Sin descripción'}</td>

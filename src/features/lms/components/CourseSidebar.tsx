@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, ChevronDown, FileText, HelpCircle, MessageSquare, PlayCircle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, FileCheck, FileCode, FileText, Globe, HelpCircle, MessageSquare, PlayCircle } from 'lucide-react';
 
 interface CourseModuleItem {
   id: string;
@@ -13,7 +13,7 @@ interface CourseLessonItem {
   module_id: string;
   title: string;
   type: string;
-  order_index: number;
+  order_index?: number;
 }
 
 interface CourseSidebarProps<TLesson extends CourseLessonItem> {
@@ -30,6 +30,11 @@ const LESSON_ICONS: Record<string, typeof FileText> = {
   video_link: PlayCircle,
   quiz: HelpCircle,
   forum: MessageSquare,
+  assignment: FileCheck,
+  document: FileText,
+  resource: Globe,
+  h5p: FileCode,
+  h5p_embed: FileCode,
 };
 
 export function CourseSidebar<TLesson extends CourseLessonItem>({ modules, lessons, completions, activeLesson, onSelectLesson, userRoles }: CourseSidebarProps<TLesson>) {
@@ -56,14 +61,14 @@ export function CourseSidebar<TLesson extends CourseLessonItem>({ modules, lesso
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
-        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{completedLessons} de {lessons.length} lecciones completadas</p>
+        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{completedLessons} de {lessons.length} contenidos completados</p>
       </div>
 
       <div className="space-y-2 p-3 sm:p-4">
         {visibleModules.map((module, index) => {
           const moduleLessons = lessons
             .filter((lesson) => lesson.module_id === module.id)
-            .sort((a, b) => a.order_index - b.order_index);
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
           const isExpanded = !collapsedModules[module.id];
           const moduleCompleted = moduleLessons.filter((lesson) => completions[lesson.id]).length;
           const moduleProgress = moduleLessons.length > 0 ? Math.round((moduleCompleted / moduleLessons.length) * 100) : 0;
@@ -77,6 +82,9 @@ export function CourseSidebar<TLesson extends CourseLessonItem>({ modules, lesso
                   <span className="mt-1 flex items-center gap-2 text-[10px] font-bold text-slate-400">
                     {moduleCompleted}/{moduleLessons.length} completadas
                     <span className="h-1 w-1 rounded-full bg-slate-300" />{moduleProgress}%
+                  </span>
+                  <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
+                    <span className="block h-full bg-indigo-500 transition-all duration-300" style={{ width: `${moduleProgress}%` }} />
                   </span>
                 </span>
                 <ChevronDown size={17} className={`shrink-0 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -102,13 +110,13 @@ export function CourseSidebar<TLesson extends CourseLessonItem>({ modules, lesso
                               {isCompleted ? <CheckCircle2 size={14} /> : <Icon size={14} />}
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className={`block text-[9px] font-extrabold uppercase tracking-wider ${isActive ? 'text-indigo-200' : 'text-slate-400'}`}>Lección {lessonIndex + 1}</span>
+                              <span className={`block text-[9px] font-extrabold uppercase tracking-wider ${isActive ? 'text-indigo-200' : 'text-slate-400'}`}>Ítem {lessonIndex + 1}</span>
                               <span className="mt-0.5 line-clamp-2 block font-semibold leading-snug">{lesson.title}</span>
                             </span>
                           </button>
                         );
                       })}
-                      {moduleLessons.length === 0 && <p className="py-4 text-center text-xs font-medium text-slate-400">Este módulo aún no tiene lecciones.</p>}
+                      {moduleLessons.length === 0 && <p className="py-4 text-center text-xs font-medium text-slate-400">Este módulo/sección aún no tiene contenidos.</p>}
                     </div>
                   </motion.div>
                 )}

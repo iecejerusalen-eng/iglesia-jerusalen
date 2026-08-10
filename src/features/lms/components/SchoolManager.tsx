@@ -3,9 +3,10 @@ import { supabase } from '../../../config/supabase';
 import type { LMSSchool, LMSLevel, Profile } from '../../../types';
 import {
   GraduationCap, Plus, Pencil, Trash2, School, Users,
-  ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Layers, X, Save
+  ChevronDown, ChevronUp, Layers, X, Save
 } from 'lucide-react';
 import BlockEditor from '../../../components/admin/BlockEditor';
+import { toast } from 'sonner';
 
 /**
  * SchoolManager — Full CRUD for Schools (Escuelas / Facultades) and their Levels.
@@ -42,15 +43,6 @@ export function SchoolManager() {
   const [levelParallel, setLevelParallel] = useState('');
   const [levelContent, setLevelContent] = useState('[]');
 
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -65,14 +57,16 @@ export function SchoolManager() {
       setProfiles((profilesRes.data ?? []) as Profile[]);
     } catch (err) {
       console.error('Error loading LMS schools:', err);
-      setNotification({ type: 'error', message: 'Error al cargar escuelas.' });
+      toast.error('Error al cargar escuelas.');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => { void fetchData(); }, 0);
+    const timer = setTimeout(() => {
+      void fetchData();
+    }, 0);
     return () => clearTimeout(timer);
   }, [fetchData]);
 
@@ -84,7 +78,7 @@ export function SchoolManager() {
       .order('sort_order', { ascending: true });
     if (error) {
       console.error('Error loading LMS levels:', error);
-      setNotification({ type: 'error', message: 'No se pudieron cargar los niveles.' });
+      toast.error('No se pudieron cargar los niveles.');
       return;
     }
     setLevels(prev => ({ ...prev, [schoolId]: (data ?? []) as LMSLevel[] }));
@@ -142,7 +136,7 @@ export function SchoolManager() {
   const handleSaveSchool = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) {
-      setNotification({ type: 'error', message: 'El nombre de la escuela es obligatorio.' });
+      toast.error('El nombre de la escuela es obligatorio.');
       return;
     }
 
@@ -163,17 +157,17 @@ export function SchoolManager() {
       if (editingSchool) {
         const { error } = await supabase.from('lms_schools').update(payload).eq('id', editingSchool.id);
         if (error) throw error;
-        setNotification({ type: 'success', message: `"${formName}" actualizada correctamente.` });
+        toast.success(`"${formName}" actualizada correctamente.`);
       } else {
         const { error } = await supabase.from('lms_schools').insert([{ ...payload, sort_order: schools.length + 1 }]);
         if (error) throw error;
-        setNotification({ type: 'success', message: `"${formName}" creada exitosamente.` });
+        toast.success(`"${formName}" creada exitosamente.`);
       }
       setIsSchoolModalOpen(false);
       fetchData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar escuela.';
-      setNotification({ type: 'error', message: msg });
+      toast.error(msg);
     }
   };
 
@@ -182,12 +176,12 @@ export function SchoolManager() {
     try {
       const { error } = await supabase.from('lms_schools').delete().eq('id', school.id);
       if (error) throw error;
-      setNotification({ type: 'success', message: `"${school.name}" eliminada.` });
+      toast.success(`"${school.name}" eliminada.`);
       setSchools(prev => prev.filter(s => s.id !== school.id));
       if (expandedSchool === school.id) setExpandedSchool(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al eliminar.';
-      setNotification({ type: 'error', message: msg });
+      toast.error(msg);
     }
   };
 
@@ -220,13 +214,24 @@ export function SchoolManager() {
   const handleSaveLevel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!levelName.trim()) {
-      setNotification({ type: 'error', message: 'El nombre del nivel es obligatorio.' });
+      toast.error('El nombre del nivel es obligatorio.');
       return;
     }
 
     try {
-      const parsedContent: unknown = JSON.parse(levelContent || '[]');
-      if (!Array.isArray(parsedContent)) throw new Error('El contenido del nivel debe estar compuesto por bloques.');
+      let parsedContent: unknown = [];
+      if (levelContent && levelContent.trim()) {
+        try {
+          parsedContent = JSON.parse(levelContent);
+        } catch {
+          toast.error('El contenido de bloques no tiene un formato JSON válido.');
+          return;
+        }
+      }
+      if (!Array.isArray(parsedContent)) {
+        toast.error('El contenido del nivel debe ser una lista válida de bloques.');
+        return;
+      }
       const schoolType = schools.find((school) => school.id === levelSchoolId)?.school_type || 'custom';
       const payload = {
         school_id: levelSchoolId,
@@ -242,18 +247,18 @@ export function SchoolManager() {
       if (editingLevel) {
         const { error } = await supabase.from('lms_levels').update(payload).eq('id', editingLevel.id);
         if (error) throw error;
-        setNotification({ type: 'success', message: `Nivel "${levelName}" actualizado.` });
+        toast.success(`Nivel "${levelName}" actualizado.`);
       } else {
         const existingLevels = levels[levelSchoolId] || [];
         const { error } = await supabase.from('lms_levels').insert([{ ...payload, sort_order: existingLevels.length + 1 }]);
         if (error) throw error;
-        setNotification({ type: 'success', message: `Nivel "${levelName}" creado.` });
+        toast.success(`Nivel "${levelName}" creado.`);
       }
       setIsLevelModalOpen(false);
       fetchLevels(levelSchoolId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar nivel.';
-      setNotification({ type: 'error', message: msg });
+      toast.error(msg);
     }
   };
 
@@ -262,11 +267,11 @@ export function SchoolManager() {
     try {
       const { error } = await supabase.from('lms_levels').delete().eq('id', level.id);
       if (error) throw error;
-      setNotification({ type: 'success', message: `Nivel "${level.name}" eliminado.` });
+      toast.success(`Nivel "${level.name}" eliminado.`);
       fetchLevels(level.school_id);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al eliminar nivel.';
-      setNotification({ type: 'error', message: msg });
+      toast.error(msg);
     }
   };
 
@@ -292,20 +297,6 @@ export function SchoolManager() {
 
   return (
     <div className="space-y-6">
-      {/* Notification */}
-      {notification && (
-        <div className={`p-4 rounded-2xl flex items-center gap-3 ${
-          notification.type === 'success'
-            ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-            : 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800'
-        }`}>
-          {notification.type === 'success'
-            ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-          <span className="text-sm font-medium">{notification.message}</span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -598,7 +589,7 @@ export function SchoolManager() {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-slate-950 font-bold text-sm shadow-md shadow-gold/20 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-slate-955 font-bold text-sm shadow-md shadow-gold/20 transition-all cursor-pointer"
                 >
                   <Save size={16} /> {editingSchool ? 'Guardar Cambios' : 'Crear Escuela'}
                 </button>

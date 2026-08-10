@@ -18,14 +18,20 @@ const LMSQuizBuilder: React.FC<LMSQuizBuilderProps> = ({ content, onChange }) =>
   const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { if (content) {
-      try {
-        const parsed = JSON.parse(content);
-        if (parsed.questions) setQuestions(parsed.questions);
-      } catch (e) {
-        console.error("Error parsing quiz content", e);
+    const timer = window.setTimeout(() => {
+      if (content) {
+        try {
+          const parsed = JSON.parse(content);
+          if (Array.isArray(parsed)) {
+            setQuestions(parsed);
+          } else if (parsed && Array.isArray(parsed.questions)) {
+            setQuestions(parsed.questions);
+          }
+        } catch (e) {
+          console.error("Error parsing quiz content", e);
+        }
       }
-    } }, 0);
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [content]);
 

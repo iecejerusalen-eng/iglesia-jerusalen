@@ -3,11 +3,16 @@ import DOMPurify from 'dompurify';
 import { toast } from 'sonner';
 import {
   HelpCircle, CheckCircle2, XCircle, Save, Check, ShieldAlert, BookOpen,
-  ListChecks, Dices, RotateCw, Sparkles, Grid3x3, Sliders, StickyNote, Timer,
-  Play, Pause, RefreshCw, Award, HeartHandshake
+  ListChecks, Sliders, StickyNote,
+  HeartHandshake
 } from 'lucide-react';
 import type { LessonBlock } from '../admin/BlockEditor';
 import RichTextRenderer from '../common/RichTextRenderer';
+import SpinnerWheel from '../activities/SpinnerWheel';
+import FillBlank from '../activities/FillBlank';
+import Dice3D from '../activities/Dice3D';
+import WordSearchGrid from '../activities/WordSearchGrid';
+import RetroTimer from '../activities/RetroTimer';
 
 interface Props {
   content: string;
@@ -123,53 +128,9 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
     return '';
   });
 
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [spinnerResult, setSpinnerResult] = useState<string | null>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (block.type === 'spinner' && typeof parsed.result === 'string') return parsed.result;
-      }
-    } catch { /* ignore */ }
-    return null;
-  });
-  const [spinnerRotation, setSpinnerRotation] = useState(0);
 
-  const [blankAnswers, setBlankAnswers] = useState<Record<number, string>>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (block.type === 'fill_blank' && parsed.answers) return parsed.answers;
-      }
-    } catch { /* ignore */ }
-    return {};
-  });
-  const [blankStatus, setBlankStatus] = useState<boolean | null>(null);
 
-  const [isRollingDice, setIsRollingDice] = useState(false);
-  const [diceResult, setDiceResult] = useState<number | null>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (block.type === 'dice' && typeof parsed.result === 'number') return parsed.result;
-      }
-    } catch { /* ignore */ }
-    return null;
-  });
 
-  const [foundWords, setFoundWords] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (block.type === 'word_search' && Array.isArray(parsed.found)) return parsed.found;
-      }
-    } catch { /* ignore */ }
-    return [];
-  });
 
   const [sliderVal, setSliderVal] = useState<number>(() => {
     try {
@@ -193,8 +154,7 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
     return '';
   });
 
-  const [timeLeft, setTimeLeft] = useState<number>(block.timer_seconds || 60);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
 
   const saveOpenAnswer = () => {
     localStorage.setItem(storageKey, JSON.stringify({ answer: openAnswer }));
@@ -238,71 +198,7 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
     localStorage.setItem(storageKey, JSON.stringify({ selection: pollSelection, other: val }));
   };
 
-  const spinWheel = () => {
-    if (isSpinning || !block.spinner_items || block.spinner_items.length === 0) return;
-    setIsSpinning(true);
-    setSpinnerResult(null);
 
-    const totalItems = block.spinner_items.length;
-    const sliceAngle = 360 / totalItems;
-    const winnerIdx = Math.floor(Math.random() * totalItems);
-    const rotations = 5 * 360; 
-    const targetAngle = rotations + (360 - (winnerIdx * sliceAngle)) - (sliceAngle / 2);
-    const newTotalRotation = spinnerRotation + targetAngle + (360 - (spinnerRotation % 360));
-    
-    setSpinnerRotation(newTotalRotation);
-
-    setTimeout(() => {
-      const winner = block.spinner_items![winnerIdx];
-      setSpinnerResult(winner);
-      setIsSpinning(false);
-      localStorage.setItem(storageKey, JSON.stringify({ result: winner }));
-      toast.success(`¡La ruleta se detuvo en: ${winner}!`);
-    }, 3000);
-  };
-
-  const checkFillBlank = () => {
-    const targets = block.fill_blank_words || [];
-    if (targets.length === 0) return;
-    
-    const isAllCorrect = targets.every((word, idx) => {
-      return (blankAnswers[idx] || '').trim().toLowerCase() === word.trim().toLowerCase();
-    });
-
-    setBlankStatus(isAllCorrect);
-    localStorage.setItem(storageKey, JSON.stringify({ answers: blankAnswers, correct: isAllCorrect }));
-    if (isAllCorrect) {
-      toast.success('¡Excelente! Has completado el versículo correctamente.');
-    } else {
-      toast.error('Algunas palabras no coinciden. ¡Revisa e inténtalo de nuevo!');
-    }
-  };
-
-  const rollDice = () => {
-    if (isRollingDice) return;
-    setIsRollingDice(true);
-    setDiceResult(null);
-
-    setTimeout(() => {
-      const rolled = Math.floor(Math.random() * 6) + 1;
-      setDiceResult(rolled);
-      setIsRollingDice(false);
-      localStorage.setItem(storageKey, JSON.stringify({ result: rolled }));
-      toast.success(`¡Lanzaste un ${rolled}! Lee tu pregunta de reflexión.`);
-    }, 1200);
-  };
-
-  const toggleWordFound = (word: string) => {
-    const updated = foundWords.includes(word)
-      ? foundWords.filter(w => w !== word)
-      : [...foundWords, word];
-    setFoundWords(updated);
-    localStorage.setItem(storageKey, JSON.stringify({ found: updated }));
-    
-    if (!foundWords.includes(word) && updated.length === (block.word_search_words || []).length) {
-      toast.success('🎉 ¡Felicitaciones! Has encontrado todas las palabras.');
-    }
-  };
 
   const updateSlider = (val: number) => {
     setSliderVal(val);
@@ -314,22 +210,7 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
     localStorage.setItem(storageKey, JSON.stringify({ text }));
   };
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isTimerRunning && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            toast.info('⏰ ¡Tiempo agotado! Fin del reto.');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isTimerRunning, timeLeft]);
+
 
   return (
     <div className="animate-fadeIn">
@@ -602,214 +483,22 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
 
       {/* 9. SPINNER / RULETA */}
       {block.type === 'spinner' && block.question_text && (
-        <div className="bg-orange-50/10 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-800/40 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm overflow-hidden text-center">
-          <p className="font-bold text-slate-900 dark:text-gray-100 text-sm md:text-base flex items-center justify-center gap-2">
-            <Dices className="text-orange-500 dark:text-orange-400 shrink-0" size={20} />
-            {block.question_text}
-          </p>
-          
-          <div className="relative w-48 h-48 sm:w-64 sm:h-64 mx-auto">
-            <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1 sm:-translate-y-2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[16px] sm:border-l-[12px] sm:border-r-[12px] sm:border-t-[20px] border-l-transparent border-r-transparent border-t-red-600 z-10 filter drop-shadow-md" />
-            
-            <div 
-              className="w-full h-full rounded-full border-4 border-white dark:border-slate-700 shadow-xl overflow-hidden bg-[conic-gradient(var(--tw-gradient-stops))] from-orange-300 via-orange-100 to-orange-400 dark:from-orange-700 dark:via-orange-500 dark:to-orange-800 relative"
-              style={{
-                transform: `rotate(${spinnerRotation}deg)`,
-                transition: isSpinning ? 'transform 3s cubic-bezier(0.2, 0.8, 0.1, 1)' : 'none'
-              }}
-            >
-              {(block.spinner_items || []).map((_, idx) => {
-                const total = (block.spinner_items || []).length;
-                const angle = 360 / total;
-                const rotation = idx * angle;
-                return (
-                  <div 
-                    key={idx}
-                    className="absolute inset-0 origin-center"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                  >
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-1/2 bg-white/40 dark:bg-white/20 origin-bottom" />
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg border-2 border-orange-200 dark:border-orange-700 z-10 flex items-center justify-center">
-              <div className="w-4 h-4 bg-orange-400 dark:bg-orange-500 rounded-full" />
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-2">
-            {!spinnerResult ? (
-              <button
-                type="button"
-                onClick={spinWheel}
-                disabled={isSpinning || !(block.spinner_items && block.spinner_items.length > 0)}
-                className="mx-auto flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
-              >
-                <RotateCw size={18} className={isSpinning ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
-                {isSpinning ? 'Girando...' : '¡Girar la Ruleta!'}
-              </button>
-            ) : (
-              <div className="animate-in fade-in zoom-in duration-300 p-4 bg-orange-100/50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-700/50 rounded-xl max-w-sm mx-auto">
-                 <p className="text-xs text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wider mb-1">Resultado</p>
-                 <p className="text-xl font-bold text-orange-950 dark:text-orange-200">{spinnerResult}</p>
-                 <button 
-                   onClick={() => { setSpinnerResult(null); }} 
-                   className="mt-3 text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 underline underline-offset-2 cursor-pointer"
-                 >
-                   Girar de nuevo
-                 </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <SpinnerWheel block={block} storageKey={storageKey} />
       )}
 
       {/* 10. FILL IN BLANK */}
       {block.type === 'fill_blank' && block.text && (
-        <div className="bg-teal-50/20 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-800/40 rounded-2xl p-5 md:p-6 space-y-4 shadow-sm">
-          <div className="flex items-center gap-2 text-teal-800 dark:text-teal-300 font-bold text-sm">
-            <BookOpen size={18} className="text-teal-600 dark:text-teal-400" />
-            <span>Memorización de Versículo</span>
-          </div>
-
-          <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-teal-100 dark:border-teal-800/40 text-slate-800 dark:text-gray-200 text-sm sm:text-base font-serif leading-relaxed space-y-2">
-            {(() => {
-              const textParts = (block.text || '').split(/\[(.*?)\]/g);
-              let blankIdx = 0;
-              return (
-                <div className="flex flex-wrap items-center gap-1.5 leading-loose">
-                  {textParts.map((part, idx) => {
-                    if (idx % 2 === 1) {
-                      const currentBlankIdx = blankIdx++;
-                      return (
-                        <input
-                          key={idx}
-                          type="text"
-                          value={blankAnswers[currentBlankIdx] || ''}
-                          onChange={(e) => {
-                            setBlankAnswers({ ...blankAnswers, [currentBlankIdx]: e.target.value });
-                            setBlankStatus(null);
-                          }}
-                          placeholder="..."
-                          className={`w-28 text-center px-2 py-0.5 border-b-2 font-sans font-bold text-sm focus:outline-none transition-all bg-transparent ${
-                            blankStatus === true
-                              ? 'border-green-500 dark:border-green-500 text-green-800 dark:text-green-300'
-                              : blankStatus === false
-                              ? 'border-red-400 dark:border-red-500 text-red-800 dark:text-red-300'
-                              : 'border-teal-400 dark:border-teal-600 focus:border-teal-600 dark:focus:border-teal-400 text-gray-800 dark:text-gray-200'
-                          }`}
-                        />
-                      );
-                    }
-                    return <span key={idx}>{part}</span>;
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="flex justify-between items-center pt-2">
-            <button
-              onClick={checkFillBlank}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer"
-            >
-              <Check size={14} /> Verificar Versículo
-            </button>
-            {blankStatus === true && (
-              <span className="text-xs font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle2 size={14} /> ¡Versículo memorizado!
-              </span>
-            )}
-          </div>
-        </div>
+        <FillBlank block={block} storageKey={storageKey} />
       )}
 
       {/* 11. DICE / DADO DE REFLEXION */}
       {block.type === 'dice' && block.question_text && (
-        <div className="bg-amber-50/20 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-800/40 rounded-2xl p-5 md:p-8 space-y-6 shadow-sm text-center">
-          <p className="font-bold text-slate-900 dark:text-gray-100 text-sm md:text-base flex items-center justify-center gap-2">
-            <Sparkles className="text-amber-500 dark:text-amber-400" size={20} />
-            {block.question_text}
-          </p>
-
-          <div className="py-4">
-            <button
-              type="button"
-              onClick={rollDice}
-              disabled={isRollingDice}
-              className={`w-24 h-24 mx-auto bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 dark:from-amber-500 dark:via-amber-600 dark:to-amber-700 text-white rounded-2xl shadow-xl flex items-center justify-center font-bold text-3xl border-4 border-white dark:border-slate-700 transition-all cursor-pointer select-none ${
-                isRollingDice ? 'animate-bounce scale-110' : 'hover:scale-105 active:scale-95'
-              }`}
-            >
-              {isRollingDice ? (
-                <RotateCw size={36} className="animate-spin text-white/90" />
-              ) : diceResult ? (
-                <span>{diceResult}</span>
-              ) : (
-                <Sparkles size={32} />
-              )}
-            </button>
-          </div>
-
-          {diceResult && (
-            <div className="animate-in fade-in zoom-in duration-300 p-5 bg-amber-100/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 rounded-2xl max-w-md mx-auto space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-800/40 px-2 py-0.5 rounded-full">
-                Cara #{diceResult}
-              </span>
-              <p className="text-sm md:text-base font-bold text-amber-950 dark:text-amber-200">
-                {(block.dice_options || [])[diceResult - 1] || `Pregunta ${diceResult}`}
-              </p>
-              <button
-                onClick={rollDice}
-                className="mt-2 text-xs font-bold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 underline cursor-pointer"
-              >
-                Volver a lanzar
-              </button>
-            </div>
-          )}
-        </div>
+        <Dice3D block={block} storageKey={storageKey} />
       )}
 
       {/* 12. WORD SEARCH / SOPA DE LETRAS */}
       {block.type === 'word_search' && block.question_text && (
-        <div className="bg-cyan-50/20 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-800/40 rounded-2xl p-5 md:p-6 space-y-4 shadow-sm">
-          <p className="font-bold text-slate-900 dark:text-gray-100 text-sm md:text-base flex items-center gap-2">
-            <Grid3x3 className="text-cyan-600 dark:text-cyan-400" size={20} />
-            {block.question_text}
-          </p>
-
-          <div className="space-y-3">
-            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 block">Palabras a encontrar:</span>
-            <div className="flex flex-wrap gap-2">
-              {(block.word_search_words || []).map((word, idx) => {
-                const isFound = foundWords.includes(word);
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => toggleWordFound(word)}
-                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                      isFound
-                        ? 'bg-cyan-600 dark:bg-cyan-700 text-white line-through shadow-xs'
-                        : 'bg-white dark:bg-slate-900 border border-cyan-200 dark:border-cyan-700/50 text-cyan-900 dark:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-950/30'
-                    }`}
-                  >
-                    {isFound && <Check size={12} />}
-                    {word}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {foundWords.length === (block.word_search_words || []).length && (block.word_search_words || []).length > 0 && (
-            <div className="p-3 bg-cyan-100/60 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-700/50 rounded-xl text-center text-xs font-bold text-cyan-900 dark:text-cyan-300 flex items-center justify-center gap-2 animate-in fade-in">
-              <Award size={16} /> ¡Has encontrado todas las palabras clave!
-            </div>
-          )}
-        </div>
+        <WordSearchGrid block={block} storageKey={storageKey} />
       )}
 
       {/* 13. REFLECTION SLIDER */}
@@ -876,43 +565,7 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
 
       {/* 15. TIMER CHALLENGE */}
       {block.type === 'timer_challenge' && block.question_text && (
-        <div className="bg-rose-50/20 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-800/40 rounded-2xl p-5 md:p-6 space-y-4 shadow-sm text-center">
-          <p className="font-bold text-slate-900 dark:text-gray-100 text-sm md:text-base flex items-center justify-center gap-2">
-            <Timer className="text-rose-600 dark:text-rose-400" size={20} />
-            {block.question_text}
-          </p>
-
-          <div className="py-2">
-            <div className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-mono font-bold text-2xl shadow-md ${
-              timeLeft === 0
-                ? 'bg-gray-500 dark:bg-gray-600 text-white'
-                : timeLeft <= 10
-                ? 'bg-red-600 dark:bg-red-700 text-white animate-pulse'
-                : 'bg-rose-600 dark:bg-rose-700 text-white'
-            }`}>
-              <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-3">
-            <button
-              onClick={() => setIsTimerRunning(!isTimerRunning)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
-            >
-              {isTimerRunning ? <Pause size={14} /> : <Play size={14} />}
-              {isTimerRunning ? 'Pausar' : 'Iniciar'}
-            </button>
-            <button
-              onClick={() => {
-                setIsTimerRunning(false);
-                setTimeLeft(block.timer_seconds || 60);
-              }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-700/50 text-rose-800 dark:text-rose-300 rounded-xl font-bold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
-            >
-              <RefreshCw size={14} /> Reiniciar
-            </button>
-          </div>
-        </div>
+        <RetroTimer block={block} storageKey={storageKey} />
       )}
     </div>
   );

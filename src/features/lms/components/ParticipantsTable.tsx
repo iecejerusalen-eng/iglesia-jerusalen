@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
-import { Search, Mail, Users, CheckCircle, ShieldOff, Loader2 } from 'lucide-react';
+import { Search, Mail, Users, CheckCircle, ShieldOff, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ParticipantsTableProps {
@@ -40,12 +40,38 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
   // Filters
   const [roleFilter, setRoleFilter] = useState('all'); // student, teacher, admin
   const [statusFilter, setStatusFilter] = useState('all'); // active, suspended
+
+  // Modal Confirmation State
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    action: 'delete' | 'suspend' | 'activate' | null;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    action: null,
+    title: '',
+    message: ''
+  });
+
   const fetchParticipants = useCallback(async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('lms_enrollments')
-        .select(`
+      const isSchoolFiltered = schoolId && schoolId !== 'all';
+
+      // Server-side school filtering: Use inner join syntax courses!inner(...) when schoolId is provided
+      const selectClause = isSchoolFiltered
+        ? `
+          id,
+          user_id,
+          course_id,
+          role,
+          status,
+          enrolled_at,
+          courses:course_id!inner (id, title, school_id),
+          profiles:user_id (id, first_name, last_name, email, avatar_url, doc_id)
+        `
+        : `
           id,
           user_id,
           course_id,
@@ -54,22 +80,25 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
           enrolled_at,
           courses:course_id (id, title, school_id),
           profiles:user_id (id, first_name, last_name, email, avatar_url, doc_id)
-        `);
+        `;
+
+      let query = supabase
+        .from('lms_enrollments')
+        .select(selectClause);
 
       if (courseId && courseId !== 'all') {
         query = query.eq('course_id', courseId);
       }
-      
+
+      if (isSchoolFiltered) {
+        query = query.eq('courses.school_id', schoolId);
+      }
+
       const { data, error } = await query;
       
       if (error) throw error;
-      
-      let processedData = (data as unknown as ParticipantData[]) || [];
-      if (schoolId && schoolId !== 'all') {
-        processedData = processedData.filter(d => d.courses?.school_id === schoolId);
-      }
 
-      setParticipants(processedData);
+      setParticipants((data as unknown as ParticipantData[]) || []);
     } catch (err) {
       console.error(err);
       toast.error('Error al cargar participantes');
@@ -79,7 +108,6 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
   }, [schoolId, courseId]);
 
   useEffect(() => {
-    // Evitar la advertencia del linter sobre setState síncrono retrasando la ejecución al siguiente tick
     const timer = setTimeout(() => {
       fetchParticipants();
     }, 0);
@@ -128,12 +156,38 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
     }
   };
 
-  const handleBulkAction = async (action: 'suspend' | 'activate' | 'delete') => {
+  const requestBulkAction = (action: 'suspend' | 'activate' | 'delete') => {
     if (selectedIds.length === 0) return;
-    
+    const count = selectedIds.length;
+
     if (action === 'delete') {
-      if (!confirm('¿Estás seguro de eliminar estas matrículas? Esta acción no se puede deshacer.')) return;
+      setConfirmModal({
+        open: true,
+        action: 'delete',
+        title: 'Eliminar Matrículas',
+        message: `¿Estás seguro de eliminar ${count} matrícula(s) seleccionada(s)? Esta acción no se puede deshacer.`
+      });
+    } else if (action === 'suspend') {
+      setConfirmModal({
+        open: true,
+        action: 'suspend',
+        title: 'Suspender Participantes',
+        message: `¿Deseas cambiar el estado a suspendido para ${count} participante(s)?`
+      });
+    } else {
+      setConfirmModal({
+        open: true,
+        action: 'activate',
+        title: 'Activar Participantes',
+        message: `¿Deseas cambiar el estado a activo para ${count} participante(s)?`
+      });
     }
+  };
+
+  const executeBulkAction = async () => {
+    if (!confirmModal.action || selectedIds.length === 0) return;
+    const action = confirmModal.action;
+    setConfirmModal(prev => ({ ...prev, open: false }));
 
     try {
       if (action === 'delete') {
@@ -144,7 +198,7 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
         const newStatus = action === 'activate' ? 'active' : 'suspended';
         const { error } = await supabase.from('lms_enrollments').update({ status: newStatus }).in('id', selectedIds);
         if (error) throw error;
-        toast.success(`Estado actualizado a ${newStatus}`);
+        toast.success(`Estado actualizado a ${newStatus === 'active' ? 'activo' : 'suspendido'}`);
       }
       
       setSelectedIds([]);
@@ -204,13 +258,15 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
             {selectedIds.length} participantes seleccionados
           </span>
           <div className="flex gap-2">
-            <button onClick={() => handleBulkAction('activate')} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors">
+            <button onClick={() => requestBulkAction('activate')} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors">
               <CheckCircle size={14} /> Activar
             </button>
-            <button onClick={() => handleBulkAction('suspend')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors">
+            <button onClick={() => requestBulkAction('suspend')} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors">
               <ShieldOff size={14} /> Suspender
             </button>
-            {/* Future: Agregar botón de Asignar Grupo masivo */}
+            <button onClick={() => requestBulkAction('delete')} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors">
+              <Trash2 size={14} /> Eliminar
+            </button>
           </div>
         </div>
       )}
@@ -300,6 +356,45 @@ export function ParticipantsTable({ schoolId, courseId }: ParticipantsTableProps
           </tbody>
         </table>
       </div>
+
+      {/* Custom Modal Confirmation Dialog */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-3 rounded-xl ${confirmModal.action === 'delete' ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'}`}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white">{confirmModal.title}</h3>
+                <p className="text-xs text-gray-500">Acción sobre matrículas</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{confirmModal.message}</p>
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/5">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={executeBulkAction}
+                className={`px-4 py-2 text-white rounded-xl text-sm font-bold transition-colors ${
+                  confirmModal.action === 'delete'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : confirmModal.action === 'suspend'
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

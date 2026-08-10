@@ -1,14 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, ArrowRight, Building2, Users, FolderOpen, Inbox, Settings, UserCheck, Calendar, DoorOpen } from 'lucide-react';
-import type { LMSCourse } from '../../types';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  BarChart3,
+  BookOpen,
+  Building2,
+  Calendar,
+  DoorOpen,
+  FolderOpen,
+  Inbox,
+  LayoutDashboard,
+  PanelLeftClose,
+  Plus,
+  Settings,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 
 import { useCourses } from '../../features/lms/hooks/useCourses';
 import { useCategories, type CategoryItem } from '../../features/lms/hooks/useCategories';
 import { useEnrollmentRequests } from '../../features/lms/hooks/useEnrollmentRequests';
-
 import { CoursesList } from '../../features/lms/components/CoursesList';
-import { CourseForm } from '../../features/lms/components/CourseForm';
 import { CategoriesList } from '../../features/lms/components/CategoriesList';
 import { CategoryForm } from '../../features/lms/components/CategoryForm';
 import { EnrollmentRequestsList } from '../../features/lms/components/EnrollmentRequestsList';
@@ -20,302 +31,223 @@ import { SchoolSelector } from '../../features/lms/components/SchoolSelector';
 import { ParticipantsTable } from '../../features/lms/components/ParticipantsTable';
 import { LMSAnalytics } from '../../features/lms/components/LMSAnalytics';
 import { SchoolAccessRequestsManager } from '../../features/lms/components/SchoolAccessRequestsManager';
+import { LMSAdminOverview, type LMSAdminDestination } from '../../features/lms/components/LMSAdminOverview';
 
-type LMSAdminTab = 'schools' | 'school-access' | 'courses' | 'categories' | 'requests' | 'participants' | 'analytics' | 'defaults' | 'staff' | 'calendar';
+type LMSAdminTab = 'overview' | LMSAdminDestination;
+
+interface NavigationItem {
+  id: LMSAdminTab;
+  label: string;
+  description: string;
+  icon: typeof BookOpen;
+  badge?: number;
+}
+
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+}
+
+const VALID_TABS = new Set<LMSAdminTab>([
+  'overview', 'schools', 'school-access', 'courses', 'categories', 'requests',
+  'participants', 'analytics', 'defaults', 'staff', 'calendar',
+]);
 
 export default function LMSManager() {
   const location = useLocation();
   const navigate = useNavigate();
-  const initialTab: LMSAdminTab = location.pathname.includes('matriculas') ? 'school-access' : 'courses';
-  const [activeTab, setActiveTab] = useState<LMSAdminTab>(initialTab);
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('all');
-
-  const { courses, isLoading: loadingCourses } = useCourses();
-  const { categories, isLoading: loadingCategories } = useCategories();
-  const { requests, isLoading: loadingRequests } = useEnrollmentRequests();
-
-  // Course Modal
-  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Partial<LMSCourse> & { category_id?: string } | null>(null);
-
-  // Category Modal
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedSchoolId, setSelectedSchoolId] = useState('all');
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Partial<CategoryItem> | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (location.pathname.includes('matriculas')) {
-        setActiveTab('school-access');
-      } else if (location.pathname === '/admin/lms') {
-        setActiveTab('courses');
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
+  const { courses, isLoading: loadingCourses } = useCourses();
+  const { isLoading: loadingCategories } = useCategories();
+  const { requests, isLoading: loadingRequests } = useEnrollmentRequests();
 
-  const handleOpenCourseModal = (course?: LMSCourse) => {
-    if (course) {
-      setEditingCourse({
-        ...course,
-        start_date: course.start_date ? course.start_date.substring(0, 10) : ''
-      });
-    } else {
-      setEditingCourse(null);
-    }
-    setIsCourseModalOpen(true);
+  const requestedTab = searchParams.get('tab');
+  const legacyTab: LMSAdminTab = location.pathname.includes('matriculas') ? 'school-access' : 'overview';
+  const activeTab: LMSAdminTab = requestedTab && VALID_TABS.has(requestedTab as LMSAdminTab)
+    ? requestedTab as LMSAdminTab
+    : legacyTab;
+
+  const visibleCourses = useMemo(
+    () => selectedSchoolId === 'all' ? courses : courses.filter(course => course.school_id === selectedSchoolId),
+    [courses, selectedSchoolId],
+  );
+  const filteredRequests = useMemo(
+    () => selectedSchoolId === 'all' ? requests : requests.filter(request => request.lms_courses?.school_id === selectedSchoolId),
+    [requests, selectedSchoolId],
+  );
+
+  const navigationGroups: NavigationGroup[] = [
+    {
+      label: 'Centro académico',
+      items: [
+        { id: 'overview', label: 'Resumen', description: 'Estado y tareas prioritarias', icon: LayoutDashboard },
+      ],
+    },
+    {
+      label: 'Estructura educativa',
+      items: [
+        { id: 'schools', label: 'Escuelas y niveles', description: 'Edades, rangos y paralelos', icon: Building2 },
+        { id: 'courses', label: 'Cursos', description: 'Currículo y contenidos', icon: BookOpen },
+        { id: 'categories', label: 'Categorías', description: 'Clasificación académica', icon: FolderOpen },
+        { id: 'calendar', label: 'Calendario', description: 'Sesiones y actividades', icon: Calendar },
+      ],
+    },
+    {
+      label: 'Personas y acceso',
+      items: [
+        { id: 'school-access', label: 'Acceso a escuelas', description: 'Solicitudes y admisión', icon: DoorOpen },
+        { id: 'requests', label: 'Matrículas a cursos', description: 'Inscripciones pendientes', icon: Inbox, badge: filteredRequests.length },
+        { id: 'participants', label: 'Participantes', description: 'Estudiantes y miembros', icon: Users },
+        { id: 'staff', label: 'Docentes y turnos', description: 'Carga y horarios', icon: UserCheck },
+      ],
+    },
+    {
+      label: 'Control y configuración',
+      items: [
+        { id: 'analytics', label: 'Analíticas', description: 'Rendimiento académico', icon: BarChart3 },
+        { id: 'defaults', label: 'Configuración', description: 'Escalas y formatos', icon: Settings },
+      ],
+    },
+  ];
+
+  const allNavigationItems = navigationGroups.flatMap(group => group.items);
+  const currentNavigationItem = allNavigationItems.find(item => item.id === activeTab) ?? allNavigationItems[0];
+
+  const changeTab = (tab: LMSAdminTab) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (tab === 'overview') nextParams.delete('tab');
+    else nextParams.set('tab', tab);
+    setSearchParams(nextParams, { replace: true });
   };
 
-  const handleOpenCategoryModal = (cat?: CategoryItem) => {
-    setEditingCategory(cat || null);
+  const openCategoryModal = (category?: CategoryItem) => {
+    setEditingCategory(category ?? null);
     setIsCategoryModalOpen(true);
   };
 
-  const loading = (activeTab === 'courses' && loadingCourses) || 
-                  (activeTab === 'categories' && loadingCategories) || 
-                  (activeTab === 'requests' && loadingRequests);
+  const isCurrentTabLoading = (
+    (activeTab === 'courses' && loadingCourses)
+    || (activeTab === 'categories' && loadingCategories)
+    || (activeTab === 'requests' && loadingRequests)
+  );
+
+  const renderPrimaryAction = () => {
+    if (activeTab === 'courses' || activeTab === 'overview') {
+      return (
+        <button onClick={() => navigate('/admin/lms/course/settings/new')} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-4 py-2.5 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/15 transition hover:-translate-y-0.5 hover:bg-amber-300">
+          <Plus size={18} /> Nuevo curso
+        </button>
+      );
+    }
+    if (activeTab === 'categories') {
+      return (
+        <button onClick={() => openCategoryModal()} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-4 py-2.5 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/15 transition hover:-translate-y-0.5 hover:bg-amber-300">
+          <Plus size={18} /> Nueva categoría
+        </button>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-3">
-            <BookOpen className="text-gold" size={32} />
-            Administración de Aula Virtual (LMS)
-          </h1>
-          <p className="text-slate-600 dark:text-gray-400 mt-1">
-            Administra cursos, asigna categorías de estudio, aprueba solicitudes de alumnos y configura valores predeterminados.
-          </p>
+    <div className="mx-auto max-w-[1600px] space-y-5 p-3 sm:p-5 lg:p-7">
+      <header className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/75 p-5 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/70 sm:p-7">
+        <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-slate-900 p-3 text-amber-300 shadow-lg sm:block">
+              <BookOpen size={27} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">Administración académica</span>
+                <span className="text-xs text-slate-400">Aula Virtual</span>
+              </div>
+              <h1 className="mt-2 font-serif text-2xl font-bold text-slate-950 dark:text-white sm:text-3xl">{currentNavigationItem.label}</h1>
+              <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{currentNavigationItem.description}. El contenido visible respeta el alcance autorizado para tu cuenta.</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <SchoolSelector value={selectedSchoolId} onChange={setSelectedSchoolId} className="w-full sm:w-auto" />
+            {renderPrimaryAction()}
+          </div>
         </div>
-        
-        {activeTab === 'courses' && (
-          <button
-            onClick={() => navigate('/admin/lms/course/settings/new')}
-            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer flex-shrink-0"
-          >
-            <Plus size={20} />
-            Nuevo Curso
-          </button>
-        )}
-        {activeTab === 'categories' && (
-          <button
-            onClick={() => handleOpenCategoryModal()}
-            className="bg-gold hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:-translate-y-0.5 cursor-pointer flex-shrink-0"
-          >
-            <Plus size={20} />
-            Nueva Categoría
-          </button>
-        )}
-      </div>
+      </header>
 
-      {/* Global Context Filters */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm">
-        <SchoolSelector 
-          value={selectedSchoolId} 
-          onChange={setSelectedSchoolId}
-          className="w-full md:w-auto"
-        />
-        <div className="text-xs text-gray-500 font-medium hidden md:block">
-          Filtro contextual activo para vistas de administración
-        </div>
-      </div>
-
-      {/* Quick Navigation Banner */}
-      <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-        <div className="space-y-0.5">
-          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Administración Adicional</p>
-          <p className="text-[11px] text-indigo-650/80 dark:text-indigo-400/80">Gestiona estudios de libre consumo, material de descarga y el diseño visual de la Landing Page.</p>
-        </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <button 
-            onClick={() => setActiveTab('analytics')}
-            className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-          >
-            Ver Analíticas LMS
-            <ArrowRight size={14} />
-          </button>
-          <button 
-            onClick={() => navigate('/admin/lms/landing-editor')}
-            className="px-4 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-50 dark:hover:bg-slate-800 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-          >
-            Editar Landing Page
-            <ArrowRight size={14} />
-          </button>
-          <button 
-            onClick={() => navigate('/admin/programas')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-          >
-            Programas Libres
-            <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto pb-px gap-2">
-        <button
-          onClick={() => setActiveTab('schools')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'schools' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Building2 size={16} /> Escuelas
-        </button>
-        <button
-          onClick={() => setActiveTab('courses')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'courses' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <BookOpen size={16} /> Cursos
-        </button>
-        <button
-          onClick={() => setActiveTab('school-access')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'school-access' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <DoorOpen size={16} /> Acceso a escuelas
-        </button>
-        <button
-          onClick={() => setActiveTab('participants')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'participants' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Users size={16} /> Participantes
-        </button>
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'categories' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <FolderOpen size={16} /> Categorías
-        </button>
-        <button
-          onClick={() => setActiveTab('requests')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'requests' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Inbox size={16} /> Matrículas de cursos ({requests.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('defaults')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'defaults' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Settings size={16} /> Formatos / Config.
-        </button>
-        <button
-          onClick={() => setActiveTab('staff')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'staff' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <UserCheck size={16} /> Docentes
-        </button>
-        <button
-          onClick={() => setActiveTab('calendar')}
-          className={`px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'calendar' ? 'border-gold text-gold font-extrabold' : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Calendar size={16} /> Calendario
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {activeTab === 'courses' && (
-            <CoursesList 
-              courses={selectedSchoolId === 'all' ? courses : courses.filter(c => c.school_id === selectedSchoolId)}
-              onEditCourse={handleOpenCourseModal}
-            />
-          )}
-
-          {activeTab === 'categories' && (
-            <CategoriesList onEditCategory={handleOpenCategoryModal} />
-          )}
-
-          {activeTab === 'participants' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Directorio Global de Participantes</h2>
-                  <p className="text-sm text-gray-500">
-                    Gestión masiva de estudiantes y docentes.
-                  </p>
+      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <aside className="sticky top-4 hidden max-h-[calc(100vh-2rem)] overflow-y-auto rounded-[1.75rem] border border-slate-200/70 bg-white/75 p-3 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/70 lg:block">
+          <div className="mb-3 flex items-center justify-between px-3 py-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Herramientas</span>
+            <PanelLeftClose size={16} className="text-slate-400" />
+          </div>
+          <nav aria-label="Herramientas de administración del Aula Virtual" className="space-y-5">
+            {navigationGroups.map(group => (
+              <div key={group.label}>
+                <p className="px-3 text-[10px] font-black uppercase tracking-[0.17em] text-slate-400">{group.label}</p>
+                <div className="mt-2 space-y-1">
+                  {group.items.map(item => {
+                    const Icon = item.icon;
+                    const active = activeTab === item.id;
+                    return (
+                      <button key={item.id} onClick={() => changeTab(item.id)} aria-current={active ? 'page' : undefined} className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${active ? 'bg-slate-950 text-white shadow-lg dark:bg-white dark:text-slate-950' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'}`}>
+                        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${active ? 'bg-amber-300 text-slate-950' : 'bg-slate-100 text-slate-500 group-hover:text-indigo-600 dark:bg-white/5 dark:text-slate-400'}`}><Icon size={17} /></span>
+                        <span className="min-w-0 flex-1"><strong className="block truncate text-xs">{item.label}</strong><span className={`mt-0.5 block truncate text-[10px] ${active ? 'text-slate-300 dark:text-slate-600' : 'text-slate-400'}`}>{item.description}</span></span>
+                        {typeof item.badge === 'number' && item.badge > 0 && <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black text-slate-950">{item.badge}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl text-sm text-blue-800 dark:text-blue-300">
-                <p className="font-bold mb-1 flex items-center gap-2"><ArrowRight size={14} /> Gestión de Grupos / Paralelos</p>
-                <p className="text-xs opacity-90">Para crear o administrar paralelos (Ej. Paralelo A, Grupo de Sábado), por favor diríjase al Dashboard del Docente de cada materia.</p>
-              </div>
+            ))}
+          </nav>
+          <div className="mt-5 space-y-2 border-t border-slate-200/70 p-3 pt-5 dark:border-white/10">
+            <button onClick={() => navigate('/admin/lms/landing-editor')} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:text-slate-300">Editar portada pública</button>
+            <button onClick={() => navigate('/admin/programas')} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:text-slate-300">Administrar Programas de Estudios</button>
+          </div>
+        </aside>
 
-              <ParticipantsTable schoolId={selectedSchoolId} />
+        <main className="mt-5 min-w-0 lg:mt-0">
+          <div className="mb-4 rounded-2xl border border-slate-200/70 bg-white/75 p-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 lg:hidden">
+            <label htmlFor="lms-admin-mobile-nav" className="mb-2 block text-[10px] font-black uppercase tracking-[0.17em] text-slate-400">Sección administrativa</label>
+            <select id="lms-admin-mobile-nav" value={activeTab} onChange={event => changeTab(event.target.value as LMSAdminTab)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-white/10 dark:bg-slate-900 dark:text-white">
+              {navigationGroups.map(group => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.items.map(item => <option key={item.id} value={item.id}>{item.label}{item.badge ? ` (${item.badge})` : ''}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {isCurrentTabLoading ? (
+            <div className="grid min-h-72 place-items-center rounded-[2rem] border border-slate-200/70 bg-white/75 dark:border-white/10 dark:bg-slate-950/70">
+              <div className="text-center"><div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-amber-400" /><p className="mt-3 text-sm text-slate-500">Sincronizando información académica…</p></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {activeTab === 'overview' && <LMSAdminOverview selectedSchoolId={selectedSchoolId} courses={visibleCourses} pendingCourseRequests={filteredRequests.length} onNavigate={changeTab} onCreateCourse={() => navigate('/admin/lms/course/settings/new')} />}
+              {activeTab === 'schools' && <SchoolManager />}
+              {activeTab === 'courses' && <CoursesList courses={visibleCourses} onEditCourse={course => { if (course) navigate(`/admin/lms/course/settings/${course.id}`); }} />}
+              {activeTab === 'categories' && <CategoriesList selectedSchoolId={selectedSchoolId} onEditCategory={openCategoryModal} />}
+              {activeTab === 'school-access' && <SchoolAccessRequestsManager schoolId={selectedSchoolId} />}
+              {activeTab === 'requests' && <EnrollmentRequestsList selectedSchoolId={selectedSchoolId} />}
+              {activeTab === 'participants' && (
+                <div className="space-y-5"><div><h2 className="font-serif text-xl font-bold text-slate-900 dark:text-white">Directorio de participantes</h2><p className="mt-1 text-sm text-slate-500">Matrículas, estudiantes y docentes dentro de la escuela seleccionada.</p></div><ParticipantsTable schoolId={selectedSchoolId} /></div>
+              )}
+              {activeTab === 'staff' && <AcademicStaffManager schoolId={selectedSchoolId} />}
+              {activeTab === 'calendar' && <UniversityCalendar role="admin" schoolId={selectedSchoolId} editable />}
+              {activeTab === 'analytics' && <LMSAnalytics schoolId={selectedSchoolId} />}
+              {activeTab === 'defaults' && <LMSDefaultsForm />}
             </div>
           )}
-
-          {activeTab === 'analytics' && (
-            <div className="animate-fade-in">
-              <div className="mb-6">
-                <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Analíticas LMS</h2>
-                <p className="text-sm text-gray-500">
-                  Visión general del rendimiento y progreso académico.
-                </p>
-              </div>
-              <LMSAnalytics />
-            </div>
-          )}
-
-          {activeTab === 'requests' && (
-            <EnrollmentRequestsList />
-          )}
-
-          {activeTab === 'school-access' && (
-            <SchoolAccessRequestsManager schoolId={selectedSchoolId} />
-          )}
-
-          {activeTab === 'defaults' && (
-            <LMSDefaultsForm />
-          )}
-
-          {activeTab === 'staff' && (
-            <AcademicStaffManager schoolId={selectedSchoolId} />
-          )}
-
-          {activeTab === 'calendar' && (
-            <UniversityCalendar role="admin" editable={true} />
-          )}
-
-          {activeTab === 'schools' && (
-            <SchoolManager />
-          )}
-        </div>
-      )}
-
-      {isCourseModalOpen && (
-        <CourseForm
-          editingCourse={editingCourse}
-          categories={categories}
-          onClose={() => setIsCourseModalOpen(false)}
-        />
-      )}
+        </main>
+      </div>
 
       {isCategoryModalOpen && (
-        <CategoryForm
-          editingCategory={editingCategory}
-          onClose={() => setIsCategoryModalOpen(false)}
-        />
+        <CategoryForm editingCategory={editingCategory} onClose={() => setIsCategoryModalOpen(false)} />
       )}
     </div>
   );

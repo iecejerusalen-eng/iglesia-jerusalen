@@ -6,6 +6,7 @@ export interface CategoryItem {
   id: string;
   name: string;
   description: string;
+  school_id?: string;
   created_at?: string;
 }
 

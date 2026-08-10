@@ -114,27 +114,56 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       if (enrollError) throw enrollError;
       
       const coursesWithProgress = await Promise.all((enrollData || []).map(async (enr) => {
-        const { data: totalLessons, error: lessonsError } = await supabase
+        // Dual content model support:
+        // 1. Lessons model (lms_lessons)
+        const { data: totalLessons } = await supabase
           .from('lms_lessons')
           .select('id, lms_modules!inner(subject_id, lms_subjects!inner(course_id))')
           .eq('lms_modules.lms_subjects.course_id', enr.course_id);
 
-        if (lessonsError) throw lessonsError;
-
-        const total = totalLessons?.length || 0;
-        let completed = 0;
-        if (totalLessons && totalLessons.length > 0) {
-          const lessonIds = totalLessons.map(l => l.id);
-          const { data: progressData, error: progressError } = await supabase
-            .from('lms_lesson_completions')
-            .select('is_completed')
-            .eq('student_id', user.id)
-            .in('lesson_id', lessonIds)
-            .eq('is_completed', true);
-          if (progressError) throw progressError;
-          completed = progressData?.length || 0;
+        let completedLessonsCount = 0;
+        const lessonIds = (totalLessons || []).map((l) => l.id);
+        if (lessonIds.length > 0) {
+          const [completionsRes, progressRes] = await Promise.all([
+            supabase
+              .from('lms_lesson_completions')
+              .select('lesson_id')
+              .eq('student_id', user.id)
+              .in('lesson_id', lessonIds)
+              .eq('is_completed', true),
+            supabase
+              .from('lms_student_progress')
+              .select('lesson_id')
+              .eq('user_id', user.id)
+              .in('lesson_id', lessonIds)
+              .eq('is_completed', true)
+          ]);
+          const completedSet = new Set<string>();
+          completionsRes.data?.forEach((c) => completedSet.add(c.lesson_id));
+          progressRes.data?.forEach((p) => completedSet.add(p.lesson_id));
+          completedLessonsCount = completedSet.size;
         }
 
+        // 2. Sections/Activities model (lms_sections + lms_activities)
+        const { data: totalActivities } = await supabase
+          .from('lms_activities')
+          .select('id, lms_sections!inner(course_id)')
+          .eq('lms_sections.course_id', enr.course_id);
+
+        let completedActivitiesCount = 0;
+        const activityIds = (totalActivities || []).map((a) => a.id);
+        if (activityIds.length > 0) {
+          const { data: actProgressData } = await supabase
+            .from('lms_activity_completions')
+            .select('activity_id')
+            .eq('student_id', user.id)
+            .in('activity_id', activityIds)
+            .eq('is_completed', true);
+          completedActivitiesCount = actProgressData?.length || 0;
+        }
+
+        const total = (totalLessons?.length || 0) + (totalActivities?.length || 0);
+        const completed = completedLessonsCount + completedActivitiesCount;
         const progressPercentage = total > 0 ? (completed / total) * 100 : 0;
         
         // Ensure proper typing since joined tables can return objects or arrays of objects
@@ -160,10 +189,13 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       if (badgesError) throw badgesError;
       setBadges(badgesData || []);
 
-      // Fetch pending tasks
+      // Fetch pending tasks checking both lms_lesson_submissions and lms_assignment_submissions
       const courseIds = (enrollData || []).map((e) => e.course_id);
       if (courseIds.length > 0) {
-        const { data: assignmentsData, error: assignmentsError } = await supabase
+        const allPendingTasks: PendingTask[] = [];
+
+        // Model A: lms_lessons assignments
+        const { data: lessonAssignments } = await supabase
           .from('lms_lessons')
           .select(`
             id,
@@ -179,19 +211,16 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
           .eq('type', 'assignment')
           .not('due_date', 'is', null)
           .in('lms_modules.lms_subjects.course_id', courseIds);
-        if (assignmentsError) throw assignmentsError;
 
-        if (assignmentsData && assignmentsData.length > 0) {
-          const assignmentIds = assignmentsData.map((a) => a.id);
-          
-          const { data: submissionsData, error: submissionsError } = await supabase
+        if (lessonAssignments && lessonAssignments.length > 0) {
+          const lessonAssignmentIds = lessonAssignments.map((a) => a.id);
+          const { data: lessonSubmissions } = await supabase
             .from('lms_lesson_submissions')
             .select('lesson_id')
             .eq('student_id', user.id)
-            .in('lesson_id', assignmentIds);
-          if (submissionsError) throw submissionsError;
+            .in('lesson_id', lessonAssignmentIds);
 
-          const submittedIds = new Set(submissionsData?.map((s) => s.lesson_id) || []);
+          const submittedLessonIds = new Set(lessonSubmissions?.map((s) => s.lesson_id) || []);
 
           interface AssignmentSubject {
             lms_courses?: { title: string } | { title: string }[];
@@ -206,30 +235,81 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
             lms_modules?: AssignmentModule | AssignmentModule[];
           }
 
-          const formattedTasks = assignmentsData
-            .filter((a) => !submittedIds.has(a.id))
-            .map((a: AssignmentItem) => {
-              // Handle Supabase nested array return structures
+          lessonAssignments
+            .filter((a) => !submittedLessonIds.has(a.id))
+            .forEach((a: AssignmentItem) => {
               const modules: AssignmentModule | undefined = Array.isArray(a.lms_modules) ? a.lms_modules[0] : a.lms_modules;
               const subjects: AssignmentSubject | undefined = modules && Array.isArray(modules.lms_subjects) ? modules.lms_subjects[0] : (modules?.lms_subjects as AssignmentSubject | undefined);
               const courses: { title: string } | undefined = subjects && Array.isArray(subjects.lms_courses) ? subjects.lms_courses[0] : (subjects?.lms_courses as { title: string } | undefined);
               const courseTitle = courses?.title || 'Curso';
-              return {
+              allPendingTasks.push({
                 id: a.id,
                 title: a.title,
                 courseTitle,
                 dueDate: new Date(a.due_date),
-                status: 'PENDING' as const
-              };
-            })
-            .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
-            
-          setPendingTasks(formattedTasks);
-        } else {
-          setPendingTasks([]);
+                status: 'PENDING'
+              });
+            });
         }
-      }
-      else {
+
+        // Model B: lms_activities assignments
+        const { data: activityAssignments } = await supabase
+          .from('lms_activities')
+          .select(`
+            id,
+            title,
+            due_date,
+            settings,
+            lms_sections!inner (
+              course_id,
+              lms_courses ( title )
+            )
+          `)
+          .eq('type', 'assignment')
+          .in('lms_sections.course_id', courseIds);
+
+        if (activityAssignments && activityAssignments.length > 0) {
+          const actAssignmentIds = activityAssignments.map((a) => a.id);
+          const { data: actSubmissions } = await supabase
+            .from('lms_assignment_submissions')
+            .select('activity_id')
+            .eq('student_id', user.id)
+            .in('activity_id', actAssignmentIds);
+
+          const submittedActIds = new Set(actSubmissions?.map((s) => s.activity_id) || []);
+
+          interface ActivitySection {
+            lms_courses?: { title: string } | { title: string }[];
+          }
+          interface ActivityItem {
+            id: string;
+            title: string;
+            due_date?: string | null;
+            settings?: Record<string, unknown> | null;
+            lms_sections?: ActivitySection | ActivitySection[];
+          }
+
+          activityAssignments
+            .filter((a) => !submittedActIds.has(a.id))
+            .forEach((a: ActivityItem) => {
+              const rawDueDate = a.due_date || (a.settings?.due_date as string | undefined);
+              if (!rawDueDate) return;
+              const sections: ActivitySection | undefined = Array.isArray(a.lms_sections) ? a.lms_sections[0] : a.lms_sections;
+              const courses: { title: string } | undefined = sections && Array.isArray(sections.lms_courses) ? sections.lms_courses[0] : (sections?.lms_courses as { title: string } | undefined);
+              const courseTitle = courses?.title || 'Curso';
+              allPendingTasks.push({
+                id: a.id,
+                title: a.title,
+                courseTitle,
+                dueDate: new Date(rawDueDate),
+                status: 'PENDING'
+              });
+            });
+        }
+
+        allPendingTasks.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+        setPendingTasks(allPendingTasks);
+      } else {
         setPendingTasks([]);
       }
 

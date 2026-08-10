@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Search, FileText, Lock, Check, Clock, MoreVertical, Building2, Calendar as CalendarIcon, UserCheck, Video, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../../config/supabase';
 
 interface ClassSession {
   id: string;
@@ -17,11 +19,14 @@ interface ClassSession {
 interface ClassesTabProps {
   sessions: ClassSession[];
   courseId: string;
+  onTakeAttendance?: (sessionId: string) => void;
 }
 
-export function ClassesTab({ sessions = [], courseId }: ClassesTabProps) {
+export function ClassesTab({ sessions = [], courseId, onTakeAttendance }: ClassesTabProps) {
   const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
+  const queryClient = useQueryClient();
 
   const normalizeStatus = (status: string): 'OPEN' | 'CLOSED' => {
     const openStatuses = ['open', 'active', 'scheduled', 'in_progress'];
@@ -37,6 +42,39 @@ export function ClassesTab({ sessions = [], courseId }: ClassesTabProps) {
 
   const openCount = sessions.filter(s => normalizeStatus(s.status) === 'OPEN').length;
   const closedCount = sessions.filter(s => normalizeStatus(s.status) === 'CLOSED').length;
+
+  const handleClosePastSessions = async () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const openPastSessions = sessions.filter(s => {
+      const sDate = s.session_date ? s.session_date.split('T')[0] : '';
+      return sDate < todayStr && normalizeStatus(s.status) !== 'CLOSED';
+    });
+
+    if (openPastSessions.length === 0) {
+      toast.info('No hay clases pasadas pendientes de cerrar.');
+      return;
+    }
+
+    setIsClosing(true);
+    try {
+      const idsToClose = openPastSessions.map(s => s.id);
+      const { error } = await supabase
+        .from('lms_class_sessions')
+        .update({ status: 'closed' })
+        .in('id', idsToClose);
+
+      if (error) throw error;
+
+      toast.success(`${idsToClose.length} clase(s) pasada(s) cerrada(s) correctamente.`);
+      queryClient.invalidateQueries({ queryKey: ['course-sessions', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['pending-attendance-count', courseId] });
+    } catch (err) {
+      console.error('Error al cerrar clases pasadas:', err);
+      toast.error('Error al cerrar las clases pasadas.');
+    } finally {
+      setIsClosing(false);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     try {
@@ -154,9 +192,13 @@ export function ClassesTab({ sessions = [], courseId }: ClassesTabProps) {
           <Download size={18} />
           Exportar Reporte CSV
         </button>
-        <button className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-rose-500/20 cursor-pointer">
+        <button 
+          onClick={handleClosePastSessions}
+          disabled={isClosing}
+          className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-rose-500/20 cursor-pointer disabled:opacity-50"
+        >
           <Lock size={18} />
-          Cerrar todas las Clases
+          {isClosing ? 'Cerrando clases...' : 'Cerrar todas las Clases'}
         </button>
       </div>
 
@@ -250,7 +292,15 @@ export function ClassesTab({ sessions = [], courseId }: ClassesTabProps) {
                         )}
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => onTakeAttendance?.(session.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+                            title="Tomar Asistencia para esta clase"
+                          >
+                            <UserCheck size={14} />
+                            <span>Tomar Asistencia</span>
+                          </button>
                           {session.sync_link && (
                             <a
                               href={session.sync_link}
