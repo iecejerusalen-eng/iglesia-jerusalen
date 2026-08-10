@@ -82,6 +82,8 @@ const SermonsManager = () => {
   const [editingSermon, setEditingSermon] = useState<Sermon | null>(null);
   const [editingCategory, setEditingCategory] = useState<SermonCategory | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [hoveredEvent, setHoveredEvent] = useState<{ sermon: Sermon; x: number; y: number } | null>(null);
+  const [selectedEventSermon, setSelectedEventSermon] = useState<Sermon | null>(null);
   
   // Views: table, cards, categories, calendar
   const [viewMode, setViewMode] = useState<'table' | 'cards' | 'categories' | 'calendar'>('table');
@@ -646,33 +648,50 @@ const SermonsManager = () => {
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const blanks = Array.from({ length: firstDay === 0 ? 6 : firstDay - 1 }, (_, i) => i); // Adjust if week starts on Monday
+    const blanks = Array.from({ length: firstDay === 0 ? 6 : firstDay - 1 }, (_, i) => i);
 
     return (
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-6 rounded-2xl border border-white/20 dark:border-white/10 shadow-glass">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 capitalize">{monthName}</h3>
-          <div className="flex gap-2">
-            <button onClick={prevMonth} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">Anterior</button>
-            <button onClick={nextMonth} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">Siguiente</button>
+      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl p-6 rounded-3xl border border-white/40 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 capitalize drop-shadow-sm">{monthName}</h3>
+          <div className="flex gap-3">
+            <button onClick={prevMonth} className="p-2.5 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all text-gray-700 dark:text-gray-200 shadow-sm">Anterior</button>
+            <button onClick={nextMonth} className="p-2.5 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all text-gray-700 dark:text-gray-200 shadow-sm">Siguiente</button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div className="grid grid-cols-7 gap-3">
           {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
-            <div key={d} className="bg-gray-50 dark:bg-slate-800 py-2 text-center text-xs font-bold text-gray-500">{d}</div>
+            <div key={d} className="py-2 text-center text-xs font-bold text-gray-500 uppercase tracking-widest">{d}</div>
           ))}
-          {blanks.map(b => <div key={`blank-${b}`} className="bg-white dark:bg-slate-900 min-h-[100px]" />)}
+          {blanks.map(b => <div key={`blank-${b}`} className="min-h-[120px] rounded-2xl bg-white/20 dark:bg-slate-900/20" />)}
           {days.map(day => {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const daySermons = sermons.filter(s => s.date === dateStr);
+            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
             return (
-              <div key={day} className="bg-white dark:bg-slate-900 min-h-[100px] p-2 flex flex-col gap-1 border-t border-gray-100">
-                <span className="text-xs font-semibold text-gray-400">{day}</span>
-                {daySermons.map(s => (
-                  <div key={s.id} onClick={() => handleOpenEdit(s)} className="p-1 rounded bg-blue-50 dark:bg-blue-900/20 text-[10px] text-blue-700 dark:text-blue-300 font-medium truncate cursor-pointer hover:bg-blue-100">
-                    • {s.title}
-                  </div>
-                ))}
+              <div key={day} className={`min-h-[120px] p-3 flex flex-col gap-2 rounded-2xl border transition-all ${isToday ? 'bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200/50 dark:border-blue-500/30 shadow-inner' : 'bg-white/50 dark:bg-slate-800/40 border-white/40 dark:border-white/5 hover:bg-white/80 dark:hover:bg-slate-800/70'}`}>
+                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-white shadow-md' : 'text-gray-600 dark:text-gray-300'}`}>{day}</span>
+                <div className="flex-1 space-y-1.5">
+                  {daySermons.map(s => {
+                    const catColor = s.sermon_categories?.color || '#3B82F6';
+                    return (
+                      <div 
+                        key={s.id} 
+                        onClick={() => setSelectedEventSermon(s)}
+                        onMouseEnter={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setHoveredEvent({ sermon: s, x: rect.left, y: rect.bottom });
+                        }}
+                        onMouseLeave={() => setHoveredEvent(null)}
+                        className="px-2 py-1.5 rounded-lg text-xs font-semibold truncate cursor-pointer transition-all hover:scale-[1.02] hover:shadow-sm"
+                        style={{ backgroundColor: `${catColor}25`, color: catColor, borderLeft: `3px solid ${catColor}` }}
+                      >
+                        {s.title}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
@@ -847,65 +866,17 @@ const SermonsManager = () => {
                 <div className="flex justify-center items-center py-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10"><Loader2 className="animate-spin text-primary dark:text-gold" size={32} /></div>
               ) : sermons.length > 0 ? (
                 <>
-                  {(viewMode === 'table' || viewMode === 'cards') ? (
+                  {viewMode === 'table' && (
                     <DynamicDataView
                       title="Prédicas Publicadas"
                       data={sermons}
                       columns={columns}
                       isLoading={loading}
-                      defaultView={viewMode === 'cards' ? 'grid' : 'table'}
-                      renderGridItem={(sermon) => {
-                        const hasMedia = !!sermon.youtube_url || !!sermon.metadata?.cover_video_url || !!sermon.metadata?.cover_image_url;
-                        return (
-                        <div key={sermon.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-white/10 p-5 space-y-4 shadow-xs hover:shadow-md transition-all">
-                          <div className="flex items-center gap-3">
-                            {hasMedia ? (
-                              <div className="w-10 h-10 bg-red-50 text-accent-red rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Video size={18} />
-                              </div>
-                            ) : (
-                              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FileText size={18} />
-                              </div>
-                            )}
-                            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate" title={sermon.title}>
-                              {sermon.title}
-                            </h4>
-                          </div>
-
-                          <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
-                            <p>Predicador: <strong className="text-gray-800 dark:text-gray-200">{sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}</strong></p>
-                            <p>Fecha: <span>{sermon.date}</span></p>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5">
-                            {!readOnly && (
-                              <>
-                                <button
-                                  onClick={() => handleOpenEdit(sermon)}
-                                  className="text-xs text-primary dark:text-gold font-bold flex items-center gap-1"
-                                >
-                                  <Edit2 size={12} /> Editar
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(sermon.id)}
-                                  className="text-xs text-red-600 font-bold flex items-center gap-1"
-                                >
-                                  <Trash2 size={12} /> Eliminar
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        );
-                      }}
                     />
-                  ) : (
-                    <>
-                      {viewMode === 'categories' && renderCategories()}
-                      {viewMode === 'calendar' && renderCalendar()}
-                    </>
                   )}
+                  {viewMode === 'cards' && renderCards()}
+                  {viewMode === 'categories' && renderCategories()}
+                  {viewMode === 'calendar' && renderCalendar()}
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
@@ -998,6 +969,104 @@ const SermonsManager = () => {
         </div>
       )}
       
+      {/* Floating Hover Tooltip */}
+      {hoveredEvent && (
+        <div 
+          className="fixed z-50 pointer-events-none transition-opacity duration-200"
+          style={{ 
+            top: hoveredEvent.y + 10, 
+            left: Math.min(hoveredEvent.x, window.innerWidth - 300), // Prevent right overflow
+            width: 280
+          }}
+        >
+          <div className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl p-4 shadow-2xl">
+            {hoveredEvent.sermon.sermon_categories && (
+              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2" style={{ backgroundColor: `${hoveredEvent.sermon.sermon_categories.color}20`, color: hoveredEvent.sermon.sermon_categories.color }}>
+                {hoveredEvent.sermon.sermon_categories.name}
+              </span>
+            )}
+            <h4 className="font-bold text-sm text-gray-800 dark:text-gray-100 mb-1 leading-tight">{hoveredEvent.sermon.title}</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2">{hoveredEvent.sermon.date}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-3">{hoveredEvent.sermon.description || 'Sin resumen...'}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Event Modal */}
+      {selectedEventSermon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setSelectedEventSermon(null)} />
+          <div className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/50 dark:border-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all">
+            {/* Header Media */}
+            {(selectedEventSermon.metadata?.cover_video_url || selectedEventSermon.youtube_url || selectedEventSermon.metadata?.cover_image_url) ? (
+              <div className="w-full h-48 bg-gray-100 dark:bg-slate-800 relative">
+                 {selectedEventSermon.metadata?.cover_video_url ? (
+                   <video src={selectedEventSermon.metadata.cover_video_url} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+                 ) : (
+                   <img src={selectedEventSermon.metadata?.cover_image_url || `https://img.youtube.com/vi/${getYoutubeId(selectedEventSermon.youtube_url || '')}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="portada" />
+                 )}
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                    <h3 className="text-2xl font-serif font-bold text-white leading-tight">{selectedEventSermon.title}</h3>
+                 </div>
+                 <button onClick={() => setSelectedEventSermon(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-all"><X size={20}/></button>
+              </div>
+            ) : (
+              <div className="p-6 pb-2 flex justify-between items-start">
+                 <h3 className="text-2xl font-serif font-bold text-gray-800 dark:text-white leading-tight pr-8">{selectedEventSermon.title}</h3>
+                 <button onClick={() => setSelectedEventSermon(null)} className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all"><X size={20}/></button>
+              </div>
+            )}
+            
+            <div className="p-6 space-y-4">
+               <div className="flex flex-wrap gap-2">
+                 {selectedEventSermon.sermon_categories && (
+                   <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: `${selectedEventSermon.sermon_categories.color}20`, color: selectedEventSermon.sermon_categories.color }}>
+                     {selectedEventSermon.sermon_categories.name}
+                   </span>
+                 )}
+                 <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs font-medium">
+                   {selectedEventSermon.date}
+                 </span>
+               </div>
+               
+               <div>
+                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Pastor / Predicador</p>
+                 <p className="text-gray-800 dark:text-gray-200 font-medium">{selectedEventSermon.speakers ? `${selectedEventSermon.speakers.first_name} ${selectedEventSermon.speakers.last_name}` : selectedEventSermon.pastor_name}</p>
+               </div>
+               
+               <div>
+                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Resumen</p>
+                 <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{selectedEventSermon.description || 'No hay un resumen disponible para esta prédica.'}</p>
+               </div>
+            </div>
+            
+            <div className="p-6 pt-0 mt-auto flex gap-3">
+               {!readOnly && (
+                 <button 
+                   onClick={() => {
+                     setSelectedEventSermon(null);
+                     handleOpenEdit(selectedEventSermon);
+                   }} 
+                   className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-900 transition-colors shadow-md cursor-pointer"
+                 >
+                   Editar Prédica
+                 </button>
+               )}
+               {selectedEventSermon.youtube_url && (
+                 <a 
+                   href={selectedEventSermon.youtube_url}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="flex-1 bg-red-50 dark:bg-red-900/20 text-accent-red py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
+                 >
+                   <Video size={18} /> Ver en YouTube
+                 </a>
+               )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <MediaSearchModal
         isOpen={isMediaModalOpen}
         onClose={() => setIsMediaModalOpen(false)}
