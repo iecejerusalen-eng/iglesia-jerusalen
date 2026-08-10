@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
-import { SongBlockEditor } from '../../features/songs/components/editor/SongBlockEditor';
+import SongLyricsEditor from '../../components/admin/SongLyricsEditor';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
@@ -206,9 +206,10 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
       
       blocks.push({
         id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-        type,
+        type: 'lyrics',
+        section_type: type,
         label,
-        melody,
+        melody_guide: melody,
         lyrics: blockLines.join('\n')
       });
     });
@@ -225,9 +226,10 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
         const headerText = el.textContent || 'Sección';
         currentBlock = {
           id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-          type: getBlockType(headerText),
+          type: 'lyrics',
+          section_type: getBlockType(headerText),
           label: headerText,
-          melody: null,
+          melody_guide: null,
           lyrics: ''
         };
         currentLines = [];
@@ -254,9 +256,10 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
         if (!currentBlock) {
           currentBlock = {
             id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-            type: 'otro',
+            type: 'lyrics',
+            section_type: 'otro',
             label: 'General',
-            melody: null,
+            melody_guide: null,
             lyrics: ''
           };
           currentLines = [];
@@ -270,9 +273,10 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
         if (!currentBlock) {
           currentBlock = {
             id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-            type: 'otro',
+            type: 'lyrics',
+            section_type: 'otro',
             label: 'General',
-            melody: null,
+            melody_guide: null,
             lyrics: ''
           };
           currentLines = [];
@@ -288,10 +292,11 @@ function convertHtmlToBlocks(html: string): SongStructureBlock[] {
     const textContent = htmlToBracketText(html);
     blocks.push({
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-      type: 'estrofa',
+      type: 'lyrics',
+      section_type: 'estrofa',
       label: 'Estrofa 1',
       lyrics: textContent,
-      melody: null
+      melody_guide: null
     });
   }
   
@@ -499,7 +504,7 @@ const SongsManager = () => {
   const addBlock = () => {
     const defaultLabels: Record<string, string> = {
       intro: 'Introducción',
-      estrofa: `Estrofa ${structureBlocks.filter(b => b.type === 'estrofa').length + 1}`,
+      estrofa: `Estrofa ${structureBlocks.filter(b => b.section_type === 'estrofa').length + 1}`,
       coro: 'Coro',
       puente: 'Puente',
       melodia: 'Melodía / Solo',
@@ -508,10 +513,11 @@ const SongsManager = () => {
     };
     const newBlock: SongStructureBlock = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-      type: 'estrofa',
+      type: 'lyrics',
+      section_type: 'estrofa',
       label: defaultLabels.estrofa,
       lyrics: '',
-      melody: null
+      melody_guide: null
     };
     setStructureBlocks([...structureBlocks, newBlock]);
   };
@@ -520,8 +526,8 @@ const SongsManager = () => {
     setStructureBlocks(structureBlocks.filter(b => b.id !== id));
   };
 
-  const updateBlock = (id: string, updates: Partial<SongStructureBlock>) => {
-    setStructureBlocks(structureBlocks.map(b => b.id === id ? { ...b, ...updates } : b));
+  const updateBlock = (id: string, updates: Record<string, unknown>) => {
+    setStructureBlocks(structureBlocks.map(b => b.id === id ? ({ ...b, ...updates } as SongStructureBlock) : b));
   };
 
   const moveBlock = (index: number, direction: 'up' | 'down') => {

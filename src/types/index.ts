@@ -472,6 +472,11 @@ export type SongBlockType =
 export interface BaseSongBlock {
   id: string;
   type: SongBlockType;
+  section_type?: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'solo' | 'otro';
+  label?: string;
+  lyrics?: string;
+  melody_guide?: string | null;
+  melody?: string | null;
 }
 
 export interface LyricsSongBlock extends BaseSongBlock {

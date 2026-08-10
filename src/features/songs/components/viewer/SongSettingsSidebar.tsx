@@ -85,7 +85,7 @@ export function SongSettingsSidebar({
         {/* Transpose */}
         <div className={`space-y-3 transition-opacity ${!showChords ? 'opacity-30 pointer-events-none' : ''}`}>
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
-            Tonalidad <span>{transpose === 0 ? 'Original' : transpose > 0 ? \`+\${transpose}\` : transpose}</span>
+            Tonalidad <span>{transpose === 0 ? 'Original' : transpose > 0 ? `+${transpose}` : transpose}</span>
           </label>
           <div className="flex items-center gap-3">
             <button
@@ -123,7 +123,7 @@ export function SongSettingsSidebar({
             <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-amber-500 rounded-full transition-all"
-                style={{ width: \`\${Math.min(100, Math.max(0, ((textSize - 60) / 140) * 100))}%\` }}
+                style={{ width: `${Math.min(100, Math.max(0, ((textSize - 60) / 140) * 100))}%` }}
               />
             </div>
             <button

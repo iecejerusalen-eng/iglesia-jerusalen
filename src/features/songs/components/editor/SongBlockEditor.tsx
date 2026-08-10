@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Type, Music, FileImage, Video, Plus, Trash2, ArrowUp, ArrowDown, Settings 
+  Type, Music, FileImage, Video, Trash2, ArrowUp, ArrowDown, Settings 
 } from 'lucide-react';
-import { SongStructureBlock, SongBlockType } from '@/types';
-import RichTextEditor from '@/components/admin/RichTextEditor';
+import type { SongStructureBlock, SongBlockType } from '@/types';
 
 interface Props {
   content: string; // JSON string of blocks or legacy html
@@ -31,7 +30,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
             return;
           }
         }
-      } catch (e) {
+      } catch {
         console.warn('Failed to parse content as JSON blocks. Using legacy wrap.');
       }
       
@@ -57,7 +56,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
   }, [onChange]);
 
   const addBlock = (type: SongBlockType) => {
-    let newBlock: any = { id: createBlockId(), type };
+    let newBlock: Record<string, unknown> = { id: createBlockId(), type };
 
     if (type === 'lyrics') {
       newBlock = { ...newBlock, section_type: 'estrofa', label: 'Estrofa', lyrics: '' };
@@ -73,7 +72,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
       newBlock = { ...newBlock, content: 'e|---|\nB|---|' };
     }
 
-    updateParent([...blocks, newBlock]);
+    updateParent([...blocks, newBlock as SongStructureBlock]);
   };
 
   const updateBlock = (id: string, updates: Partial<SongStructureBlock>) => {
@@ -130,7 +129,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
                 />
                 <select 
                   value={block.section_type}
-                  onChange={e => updateBlock(block.id, { section_type: e.target.value as any })}
+                  onChange={e => updateBlock(block.id, { section_type: e.target.value as SongStructureBlock['section_type'] })}
                   className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                 >
                   <option value="intro">Intro</option>
@@ -186,7 +185,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
             <div className="space-y-3">
               <select 
                 value={block.instrument}
-                onChange={e => updateBlock(block.id, { instrument: e.target.value as any })}
+                onChange={e => updateBlock(block.id, { instrument: e.target.value as 'guitar' | 'piano' | 'ukulele' })}
                 className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm w-[200px]"
               >
                 <option value="guitar">Guitarra</option>
@@ -235,7 +234,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
             <div className="space-y-3">
               <select 
                 value={block.target_instrument}
-                onChange={e => updateBlock(block.id, { target_instrument: e.target.value as any })}
+                onChange={e => updateBlock(block.id, { target_instrument: e.target.value as 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' })}
                 className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm w-[200px]"
               >
                 <option value="General">General</option>
