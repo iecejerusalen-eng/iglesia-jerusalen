@@ -9,6 +9,7 @@ const pairingCode = process.env.PROPRESENTER_PAIRING_CODE;
 const proPresenterUrl = (process.env.PROPRESENTER_URL || 'http://127.0.0.1:50001').replace(/\/$/, '');
 const messageId = process.env.PROPRESENTER_MESSAGE_ID?.trim();
 const messageToken = process.env.PROPRESENTER_MESSAGE_TOKEN?.trim() || 'text';
+const stageChordsEnabled = process.env.PROPRESENTER_STAGE_CHORDS !== 'false';
 const overlayPort = Number(process.env.OVERLAY_PORT || 43177);
 const idlePollMs = Math.max(1_500, Number(process.env.IDLE_POLL_MS || 5_000));
 const activePollMs = Math.max(500, Number(process.env.ACTIVE_POLL_MS || 800));
@@ -41,6 +42,11 @@ const overlayDocument = `<!doctype html>
     main { display: flex; width: 100%; height: 100%; align-items: flex-end; justify-content: center; padding: 6vh 7vw; opacity: 0; transition: opacity 180ms ease; }
     main.visible { opacity: 1; }
     .content { width: min(92vw, 1600px); white-space: pre-line; text-align: center; color: #fff; font-size: clamp(34px, 4.25vw, 82px); font-weight: 800; line-height: 1.16; letter-spacing: -.025em; text-wrap: balance; text-shadow: 0 3px 12px rgba(0,0,0,.92), 0 1px 2px rgba(0,0,0,1); }
+    body.stage main { align-items: center; justify-content: flex-start; padding: 5vh 6vw; }
+    body.stage .content { width: min(94vw, 1800px); text-align: left; text-wrap: auto; }
+    .stage-line + .stage-line { margin-top: clamp(24px, 4vh, 60px); }
+    .stage-chords { min-height: 1.25em; overflow: hidden; color: #fbbf24; font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-size: clamp(24px, 2.8vw, 54px); font-weight: 900; line-height: 1.15; letter-spacing: 0; white-space: pre; text-shadow: 0 2px 10px rgba(0,0,0,.95); }
+    .stage-lyrics { color: #fff; font-size: clamp(38px, 4.6vw, 88px); font-weight: 850; line-height: 1.12; text-wrap: balance; }
     .meta { position: fixed; right: 2vw; top: 2vh; color: rgba(255,255,255,.68); font-size: 13px; font-weight: 700; opacity: 0; }
     body.debug { background: linear-gradient(135deg, #07152f, #152555); }
     body.debug .meta { opacity: 1; }
@@ -53,15 +59,43 @@ const overlayDocument = `<!doctype html>
     const root = document.getElementById('overlay');
     const content = document.getElementById('content');
     const meta = document.getElementById('meta');
-    if (new URLSearchParams(location.search).has('debug')) document.body.classList.add('debug');
+    const parameters = new URLSearchParams(location.search);
+    const stageView = parameters.get('view') === 'stage';
+    if (parameters.has('debug')) document.body.classList.add('debug');
+    if (stageView) document.body.classList.add('stage');
     let revision = '';
+    function renderSlide(slide) {
+      content.replaceChildren();
+      if (!slide) return;
+      if (!stageView) {
+        content.textContent = slide.text || '';
+        return;
+      }
+      const lines = Array.isArray(slide.lines) ? slide.lines : [];
+      lines.forEach((line) => {
+        const group = document.createElement('div');
+        group.className = 'stage-line';
+        if (line.chord_line) {
+          const chords = document.createElement('div');
+          chords.className = 'stage-chords';
+          chords.textContent = line.chord_line;
+          group.appendChild(chords);
+        }
+        const lyrics = document.createElement('div');
+        lyrics.className = 'stage-lyrics';
+        lyrics.textContent = line.lyrics || '';
+        group.appendChild(lyrics);
+        content.appendChild(group);
+      });
+      if (lines.length === 0) content.textContent = slide.stage_text || slide.text || '';
+    }
     async function refresh() {
       try {
         const response = await fetch('/state', { cache: 'no-store' });
         const state = await response.json();
         if (state.updatedAt !== revision) {
           revision = state.updatedAt;
-          content.textContent = state.slide?.text || '';
+          renderSlide(state.slide);
           meta.textContent = state.content ? state.content.title + ' · ' + (state.currentSlideIndex + 1) + '/' + state.content.slides.length : 'Sin contenido';
           root.classList.toggle('visible', Boolean(state.visible && state.slide));
         }
@@ -100,7 +134,12 @@ const startOverlayServer = () => {
       return;
     }
     if (request.method === 'GET' && url.pathname === '/health') {
-      writeJson(response, 200, { ok: true, version: 'bridge-0.2.0', overlay_url: `http://127.0.0.1:${overlayPort}/overlay` });
+      writeJson(response, 200, {
+        ok: true,
+        version: 'bridge-0.3.0',
+        overlay_url: `http://127.0.0.1:${overlayPort}/overlay`,
+        stage_overlay_url: `http://127.0.0.1:${overlayPort}/overlay?view=stage`,
+      });
       return;
     }
     writeJson(response, 404, { error: 'Not found' });
@@ -173,12 +212,30 @@ const showMessageSlide = async () => {
   });
 };
 
+const currentStageChords = () => {
+  const slide = currentSlide();
+  if (!slide || !Array.isArray(slide.lines)) return '';
+  return slide.lines
+    .map((line) => typeof line?.chord_line === 'string' ? line.chord_line : '')
+    .filter(Boolean)
+    .join('\n')
+    .trimEnd();
+};
+
+const showStageChords = async () => {
+  if (!stageChordsEnabled) return;
+  const chords = currentStageChords();
+  await callProPresenter('/v1/stage/message', chords
+    ? { method: 'PUT', body: JSON.stringify(chords) }
+    : { method: 'DELETE' });
+};
+
 const loadOverlayContent = async (content, slideIndex = 0) => {
   overlayState.content = content;
   overlayState.currentSlideIndex = Math.max(0, Math.min(Number(slideIndex) || 0, Math.max(0, content.slides.length - 1)));
   overlayState.visible = content.slides.length > 0;
   touchOverlay();
-  await showMessageSlide();
+  await Promise.all([showMessageSlide(), showStageChords()]);
 };
 
 const moveOverlay = async (offset) => {
@@ -186,8 +243,27 @@ const moveOverlay = async (offset) => {
   overlayState.currentSlideIndex = Math.max(0, Math.min(overlayState.currentSlideIndex + offset, overlayState.content.slides.length - 1));
   overlayState.visible = true;
   touchOverlay();
-  await showMessageSlide();
+  await Promise.all([showMessageSlide(), showStageChords()]);
   return true;
+};
+
+const advancePresentation = async (offset) => {
+  const path = offset > 0
+    ? '/v1/presentation/active/next/trigger'
+    : '/v1/presentation/active/previous/trigger';
+  const [overlayResult, presentationResult] = await Promise.allSettled([
+    moveOverlay(offset),
+    callProPresenter(path),
+  ]);
+  const overlayAdvanced = overlayResult.status === 'fulfilled' && overlayResult.value;
+  const presentationAdvanced = presentationResult.status === 'fulfilled';
+  if (!overlayAdvanced && !presentationAdvanced) {
+    if (presentationResult.status === 'rejected') throw presentationResult.reason;
+    if (overlayResult.status === 'rejected') throw overlayResult.reason;
+    throw new Error('No hay contenido preparado ni una presentación activa para avanzar.');
+  }
+  if (overlayResult.status === 'rejected') console.warn(`El overlay no pudo avanzar: ${overlayResult.reason}`);
+  if (presentationResult.status === 'rejected') console.warn(`La presentación activa no pudo avanzar: ${presentationResult.reason}`);
 };
 
 const clearOutput = async () => {
@@ -195,6 +271,7 @@ const clearOutput = async () => {
   touchOverlay();
   const operations = [callProPresenter('/v1/clear/layer/slide')];
   if (messageId) operations.push(callProPresenter(`/v1/message/${encodeURIComponent(messageId)}/clear`));
+  if (stageChordsEnabled) operations.push(callProPresenter('/v1/stage/message', { method: 'DELETE' }));
   const results = await Promise.allSettled(operations);
   if (results.every((result) => result.status === 'rejected')) {
     const failure = results[0];
@@ -216,10 +293,10 @@ const executeCommand = async (command) => {
       await loadOverlayContent(readContent(command), command.payload?.slide_index);
       return;
     case 'next_slide':
-      if (!await moveOverlay(1)) await callProPresenter('/v1/presentation/active/next/trigger');
+      await advancePresentation(1);
       return;
     case 'previous_slide':
-      if (!await moveOverlay(-1)) await callProPresenter('/v1/presentation/active/previous/trigger');
+      await advancePresentation(-1);
       return;
     case 'clear_output':
       await clearOutput();
@@ -241,7 +318,7 @@ const run = async () => {
     try {
       const now = Date.now();
       if (now - lastHeartbeat > 20_000) {
-        await callDevice({ action: 'heartbeat', computer_name: process.env.COMPUTERNAME || process.env.HOSTNAME || 'Equipo de producción', app_version: 'bridge-0.2.0' }, device.deviceToken);
+        await callDevice({ action: 'heartbeat', computer_name: process.env.COMPUTERNAME || process.env.HOSTNAME || 'Equipo de producción', app_version: 'bridge-0.3.0' }, device.deviceToken);
         lastHeartbeat = now;
       }
       const data = await callDevice({ action: 'poll' }, device.deviceToken);

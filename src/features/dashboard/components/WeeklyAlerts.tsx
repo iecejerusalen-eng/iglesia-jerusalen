@@ -7,11 +7,16 @@ interface WeeklyAlertsProps {
 
 export const WeeklyAlerts = ({ alerts }: WeeklyAlertsProps) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl p-5 shadow-2xs space-y-4">
-      <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-white/10 pb-2 flex items-center gap-1.5">
-        <Gift size={16} className="text-gold animate-bounce" />
-        Alertas de la Semana
-      </h3>
+    <section className="space-y-4 rounded-[1.6rem] border border-white/70 bg-white/70 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,.55)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/65">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-white/10">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-white">
+            <Gift size={17} className="text-amber-500" /> Próximos 7 días
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cumpleaños y aniversarios de fe para acompañar.</p>
+        </div>
+        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">{alerts.length}</span>
+      </div>
 
       <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
         {alerts.length > 0 ? (
@@ -31,23 +36,20 @@ export const WeeklyAlerts = ({ alerts }: WeeklyAlertsProps) => {
                   <Sparkles className="text-green-600 animate-pulse" size={16} />
                 )}
               </div>
-              <div className="space-y-1 text-left">
+              <div className="min-w-0 flex-1 space-y-1 text-left">
                 <span className="font-bold text-xs text-gray-800 dark:text-gray-100 block leading-tight">{alert.name}</span>
                 <span className="text-[10px] font-bold text-gray-400 block">
                   {alert.type === 'birthday' ? `Cumpleaños: ${alert.dateLabel}` : `Conversión: ${alert.dateLabel} (${alert.years})`}
                 </span>
-                <p className="text-[9px] text-gray-500 dark:text-gray-400 italic font-semibold pt-1 border-t border-gray-100/50 mt-1">
-                  {alert.verse}
-                </p>
               </div>
             </div>
           ))
         ) : (
           <div className="text-center py-8 text-xs text-gray-400 dark:text-gray-500 font-semibold bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-white/10">
-            Sin cumpleaños o aniversarios esta semana.
+            No hay celebraciones registradas para los próximos siete días.
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 };

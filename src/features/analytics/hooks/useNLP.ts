@@ -6,7 +6,7 @@ export function useNLP() {
   const [searchQuery, setSearchQuery] = useState('');
   const [parsedNLP, setParsedNLP] = useState<Omit<Widget, 'id'> | null>(null);
 
-  const handleNLPSearch = (e: React.FormEvent, forceQuery?: string) => {
+  const handleNLPSearch = (e: { preventDefault: () => void }, forceQuery?: string) => {
     e.preventDefault();
     const query = (forceQuery || searchQuery).toLowerCase();
     
@@ -15,9 +15,7 @@ export function useNLP() {
       return;
     }
 
-    toast.info('Analizando lenguaje natural con Asistente Inteligente...', { id: 'nlp' });
-
-    let source: Widget['source'] = 'members';
+    let source: Widget['source'];
     let dimension = 'month';
     let metric = 'Conteo';
     let aggregation: Widget['aggregation'] = 'count';
@@ -25,7 +23,6 @@ export function useNLP() {
     let chartType: Widget['chartType'] = 'bar';
     const title = query.charAt(0).toUpperCase() + query.slice(1);
 
-    setTimeout(() => {
       if (query.includes('diezmo') || query.includes('ofrenda') || query.includes('ingreso') || query.includes('donacion')) {
         source = 'donations';
         aggregation = 'sum';
@@ -141,8 +138,7 @@ export function useNLP() {
         chartType
       });
       
-      toast.success('Consulta analizada. Previsualizando resultados.', { id: 'nlp' });
-    }, 1500);
+      toast.success('Configuración preparada. Revísala antes de guardarla.');
   };
 
   return {

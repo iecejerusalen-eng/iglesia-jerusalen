@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { SVGuitarChord, type Barre, type Finger } from 'svguitar';
 import { getChordData } from '../../utils/chordDictionary';
 
@@ -19,6 +19,21 @@ interface StringChordDiagramProps {
   variation?: number;
 }
 
+function widestPlayableBarre(frets: number[], barreFret: number): { from: number; to: number } | null {
+  const matchingIndexes = frets
+    .map((fret, index) => fret === barreFret ? index : -1)
+    .filter((index) => index >= 0);
+  let bestRange: { from: number; to: number } | null = null;
+  for (const from of matchingIndexes) {
+    for (const to of matchingIndexes) {
+      if (to <= from) continue;
+      const playableRange = frets.slice(from, to + 1).every((fret) => fret >= barreFret);
+      if (playableRange && (!bestRange || to - from > bestRange.to - bestRange.from)) bestRange = { from, to };
+    }
+  }
+  return bestRange;
+}
+
 export function StringChordDiagram({
   chord,
   instrument = 'guitar',
@@ -29,24 +44,23 @@ export function StringChordDiagram({
   variation = 0,
 }: StringChordDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<SVGuitarChord | null>(null);
+  const isUkulele = instrument === 'ukulele';
+  const resolvedData = useMemo(
+    () => chord.fingers?.length ? null : getChordData(chord.title || '', isUkulele ? 'ukelele' : 'guitarra', variation),
+    [chord.fingers?.length, chord.title, isUkulele, variation],
+  );
+  const canRender = Boolean(chord.fingers?.length || resolvedData?.instrument === 'guitarra' || resolvedData?.instrument === 'ukelele');
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Initialize or clear existing
-    if (chartRef.current) {
-      containerRef.current.innerHTML = '';
-    }
-
-    const isUkulele = instrument === 'ukulele';
+    if (!containerRef.current || !canRender) return;
+    containerRef.current.replaceChildren();
     
     let resolvedFingers: Finger[] = [];
     let resolvedBarres: Barre[] = [];
     let position = chord.position || 1;
 
     if (!chord.fingers || chord.fingers.length === 0) {
-      const data = getChordData(chord.title || '', isUkulele ? 'ukelele' : 'guitarra', variation);
+      const data = resolvedData;
       if (data?.instrument === 'guitarra' || data?.instrument === 'ukelele') {
         const numStrings = isUkulele ? 4 : 6;
         for (let i = 0; i < numStrings; i++) {
@@ -64,11 +78,16 @@ export function StringChordDiagram({
         }
         position = data.baseFret || 1;
         if (data.barres && data.barres.length > 0) {
-          resolvedBarres = data.barres.map((bFret: number) => ({
-            fret: bFret,
-            fromString: 1,
-            toString: numStrings
-          }));
+          resolvedBarres = data.barres.flatMap((barreFret: number) => {
+            const bestRange = widestPlayableBarre(data.frets, barreFret);
+            if (!bestRange) return [];
+            const range: Barre = {
+              fret: barreFret,
+              fromString: numStrings - bestRange.from,
+              toString: numStrings - bestRange.to,
+            };
+            return [range];
+          });
         }
       }
     } else {
@@ -85,7 +104,7 @@ export function StringChordDiagram({
       .chord({
         fingers: resolvedFingers,
         barres: resolvedBarres,
-        title: chord.title || ''
+        title: '',
       })
       .configure({
         strings: isUkulele ? 4 : 6,
@@ -106,18 +125,24 @@ export function StringChordDiagram({
     if (svg) {
       svg.style.width = '100%';
       svg.style.height = '100%';
-      svg.style.overflow = 'visible';
+      svg.style.overflow = 'hidden';
       svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     }
-    chartRef.current = chart;
+  }, [canRender, chord.barres, chord.fingers, chord.position, color, isUkulele, resolvedData]);
 
-  }, [chord, instrument, color, variation]);
+  if (!canRender) {
+    return (
+      <div className={`grid place-items-center rounded-xl border border-dashed border-slate-200 px-3 text-center text-[11px] leading-4 text-slate-500 dark:border-white/10 ${className}`} style={{ width, height }}>
+        No existe una digitación segura para {chord.title || 'este acorde'}.
+      </div>
+    );
+  }
 
   return (
     <div 
       ref={containerRef} 
-      className={`svg-chord-diagram overflow-visible ${className}`}
-      style={{ width, height, padding: '4px' }}
+      className={`svg-chord-diagram overflow-hidden rounded-xl ${className}`}
+      style={{ width, height, padding: '6px' }}
       aria-label={`Diagrama de acorde ${chord.title}`}
     />
   );

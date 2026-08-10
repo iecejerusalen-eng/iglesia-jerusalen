@@ -22,16 +22,34 @@ export interface HarmonyScoreOptions {
   accidentalPreference?: AccidentalPreference;
 }
 
-const CHORD_REGEX = /^([A-G](?:#|b)?)([^/\s[\]]*)(?:\/([A-G](?:#|b)?))?$/;
+const CHORD_REGEX = /^([A-G](?:(?:#{1,2})|(?:b{1,2}))?)([^/\s[\]]*)(?:\/([A-G](?:(?:#{1,2})|(?:b{1,2}))?))?$/;
+const NATURAL_NOTE_INDEX: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const ROMAN_DEGREES: Record<number, string> = {
+  0: 'I',
+  1: '♭II',
+  2: 'II',
+  3: '♭III',
+  4: 'III',
+  5: 'IV',
+  6: '♭V',
+  7: 'V',
+  8: '♭VI',
+  9: 'VI',
+  10: '♭VII',
+  11: 'VII',
+};
 
 function noteIndex(note: string): number {
-  const sharpIndex = SHARP_NOTES.indexOf(note as (typeof SHARP_NOTES)[number]);
-  if (sharpIndex >= 0) return sharpIndex;
-  return FLAT_NOTES.indexOf(note as (typeof FLAT_NOTES)[number]);
+  const normalized = note.replaceAll('♯', '#').replaceAll('♭', 'b');
+  const match = normalized.match(/^([A-G])([#b]*)$/);
+  if (!match) return -1;
+  const accidentalOffset = [...match[2]].reduce((total, accidental) => total + (accidental === '#' ? 1 : -1), 0);
+  return ((NATURAL_NOTE_INDEX[match[1]] + accidentalOffset) % 12 + 12) % 12;
 }
 
 export function parseChord(chord: string): ParsedChord | null {
-  const match = chord.trim().match(CHORD_REGEX);
+  const normalizedChord = chord.trim().replaceAll('♯', '#').replaceAll('♭', 'b');
+  const match = normalizedChord.match(CHORD_REGEX);
   if (!match) return null;
   const [, root, quality, bass] = match;
   if (noteIndex(root) < 0 || (bass && noteIndex(bass) < 0)) return null;
@@ -72,7 +90,7 @@ export function transposeChord(
   keyContext?: string | null,
 ): string {
   const parsed = parseChord(chord);
-  if (!parsed || semitones === 0) return chord;
+  if (!parsed) return chord;
   const root = transposeNote(parsed.root, semitones, preference, keyContext);
   const bass = parsed.bass ? `/${transposeNote(parsed.bass, semitones, preference, keyContext)}` : '';
   return `${root}${parsed.quality}${bass}`;
@@ -85,10 +103,24 @@ export function chordToNashville(chord: string, key: string | null): string {
   const keyIndex = noteIndex(parsedKey.root);
   const degreeFor = (note: string): string => {
     const interval = ((noteIndex(note) - keyIndex) % 12 + 12) % 12;
-    return ({ 0: '1', 1: '♭2', 2: '2', 3: '♭3', 4: '3', 5: '4', 6: '♭5', 7: '5', 8: '♭6', 9: '6', 10: '♭7', 11: '7' } as Record<number, string>)[interval] ?? note;
+    return ROMAN_DEGREES[interval] ?? note;
   };
+  const tonalChord = Chord.get(`${parsedChord.root}${parsedChord.quality}`);
+  const isDiminished = tonalChord.quality === 'Diminished';
+  const isMinor = tonalChord.quality === 'Minor';
+  const isAugmented = tonalChord.quality === 'Augmented';
+  let degree = degreeFor(parsedChord.root);
+  if (isMinor || isDiminished) degree = degree.toLocaleLowerCase('es');
+  let quality = parsedChord.quality;
+  if (isMinor) quality = quality.replace(/^m(?!aj)/, '');
+  if (isDiminished) quality = `°${quality.replace(/^(?:dim|o)/, '')}`;
+  if (isAugmented) quality = `+${quality.replace(/^(?:aug|\+)/, '')}`;
+  quality = quality
+    .replace(/^M(?=\d)/, 'maj')
+    .replaceAll('b', '♭')
+    .replaceAll('#', '♯');
   const bass = parsedChord.bass ? `/${degreeFor(parsedChord.bass)}` : '';
-  return `${degreeFor(parsedChord.root)}${parsedChord.quality}${bass}`;
+  return `${degree}${quality}${bass}`;
 }
 
 export function extractChords(text: string): string[] {

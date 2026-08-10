@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
-import type { DashboardAccess, DashboardMember, DashboardData, WeeklyAlert } from '../types';
+import type { DashboardAccess, DashboardMember, DashboardData, TalentDirectoryEntry, WeeklyAlert } from '../types';
 import { MONTHS, BIBLE_VERSES } from '../constants';
+
+const parseCalendarDate = (value: string) => new Date(`${value.slice(0, 10)}T12:00:00`);
 
 const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
   const today = new Date();
@@ -9,7 +11,7 @@ const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
 
   membersList.forEach(m => {
     if (m.birth_date) {
-      const birth = new Date(m.birth_date);
+      const birth = parseCalendarDate(m.birth_date);
       const bDayThisYear = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
       
       const diffTime = bDayThisYear.getTime() - today.getTime();
@@ -27,7 +29,7 @@ const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
     }
 
     if (m.conversion_date) {
-      const conv = new Date(m.conversion_date);
+      const conv = parseCalendarDate(m.conversion_date);
       const cDayThisYear = new Date(today.getFullYear(), conv.getMonth(), conv.getDate());
       
       const diffTime = cDayThisYear.getTime() - today.getTime();
@@ -50,7 +52,7 @@ const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
   return list;
 };
 
-const processChartData = (membersList: DashboardMember[]) => {
+export const processChartData = (membersList: DashboardMember[]) => {
   const today = new Date();
   const ages: number[] = [];
   const areaCounts: { [key: string]: number } = {};
@@ -61,12 +63,12 @@ const processChartData = (membersList: DashboardMember[]) => {
   membersList.forEach(m => {
     // 1. Age calculation
     if (m.birth_date) {
-      const birth = new Date(m.birth_date);
+      const birth = parseCalendarDate(m.birth_date);
       let age = today.getFullYear() - birth.getFullYear();
       const birthdayOccurred = today.getMonth() > birth.getMonth()
         || (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
       if (!birthdayOccurred) age -= 1;
-      ages.push(age);
+      if (age >= 0 && age <= 120) ages.push(age);
     }
 
     // 2. Service areas tally
@@ -96,7 +98,7 @@ const processChartData = (membersList: DashboardMember[]) => {
 
     // 4. Baptism progression
     if (m.baptism_date) {
-      const year = new Date(m.baptism_date).getFullYear().toString();
+      const year = parseCalendarDate(m.baptism_date).getFullYear().toString();
       baptismYearCounts[year] = (baptismYearCounts[year] || 0) + 1;
     }
   });
@@ -111,12 +113,16 @@ const processChartData = (membersList: DashboardMember[]) => {
   });
 
   const ageData = Object.entries(groups).map(([range, count]) => ({ range, cantidad: count }));
-  const areasData = Object.entries(areaCounts).map(([name, value]) => ({ name, miembros: value }));
+  const areasData = Object.entries(areaCounts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .map(([name, value]) => ({ name, miembros: value }));
   const talentsData = Object.entries(talentCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
     .map(([name, value]) => ({ name, value }));
-  const talentCategoriesData = Object.entries(talentCategoryCounts).map(([name, value]) => ({ name, value }));
+  const talentCategoriesData = Object.entries(talentCategoryCounts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .map(([name, value]) => ({ name, value }));
   
   const baptismsData = Object.entries(baptismYearCounts)
     .sort((a, b) => a[0].localeCompare(b[0]))
@@ -124,6 +130,27 @@ const processChartData = (membersList: DashboardMember[]) => {
 
   return { ageData, areasData, talentsData, talentCategoriesData, baptismsData };
 };
+
+export const buildTalentDirectory = (members: DashboardMember[]): TalentDirectoryEntry[] => members.flatMap((member) => {
+  const seenTalents = new Set<string>();
+  return (member.member_talents ?? []).flatMap((entry) => {
+    const rawName = entry.catalog_roles?.name?.trim();
+    if (!rawName) return [];
+    const match = rawName.match(/^\[(.*?)\]\s*(.*)$/);
+    const talentName = (match?.[2] || rawName).trim();
+    const category = (match?.[1] || 'Otros').trim();
+    const dedupeKey = `${talentName.toLocaleLowerCase('es')}::${category.toLocaleLowerCase('es')}`;
+    if (seenTalents.has(dedupeKey)) return [];
+    seenTalents.add(dedupeKey);
+    return [{
+      memberId: member.id,
+      memberName: `${member.first_name} ${member.last_name}`.trim(),
+      photoUrl: member.photo_url ?? null,
+      talentName,
+      category,
+    }];
+  });
+}).sort((a, b) => a.talentName.localeCompare(b.talentName, 'es'));
 
 export const useDashboardStats = (access: DashboardAccess) => {
   return useQuery<DashboardData>({
@@ -133,7 +160,7 @@ export const useDashboardStats = (access: DashboardAccess) => {
         access.finances ? supabase.from('donations').select('amount') : Promise.resolve(null),
         access.members
           ? supabase.from('members').select(`
-              id, first_name, last_name, birth_date, conversion_date, baptism_date, is_leader,
+              id, first_name, last_name, photo_url, birth_date, conversion_date, baptism_date, is_leader,
               member_service_areas(catalog_roles(name)),
               member_talents(catalog_roles(name))
             `)
@@ -152,6 +179,7 @@ export const useDashboardStats = (access: DashboardAccess) => {
         id: member.id,
         first_name: member.first_name,
         last_name: member.last_name,
+        photo_url: member.photo_url,
         birth_date: member.birth_date,
         conversion_date: member.conversion_date,
         baptism_date: member.baptism_date,
@@ -164,6 +192,7 @@ export const useDashboardStats = (access: DashboardAccess) => {
         })),
       }));
       const leadersCount = members.filter(m => m.is_leader).length;
+      const talentDirectory = buildTalentDirectory(members);
 
       const inventory = inventoryRes?.data || [];
       const inventoryCount = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -192,6 +221,7 @@ export const useDashboardStats = (access: DashboardAccess) => {
       return {
         stats,
         alerts,
+        talentDirectory,
         ...charts
       };
     },

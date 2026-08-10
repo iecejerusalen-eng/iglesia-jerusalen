@@ -14,10 +14,11 @@ export const QuickLinks = () => {
   if (links.length === 0) return null;
 
   return (
-    <section className="space-y-4 rounded-2xl border border-gray-150 bg-white/90 p-5 shadow-2xs backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
-      <h3 className="border-b border-gray-100 pb-2 font-serif text-sm font-bold text-gray-800 dark:border-white/10 dark:text-gray-100">
-        Accesos para tu rol
-      </h3>
+    <section className="space-y-4 rounded-[1.6rem] border border-white/70 bg-white/70 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,.55)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/65">
+      <div className="border-b border-slate-200/70 pb-3 dark:border-white/10">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white">Accesos frecuentes</h3>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Herramientas útiles disponibles para tu rol.</p>
+      </div>
 
       <div className="space-y-2">
         {links.map((module) => module && (

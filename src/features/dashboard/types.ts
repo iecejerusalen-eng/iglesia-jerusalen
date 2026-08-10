@@ -27,6 +27,14 @@ export interface TalentCategoryDataPoint {
   value: number;
 }
 
+export interface TalentDirectoryEntry {
+  memberId: string;
+  memberName: string;
+  photoUrl: string | null;
+  talentName: string;
+  category: string;
+}
+
 export interface BaptismDataPoint {
   year: string;
   cantidad: number;
@@ -36,6 +44,7 @@ export interface DashboardMember {
   id: string;
   first_name: string;
   last_name: string;
+  photo_url?: string | null;
   birth_date?: string | null;
   conversion_date?: string | null;
   baptism_date?: string | null;
@@ -72,6 +81,7 @@ export interface DashboardData {
   areasData: AreaDataPoint[];
   talentsData: TalentDataPoint[];
   talentCategoriesData: TalentCategoryDataPoint[];
+  talentDirectory: TalentDirectoryEntry[];
   baptismsData: BaptismDataPoint[];
 }
 

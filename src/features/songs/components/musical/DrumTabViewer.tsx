@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Drum,
   Volume2,
@@ -6,13 +6,10 @@ import {
   Copy,
   Check,
   ListMusic,
-  Info,
   ChevronDown,
   ChevronUp,
   Activity,
-  Music2,
   FileText,
-  SlidersHorizontal,
 } from 'lucide-react';
 import type { Song, SongStructureBlock, MusicianNoteSongBlock } from '../../../../types';
 
@@ -48,7 +45,7 @@ export interface DrumPadCategoryInfo {
 // 3. SD (Snare / Caja in Orange text-orange-500 bg-orange-500/10)
 // 4. BD (Bass Drum / Bombo in Blue text-blue-500 bg-blue-500/10)
 // 5. T1 / FT (Toms in Purple text-purple-500 bg-purple-500/10)
-export const DRUM_PAD_CATEGORIES: DrumPadCategoryInfo[] = [
+const DRUM_PAD_CATEGORIES: DrumPadCategoryInfo[] = [
   {
     id: 'cymbals',
     codes: ['C1', 'CR', 'CC', 'CY', 'RC', 'RD'],
@@ -504,6 +501,34 @@ export function DrumTabViewer({
         )}
       </div>
 
+      {compact ? (
+        <section aria-label="Mapa rítmico por secciones">
+          <div className="mb-3 flex items-start gap-3 rounded-xl border border-cyan-200/70 bg-cyan-50/70 p-3 dark:border-cyan-400/20 dark:bg-cyan-400/10">
+            <Activity size={16} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-300" />
+            <div>
+              <h4 className="text-xs font-black text-cyan-950 dark:text-cyan-100">Mapa rítmico, no acordes</h4>
+              <p className="mt-0.5 text-[10px] leading-4 text-cyan-800/80 dark:text-cyan-200/75">La batería sigue pulsos, dinámicas, cortes y entradas. Cada tarjeta resume qué tocar en esa sección.</p>
+            </div>
+          </div>
+          <div className="flex snap-x gap-2.5 overflow-x-auto overscroll-contain pb-2">
+            {sectionGuides.map((guide, index) => (
+              <article key={`${guide.sectionLabel}-${index}`} className="min-w-[210px] snap-start rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">{guide.sectionLabel}</strong>
+                  <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[8px] font-black text-slate-600 dark:bg-white/10 dark:text-slate-300">{guide.dynamics}</span>
+                </div>
+                <p className="mt-2 text-[11px] font-bold leading-4 text-slate-800 dark:text-slate-100">{guide.rhythmFeel}</p>
+                <dl className="mt-2 grid gap-1 text-[9px] leading-4 text-slate-500 dark:text-slate-400">
+                  <div><dt className="inline font-black text-cyan-600 dark:text-cyan-300">HH · </dt><dd className="inline">{guide.hihatGuide}</dd></div>
+                  <div><dt className="inline font-black text-orange-600 dark:text-orange-300">Caja · </dt><dd className="inline">{guide.snareGuide}</dd></div>
+                  <div><dt className="inline font-black text-blue-600 dark:text-blue-300">Bombo · </dt><dd className="inline">{guide.kickGuide}</dd></div>
+                </dl>
+                {guide.musicianNotes?.map((note, noteIndex) => <p key={noteIndex} className="mt-2 rounded-lg bg-indigo-50 px-2 py-1.5 text-[9px] font-semibold leading-4 text-indigo-800 dark:bg-indigo-400/10 dark:text-indigo-200">Nota: {note}</p>)}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : <>
       {/* Visual Drum Pad Matrix / Leyenda de Parches */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -677,6 +702,7 @@ export function DrumTabViewer({
           </pre>
         </div>
       </div>
+      </>}
 
       {/* Guía de Toques por Sección (Versos, Coros, Puentes) */}
       {!compact && (

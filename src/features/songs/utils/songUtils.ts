@@ -72,7 +72,13 @@ export function processBracketText(text: string, transposeAmount: number = 0, na
   return transposeBracketText(text, transposeAmount, { nashville: nashvilleMode, key: originalKey });
 }
 
-export function bracketTextToHtml(text: string, transposeAmount: number = 0, nashvilleMode: boolean = false, originalKey: string | null = null): string {
+export function bracketTextToHtml(
+  text: string,
+  transposeAmount: number = 0,
+  nashvilleMode: boolean = false,
+  originalKey: string | null = null,
+  accidentalPreference: AccidentalPreference = 'auto',
+): string {
   if (!text) return '';
   const escaped = text
     .replace(/&/g, '&amp;')
@@ -85,12 +91,12 @@ export function bracketTextToHtml(text: string, transposeAmount: number = 0, nas
   const processedLines = lines.map(line => {
     const compiledLine = line.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
       if (!isValidChord(chord)) return match;
-      let finalChord = chord;
-      if (transposeAmount !== 0) {
-        finalChord = transposeChord(finalChord, transposeAmount);
-      }
+      let finalChord = transposeParsedChord(chord, transposeAmount, accidentalPreference, originalKey);
       if (nashvilleMode) {
-        finalChord = chordToNashville(finalChord, originalKey ? transposeNote(originalKey, transposeAmount) : null);
+        finalChord = chordToNashville(
+          finalChord,
+          originalKey ? transposeParsedNote(originalKey, transposeAmount, accidentalPreference, originalKey) : null,
+        );
       }
       return `<span class="chord-node-wrapper" data-chord-node="true" data-chord="${finalChord}"></span>`;
     });
@@ -107,3 +113,4 @@ import {
   transposeChord as transposeParsedChord,
   transposeNote as transposeParsedNote,
 } from './musicEngine';
+import type { AccidentalPreference } from '../../../types';

@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import DOMPurify from 'dompurify';
 import {
-  ArrowDownToLine,
-  ArrowUpToLine,
   BookOpenText,
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronsUp,
   Copy,
   Drum,
   Eye,
@@ -23,8 +22,9 @@ import {
   Minimize2,
   Minus,
   Music2,
-  Pause,
+  PauseCircle,
   Play,
+  PlayCircle,
   Plus,
   Printer,
   Settings2,
@@ -119,8 +119,14 @@ function legacyText(song: Song): string {
   return htmlToBracketText(song.lyrics ?? '');
 }
 
-function safeBracketHtml(text: string, transpose: number, nashville: boolean, key: string | null): string {
-  return DOMPurify.sanitize(bracketTextToHtml(text, transpose, nashville, key), {
+function safeBracketHtml(
+  text: string,
+  transpose: number,
+  nashville: boolean,
+  key: string | null,
+  preference: AccidentalPreference,
+): string {
+  return DOMPurify.sanitize(bracketTextToHtml(text, transpose, nashville, key, preference), {
     ADD_ATTR: ['data-chord', 'data-chord-node'],
   });
 }
@@ -343,7 +349,7 @@ export const SongViewer = ({
     const renderText = (text: string) => (
       <div
         className={`song-workspace-lyrics ${withChords ? '' : 'song-workspace-hide-chords'}`}
-        dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, chordTransposeAmount, nashvilleMode, originalKey) }}
+        dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, chordTransposeAmount, nashvilleMode, originalKey, accidentalPreference) }}
       />
     );
     if (!structuredLyrics.length) return renderText(legacyText(selectedSong));
@@ -497,7 +503,7 @@ export const SongViewer = ({
               <div className="grid grid-cols-3 gap-2">
                 {(['auto', 'sharp', 'flat'] as AccidentalPreference[]).map((value) => <button key={value} onClick={() => setAccidentalPreference(value)} className={`rounded-xl border px-2 py-2 text-[10px] font-black uppercase ${accidentalPreference === value ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300' : 'border-white/70 bg-white/60 text-slate-500 dark:border-white/10 dark:bg-white/5'}`}>{value === 'auto' ? 'Auto' : value === 'sharp' ? '♯' : '♭'}</button>)}
               </div>
-              <button onClick={() => setNashvilleMode((value) => !value)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-white/70 bg-white/60 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><span className="flex items-center gap-2"><Hash size={14} /> Nashville</span><span>{nashvilleMode ? 'Activo' : 'Inactivo'}</span></button>
+              <button onClick={() => setNashvilleMode((value) => !value)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-white/70 bg-white/60 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><span className="flex items-center gap-2"><Hash size={14} /> Grados romanos</span><span>{nashvilleMode ? 'I · ii · iii' : 'Inactivo'}</span></button>
             </ToolSection>
           </div>
         </aside>
@@ -514,8 +520,16 @@ export const SongViewer = ({
                 {(rootSong.song_arrangements?.length ?? 0) > 0 && <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-amber-200/60 bg-amber-50/70 px-2 py-1 text-[10px] font-black text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200"><ListMusic size={12} /> Versión<select value={arrangementId} onChange={(event) => { const nextId = event.target.value; const version = rootSong.song_arrangements?.find((item) => item.id === nextId); setCapo(version?.capo ?? rootSong.capo ?? 0); setTransposeAmount(0); setArrangementId(nextId); }} className="bg-transparent outline-none"><option value="original">Original</option>{rootSong.song_arrangements?.map((version) => <option key={version.id} value={version.id} className="text-slate-900">{version.name}</option>)}</select></label>}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => setShowTools((value) => !value)} className="header-icon-button hidden lg:grid" aria-label="Mostrar u ocultar herramientas"><Settings2 size={17} /></button>
-                <button onClick={() => setShowMobileTools(true)} className="header-icon-button lg:hidden" aria-label="Abrir herramientas musicales"><Settings2 size={17} /></button>
+                <button
+                  onClick={() => {
+                    if (window.innerWidth >= 1024) setShowTools((v) => !v);
+                    else setShowMobileTools(true);
+                  }}
+                  className="header-icon-button"
+                  aria-label="Herramientas musicales"
+                >
+                  <Settings2 size={17} />
+                </button>
                 <button onClick={() => void shareSong()} className="header-icon-button" aria-label="Compartir"><Share2 size={17} /></button>
                 <button onClick={() => void toggleFullscreen()} className="header-icon-button hidden sm:grid" aria-label="Pantalla completa">{isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>
                 <button onClick={close} className="header-icon-button" aria-label="Cerrar"><X size={19} /></button>
@@ -533,7 +547,26 @@ export const SongViewer = ({
               </div>
               {capo && usesCapoShapes ? <span className="toolbar-chip">Capo {capo} · forma {transposeNote(originalKey || 'C', chordTransposeAmount, accidentalPreference, originalKey)}</span> : null}
               {selectedSong.bpm ? <button onClick={() => { loadSongTempo(selectedSong.bpm ?? 80, selectedSong.time_signature, selectedSong.title); toast.success(`${selectedSong.bpm} BPM enviados al metrónomo`); }} className="toolbar-chip border-amber-200/70 text-amber-700 dark:text-amber-300"><Send size={13} /> Mandar {selectedSong.bpm} BPM</button> : <button onClick={() => openTool('metronome')} className="toolbar-chip"><Music2 size={13} /> Metrónomo</button>}
-              <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5"><button onClick={() => setAutoScrollActive((active) => !active)} className={`transpose-button ${autoScrollActive ? 'bg-indigo-100 text-indigo-700' : ''}`} aria-label={autoScrollActive ? 'Pausar autoscroll' : 'Iniciar autoscroll'}>{autoScrollActive ? <Pause size={13} /> : <ArrowDownToLine size={14} />}</button><input type="range" min="5" max="100" value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(Number(event.target.value))} className="w-20 accent-indigo-500" aria-label="Velocidad del autoscroll" /><span className="w-7 text-[9px] font-black text-slate-400">{Math.round(autoScrollProgress)}%</span><button onClick={() => { if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }); setAutoScrollProgress(0); }} className="transpose-button" aria-label="Volver arriba"><ArrowUpToLine size={13} /></button></div>
+              <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5">
+                <button
+                  onClick={() => setAutoScrollActive((active) => !active)}
+                  className={`transpose-button ${autoScrollActive ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300' : ''}`}
+                  aria-label={autoScrollActive ? 'Pausar desplazamiento automático' : 'Iniciar desplazamiento automático'}
+                  title={autoScrollActive ? 'Pausar autoscroll' : 'Activar autoscroll'}
+                >
+                  {autoScrollActive ? <PauseCircle size={16} /> : <PlayCircle size={16} />}
+                </button>
+                <input type="range" min="5" max="100" value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(Number(event.target.value))} className="w-20 accent-indigo-500" aria-label="Velocidad del autoscroll" />
+                <span className="w-7 text-[9px] font-black text-slate-400">{Math.round(autoScrollProgress)}%</span>
+                <button
+                  onClick={() => { if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }); setAutoScrollProgress(0); }}
+                  className="transpose-button"
+                  aria-label="Volver al inicio"
+                  title="Volver arriba"
+                >
+                  <ChevronsUp size={16} />
+                </button>
+              </div>
               <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
               <button onClick={() => void copyForProPresenter('lyrics')} className="toolbar-chip" title="Dos líneas de letra por diapositiva"><FileText size={13} /> Letra → ProPresenter</button>
               <button onClick={() => void copyForProPresenter('lyrics-chords')} className="toolbar-chip border-indigo-200/70 text-indigo-700 dark:text-indigo-300" title="Una frase por diapositiva: acordes arriba y letra abajo"><Copy size={13} /> Stage + acordes</button>
@@ -602,7 +635,7 @@ export const SongViewer = ({
                   <select value={fontFamily} onChange={(event) => setFontFamily(event.target.value as 'mono' | 'serif' | 'sans')} className="song-select w-28" aria-label="Tipografía"><option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Mono</option></select>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">{(['auto', 'sharp', 'flat'] as AccidentalPreference[]).map((value) => <button key={value} onClick={() => setAccidentalPreference(value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black uppercase ${accidentalPreference === value ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>{value === 'auto' ? 'Auto' : value === 'sharp' ? '♯' : '♭'}</button>)}<button onClick={() => setNashvilleMode((value) => !value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>Nashville</button></div>
+                <div className="grid grid-cols-4 gap-2">{(['auto', 'sharp', 'flat'] as AccidentalPreference[]).map((value) => <button key={value} onClick={() => setAccidentalPreference(value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black uppercase ${accidentalPreference === value ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>{value === 'auto' ? 'Auto' : value === 'sharp' ? '♯' : '♭'}</button>)}<button onClick={() => setNashvilleMode((value) => !value)} className={`rounded-xl border px-2 py-2.5 text-[10px] font-black ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-slate-200 text-slate-500 dark:border-white/10'}`}>Grados</button></div>
               </div>
             </section>
           </div>
@@ -619,10 +652,10 @@ export const SongViewer = ({
         .song-workspace-lyrics .chord-node-wrapper::before { content: attr(data-chord); position: absolute; bottom: .92em; left: 0; color: rgb(180 83 9); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72em; font-weight: 900; line-height: 1; white-space: nowrap; }
         .dark .song-workspace-lyrics .chord-node-wrapper::before { color: rgb(252 211 77); }
         .song-workspace-hide-chords .chord-node-wrapper { display: none; }
-        .tool-icon-button,.header-icon-button,.transpose-button { display:grid; place-items:center; border-radius:.75rem; color:rgb(100 116 139); transition:.2s; }
-        .tool-icon-button { width:2.25rem;height:2.25rem;background:rgb(241 245 249 / .8); }
-        .header-icon-button { width:2.5rem;height:2.5rem;background:rgb(255 255 255 / .65);border:1px solid rgb(255 255 255 / .75); }
-        .transpose-button { width:2rem;height:2rem; }
+        .tool-icon-button,.header-icon-button,.transpose-button { place-items:center; border-radius:.75rem; color:rgb(100 116 139); transition:.2s; }
+        .tool-icon-button { display:grid; width:2.25rem;height:2.25rem;background:rgb(241 245 249 / .8); }
+        .header-icon-button { display:grid; width:2.5rem;height:2.5rem;background:rgb(255 255 255 / .65);border:1px solid rgb(255 255 255 / .75); }
+        .transpose-button { display:grid; width:2rem;height:2rem; }
         .tool-icon-button:hover,.header-icon-button:hover,.transpose-button:hover { color:rgb(180 83 9);background:rgb(254 243 199 / .8); }
         .dark .tool-icon-button,.dark .header-icon-button { background:rgb(255 255 255 / .06);border-color:rgb(255 255 255 / .1);color:rgb(203 213 225); }
         .song-select { width:100%;border-radius:.8rem;border:1px solid rgb(255 255 255 / .7);background:rgb(255 255 255 / .7);padding:.65rem .75rem;font-size:.75rem;font-weight:700;color:rgb(71 85 105);outline:none; }

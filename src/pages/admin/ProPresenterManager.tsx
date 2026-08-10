@@ -633,8 +633,8 @@ const EnhancedControlTab = ({
         ) : selectedSong && !loadingSong ? <p className="mt-5 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-200">Esta versión todavía no contiene líneas de letra válidas.</p> : null}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <ActionButton icon={Play} label="Mostrar solo letra" disabled={!canSendContent} onClick={() => sendContent('show_lyrics', 'lyrics')} />
-          <ActionButton icon={Sparkles} label="Mostrar letra + acordes" disabled={!canSendContent} onClick={() => sendContent('show_chords', 'lyrics-chords')} />
+          <ActionButton icon={Play} label="Letra al público + acordes Stage" disabled={!canSendContent} onClick={() => sendContent('show_lyrics', 'lyrics')} />
+          <ActionButton icon={Sparkles} label="Letra + acordes en público" disabled={!canSendContent} onClick={() => sendContent('show_chords', 'lyrics-chords')} />
           <ActionButton icon={RefreshCw} label="Sincronizar presentación" disabled={!canSendContent} onClick={() => sendContent('sync_service', contentMode)} />
           <ActionButton icon={ChevronRight} label="Siguiente slide" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('next_slide')} />
           <ActionButton icon={ChevronRight} label="Slide anterior" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('previous_slide')} />
@@ -669,6 +669,11 @@ const EnhancedSettingsTab = () => (
         ))}
       </div>
       <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-xs leading-5 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200"><strong>Importante:</strong> Alpha/Key-Fill y NDI son configuraciones de salida de ProPresenter. El conector entrega la letra; ProPresenter y el switcher deciden cómo se compone la señal.</p>
+      <div className="mt-4 rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-4 text-xs leading-5 text-indigo-900 dark:border-indigo-400/20 dark:bg-indigo-400/10 dark:text-indigo-100">
+        <strong className="block">Stage recomendado</strong>
+        <p className="mt-1">Añade <em>Current Slide Text</em> en blanco y <em>Stage Display Message</em> en ámbar. Como alternativa, muestra la página local:</p>
+        <code className="mt-2 block overflow-x-auto rounded-xl bg-white/75 px-3 py-2 font-mono text-[11px] text-indigo-800 dark:bg-slate-950/50 dark:text-indigo-200">http://127.0.0.1:43177/overlay?view=stage</code>
+      </div>
     </section>
     <section className={`${glassPanel} p-5 sm:p-6`}>
       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-400"><KeyRound size={14} /> Seguridad operativa</div>

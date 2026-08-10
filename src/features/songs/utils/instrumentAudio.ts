@@ -1,5 +1,6 @@
 import { Chord, Note } from '@tonaljs/tonal';
 import type { InstrumentType } from './chordDictionary';
+import { parseChord, transposeNote } from './musicEngine';
 
 interface WebkitAudioWindow extends Window {
   webkitAudioContext?: typeof AudioContext;
@@ -29,7 +30,10 @@ function oscillatorType(instrument: InstrumentType): OscillatorType {
 }
 
 export function playInstrumentChord(chordName: string, instrument: InstrumentType): void {
-  const parsed = Chord.get(chordName);
+  const symbol = parseChord(chordName);
+  if (!symbol) throw new Error(`No se pudo interpretar el acorde ${chordName}.`);
+  const root = transposeNote(symbol.root, 0, symbol.root.includes('b') ? 'flat' : 'sharp', symbol.root);
+  const parsed = Chord.get(`${root}${symbol.quality}`);
   if (parsed.empty || !parsed.notes.length) throw new Error(`No se pudo interpretar el acorde ${chordName}.`);
   const context = getContext();
   const master = context.createGain();
@@ -39,9 +43,12 @@ export function playInstrumentChord(chordName: string, instrument: InstrumentTyp
   master.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
   master.connect(context.destination);
 
-  const baseOctave = instrument === 'bajo' ? 2 : instrument === 'ukelele' ? 4 : 3;
-  parsed.notes.forEach((note, index) => {
-    const midi = midiForPitchClass(note, baseOctave + (index > 2 && instrument !== 'bajo' ? 1 : 0));
+  const baseOctave = instrument === 'bajo' ? 2 : instrument === 'ukelele' ? 4 : instrument === 'piano' ? 4 : 3;
+  const voices = symbol.bass
+    ? [{ note: transposeNote(symbol.bass, 0, symbol.bass.includes('b') ? 'flat' : 'sharp', symbol.bass), octave: Math.max(1, baseOctave - 1) }, ...parsed.notes.map((note) => ({ note, octave: baseOctave }))]
+    : parsed.notes.map((note) => ({ note, octave: baseOctave }));
+  voices.forEach(({ note, octave }, index) => {
+    const midi = midiForPitchClass(note, octave);
     if (midi === null) return;
     const oscillator = context.createOscillator();
     const voice = context.createGain();
@@ -49,7 +56,7 @@ export function playInstrumentChord(chordName: string, instrument: InstrumentTyp
     oscillator.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), context.currentTime);
     voice.gain.setValueAtTime(0.0001, context.currentTime);
     const stagger = instrument === 'guitarra' || instrument === 'electrica' || instrument === 'ukelele' ? index * 0.028 : 0;
-    voice.gain.exponentialRampToValueAtTime(0.8 / parsed.notes.length, context.currentTime + stagger + 0.012);
+    voice.gain.exponentialRampToValueAtTime(0.8 / voices.length, context.currentTime + stagger + 0.012);
     voice.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
     oscillator.connect(voice).connect(master);
     oscillator.start(context.currentTime + stagger);

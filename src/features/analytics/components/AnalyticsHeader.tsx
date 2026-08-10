@@ -1,17 +1,31 @@
-import { BarChart3, RefreshCw, Sparkles } from 'lucide-react';
+import { BarChart3, FileQuestion, LayoutDashboard, Plus, RefreshCw, RotateCcw } from 'lucide-react';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { toast } from 'sonner';
+import type { AnalyticsTab, DateFilter } from '../types';
 
 interface AnalyticsHeaderProps {
-  dateFilter: string;
-  setDateFilter: (filter: 'all' | '30days' | '90days' | 'thisyear') => void;
+  dateFilter: DateFilter;
+  setDateFilter: (filter: DateFilter) => void;
   onReset: () => void;
   onRefresh: () => void;
   loading: boolean;
-  activeTab: string;
-  setActiveTab: (tab: 'dashboard' | 'builder' | 'forms') => void;
+  activeTab: AnalyticsTab;
+  setActiveTab: (tab: AnalyticsTab) => void;
   widgetCount: number;
 }
+
+const filters: Array<{ value: DateFilter; label: string }> = [
+  { value: 'all', label: 'Todo el historial' },
+  { value: '30days', label: 'Últimos 30 días' },
+  { value: '90days', label: 'Últimos 90 días' },
+  { value: 'thisyear', label: `Este año (${new Date().getFullYear()})` },
+];
+
+const tabs: Array<{ id: AnalyticsTab; label: string; icon: typeof LayoutDashboard }> = [
+  { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
+  { id: 'builder', label: 'Crear informe', icon: Plus },
+  { id: 'forms', label: 'Cuestionarios', icon: FileQuestion },
+];
 
 export function AnalyticsHeader({
   dateFilter,
@@ -21,105 +35,99 @@ export function AnalyticsHeader({
   loading,
   activeTab,
   setActiveTab,
-  widgetCount
+  widgetCount,
 }: AnalyticsHeaderProps) {
   const confirm = useConfirmStore((state) => state.confirm);
 
   const handleReset = async () => {
     const confirmed = await confirm({
-      title: 'Restablecer paneles',
-      message: '¿Estás seguro de restablecer todos los paneles al estado predeterminado? Se perderán los reportes personalizados que hayas guardado.',
+      title: 'Restablecer informes',
+      message: 'Se reemplazarán los informes personalizados por los ocho informes predeterminados.',
       confirmText: 'Restablecer',
       cancelText: 'Cancelar',
       variant: 'warning',
     });
     if (!confirmed) return;
     onReset();
-    toast.success('Paneles restablecidos a los 8 predeterminados.');
+    toast.success('Informes predeterminados restaurados.');
   };
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-gray-150 dark:border-white/10">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright flex items-center gap-2">
-            <BarChart3 className="text-gold" />
-            Consola Inteligente de Analíticas (BI)
+    <header className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:p-7 dark:border-white/10 dark:bg-slate-950/65">
+      <div className="absolute -right-20 -top-24 size-64 rounded-full bg-blue-500/10 blur-3xl" aria-hidden="true" />
+      <div className="absolute -bottom-28 left-1/3 size-56 rounded-full bg-violet-500/10 blur-3xl" aria-hidden="true" />
+
+      <div className="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="max-w-2xl">
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">
+            <span className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+              <BarChart3 size={16} aria-hidden="true" />
+            </span>
+            Datos para decidir
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl dark:text-white">
+            Análisis y decisiones
           </h1>
-          <p className="text-gray-400 text-xs mt-1">
-            Plataforma interactiva de Business Intelligence. Construye reportes, analiza datos y consulta al Asistente Inteligente.
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Indicadores verificables de comunidad, finanzas, atención pastoral y operaciones, con filtros aplicados a las fuentes reales.
           </p>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <select
-              value={dateFilter}
-              onChange={(e) => {
-                setDateFilter(e.target.value as any);
-                toast.success('Filtro temporal aplicado globalmente.');
-              }}
-              className="px-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-900 text-xs font-semibold cursor-pointer shadow-xs focus:outline-none"
-            >
-              <option value="all">Todos los tiempos</option>
-              <option value="30days">Últimos 30 días</option>
-              <option value="90days">Últimos 90 días</option>
-              <option value="thisyear">Este año ({new Date().getFullYear()})</option>
-            </select>
-          </div>
 
-          <button
-            onClick={handleReset}
-            className="p-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
-            title="Restablecer paneles predeterminados"
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:max-w-xl xl:justify-end">
+          <label className="sr-only" htmlFor="analytics-date-filter">Periodo de análisis</label>
+          <select
+            id="analytics-date-filter"
+            value={dateFilter}
+            onChange={(event) => {
+              const next = filters.find((filter) => filter.value === event.target.value)?.value;
+              if (next) setDateFilter(next);
+            }}
+            className="min-h-11 rounded-2xl border border-slate-200/80 bg-white/85 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
           >
-            <RefreshCw size={14} className="text-amber-500" />
-            Restablecer Paneles
-          </button>
-
+            {filters.map((filter) => <option key={filter.value} value={filter.value}>{filter.label}</option>)}
+          </select>
           <button
+            type="button"
             onClick={onRefresh}
-            className="p-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-gray-450 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+            disabled={loading}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-wait disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            Actualizar Datos
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+            Actualizar
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200/80 bg-white/70 px-4 text-sm font-semibold text-slate-600 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+          >
+            <RotateCcw size={15} aria-hidden="true" />
+            Restablecer
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit border border-slate-200 dark:border-white/10">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'dashboard'
-              ? 'bg-white text-primary shadow-xs dark:bg-slate-800 dark:text-church-gold-bright'
-              : 'text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-gray-200'
-          }`}
-        >
-          Panel Personalizado ({widgetCount})
-        </button>
-        <button
-          onClick={() => setActiveTab('builder')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-            activeTab === 'builder'
-              ? 'bg-white text-primary shadow-xs dark:bg-slate-800 dark:text-church-gold-bright'
-              : 'text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-gray-200'
-          }`}
-        >
-          <Sparkles size={12} className="text-gold" />
-          Constructor y Asistente Inteligente
-        </button>
-        <button
-          onClick={() => setActiveTab('forms')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'forms'
-              ? 'bg-white text-primary shadow-xs dark:bg-slate-800 dark:text-church-gold-bright'
-              : 'text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-gray-200'
-          }`}
-        >
-          Respuestas de Cuestionarios
-        </button>
-      </div>
-    </>
+      <nav aria-label="Secciones de análisis" className="relative mt-7 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200/70 bg-slate-100/70 p-1.5 dark:border-white/10 dark:bg-white/5">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const selected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-current={selected ? 'page' : undefined}
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                selected
+                  ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              <Icon size={16} aria-hidden="true" />
+              {tab.label}{tab.id === 'dashboard' ? ` (${widgetCount})` : ''}
+            </button>
+          );
+        })}
+      </nav>
+    </header>
   );
 }

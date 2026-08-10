@@ -28,17 +28,23 @@ describe('musicEngine', () => {
   it('uses the requested enharmonic spelling', () => {
     expect(transposeNote('C', 1, 'sharp')).toBe('C#');
     expect(transposeNote('C', 1, 'flat')).toBe('Db');
+    expect(transposeChord('A#', 0, 'flat', 'Bb')).toBe('Bb');
+    expect(transposeChord('A##', 0, 'sharp')).toBe('B');
   });
 
   it('converts chord qualities and inversions to Nashville notation', () => {
-    expect(chordToNashville('Bm7/D', 'G')).toBe('3m7/5');
-    expect(chordToNashville('F', 'C')).toBe('4');
+    expect(chordToNashville('Bm7/D', 'G')).toBe('iii7/V');
+    expect(chordToNashville('F', 'C')).toBe('IV');
+    expect(chordToNashville('Dm', 'C')).toBe('ii');
+    expect(chordToNashville('B', 'C')).toBe('VII');
   });
 
   it('transposes complete bracket text and leaves section labels intact', () => {
     const source = '[Intro]\n[D]Santo [G/B]por siempre';
     expect(transposeBracketText(source, 2, { key: 'D', preference: 'sharp' }))
       .toBe('[Intro]\n[E]Santo [A/C#]por siempre');
+    expect(transposeBracketText('[A#]Santo [D#]Dios', 0, { key: 'Bb', preference: 'flat' }))
+      .toBe('[Bb]Santo [Eb]Dios');
   });
 
   it('extracts chords in appearance order and finds a key candidate', () => {

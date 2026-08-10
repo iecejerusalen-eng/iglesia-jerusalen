@@ -21,4 +21,27 @@ describe('chordDictionary', () => {
     expect(data?.instrument).toBe('piano');
     if (data?.instrument === 'piano') expect(data.notes.length).toBeGreaterThanOrEqual(4);
   });
+
+  it.each(['F/A', 'Bb/D'])('resolves guitar slash chords for %s', (chord) => {
+    const data = getChordData(chord, 'guitarra');
+    expect(data?.instrument).toBe('guitarra');
+    if (data?.instrument === 'guitarra') {
+      expect(data.bassNote).toBe(chord.split('/')[1]);
+      expect(data.frets.some((fret) => fret >= 0)).toBe(true);
+    }
+  });
+
+  it('generates a playable ukulele inversion instead of an empty grid', () => {
+    const data = getChordData('Bb/D', 'ukelele');
+    expect(data?.instrument).toBe('ukelele');
+    if (data?.instrument === 'ukelele') {
+      expect(data.bassNote).toBe('D');
+      expect(data.frets).toHaveLength(4);
+    }
+  });
+
+  it('separates the right-hand chord from the slash bass on piano', () => {
+    const data = getChordData('Bb/D', 'piano');
+    expect(data).toEqual({ instrument: 'piano', notes: ['Bb', 'D', 'F'], bassNote: 'D' });
+  });
 });

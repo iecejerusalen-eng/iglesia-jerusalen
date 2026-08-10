@@ -7,6 +7,15 @@ El conector vincula el Panel ProPresenter de Iglesia Jerusalén con ProPresenter
 
 Alpha/Key-Fill y NDI son salidas que se configuran dentro de ProPresenter. Cualquiera de las dos puede transportar el mensaje o la página web preparados por este conector.
 
+## Flujo recomendado: letra al público y acordes en Stage
+
+1. En el visor de alabanzas o en el Panel ProPresenter pulsa **Copiar letra** o **Descargar .txt**. Los párrafos vacíos ya separan las diapositivas.
+2. Importa el archivo desde ProPresenter o pega el texto en Reflow. Usa una o dos frases por diapositiva.
+3. En el editor de Stage crea un layout con **Current Slide Text** en blanco y **Stage Display Message** en ámbar, con una fuente monoespaciada.
+4. Sincroniza la misma versión desde el panel. El conector envía únicamente la línea de acordes al Stage Message y la actualiza al avanzar.
+
+Para una correspondencia exacta entre acordes y frase, usa una línea por diapositiva. La importación de texto plano no crea metadatos nativos de acordes ni conserva estilos por línea; la separación de colores sucede en el layout de Stage o en la página Stage local.
+
 ## Requisitos
 
 - Node.js 20 o superior.
@@ -53,6 +62,16 @@ http://127.0.0.1:43177/overlay
 
 Para una previsualización con fondo de diagnóstico usa `http://127.0.0.1:43177/overlay?debug=1`. El puerto puede cambiarse con `OVERLAY_PORT`.
 
+### Página Stage con acordes y letra
+
+Si prefieres no crear un layout con Stage Message, añade esta página web al Stage:
+
+```text
+http://127.0.0.1:43177/overlay?view=stage
+```
+
+Esta variante presenta cada acorde en ámbar sobre su frase en blanco y conserva los espacios de alineación. Para diagnosticarla usa `http://127.0.0.1:43177/overlay?view=stage&debug=1`.
+
 ## Variables opcionales
 
 | Variable | Predeterminado | Uso |
@@ -61,5 +80,6 @@ Para una previsualización con fondo de diagnóstico usa `http://127.0.0.1:43177
 | `OVERLAY_PORT` | `43177` | Página web local |
 | `IDLE_POLL_MS` | `5000` | Frecuencia cuando no hay actividad |
 | `ACTIVE_POLL_MS` | `800` | Frecuencia durante control en vivo |
+| `PROPRESENTER_STAGE_CHORDS` | `true` | Envía los acordes del slide activo a Stage Display Message; usa `false` para desactivarlo |
 
 El endpoint `http://127.0.0.1:43177/health` permite comprobar que el conector está activo.

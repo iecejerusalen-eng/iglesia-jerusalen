@@ -4,15 +4,15 @@ import {
   ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell 
 } from 'recharts';
 import { Sparkles, Search, Plus, Settings, X } from 'lucide-react';
-import type { Widget } from '../types';
+import type { AnalyticsDatasets, DateFilter, Widget } from '../types';
 import { COLORS } from '../constants';
 import { getDimensionLabel } from '../utils';
 import { useNLP } from '../hooks/useNLP';
 import { useChartData } from '../hooks/useChartData';
 
 interface BuilderTabProps {
-  datasets: any;
-  dateFilter: string;
+  datasets: AnalyticsDatasets;
+  dateFilter: DateFilter;
   onAddWidget: (widget: Omit<Widget, 'id'>) => void;
 }
 
@@ -47,10 +47,10 @@ export function BuilderTab({ datasets, dateFilter, onAddWidget }: BuilderTabProp
         <div className="relative space-y-4">
           <h3 className="text-lg font-serif font-bold text-white flex items-center gap-2">
             <Sparkles className="text-gold" />
-            Asistente Inteligente de Datos
+            Consulta guiada de datos
           </h3>
           <p className="text-slate-300 text-xs">
-            Pregunta al asistente para configurar reportes instantáneamente con palabras clave (ej: *"mostrar donaciones por mes"*, *"inventario por estado"*, *"diezmos totales por miembros"*, *"alabanzas por estilo"*).
+            Escribe una consulta sencilla. Verás exactamente qué fuente, agrupación y cálculo se usarán antes de guardar el informe.
           </p>
 
           <form onSubmit={handleNLPSearch} className="flex gap-2">
@@ -87,7 +87,7 @@ export function BuilderTab({ datasets, dateFilter, onAddWidget }: BuilderTabProp
                 type="button"
                 onClick={(e) => {
                   setSearchQuery(tag);
-                  setTimeout(() => handleNLPSearch(e, tag), 50);
+                  handleNLPSearch(e, tag);
                 }}
                 className="bg-white/5 hover:bg-white/15 px-2.5 py-1 rounded-full text-slate-200 border border-white/10 transition-colors cursor-pointer"
               >
@@ -103,7 +103,7 @@ export function BuilderTab({ datasets, dateFilter, onAddWidget }: BuilderTabProp
           <div className="flex justify-between items-center pb-3 border-b border-amber-50">
             <h3 className="font-serif font-bold text-amber-800 text-sm flex items-center gap-1.5">
               <Sparkles size={16} className="text-gold animate-bounce" />
-              Resultado del Asistente Inteligente: {parsedNLP.title}
+              Configuración sugerida: {parsedNLP.title}
             </h3>
             <button
               onClick={() => setParsedNLP(null)}

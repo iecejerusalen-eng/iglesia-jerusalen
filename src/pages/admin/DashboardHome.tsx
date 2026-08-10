@@ -41,6 +41,7 @@ const DashboardHome = () => {
   const areasData = data?.areasData || [];
   const talentsData = data?.talentsData || [];
   const talentCategoriesData = data?.talentCategoriesData || [];
+  const talentDirectory = data?.talentDirectory || [];
   const baptismsData = data?.baptismsData || [];
 
   return (
@@ -62,27 +63,23 @@ const DashboardHome = () => {
         access={access}
       />
 
-      {(access.members || access.petitions) && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
-          {access.members && (
-            <DashboardCharts 
-              loading={isLoading}
-              ageData={ageData}
-              areasData={areasData}
-              talentsData={talentsData}
-              talentCategoriesData={talentCategoriesData}
-              baptismsData={baptismsData}
-            />
-          )}
-
-          <AnimeFadeUp delay={250} duration={800} className={`space-y-5 lg:space-y-6 ${access.members ? '' : 'lg:col-span-3'}`}>
-            {access.members && <WeeklyAlerts alerts={alerts} />}
-            <QuickLinks />
-          </AnimeFadeUp>
-        </div>
+      {access.members && (
+        <DashboardCharts
+          loading={isLoading}
+          ageData={ageData}
+          areasData={areasData}
+          talentsData={talentsData}
+          talentCategoriesData={talentCategoriesData}
+          talentDirectory={talentDirectory}
+          baptismsData={baptismsData}
+          showAnalyticsLink={hasPermission('analytics', 'view')}
+        />
       )}
 
-      {!access.members && !access.petitions && <QuickLinks />}
+      <AnimeFadeUp delay={250} duration={700} className="grid gap-5 lg:grid-cols-2 lg:gap-6">
+        {access.members && <WeeklyAlerts alerts={alerts} />}
+        <QuickLinks />
+      </AnimeFadeUp>
 
       <ModuleGrid />
     </div>
