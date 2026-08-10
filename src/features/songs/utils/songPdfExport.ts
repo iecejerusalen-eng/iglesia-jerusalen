@@ -85,12 +85,13 @@ export const exportSongToPdf = (song: Song, options: PdfExportOptions) => {
   // 2. Prepare Lyrics
   let processedText: string;
   if (song.structure_blocks && song.structure_blocks.length > 0) {
-    processedText = song.structure_blocks.map((b: any) => {
-      let blockStr = `[BLOCK:${(b.label || '').toUpperCase()}]\n`;
-      if (b.melody || b.melody_guide) blockStr += `(Guía: ${b.melody || b.melody_guide})\n`;
-      blockStr += `${processBracketText(b.lyrics || '', options.transposeAmount, options.nashvilleMode, options.originalKey)}\n`;
+    processedText = song.structure_blocks.map((block) => {
+      if (block.type !== 'lyrics') return '';
+      let blockStr = `[BLOCK:${block.label.toUpperCase()}]\n`;
+      if (block.melody || block.melody_guide) blockStr += `(Guía: ${block.melody || block.melody_guide})\n`;
+      blockStr += `${processBracketText(block.lyrics, options.transposeAmount, options.nashvilleMode, options.originalKey)}\n`;
       return blockStr;
-    }).join('\n');
+    }).filter(Boolean).join('\n');
   } else {
     const baseText = htmlToBracketText(song.lyrics);
     processedText = processBracketText(baseText, options.transposeAmount, options.nashvilleMode, options.originalKey);

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { SVGuitarChord } from 'svguitar';
+import { SVGuitarChord, type Barre, type Finger } from 'svguitar';
 import { getChordData } from '../../utils/chordDictionary';
 
 export interface ChordPosition {
-  fingers?: [number, number | string, (string | undefined)?][]; // [string, fret, text]
+  fingers?: Finger[]; // [string, fret/open/muted, optional label]
   barres?: { fret: number; fromString: number; toString: number }[];
   title?: string;
   position?: number;
@@ -27,7 +27,7 @@ export function StringChordDiagram({
   color = 'currentColor'
 }: StringChordDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<SVGuitarChord | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -39,13 +39,13 @@ export function StringChordDiagram({
 
     const isUkulele = instrument === 'ukulele';
     
-    let resolvedFingers: any[] = [];
-    let resolvedBarres: any[] = [];
+    let resolvedFingers: Finger[] = [];
+    let resolvedBarres: Barre[] = [];
     let position = chord.position || 1;
 
     if (!chord.fingers || chord.fingers.length === 0) {
       const data = getChordData(chord.title || '', isUkulele ? 'ukelele' : 'guitarra');
-      if (data) {
+      if (data?.instrument === 'guitarra' || data?.instrument === 'ukelele') {
         const numStrings = isUkulele ? 4 : 6;
         for (let i = 0; i < numStrings; i++) {
           const fret = data.frets[i];
@@ -71,7 +71,7 @@ export function StringChordDiagram({
       }
     } else {
       // Manual fingers from props
-      resolvedFingers = chord.fingers.map(f => [f[0], f[1], f[2]]);
+      resolvedFingers = chord.fingers.map((finger) => [...finger] as Finger);
       resolvedBarres = chord.barres?.map(b => ({
         fret: b.fret,
         fromString: b.fromString,
@@ -79,9 +79,9 @@ export function StringChordDiagram({
       })) || [];
     }
 
-    chartRef.current = new SVGuitarChord(containerRef.current)
+    const chart = new SVGuitarChord(containerRef.current)
       .chord({
-        fingers: resolvedFingers as any,
+        fingers: resolvedFingers,
         barres: resolvedBarres,
         title: chord.title || ''
       })
@@ -90,18 +90,17 @@ export function StringChordDiagram({
         frets: isUkulele ? 4 : 5,
         position: position,
         color: color,
-        nutColor: color,
         fretColor: color,
         stringColor: color,
         titleColor: color,
         strokeWidth: 2,
         nutWidth: 4,
-        fretWidth: 1.5,
         fontFamily: 'Inter, sans-serif',
         titleFontSize: 40,
         fixedDiagramPosition: true
-      } as any)
-      .draw();
+      });
+    chart.draw();
+    chartRef.current = chart;
 
   }, [chord, instrument, color]);
 

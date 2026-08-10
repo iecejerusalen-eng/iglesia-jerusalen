@@ -1,21 +1,23 @@
 import { useCallback, useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import SongLyricsEditor from '../../components/admin/SongLyricsEditor';
 import { SongBlockEditor } from '../../features/songs/components/editor/SongBlockEditor';
+import { SongViewer } from '../../features/songs/components/SongViewer';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
   Plus, Edit3, Trash2, X, Search, Music, ListMusic,
   Tag, Palette as StyleIcon, ChevronDown, ChevronUp,
-  Link as LinkIcon, PlusCircle, ArrowUp, ArrowDown, Sparkles,
-  BookOpenText, Guitar, RotateCcw
+  Link as LinkIcon, PlusCircle, Sparkles,
+  BookOpenText, Guitar, RotateCcw, Eye
 } from 'lucide-react';
-import type { Song, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
+import type { AccidentalPreference, Song, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
+import { detectKeyCandidate, slugifySongTitle } from '../../features/songs/utils/musicEngine';
 
 const songSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
@@ -27,10 +29,51 @@ const songSchema = z.object({
   type_id: z.string().optional(),
   style_id: z.string().optional(),
   has_chords: z.boolean(),
+  original_key: z.string().optional(),
+  preferred_accidentals: z.enum(['auto', 'sharp', 'flat']),
+  capo: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) ? 0 : Number(val),
+    z.number().int().min(0).max(12)
+  ),
+  time_signature: z.string().regex(/^\d{1,2}\/\d{1,2}$/, 'Usa un compás como 4/4 o 6/8'),
+  status: z.enum(['draft', 'review', 'published', 'archived']),
+  composers: z.string().optional(),
+  copyright_notice: z.string().optional(),
 });
 
 type SongFormInput = z.input<typeof songSchema>;
 type SongFormValues = z.output<typeof songSchema>;
+
+interface SongEditorDraft {
+  updatedAt: string;
+  form: SongFormInput;
+  lyrics: string;
+  drumStyle: string;
+  resourceLinks: SongResourceLink[];
+  structureBlocks: SongStructureBlock[];
+  editorMode: 'free' | 'structured';
+}
+
+function readEditorDraft(key: string): SongEditorDraft | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !('updatedAt' in parsed) || !('form' in parsed)) return null;
+    return parsed as SongEditorDraft;
+  } catch (error) {
+    console.warn('No fue posible recuperar el borrador local de la canción.', error);
+    return null;
+  }
+}
+
+function clearEditorDraft(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    console.warn('No fue posible eliminar el borrador local de la canción.', error);
+  }
+}
 
 
 
@@ -331,16 +374,47 @@ const SongsManager = () => {
   const [resourceLinks, setResourceLinks] = useState<SongResourceLink[]>([]);
   const [structureBlocks, setStructureBlocks] = useState<SongStructureBlock[]>([]);
   const [editorMode, setEditorMode] = useState<'free' | 'structured'>('free');
+  const [previewSong, setPreviewSong] = useState<Song | null>(null);
+  const [previewShowChords, setPreviewShowChords] = useState(true);
+  const [previewFont, setPreviewFont] = useState<'mono' | 'serif' | 'sans'>('sans');
+  const [previewTab, setPreviewTab] = useState<'lyrics' | 'resources'>('lyrics');
 
   // Catalog management
   const [showCatalogs, setShowCatalogs] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [newStyleName, setNewStyleName] = useState('');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<SongFormInput, unknown, SongFormValues>({
+  const { register, handleSubmit, reset, getValues, control, formState: { errors } } = useForm<SongFormInput, unknown, SongFormValues>({
     resolver: zodResolver(songSchema),
-    defaultValues: { title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false },
+    defaultValues: {
+      title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false,
+      original_key: '', preferred_accidentals: 'auto', capo: 0, time_signature: '4/4', status: 'draft',
+      composers: '', copyright_notice: '',
+    },
   });
+  const watchedForm = useWatch({ control });
+
+  useEffect(() => {
+    if (!showForm) return;
+    const draftKey = editingSong ? `song-editor-draft:${editingSong.id}` : 'song-editor-draft:new';
+    const timer = window.setTimeout(() => {
+      const draft: SongEditorDraft = {
+        updatedAt: new Date().toISOString(),
+        form: getValues(),
+        lyrics,
+        drumStyle,
+        resourceLinks,
+        structureBlocks,
+        editorMode,
+      };
+      try {
+        window.localStorage.setItem(draftKey, JSON.stringify(draft));
+      } catch (error) {
+        console.warn('No fue posible guardar el borrador local de la canción.', error);
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [drumStyle, editingSong, editorMode, getValues, lyrics, resourceLinks, showForm, structureBlocks, watchedForm]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -408,15 +482,33 @@ const SongsManager = () => {
     void Promise.resolve().then(fetchAll);
   }, [fetchAll]);
 
+  const restoreEditorDraft = (key: string, baseline?: string | null) => {
+    const draft = readEditorDraft(key);
+    if (!draft) return;
+    if (baseline && new Date(draft.updatedAt).getTime() <= new Date(baseline).getTime()) return;
+    reset(draft.form);
+    setLyrics(draft.lyrics);
+    setDrumStyle(draft.drumStyle);
+    setResourceLinks(draft.resourceLinks);
+    setStructureBlocks(draft.structureBlocks);
+    setEditorMode(draft.editorMode);
+    toast.info('Se recuperó un borrador local más reciente.');
+  };
+
   const openCreate = () => {
     setEditingSong(null);
-    reset({ title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false });
+    reset({
+      title: '', artist: '', bpm: undefined, type_id: '', style_id: '', has_chords: false,
+      original_key: '', preferred_accidentals: 'auto', capo: 0, time_signature: '4/4', status: 'draft',
+      composers: '', copyright_notice: '',
+    });
     setLyrics('');
     setDrumStyle('');
     setResourceLinks([]);
     setStructureBlocks([]);
     setEditorMode('free');
     setShowForm(true);
+    window.setTimeout(() => restoreEditorDraft('song-editor-draft:new'), 0);
   };
 
   const openEdit = (song: Song) => {
@@ -428,6 +520,13 @@ const SongsManager = () => {
       type_id: song.type_id || '',
       style_id: song.style_id || '',
       has_chords: song.has_chords,
+      original_key: song.original_key || '',
+      preferred_accidentals: song.preferred_accidentals || 'auto',
+      capo: song.capo || 0,
+      time_signature: song.time_signature || '4/4',
+      status: song.status || 'published',
+      composers: (song.composers || []).join(', '),
+      copyright_notice: song.copyright_notice || '',
     });
     setLyrics(song.lyrics || '');
     setDrumStyle(song.drum_style || '');
@@ -435,6 +534,7 @@ const SongsManager = () => {
     setStructureBlocks(song.structure_blocks || []);
     setEditorMode(song.structure_blocks && song.structure_blocks.length > 0 ? 'structured' : 'free');
     setShowForm(true);
+    window.setTimeout(() => restoreEditorDraft(`song-editor-draft:${song.id}`, song.updated_at || song.created_at), 0);
   };
 
   const onSubmit = async (data: SongFormValues) => {
@@ -451,6 +551,14 @@ const SongsManager = () => {
 
     if (data.has_chords && bracketTokens.length === 0) {
       toast.error('La canción está marcada con acordes, pero no contiene ninguno en formato [C].');
+      return;
+    }
+
+    if (data.has_chords && !data.original_key?.trim()) {
+      const candidate = detectKeyCandidate(editableText);
+      toast.error(candidate
+        ? `Define la tonalidad original. La primera tonalidad detectada es ${candidate}.`
+        : 'Define la tonalidad original antes de publicar una canción con acordes.');
       return;
     }
 
@@ -471,6 +579,16 @@ const SongsManager = () => {
       drum_style: drumStyle || null,
       resource_links: resourceLinks,
       structure_blocks: structureBlocks,
+      slug: editingSong?.slug || slugifySongTitle(data.title),
+      original_key: data.original_key?.trim() || null,
+      preferred_accidentals: data.preferred_accidentals,
+      capo: data.capo,
+      time_signature: data.time_signature,
+      status: data.status,
+      composers: data.composers?.split(',').map((composer) => composer.trim()).filter(Boolean) || [],
+      copyright_notice: data.copyright_notice?.trim() || null,
+      published_at: data.status === 'published' ? (editingSong?.published_at || new Date().toISOString()) : null,
+      updated_at: new Date().toISOString(),
     };
 
     if (editingSong) {
@@ -482,8 +600,9 @@ const SongsManager = () => {
       if (error) { toast.error('Error al crear'); return; }
       toast.success('Canción creada');
     }
+    clearEditorDraft(editingSong ? `song-editor-draft:${editingSong.id}` : 'song-editor-draft:new');
     setShowForm(false);
-    fetchAll();
+    void fetchAll();
   };
 
   const deleteSong = async (id: string) => {
@@ -499,47 +618,6 @@ const SongsManager = () => {
     if (error) { toast.error('Error al eliminar'); return; }
     toast.success('Canción eliminada');
     fetchAll();
-  };
-
-  // Structured Blocks CRUD
-  const addBlock = () => {
-    const defaultLabels: Record<string, string> = {
-      intro: 'Introducción',
-      estrofa: `Estrofa ${structureBlocks.filter(b => b.section_type === 'estrofa').length + 1}`,
-      coro: 'Coro',
-      puente: 'Puente',
-      melodia: 'Melodía / Solo',
-      outro: 'Final',
-      otro: 'Sección'
-    };
-    const newBlock: SongStructureBlock = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
-      type: 'lyrics',
-      section_type: 'estrofa',
-      label: defaultLabels.estrofa,
-      lyrics: '',
-      melody_guide: null
-    };
-    setStructureBlocks([...structureBlocks, newBlock]);
-  };
-
-  const removeBlock = (id: string) => {
-    setStructureBlocks(structureBlocks.filter(b => b.id !== id));
-  };
-
-  const updateBlock = (id: string, updates: Record<string, unknown>) => {
-    setStructureBlocks(structureBlocks.map(b => b.id === id ? ({ ...b, ...updates } as SongStructureBlock) : b));
-  };
-
-  const moveBlock = (index: number, direction: 'up' | 'down') => {
-    const newBlocks = [...structureBlocks];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex >= 0 && targetIndex < newBlocks.length) {
-      const temp = newBlocks[index];
-      newBlocks[index] = newBlocks[targetIndex];
-      newBlocks[targetIndex] = temp;
-      setStructureBlocks(newBlocks);
-    }
   };
 
   const handleSwitchToStructured = () => {
@@ -565,7 +643,10 @@ const SongsManager = () => {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
       instrument: 'General',
       url: '',
-      comment: ''
+      comment: '',
+      title: '',
+      kind: 'video',
+      visibility: 'public',
     };
     setResourceLinks([...resourceLinks, newLink]);
   };
@@ -576,6 +657,38 @@ const SongsManager = () => {
 
   const updateLink = (id: string, updates: Partial<SongResourceLink>) => {
     setResourceLinks(resourceLinks.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const openPreview = () => {
+    const data = getValues();
+    const compiledLyrics = editorMode === 'structured' ? compileBlocksToHtml(structureBlocks) : lyrics;
+    const now = new Date().toISOString();
+    setPreviewSong({
+      id: editingSong?.id || 'song-preview',
+      title: data.title?.trim() || 'Canción sin título',
+      artist: data.artist?.trim() || null,
+      bpm: data.bpm === undefined ? null : Number(data.bpm),
+      type_id: data.type_id || null,
+      style_id: data.style_id || null,
+      lyrics: compiledLyrics,
+      has_chords: Boolean(data.has_chords),
+      drum_style: drumStyle || null,
+      resource_links: resourceLinks,
+      structure_blocks: structureBlocks,
+      slug: editingSong?.slug || slugifySongTitle(data.title || 'cancion'),
+      original_key: data.original_key?.trim() || detectKeyCandidate(editorMode === 'structured' ? structureBlocks.map((block) => block.lyrics || '').join('\n') : htmlToBracketText(lyrics)),
+      preferred_accidentals: data.preferred_accidentals as AccidentalPreference,
+      capo: Number(data.capo || 0),
+      time_signature: data.time_signature || '4/4',
+      status: data.status as SongStatus,
+      composers: data.composers?.split(',').map((composer) => composer.trim()).filter(Boolean) || [],
+      copyright_notice: data.copyright_notice?.trim() || null,
+      created_at: editingSong?.created_at || now,
+      updated_at: now,
+      song_types: songTypes.find((type) => type.id === data.type_id) || null,
+      song_styles: songStyles.find((style) => style.id === data.style_id) || null,
+    });
+    setPreviewTab('lyrics');
   };
 
   // Catalog CRUD
@@ -839,15 +952,18 @@ const SongsManager = () => {
       {/* Song Form Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowForm(false)}></div>
-          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl border border-gray-200 dark:border-white/10 my-4 z-10">
+          <div className="fixed inset-0 bg-slate-950/55 backdrop-blur-md" onClick={() => setShowForm(false)}></div>
+          <div className="relative w-full max-w-6xl rounded-[2rem] border border-white/60 bg-white/90 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/90 my-4 z-10 overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-gray-150 dark:border-white/5">
               <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 <Music className="text-amber-600 animate-pulse" size={22} />
                 {editingSong ? 'Editar Canción' : 'Nueva Canción'}
               </h2>
-              <button onClick={() => setShowForm(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 cursor-pointer"><X size={20} /></button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={openPreview} className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300"><Eye size={15} /> Vista previa</button>
+                <button onClick={() => setShowForm(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 cursor-pointer"><X size={20} /></button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
@@ -863,6 +979,38 @@ const SongsManager = () => {
                   <input id="song-artist" {...register('artist')} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-850 dark:text-gray-100 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Thomas Chisholm" />
                 </div>
               </div>
+
+              <section className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-white/60 p-4 dark:border-amber-400/10 dark:from-amber-400/[.06] dark:to-white/[.02]">
+                <div className="mb-4 flex items-center gap-2">
+                  <Guitar size={16} className="text-amber-600" />
+                  <div><h3 className="text-sm font-black text-slate-800 dark:text-white">Identidad musical</h3><p className="text-[10px] text-slate-500">La tonalidad guardada gobierna transposición, Nashville, diagramas y partituras.</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+                  <div>
+                    <label htmlFor="song-key" className="block text-[10px] font-bold uppercase text-slate-400">Tono original</label>
+                    <select id="song-key" {...register('original_key')} className="mt-1 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white">
+                      <option value="">Sin definir</option>{['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B','C#','D#','F#','G#','A#'].map((key) => <option key={key} value={key}>{key}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="song-accidentals" className="block text-[10px] font-bold uppercase text-slate-400">Alteraciones</label>
+                    <select id="song-accidentals" {...register('preferred_accidentals')} className="mt-1 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"><option value="auto">Automático</option><option value="sharp">Sostenidos ♯</option><option value="flat">Bemoles ♭</option></select>
+                  </div>
+                  <div>
+                    <label htmlFor="song-time" className="block text-[10px] font-bold uppercase text-slate-400">Compás</label>
+                    <input id="song-time" {...register('time_signature')} placeholder="4/4" className="mt-1 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-mono text-slate-700 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white" />
+                    {errors.time_signature && <p className="mt-1 text-[10px] text-red-500">{errors.time_signature.message}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="song-capo" className="block text-[10px] font-bold uppercase text-slate-400">Capo</label>
+                    <input id="song-capo" type="number" min="0" max="12" {...register('capo')} className="mt-1 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-mono text-slate-700 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white" />
+                  </div>
+                  <div className="col-span-2">
+                    <label htmlFor="song-status" className="block text-[10px] font-bold uppercase text-slate-400">Estado editorial</label>
+                    <select id="song-status" {...register('status')} className="mt-1 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"><option value="draft">Borrador</option><option value="review">En revisión</option><option value="published">Publicado</option><option value="archived">Archivado</option></select>
+                  </div>
+                </div>
+              </section>
 
               {/* Row 2: BPM + Type + Style + Has Chords + Drum Style */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -903,6 +1051,17 @@ const SongsManager = () => {
                     <input id="song-chords" type="checkbox" {...register('has_chords')} className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-400" />
                     <span className="text-sm font-medium text-gray-750 dark:text-gray-300">Tiene acordes</span>
                   </label>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="song-composers" className="mb-1 block text-xs font-bold uppercase text-gray-400">Compositores</label>
+                  <input id="song-composers" {...register('composers')} placeholder="Separados por comas" className="w-full rounded-xl border border-gray-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div>
+                  <label htmlFor="song-copyright" className="mb-1 block text-xs font-bold uppercase text-gray-400">Copyright / Licencia</label>
+                  <input id="song-copyright" {...register('copyright_notice')} placeholder="Autor, editorial o licencia de uso" className="w-full rounded-xl border border-gray-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-800 dark:text-white" />
                 </div>
               </div>
 
@@ -1009,6 +1168,16 @@ const SongsManager = () => {
                           ))}
                         </select>
 
+                        <select value={link.kind || 'video'} onChange={(e) => updateLink(link.id, { kind: e.target.value as SongResourceLink['kind'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
+                          <option value="video">Video</option><option value="audio">Audio</option><option value="pdf">PDF</option><option value="link">Enlace</option>
+                        </select>
+
+                        <select value={link.visibility || 'public'} onChange={(e) => updateLink(link.id, { visibility: e.target.value as SongResourceLink['visibility'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
+                          <option value="public">Público</option><option value="team">Solo equipo</option>
+                        </select>
+
+                        <input type="text" value={link.title || ''} onChange={(e) => updateLink(link.id, { title: e.target.value })} placeholder="Título del recurso" className="min-w-[150px] flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-800 dark:text-gray-100" />
+
                         <input
                           type="url"
                           value={link.url}
@@ -1052,6 +1221,19 @@ const SongsManager = () => {
             </form>
           </div>
         </div>
+      )}
+      {previewSong && (
+        <SongViewer
+          selectedSong={previewSong}
+          setSelectedSong={setPreviewSong}
+          onClose={() => setPreviewSong(null)}
+          showChords={previewShowChords}
+          setShowChords={setPreviewShowChords}
+          fontFamily={previewFont}
+          setFontFamily={setPreviewFont}
+          activeTab={previewTab}
+          setActiveTab={setPreviewTab}
+        />
       )}
     </div>
   );

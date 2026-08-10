@@ -82,6 +82,7 @@ export default function PublicRoutes() {
         <Route path="/eventos" element={<Events />} />
         <Route path="/peticiones" element={<Petitions />} />
         <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
+        <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
         <Route path="/programas" element={<ProgramsOverview />} />
         <Route path="/programas/:id" element={<ProgramDetail />} />
         <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />

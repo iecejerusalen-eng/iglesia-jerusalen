@@ -14,88 +14,24 @@ export const DRUM_STYLES = [
   'Acústico / Sin Batería'
 ];
 
-const CHORDS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const FLATS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-
-const CHORD_PATTERN = /^[A-G](?:#|b)?(?:(?:(?:maj|min|dim|aug|sus|add|m)?(?:2|4|5|6|7|9|11|13)?(?:sus[24]|add(?:2|4|6|9|11|13))?)|(?:(?:2|4|5|6|7|9|11|13)(?:sus[24]|add(?:2|4|6|9|11|13))?))?(?:\/[A-G](?:#|b)?)?$/;
-
 export function isValidChord(chord: string): boolean {
-  return CHORD_PATTERN.test(chord.trim());
+  return isChord(chord);
 }
 
 export function transposeNote(note: string, steps: number): string {
-  if (!note) return note;
-  const isFlat = note.includes('b');
-  let index = CHORDS.indexOf(note);
-  if (index === -1) index = FLATS.indexOf(note);
-  if (index === -1) return note;
-
-  let newIndex = (index + steps) % 12;
-  if (newIndex < 0) newIndex += 12;
-
-  return isFlat ? FLATS[newIndex] : CHORDS[newIndex];
+  return transposeParsedNote(note, steps, note.includes('b') ? 'flat' : 'sharp', note);
 }
 
 export function transposeChord(chord: string, steps: number): string {
-  if (!chord || steps === 0) return chord;
-  
-  const regex = /^([CDEFGAB][#b]?)([^/]*)(\/?)([CDEFGAB][#b]?)?$/;
-  const match = chord.match(regex);
-  if (!match) return chord; 
-
-  const [, root, mod, slash, bass] = match;
-
-  const newRoot = transposeNote(root, steps);
-  const newBass = bass ? transposeNote(bass, steps) : '';
-
-  return `${newRoot}${mod}${slash}${newBass}`;
+  return transposeParsedChord(chord, steps, chord.includes('b') ? 'flat' : 'sharp');
 }
 
 export function getOriginalKey(text: string): string | null {
-  if (!text) return null;
-  const match = [...text.matchAll(/\[([^\]]+)\]/g)].find((candidate) => isValidChord(candidate[1]));
-  if (match?.[1]) {
-    const chordRegex = /^([CDEFGAB][#b]?)/;
-    const rootMatch = match[1].match(chordRegex);
-    if (rootMatch && rootMatch[1]) {
-      return rootMatch[1];
-    }
-  }
-  return null;
+  return detectKeyCandidate(text);
 }
 
 export function chordToNashville(chord: string, originalKey: string | null): string {
-  if (!originalKey) return chord;
-  
-  const regex = /^([CDEFGAB][#b]?)([^/]*)(\/?)([CDEFGAB][#b]?)?$/;
-  const match = chord.match(regex);
-  if (!match) return chord; 
-
-  const [, root, mod, slash, bass] = match;
-  
-  let keyIndex = CHORDS.indexOf(originalKey);
-  if (keyIndex === -1) keyIndex = FLATS.indexOf(originalKey);
-  if (keyIndex === -1) return chord;
-
-  const getDegree = (note: string) => {
-    let noteIndex = CHORDS.indexOf(note);
-    if (noteIndex === -1) noteIndex = FLATS.indexOf(note);
-    if (noteIndex === -1) return note;
-
-    let diff = noteIndex - keyIndex;
-    if (diff < 0) diff += 12;
-    
-    const degrees: Record<number, string> = {
-      0: '1', 1: 'b2', 2: '2', 3: 'b3', 4: '3', 5: '4', 
-      6: 'b5', 7: '5', 8: 'b6', 9: '6', 10: 'b7', 11: '7'
-    };
-    return degrees[diff] || note;
-  };
-
-  const rootDegree = getDegree(root);
-  const bassDegree = bass ? getDegree(bass) : '';
-
-  return `${rootDegree}${mod}${slash}${bassDegree}`;
+  return convertChordToNashville(chord, originalKey);
 }
 
 export function htmlToBracketText(html: string): string {
@@ -133,17 +69,7 @@ export function htmlToBracketText(html: string): string {
 
 export function processBracketText(text: string, transposeAmount: number = 0, nashvilleMode: boolean = false, originalKey: string | null = null): string {
   if (!text) return '';
-  return text.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
-    if (!isValidChord(chord)) return match;
-    let finalChord = chord;
-    if (transposeAmount !== 0) {
-      finalChord = transposeChord(finalChord, transposeAmount);
-    }
-    if (nashvilleMode) {
-      finalChord = chordToNashville(finalChord, originalKey ? transposeNote(originalKey, transposeAmount) : null);
-    }
-    return `[${finalChord}]`;
-  });
+  return transposeBracketText(text, transposeAmount, { nashville: nashvilleMode, key: originalKey });
 }
 
 export function bracketTextToHtml(text: string, transposeAmount: number = 0, nashvilleMode: boolean = false, originalKey: string | null = null): string {
@@ -173,3 +99,11 @@ export function bracketTextToHtml(text: string, transposeAmount: number = 0, nas
   
   return processedLines;
 }
+import {
+  chordToNashville as convertChordToNashville,
+  detectKeyCandidate,
+  isChord,
+  transposeBracketText,
+  transposeChord as transposeParsedChord,
+  transposeNote as transposeParsedNote,
+} from './musicEngine';

@@ -459,7 +459,13 @@ export interface SongResourceLink {
   instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' | 'Viento' | 'Otro';
   url: string;
   comment: string | null;
+  title?: string | null;
+  kind?: 'video' | 'audio' | 'pdf' | 'link';
+  visibility?: 'public' | 'team';
 }
+
+export type SongStatus = 'draft' | 'review' | 'published' | 'archived';
+export type AccidentalPreference = 'sharp' | 'flat' | 'auto';
 
 export type SongBlockType = 
   | 'lyrics' 
@@ -541,6 +547,21 @@ export interface Song {
   drum_style?: string | null;
   resource_links?: SongResourceLink[] | null;
   structure_blocks?: SongStructureBlock[] | null;
+  slug?: string | null;
+  original_key?: string | null;
+  preferred_accidentals?: AccidentalPreference | null;
+  capo?: number | null;
+  time_signature?: string | null;
+  language?: string | null;
+  duration_seconds?: number | null;
+  composers?: string[] | null;
+  copyright_notice?: string | null;
+  release_year?: number | null;
+  status?: SongStatus | null;
+  published_at?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+  document_version?: number | null;
   created_at: string;
   song_types?: SongType | null;
   song_styles?: SongStyle | null;

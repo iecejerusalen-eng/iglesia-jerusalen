@@ -2,7 +2,39 @@ import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
 import ukuleleDb from '@tombatossals/chords-db/lib/ukulele.json';
 import { Chord } from '@tonaljs/tonal';
 
-export type InstrumentType = 'guitarra' | 'ukelele' | 'piano' | 'bajo' | 'ninguno';
+export type InstrumentType = 'guitarra' | 'electrica' | 'ukelele' | 'piano' | 'bajo' | 'ninguno';
+
+interface ChordDatabasePosition {
+  frets: number[];
+  fingers: number[];
+  baseFret?: number;
+  barres?: number[];
+}
+
+interface ChordDatabaseEntry {
+  suffix: string;
+  positions: ChordDatabasePosition[];
+}
+
+interface ChordDatabase {
+  chords: Record<string, ChordDatabaseEntry[]>;
+}
+
+export interface PianoChordData {
+  instrument: 'piano';
+  notes: string[];
+}
+
+export interface StringChordData {
+  instrument: 'guitarra' | 'electrica' | 'ukelele';
+  title: string;
+  frets: number[];
+  fingers: number[];
+  baseFret?: number;
+  barres?: number[];
+}
+
+export type ResolvedChordData = PianoChordData | StringChordData;
 
 // Map tonaljs aliases to chords-db suffixes
 const suffixMap: Record<string, string> = {
@@ -60,10 +92,6 @@ const suffixMap: Record<string, string> = {
   'madd9': 'madd9',
 };
 
-const normalizeKey = (key: string): string => {
-  return key.replace('#', 'sharp').replace('b', 'b'); // chords-db uses 'Csharp' but 'Eb'
-};
-
 const formatKeyForDb = (key: string): string => {
   const map: Record<string, string> = {
     'C#': 'Csharp',
@@ -77,7 +105,7 @@ const formatKeyForDb = (key: string): string => {
   return map[key] || key;
 };
 
-export const getChordData = (chordName: string, instrument: InstrumentType) => {
+export const getChordData = (chordName: string, instrument: InstrumentType): ResolvedChordData | null => {
   try {
     const parsed = Chord.get(chordName);
     if (parsed.empty) return null;
@@ -89,8 +117,8 @@ export const getChordData = (chordName: string, instrument: InstrumentType) => {
       };
     }
 
-    if (instrument === 'guitarra' || instrument === 'ukelele') {
-      const db: any = instrument === 'ukelele' ? ukuleleDb : guitarDb;
+    if (instrument === 'guitarra' || instrument === 'electrica' || instrument === 'ukelele') {
+      const db = (instrument === 'ukelele' ? ukuleleDb : guitarDb) as ChordDatabase;
       
       const rootKey = formatKeyForDb(parsed.tonic || '');
       const mappedSuffix = suffixMap[parsed.aliases[0] || ''] || suffixMap[parsed.type] || 'major';
@@ -98,7 +126,7 @@ export const getChordData = (chordName: string, instrument: InstrumentType) => {
       const keyData = db.chords[rootKey];
       if (!keyData) return null;
 
-      const chordVariations = keyData.find((c: any) => c.suffix === mappedSuffix);
+      const chordVariations = keyData.find((candidate) => candidate.suffix === mappedSuffix);
       
       if (chordVariations && chordVariations.positions.length > 0) {
         // Return the first position (simplest)

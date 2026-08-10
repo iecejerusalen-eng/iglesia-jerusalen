@@ -38,24 +38,24 @@ export function SongBlockEditor({
       if (content && content.trim().startsWith('[')) {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed)) {
-          setInternalBlocks(parsed as SongStructureBlock[]);
+          queueMicrotask(() => setInternalBlocks(parsed as SongStructureBlock[]));
           return;
         }
       }
-    } catch {
-      console.warn('Failed to parse content as JSON blocks.');
+    } catch (error) {
+      console.warn('No fue posible interpretar el contenido como bloques JSON.', error);
     }
     
     if (content) {
-      setInternalBlocks([{
+      queueMicrotask(() => setInternalBlocks([{
         id: createBlockId(),
         type: 'lyrics',
         section_type: 'estrofa',
         label: 'Letra Original',
         lyrics: content
-      }]);
+      }]));
     } else {
-      setInternalBlocks([]);
+      queueMicrotask(() => setInternalBlocks([]));
     }
   }, [content, externalBlocks]);
 
@@ -184,8 +184,8 @@ export function SongBlockEditor({
                   <select 
                     value={(blockObj.section_type as string) || 'estrofa'}
                     onChange={e => {
-                      const section_type = e.target.value;
-                      const count = activeBlocks.filter(b => b.type === 'lyrics' && (b as any).section_type === section_type && b.id !== block.id).length + 1;
+                      const section_type = e.target.value as Extract<SongStructureBlock, { type: 'lyrics' }>['section_type'];
+                      const count = activeBlocks.filter(b => b.type === 'lyrics' && b.section_type === section_type && b.id !== block.id).length + 1;
                       const labels: Record<string, string> = {
                         intro: 'Introducción',
                         estrofa: `Estrofa ${count}`,
@@ -195,7 +195,7 @@ export function SongBlockEditor({
                         outro: 'Final',
                         otro: 'Sección'
                       };
-                      updateBlock(block.id, { section_type: section_type as any, label: labels[section_type] || 'Sección' });
+                      updateBlock(block.id, { section_type, label: labels[section_type] || 'Sección' });
                     }}
                     className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-100 outline-none focus:border-amber-400"
                   >
@@ -276,7 +276,7 @@ export function SongBlockEditor({
                   <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Instrumento</label>
                   <select 
                     value={(blockObj.instrument as string) || 'guitar'}
-                    onChange={e => updateBlock(block.id, { instrument: e.target.value as any })}
+                    onChange={e => updateBlock(block.id, { instrument: e.target.value as Extract<SongStructureBlock, { type: 'chord_diagram' }>['instrument'] })}
                     className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-100 outline-none"
                   >
                     <option value="guitar">Guitarra 🎸</option>
@@ -289,7 +289,7 @@ export function SongBlockEditor({
                   <input 
                     type="text"
                     value={Array.isArray(blockObj.chords) ? blockObj.chords.join(', ') : ''} 
-                    onChange={e => updateBlock(block.id, { chords: e.target.value.split(',').map(c => c.trim()).filter(Boolean) as any })}
+                    onChange={e => updateBlock(block.id, { chords: e.target.value.split(',').map(c => c.trim()).filter(Boolean) })}
                     placeholder="Ej. G, C, D, Em"
                     className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none focus:border-amber-400"
                   />
@@ -339,7 +339,7 @@ export function SongBlockEditor({
                   <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Para quién es esta nota</label>
                   <select 
                     value={(blockObj.target_instrument as string) || 'General'}
-                    onChange={e => updateBlock(block.id, { target_instrument: e.target.value as any })}
+                    onChange={e => updateBlock(block.id, { target_instrument: e.target.value as Extract<SongStructureBlock, { type: 'musician_note' }>['target_instrument'] })}
                     className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-100 outline-none"
                   >
                     <option value="General">General 📢</option>

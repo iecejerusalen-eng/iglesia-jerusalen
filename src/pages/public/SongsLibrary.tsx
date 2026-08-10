@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSongs } from '../../features/songs/hooks/useSongs';
 import { SongsHero } from '../../features/songs/components/SongsHero';
 import { SongsFilters, type ChordsFilter, type SongSort, type SongViewMode } from '../../features/songs/components/SongsFilters';
 import { SongsList } from '../../features/songs/components/SongsList';
 import { SongViewer } from '../../features/songs/components/SongViewer';
 import type { Song } from '../../types';
+import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
 
 const INITIAL_VISIBLE_SONGS = 18;
 const SONGS_INCREMENT = 18;
@@ -15,6 +17,8 @@ const normalizeText = (value: string) => value
   .toLocaleLowerCase('es');
 
 const SongsLibrary = () => {
+  const navigate = useNavigate();
+  const { songSlug } = useParams<{ songSlug?: string }>();
   const { songs, songTypes, songStyles, isLoading, isError } = useSongs();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -25,7 +29,7 @@ const SongsLibrary = () => {
   const [viewMode, setViewMode] = useState<SongViewMode>('cards');
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_SONGS);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [selectedSongState, setSelectedSongState] = useState<Song | null>(null);
   const [showChords, setShowChords] = useState(true);
   const [fontFamily, setFontFamily] = useState<'mono' | 'serif' | 'sans'>('sans');
   const [activeTab, setActiveTab] = useState<'lyrics' | 'resources'>('lyrics');
@@ -53,6 +57,10 @@ const SongsLibrary = () => {
 
   const activeFilterCount = [filterType, filterStyle, filterDrumStyle, filterChords !== 'all'].filter(Boolean).length;
   const visibleSongs = sortedSongs.slice(0, visibleCount);
+  const routeSong = useMemo(() => songSlug
+    ? songs.find((song) => (song.slug || slugifySongTitle(song.title)) === songSlug) ?? null
+    : null, [songSlug, songs]);
+  const selectedSong = routeSong ?? selectedSongState;
   const clearFilters = () => {
     setSearch('');
     setFilterType('');
@@ -62,8 +70,13 @@ const SongsLibrary = () => {
     setSortBy('title-asc');
   };
   const handleSelectSong = (song: Song) => {
-    setSelectedSong(song);
+    setSelectedSongState(song);
     setActiveTab('lyrics');
+    navigate(`/recursos/alabanzas/${song.slug || slugifySongTitle(song.title)}`);
+  };
+  const closeViewer = () => {
+    setSelectedSongState(null);
+    navigate('/recursos/alabanzas');
   };
 
   return (
@@ -96,7 +109,7 @@ const SongsLibrary = () => {
       </main>
 
       {selectedSong && (
-        <SongViewer selectedSong={selectedSong} setSelectedSong={setSelectedSong} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SongViewer selectedSong={selectedSong} setSelectedSong={setSelectedSongState} onClose={closeViewer} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
     </div>
   );

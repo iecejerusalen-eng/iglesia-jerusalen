@@ -15,7 +15,11 @@ export function PianoChordDiagram({
   className = ''
 }: PianoChordDiagramProps) {
   // Simplify notes to just their pitch class for a generic 2-octave view
-  const activeNotes = notes.map(n => n.replace(/[0-9]/g, ''));
+  const enharmonicSharps: Record<string, string> = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+  const activeNotes = notes.map((note) => {
+    const pitchClass = note.replace(/[0-9]/g, '');
+    return enharmonicSharps[pitchClass] ?? pitchClass;
+  });
 
   // Define 2 octaves starting from C
   const OCTAVES = 2;
@@ -28,7 +32,7 @@ export function PianoChordDiagram({
   const blackKeyHeight = height * 0.6;
 
   const renderWhiteKeys = () => {
-    let keys = [];
+    const keys: React.ReactElement[] = [];
     for (let o = 0; o < OCTAVES; o++) {
       for (let i = 0; i < WHITE_KEYS.length; i++) {
         const note = WHITE_KEYS[i];
@@ -51,7 +55,7 @@ export function PianoChordDiagram({
   };
 
   const renderBlackKeys = () => {
-    let keys = [];
+    const keys: React.ReactElement[] = [];
     for (let o = 0; o < OCTAVES; o++) {
       for (let i = 0; i < BLACK_KEYS.length; i++) {
         const note = BLACK_KEYS[i];

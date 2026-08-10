@@ -65,11 +65,15 @@ export function SheetMusicViewer({
           className="abcjs-audio-container bg-muted/30 p-2 rounded-md"
         />
       )}
+
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:hidden">
+        Desliza para recorrer la partitura →
+      </span>
       
       {/* Target for SVG rendering */}
       <div 
         ref={paperRef} 
-        className="abcjs-paper-container overflow-x-auto bg-card rounded-lg border p-4 shadow-sm"
+        className="abcjs-paper-container overflow-x-auto rounded-lg border bg-card p-2 shadow-sm sm:p-4 [&_svg]:min-w-[560px]"
       />
     </div>
   );

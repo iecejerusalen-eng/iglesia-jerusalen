@@ -11,7 +11,12 @@ export function useSongs() {
         .select('*, song_types(*), song_styles(*)')
         .order('title');
       if (error) throw error;
-      return data || [];
+      // RLS is the publication boundary after the editorial migration. This
+      // filter also keeps drafts out of the public library for signed-in editors
+      // while remaining compatible with rows created before `status` existed.
+      return ((data as Song[]) || []).filter(
+        (song) => (song.status ?? 'published') === 'published',
+      );
     }
   });
 

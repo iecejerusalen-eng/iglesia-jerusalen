@@ -1,13 +1,57 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import DOMPurify from 'dompurify';
-import { AnimeZoomIn } from '../../../components/animations/AnimeWrappers';
-import { X, Eye, EyeOff, Copy, ExternalLink, Info, PlayCircle, FileText, Printer, Maximize, Minimize, Hash, ArrowDownToLine, Volume2, VolumeX, Play, Square } from 'lucide-react';
-import type { Song } from '../../../types';
-import { htmlToBracketText, bracketTextToHtml, processBracketText, getOriginalKey, transposeNote } from '../utils/songUtils';
+import {
+  ArrowDownToLine,
+  BookOpenText,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Eye,
+  EyeOff,
+  FileMusic,
+  FileText,
+  Guitar,
+  Hash,
+  Headphones,
+  KeyboardMusic,
+  Link2,
+  Maximize2,
+  Minimize2,
+  Minus,
+  Music2,
+  Pause,
+  Play,
+  Plus,
+  Printer,
+  Settings2,
+  Share2,
+  SlidersHorizontal,
+  Sparkles,
+  Square,
+  Type,
+  Volume2,
+  VolumeX,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AccidentalPreference, Song, SongStructureBlock } from '../../../types';
 import { exportSongToPdf } from '../utils/songPdfExport';
 import { useMetronome } from '../hooks/useMetronome';
-import { StringChordDiagram } from './musical/StringChordDiagram';
-import { toast } from 'sonner';
+import {
+  extractChords,
+  generateHarmonyScoreAbc,
+  getSongChordText,
+  transposeBracketText,
+  transposeChord,
+  transposeNote,
+} from '../utils/musicEngine';
+import { bracketTextToHtml, getOriginalKey, htmlToBracketText } from '../utils/songUtils';
+import type { InstrumentType } from '../utils/chordDictionary';
+import { InstrumentChordCard } from './musical/InstrumentChordCard';
+import { SheetMusicViewer } from './musical/SheetMusicViewer';
+
+type ViewerMode = 'lyrics' | 'lyrics-chords' | 'chords' | 'diagrams' | 'score';
 
 interface SongViewerProps {
   selectedSong: Song;
@@ -18,771 +62,466 @@ interface SongViewerProps {
   setFontFamily: (font: 'mono' | 'serif' | 'sans') => void;
   activeTab: 'lyrics' | 'resources';
   setActiveTab: (tab: 'lyrics' | 'resources') => void;
+  onClose?: () => void;
+}
+
+interface StoredViewerPreferences {
+  instrument: InstrumentType;
+  fontSize: number;
+  accidentalPreference: AccidentalPreference;
+  mode: ViewerMode;
+}
+
+const DEFAULT_PREFERENCES: StoredViewerPreferences = {
+  instrument: 'guitarra',
+  fontSize: 100,
+  accidentalPreference: 'auto',
+  mode: 'lyrics-chords',
+};
+
+const INSTRUMENTS: Array<{ id: InstrumentType; label: string; icon: typeof Guitar }> = [
+  { id: 'guitarra', label: 'Guitarra', icon: Guitar },
+  { id: 'electrica', label: 'Eléctrica', icon: Guitar },
+  { id: 'piano', label: 'Piano', icon: KeyboardMusic },
+  { id: 'bajo', label: 'Bajo', icon: Music2 },
+  { id: 'ukelele', label: 'Ukelele', icon: Guitar },
+  { id: 'ninguno', label: 'Sin diagrama', icon: EyeOff },
+];
+
+const MODES: Array<{ id: ViewerMode; label: string; icon: typeof FileText }> = [
+  { id: 'lyrics', label: 'Solo letra', icon: FileText },
+  { id: 'lyrics-chords', label: 'Letra + acordes', icon: Music2 },
+  { id: 'chords', label: 'Solo acordes', icon: Hash },
+  { id: 'diagrams', label: 'Diagramas', icon: Guitar },
+  { id: 'score', label: 'Partitura', icon: FileMusic },
+];
+
+function readPreferences(): StoredViewerPreferences {
+  try {
+    const stored = window.localStorage.getItem('song-viewer-preferences-v2');
+    return stored ? { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) as Partial<StoredViewerPreferences> } : DEFAULT_PREFERENCES;
+  } catch (error) {
+    console.warn('No fue posible leer las preferencias del visor musical.', error);
+    return DEFAULT_PREFERENCES;
+  }
+}
+
+function lyricsBlocks(song: Song): Array<Extract<SongStructureBlock, { type: 'lyrics' }>> {
+  return (song.structure_blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'lyrics' }> => block.type === 'lyrics');
+}
+
+function legacyText(song: Song): string {
+  return htmlToBracketText(song.lyrics ?? '');
+}
+
+function safeBracketHtml(text: string, transpose: number, nashville: boolean, key: string | null): string {
+  return DOMPurify.sanitize(bracketTextToHtml(text, transpose, nashville, key), {
+    ADD_ATTR: ['data-chord', 'data-chord-node'],
+  });
+}
+
+function manualScores(blocks: SongStructureBlock[] | null | undefined) {
+  return (blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'sheet_music' }> => block.type === 'sheet_music' && block.notation_type === 'abc' && Boolean(block.abc_code));
 }
 
 export const SongViewer = ({
-  selectedSong, setSelectedSong, showChords, setShowChords, 
-  fontFamily, setFontFamily, activeTab, setActiveTab
+  selectedSong,
+  setSelectedSong,
+  showChords,
+  setShowChords,
+  fontFamily,
+  setFontFamily,
+  activeTab,
+  setActiveTab,
+  onClose,
 }: SongViewerProps) => {
+  const [initialPreferences] = useState(readPreferences);
+  const [mode, setMode] = useState<ViewerMode>(showChords ? initialPreferences.mode : 'lyrics');
+  const [instrument, setInstrument] = useState<InstrumentType>(initialPreferences.instrument);
+  const [fontSize, setFontSize] = useState(initialPreferences.fontSize);
+  const [accidentalPreference, setAccidentalPreference] = useState<AccidentalPreference>(initialPreferences.accidentalPreference);
   const [transposeAmount, setTransposeAmount] = useState(0);
   const [nashvilleMode, setNashvilleMode] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
-  const [chordPosition, setChordPosition] = useState<'above' | 'inline'>('above');
-  const [textSize] = useState(100);
-
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showTools, setShowTools] = useState(true);
+  const [countIn, setCountIn] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollIntervalRef = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastFrameRef = useRef<number | null>(null);
 
-  const { isPlaying: metronomePlaying, isMuted: metronomeMuted, currentBeat, togglePlay: toggleMetronome, toggleMute: toggleMetronomeMute } = useMetronome(selectedSong.bpm);
+  const sourceText = useMemo(
+    () => getSongChordText(selectedSong.structure_blocks, legacyText(selectedSong)),
+    [selectedSong],
+  );
+  const originalKey = selectedSong.original_key ?? getOriginalKey(sourceText);
+  const currentKey = originalKey
+    ? transposeNote(originalKey, transposeAmount, accidentalPreference, originalKey)
+    : null;
+  const displayedChords = useMemo(() => {
+    const unique = [...new Set(extractChords(sourceText))];
+    return unique.map((chord) => transposeChord(chord, transposeAmount, accidentalPreference, originalKey));
+  }, [accidentalPreference, originalKey, sourceText, transposeAmount]);
+  const generatedScore = useMemo(() => generateHarmonyScoreAbc({
+    title: selectedSong.title,
+    artist: selectedSong.artist,
+    key: originalKey,
+    timeSignature: selectedSong.time_signature,
+    blocks: selectedSong.structure_blocks ?? [],
+    fallbackText: sourceText,
+    transpose: transposeAmount,
+    accidentalPreference,
+  }), [accidentalPreference, originalKey, selectedSong, sourceText, transposeAmount]);
+  const scores = useMemo(() => manualScores(selectedSong.structure_blocks), [selectedSong.structure_blocks]);
+  const structuredLyrics = useMemo(() => lyricsBlocks(selectedSong), [selectedSong]);
+  const { isPlaying, isMuted, currentBeat, togglePlay, toggleMute } = useMetronome(selectedSong.bpm);
 
-  const originalKey = (() => {
-    let textToAnalyze;
-    if (selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0) {
-      textToAnalyze = selectedSong.structure_blocks.map(b => b.lyrics).join('\n');
-    } else {
-      textToAnalyze = htmlToBracketText(selectedSong.lyrics);
-    }
-    return getOriginalKey(textToAnalyze);
-  })();
-
-
+  const close = () => {
+    if (onClose) onClose();
+    else setSelectedSong(null);
+  };
 
   useEffect(() => {
-    if (autoScrollSpeed > 0) {
-      const scrollSpeedMap = { 1: 50, 2: 35, 3: 20, 4: 10, 5: 5 };
-      scrollIntervalRef.current = window.setInterval(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop += 1;
-        }
-      }, scrollSpeedMap[autoScrollSpeed as keyof typeof scrollSpeedMap]);
-    } else {
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    try {
+      window.localStorage.setItem('song-viewer-preferences-v2', JSON.stringify({ instrument, fontSize, accidentalPreference, mode } satisfies StoredViewerPreferences));
+    } catch (error) {
+      console.warn('No fue posible guardar las preferencias del visor musical.', error);
     }
+  }, [accidentalPreference, fontSize, instrument, mode]);
+
+  useEffect(() => {
+    setShowChords(mode !== 'lyrics');
+  }, [mode, setShowChords]);
+
+  useEffect(() => {
+    if (!autoScrollSpeed) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      lastFrameRef.current = null;
+      return;
+    }
+    const pixelsPerSecond = [0, 8, 14, 22, 32, 46][autoScrollSpeed] ?? 14;
+    const animate = (time: number) => {
+      if (lastFrameRef.current !== null && scrollRef.current) {
+        scrollRef.current.scrollTop += ((time - lastFrameRef.current) / 1000) * pixelsPerSecond;
+      }
+      lastFrameRef.current = time;
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
     return () => {
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [autoScrollSpeed]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
+      if (event.key === 'Escape') close();
+      if (event.key === ' ') {
+        event.preventDefault();
+        setAutoScrollSpeed((speed) => speed ? 0 : 2);
+      }
+      if (event.key === 'ArrowUp' && event.shiftKey) setTransposeAmount((value) => value + 1);
+      if (event.key === 'ArrowDown' && event.shiftKey) setTransposeAmount((value) => value - 1);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await containerRef.current?.requestFullscreen();
+    } catch (error) {
+      console.error('No se pudo cambiar el modo de pantalla completa.', error);
+      toast.error('El navegador no permitió activar la pantalla completa.');
     }
   };
 
-  const handlePrint = () => {
-    exportSongToPdf(selectedSong, {
-      transposeAmount,
-      nashvilleMode,
-      originalKey,
-      showChords
+  const copyText = async (onlyLyrics: boolean) => {
+    const processed = transposeBracketText(sourceText, transposeAmount, {
+      nashville: nashvilleMode,
+      key: originalKey,
+      preference: accidentalPreference,
     });
-    toast.success('Generando PDF profesional...');
+    const result = onlyLyrics ? processed.replace(/\[[^\]]+]/g, '') : processed;
+    try {
+      await navigator.clipboard.writeText(result.trim());
+      toast.success(onlyLyrics ? 'Letra copiada' : 'Letra y acordes copiados');
+    } catch (error) {
+      console.error('No se pudo copiar la canción.', error);
+      toast.error('No fue posible copiar la canción.');
+    }
   };
 
-  const copyChords = (song: Song) => {
-    let result;
-    if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b) => {
-        const bObj = b as unknown as { label?: string; melody?: string; melody_guide?: string; lyrics?: string };
-        let blockStr = `[${(bObj.label || '').toUpperCase()}]\n`;
-        if (bObj.melody || bObj.melody_guide) blockStr += `(Guía: ${bObj.melody || bObj.melody_guide})\n`;
-        blockStr += `${processBracketText(bObj.lyrics || '', transposeAmount, nashvilleMode, originalKey)}\n`;
-        return blockStr;
-      }).join('\n');
-    } else {
-      result = processBracketText(htmlToBracketText(song.lyrics), transposeAmount, nashvilleMode, originalKey);
+  const shareSong = async () => {
+    const shareData = { title: selectedSong.title, text: `${selectedSong.title}${currentKey ? ` · Tono ${currentKey}` : ''}`, url: window.location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Enlace copiado');
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.error('No se pudo compartir la canción.', error);
+      toast.error('No fue posible compartir la canción.');
     }
-
-    navigator.clipboard.writeText(result);
-    toast.success('Letra y acordes copiados al portapapeles 🎸');
   };
 
-  const copyOnlyLyrics = (song: Song) => {
-    let result;
-    if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b) => {
-        const bObj = b as unknown as { label?: string; lyrics?: string };
-        let blockStr = `[${(bObj.label || '').toUpperCase()}]\n`;
-        const cleanLyrics = (bObj.lyrics || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
-        blockStr += `${cleanLyrics}\n`;
-        return blockStr;
-      }).join('\n');
-    } else {
-      const temp = document.createElement('div');
-      temp.innerHTML = song.lyrics;
-      temp.querySelectorAll('span.chord-node-wrapper, span.chord-node, span.chord-annotation, ruby rt').forEach(el => el.remove());
-      result = temp.textContent || '';
-    }
+  const printSong = () => {
+    exportSongToPdf(selectedSong, { transposeAmount, nashvilleMode, originalKey, showChords: mode !== 'lyrics' });
+    toast.success('Preparando el PDF de la canción');
+  };
 
-    navigator.clipboard.writeText(result.trim());
-    toast.success('Letra limpia copiada al portapapeles 🎤');
+  const renderLyrics = () => {
+    const withChords = mode !== 'lyrics';
+    const renderText = (text: string) => (
+      <div
+        className={`song-workspace-lyrics ${withChords ? '' : 'song-workspace-hide-chords'}`}
+        dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, transposeAmount, nashvilleMode, originalKey) }}
+      />
+    );
+    if (!structuredLyrics.length) return renderText(legacyText(selectedSong));
+    return structuredLyrics.map((block) => (
+      <section key={block.id} className="song-section-glass">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="h-px w-8 bg-amber-400" />
+          <h3 className="text-[11px] font-black uppercase tracking-[.2em] text-amber-700 dark:text-amber-300">{block.label}</h3>
+        </div>
+        {block.melody_guide && <p className="mb-4 rounded-xl bg-indigo-50/80 px-3 py-2 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">Guía: {block.melody_guide}</p>}
+        {renderText(block.lyrics)}
+      </section>
+    ));
+  };
+
+  const renderChordChart = () => {
+    const blocks = structuredLyrics.length ? structuredLyrics : [{ id: 'legacy', label: 'Canción', lyrics: sourceText }];
+    return (
+      <div className="grid gap-4 md:grid-cols-2">
+        {blocks.map((block) => {
+          const chords = extractChords(block.lyrics).map((chord) => {
+            const transposed = transposeChord(chord, transposeAmount, accidentalPreference, originalKey);
+            return nashvilleMode ? transposeBracketText(`[${chord}]`, transposeAmount, { nashville: true, key: originalKey, preference: accidentalPreference }).slice(1, -1) : transposed;
+          });
+          if (!chords.length) return null;
+          return (
+            <section key={block.id} className="song-section-glass">
+              <h3 className="mb-4 text-[11px] font-black uppercase tracking-[.2em] text-slate-500">{block.label}</h3>
+              <div className="flex flex-wrap gap-2">
+                {chords.map((chord, index) => <span key={`${block.id}-${index}`} className="rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 font-mono text-sm font-black text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">{chord}</span>)}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderScores = () => (
+    <div className="space-y-6">
+      {scores.map((score) => (
+        <section key={score.id} className="song-section-glass">
+          <div className="mb-4 flex items-center gap-2"><Check size={15} className="text-emerald-500" /><h3 className="font-bold text-slate-800 dark:text-white">{score.title || 'Partitura de melodía'}</h3></div>
+          <SheetMusicViewer abcNotation={score.abc_code ?? ''} responsive audioEnabled />
+        </section>
+      ))}
+      {generatedScore && (
+        <section className="song-section-glass">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2"><Sparkles size={15} className="text-amber-500" /><h3 className="font-bold text-slate-800 dark:text-white">Partitura armónica generada</h3></div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Acordes sobre pulso · no inventa melodía</span>
+          </div>
+          <SheetMusicViewer abcNotation={generatedScore} responsive />
+        </section>
+      )}
+      {!scores.length && !generatedScore && <EmptyState icon={FileMusic} title="Aún no hay material para generar una partitura" description="Agrega acordes o una melodía ABC desde el editor." />}
+    </div>
+  );
+
+  const renderResources = () => {
+    const links = (selectedSong.resource_links ?? []).filter((link) => (link.visibility ?? 'public') === 'public');
+    const notes = (selectedSong.structure_blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'musician_note' }> => block.type === 'musician_note');
+    if (!links.length && !notes.length) return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Esta canción todavía no tiene tutoriales o notas para músicos." />;
+    return (
+      <div className="grid gap-4 md:grid-cols-2">
+        {notes.map((note) => (
+          <article key={note.id} className="song-section-glass">
+            <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {note.target_instrument}</span>
+            <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-200">{note.content}</p>
+          </article>
+        ))}
+        {links.map((link) => (
+          <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="song-section-glass group block transition hover:-translate-y-0.5 hover:border-amber-300">
+            <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-amber-600">{link.instrument}</span><Link2 size={15} className="text-slate-400 group-hover:text-amber-500" /></div>
+            <h3 className="mt-3 font-bold text-slate-900 dark:text-white">{link.title || link.comment || 'Abrir recurso'}</h3>
+            {link.comment && link.title && <p className="mt-2 text-xs leading-5 text-slate-500">{link.comment}</p>}
+          </a>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex items-start justify-center p-0 md:p-4 md:pt-8 bg-slate-950/60 backdrop-blur-sm print:bg-white print:p-0 print:block">
-      {/* Modal Backdrop overlay */}
-      <div className="absolute inset-0" onClick={() => !isFullscreen && setSelectedSong(null)}></div>
-      
-      <AnimeZoomIn delay={0} duration={400} className={`relative w-full ${isFullscreen ? 'max-w-none h-full' : 'max-w-5xl h-[100dvh] md:h-auto max-h-[90vh]'} z-10 flex flex-col shadow-2xl overflow-hidden md:rounded-3xl bg-white dark:bg-slate-900 border-0 md:border border-gray-150 dark:border-white/10 print:border-none print:shadow-none print:max-h-none print:h-auto`}>
-        <div className="flex-1 overflow-y-auto print:overflow-visible" ref={scrollContainerRef}>
-          {/* Header block */}
-          <div className="p-4 md:p-6 border-b border-gray-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/20 relative print:hidden">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-800 dark:text-white">{selectedSong.title}</h2>
-                  {originalKey && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
-                      Tono Original: {originalKey}
-                    </span>
-                  )}
-                </div>
-                {selectedSong.artist && <p className="text-xs text-gray-400 dark:text-gray-450 font-bold">{selectedSong.artist}</p>}
-                
-                <div className="flex flex-wrap gap-2 mt-3 pt-1">
-                  {selectedSong.song_types && (
-                    <span className="text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-extrabold px-2.5 py-1 rounded-xl border border-amber-200/50 dark:border-amber-800/30 uppercase">{selectedSong.song_types.name}</span>
-                  )}
-                  {selectedSong.song_styles && (
-                    <span className="text-[10px] bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-extrabold px-2.5 py-1 rounded-xl border border-blue-200/50 dark:border-blue-800/30 uppercase">{selectedSong.song_styles.name}</span>
-                  )}
-                {selectedSong.bpm && (
-                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-0.5">
-                      <span className="text-[10px] text-gray-600 dark:text-gray-300 font-bold font-mono">♩ {selectedSong.bpm} BPM</span>
-                      
-                      {/* Metronome Visual Indicator */}
-                      <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-300 dark:border-slate-600">
-                        {metronomePlaying && (
-                          <div className="flex gap-1 items-center mr-1">
-                            {[1, 2, 3, 4].map((beat) => (
-                              <div 
-                                key={beat}
-                                className={`w-2 h-2 rounded-full transition-all duration-75 ${
-                                  currentBeat === beat 
-                                    ? (beat === 1 ? 'bg-red-500 scale-125 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-green-500 scale-110 shadow-[0_0_5px_rgba(34,197,94,0.6)]') 
-                                    : 'bg-gray-300 dark:bg-slate-700 scale-100'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        
-                        <button 
-                          onClick={toggleMetronome} 
-                          className={`p-1 rounded-full transition-colors ${metronomePlaying ? 'text-amber-600 hover:bg-amber-100 dark:hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 dark:hover:bg-slate-700'}`}
-                          title={metronomePlaying ? "Detener metrónomo" : "Iniciar metrónomo"}
-                        >
-                          {metronomePlaying ? <Square size={12} className="fill-current" /> : <Play size={12} className="fill-current" />}
-                        </button>
-                        
-                        <button 
-                          onClick={toggleMetronomeMute} 
-                          className={`p-1 rounded-full transition-colors ${!metronomeMuted ? 'text-blue-600 hover:bg-blue-100 dark:hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 dark:hover:bg-slate-700'}`}
-                          title={metronomeMuted ? "Activar sonido" : "Silenciar sonido"}
-                        >
-                          {metronomeMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {selectedSong.drum_style && (
-                    <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-extrabold px-2.5 py-1 rounded-xl border border-indigo-200/20">🥁 Batería: {selectedSong.drum_style}</span>
-                  )}
-                </div>
+    <div ref={containerRef} className="fixed inset-0 z-[80] bg-slate-950/65 p-0 backdrop-blur-md md:p-4 lg:p-7 print:static print:bg-white print:p-0" role="dialog" aria-modal="true" aria-labelledby="song-viewer-title">
+      <button className="absolute inset-0 cursor-default" onClick={() => !isFullscreen && close()} aria-label="Cerrar visor" />
+      <div className="relative mx-auto flex h-[100dvh] w-full max-w-[1500px] overflow-hidden bg-slate-50/95 shadow-2xl dark:bg-slate-950/95 md:h-[calc(100dvh-2rem)] md:rounded-[2rem] md:border md:border-white/20 lg:h-[calc(100dvh-3.5rem)] print:h-auto print:max-w-none print:overflow-visible print:bg-white">
+        <aside className={`${showTools ? 'w-[280px]' : 'w-0'} hidden shrink-0 overflow-hidden border-r border-white/50 bg-white/55 backdrop-blur-2xl transition-[width] duration-300 dark:border-white/10 dark:bg-slate-900/55 lg:block print:hidden`}>
+          <div className="flex h-full w-[280px] flex-col overflow-y-auto p-4">
+            <ToolSection title="Vista" icon={Eye}>
+              <div className="grid grid-cols-2 gap-2">
+                {MODES.map((item) => <ModeButton key={item.id} active={mode === item.id} label={item.label} icon={item.icon} onClick={() => setMode(item.id)} />)}
               </div>
+            </ToolSection>
+            <ToolSection title="Instrumento" icon={Guitar}>
+              <div className="grid grid-cols-2 gap-2">
+                {INSTRUMENTS.map((item) => <ModeButton key={item.id} active={instrument === item.id} label={item.label} icon={item.icon} onClick={() => setInstrument(item.id)} />)}
+              </div>
+            </ToolSection>
+            <ToolSection title="Lectura" icon={Type}>
+              <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/70 p-2 dark:border-white/10 dark:bg-white/5">
+                <button onClick={() => setFontSize((value) => Math.max(70, value - 10))} className="tool-icon-button" aria-label="Reducir texto"><Minus size={15} /></button>
+                <span className="flex-1 text-center text-xs font-black text-slate-700 dark:text-slate-200">{fontSize}%</span>
+                <button onClick={() => setFontSize((value) => Math.min(180, value + 10))} className="tool-icon-button" aria-label="Aumentar texto"><Plus size={15} /></button>
+              </div>
+              <select value={fontFamily} onChange={(event) => setFontFamily(event.target.value as 'mono' | 'serif' | 'sans')} className="song-select" aria-label="Tipografía">
+                <option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Monospace</option>
+              </select>
+            </ToolSection>
+            <ToolSection title="Escritura musical" icon={SlidersHorizontal}>
+              <div className="grid grid-cols-3 gap-2">
+                {(['auto', 'sharp', 'flat'] as AccidentalPreference[]).map((value) => <button key={value} onClick={() => setAccidentalPreference(value)} className={`rounded-xl border px-2 py-2 text-[10px] font-black uppercase ${accidentalPreference === value ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300' : 'border-white/70 bg-white/60 text-slate-500 dark:border-white/10 dark:bg-white/5'}`}>{value === 'auto' ? 'Auto' : value === 'sharp' ? '♯' : '♭'}</button>)}
+              </div>
+              <button onClick={() => setNashvilleMode((value) => !value)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold ${nashvilleMode ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300' : 'border-white/70 bg-white/60 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><span className="flex items-center gap-2"><Hash size={14} /> Nashville</span><span>{nashvilleMode ? 'Activo' : 'Inactivo'}</span></button>
+            </ToolSection>
+          </div>
+        </aside>
 
-              <div className="flex flex-wrap items-center gap-2 self-start md:self-auto max-w-full justify-end">
-                {/* Advanced Musician Controls Toolbar */}
-                {selectedSong.has_chords && showChords && (
-                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-750 shadow-sm">
-                    {/* Transposition */}
-                    <div className="flex items-center">
-                      <button 
-                        onClick={() => setTransposeAmount(prev => prev - 1)}
-                        className="px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                        title="Bajar medio tono"
-                      >
-                        -½
-                      </button>
-                      <div className="px-2 flex flex-col items-center justify-center min-w-[3.5rem]" title="Resetear tono">
-                        <span className="text-[10px] leading-tight font-extrabold text-amber-600 dark:text-amber-400">
-                          {originalKey ? transposeNote(originalKey, transposeAmount) : (transposeAmount > 0 ? `+${transposeAmount}` : transposeAmount)}
-                        </span>
-                        {transposeAmount !== 0 && (
-                          <button onClick={() => setTransposeAmount(0)} className="text-[8px] uppercase tracking-wider text-gray-400 hover:text-gray-600">Reset</button>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => setTransposeAmount(prev => prev + 1)}
-                        className="px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                        title="Subir medio tono"
-                      >
-                        +½
-                      </button>
-                    </div>
-
-                    <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
-
-                    {/* Nashville Toggle */}
-                    <button
-                      onClick={() => setNashvilleMode(!nashvilleMode)}
-                      className={`flex items-center justify-center p-1.5 rounded-lg transition-colors ${
-                        nashvilleMode 
-                          ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' 
-                          : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                      title="Sistema Nashville (Grados Numéricos)"
-                    >
-                      <Hash size={14} />
-                    </button>
-
-                    <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
-
-                    {/* Position Toggle */}
-                    <button
-                      onClick={() => setChordPosition(prev => prev === 'above' ? 'inline' : 'above')}
-                      className="px-2 py-1 text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors uppercase tracking-wider"
-                      title="Posición de Acordes"
-                    >
-                      {chordPosition === 'above' ? 'ARRIBA' : 'INLINE'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Autoscroll */}
-                <div className="flex items-center bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl px-2 py-1 shadow-sm gap-1">
-                  <ArrowDownToLine size={14} className="text-gray-400 mr-1" />
-                  {[0, 1, 2, 3, 4, 5].map(speed => (
-                    <button
-                      key={speed}
-                      onClick={() => setAutoScrollSpeed(speed)}
-                      className={`w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-md text-[9px] font-bold transition-all ${
-                        autoScrollSpeed === speed 
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' 
-                          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {speed === 0 ? '■' : speed}
-                    </button>
-                  ))}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="relative z-20 border-b border-white/60 bg-white/65 px-4 py-4 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/65 sm:px-6 print:hidden">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[.15em] text-amber-600 dark:text-amber-300">
+                  <span>{selectedSong.song_types?.name || 'Canción'}</span>{selectedSong.time_signature && <><span>•</span><span>{selectedSong.time_signature}</span></>}{selectedSong.bpm && <><span>•</span><span>{selectedSong.bpm} BPM</span></>}
                 </div>
+                <h2 id="song-viewer-title" className="mt-1 truncate font-serif text-xl font-black text-slate-950 dark:text-white sm:text-2xl">{selectedSong.title}</h2>
+                {selectedSong.artist && <p className="mt-0.5 truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{selectedSong.artist}</p>}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={() => setShowTools((value) => !value)} className="header-icon-button hidden lg:grid" aria-label="Mostrar u ocultar herramientas"><Settings2 size={17} /></button>
+                <button onClick={() => void shareSong()} className="header-icon-button" aria-label="Compartir"><Share2 size={17} /></button>
+                <button onClick={() => void toggleFullscreen()} className="header-icon-button hidden sm:grid" aria-label="Pantalla completa">{isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>
+                <button onClick={close} className="header-icon-button" aria-label="Cerrar"><X size={19} /></button>
+              </div>
+            </div>
 
-                {/* Lyrics Font Selector */}
-                <select
-                  value={fontFamily}
-                  onChange={(e) => setFontFamily(e.target.value as 'mono' | 'serif' | 'sans')}
-                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-750 rounded-xl px-2.5 py-1.5 text-xxs font-bold text-gray-700 dark:text-gray-300 outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm h-8"
-                >
-                  <option value="mono font-mono">Monospace</option>
-                  <option value="serif font-serif">Serif</option>
-                  <option value="sans font-sans">Sans</option>
-                </select>
-
-                {/* Utilities (Print, Fullscreen, Toggle Chords) */}
-                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-750 shadow-sm p-0.5 h-8">
-                  <button onClick={handlePrint} className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Imprimir">
-                    <Printer size={14} />
-                  </button>
-                  
-                  <button onClick={toggleFullscreen} className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Pantalla Completa">
-                    {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
-                  </button>
-
-                  {selectedSong.has_chords && (
-                    <button
-                      onClick={() => setShowChords(!showChords)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xxs font-bold transition-all ml-1 ${
-                        showChords
-                          ? 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400'
-                          : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {showChords ? <Eye size={12} /> : <EyeOff size={12} />}
-                      <span className="hidden md:inline">{showChords ? 'Acordes' : 'Sin acordes'}</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Close button */}
-                <button 
-                  onClick={() => setSelectedSong(null)} 
-                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-400 cursor-pointer"
-                >
-                  <X size={20} />
+            <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="flex shrink-0 items-center rounded-2xl border border-white/70 bg-white/75 p-1 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <button onClick={() => setTransposeAmount((value) => value - 1)} className="transpose-button" aria-label="Bajar semitono"><Minus size={14} /></button>
+                <button onClick={() => setTransposeAmount(0)} className="min-w-[86px] px-3 py-1 text-center" title="Restaurar tono">
+                  <span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">Tonalidad</span>
+                  <strong className="text-sm text-amber-700 dark:text-amber-300">{currentKey || (transposeAmount ? `${transposeAmount > 0 ? '+' : ''}${transposeAmount}` : 'Original')}</strong>
                 </button>
+                <button onClick={() => setTransposeAmount((value) => value + 1)} className="transpose-button" aria-label="Subir semitono"><Plus size={14} /></button>
+              </div>
+              {selectedSong.capo ? <span className="toolbar-chip">Capo {selectedSong.capo}</span> : null}
+              <div className="flex shrink-0 items-center rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5">
+                <button onClick={() => { setCountIn(true); togglePlay(); window.setTimeout(() => setCountIn(false), Math.max(1000, (60000 / (selectedSong.bpm || 80)) * 4)); }} className="transpose-button" aria-label={isPlaying ? 'Pausar metrónomo' : 'Iniciar metrónomo'}>{isPlaying ? <Square size={13} /> : <Play size={13} />}</button>
+                <div className="mx-1 flex gap-1" aria-label={countIn ? 'Cuenta de entrada' : 'Pulso'}>{[1, 2, 3, 4].map((beat) => <span key={beat} className={`h-1.5 w-1.5 rounded-full ${isPlaying && currentBeat === beat ? beat === 1 ? 'bg-rose-500' : 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />)}</div>
+                <button onClick={toggleMute} className="transpose-button" aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}>{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
+              </div>
+              <div className="flex shrink-0 items-center rounded-2xl border border-white/70 bg-white/75 p-1 dark:border-white/10 dark:bg-white/5"><ArrowDownToLine size={14} className="mx-2 text-slate-400" />{[0, 1, 2, 3, 4, 5].map((speed) => <button key={speed} onClick={() => setAutoScrollSpeed(speed)} className={`grid h-7 w-7 place-items-center rounded-lg text-[9px] font-black ${autoScrollSpeed === speed ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300' : 'text-slate-400'}`}>{speed === 0 ? <Pause size={11} /> : speed}</button>)}</div>
+              <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
+              <button onClick={() => void copyText(false)} className="toolbar-chip"><Copy size={13} /> Copiar</button>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex gap-1 rounded-2xl bg-slate-100/80 p-1 dark:bg-slate-950/60">
+                <button onClick={() => setActiveTab('lyrics')} className={`workspace-tab ${activeTab === 'lyrics' ? 'workspace-tab-active' : ''}`}><BookOpenText size={14} /> Canción</button>
+                <button onClick={() => setActiveTab('resources')} className={`workspace-tab ${activeTab === 'resources' ? 'workspace-tab-active' : ''}`}><Headphones size={14} /> Recursos</button>
+              </div>
+              <div className="flex gap-1 overflow-x-auto lg:hidden">
+                {MODES.map((item) => { const Icon = item.icon; return <button key={item.id} onClick={() => setMode(item.id)} className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${mode === item.id ? 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300' : 'text-slate-400'}`} title={item.label}><Icon size={15} /></button>; })}
               </div>
             </div>
+          </header>
 
-            {/* Tabs bar */}
-            <div className="flex gap-4 mt-6 border-t border-gray-150 dark:border-white/5 pt-4">
-              <button
-                onClick={() => setActiveTab('lyrics')}
-                className={`flex items-center gap-1.5 pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'lyrics'
-                    ? 'border-gold text-amber-700 dark:text-gold'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-white'
-                }`}
-              >
-                <FileText size={14} />
-                <span>Letra y Partitura</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('resources')}
-                className={`flex items-center gap-1.5 pb-2 text-xs font-bold transition-all border-b-2 cursor-pointer relative ${
-                  activeTab === 'resources'
-                    ? 'border-gold text-amber-700 dark:text-gold'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-white'
-                }`}
-              >
-                <PlayCircle size={14} />
-                <span>Recursos y Tutoriales</span>
-                {selectedSong.resource_links && selectedSong.resource_links.length > 0 && (
-                  <span className="absolute -top-1 -right-4 w-4 h-4 bg-amber-600 text-white rounded-full flex items-center justify-center text-[8px] font-bold">
-                    {selectedSong.resource_links.length}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="p-4 md:p-6 pb-20 print:p-0 print:text-black">
-            <style>{`
-              .song-lyrics-wrapper.font-mono .song-lyrics {
-                font-size: clamp(14px, calc(18px * (var(--text-size) / 100)), 36px);
-                line-height: clamp(1.8, calc(2.2 * (var(--text-size) / 100)), 4);
-                font-family: 'Courier New', Courier, monospace !important;
-              }
-              .song-lyrics-wrapper.font-serif .song-lyrics {
-                font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
-              }
-              .song-lyrics-wrapper.font-sans .song-lyrics {
-                font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-              }
-              .song-lyrics {
-                font-size: 1rem;
-                line-height: 2.3;
-                white-space: pre-wrap;
-                color: #1f2937;
-              }
-              .dark .song-lyrics {
-                color: #d1d5db;
-              }
-              .song-lyrics h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.5rem; font-family: inherit; color: #111827; }
-              .dark .song-lyrics h1 { color: #f9fafb; }
-              .song-lyrics h2 { font-size: 1.15rem; font-weight: 700; margin: 1rem 0 0.3rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-family: inherit; }
-              .dark .song-lyrics h2 { color: #9ca3af; }
-              .song-lyrics h3 { font-size: 1rem; font-weight: 600; margin: 0.5rem 0 0.2rem; color: #9ca3af; font-style: italic; font-family: inherit; }
-              .dark .song-lyrics h3 { color: #868e96; }
-              .song-lyrics p { margin-bottom: 0.15rem; }
-              
-              /* Native ruby style */
-              .song-lyrics ruby rt {
-                font-size: 0.7rem;
-                font-weight: 700;
-                color: #dc2626;
-                font-family: 'Inter', sans-serif;
-              }
-              .dark .song-lyrics ruby rt {
-                color: #f87171;
-              }
-              .song-lyrics.hide-chords ruby rt {
-                display: none;
-              }
-              }
-              
-              /* Chord annotation style (Above) */
-              .song-lyrics.chords-above span.chord-annotation {
-                position: relative;
-                display: inline-block;
-                background: rgba(220, 38, 38, 0.05);
-                border-radius: 4px;
-                padding: 0 1px;
-                margin-top: 1.2rem;
-              }
-              .dark .song-lyrics.chords-above span.chord-annotation {
-                background: rgba(248, 113, 113, 0.08);
-              }
-              .song-lyrics.chords-above span.chord-annotation::before {
-                content: attr(data-chord);
-                position: absolute;
-                top: -1.3rem;
-                left: -0.1rem;
-                font-size: 0.85rem;
-                font-weight: 800;
-                color: #dc2626;
-                font-family: 'Inter', sans-serif;
-                line-height: 1;
-                pointer-events: none;
-                background: rgba(255, 255, 255, 0.8);
-                padding: 0px 4px;
-                border-radius: 4px;
-              }
-              .dark .song-lyrics.chords-above span.chord-annotation::before {
-                color: #f87171;
-                background: rgba(15, 23, 42, 0.8);
-              }
-
-              /* Chord node wrapper (Above) */
-              .song-lyrics.chords-above span.chord-node-wrapper {
-                display: inline-block;
-                position: relative;
-                width: 0;
-                height: 0;
-                overflow: visible;
-                user-select: none;
-              }
-              .song-lyrics.chords-above span.chord-node-wrapper::before {
-                content: attr(data-chord);
-                position: absolute;
-                bottom: 1.3rem;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: 0.85rem;
-                font-weight: 800;
-                color: #dc2626;
-                font-family: 'Inter', sans-serif;
-                line-height: 1;
-                pointer-events: none;
-                white-space: nowrap;
-                background: rgba(255, 255, 255, 0.8);
-                padding: 0px 4px;
-                border-radius: 4px;
-              }
-              .dark .song-lyrics.chords-above span.chord-node-wrapper::before {
-                color: #f87171;
-                background: rgba(15, 23, 42, 0.8);
-              }
-
-              /* Inline Chords */
-              .song-lyrics.chords-inline span.chord-annotation,
-              .song-lyrics.chords-inline span.chord-node-wrapper {
-                position: static;
-                display: inline;
-                margin: 0;
-                padding: 0;
-                width: auto;
-                height: auto;
-              }
-              .song-lyrics.chords-inline span.chord-annotation::before,
-              .song-lyrics.chords-inline span.chord-node-wrapper::before {
-                content: attr(data-chord);
-                position: static;
-                transform: none;
-                font-size: 0.85em;
-                font-weight: 800;
-                color: #b91c1c;
-                font-family: 'Inter', sans-serif;
-                background: rgba(254, 226, 226, 0.6);
-                border: 1px solid rgba(252, 165, 165, 0.5);
-                padding: 2px 6px;
-                border-radius: 6px;
-                margin: 0 6px;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-              }
-              .dark .song-lyrics.chords-inline span.chord-annotation::before,
-              .dark .song-lyrics.chords-inline span.chord-node-wrapper::before {
-                color: #fca5a5;
-                background: rgba(248, 113, 113, 0.15);
-              }
-
-              /* Hide chords */
-              .song-lyrics.hide-chords span.chord-annotation::before,
-              .song-lyrics.hide-chords span.chord-node-wrapper::before {
-                display: none;
-              }
-              .song-lyrics.hide-chords span.chord-annotation {
-                margin-top: 0;
-                background: none;
-                padding: 0;
-              }
-              @media print {
-                body * {
-                  visibility: hidden;
-                }
-                .song-lyrics-wrapper, .song-lyrics-wrapper * {
-                  visibility: visible;
-                }
-                .song-lyrics-wrapper {
-                  position: absolute;
-                  left: 0;
-                  top: 0;
-                  width: 100%;
-                  color: black !important;
-                }
-                .song-lyrics {
-                  color: black !important;
-                  font-size: 14pt !important;
-                  line-height: 1.5 !important;
-                }
-                .song-lyrics span.chord-node-wrapper::before,
-                .song-lyrics span.chord-annotation::before {
-                  color: #333 !important;
-                  font-size: 11pt !important;
-                  font-weight: bold !important;
-                }
-                .dark .song-lyrics span.chord-node-wrapper::before,
-                .dark .song-lyrics span.chord-annotation::before {
-                   color: #333 !important;
-                }
-              }
-            `}</style>
-
-            {activeTab === 'lyrics' ? (
-              /* LYRICS TAB */
-              <div className="space-y-6">
-                {/* Print Title (Visible only in print) */}
-                <div className="hidden print:block mb-8 text-center border-b pb-4">
-                  <h1 className="text-3xl font-bold font-serif m-0">{selectedSong.title}</h1>
-                  {selectedSong.artist && <h2 className="text-lg text-gray-600 m-0 mt-1">{selectedSong.artist}</h2>}
-                  <div className="flex justify-center gap-4 mt-2 text-sm text-gray-500">
-                    {originalKey && <span>Tono: {transposeAmount !== 0 ? transposeNote(originalKey, transposeAmount) : originalKey}</span>}
-                    {selectedSong.bpm && <span>♩ {selectedSong.bpm}</span>}
-                  </div>
-                </div>
-
-                {/* Copy Buttons Panel */}
-                <div className="flex gap-2 print:hidden">
-                  <button
-                    onClick={() => copyChords(selectedSong)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 text-amber-700 dark:text-gold border border-amber-250/20 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer shadow-2xs"
-                  >
-                    <Copy size={11} />
-                    <span>Copiar con acordes</span>
-                  </button>
-                  <button
-                    onClick={() => copyOnlyLyrics(selectedSong)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/5 rounded-2xl text-[10px] font-bold uppercase transition-all cursor-pointer shadow-2xs"
-                  >
-                    <Copy size={11} />
-                    <span>Copiar solo letra</span>
-                  </button>
-                </div>
-
-                <div className={`song-lyrics-wrapper font-${fontFamily}`} style={{ "--text-size": textSize } as React.CSSProperties}>
-                  {selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0 ? (
-                    /* STRUCTURED RENDERING */
-                    <div className="space-y-6">
-                      {selectedSong.structure_blocks.map((block, idx) => {
-                        const blockObj = block as unknown as Record<string, unknown>;
-                        const blockType = (blockObj.type as string) || 'lyrics';
-
-                        if (blockType === 'chord_diagram') {
-                          const chordsList = Array.isArray(blockObj.chords) ? (blockObj.chords as string[]) : [];
-                          const inst = ((blockObj.instrument as string) === 'ukulele' ? 'ukulele' : 'guitar') as 'guitar' | 'ukulele';
-                          return (
-                            <div key={blockObj.id as string || `block-${idx}`} className="border border-emerald-200/40 dark:border-emerald-900/30 rounded-3xl p-5 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-3">
-                              <div className="flex justify-between items-center border-b border-emerald-100 dark:border-emerald-900/20 pb-2">
-                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300/30">
-                                  🎸 Diagramas de Acordes ({inst === 'ukulele' ? 'Ukelele' : 'Guitarra'})
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-4 items-center justify-center pt-2">
-                                {chordsList.map((c, i) => {
-                                  const transposed = transposeNote(c, transposeAmount);
-                                  return (
-                                    <div key={i} className="flex flex-col items-center bg-white dark:bg-slate-900 p-2 rounded-2xl border border-emerald-100 dark:border-white/5 shadow-2xs">
-                                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">{transposed}</span>
-                                      <StringChordDiagram chord={{ title: transposed }} instrument={inst} width={110} height={130} />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        if (blockType === 'musician_note') {
-                          const target = (blockObj.target_instrument as string) || 'General';
-                          return (
-                            <div key={blockObj.id as string || `block-${idx}`} className="border border-indigo-200/40 dark:border-indigo-900/30 rounded-3xl p-5 bg-indigo-50/20 dark:bg-indigo-950/10 space-y-2">
-                              <div className="flex items-center gap-2 border-b border-indigo-100 dark:border-indigo-900/20 pb-2">
-                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-300/30">
-                                  📌 Nota para Músicos ({target})
-                                </span>
-                              </div>
-                              <p className="text-xs font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed pt-1">
-                                {(blockObj.content as string) || ''}
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (blockType === 'sheet_music') {
-                          return (
-                            <div key={blockObj.id as string || `block-${idx}`} className="border border-violet-200/40 dark:border-violet-900/30 rounded-3xl p-5 bg-violet-50/20 dark:bg-violet-950/10 space-y-3">
-                              <div className="flex justify-between items-center border-b border-violet-100 dark:border-violet-900/20 pb-2">
-                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border-violet-300/30">
-                                  🎼 Partitura / Notación ABC
-                                </span>
-                                {(blockObj.title as string) && (
-                                  <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
-                                    {(blockObj.title as string)}
-                                  </span>
-                                )}
-                              </div>
-                              <pre className="font-mono text-xs p-4 bg-white dark:bg-slate-900 rounded-2xl border border-violet-100 dark:border-white/5 overflow-x-auto text-violet-900 dark:text-violet-200">
-                                {(blockObj.abc_code as string) || ''}
-                              </pre>
-                            </div>
-                          );
-                        }
-
-                        if (blockType === 'media_embed') {
-                          const url = (blockObj.url as string) || '';
-                          const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
-                          let embedUrl = url;
-                          if (isYoutube) {
-                            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-                            if (match) embedUrl = `https://www.youtube.com/embed/${match[1]}`;
-                          }
-
-                          return (
-                            <div key={blockObj.id as string || `block-${idx}`} className="border border-red-200/40 dark:border-red-900/30 rounded-3xl p-5 bg-red-50/20 dark:bg-red-950/10 space-y-3">
-                              <div className="flex justify-between items-center border-b border-red-100 dark:border-red-900/20 pb-2">
-                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-300/30">
-                                  🎬 Recurso Multimedia / Audio de Referencia
-                                </span>
-                              </div>
-                              {isYoutube ? (
-                                <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xs border border-red-100 dark:border-white/5">
-                                  <iframe src={embedUrl} className="w-full h-full" title="Multimedia" allowFullScreen />
-                                </div>
-                              ) : (
-                                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
-                                  <ExternalLink size={14} /> Abrir recurso multimedia
-                                </a>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        if (blockType === 'tablature') {
-                          return (
-                            <div key={blockObj.id as string || `block-${idx}`} className="border border-slate-200 dark:border-white/10 rounded-3xl p-5 bg-slate-50/40 dark:bg-slate-950/20 space-y-3">
-                              <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-white/5 pb-2">
-                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/30">
-                                  🎸 Tablatura
-                                </span>
-                              </div>
-                              <pre className="font-mono text-xs p-4 bg-slate-900 text-slate-100 rounded-2xl overflow-x-auto leading-relaxed">
-                                {(blockObj.content as string) || ''}
-                              </pre>
-                            </div>
-                          );
-                        }
-
-                        // DEFAULT / LYRICS BLOCK
-                        return (
-                          <div 
-                            key={blockObj.id as string || `block-${idx}`} 
-                            className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
-                          >
-                            <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
-                              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide ${
-                                blockObj.section_type === 'coro' || blockObj.type === 'coro'
-                                  ? 'bg-amber-55 dark:bg-amber-950/40 text-amber-800 dark:text-gold border-amber-300/30'
-                                  : blockObj.section_type === 'intro' || blockObj.type === 'intro'
-                                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
-                              }`}>
-                                {(blockObj.label as string) || 'Sección'}
-                              </span>
-                              {Boolean(blockObj.melody || blockObj.melody_guide) && (
-                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
-                                  <Info size={10} /> {((blockObj.melody as string) || (blockObj.melody_guide as string))}
-                                </span>
-                              )}
-                            </div>
-                            <div 
-                              className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml((blockObj.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    /* LEGACY HTML RENDERING */
-                    <div
-                      className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(htmlToBracketText(selectedSong.lyrics || ''), transposeAmount, nashvilleMode, originalKey) || '<p class="text-gray-400 italic">Sin letra disponible</p>', { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
-                    />
+          <main ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(circle_at_15%_10%,rgba(251,191,36,.09),transparent_28%),radial-gradient(circle_at_85%_5%,rgba(99,102,241,.08),transparent_24%)] px-4 py-6 sm:px-6 lg:px-10 print:overflow-visible print:bg-white print:p-0">
+            <div className="mx-auto max-w-5xl">
+              {activeTab === 'resources' ? renderResources() : (
+                <>
+                  {(mode === 'diagrams' || (mode === 'lyrics-chords' && instrument !== 'ninguno' && displayedChords.length > 0)) && (
+                    <section className="mb-6 print:hidden">
+                      <div className="mb-3 flex items-center justify-between"><h3 className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400">Acordes · {INSTRUMENTS.find((item) => item.id === instrument)?.label}</h3><button onClick={() => setMode('diagrams')} className="text-[10px] font-bold text-amber-600">Ver todos</button></div>
+                      <div className={`flex gap-3 overflow-x-auto pb-3 ${mode === 'diagrams' ? 'flex-wrap overflow-visible' : ''}`}>{instrument !== 'ninguno' && displayedChords.map((chord) => <InstrumentChordCard key={chord} chord={chord} instrument={instrument} compact={mode !== 'diagrams'} />)}</div>
+                    </section>
                   )}
-                </div>
-              </div>
-            ) : (
-              /* RESOURCES AND TUTORIALS TAB */
-              <div className="space-y-4">
-                {!selectedSong.resource_links || selectedSong.resource_links.length === 0 ? (
-                  <div className="bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-white/5 p-12 rounded-3xl text-center space-y-2">
-                    <PlayCircle className="mx-auto text-gray-300 dark:text-slate-850" size={36} />
-                    <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Sin recursos</h5>
-                    <p className="text-xxs text-gray-450 dark:text-gray-400 max-w-xs mx-auto leading-relaxed">
-                      No hay tutoriales o grabaciones de ensayo subidas para esta alabanza.
-                    </p>
+                  <div className={`font-${fontFamily}`} style={{ '--song-font-scale': fontSize / 100 } as CSSProperties}>
+                    {(mode === 'lyrics' || mode === 'lyrics-chords') && renderLyrics()}
+                    {mode === 'chords' && renderChordChart()}
+                    {mode === 'score' && renderScores()}
+                    {mode === 'diagrams' && displayedChords.length === 0 && <EmptyState icon={Guitar} title="No se encontraron acordes" description="Revisa el formato de la canción desde el editor." />}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {selectedSong.resource_links.map((link) => (
-                      <div 
-                        key={link.id} 
-                        className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-4 rounded-2xl shadow-2xs hover:shadow-xs hover:border-gold/30 transition-all flex flex-col justify-between gap-3 group"
-                      >
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md border tracking-wider ${
-                              link.instrument === 'Batería'
-                                ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200/30'
-                                : link.instrument === 'Piano'
-                                ? 'bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400 border-teal-200/30'
-                                : link.instrument === 'Guitarra' || link.instrument === 'Bajo'
-                                ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200/30'
-                                : 'bg-slate-100 dark:bg-slate-850 text-slate-700 dark:text-gray-300 border-slate-200/30'
-                            }`}>
-                              {link.instrument}
-                            </span>
-                            <PlayCircle size={14} className="text-gray-350 group-hover:text-amber-600 transition-colors" />
-                          </div>
-                          {link.comment && (
-                            <p className="text-xxs text-gray-650 dark:text-gray-300 leading-normal font-semibold">
-                              {link.comment}
-                            </p>
-                          )}
-                        </div>
-
-                        <a 
-                          href={link.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[10px] text-amber-700 hover:text-amber-800 dark:text-gold dark:hover:text-yellow-300 font-extrabold uppercase tracking-wide flex items-center gap-1 mt-1 transition-colors cursor-pointer"
-                        >
-                          <span>Ver referencia</span>
-                          <ExternalLink size={10} />
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                </>
+              )}
+            </div>
+          </main>
         </div>
-      </AnimeZoomIn>
+      </div>
+
+      <style>{`
+        .song-section-glass { border: 1px solid rgb(255 255 255 / .68); background: rgb(255 255 255 / .72); border-radius: 1.5rem; padding: 1.25rem; box-shadow: 0 18px 55px -42px rgb(15 23 42 / .65); backdrop-filter: blur(22px); }
+        .dark .song-section-glass { border-color: rgb(255 255 255 / .09); background: rgb(15 23 42 / .62); }
+        .song-workspace-lyrics { font-size: calc(1.05rem * var(--song-font-scale)); line-height: 2.45; color: rgb(30 41 59); }
+        .dark .song-workspace-lyrics { color: rgb(226 232 240); }
+        .song-workspace-lyrics .lyrics-line { margin: .25rem 0; min-height: 1.5em; }
+        .song-workspace-lyrics .chord-node-wrapper { display: inline-block; position: relative; width: .05em; height: 1em; vertical-align: baseline; margin-right: .03em; }
+        .song-workspace-lyrics .chord-node-wrapper::before { content: attr(data-chord); position: absolute; bottom: .92em; left: 0; color: rgb(180 83 9); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72em; font-weight: 900; line-height: 1; white-space: nowrap; }
+        .dark .song-workspace-lyrics .chord-node-wrapper::before { color: rgb(252 211 77); }
+        .song-workspace-hide-chords .chord-node-wrapper { display: none; }
+        .tool-icon-button,.header-icon-button,.transpose-button { display:grid; place-items:center; border-radius:.75rem; color:rgb(100 116 139); transition:.2s; }
+        .tool-icon-button { width:2.25rem;height:2.25rem;background:rgb(241 245 249 / .8); }
+        .header-icon-button { width:2.5rem;height:2.5rem;background:rgb(255 255 255 / .65);border:1px solid rgb(255 255 255 / .75); }
+        .transpose-button { width:2rem;height:2rem; }
+        .tool-icon-button:hover,.header-icon-button:hover,.transpose-button:hover { color:rgb(180 83 9);background:rgb(254 243 199 / .8); }
+        .dark .tool-icon-button,.dark .header-icon-button { background:rgb(255 255 255 / .06);border-color:rgb(255 255 255 / .1);color:rgb(203 213 225); }
+        .song-select { width:100%;border-radius:.8rem;border:1px solid rgb(255 255 255 / .7);background:rgb(255 255 255 / .7);padding:.65rem .75rem;font-size:.75rem;font-weight:700;color:rgb(71 85 105);outline:none; }
+        .dark .song-select { border-color:rgb(255 255 255 / .1);background:rgb(255 255 255 / .05);color:rgb(226 232 240); }
+        .toolbar-chip { display:flex;align-items:center;gap:.4rem;flex-shrink:0;border:1px solid rgb(255 255 255 / .7);background:rgb(255 255 255 / .72);padding:.55rem .75rem;border-radius:1rem;color:rgb(71 85 105);font-size:.68rem;font-weight:800; }
+        .dark .toolbar-chip { border-color:rgb(255 255 255 / .1);background:rgb(255 255 255 / .05);color:rgb(203 213 225); }
+        .workspace-tab { display:flex;align-items:center;gap:.4rem;border-radius:.75rem;padding:.45rem .75rem;font-size:.7rem;font-weight:800;color:rgb(100 116 139); }
+        .workspace-tab-active { background:white;color:rgb(180 83 9);box-shadow:0 2px 8px rgb(15 23 42 / .08); }
+        .dark .workspace-tab-active { background:rgb(30 41 59);color:rgb(252 211 77); }
+        @media print { .song-section-glass { break-inside:avoid;border:0;background:white;box-shadow:none;padding:.5rem 0; } }
+      `}</style>
     </div>
   );
 };
+
+function ToolSection({ title, icon: Icon, children }: { title: string; icon: typeof Eye; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <section className="mb-3 rounded-2xl border border-white/60 bg-white/45 p-3 dark:border-white/10 dark:bg-white/[.03]">
+      <button onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-slate-500 dark:text-slate-300"><Icon size={14} className="text-amber-500" /><span className="flex-1 text-left">{title}</span>{open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</button>
+      {open && <div className="mt-3 space-y-2">{children}</div>}
+    </section>
+  );
+}
+
+function ModeButton({ active, label, icon: Icon, onClick }: { active: boolean; label: string; icon: typeof Eye; onClick: () => void }) {
+  return <button onClick={onClick} className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-[9px] font-black transition ${active ? 'border-amber-300 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300' : 'border-white/70 bg-white/55 text-slate-500 hover:border-amber-200 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400'}`}><Icon size={16} /><span>{label}</span></button>;
+}
+
+function EmptyState({ icon: Icon, title, description }: { icon: typeof Eye; title: string; description: string }) {
+  return <div className="song-section-glass py-14 text-center"><Icon size={34} className="mx-auto text-slate-300" /><h3 className="mt-4 font-bold text-slate-700 dark:text-slate-200">{title}</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p></div>;
+}
+
+export default SongViewer;
