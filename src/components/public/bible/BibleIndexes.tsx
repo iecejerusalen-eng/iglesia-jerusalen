@@ -113,7 +113,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden flex relative">
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start h-full pb-24">
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 content-start h-full pb-24">
             <AnimatePresence mode="popLayout">
               {filteredData.length === 0 ? (
                 <motion.div 
@@ -121,7 +121,7 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                   className="col-span-full flex flex-col items-center justify-center h-64 text-white/40"
                 >
                   <Search size={48} className="mb-4 opacity-50" />
-                  <p>No se encontraron resultados para "{searchTerm}"</p>
+                  <p className="text-xl">No se encontraron resultados para "{searchTerm}"</p>
                 </motion.div>
               ) : (
                 filteredData.map((item: BibleIndexItem) => (
@@ -132,43 +132,60 @@ export default function BibleIndexes({ onClose, onNavigateToBible }: BibleIndexe
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     onClick={() => setSelectedItem(item)}
-                    className={`group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/10 ${
+                    className={`group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-500 hover:scale-[1.03] hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.2)] flex flex-col ${
                       activeTab === 'books' 
-                        ? `bg-gradient-to-br ${getBookColor(item.group || '')} border` 
-                        : 'bg-white/5 border border-white/10 hover:border-white/30'
+                        ? `bg-gradient-to-br ${getBookColor(item.group || '')} border shadow-lg` 
+                        : 'bg-black/40 border border-white/10 hover:border-amber-500/30 hover:bg-black/60 shadow-xl'
                     }`}
+                    style={activeTab === 'books' ? {
+                      boxShadow: 'inset 4px 0 10px rgba(255,255,255,0.1), inset -1px 0 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.4)',
+                    } : {}}
                   >
                     {/* Glass highlight */}
                     <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />
                     
+                    {/* Book spine line */}
+                    {activeTab === 'books' && (
+                      <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black/60 via-black/20 to-transparent border-r border-white/10 pointer-events-none z-10" />
+                    )}
+
                     {item.imageUrl ? (
-                      <div className="h-48 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-black/40 to-transparent z-10" />
+                      <div className="h-56 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
                         <img 
                           src={item.imageUrl} 
                           alt={item.name} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                          className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-transform duration-700 ease-out"
                         />
-                        <h3 className="absolute bottom-4 left-4 z-20 text-xl font-bold text-white drop-shadow-md">{item.name}</h3>
+                        <div className="absolute bottom-4 left-4 right-4 z-20">
+                          <h3 className="text-2xl font-black text-white drop-shadow-md leading-tight">{item.name}</h3>
+                          <p className="text-amber-400/90 text-xs font-bold uppercase tracking-widest mt-1 truncate">
+                            {item.meaning || item.location}
+                          </p>
+                        </div>
                       </div>
                     ) : (
-                      <div className="p-6 pb-2 relative z-20">
+                      <div className={`p-6 pb-4 relative z-20 ${activeTab === 'books' ? 'pl-10' : ''}`}>
                          {activeTab === 'books' && (
-                           <div className="absolute top-4 right-4 bg-black/30 backdrop-blur-md px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider text-white/70">
+                           <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-[10px] uppercase font-bold tracking-widest text-white/80 shadow-sm">
                              {item.testament === 'Antiguo Testamento' ? 'AT' : 'NT'}
                            </div>
                          )}
-                         <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
-                         {activeTab === 'books' && <p className="text-white/60 text-xs uppercase tracking-widest">{item.group}</p>}
+                         <h3 className="text-3xl font-black text-white mb-2 leading-none">{item.name}</h3>
+                         {activeTab === 'books' && (
+                           <p className="text-white/70 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                             <span className="w-2 h-2 rounded-full bg-white/40"></span> {item.group}
+                           </p>
+                         )}
                       </div>
                     )}
                     
-                    <div className="p-4 pt-2 relative z-20">
-                      <p className="text-white/60 text-sm line-clamp-3 mb-4">
+                    <div className={`p-5 pt-4 relative z-20 flex-1 flex flex-col justify-between bg-gradient-to-b from-transparent to-black/60 ${activeTab === 'books' ? 'pl-10' : ''}`}>
+                      <p className="text-white/70 text-sm line-clamp-3 mb-6 leading-relaxed">
                         {item.historicalContext || item.significance || item.description}
                       </p>
-                      <div className="flex items-center text-amber-400 text-sm font-medium opacity-80 group-hover:opacity-100 transition-opacity">
-                        Explorar <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                      <div className="flex items-center text-amber-400 text-sm font-bold uppercase tracking-wider opacity-70 group-hover:opacity-100 transition-opacity mt-auto">
+                        Explorar <ChevronRight size={16} className="ml-1 group-hover:translate-x-1.5 transition-transform" />
                       </div>
                     </div>
                   </motion.div>

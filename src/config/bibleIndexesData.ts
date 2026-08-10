@@ -220,7 +220,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'salomon',
-    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
+    imageUrl: '/assets/encyclopedia/characters/salomon.png',
     name: 'Salomón',
     meaning: 'Pacífico',
     historicalContext: 'Tercer rey del Reino Unido de Israel, hijo de David y Betsabé. Gobernó durante la "edad de oro" de Israel (970–931 a.C.).',
@@ -348,7 +348,27 @@ export const bibleCharacters: BibleCharacter[] = [
     firstMention: 'Hechos 6:5',
     imageUrl: '/assets/encyclopedia/characters/placeholder.png'
   }
-
+  },
+  {
+    id: 'josue_lider',
+    name: 'Josué',
+    meaning: 'Yahveh salva',
+    historicalContext: 'Sucesor de Moisés, lideró la conquista de la Tierra Prometida.',
+    keyEvents: ['Espía en Canaán', 'Cruce del Jordán', 'Caída de Jericó', 'Repartición de la tierra'],
+    interestingFacts: ['Su nombre original era Oseas.', 'Junto a Caleb, fue el único de su generación en entrar a Canaán.'],
+    firstMention: 'Éxodo 17:9',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'ester_reina',
+    name: 'Ester',
+    meaning: 'Estrella',
+    historicalContext: 'Joven judía que llegó a ser reina del Imperio Persa bajo el rey Asuero.',
+    keyEvents: ['Coronación como reina', 'Descubrimiento del complot de Amán', 'Ayuno de tres días', 'Salvación del pueblo judío'],
+    interestingFacts: ['Su nombre hebreo era Hadasa.', 'Instituyó la fiesta de Purim que se celebra hasta hoy.'],
+    firstMention: 'Ester 2:7',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  }
 ];
 
 export const biblePlaces: BiblePlace[] = [
@@ -382,7 +402,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'babilonia',
-    imageUrl: '/assets/encyclopedia/places/placeholder.png',
+    imageUrl: '/assets/encyclopedia/places/babilonia.png',
     name: 'Babilonia',
     location: 'Mesopotamia, a orillas del río Éufrates (actual Irak).',
     significance: 'Símbolo del orgullo y rebelión humana contra Dios. Imperio que exilió a los judíos.',
@@ -594,7 +614,27 @@ export const biblePlaces: BiblePlace[] = [
     firstMention: '2 Samuel 15:30',
     imageUrl: '/assets/encyclopedia/places/placeholder.png'
   }
-
+  },
+  {
+    id: 'ninive',
+    name: 'Nínive',
+    location: 'A orillas del río Tigris, capital del antiguo Imperio Asirio.',
+    significance: 'Ciudad enemiga de Israel conocida por su crueldad, objeto de la misión de Jonás.',
+    keyEvents: ['Predicación de Jonás', 'Arrepentimiento de toda la ciudad', 'Profecía de su destrucción por Nahúm'],
+    interestingFacts: ['Era tan grande que tomaba tres días recorrerla.', 'Finalmente fue destruida por babilonios y medos en 612 a.C.'],
+    firstMention: 'Génesis 10:11',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'patmos',
+    name: 'Isla de Patmos',
+    location: 'Pequeña isla volcánica en el Mar Egeo, frente a la costa de Turquía.',
+    significance: 'Lugar de exilio donde el apóstol Juan recibió la revelación del Apocalipsis.',
+    keyEvents: ['Exilio de Juan', 'Visión del Cristo glorificado', 'Recepción del libro de Apocalipsis'],
+    interestingFacts: ['El exilio fue bajo el emperador Domiciano.', 'Hoy en día se conoce como la "Jerusalén del Egeo".'],
+    firstMention: 'Apocalipsis 1:9',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  }
 ];
 
 export const bibleBooks: BibleBookInfo[] = [
