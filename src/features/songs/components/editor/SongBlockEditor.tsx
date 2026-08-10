@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Type, Music, FileImage, Video, Trash2, ArrowUp, ArrowDown, Settings, PlusCircle, Info
+  Type, Music, FileImage, Video, Trash2, ArrowUp, ArrowDown, Settings, PlusCircle, Info, ListChecks, CircleHelp, Link2, FileText, Drum
 } from 'lucide-react';
 import type { SongStructureBlock, SongBlockType } from '@/types';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 
 interface Props {
   content?: string; // JSON string of blocks or legacy html
@@ -92,7 +93,15 @@ export function SongBlockEditor({
     } else if (type === 'musician_note') {
       newBlock = { ...newBlock, target_instrument: 'General', content: '' };
     } else if (type === 'tablature') {
-      newBlock = { ...newBlock, title: 'Tablatura', content: 'e|-----------------|\nB|-----------------|\nG|---0---2---0-----|\nD|-----------------|\nA|-----------------|\nE|-----------------|' };
+      newBlock = { ...newBlock, title: 'Tablatura', instrument: 'guitar', tuning: 'E A D G B E', content: 'e|-----------------|\nB|-----------------|\nG|---0---2---0-----|\nD|-----------------|\nA|-----------------|\nE|-----------------|' };
+    } else if (type === 'rich_text') {
+      newBlock = { ...newBlock, title: 'Recurso', content: '<p>Escribe aquí el contenido del recurso.</p>', audience: 'public' };
+    } else if (type === 'poll') {
+      newBlock = { ...newBlock, question: '¿Qué versión prepararemos?', options: ['Versión original', 'Versión acústica'], allow_multiple: false };
+    } else if (type === 'question') {
+      newBlock = { ...newBlock, question: 'Pregunta para el equipo', helper_text: '', answer_type: 'long' };
+    } else if (type === 'link_collection') {
+      newBlock = { ...newBlock, title: 'Enlaces de ensayo', links: [{ id: createBlockId(), label: 'Referencia', url: '', description: '' }] };
     }
 
     updateParent([...activeBlocks, newBlock as unknown as SongStructureBlock]);
@@ -157,7 +166,7 @@ export function SongBlockEditor({
                 ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border-indigo-200/30'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
             }`}>
-              {block.type === 'lyrics' ? 'Letra / Acordes' : block.type === 'chord_diagram' ? 'Diagrama Acordes' : block.type === 'musician_note' ? 'Nota Músicos' : block.type === 'sheet_music' ? 'Partitura' : block.type === 'media_embed' ? 'Media / Audio' : 'Tablatura'}
+              {block.type === 'lyrics' ? 'Letra / Acordes' : block.type === 'chord_diagram' ? 'Diagrama Acordes' : block.type === 'musician_note' ? 'Nota Músicos' : block.type === 'sheet_music' ? 'Partitura' : block.type === 'media_embed' ? 'Media / Audio' : block.type === 'tablature' ? 'Tablatura' : block.type === 'rich_text' ? 'Texto enriquecido' : block.type === 'poll' ? 'Encuesta' : block.type === 'question' ? 'Pregunta' : 'Colección de enlaces'}
             </span>
             {block.type === 'lyrics' && <span className="font-bold text-gray-700 dark:text-gray-200 text-xs">— {(blockObj.label as string) || 'Sección'}</span>}
           </div>
@@ -346,8 +355,12 @@ export function SongBlockEditor({
                     <option value="Batería">Batería 🥁</option>
                     <option value="Piano">Piano 🎹</option>
                     <option value="Guitarra">Guitarra 🎸</option>
+                    <option value="Guitarra eléctrica">Guitarra eléctrica ⚡</option>
                     <option value="Bajo">Bajo 🎸</option>
+                    <option value="Ukelele">Ukelele</option>
                     <option value="Voz">Voz 🎤</option>
+                    <option value="Vientos">Vientos 🎺</option>
+                    <option value="Sonido">Sonido / Multimedia</option>
                   </select>
                 </div>
                 <div className="md:col-span-2">
@@ -362,6 +375,36 @@ export function SongBlockEditor({
                 </div>
               </div>
             </div>
+          )}
+
+          {block.type === 'tablature' && (
+            <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-3">
+                <input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título de la tablatura" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" />
+                <select value={block.instrument || 'guitar'} onChange={(event) => updateBlock(block.id, { instrument: event.target.value as Extract<SongStructureBlock, { type: 'tablature' }>['instrument'] })} className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800"><option value="guitar">Guitarra</option><option value="bass">Bajo</option><option value="ukulele">Ukelele</option><option value="drums">Batería / Drum tab</option></select>
+                <input value={block.tuning || ''} onChange={(event) => updateBlock(block.id, { tuning: event.target.value })} placeholder="Afinación: E A D G B E" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" />
+              </div>
+              <textarea value={block.content} onChange={(event) => updateBlock(block.id, { content: event.target.value })} rows={8} spellCheck={false} className="w-full overflow-x-auto whitespace-pre rounded-xl border border-gray-300 bg-slate-950 px-4 py-3 font-mono text-xs leading-6 text-emerald-300 outline-none dark:border-white/10" placeholder="Escribe la tablatura respetando espacios y líneas" />
+            </div>
+          )}
+
+          {block.type === 'rich_text' && (
+            <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-[1fr_10rem]"><input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título del recurso" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" /><select value={block.audience || 'public'} onChange={(event) => updateBlock(block.id, { audience: event.target.value as 'public' | 'team' })} className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800"><option value="public">Público</option><option value="team">Sólo equipo</option></select></div>
+              <RichTextEditor content={block.content} onChange={(content) => updateBlock(block.id, { content })} disabled={disabled} />
+            </div>
+          )}
+
+          {block.type === 'poll' && (
+            <div className="space-y-3"><input value={block.question} onChange={(event) => updateBlock(block.id, { question: event.target.value })} placeholder="Pregunta de la encuesta" className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold dark:border-white/10 dark:bg-slate-800" /><textarea value={block.options.join('\n')} onChange={(event) => updateBlock(block.id, { options: event.target.value.split('\n').map((value) => value.trim()).filter(Boolean) })} rows={4} placeholder="Una opción por línea" className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800" /><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={Boolean(block.allow_multiple)} onChange={(event) => updateBlock(block.id, { allow_multiple: event.target.checked })} /> Permitir varias respuestas</label></div>
+          )}
+
+          {block.type === 'question' && (
+            <div className="grid gap-3 md:grid-cols-2"><input value={block.question} onChange={(event) => updateBlock(block.id, { question: event.target.value })} placeholder="Pregunta" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold dark:border-white/10 dark:bg-slate-800" /><select value={block.answer_type} onChange={(event) => updateBlock(block.id, { answer_type: event.target.value as Extract<SongStructureBlock, { type: 'question' }>['answer_type'] })} className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-slate-800"><option value="short">Respuesta corta</option><option value="long">Respuesta larga</option><option value="yes_no">Sí / No</option></select><input value={block.helper_text || ''} onChange={(event) => updateBlock(block.id, { helper_text: event.target.value })} placeholder="Texto de ayuda opcional" className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs md:col-span-2 dark:border-white/10 dark:bg-slate-800" /></div>
+          )}
+
+          {block.type === 'link_collection' && (
+            <div className="space-y-3"><input value={block.title || ''} onChange={(event) => updateBlock(block.id, { title: event.target.value })} placeholder="Título de la colección" className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold dark:border-white/10 dark:bg-slate-800" />{block.links.map((link, linkIndex) => <div key={link.id} className="grid gap-2 rounded-xl bg-slate-50 p-3 md:grid-cols-[.8fr_1.2fr_1fr_auto] dark:bg-white/5"><input value={link.label} onChange={(event) => updateBlock(block.id, { links: block.links.map((item, index) => index === linkIndex ? { ...item, label: event.target.value } : item) })} placeholder="Etiqueta" className="rounded-lg border px-2 py-1.5 text-xs dark:border-white/10 dark:bg-slate-800" /><input value={link.url} onChange={(event) => updateBlock(block.id, { links: block.links.map((item, index) => index === linkIndex ? { ...item, url: event.target.value } : item) })} placeholder="https://..." className="rounded-lg border px-2 py-1.5 text-xs dark:border-white/10 dark:bg-slate-800" /><input value={link.description || ''} onChange={(event) => updateBlock(block.id, { links: block.links.map((item, index) => index === linkIndex ? { ...item, description: event.target.value } : item) })} placeholder="Descripción" className="rounded-lg border px-2 py-1.5 text-xs dark:border-white/10 dark:bg-slate-800" /><button type="button" onClick={() => updateBlock(block.id, { links: block.links.filter((_, index) => index !== linkIndex) })} className="text-rose-500"><Trash2 size={14} /></button></div>)}<button type="button" onClick={() => updateBlock(block.id, { links: [...block.links, { id: createBlockId(), label: '', url: '', description: '' }] })} className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold dark:bg-white/10"><PlusCircle size={13} className="mr-1 inline" /> Agregar enlace</button></div>
           )}
         </div>
       </motion.div>
@@ -416,6 +459,11 @@ export function SongBlockEditor({
             >
               <Video size={14}/> Audio / Media
             </button>
+            <button type="button" onClick={() => addBlock('tablature')} className="flex items-center gap-1.5 rounded-xl border border-cyan-200/40 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"><Drum size={14}/> Tabs / Drum tabs</button>
+            <button type="button" onClick={() => addBlock('rich_text')} className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"><FileText size={14}/> Texto enriquecido</button>
+            <button type="button" onClick={() => addBlock('poll')} className="flex items-center gap-1.5 rounded-xl border border-fuchsia-200/40 bg-fuchsia-50 px-3.5 py-2 text-xs font-bold text-fuchsia-700 dark:bg-fuchsia-950/30 dark:text-fuchsia-300"><ListChecks size={14}/> Encuesta</button>
+            <button type="button" onClick={() => addBlock('question')} className="flex items-center gap-1.5 rounded-xl border border-blue-200/40 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"><CircleHelp size={14}/> Pregunta</button>
+            <button type="button" onClick={() => addBlock('link_collection')} className="flex items-center gap-1.5 rounded-xl border border-emerald-200/40 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"><Link2 size={14}/> Enlaces</button>
           </div>
         </div>
       )}

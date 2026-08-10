@@ -16,6 +16,7 @@ interface StringChordDiagramProps {
   height?: number;
   className?: string;
   color?: string;
+  variation?: number;
 }
 
 export function StringChordDiagram({
@@ -24,7 +25,8 @@ export function StringChordDiagram({
   width = 120,
   height = 150,
   className = '',
-  color = 'currentColor'
+  color = 'currentColor',
+  variation = 0,
 }: StringChordDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<SVGuitarChord | null>(null);
@@ -44,7 +46,7 @@ export function StringChordDiagram({
     let position = chord.position || 1;
 
     if (!chord.fingers || chord.fingers.length === 0) {
-      const data = getChordData(chord.title || '', isUkulele ? 'ukelele' : 'guitarra');
+      const data = getChordData(chord.title || '', isUkulele ? 'ukelele' : 'guitarra', variation);
       if (data?.instrument === 'guitarra' || data?.instrument === 'ukelele') {
         const numStrings = isUkulele ? 4 : 6;
         for (let i = 0; i < numStrings; i++) {
@@ -100,15 +102,22 @@ export function StringChordDiagram({
         fixedDiagramPosition: true
       });
     chart.draw();
+    const svg = containerRef.current.querySelector('svg');
+    if (svg) {
+      svg.style.width = '100%';
+      svg.style.height = '100%';
+      svg.style.overflow = 'visible';
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
     chartRef.current = chart;
 
-  }, [chord, instrument, color]);
+  }, [chord, instrument, color, variation]);
 
   return (
     <div 
       ref={containerRef} 
-      className={`svg-chord-diagram ${className}`}
-      style={{ width, height }}
+      className={`svg-chord-diagram overflow-visible ${className}`}
+      style={{ width, height, padding: '4px' }}
       aria-label={`Diagrama de acorde ${chord.title}`}
     />
   );

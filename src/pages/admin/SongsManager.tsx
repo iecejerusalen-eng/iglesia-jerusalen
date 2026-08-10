@@ -13,9 +13,9 @@ import {
   Plus, Edit3, Trash2, X, Search, Music, ListMusic,
   Tag, Palette as StyleIcon, ChevronDown, ChevronUp,
   Link as LinkIcon, PlusCircle, Sparkles,
-  BookOpenText, Guitar, RotateCcw, Eye
+  BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star
 } from 'lucide-react';
-import type { AccidentalPreference, Song, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
+import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
 import { detectKeyCandidate, slugifySongTitle } from '../../features/songs/utils/musicEngine';
 
@@ -378,6 +378,9 @@ const SongsManager = () => {
   const [previewShowChords, setPreviewShowChords] = useState(true);
   const [previewFont, setPreviewFont] = useState<'mono' | 'serif' | 'sans'>('sans');
   const [previewTab, setPreviewTab] = useState<'lyrics' | 'resources'>('lyrics');
+  const [arrangements, setArrangements] = useState<SongArrangement[]>([]);
+  const [activeArrangementId, setActiveArrangementId] = useState<string | null>(null);
+  const [newVersionName, setNewVersionName] = useState('');
 
   // Catalog management
   const [showCatalogs, setShowCatalogs] = useState(false);
@@ -462,7 +465,21 @@ const SongsManager = () => {
 
       if (error) throw error;
       
-      if (songsData) setSongs(songsData);
+      if (songsData) {
+        const songIds = songsData.map((song) => song.id);
+        let arrangementRows: SongArrangement[] = [];
+        if (songIds.length > 0) {
+          const arrangementsResult = await supabase.from('song_arrangements').select('*').in('song_id', songIds).order('name');
+          if (arrangementsResult.error) {
+            const migrationPending = arrangementsResult.error.code === '42P01' || arrangementsResult.error.code === 'PGRST205';
+            if (!migrationPending) throw arrangementsResult.error;
+            console.warn('Falta aplicar la migración de versiones de alabanzas.', arrangementsResult.error);
+          } else {
+            arrangementRows = (arrangementsResult.data as SongArrangement[]) || [];
+          }
+        }
+        setSongs(songsData.map((song) => ({ ...song, song_arrangements: arrangementRows.filter((version) => version.song_id === song.id) })));
+      }
       if (count !== null) {
         setTotalItems(count);
         setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
@@ -507,6 +524,9 @@ const SongsManager = () => {
     setResourceLinks([]);
     setStructureBlocks([]);
     setEditorMode('free');
+    setArrangements([]);
+    setActiveArrangementId(null);
+    setNewVersionName('');
     setShowForm(true);
     window.setTimeout(() => restoreEditorDraft('song-editor-draft:new'), 0);
   };
@@ -533,6 +553,9 @@ const SongsManager = () => {
     setResourceLinks(song.resource_links || []);
     setStructureBlocks(song.structure_blocks || []);
     setEditorMode(song.structure_blocks && song.structure_blocks.length > 0 ? 'structured' : 'free');
+    setArrangements(song.song_arrangements || []);
+    setActiveArrangementId(null);
+    setNewVersionName('');
     setShowForm(true);
     window.setTimeout(() => restoreEditorDraft(`song-editor-draft:${song.id}`, song.updated_at || song.created_at), 0);
   };
@@ -591,13 +614,32 @@ const SongsManager = () => {
       updated_at: new Date().toISOString(),
     };
 
-    if (editingSong) {
+    if (editingSong && activeArrangementId) {
+      const activeVersion = arrangements.find((version) => version.id === activeArrangementId);
+      if (!activeVersion) {
+        toast.error('La versión seleccionada ya no está disponible.');
+        return;
+      }
+      const { error } = await supabase.from('song_arrangements').update({
+        original_key: payload.original_key,
+        preferred_accidentals: payload.preferred_accidentals,
+        capo: payload.capo,
+        bpm: payload.bpm,
+        time_signature: payload.time_signature,
+        lyrics: payload.lyrics,
+        structure_blocks: payload.structure_blocks,
+        resource_links: payload.resource_links,
+        status: payload.status,
+      }).eq('id', activeArrangementId);
+      if (error) { console.error('No se pudo actualizar la versión de la alabanza.', error); toast.error('Error al actualizar la versión'); return; }
+      toast.success(`Versión “${activeVersion.name}” actualizada`);
+    } else if (editingSong) {
       const { error } = await supabase.from('songs').update(payload).eq('id', editingSong.id);
-      if (error) { toast.error('Error al actualizar'); return; }
+      if (error) { console.error('No se pudo actualizar la canción.', error); toast.error('Error al actualizar'); return; }
       toast.success('Canción actualizada');
     } else {
       const { error } = await supabase.from('songs').insert(payload);
-      if (error) { toast.error('Error al crear'); return; }
+      if (error) { console.error('No se pudo crear la canción.', error); toast.error('Error al crear'); return; }
       toast.success('Canción creada');
     }
     clearEditorDraft(editingSong ? `song-editor-draft:${editingSong.id}` : 'song-editor-draft:new');
@@ -657,6 +699,115 @@ const SongsManager = () => {
 
   const updateLink = (id: string, updates: Partial<SongResourceLink>) => {
     setResourceLinks(resourceLinks.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const loadArrangement = (arrangement: SongArrangement) => {
+    const current = getValues();
+    reset({
+      ...current,
+      bpm: arrangement.bpm ?? undefined,
+      original_key: arrangement.original_key || '',
+      preferred_accidentals: arrangement.preferred_accidentals,
+      capo: arrangement.capo,
+      time_signature: arrangement.time_signature,
+      status: arrangement.status,
+      has_chords: arrangement.structure_blocks.some((block) => block.type === 'lyrics' && /\[[^\]]+]/.test(block.lyrics)),
+    });
+    setLyrics(arrangement.lyrics);
+    setResourceLinks(arrangement.resource_links);
+    setStructureBlocks(arrangement.structure_blocks);
+    setEditorMode(arrangement.structure_blocks.length > 0 ? 'structured' : 'free');
+    setActiveArrangementId(arrangement.id);
+    toast.info(`Editando versión “${arrangement.name}”`);
+  };
+
+  const loadOriginalArrangement = () => {
+    if (!editingSong) return;
+    reset({
+      title: editingSong.title,
+      artist: editingSong.artist || '',
+      bpm: editingSong.bpm ?? undefined,
+      type_id: editingSong.type_id || '',
+      style_id: editingSong.style_id || '',
+      has_chords: editingSong.has_chords,
+      original_key: editingSong.original_key || '',
+      preferred_accidentals: editingSong.preferred_accidentals || 'auto',
+      capo: editingSong.capo || 0,
+      time_signature: editingSong.time_signature || '4/4',
+      status: editingSong.status || 'published',
+      composers: (editingSong.composers || []).join(', '),
+      copyright_notice: editingSong.copyright_notice || '',
+    });
+    setLyrics(editingSong.lyrics || '');
+    setResourceLinks(editingSong.resource_links || []);
+    setStructureBlocks(editingSong.structure_blocks || []);
+    setEditorMode(editingSong.structure_blocks?.length ? 'structured' : 'free');
+    setActiveArrangementId(null);
+  };
+
+  const createArrangement = async () => {
+    if (!editingSong) {
+      toast.error('Guarda primero la canción principal.');
+      return;
+    }
+    const name = newVersionName.trim();
+    if (!name) {
+      toast.error('Escribe un nombre para la nueva versión.');
+      return;
+    }
+    const data = getValues();
+    const compiledLyrics = editorMode === 'structured' ? compileBlocksToHtml(structureBlocks) : lyrics;
+    const { data: created, error } = await supabase.from('song_arrangements').insert({
+      song_id: editingSong.id,
+      name,
+      slug: slugifySongTitle(name),
+      description: `Versión de ${editingSong.title}`,
+      is_default: arrangements.length === 0,
+      status: data.status,
+      original_key: data.original_key?.trim() || null,
+      preferred_accidentals: data.preferred_accidentals,
+      capo: Number(data.capo || 0),
+      bpm: data.bpm ?? null,
+      time_signature: data.time_signature || '4/4',
+      lyrics: compiledLyrics,
+      structure_blocks: structureBlocks,
+      resource_links: resourceLinks,
+    }).select('*').single();
+    if (error) {
+      console.error('No se pudo crear la versión de la alabanza.', error);
+      toast.error(error.code === '23505' ? 'Ya existe una versión con ese nombre.' : 'No se pudo crear la versión.');
+      return;
+    }
+    const version = created as SongArrangement;
+    setArrangements((versions) => [...versions, version]);
+    setActiveArrangementId(version.id);
+    setNewVersionName('');
+    toast.success(`Versión “${name}” creada desde el documento actual`);
+  };
+
+  const deleteArrangement = async (arrangement: SongArrangement) => {
+    const accepted = await confirm({ title: 'Eliminar versión', message: `Se eliminará la versión “${arrangement.name}”, sin borrar la canción principal.`, confirmText: 'Eliminar versión', cancelText: 'Cancelar', variant: 'danger' });
+    if (!accepted) return;
+    const { error } = await supabase.from('song_arrangements').delete().eq('id', arrangement.id);
+    if (error) {
+      console.error('No se pudo eliminar la versión.', error);
+      toast.error('No se pudo eliminar la versión.');
+      return;
+    }
+    setArrangements((versions) => versions.filter((version) => version.id !== arrangement.id));
+    if (activeArrangementId === arrangement.id) loadOriginalArrangement();
+    toast.success('Versión eliminada');
+  };
+
+  const makeDefaultArrangement = async (arrangement: SongArrangement) => {
+    const { error } = await supabase.rpc('set_default_song_arrangement', { target_arrangement_id: arrangement.id });
+    if (error) {
+      console.error('No se pudo establecer la versión predeterminada.', error);
+      toast.error('No se pudo cambiar la versión predeterminada.');
+      return;
+    }
+    setArrangements((versions) => versions.map((version) => ({ ...version, is_default: version.id === arrangement.id })));
+    toast.success(`“${arrangement.name}” es ahora la versión predeterminada`);
   };
 
   const openPreview = () => {
@@ -1012,6 +1163,12 @@ const SongsManager = () => {
                 </div>
               </section>
 
+              {editingSong && <section className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/75 to-white/60 p-4 dark:border-indigo-400/10 dark:from-indigo-400/[.06] dark:to-white/[.02]">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-2"><Layers3 size={17} className="text-indigo-600" /><div><h3 className="text-sm font-black text-slate-800 dark:text-white">Versiones de esta alabanza</h3><p className="text-[10px] text-slate-500">Cada versión puede tener otra letra, tono, BPM, capo, bloques y recursos.</p></div></div><div className="flex gap-2"><input value={newVersionName} onChange={(event) => setNewVersionName(event.target.value)} placeholder="Ej. Acústica, Jóvenes, Domingo" className="min-w-0 flex-1 rounded-xl border border-white bg-white/80 px-3 py-2 text-xs outline-none focus:border-indigo-300 dark:border-white/10 dark:bg-slate-950/60 lg:w-64" /><button type="button" onClick={() => void createArrangement()} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white"><Copy size={13} /> Crear desde actual</button></div></div>
+                <div className="mt-4 flex gap-2 overflow-x-auto pb-1"><button type="button" onClick={loadOriginalArrangement} className={`min-w-36 rounded-xl border px-3 py-2 text-left ${activeArrangementId === null ? 'border-indigo-300 bg-white text-indigo-700 shadow-sm dark:bg-white/10 dark:text-indigo-300' : 'border-white bg-white/50 text-slate-500 dark:border-white/10 dark:bg-white/5'}`}><span className="block text-[9px] font-black uppercase tracking-wider">Principal</span><strong className="text-xs">Versión original</strong></button>{arrangements.map((version) => <div key={version.id} className={`flex min-w-52 items-center rounded-xl border pr-1 ${activeArrangementId === version.id ? 'border-indigo-300 bg-white shadow-sm dark:bg-white/10' : 'border-white bg-white/50 dark:border-white/10 dark:bg-white/5'}`}><button type="button" onClick={() => loadArrangement(version)} className="min-w-0 flex-1 px-3 py-2 text-left"><span className="block text-[9px] font-black uppercase tracking-wider text-indigo-500">{version.original_key || 'Sin tono'} · {version.bpm || '—'} BPM {version.is_default ? '· Predeterminada' : ''}</span><strong className="block truncate text-xs text-slate-700 dark:text-slate-200">{version.name}</strong></button><button type="button" onClick={() => void makeDefaultArrangement(version)} className={`rounded-lg p-2 ${version.is_default ? 'text-amber-500' : 'text-slate-300 hover:bg-amber-50 hover:text-amber-500 dark:hover:bg-amber-400/10'}`} aria-label={`Marcar ${version.name} como predeterminada`} title="Usar por defecto"><Star size={13} fill={version.is_default ? 'currentColor' : 'none'} /></button><button type="button" onClick={() => void deleteArrangement(version)} className="rounded-lg p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-400/10" aria-label={`Eliminar versión ${version.name}`}><Trash2 size={13} /></button></div>)}</div>
+                {activeArrangementId && <p className="mt-3 rounded-xl bg-indigo-100/70 px-3 py-2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300">Estás editando una versión. “Actualizar” guardará solamente esta versión y no sobrescribirá la canción principal.</p>}
+              </section>}
+
               {/* Row 2: BPM + Type + Style + Has Chords + Drum Style */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
@@ -1215,7 +1372,7 @@ const SongsManager = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 cursor-pointer transition-colors shadow-md">
-                  {editingSong ? 'Actualizar Canción' : 'Guardar Canción'}
+                  {activeArrangementId ? 'Actualizar versión' : editingSong ? 'Actualizar Canción' : 'Guardar Canción'}
                 </button>
               </div>
             </form>

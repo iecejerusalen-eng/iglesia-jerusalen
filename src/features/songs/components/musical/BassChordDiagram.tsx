@@ -1,4 +1,5 @@
 import { parseChord } from '../../utils/musicEngine';
+import { Chord } from '@tonaljs/tonal';
 
 interface BassChordDiagramProps {
   chord: string;
@@ -27,7 +28,7 @@ export function BassChordDiagram({ chord, width = 190, height = 105, className =
   }
 
   const root = pitchIndex(parsed.root);
-  const fifth = (root + 7) % 12;
+  const chordPitches = new Set(Chord.get(chord).notes.map(pitchIndex).filter((pitch) => pitch >= 0));
   const left = 24;
   const top = 12;
   const fretCount = 7;
@@ -47,13 +48,13 @@ export function BassChordDiagram({ chord, width = 190, height = 105, className =
               {Array.from({ length: fretCount }, (_, fretIndex) => {
                 const fret = fretIndex + 1;
                 const note = (string.pitch + fret) % 12;
-                if (note !== root && note !== fifth) return null;
+                if (!chordPitches.has(note)) return null;
                 const x = left + (fretIndex + 0.5) * fretWidth;
                 const isRoot = note === root;
                 return (
                   <g key={`${string.label}-${fret}`}>
                     <circle cx={x} cy={y} r={6.5} className={isRoot ? 'fill-amber-500' : 'fill-sky-500'} />
-                    <text x={x} y={y + 3} textAnchor="middle" className="fill-white text-[7px] font-black">{isRoot ? 'R' : '5'}</text>
+                    <text x={x} y={y + 3} textAnchor="middle" className="fill-white text-[7px] font-black">{isRoot ? 'R' : PITCHES[note].replace('#', '♯')}</text>
                   </g>
                 );
               })}
@@ -69,7 +70,7 @@ export function BassChordDiagram({ chord, width = 190, height = 105, className =
       </svg>
       <div className="flex justify-center gap-3 text-[9px] font-bold uppercase tracking-wide text-slate-500">
         <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />Raíz</span>
-        <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500" />Quinta</span>
+        <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500" />Notas del acorde</span>
       </div>
     </div>
   );

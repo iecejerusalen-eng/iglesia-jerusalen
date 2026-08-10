@@ -95,17 +95,36 @@ const suffixMap: Record<string, string> = {
 const formatKeyForDb = (key: string): string => {
   const map: Record<string, string> = {
     'C#': 'Csharp',
-    'D#': 'Dsharp',
+    'Db': 'Csharp',
+    'D#': 'Eb',
     'F#': 'Fsharp',
-    'G#': 'Gsharp',
-    'A#': 'Asharp',
-    // Db, Eb, Gb, Ab, Bb are just Db, Eb etc in chords-db ? 
-    // Wait, let's just replace # with sharp
+    'Gb': 'Fsharp',
+    'G#': 'Ab',
+    'A#': 'Bb',
   };
   return map[key] || key;
 };
 
-export const getChordData = (chordName: string, instrument: InstrumentType): ResolvedChordData | null => {
+function resolveDatabaseEntry(chordName: string, instrument: 'guitarra' | 'electrica' | 'ukelele'): ChordDatabaseEntry | null {
+  const parsed = Chord.get(chordName);
+  if (parsed.empty) return null;
+  const db = (instrument === 'ukelele' ? ukuleleDb : guitarDb) as ChordDatabase;
+  const rootKey = formatKeyForDb(parsed.tonic || '');
+  const keyData = db.chords[rootKey];
+  if (!keyData) return null;
+  const mappedSuffix = parsed.aliases.map((alias) => suffixMap[alias]).find(Boolean)
+    || suffixMap[parsed.type]
+    || (parsed.quality === 'Minor' ? 'minor' : 'major');
+  return keyData.find((candidate) => candidate.suffix === mappedSuffix) ?? null;
+}
+
+export function getChordVariationCount(chordName: string, instrument: InstrumentType): number {
+  if (instrument === 'piano' || instrument === 'bajo') return 1;
+  if (instrument === 'ninguno') return 0;
+  return resolveDatabaseEntry(chordName, instrument)?.positions.length ?? 0;
+}
+
+export const getChordData = (chordName: string, instrument: InstrumentType, variation = 0): ResolvedChordData | null => {
   try {
     const parsed = Chord.get(chordName);
     if (parsed.empty) return null;
@@ -118,19 +137,10 @@ export const getChordData = (chordName: string, instrument: InstrumentType): Res
     }
 
     if (instrument === 'guitarra' || instrument === 'electrica' || instrument === 'ukelele') {
-      const db = (instrument === 'ukelele' ? ukuleleDb : guitarDb) as ChordDatabase;
-      
-      const rootKey = formatKeyForDb(parsed.tonic || '');
-      const mappedSuffix = suffixMap[parsed.aliases[0] || ''] || suffixMap[parsed.type] || 'major';
-
-      const keyData = db.chords[rootKey];
-      if (!keyData) return null;
-
-      const chordVariations = keyData.find((candidate) => candidate.suffix === mappedSuffix);
+      const chordVariations = resolveDatabaseEntry(chordName, instrument);
       
       if (chordVariations && chordVariations.positions.length > 0) {
-        // Return the first position (simplest)
-        const pos = chordVariations.positions[0];
+        const pos = chordVariations.positions[Math.abs(variation) % chordVariations.positions.length];
         
         // svGuitar expects fingers in a specific format for rendering
         // pos.frets: array of frets [E, A, D, G, B, e]

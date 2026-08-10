@@ -18,6 +18,7 @@ import { initLocalDatabase } from './config/localDb';
 import { usePluginStore } from './store/usePluginStore';
 
 import GlobalContextMenu from './components/common/GlobalContextMenu';
+import GlobalMusicTools from './components/common/GlobalMusicTools';
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -44,8 +45,10 @@ export default function App() {
           .limit(1)
           .maybeSingle();
 
-        // Table may not exist yet — silently skip without logging to console
-        if (error) return;
+        if (error) {
+          console.warn('No fue posible cargar el favicon desde church_settings.', error);
+          return;
+        }
 
         if (data?.logo_url) {
           let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
@@ -56,8 +59,8 @@ export default function App() {
           }
           link.href = data.logo_url;
         }
-      } catch {
-        // Silently ignore — church_settings table may not exist in this deployment
+      } catch (error) {
+        console.warn('Falló la actualización dinámica del favicon.', error);
       }
     };
 
@@ -109,6 +112,7 @@ export default function App() {
               <BirthdayCelebrationModal />
             </Suspense>
             <AppRouter />
+            <GlobalMusicTools />
           </GlobalContextMenu>
         </BrowserRouter>
       </GlobalErrorBoundary>

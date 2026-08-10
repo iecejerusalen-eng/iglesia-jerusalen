@@ -44,7 +44,7 @@ export function PianoChordDiagram({
             y={0}
             width={keyWidth}
             height={height}
-            className={`stroke-border ${isActive ? 'fill-primary' : 'fill-background'}`}
+            className={isActive ? 'fill-amber-400 stroke-amber-600' : 'fill-white stroke-slate-300'}
             strokeWidth={1}
             rx={2}
           />
@@ -73,7 +73,7 @@ export function PianoChordDiagram({
             y={0}
             width={blackKeyWidth}
             height={blackKeyHeight}
-            className={`stroke-border ${isActive ? 'fill-primary' : 'fill-foreground'}`}
+            className={isActive ? 'fill-orange-500 stroke-orange-700' : 'fill-slate-900 stroke-slate-950'}
             strokeWidth={1}
             rx={2}
           />
@@ -85,7 +85,7 @@ export function PianoChordDiagram({
 
   return (
     <div className={`piano-chord-diagram flex flex-col items-center gap-2 ${className}`}>
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="max-w-full drop-shadow-sm" role="img" aria-label={`Teclado para ${notes.join(', ')}`}>
         <g>{renderWhiteKeys()}</g>
         <g>{renderBlackKeys()}</g>
       </svg>

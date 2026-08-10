@@ -39,6 +39,7 @@
     "@tonaljs/tonal": "^4.10.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",
+    "@vercel/analytics": "^2.0.1",
     "abcjs": "^6.7.0",
     "animate.css": "^4.1.1",
     "animejs": "^3.2.2",

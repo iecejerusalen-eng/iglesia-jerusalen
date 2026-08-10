@@ -9,7 +9,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      gcTime: 1000 * 60 * 60 * 24, // 24 horas de retención en memoria
       refetchOnWindowFocus: false,
     },
   },
@@ -21,10 +22,13 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+import { Analytics } from "@vercel/analytics/react";
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <Analytics />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>,

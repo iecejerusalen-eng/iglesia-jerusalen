@@ -473,7 +473,11 @@ export type SongBlockType =
   | 'sheet_music' 
   | 'tablature' 
   | 'media_embed' 
-  | 'musician_note';
+  | 'musician_note'
+  | 'rich_text'
+  | 'poll'
+  | 'question'
+  | 'link_collection';
 
 export interface BaseSongBlock {
   id: string;
@@ -511,6 +515,7 @@ export interface TablatureSongBlock extends BaseSongBlock {
   type: 'tablature';
   title?: string;
   tuning?: string;
+  instrument?: 'guitar' | 'bass' | 'ukulele' | 'drums';
   content: string;
 }
 
@@ -523,8 +528,35 @@ export interface MediaEmbedSongBlock extends BaseSongBlock {
 
 export interface MusicianNoteSongBlock extends BaseSongBlock {
   type: 'musician_note';
-  target_instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz';
+  target_instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Guitarra eléctrica' | 'Bajo' | 'Ukelele' | 'Voz' | 'Vientos' | 'Sonido';
   content: string;
+}
+
+export interface RichTextSongBlock extends BaseSongBlock {
+  type: 'rich_text';
+  title?: string;
+  content: string;
+  audience?: 'public' | 'team';
+}
+
+export interface PollSongBlock extends BaseSongBlock {
+  type: 'poll';
+  question: string;
+  options: string[];
+  allow_multiple?: boolean;
+}
+
+export interface QuestionSongBlock extends BaseSongBlock {
+  type: 'question';
+  question: string;
+  helper_text?: string;
+  answer_type: 'short' | 'long' | 'yes_no';
+}
+
+export interface LinkCollectionSongBlock extends BaseSongBlock {
+  type: 'link_collection';
+  title?: string;
+  links: Array<{ id: string; label: string; url: string; description?: string }>;
 }
 
 export type SongStructureBlock = 
@@ -533,7 +565,31 @@ export type SongStructureBlock =
   | SheetMusicSongBlock 
   | TablatureSongBlock 
   | MediaEmbedSongBlock 
-  | MusicianNoteSongBlock;
+  | MusicianNoteSongBlock
+  | RichTextSongBlock
+  | PollSongBlock
+  | QuestionSongBlock
+  | LinkCollectionSongBlock;
+
+export interface SongArrangement {
+  id: string;
+  song_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  is_default: boolean;
+  status: SongStatus;
+  original_key: string | null;
+  preferred_accidentals: AccidentalPreference;
+  capo: number;
+  bpm: number | null;
+  time_signature: string;
+  lyrics: string;
+  structure_blocks: SongStructureBlock[];
+  resource_links: SongResourceLink[];
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Song {
   id: string;
@@ -562,6 +618,7 @@ export interface Song {
   updated_at?: string | null;
   updated_by?: string | null;
   document_version?: number | null;
+  song_arrangements?: SongArrangement[];
   created_at: string;
   song_types?: SongType | null;
   song_styles?: SongStyle | null;

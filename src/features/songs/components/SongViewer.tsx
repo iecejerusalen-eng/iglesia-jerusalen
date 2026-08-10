@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import DOMPurify from 'dompurify';
 import {
   ArrowDownToLine,
+  ArrowUpToLine,
   BookOpenText,
   Check,
   ChevronDown,
@@ -16,6 +17,7 @@ import {
   Headphones,
   KeyboardMusic,
   Link2,
+  ListMusic,
   Maximize2,
   Minimize2,
   Minus,
@@ -27,17 +29,14 @@ import {
   Settings2,
   Share2,
   SlidersHorizontal,
+  Send,
   Sparkles,
-  Square,
   Type,
-  Volume2,
-  VolumeX,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AccidentalPreference, Song, SongStructureBlock } from '../../../types';
 import { exportSongToPdf } from '../utils/songPdfExport';
-import { useMetronome } from '../hooks/useMetronome';
 import {
   extractChords,
   generateHarmonyScoreAbc,
@@ -50,6 +49,8 @@ import { bracketTextToHtml, getOriginalKey, htmlToBracketText } from '../utils/s
 import type { InstrumentType } from '../utils/chordDictionary';
 import { InstrumentChordCard } from './musical/InstrumentChordCard';
 import { SheetMusicViewer } from './musical/SheetMusicViewer';
+import { useMusicToolsStore } from '../../../store/useMusicToolsStore';
+import RichTextRenderer from '../../../components/common/RichTextRenderer';
 
 type ViewerMode = 'lyrics' | 'lyrics-chords' | 'chords' | 'diagrams' | 'score';
 
@@ -125,7 +126,7 @@ function manualScores(blocks: SongStructureBlock[] | null | undefined) {
 }
 
 export const SongViewer = ({
-  selectedSong,
+  selectedSong: rootSong,
   setSelectedSong,
   showChords,
   setShowChords,
@@ -135,17 +136,36 @@ export const SongViewer = ({
   setActiveTab,
   onClose,
 }: SongViewerProps) => {
+  const [arrangementId, setArrangementId] = useState(() => rootSong.song_arrangements?.find((version) => version.is_default)?.id ?? 'original');
+  const selectedSong = useMemo<Song>(() => {
+    const arrangement = rootSong.song_arrangements?.find((version) => version.id === arrangementId);
+    if (!arrangement) return rootSong;
+    return {
+      ...rootSong,
+      lyrics: arrangement.lyrics,
+      structure_blocks: arrangement.structure_blocks,
+      resource_links: arrangement.resource_links,
+      original_key: arrangement.original_key,
+      preferred_accidentals: arrangement.preferred_accidentals,
+      capo: arrangement.capo,
+      bpm: arrangement.bpm,
+      time_signature: arrangement.time_signature,
+    };
+  }, [arrangementId, rootSong]);
   const [initialPreferences] = useState(readPreferences);
   const [mode, setMode] = useState<ViewerMode>(showChords ? initialPreferences.mode : 'lyrics');
   const [instrument, setInstrument] = useState<InstrumentType>(initialPreferences.instrument);
   const [fontSize, setFontSize] = useState(initialPreferences.fontSize);
   const [accidentalPreference, setAccidentalPreference] = useState<AccidentalPreference>(initialPreferences.accidentalPreference);
   const [transposeAmount, setTransposeAmount] = useState(0);
+  const [capo, setCapo] = useState(selectedSong.capo ?? 0);
   const [nashvilleMode, setNashvilleMode] = useState(false);
-  const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState(28);
+  const [autoScrollActive, setAutoScrollActive] = useState(false);
+  const [autoScrollProgress, setAutoScrollProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTools, setShowTools] = useState(true);
-  const [countIn, setCountIn] = useState(false);
+  const [resourceAnswers, setResourceAnswers] = useState<Record<string, string[]>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -156,13 +176,15 @@ export const SongViewer = ({
     [selectedSong],
   );
   const originalKey = selectedSong.original_key ?? getOriginalKey(sourceText);
+  const usesCapoShapes = instrument === 'guitarra' || instrument === 'electrica' || instrument === 'ukelele';
+  const chordTransposeAmount = nashvilleMode ? transposeAmount : transposeAmount - (usesCapoShapes ? capo : 0);
   const currentKey = originalKey
     ? transposeNote(originalKey, transposeAmount, accidentalPreference, originalKey)
     : null;
   const displayedChords = useMemo(() => {
     const unique = [...new Set(extractChords(sourceText))];
-    return unique.map((chord) => transposeChord(chord, transposeAmount, accidentalPreference, originalKey));
-  }, [accidentalPreference, originalKey, sourceText, transposeAmount]);
+    return unique.map((chord) => transposeChord(chord, chordTransposeAmount, accidentalPreference, originalKey));
+  }, [accidentalPreference, chordTransposeAmount, originalKey, sourceText]);
   const generatedScore = useMemo(() => generateHarmonyScoreAbc({
     title: selectedSong.title,
     artist: selectedSong.artist,
@@ -175,7 +197,7 @@ export const SongViewer = ({
   }), [accidentalPreference, originalKey, selectedSong, sourceText, transposeAmount]);
   const scores = useMemo(() => manualScores(selectedSong.structure_blocks), [selectedSong.structure_blocks]);
   const structuredLyrics = useMemo(() => lyricsBlocks(selectedSong), [selectedSong]);
-  const { isPlaying, isMuted, currentBeat, togglePlay, toggleMute } = useMetronome(selectedSong.bpm);
+  const musicTools = useMusicToolsStore();
 
   const close = () => {
     if (onClose) onClose();
@@ -195,16 +217,19 @@ export const SongViewer = ({
   }, [mode, setShowChords]);
 
   useEffect(() => {
-    if (!autoScrollSpeed) {
+    if (!autoScrollActive) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       lastFrameRef.current = null;
       return;
     }
-    const pixelsPerSecond = [0, 8, 14, 22, 32, 46][autoScrollSpeed] ?? 14;
+    const pixelsPerSecond = 4 + autoScrollSpeed * 0.72;
     const animate = (time: number) => {
       if (lastFrameRef.current !== null && scrollRef.current) {
         scrollRef.current.scrollTop += ((time - lastFrameRef.current) / 1000) * pixelsPerSecond;
+        const maxScroll = scrollRef.current.scrollHeight - scrollRef.current.clientHeight;
+        setAutoScrollProgress(maxScroll > 0 ? Math.min(100, (scrollRef.current.scrollTop / maxScroll) * 100) : 100);
+        if (maxScroll > 0 && scrollRef.current.scrollTop >= maxScroll - 1) setAutoScrollActive(false);
       }
       lastFrameRef.current = time;
       rafRef.current = requestAnimationFrame(animate);
@@ -213,7 +238,7 @@ export const SongViewer = ({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [autoScrollSpeed]);
+  }, [autoScrollActive, autoScrollSpeed]);
 
   useEffect(() => {
     const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -227,7 +252,7 @@ export const SongViewer = ({
       if (event.key === 'Escape') close();
       if (event.key === ' ') {
         event.preventDefault();
-        setAutoScrollSpeed((speed) => speed ? 0 : 2);
+        setAutoScrollActive((active) => !active);
       }
       if (event.key === 'ArrowUp' && event.shiftKey) setTransposeAmount((value) => value + 1);
       if (event.key === 'ArrowDown' && event.shiftKey) setTransposeAmount((value) => value - 1);
@@ -287,7 +312,7 @@ export const SongViewer = ({
     const renderText = (text: string) => (
       <div
         className={`song-workspace-lyrics ${withChords ? '' : 'song-workspace-hide-chords'}`}
-        dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, transposeAmount, nashvilleMode, originalKey) }}
+        dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, chordTransposeAmount, nashvilleMode, originalKey) }}
       />
     );
     if (!structuredLyrics.length) return renderText(legacyText(selectedSong));
@@ -309,7 +334,7 @@ export const SongViewer = ({
       <div className="grid gap-4 md:grid-cols-2">
         {blocks.map((block) => {
           const chords = extractChords(block.lyrics).map((chord) => {
-            const transposed = transposeChord(chord, transposeAmount, accidentalPreference, originalKey);
+            const transposed = transposeChord(chord, chordTransposeAmount, accidentalPreference, originalKey);
             return nashvilleMode ? transposeBracketText(`[${chord}]`, transposeAmount, { nashville: true, key: originalKey, preference: accidentalPreference }).slice(1, -1) : transposed;
           });
           if (!chords.length) return null;
@@ -349,16 +374,23 @@ export const SongViewer = ({
 
   const renderResources = () => {
     const links = (selectedSong.resource_links ?? []).filter((link) => (link.visibility ?? 'public') === 'public');
-    const notes = (selectedSong.structure_blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'musician_note' }> => block.type === 'musician_note');
-    if (!links.length && !notes.length) return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Esta canción todavía no tiene tutoriales o notas para músicos." />;
+    const blocks = (selectedSong.structure_blocks ?? []).filter((block) => block.type !== 'lyrics' && block.type !== 'sheet_music' && block.type !== 'chord_diagram');
+    if (!links.length && !blocks.length) return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Agrega texto, enlaces, notas por instrumento, preguntas, encuestas o tablaturas desde el editor por bloques." />;
     return (
       <div className="grid gap-4 md:grid-cols-2">
-        {notes.map((note) => (
-          <article key={note.id} className="song-section-glass">
-            <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {note.target_instrument}</span>
-            <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-200">{note.content}</p>
-          </article>
-        ))}
+        {blocks.map((block) => {
+          if (block.type === 'musician_note') return <article key={block.id} className="song-section-glass border-l-4 border-l-indigo-400"><span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {block.target_instrument}</span><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{block.content}</p></article>;
+          if (block.type === 'rich_text' && (block.audience ?? 'public') === 'public') return <article key={block.id} className="song-section-glass md:col-span-2">{block.title && <h3 className="mb-3 font-serif text-xl font-black text-slate-900 dark:text-white">{block.title}</h3>}<RichTextRenderer html={DOMPurify.sanitize(block.content)} className="text-sm leading-7 text-slate-700 dark:text-slate-200" /></article>;
+          if (block.type === 'tablature') return <article key={block.id} className="song-section-glass md:col-span-2"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><span className="text-[10px] font-black uppercase tracking-wider text-cyan-600">{block.instrument === 'drums' ? 'Drum tab' : `${block.instrument ?? 'guitar'} tab`}</span><h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Tablatura'}</h3></div>{block.tuning && <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500 dark:bg-white/10">Afinación {block.tuning}</span>}</div><div className="overflow-x-auto rounded-xl bg-slate-950 p-4"><pre className="min-w-max font-mono text-xs leading-6 text-emerald-300">{block.content}</pre></div></article>;
+          if (block.type === 'media_embed') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-rose-500">Media de ensayo</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.title || 'Referencia multimedia'}</h3><a href={block.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"><Play size={14} /> Abrir recurso</a></article>;
+          if (block.type === 'poll') {
+            const selected = resourceAnswers[block.id] ?? [];
+            return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-fuchsia-500">Encuesta de preparación</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3><div className="mt-4 space-y-2">{block.options.map((option) => <button key={option} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: block.allow_multiple ? selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] : [option] }))} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-semibold ${selected.includes(option) ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-300' : 'border-slate-200 dark:border-white/10'}`}><span className={`h-3 w-3 rounded-full border ${selected.includes(option) ? 'border-fuchsia-500 bg-fuchsia-500' : 'border-slate-300'}`} />{option}</button>)}</div><p className="mt-3 text-[9px] text-slate-400">Respuesta guardada sólo durante esta sesión de preparación.</p></article>;
+          }
+          if (block.type === 'question') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-blue-500">Pregunta</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3>{block.helper_text && <p className="mt-1 text-xs text-slate-500">{block.helper_text}</p>}{block.answer_type === 'yes_no' ? <div className="mt-4 grid grid-cols-2 gap-2">{['Sí', 'No'].map((value) => <button key={value} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: [value] }))} className={`rounded-xl border px-3 py-2 text-xs font-bold ${(resourceAnswers[block.id] ?? []).includes(value) ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 dark:border-white/10'}`}>{value}</button>)}</div> : block.answer_type === 'long' ? <textarea onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" rows={4} placeholder="Escribe una respuesta para el ensayo…" /> : <input onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" placeholder="Respuesta" />}</article>;
+          if (block.type === 'link_collection') return <article key={block.id} className="song-section-glass"><h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Enlaces'}</h3><div className="mt-3 space-y-2">{block.links.map((link) => <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-slate-200 p-3 transition hover:border-amber-300 dark:border-white/10"><span className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">{link.label}<Link2 size={13} /></span>{link.description && <p className="mt-1 text-[11px] text-slate-500">{link.description}</p>}</a>)}</div></article>;
+          return null;
+        })}
         {links.map((link) => (
           <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="song-section-glass group block transition hover:-translate-y-0.5 hover:border-amber-300">
             <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-amber-600">{link.instrument}</span><Link2 size={15} className="text-slate-400 group-hover:text-amber-500" /></div>
@@ -386,6 +418,12 @@ export const SongViewer = ({
                 {INSTRUMENTS.map((item) => <ModeButton key={item.id} active={instrument === item.id} label={item.label} icon={item.icon} onClick={() => setInstrument(item.id)} />)}
               </div>
             </ToolSection>
+            {usesCapoShapes && <ToolSection title="Capo y posiciones" icon={Guitar}>
+              <div className="rounded-2xl border border-white/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center gap-2"><button onClick={() => setCapo((value) => Math.max(0, value - 1))} className="tool-icon-button" aria-label="Bajar capo"><Minus size={14} /></button><div className="flex-1 text-center"><span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">Traste</span><strong className="text-lg text-amber-700 dark:text-amber-300">{capo || 'Sin capo'}</strong></div><button onClick={() => setCapo((value) => Math.min(12, value + 1))} className="tool-icon-button" aria-label="Subir capo"><Plus size={14} /></button></div>
+                {capo > 0 && <p className="mt-2 text-center text-[10px] leading-4 text-slate-500">Suena en {currentKey}; muestra las formas que debes tocar con capo.</p>}
+              </div>
+            </ToolSection>}
             <ToolSection title="Lectura" icon={Type}>
               <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/70 p-2 dark:border-white/10 dark:bg-white/5">
                 <button onClick={() => setFontSize((value) => Math.max(70, value - 10))} className="tool-icon-button" aria-label="Reducir texto"><Minus size={15} /></button>
@@ -414,6 +452,7 @@ export const SongViewer = ({
                 </div>
                 <h2 id="song-viewer-title" className="mt-1 truncate font-serif text-xl font-black text-slate-950 dark:text-white sm:text-2xl">{selectedSong.title}</h2>
                 {selectedSong.artist && <p className="mt-0.5 truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{selectedSong.artist}</p>}
+                {(rootSong.song_arrangements?.length ?? 0) > 0 && <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-amber-200/60 bg-amber-50/70 px-2 py-1 text-[10px] font-black text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200"><ListMusic size={12} /> Versión<select value={arrangementId} onChange={(event) => { const nextId = event.target.value; const version = rootSong.song_arrangements?.find((item) => item.id === nextId); setCapo(version?.capo ?? rootSong.capo ?? 0); setTransposeAmount(0); setArrangementId(nextId); }} className="bg-transparent outline-none"><option value="original">Original</option>{rootSong.song_arrangements?.map((version) => <option key={version.id} value={version.id} className="text-slate-900">{version.name}</option>)}</select></label>}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button onClick={() => setShowTools((value) => !value)} className="header-icon-button hidden lg:grid" aria-label="Mostrar u ocultar herramientas"><Settings2 size={17} /></button>
@@ -432,13 +471,9 @@ export const SongViewer = ({
                 </button>
                 <button onClick={() => setTransposeAmount((value) => value + 1)} className="transpose-button" aria-label="Subir semitono"><Plus size={14} /></button>
               </div>
-              {selectedSong.capo ? <span className="toolbar-chip">Capo {selectedSong.capo}</span> : null}
-              <div className="flex shrink-0 items-center rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5">
-                <button onClick={() => { setCountIn(true); togglePlay(); window.setTimeout(() => setCountIn(false), Math.max(1000, (60000 / (selectedSong.bpm || 80)) * 4)); }} className="transpose-button" aria-label={isPlaying ? 'Pausar metrónomo' : 'Iniciar metrónomo'}>{isPlaying ? <Square size={13} /> : <Play size={13} />}</button>
-                <div className="mx-1 flex gap-1" aria-label={countIn ? 'Cuenta de entrada' : 'Pulso'}>{[1, 2, 3, 4].map((beat) => <span key={beat} className={`h-1.5 w-1.5 rounded-full ${isPlaying && currentBeat === beat ? beat === 1 ? 'bg-rose-500' : 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />)}</div>
-                <button onClick={toggleMute} className="transpose-button" aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}>{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
-              </div>
-              <div className="flex shrink-0 items-center rounded-2xl border border-white/70 bg-white/75 p-1 dark:border-white/10 dark:bg-white/5"><ArrowDownToLine size={14} className="mx-2 text-slate-400" />{[0, 1, 2, 3, 4, 5].map((speed) => <button key={speed} onClick={() => setAutoScrollSpeed(speed)} className={`grid h-7 w-7 place-items-center rounded-lg text-[9px] font-black ${autoScrollSpeed === speed ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300' : 'text-slate-400'}`}>{speed === 0 ? <Pause size={11} /> : speed}</button>)}</div>
+              {capo && usesCapoShapes ? <span className="toolbar-chip">Capo {capo} · forma {transposeNote(originalKey || 'C', chordTransposeAmount, accidentalPreference, originalKey)}</span> : null}
+              {selectedSong.bpm ? <button onClick={() => { musicTools.loadSongTempo(selectedSong.bpm ?? 80, selectedSong.time_signature, selectedSong.title); toast.success(`${selectedSong.bpm} BPM enviados al metrónomo`); }} className="toolbar-chip border-amber-200/70 text-amber-700 dark:text-amber-300"><Send size={13} /> Mandar {selectedSong.bpm} BPM</button> : <button onClick={() => musicTools.open('metronome')} className="toolbar-chip"><Music2 size={13} /> Metrónomo</button>}
+              <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5"><button onClick={() => setAutoScrollActive((active) => !active)} className={`transpose-button ${autoScrollActive ? 'bg-indigo-100 text-indigo-700' : ''}`} aria-label={autoScrollActive ? 'Pausar autoscroll' : 'Iniciar autoscroll'}>{autoScrollActive ? <Pause size={13} /> : <ArrowDownToLine size={14} />}</button><input type="range" min="5" max="100" value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(Number(event.target.value))} className="w-20 accent-indigo-500" aria-label="Velocidad del autoscroll" /><span className="w-7 text-[9px] font-black text-slate-400">{Math.round(autoScrollProgress)}%</span><button onClick={() => { if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }); setAutoScrollProgress(0); }} className="transpose-button" aria-label="Volver arriba"><ArrowUpToLine size={13} /></button></div>
               <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
               <button onClick={() => void copyText(false)} className="toolbar-chip"><Copy size={13} /> Copiar</button>
             </div>
