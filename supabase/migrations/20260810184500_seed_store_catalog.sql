@@ -1,6 +1,7 @@
 -- Catálogo inicial de la Tienda Jerusalén.
 -- Idempotente: identifica los productos por SKU y reemplaza únicamente sus variantes seed.
-DO DECLARE
+DO $$
+DECLARE
   v_product_id UUID;
 BEGIN
   -- 1. Camiseta oficial
