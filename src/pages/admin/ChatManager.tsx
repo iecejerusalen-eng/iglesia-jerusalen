@@ -9,6 +9,7 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import type { Message } from '../../types';
 import { useChats, useChatMessages, useChatContacts, useChatMutations, useChatRetentionDays, useChatRealtime } from '../../features/chat/hooks';
+import { calculateAge, MAX_BROADCAST_RECIPIENTS, MAX_CHAT_MESSAGE_LENGTH } from '../../features/chat/chatRules';
 import {
   Search,
   Send,
@@ -20,10 +21,16 @@ import {
   X,
   ChevronLeft,
   Loader2,
-  CheckCheck,
+  Check,
   Copy,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  AlertCircle,
+  RefreshCw,
+  Clock3,
+  Wifi,
+  WifiOff,
+  LockKeyhole
 } from 'lucide-react';
 
 
@@ -80,17 +87,22 @@ const getRoleLabel = (role: string) => {
   }
 };
 
-const calculateAge = (birthDateStr: string | null) => {
-  if (!birthDateStr) return 0;
-  const birthDate = new Date(birthDateStr);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
+function InlineError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="m-4 rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-rose-900 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-100">
+      <div className="flex items-start gap-3">
+        <AlertCircle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">No pudimos cargar esta información</p>
+          <p className="mt-1 break-words text-xs opacity-80">{message}</p>
+          <button type="button" onClick={onRetry} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-3 text-xs font-semibold text-white hover:bg-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
+            <RefreshCw size={14} aria-hidden="true" /> Reintentar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatManager() {
   const { user, role, roles, memberId } = useAuthStore();
@@ -101,14 +113,14 @@ export default function ChatManager() {
   const confirm = useConfirmStore((state) => state.confirm);
   const { activeChat, setActiveChat } = useChatStore();
   
-  const { data: chats = [], isLoading: loadingChats } = useChats();
-  const { data: contactsData, isLoading: loadingContacts } = useChatContacts();
+  const { data: chats = [], isLoading: loadingChats, error: chatsError, refetch: refetchChats } = useChats();
+  const { data: contactsData, isLoading: loadingContacts, error: contactsError, refetch: refetchContacts } = useChatContacts();
   const { contacts = [], members = [], ministries = [] } = contactsData || {};
-  const { data: messages = [], isLoading: loadingMessages } = useChatMessages(activeChat?.id);
-  const { data: retentionDays = 7 } = useChatRetentionDays();
-  const { sendMessage, startChatWith, sendBroadcast, deleteMessage, deleteChat } = useChatMutations();
+  const { data: messages = [], isLoading: loadingMessages, error: messagesError, refetch: refetchMessages } = useChatMessages(activeChat?.id);
+  const { data: retentionDays, error: retentionError } = useChatRetentionDays();
+  const { sendMessage, startChatWith, sendBroadcast, deleteMessage, leaveChat } = useChatMutations();
   
-  useChatRealtime(activeChat?.id || null);
+  const realtimeStatus = useChatRealtime(activeChat?.id || null);
 
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,10 +134,11 @@ export default function ChatManager() {
     if (!highlight.trim()) return <span>{text}</span>;
     const regex = new RegExp(`(${highlight.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
+    const normalizedHighlight = highlight.toLocaleLowerCase('es');
     return (
       <span>
         {parts.map((part, i) =>
-          regex.test(part) ? (
+          part.toLocaleLowerCase('es') === normalizedHighlight ? (
             <mark key={i} className="bg-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 px-0.5 rounded font-semibold">
               {part}
             </mark>
@@ -173,11 +186,29 @@ export default function ChatManager() {
 
   // Handle deleting a message
   const handleDeleteMessage = async (messageId: string) => {
+    const confirmed = await confirm({
+      title: 'Eliminar mensaje',
+      message: 'El mensaje se eliminará para todas las personas de esta conversación y no se puede recuperar.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteMessage.mutateAsync(messageId);
       toast.success('Mensaje eliminado.');
     } catch (err) {
       toast.error('No se pudo eliminar el mensaje: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success('Mensaje copiado.');
+    } catch (error) {
+      console.error('No se pudo copiar el mensaje al portapapeles.', error);
+      toast.error('El navegador no permitió copiar el mensaje.');
     }
   };
 
@@ -210,13 +241,17 @@ export default function ChatManager() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const broadcastCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    // Initial fetch, now handled by useQuery automatically, but can leave refetch if desired.
-    // fetchChats();
-    // fetchContacts();
-    // fetchRetentionDays();
-  }, []);
+    if (!isBroadcastOpen) return;
+    broadcastCloseRef.current?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !sendingBroadcast) setIsBroadcastOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isBroadcastOpen, sendingBroadcast]);
 
   // Scroll to bottom on active chat change or if user is near bottom
   useEffect(() => {
@@ -231,9 +266,12 @@ export default function ChatManager() {
 
     setSendingMessage(true);
     try {
-      await sendMessage.mutateAsync({ chatId: activeChat.id, content: messageInput.trim() });
+      const originalContent = messageInput.trim();
+      const moderatedContent = cleanContent(originalContent).trim();
+      await sendMessage.mutateAsync({ chatId: activeChat.id, content: moderatedContent });
       setMessageInput('');
       setShowEmojiPicker(false);
+      if (moderatedContent !== originalContent) toast.info('El filtro de contenido ajustó el mensaje antes de enviarlo.');
     } catch (err) {
       toast.error('Error al enviar el mensaje: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -261,15 +299,7 @@ export default function ChatManager() {
   const myMinistry = ministries.find((m) => m.id === myMinistryId);
 
   // Check broadcasting capabilities
-  const canBroadcast =
-    userRoles.some(r => ['admin', 'pastor', 'leader', 'editor', 'secretary', 'secretaria', 'maestro', 'docente', 'musico', 'apoyo'].includes(r)) ||
-    hasPermission('chat', 'edit') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('coordinador') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('coordinadora') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('director') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('directora') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('encargado') ||
-    (currentUserMember?.leadership_role || '').toLowerCase().includes('encargada');
+  const canBroadcast = isPrivileged && hasPermission('chat', 'edit');
 
   // Filter available ministries for the coordinator dropdown
   const availableMinistries = (() => {
@@ -316,9 +346,10 @@ export default function ChatManager() {
       return contacts.filter((c) => c.member_id && deptMemberIds.includes(c.member_id));
     } else if (broadcastTarget === 'men_over_30') {
       // Men over 30 in the CRM
-      const menOver30Members = members.filter(
-        (m) => m.gender === 'Masculino' && calculateAge(m.birth_date) >= 30
-      );
+      const menOver30Members = members.filter((m) => {
+        const age = calculateAge(m.birth_date);
+        return m.gender === 'Masculino' && age !== null && age >= 30;
+      });
       const menOver30Ids = menOver30Members.map((m) => m.id);
       return contacts.filter((c) => c.member_id && menOver30Ids.includes(c.member_id));
     } else if (broadcastTarget === 'ladies') {
@@ -328,7 +359,10 @@ export default function ChatManager() {
       return contacts.filter((c) => c.member_id && ladiesIds.includes(c.member_id));
     } else if (broadcastTarget === 'youth') {
       // Youth under 30 in the CRM
-      const youthMembers = members.filter((m) => calculateAge(m.birth_date) < 30);
+      const youthMembers = members.filter((m) => {
+        const age = calculateAge(m.birth_date);
+        return age !== null && age < 30;
+      });
       const youthIds = youthMembers.map((m) => m.id);
       return contacts.filter((c) => c.member_id && youthIds.includes(c.member_id));
     }
@@ -339,22 +373,36 @@ export default function ChatManager() {
 
   const handleSendBroadcast = async () => {
     if (!broadcastContent.trim() || recipientsList.length === 0 || sendingBroadcast) return;
+    if (recipientsList.length > MAX_BROADCAST_RECIPIENTS) {
+      toast.error('Una difusión admite como máximo 100 destinatarios. Elige un segmento más pequeño.');
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: 'Confirmar difusión',
+      message: `Se enviará este mensaje de forma individual a ${recipientsList.length} destinatarios. Si una entrega falla, no se enviará a ninguno.`,
+      confirmText: 'Enviar difusión',
+      cancelText: 'Revisar',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
 
     setSendingBroadcast(true);
     setBroadcastProgress({ sent: 0, total: recipientsList.length });
 
     try {
       const targetIds = recipientsList.map((r) => r.id);
-      await sendBroadcast.mutateAsync({
+      const moderatedBroadcast = cleanContent(broadcastContent.trim()).trim();
+      const result = await sendBroadcast.mutateAsync({
         targetProfileIds: targetIds, 
-        messageContent: broadcastContent.trim(), 
-        ministries, 
+        messageContent: moderatedBroadcast, 
         onProgress: (sent, total) => {
           setBroadcastProgress({ sent, total });
         }
       });
 
-      toast.success('Mensaje de difusión enviado con éxito.');
+      toast.success(`Difusión enviada a ${result.sent} destinatarios.`);
+      if (moderatedBroadcast !== broadcastContent.trim()) toast.info('El filtro de contenido ajustó la difusión antes de enviarla.');
       setIsBroadcastOpen(false);
       setBroadcastContent('');
     } catch (err) {
@@ -366,39 +414,52 @@ export default function ChatManager() {
 
   return (
     <AnimeFadeUp
-      className="space-y-6 h-[calc(100vh-140px)] flex flex-col"
+      className="relative flex h-[calc(100vh-128px)] min-h-[640px] flex-col space-y-4"
     >
-      <div className="flex justify-between items-center shrink-0">
-        <AdminHeader
-          title="Chat en Tiempo Real"
-          description="Mensajería efímera de seguridad y difusiones masivas segmentadas."
-        />
-        {canBroadcast && (
-          <button
-            onClick={() => {
-              // Pre-select user's department or default values
-              setSelectedDeptId(myMinistryId);
-              if (role !== 'admin' && role !== 'pastor' && role !== 'leader') {
-                setBroadcastTarget('department');
-              } else {
-                setBroadcastTarget('all');
-              }
-              setIsBroadcastOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white hover:bg-primary/95 font-semibold text-xs tracking-wider uppercase rounded-xl transition shadow-sm cursor-pointer"
-          >
-            <Megaphone size={14} />
-            Difusión
-          </button>
-        )}
+      <div className="relative shrink-0 overflow-hidden rounded-3xl border border-white/75 bg-white/75 p-4 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-slate-950/65">
+        <div className="absolute -right-10 -top-20 size-56 rounded-full bg-blue-500/10 blur-3xl" aria-hidden="true" />
+        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <AdminHeader
+            title="Mensajería segura"
+            description="Conversaciones privadas, temporales y protegidas por participación."
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/70 px-3 text-xs font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              <LockKeyhole size={14} className="text-blue-600 dark:text-blue-300" aria-hidden="true" /> Solo participantes
+            </span>
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/70 px-3 text-xs font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              <Clock3 size={14} className="text-amber-600 dark:text-amber-300" aria-hidden="true" />
+              {retentionError ? 'Retención no disponible' : `${retentionDays ?? '—'} días`}
+            </span>
+            {activeChat && (
+              <span className={`inline-flex min-h-10 items-center gap-2 rounded-2xl border px-3 text-xs font-semibold ${realtimeStatus === 'connected' ? 'border-emerald-200 bg-emerald-50/80 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300' : realtimeStatus === 'error' ? 'border-rose-200 bg-rose-50/80 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300' : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`}>
+                {realtimeStatus === 'error' ? <WifiOff size={14} aria-hidden="true" /> : <Wifi size={14} aria-hidden="true" />}
+                {realtimeStatus === 'connected' ? 'En tiempo real' : realtimeStatus === 'error' ? 'Reconexión necesaria' : 'Conectando'}
+              </span>
+            )}
+            {canBroadcast && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDeptId(myMinistryId);
+                  setBroadcastTarget('all');
+                  setIsBroadcastOpen(true);
+                }}
+                className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-white dark:text-slate-950"
+              >
+                <Megaphone size={16} aria-hidden="true" /> Nueva difusión
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Main Workspace split screen */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-xs flex flex-1 overflow-hidden min-h-0">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/72 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.55)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/70">
         
         {/* Left Side: Navigation / Contacts / Chats */}
         <div
-          className={`w-full md:w-80 border-r border-gray-150 dark:border-white/10 flex flex-col shrink-0 ${
+          className={`w-full md:w-[22rem] border-r border-slate-200/70 dark:border-white/10 flex flex-col shrink-0 ${
             activeChat ? 'hidden md:flex' : 'flex'
           }`}
         >
@@ -458,7 +519,9 @@ export default function ChatManager() {
           {/* List display */}
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'chats' ? (
-              loadingChats ? (
+              chatsError ? (
+                <InlineError message={chatsError.message} onRetry={() => { void refetchChats(); }} />
+              ) : loadingChats ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
                   <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={20} />
                   <span className="text-xxs text-gray-400">Cargando chats...</span>
@@ -522,23 +585,25 @@ export default function ChatManager() {
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   const confirmed = await confirm({
-                                     title: 'Eliminar conversación',
-                                     message: `¿Estás seguro de que deseas eliminar permanentemente la conversación con "${chatName}"?\n\nTodos los mensajes de este chat se borrarán permanentemente.`,
-                                     confirmText: 'Eliminar',
+                                     title: 'Salir de la conversación',
+                                     message: `La conversación con "${chatName}" dejará de aparecer para ti. Los mensajes no se borrarán para la otra persona.`,
+                                     confirmText: 'Salir',
                                      cancelText: 'Cancelar',
                                      variant: 'danger',
                                    });
                                    if (confirmed) {
                                      try {
-                                       await deleteChat.mutateAsync(chat.id);
-                                       toast.success('Conversación eliminada.');
+                                       await leaveChat.mutateAsync(chat.id);
+                                       if (activeChat?.id === chat.id) setActiveChat(null);
+                                       toast.success('Saliste de la conversación.');
                                      } catch (err) {
-                                       toast.error('No se pudo eliminar la conversación: ' + (err instanceof Error ? err.message : String(err)));
+                                       toast.error('No se pudo salir de la conversación: ' + (err instanceof Error ? err.message : String(err)));
                                      }
                                    }
                                 }}
                                 className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/35 text-gray-300 dark:text-gray-500 hover:text-rose-600 dark:hover:text-rose-450 rounded-lg transition-all ml-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/chat:opacity-100"
-                                title="Eliminar conversación"
+                                title="Salir de la conversación"
+                                aria-label={`Salir de la conversación con ${chatName}`}
                               >
                                 <Trash2 size={12} />
                               </button>
@@ -562,7 +627,9 @@ export default function ChatManager() {
                 </div>
               )
             ) : (
-              loadingContacts ? (
+              contactsError ? (
+                <InlineError message={contactsError.message} onRetry={() => { void refetchContacts(); }} />
+              ) : loadingContacts ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
                   <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={20} />
                   <span className="text-xxs text-gray-400">Cargando contactos...</span>
@@ -662,8 +729,8 @@ export default function ChatManager() {
                             <span className={`px-1.5 py-0 rounded text-[9px] font-bold border ${getRoleBadgeStyle(chatRole)}`}>
                               {getRoleLabel(chatRole)}
                             </span>
-                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                            <span className="text-[10px] text-gray-400">Mensajería efímera</span>
+                            <LockKeyhole size={10} className="text-slate-400" aria-hidden="true" />
+                            <span className="text-[10px] text-gray-400">Conversación privada</span>
                           </div>
                         </div>
                       </>
@@ -676,7 +743,9 @@ export default function ChatManager() {
               <div className="bg-amber-50/60 dark:bg-amber-950/20 backdrop-blur-xs border-b border-amber-100 dark:border-amber-900/30 p-2.5 px-4 flex items-center gap-3 shrink-0 relative z-10">
                 <ShieldAlert className="text-amber-600 dark:text-amber-400 shrink-0" size={16} />
                 <p className="text-[10.5px] font-medium text-amber-800 dark:text-amber-300 leading-normal">
-                  ⚠️ Por motivos de privacidad y almacenamiento, los mensajes de este chat solo contienen texto/emojis y se eliminarán automáticamente después de <strong>{retentionDays} días</strong>.
+                  Solo se admite texto y emojis. {retentionError
+                    ? 'No pudimos verificar ahora el plazo de eliminación automática.'
+                    : <>Los mensajes se eliminarán automáticamente después de <strong>{retentionDays} días</strong>.</>}
                 </p>
               </div>
 
@@ -686,7 +755,9 @@ export default function ChatManager() {
                 onScroll={handleScroll}
                 className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-transparent relative"
               >
-                {loadingMessages ? (
+                {messagesError ? (
+                  <InlineError message={messagesError.message} onRetry={() => { void refetchMessages(); }} />
+                ) : loadingMessages ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-2">
                     <Loader2 className="animate-spin text-primary dark:text-church-gold-bright" size={24} />
                     <span className="text-xs text-gray-500 dark:text-gray-450">Cargando mensajes...</span>
@@ -739,10 +810,7 @@ export default function ChatManager() {
                                 }`}>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(msg.content);
-                                      toast.success('Mensaje copiado al portapapeles.');
-                                    }}
+                                    onClick={() => { void handleCopyMessage(msg.content); }}
                                     className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-gray-400 hover:text-slate-600 dark:hover:text-gray-200 transition cursor-pointer"
                                     title="Copiar texto"
                                   >
@@ -768,7 +836,7 @@ export default function ChatManager() {
                                 <span>
                                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                {isMe && <CheckCheck size={10} className="text-primary/70 dark:text-church-gold-bright/70" />}
+                                {isMe && <Check size={10} aria-label="Enviado" className="text-primary/70 dark:text-church-gold-bright/70" />}
                               </div>
                             </div>
                           );
@@ -835,19 +903,27 @@ export default function ChatManager() {
 
                 {/* Form input */}
                 <form onSubmit={handleSendMessage} className="flex gap-2.5 items-center">
-                  <input
-                    type="text"
-                    placeholder="Escribe un mensaje aquí... (Solo texto y emojis)"
+                  <textarea
+                    rows={1}
+                    aria-label="Mensaje"
+                    placeholder="Escribe un mensaje…"
                     value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value.slice(0, 1000))}
-                    className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none focus:bg-white dark:focus:bg-slate-850 bg-slate-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 transition"
-                    maxLength={1000}
+                    onChange={(e) => setMessageInput(e.target.value.slice(0, MAX_CHAT_MESSAGE_LENGTH))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleSendMessage();
+                      }
+                    }}
+                    className="max-h-28 min-h-11 flex-1 resize-none rounded-2xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm text-gray-800 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-950 dark:text-gray-100 dark:focus:bg-slate-850"
+                    maxLength={MAX_CHAT_MESSAGE_LENGTH}
                     disabled={sendingMessage}
                   />
                   <button
                     type="submit"
+                    aria-label="Enviar mensaje"
                     disabled={!messageInput.trim() || sendingMessage}
-                    className="p-2.5 bg-primary text-white hover:bg-primary/95 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0 cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+                    className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-sm transition hover:bg-primary/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {sendingMessage ? (
                       <Loader2 className="animate-spin" size={16} />
@@ -861,18 +937,23 @@ export default function ChatManager() {
                     Solo texto y emojis permitidos.
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium">
-                    {messageInput.length}/1000
+                    {messageInput.length}/{MAX_CHAT_MESSAGE_LENGTH}
                   </span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-3">
-              <MessageSquare className="text-gray-300 animate-pulse" size={56} />
-              <h3 className="font-serif font-bold text-base text-gray-800 dark:text-gray-100">Mensajería en Tiempo Real</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-450 max-w-sm">
-                Selecciona un chat en la lista o inicia una conversación con otro miembro para comenzar a chatear.
+            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+              <div className="grid size-20 place-items-center rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-100 text-blue-700 shadow-xl shadow-blue-900/5 dark:border-blue-400/15 dark:from-blue-400/10 dark:to-violet-400/10 dark:text-blue-300">
+                <MessageSquare size={32} aria-hidden="true" />
+              </div>
+              <h3 className="mt-5 text-lg font-semibold text-gray-900 dark:text-white">Elige una conversación</h3>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
+                Abre un chat existente o busca un contacto. Solo las personas participantes pueden leer y enviar mensajes.
               </p>
+              <button type="button" onClick={() => setActiveTab('contacts')} className="mt-5 min-h-11 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-white dark:text-slate-950">
+                Buscar contacto
+              </button>
             </div>
           )}
         </div>
@@ -881,19 +962,25 @@ export default function ChatManager() {
       {/* Broadcast Modal */}
       <>
         {isBroadcastOpen && (
-          <div className="fixed inset-0 bg-black/55 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <AnimeFadeUp
-              className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full border border-gray-150 dark:border-white/10 p-6 shadow-xl space-y-4 flex flex-col max-h-[90vh] animate-scale-in"
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="broadcast-dialog-title"
+              className="flex max-h-[90vh] w-full max-w-lg flex-col space-y-4 rounded-3xl border border-white/80 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl animate-scale-in dark:border-white/10 dark:bg-slate-900/95"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-3">
-                <h3 className="font-serif font-bold text-base text-primary dark:text-church-gold-bright flex items-center gap-2">
+                <h3 id="broadcast-dialog-title" className="font-serif font-bold text-base text-primary dark:text-church-gold-bright flex items-center gap-2">
                   <Megaphone size={18} className="text-gold" />
                   Nueva Difusión de Mensajería
                 </h3>
                 <button
+                  ref={broadcastCloseRef}
+                  type="button"
                   onClick={() => setIsBroadcastOpen(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer"
+                  aria-label="Cerrar difusión"
+                  className="grid size-10 place-items-center rounded-xl text-gray-400 hover:bg-slate-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-white/10"
                 >
                   <X size={18} />
                 </button>
@@ -1033,10 +1120,15 @@ export default function ChatManager() {
                     <Users size={15} className="text-gray-500 dark:text-gray-450" />
                     <span className="text-xxs font-semibold text-gray-600 dark:text-gray-400">Destinatarios estimados:</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright font-bold text-xxs rounded-full">
+                  <span className={`px-2 py-0.5 font-bold text-xxs rounded-full ${recipientsList.length > MAX_BROADCAST_RECIPIENTS ? 'bg-rose-100 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300' : 'bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright'}`}>
                     {recipientsList.length} usuarios
                   </span>
                 </div>
+                {recipientsList.length > MAX_BROADCAST_RECIPIENTS && (
+                  <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-300">
+                    El límite es de 100 destinatarios por difusión. Selecciona un segmento más pequeño.
+                  </p>
+                )}
 
                 {/* Broadcast Message Input */}
                 <div className="space-y-1.5">
@@ -1047,14 +1139,14 @@ export default function ChatManager() {
                     rows={4}
                     placeholder="Escribe el mensaje de difusión... (Se enviará de forma individual a cada destinatario)"
                     value={broadcastContent}
-                    onChange={(e) => setBroadcastContent(e.target.value.slice(0, 1000))}
+                    onChange={(e) => setBroadcastContent(e.target.value.slice(0, MAX_CHAT_MESSAGE_LENGTH))}
                     className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs focus:ring-2 focus:ring-primary/10 focus:outline-none resize-none leading-relaxed bg-white dark:bg-slate-850 text-gray-850 dark:text-gray-100"
-                    maxLength={1000}
+                    maxLength={MAX_CHAT_MESSAGE_LENGTH}
                     disabled={sendingBroadcast}
                   />
                   <div className="flex justify-between items-center text-[10px] text-gray-400">
                     <span>Solo se permite enviar texto y emojis.</span>
-                    <span>{broadcastContent.length}/1000</span>
+                    <span>{broadcastContent.length}/{MAX_CHAT_MESSAGE_LENGTH}</span>
                   </div>
                 </div>
               </div>
@@ -1069,7 +1161,7 @@ export default function ChatManager() {
                   <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-primary dark:bg-church-gold h-full transition-all duration-300"
-                      style={{ width: `${(broadcastProgress.sent / broadcastProgress.total) * 100}%` }}
+                      style={{ width: `${broadcastProgress.total > 0 ? (broadcastProgress.sent / broadcastProgress.total) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
@@ -1088,7 +1180,7 @@ export default function ChatManager() {
                 <button
                   type="button"
                   onClick={handleSendBroadcast}
-                  disabled={!broadcastContent.trim() || recipientsList.length === 0 || sendingBroadcast}
+                  disabled={!broadcastContent.trim() || recipientsList.length === 0 || recipientsList.length > MAX_BROADCAST_RECIPIENTS || sendingBroadcast}
                   className="flex items-center gap-1.5 px-5 py-2 bg-primary hover:bg-primary/95 text-white font-semibold text-xs tracking-wider uppercase rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {sendingBroadcast ? (
@@ -1104,7 +1196,7 @@ export default function ChatManager() {
                   )}
                 </button>
               </div>
-            </AnimeFadeUp>
+            </div>
           </div>
         )}
       </>

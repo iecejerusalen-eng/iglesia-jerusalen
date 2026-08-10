@@ -1,53 +1,47 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
-import type { Profile, Member, Ministry } from '../../../types';
+import type { ChatContact, ChatContactsData, ChatMember, ChatMinistry } from '../types';
 
-export const fetchContacts = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { contacts: [], members: [], ministries: [] };
+export const fetchContacts = async (): Promise<ChatContactsData> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) throw new Error('Debes iniciar sesión para consultar contactos.');
 
-  const { data: profiles, error: profError } = await supabase
-    .from('profiles')
-    .select('id, first_name, last_name, role, photo_url, email, member_id')
-    .neq('id', user.id);
+  const [profilesResult, membersResult, ministriesResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id,first_name,last_name,role,photo_url,email,member_id')
+      .eq('banned', false)
+      .neq('id', user.id)
+      .order('first_name'),
+    supabase
+      .from('members')
+      .select('id,first_name,last_name,birth_date,gender,ministry_id,leadership_role,is_leader')
+      .is('deleted_at', null),
+    supabase.from('ministries').select('id,name,anniversary_date').order('name'),
+  ]);
+  if (profilesResult.error) throw profilesResult.error;
+  if (membersResult.error) throw membersResult.error;
+  if (ministriesResult.error) throw ministriesResult.error;
 
-  if (profError) throw profError;
-
-  const { data: members, error: memError } = await supabase
-    .from('members')
-    .select('id, first_name, last_name, birth_date, gender, ministry_id, leadership_role, is_leader')
-    .is('deleted_at', null);
-
-  if (memError) throw memError;
-
-  const { data: ministries, error: minError } = await supabase
-    .from('ministries')
-    .select('*');
-
-  if (minError) throw minError;
-
-  const memberMap = new Map<string, Member>();
-  members?.forEach(m => memberMap.set(m.id, m as Member));
-
-  const contactsWithMember = (profiles || []).map((profile: any) => {
-    const member = profile.member_id ? memberMap.get(profile.member_id) : null;
+  const members = (membersResult.data ?? []) as ChatMember[];
+  const memberMap = new Map(members.map((member) => [member.id, member]));
+  const contacts = (profilesResult.data ?? []).map((profile): ChatContact => {
+    const member = profile.member_id ? memberMap.get(profile.member_id) : undefined;
     return {
       ...profile,
-      member: member ? { id: member.id, first_name: member.first_name, last_name: member.last_name } : null
-    } as Profile;
+      member: member ? { id: member.id, first_name: member.first_name, last_name: member.last_name } : null,
+    } as ChatContact;
   });
 
-  return {
-    contacts: contactsWithMember,
-    members: (members || []) as Member[],
-    ministries: (ministries || []) as Ministry[],
-  };
+  return { contacts, members, ministries: (ministriesResult.data ?? []) as ChatMinistry[] };
 };
 
 export function useChatContacts() {
-  return useQuery({
+  return useQuery<ChatContactsData, Error>({
     queryKey: ['chatContacts'],
     queryFn: fetchContacts,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 }

@@ -384,7 +384,7 @@ export const useToolboxStore = create<ToolboxState>((set, get) => {
       set({ volume: Math.min(1, Math.max(0, volume)) });
       persist();
     },
-    setPlaying: (isPlaying) => set({ isPlaying, isOpen: true }),
+    setPlaying: (isPlaying) => set((state) => ({ isPlaying, isOpen: isPlaying ? true : state.isOpen })),
 
     setTallyCount: (countOrUpdater) => {
       const current = get().tallyCount;

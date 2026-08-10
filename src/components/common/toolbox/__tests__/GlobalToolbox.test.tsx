@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import GlobalToolbox from '../../GlobalToolbox';
@@ -53,5 +53,22 @@ describe('GlobalToolbox', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Restaurar herramientas' }));
     await waitFor(() => expect(screen.getByText('Reloj de púlpito')).toBeVisible());
+  });
+
+  it('cierra el panel de herramientas de forma inmediata al presionar el botón X', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <GlobalToolbox />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir centro de herramientas' }));
+    expect(await screen.findByRole('complementary', { name: 'Centro de herramientas global' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar herramientas' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Abrir centro de herramientas' })).toBeVisible();
+      expect(useToolboxStore.getState().isOpen).toBe(false);
+    });
   });
 });

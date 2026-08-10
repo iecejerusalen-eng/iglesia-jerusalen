@@ -210,15 +210,22 @@ export default function GlobalToolbox() {
     store.setPosition({ x, y });
   };
 
-  const requestClose = () => {
-    if (hasBackgroundActivity) setShowCloseDialog(true);
-    else store.close();
+  const requestClose = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const state = useToolboxStore.getState();
+    state.setPlaying(false);
+    state.setTimerIsRunning(false);
+    state.close();
+    setShowCloseDialog(false);
   };
 
   const stopAndClose = () => {
-    store.setPlaying(false);
-    store.setTimerIsRunning(false);
-    store.close();
+    const state = useToolboxStore.getState();
+    state.setPlaying(false);
+    state.setTimerIsRunning(false);
+    state.close();
     setShowCloseDialog(false);
   };
 
@@ -295,10 +302,13 @@ export default function GlobalToolbox() {
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5">
+          <div className="relative z-10 flex items-center gap-0.5">
             <button
               type="button"
-              onClick={store.toggleMinimized}
+              onClick={(e) => {
+                e.stopPropagation();
+                store.toggleMinimized();
+              }}
               className="flex h-11 w-11 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               aria-label={store.isMinimized ? 'Restaurar herramientas' : 'Minimizar herramientas'}
             >

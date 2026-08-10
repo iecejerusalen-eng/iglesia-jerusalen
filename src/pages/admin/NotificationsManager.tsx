@@ -256,6 +256,11 @@ export default function NotificationsManager() {
         }
 
         const targetIds = targetProfiles.map(p => p.id);
+        if (targetIds.length > 100) {
+          toast.error('Las difusiones de chat admiten hasta 100 destinatarios. Selecciona un grupo más pequeño.');
+          setSubmitting(false);
+          return;
+        }
         
         await sendBroadcast.mutateAsync({
           targetProfileIds: targetIds, 
