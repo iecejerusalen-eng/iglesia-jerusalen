@@ -28,6 +28,36 @@ export const SongViewer = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
   const [chordPosition, setChordPosition] = useState<'above' | 'inline'>('above');
+  const [instrument, setInstrument] = useState<InstrumentType>('guitarra');
+  const [textSize, setTextSize] = useState(100);
+  const [showDiagramsAtTop, setShowDiagramsAtTop] = useState(true);
+
+  const uniqueChords = useMemo(() => {
+    const chords = new Set<string>();
+    
+    // Support modern blocks
+    if (selectedSong.structure_blocks) {
+      selectedSong.structure_blocks.forEach((block: any) => {
+        if (block.type === 'lyrics') {
+          const text = block.lyrics || '';
+          const regex = /\[(.*?)\]/g;
+          let match;
+          while ((match = regex.exec(text)) !== null) {
+            chords.add(match[1]);
+          }
+        }
+      });
+    } else if (selectedSong.lyrics) {
+      // Support legacy html 
+      const text = selectedSong.lyrics || '';
+      const regex = /\[(.*?)\]/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        chords.add(match[1]);
+      }
+    }
+    return Array.from(chords).map(c => transposeNote(c, transposeAmount));
+  }, [selectedSong.structure_blocks, selectedSong.lyrics, transposeAmount]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -359,6 +389,8 @@ export const SongViewer = ({
           <div className="p-4 md:p-6 pb-20 print:p-0 print:text-black">
             <style>{`
               .song-lyrics-wrapper.font-mono .song-lyrics {
+                font-size: clamp(14px, calc(18px * (var(--text-size) / 100)), 36px);
+                line-height: clamp(1.8, calc(2.2 * (var(--text-size) / 100)), 4);
                 font-family: 'Courier New', Courier, monospace !important;
               }
               .song-lyrics-wrapper.font-serif .song-lyrics {
@@ -567,7 +599,7 @@ export const SongViewer = ({
                   </button>
                 </div>
 
-                <div className={`song-lyrics-wrapper font-${fontFamily}`}>
+                <div className={`song-lyrics-wrapper font-${fontFamily}`} style={{ "--text-size": textSize } as React.CSSProperties}>
                   {selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0 ? (
                     /* STRUCTURED RENDERING */
                     <div className="space-y-6">

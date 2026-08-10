@@ -4,19 +4,21 @@ import { supabase } from '../../config/supabase';
 import { getDb } from '../../config/localDb';
 import { useSyncStore } from '../../store/useSyncStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import DOMPurify from 'dompurify';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Calendar, User, ArrowLeft, RefreshCw, FileText,
-  Save, AlertTriangle, Bold, Italic, List, ListOrdered,
-  Heading2, Heading3, Undo, Redo, Edit2
+  AlertTriangle, Edit2, Sparkles, X
 } from 'lucide-react';
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
-import { AnimeFadeUp, AnimeZoomIn, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import VideoPlayer from '../../components/ui/video-player';
+import SermonNotesPad from '../../components/sermons/SermonNotesPad';
+import ChristianPomodoro from '../../components/sermons/ChristianPomodoro';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -44,6 +46,8 @@ const SermonDetail = () => {
   const [loading, setLoading] = useState(true);
   const [savingNote, setSavingNote] = useState(false);
   const [noteId, setNoteId] = useState<string | null>(null);
+  const [sidebarTab, setSidebarTab] = useState<'notes' | 'pomodoro'>('notes');
+  const [isFocusModeActive, setIsFocusModeActive] = useState(false);
 
   // TipTap Note Editor
   const editor = useEditor({
@@ -215,227 +219,192 @@ const SermonDetail = () => {
   const ytId = getYoutubeId(sermon.youtube_url);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-6">
-      <AnimeFadeUp delay={100} duration={800} className="space-y-6">
-      {/* Back button */}
-      <div>
-        <Link to="/predicas" className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-semibold transition-colors">
-          <ArrowLeft size={16} />
-          Volver a Prédicas
-        </Link>
-      </div>
-
-      {/* Main Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        {/* Sermon details & video */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
-          {(sermon.video_url || ytId) && (
-            <AnimeZoomIn delay={300} duration={800}>
-              <VideoPlayer
-                src={sermon.video_url}
-                youtubeUrl={sermon.video_url || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : undefined)}
-                title={sermon.title}
-              />
-            </AnimeZoomIn>
-          )}
-
-          <div className="space-y-4">
-            <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 leading-tight">{sermon.title}</h1>
-            
-            <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-              {sermon.sermon_categories && (
-                <span 
-                  className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                  style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
-                >
-                  {sermon.sermon_categories.name}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 font-semibold text-gray-750 dark:text-gray-300">
-                <User size={16} className="text-gray-400" />
-                {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
+    <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-6">
+      {/* Ambient Focus Mode Dimmer Overlay */}
+      <AnimatePresence>
+        {isFocusModeActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-40 transition-opacity duration-500 flex flex-col justify-between p-6 pointer-events-auto"
+          >
+            <div className="flex justify-between items-center text-white/80">
+              <span className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <Sparkles size={14} className="text-amber-400" />
+                Modo Enfoque Activo — Prédica & Meditación
               </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar size={16} className="text-gray-400" />
-                {new Date(sermon.created_at).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                })}
-              </span>
-              {sermon.editors && sermon.editors.length > 0 && (
-                <span className="flex items-center gap-1.5 text-xs italic opacity-80" title="Editores / Creadores">
-                  <Edit2 size={14} className="text-gray-400" />
-                  Editado por: {sermon.editors.join(', ')}
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsFocusModeActive(false)}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+              >
+                <X size={16} /> Salir del Enfoque
+              </button>
             </div>
-          </div>
+            <p className="text-center text-xs text-white/50 italic">
+              "Mantén fijos tus ojos en las cosas de arriba..."
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div className="border-t border-gray-100 dark:border-white/10 pt-6">
-            <BlockLessonRenderer content={sermon.content} lessonId={sermon.id} />
-          </div>
-
-          {/* Acerca del Expositor */}
-          {sermon.speakers && (
-            <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white mb-4">Acerca del Expositor</h3>
-              <div className="flex flex-col sm:flex-row gap-6 items-start">
-                {sermon.speakers.photo_url ? (
-                  <img 
-                    src={sermon.speakers.photo_url} 
-                    alt={sermon.speakers.first_name} 
-                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-slate-200 dark:border-slate-700"
-                  />
-                ) : (
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                    <User size={48} />
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                      {sermon.speakers.first_name} {sermon.speakers.last_name}
-                    </h4>
-                    <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase tracking-wider">
-                      {sermon.speakers.role}
-                    </span>
-                  </div>
-                  {sermon.speakers.bio ? (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                      {sermon.speakers.bio}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-slate-400 italic">
-                      No hay biografía disponible para este expositor.
-                    </p>
-                  )}
-                  <Link 
-                    to={`/predicas?speaker=${sermon.speakers.id}`} 
-                    className="inline-block mt-2 text-sm font-bold text-primary dark:text-gold hover:underline"
-                  >
-                    Ver más prédicas de {sermon.speakers.first_name}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
+      <AnimeFadeUp delay={100} duration={800} className={`space-y-6 relative ${isFocusModeActive ? 'z-50' : ''}`}>
+        {/* Back button */}
+        <div>
+          <Link to="/predicas" className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-semibold transition-colors">
+            <ArrowLeft size={16} />
+            Volver a Prédicas
+          </Link>
         </div>
 
-        {/* Private Sermon Note pad */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm flex flex-col overflow-hidden lg:sticky lg:top-24 self-start">
+        {/* Main Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* Notes Header */}
-          <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <FileText className="text-amber-600" size={18} />
-              <span className="font-bold text-sm text-gray-755 dark:text-gray-200 font-serif">Mis Apuntes Privados</span>
-            </div>
-            
-            <AnimeRubberBandHover>
-              <button
-                onClick={handleSaveNotes}
-                disabled={savingNote || !editor}
-                className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer transition-colors"
-              >
-                {savingNote ? <RefreshCw className="animate-spin" size={12} /> : <Save size={12} />}
-                Guardar
-              </button>
-            </AnimeRubberBandHover>
-          </div>
+          {/* Sermon details & video */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 md:p-8 shadow-sm space-y-6">
+            {(sermon.video_url || ytId) && (
+              <AnimeZoomIn delay={300} duration={800}>
+                <VideoPlayer
+                  src={sermon.video_url}
+                  youtubeUrl={sermon.video_url || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : undefined)}
+                  title={sermon.title}
+                />
+              </AnimeZoomIn>
+            )}
 
-          {/* Note Pad Body */}
-          <div className="p-4 flex-1 flex flex-col min-h-[400px]">
-            {!user ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400 space-y-3">
-                <AlertTriangle size={32} className="text-amber-500/80" />
-                <p className="text-xs font-semibold max-w-xs leading-normal">
-                  Inicia sesión para poder tomar apuntes de esta prédica y guardarlos de forma privada en tu perfil.
-                </p>
-                <Link to="/login" className="text-xs font-bold text-primary dark:text-white hover:underline">
-                  Iniciar Sesión
-                </Link>
+            <div className="space-y-4">
+              <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 leading-tight">{sermon.title}</h1>
+              
+              <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+                {sermon.sermon_categories && (
+                  <span 
+                    className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: `${sermon.sermon_categories.color}15`, color: sermon.sermon_categories.color, border: `1px solid ${sermon.sermon_categories.color}30` }}
+                  >
+                    {sermon.sermon_categories.name}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 font-semibold text-gray-750 dark:text-gray-300">
+                  <User size={16} className="text-gray-400" />
+                  {sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={16} className="text-gray-400" />
+                  {new Date(sermon.created_at).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+                {sermon.editors && sermon.editors.length > 0 && (
+                  <span className="flex items-center gap-1.5 text-xs italic opacity-80" title="Editores / Creadores">
+                    <Edit2 size={14} className="text-gray-400" />
+                    Editado por: {sermon.editors.join(', ')}
+                  </span>
+                )}
               </div>
-            ) : (
-              editor && (
-                <div className="flex-1 flex flex-col space-y-3">
-                  {/* Rich Text Toolbar */}
-                  <div className="flex flex-wrap gap-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-1.5">
-                    <button
-                      onClick={() => editor.chain().focus().toggleBold().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bold') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Negrita"
-                    >
-                      <Bold size={14} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleItalic().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('italic') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Cursiva"
-                    >
-                      <Italic size={14} />
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
-                    <button
-                      onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 2 }) ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Título 2"
-                    >
-                      <Heading2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('heading', { level: 3 }) ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Título 3"
-                    >
-                      <Heading3 size={14} />
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
-                    <button
-                      onClick={() => editor.chain().focus().toggleBulletList().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('bulletList') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Lista de viñetas"
-                    >
-                      <List size={14} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                      className={`p-1.5 rounded cursor-pointer ${editor.isActive('orderedList') ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'}`}
-                      title="Lista numerada"
-                    >
-                      <ListOrdered size={14} />
-                    </button>
-                    <div className="w-px h-5 bg-gray-300 dark:bg-slate-600 mx-1 align-middle self-center"></div>
-                    <button
-                      onClick={() => editor.chain().focus().undo().run()}
-                      disabled={!editor.can().undo()}
-                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
-                      title="Deshacer"
-                    >
-                      <Undo size={14} />
-                    </button>
-                    <button
-                      onClick={() => editor.chain().focus().redo().run()}
-                      disabled={!editor.can().redo()}
-                      className="p-1.5 rounded text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
-                      title="Rehacer"
-                    >
-                      <Redo size={14} />
-                    </button>
-                  </div>
+            </div>
 
-                  {/* Note Area */}
-                  <div className="flex-1 border border-gray-200 dark:border-white/10 rounded-xl p-3 bg-white dark:bg-slate-900 focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 overflow-y-auto">
-                    <EditorContent editor={editor} />
+            <div className="border-t border-gray-100 dark:border-white/10 pt-6">
+              <BlockLessonRenderer content={sermon.content} lessonId={sermon.id} />
+            </div>
+
+            {/* Acerca del Expositor */}
+            {sermon.speakers && (
+              <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white mb-4">Acerca del Expositor</h3>
+                <div className="flex flex-col sm:flex-row gap-6 items-start">
+                  {sermon.speakers.photo_url ? (
+                    <img 
+                      src={sermon.speakers.photo_url} 
+                      alt={sermon.speakers.first_name} 
+                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-slate-200 dark:border-slate-700"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                      <User size={48} />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                        {sermon.speakers.first_name} {sermon.speakers.last_name}
+                      </h4>
+                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        {sermon.speakers.role}
+                      </span>
+                    </div>
+                    {sermon.speakers.bio ? (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {sermon.speakers.bio}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">
+                        No hay biografía disponible para este expositor.
+                      </p>
+                    )}
+                    <Link 
+                      to={`/predicas?speaker=${sermon.speakers.id}`} 
+                      className="inline-block mt-2 text-sm font-bold text-primary dark:text-gold hover:underline"
+                    >
+                      Ver más prédicas de {sermon.speakers.first_name}
+                    </Link>
                   </div>
                 </div>
-              )
+              </div>
             )}
           </div>
-        </div>
 
-      </div>
+          {/* Sidebar Area: Tabbed Apuntes Privados / Enfócate Pomodoro */}
+          <div className="lg:sticky lg:top-24 self-start space-y-3">
+            {/* Sidebar Tab Selector */}
+            <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1.5 border border-slate-200/80 dark:border-white/10 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setSidebarTab('notes')}
+                className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  sidebarTab === 'notes'
+                    ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-md'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <FileText size={14} />
+                <span>Apuntes Privados</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSidebarTab('pomodoro')}
+                className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  sidebarTab === 'pomodoro'
+                    ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-md'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>Enfócate 🕊️</span>
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            {sidebarTab === 'notes' ? (
+              <SermonNotesPad
+                editor={editor}
+                savingNote={savingNote}
+                onSave={handleSaveNotes}
+                isAuthenticated={!!user}
+                sermonTitle={sermon.title}
+              />
+            ) : (
+              <ChristianPomodoro
+                isFocusModeActive={isFocusModeActive}
+                onToggleFocusMode={() => setIsFocusModeActive((prev) => !prev)}
+              />
+            )}
+          </div>
+
+        </div>
       </AnimeFadeUp>
     </div>
   );

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
-import SongLyricsEditor from '../../components/admin/SongLyricsEditor';
+import { SongBlockEditor } from '../../features/songs/components/editor/SongBlockEditor';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
@@ -117,19 +117,29 @@ function getBracketTokens(text: string): string[] {
 
 function compileBlocksToHtml(blocks: SongStructureBlock[]): string {
   return blocks.map(block => {
-    let sectionHtml = `<h2>${block.label}</h2>`;
-    
-    if (block.melody && block.melody.trim()) {
-      sectionHtml += `<p><em>Melodía/Guía: ${block.melody.trim()}</em></p>`;
+    if (block.type === 'lyrics') {
+      let sectionHtml = `<h2>${block.label}</h2>`;
+      if (block.melody_guide && block.melody_guide.trim()) {
+        sectionHtml += `<p><em>Melodía/Guía: ${block.melody_guide.trim()}</em></p>`;
+      }
+      const lines = block.lyrics.split('\n');
+      const linesHtml = lines.map(line => {
+        const compiledLine = bracketTextToHtml(line);
+        return `<p>${compiledLine || '&nbsp;'}</p>`;
+      }).join('');
+      return `<div class="song-section" data-section-type="${block.section_type}">${sectionHtml}${linesHtml}</div>`;
+    } else if (block.type === 'chord_diagram') {
+      return `<p><em>[Diagrama de Acordes: ${block.chords.join(', ')} - ${block.instrument}]</em></p>`;
+    } else if (block.type === 'sheet_music') {
+      return `<p><em>[Partitura ABC: ${block.title || 'Sin Título'}]</em></p>`;
+    } else if (block.type === 'media_embed') {
+      return `<p><em>[Media: <a href="${block.url}">${block.url}</a>]</em></p>`;
+    } else if (block.type === 'musician_note') {
+      return `<p><strong>[Nota - ${block.target_instrument}]:</strong> ${block.content}</p>`;
+    } else if (block.type === 'tablature') {
+      return `<pre><code>${block.content}</code></pre>`;
     }
-    
-    const lines = block.lyrics.split('\n');
-    const linesHtml = lines.map(line => {
-      const compiledLine = bracketTextToHtml(line);
-      return `<p>${compiledLine || '&nbsp;'}</p>`;
-    }).join('');
-    
-    return `<div class="song-section" data-section-type="${block.type}">${sectionHtml}${linesHtml}</div>`;
+    return '';
   }).join('<br/>');
 }
 
@@ -454,7 +464,7 @@ const SongsManager = () => {
       lyrics: compiledLyrics,
       drum_style: drumStyle || null,
       resource_links: resourceLinks,
-      structure_blocks: editorMode === 'structured' ? structureBlocks : [],
+      structure_blocks: structureBlocks,
     };
 
     if (editingSong) {

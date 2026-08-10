@@ -1,0 +1,127 @@
+import guitarDb from '@tombatossals/chords-db/lib/guitar.json';
+import ukuleleDb from '@tombatossals/chords-db/lib/ukulele.json';
+import { Chord } from '@tonaljs/tonal';
+
+export type InstrumentType = 'guitarra' | 'ukelele' | 'piano' | 'bajo' | 'ninguno';
+
+// Map tonaljs aliases to chords-db suffixes
+const suffixMap: Record<string, string> = {
+  '': 'major',
+  'M': 'major',
+  'm': 'minor',
+  'dim': 'dim',
+  'o': 'dim',
+  'dim7': 'dim7',
+  'o7': 'dim7',
+  'sus2': 'sus2',
+  'sus4': 'sus4',
+  'sus': 'sus4',
+  '7sus4': '7sus4',
+  '7sus': '7sus4',
+  'aug': 'aug',
+  '+': 'aug',
+  '6': '6',
+  '69': '69',
+  '6/9': '69',
+  '7': '7',
+  '7b5': '7b5',
+  'aug7': 'aug7',
+  '+7': 'aug7',
+  '9': '9',
+  '9b5': '9b5',
+  'aug9': 'aug9',
+  '+9': 'aug9',
+  '7b9': '7b9',
+  '7#9': '7#9',
+  '11': '11',
+  '9#11': '9#11',
+  '13': '13',
+  'maj7': 'maj7',
+  'M7': 'maj7',
+  'maj7b5': 'maj7b5',
+  'maj7#5': 'maj7#5',
+  'maj9': 'maj9',
+  'M9': 'maj9',
+  'maj11': 'maj11',
+  'M11': 'maj11',
+  'maj13': 'maj13',
+  'M13': 'maj13',
+  'm6': 'm6',
+  'm69': 'm69',
+  'm7': 'm7',
+  'm7b5': 'm7b5',
+  'm9': 'm9',
+  'm11': 'm11',
+  'mmaj7': 'mmaj7',
+  'mmaj7b5': 'mmaj7b5',
+  'mmaj9': 'mmaj9',
+  'mmaj11': 'mmaj11',
+  'add9': 'add9',
+  'madd9': 'madd9',
+};
+
+const normalizeKey = (key: string): string => {
+  return key.replace('#', 'sharp').replace('b', 'b'); // chords-db uses 'Csharp' but 'Eb'
+};
+
+const formatKeyForDb = (key: string): string => {
+  const map: Record<string, string> = {
+    'C#': 'Csharp',
+    'D#': 'Dsharp',
+    'F#': 'Fsharp',
+    'G#': 'Gsharp',
+    'A#': 'Asharp',
+    // Db, Eb, Gb, Ab, Bb are just Db, Eb etc in chords-db ? 
+    // Wait, let's just replace # with sharp
+  };
+  return map[key] || key;
+};
+
+export const getChordData = (chordName: string, instrument: InstrumentType) => {
+  try {
+    const parsed = Chord.get(chordName);
+    if (parsed.empty) return null;
+
+    if (instrument === 'piano') {
+      return {
+        instrument: 'piano',
+        notes: parsed.notes
+      };
+    }
+
+    if (instrument === 'guitarra' || instrument === 'ukelele') {
+      const db: any = instrument === 'ukelele' ? ukuleleDb : guitarDb;
+      
+      const rootKey = formatKeyForDb(parsed.tonic || '');
+      const mappedSuffix = suffixMap[parsed.aliases[0] || ''] || suffixMap[parsed.type] || 'major';
+
+      const keyData = db.chords[rootKey];
+      if (!keyData) return null;
+
+      const chordVariations = keyData.find((c: any) => c.suffix === mappedSuffix);
+      
+      if (chordVariations && chordVariations.positions.length > 0) {
+        // Return the first position (simplest)
+        const pos = chordVariations.positions[0];
+        
+        // svGuitar expects fingers in a specific format for rendering
+        // pos.frets: array of frets [E, A, D, G, B, e]
+        // pos.fingers: array of fingers
+        
+        // For StringChordDiagram we only need title and fingers if we want full custom 
+        // But for now, we can pass it so StringChordDiagram can draw it perfectly.
+        return {
+          instrument,
+          title: chordName,
+          frets: pos.frets,
+          fingers: pos.fingers,
+          baseFret: pos.baseFret,
+          barres: pos.barres
+        };
+      }
+    }
+  } catch (e) {
+    console.error("Error parsing chord:", chordName, e);
+  }
+  return null;
+};

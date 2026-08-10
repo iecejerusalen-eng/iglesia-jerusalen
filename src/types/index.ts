@@ -461,13 +461,68 @@ export interface SongResourceLink {
   comment: string | null;
 }
 
-export interface SongStructureBlock {
+export type SongBlockType = 
+  | 'lyrics' 
+  | 'chord_diagram' 
+  | 'sheet_music' 
+  | 'tablature' 
+  | 'media_embed' 
+  | 'musician_note';
+
+export interface BaseSongBlock {
   id: string;
-  type: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'otro';
-  label: string;
-  lyrics: string;
-  melody: string | null;
+  type: SongBlockType;
 }
+
+export interface LyricsSongBlock extends BaseSongBlock {
+  type: 'lyrics';
+  section_type: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'solo' | 'otro';
+  label: string; 
+  melody_guide?: string | null; 
+  lyrics: string; 
+}
+
+export interface ChordDiagramSongBlock extends BaseSongBlock {
+  type: 'chord_diagram';
+  chords: string[]; // e.g., ["G", "D/F#", "Em7", "C2"]
+  instrument: 'guitar' | 'piano' | 'ukulele';
+}
+
+export interface SheetMusicSongBlock extends BaseSongBlock {
+  type: 'sheet_music';
+  title?: string;
+  notation_type: 'abc' | 'musicxml' | 'image';
+  abc_code?: string;
+  image_url?: string;
+}
+
+export interface TablatureSongBlock extends BaseSongBlock {
+  type: 'tablature';
+  title?: string;
+  tuning?: string;
+  content: string;
+}
+
+export interface MediaEmbedSongBlock extends BaseSongBlock {
+  type: 'media_embed';
+  title?: string;
+  url: string;
+  provider: 'youtube' | 'audio' | 'spotify';
+}
+
+export interface MusicianNoteSongBlock extends BaseSongBlock {
+  type: 'musician_note';
+  target_instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz';
+  content: string;
+}
+
+export type SongStructureBlock = 
+  | LyricsSongBlock 
+  | ChordDiagramSongBlock 
+  | SheetMusicSongBlock 
+  | TablatureSongBlock 
+  | MediaEmbedSongBlock 
+  | MusicianNoteSongBlock;
 
 export interface Song {
   id: string;
