@@ -121,6 +121,7 @@ CREATE POLICY "ProPresenter editors update commands"
   USING (public.current_user_can_propresenter('edit'))
   WITH CHECK (public.current_user_can_propresenter('edit'));
 
+GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.propresenter_connections TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.propresenter_commands TO authenticated;
 
@@ -144,3 +145,5 @@ COMMENT ON TABLE public.propresenter_connections IS
   'Computadoras autorizadas para el conector local de ProPresenter.';
 COMMENT ON TABLE public.propresenter_commands IS
   'Cola auditable de órdenes entre el panel y el conector local de ProPresenter.';
+
+NOTIFY pgrst, 'reload schema';

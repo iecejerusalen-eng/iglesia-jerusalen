@@ -1,4 +1,4 @@
-import { Minus, Plus, RotateCcw, Users } from 'lucide-react';
+import { RotateCcw, Users } from 'lucide-react';
 import { useToolboxStore } from '../../../store/useToolboxStore';
 
 export function TallyClickerTool() {

@@ -7,7 +7,10 @@ export interface BibleCharacter {
   historicalContext: string;
   keyEvents: string[];
   interestingFacts: string[];
+  imageUrl?: string;
   firstMention: string;
+  imageUrl?: string;
+  imageUrl?: string;
 }
 
 export interface BiblePlace {
@@ -36,6 +39,7 @@ export interface BibleBookInfo {
 export const bibleCharacters: BibleCharacter[] = [
   {
     id: 'jesus',
+    imageUrl: '/assets/encyclopedia/characters/jesus.png',
     name: 'Jesús',
     meaning: 'Yahveh es salvación',
     historicalContext: 'Nació en Belén bajo el imperio romano durante el reinado de Herodes el Grande. Vivió y ministró principalmente en Galilea y Judea.',
@@ -49,6 +53,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'moises',
+    imageUrl: '/assets/encyclopedia/characters/moises.png',
     name: 'Moisés',
     meaning: 'Rescatado de las aguas',
     historicalContext: 'Vivió durante la opresión israelita en Egipto. Fue criado como príncipe egipcio pero huyó a Madián antes de regresar para liberar a su pueblo.',
@@ -62,6 +67,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'david',
+    imageUrl: '/assets/encyclopedia/characters/david.png',
     name: 'David',
     meaning: 'Amado',
     historicalContext: 'Segundo rey de Israel unido, sucediendo a Saúl. Vivió alrededor del año 1000 a.C. y estableció Jerusalén como la capital.',
@@ -75,6 +81,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'pablo',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Pablo (Saulo)',
     meaning: 'Pequeño / Humilde',
     historicalContext: 'Ciudadano romano nacido en Tarso. Fariseo instruido por Gamaliel, inicialmente un feroz perseguidor de la Iglesia primitiva antes de su conversión.',
@@ -88,6 +95,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'abraham',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Abraham',
     meaning: 'Padre de multitudes',
     historicalContext: 'Vivió alrededor del año 2000 a.C. en Ur de los Caldeos antes de ser llamado por Dios a Canaán.',
@@ -101,6 +109,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'maria',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'María',
     meaning: 'Amada / Rebelión / Gota del mar',
     historicalContext: 'Una joven judía de Nazaret en Galilea, desposada con José el carpintero en el siglo I a.C.',
@@ -114,6 +123,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'pedro',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Pedro (Simón)',
     meaning: 'Piedra / Roca',
     historicalContext: 'Pescador de Betsaida que vivía en Capernaúm. Uno de los discípulos más cercanos a Jesús.',
@@ -127,6 +137,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'elias',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Elías',
     meaning: 'Mi Dios es Yahveh',
     historicalContext: 'Profeta que ministró en el Reino del Norte (Israel) durante el reinado del malvado rey Acab y la reina Jezabel (siglo IX a.C.).',
@@ -140,6 +151,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'daniel',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Daniel',
     meaning: 'Dios es mi juez',
     historicalContext: 'Joven noble judío exiliado a Babilonia en el 605 a.C., que sirvió fielmente bajo múltiples reyes babilónicos y medopersas.',
@@ -153,6 +165,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'juan_bautista',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Juan el Bautista',
     meaning: 'Dios es clemente',
     historicalContext: 'Hijo del sacerdote Zacarías y Elisabet, pariente de Jesús. Ministró en el desierto de Judea preparándo el camino para el Mesías.',
@@ -166,6 +179,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'noe',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Noé',
     meaning: 'Descanso / Consuelo',
     historicalContext: 'Vivió en una época de gran corrupción antes del diluvio. Décima generación desde Adán.',
@@ -179,6 +193,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'jose',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'José (hijo de Jacob)',
     meaning: 'Él añade / Que Dios añada',
     historicalContext: 'Vivió alrededor de 1900-1800 a.C. Fue vendido por sus hermanos como esclavo en Egipto, pero llegó a ser el segundo al mando de Faraón.',
@@ -192,6 +207,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'rut',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Rut',
     meaning: 'Amiga / Compañera',
     historicalContext: 'Una mujer moabita que vivió durante el tiempo de los jueces en Israel.',
@@ -205,6 +221,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'salomon',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Salomón',
     meaning: 'Pacífico',
     historicalContext: 'Tercer rey del Reino Unido de Israel, hijo de David y Betsabé. Gobernó durante la "edad de oro" de Israel (970–931 a.C.).',
@@ -218,6 +235,7 @@ export const bibleCharacters: BibleCharacter[] = [
   },
   {
     id: 'samuel',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png',
     name: 'Samuel',
     meaning: 'Oído por Dios / Pedido a Dios',
     historicalContext: 'El último de los jueces y el primero de los profetas principales. Transicionó la nación de una federación tribal a una monarquía.',
@@ -229,11 +247,115 @@ export const bibleCharacters: BibleCharacter[] = [
     ],
     firstMention: '1 Samuel 1:20'
   }
+,
+
+  {
+    id: 'isaac',
+    name: 'Isaac',
+    meaning: 'El que ríe',
+    historicalContext: 'Hijo de Abraham y Sara en su vejez. Patriarca de Israel.',
+    keyEvents: ['Casi sacrificado por Abraham', 'Matrimonio con Rebeca', 'Bendición a Jacob en lugar de Esaú'],
+    interestingFacts: ['Su nombre proviene de la risa de Sara al escuchar que sería madre.', 'Fue pacífico y evitó conflictos por pozos de agua.'],
+    firstMention: 'Génesis 17:19',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'jacob',
+    name: 'Jacob / Israel',
+    meaning: 'Sostenido por el talón / El que lucha con Dios',
+    historicalContext: 'Hijo de Isaac. Padre de las 12 tribus de Israel.',
+    keyEvents: ['Compra de la primogenitura a Esaú', 'Sueño de la escalera al cielo', 'Lucha con el ángel', 'Reconciliación con Esaú'],
+    interestingFacts: ['Trabajó 14 años por Raquel.', 'Dios le cambió el nombre a Israel.'],
+    firstMention: 'Génesis 25:26',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'isaias_profeta',
+    name: 'Isaías',
+    meaning: 'Yahveh es salvación',
+    historicalContext: 'Profetizó en Judá durante los reinados de Uzías, Jotam, Acaz y Ezequías.',
+    keyEvents: ['Llamamiento en el templo', 'Profecías mesiánicas', 'Advertencias a Ezequías'],
+    interestingFacts: ['Conocido como el "Profeta Evangélico".', 'Menciona a Ciro el Grande por nombre 150 años antes de su nacimiento.'],
+    firstMention: 'Isaías 1:1',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'jeremias_profeta',
+    name: 'Jeremías',
+    meaning: 'Yahveh levanta',
+    historicalContext: 'Conocido como el profeta llorón. Ministró antes y durante la caída de Jerusalén.',
+    keyEvents: ['Llamamiento en su juventud', 'Profecía de los 70 años de exilio', 'Encarcelamiento en la cisterna'],
+    interestingFacts: ['Se le prohibió casarse como señal de juicio a Judá.', 'Escribió también el libro de Lamentaciones.'],
+    firstMention: 'Jeremías 1:1',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'ezequiel_profeta',
+    name: 'Ezequiel',
+    meaning: 'Dios fortalece',
+    historicalContext: 'Sacerdote y profeta durante el exilio en Babilonia.',
+    keyEvents: ['Visión de los querubines y la gloria de Dios', 'Valle de los huesos secos', 'Visión del nuevo templo'],
+    interestingFacts: ['Actuaba sus profecías mediante señales dramáticas.', 'Quedó mudo durante un tiempo por mandato divino.'],
+    firstMention: 'Ezequiel 1:3',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'mateo_apostol',
+    name: 'Mateo (Leví)',
+    meaning: 'Don de Dios',
+    historicalContext: 'Recaudador de impuestos judío para el Imperio Romano antes de seguir a Jesús.',
+    keyEvents: ['Llamamiento por Jesús', 'Banquete en su casa', 'Autoría del primer evangelio'],
+    interestingFacts: ['Su profesión lo hacía despreciado por los judíos religiosos.', 'Escribió su evangelio dirigido a los judíos.'],
+    firstMention: 'Mateo 9:9',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'juan_apostol',
+    name: 'Juan (El Amado)',
+    meaning: 'Dios es misericordioso',
+    historicalContext: 'Pescador, hermano de Jacobo. Parte del círculo íntimo de Jesús.',
+    keyEvents: ['Llamamiento', 'En la transfiguración', 'Al pie de la cruz', 'Exilio en Patmos'],
+    interestingFacts: ['Se describe a sí mismo como "el discípulo a quien Jesús amaba".', 'Escribió 5 libros del Nuevo Testamento, incluyendo Apocalipsis.'],
+    firstMention: 'Mateo 4:21',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'maria_magdalena',
+    name: 'María Magdalena',
+    meaning: 'María de Magdala',
+    historicalContext: 'Mujer de la que Jesús expulsó 7 demonios, devota seguidora.',
+    keyEvents: ['Liberación demoníaca', 'Presente en la crucifixión', 'Primera testigo de la resurrección'],
+    interestingFacts: ['Ayudaba a financiar el ministerio de Jesús.', 'Jesús le encargó anunciar su resurrección a los apóstoles.'],
+    firstMention: 'Lucas 8:2',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'lazaro',
+    name: 'Lázaro de Betania',
+    meaning: 'Dios ha ayudado',
+    historicalContext: 'Hermano de Marta y María, amigo íntimo de Jesús.',
+    keyEvents: ['Enfermedad y muerte', 'Resurrección al cuarto día', 'Cena de celebración'],
+    interestingFacts: ['Su resurrección fue el milagro que detonó el complot para matar a Jesús.', 'Los fariseos también quisieron matarlo a él por ser testigo del milagro.'],
+    firstMention: 'Juan 11:1',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  },
+  {
+    id: 'esteban',
+    name: 'Esteban',
+    meaning: 'Corona / Coronado',
+    historicalContext: 'Uno de los 7 diáconos originales de la iglesia primitiva en Jerusalén.',
+    keyEvents: ['Elección como diácono', 'Discurso ante el Sanedrín', 'Muerte por apedreamiento'],
+    interestingFacts: ['El primer mártir de la iglesia cristiana.', 'Tuvo una visión del cielo abierto y Jesús de pie antes de morir.'],
+    firstMention: 'Hechos 6:5',
+    imageUrl: '/assets/encyclopedia/characters/placeholder.png'
+  }
+
 ];
 
 export const biblePlaces: BiblePlace[] = [
   {
     id: 'jerusalen',
+    imageUrl: '/assets/encyclopedia/places/jerusalem.png',
     name: 'Jerusalén',
     location: 'Montañas de Judea, entre el Mediterráneo y el Mar Muerto.',
     significance: 'El centro espiritual y político del judaísmo bíblico, y el lugar central de los eventos de redención en el Nuevo Testamento.',
@@ -247,6 +369,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'eden',
+    imageUrl: '/assets/encyclopedia/places/eden.png',
     name: 'Edén',
     location: 'Desconocida exactamente; la Biblia menciona que de él salían cuatro ríos (Pisón, Gihón, Hidekel, y Éufrates).',
     significance: 'El jardín paradisíaco original creado por Dios para el hombre.',
@@ -260,6 +383,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'babilonia',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Babilonia',
     location: 'Mesopotamia, a orillas del río Éufrates (actual Irak).',
     significance: 'Símbolo del orgullo y rebelión humana contra Dios. Imperio que exilió a los judíos.',
@@ -273,6 +397,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'egipto',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Egipto',
     location: 'Noreste de África, a lo largo del río Nilo.',
     significance: 'Un lugar de refugio (para Abraham, Jacob, y Jesús) pero también un lugar de esclavitud y opresión para Israel.',
@@ -286,6 +411,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'belen',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Belén',
     location: 'A unos 9 km al sur de Jerusalén, en la región montañosa de Judea.',
     significance: 'El lugar de nacimiento de Jesucristo, cumpliendo la profecía de Miqueas 5:2.',
@@ -299,6 +425,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'nazaret',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Nazaret',
     location: 'Baja Galilea, al norte de Israel.',
     significance: 'El pueblo donde Jesús creció y pasó la mayor parte de su vida antes de iniciar su ministerio.',
@@ -312,6 +439,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'galilea',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Mar de Galilea',
     location: 'Valle del Jordán, norte de Israel.',
     significance: 'El principal centro del ministerio público de Jesucristo.',
@@ -325,6 +453,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'sinai',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Monte Sinaí',
     location: 'Península del Sinaí (ubicación exacta debatida, tradicionalmente Jebel Musa).',
     significance: 'Lugar donde Dios estableció su pacto con Israel y entregó la Ley.',
@@ -338,6 +467,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'jordan',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Río Jordán',
     location: 'Atraviesa la falla siro-africana, desde el Monte Hermón hasta el Mar Muerto.',
     significance: 'Frontera natural de la Tierra Prometida y un lugar de transiciones y milagros.',
@@ -351,6 +481,7 @@ export const biblePlaces: BiblePlace[] = [
   },
   {
     id: 'capernaum',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png',
     name: 'Capernaúm',
     location: 'Orilla noroeste del Mar de Galilea.',
     significance: 'El "cuartel general" del ministerio de Jesús en Galilea, adoptada como "su propia ciudad".',
@@ -362,6 +493,109 @@ export const biblePlaces: BiblePlace[] = [
     ],
     firstMention: 'Mateo 4:13'
   }
+,
+
+  {
+    id: 'jerico',
+    name: 'Jericó',
+    location: 'Valle del Jordán, cerca del Mar Muerto.',
+    significance: 'Una de las ciudades habitadas más antiguas del mundo, puerta de entrada a la Tierra Prometida.',
+    keyEvents: ['Caída de sus muros bajo Josué', 'Curación del ciego Bartimeo', 'Conversión de Zaqueo'],
+    interestingFacts: ['Sus muros cayeron al sonido de las trompetas y los gritos de Israel.', 'Elisa sanó sus aguas.'],
+    firstMention: 'Números 22:1',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'montecarmelo',
+    name: 'Monte Carmelo',
+    location: 'Cadena montañosa costera en el norte de Israel.',
+    significance: 'Símbolo de belleza y fertilidad. Sitio del enfrentamiento entre Yahveh y Baal.',
+    keyEvents: ['Desafío de Elías a los profetas de Baal', 'Oración por lluvia tras la sequía'],
+    interestingFacts: ['Su nombre significa "viña de Dios".', 'Refugio tradicional para profetas y ermitaños.'],
+    firstMention: 'Josué 12:22',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'marmuerto',
+    name: 'Mar Muerto',
+    location: 'Frontera oriental de Judá.',
+    significance: 'El punto más bajo de la tierra. Símbolo de juicio (Sodoma y Gomorra).',
+    keyEvents: ['Destrucción de Sodoma y Gomorra en sus alrededores', 'Visión profética de Ezequiel de aguas sanadoras'],
+    interestingFacts: ['Es unas 10 veces más salado que los océanos, impidiendo la vida acuática.', 'Famoso por los rollos de Qumrán encontrados en cuevas cercanas.'],
+    firstMention: 'Génesis 14:3',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'samaria',
+    name: 'Samaria',
+    location: 'Región central entre Judea y Galilea.',
+    significance: 'Capital del Reino del Norte. Sus habitantes (samaritanos) eran despreciados por los judíos.',
+    keyEvents: ['Caída ante Asiria', 'Encuentro de Jesús con la mujer samaritana', 'Avivamiento predicado por Felipe'],
+    interestingFacts: ['Los samaritanos construyeron su propio templo en el Monte Gerizim.', 'Jesús los puso como ejemplo de amor al prójimo en una parábola.'],
+    firstMention: '1 Reyes 16:24',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'betania',
+    name: 'Betania',
+    location: 'Aldea en la ladera este del Monte de los Olivos, a 3 km de Jerusalén.',
+    significance: 'Refugio pacífico para Jesús cerca de Jerusalén. Hogar de Lázaro, Marta y María.',
+    keyEvents: ['Resurrección de Lázaro', 'Ungimiento de Jesús por María', 'Ascensión de Cristo (cercanías)'],
+    interestingFacts: ['Jesús se hospedaba aquí durante la semana de la crucifixión.', 'Significa "casa del pobre" o "casa de higos".'],
+    firstMention: 'Mateo 21:17',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'antioquia',
+    name: 'Antioquía (de Siria)',
+    location: 'A orillas del río Orontes, actual Turquía.',
+    significance: 'Centro principal del cristianismo gentil y base misionera de Pablo.',
+    keyEvents: ['Primer lugar donde los discípulos fueron llamados "cristianos"', 'Iglesia base de Pablo y Bernabé'],
+    interestingFacts: ['Era la tercera ciudad más grande del Imperio Romano.', 'La primera iglesia verdaderamente multiétnica de la antigüedad.'],
+    firstMention: 'Hechos 6:5',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'efeso',
+    name: 'Éfeso',
+    location: 'Costa occidental de Asia Menor (Turquía).',
+    significance: 'Importante centro comercial y religioso. Sede del Templo de Artemisa.',
+    keyEvents: ['Ministerio de 3 años de Pablo', 'Disturbios de los plateros', 'Destinataria de una carta paulina y del Apocalipsis'],
+    interestingFacts: ['El Apóstol Juan vivió y pastoreó allí en sus últimos años.', 'Una de las Siete Iglesias de Apocalipsis, acusada de "perder su primer amor".'],
+    firstMention: 'Hechos 18:19',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'roma',
+    name: 'Roma',
+    location: 'Capital del Imperio Romano (Península itálica).',
+    significance: 'Centro del poder político y de severas persecuciones a los cristianos.',
+    keyEvents: ['Encarcelamiento de Pablo', 'Martirio de Pedro y Pablo', 'Destinataria de la epístola a los Romanos'],
+    interestingFacts: ['Todos los caminos llevaban a Roma, facilitando la expansión del evangelio.', 'Sufrió un gran incendio bajo Nerón, del cual se culpó a los cristianos.'],
+    firstMention: 'Hechos 2:10',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'corinto',
+    name: 'Corinto',
+    location: 'Grecia, en el istmo de Corinto.',
+    significance: 'Ciudad portuaria rica y sumamente inmoral.',
+    keyEvents: ['Pablo trabajó allí haciendo tiendas', 'Destinataria de dos epístolas paulinas'],
+    interestingFacts: ['Conocida por el templo de Afrodita y sus mil prostitutas sagradas.', '"Vivir como un corintio" era sinónimo de inmoralidad en la antigüedad.'],
+    firstMention: 'Hechos 18:1',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  },
+  {
+    id: 'monte_olivos',
+    name: 'Monte de los Olivos',
+    location: 'Al este de Jerusalén, separado por el valle del Cedrón.',
+    significance: 'Lugar de profunda agonía espiritual y enseñanza de Jesús.',
+    keyEvents: ['Entrada triunfal', 'Discurso de los Olivos', 'Agonía en Getsemaní', 'Ascensión'],
+    interestingFacts: ['Zacarías profetiza que el Mesías pondrá sus pies en este monte a su regreso.', 'Aún hoy está lleno de antiguos olivos, algunos quizás de la época romana.'],
+    firstMention: '2 Samuel 15:30',
+    imageUrl: '/assets/encyclopedia/places/placeholder.png'
+  }
+
 ];
 
 export const bibleBooks: BibleBookInfo[] = [

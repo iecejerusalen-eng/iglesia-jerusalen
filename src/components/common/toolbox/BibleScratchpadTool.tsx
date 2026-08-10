@@ -18,10 +18,15 @@ export function BibleScratchpadTool() {
     setResult(null);
     try {
       let finalQuery = query;
-      const parsed = parseBibleReferences(query);
-      if (parsed.length > 0 && parsed[0].bookId) {
-        const p = parsed[0];
-        finalQuery = `${p.bookId} ${p.chapter}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
+      try {
+        const parsed = parseBibleReferences(query);
+        if (parsed.length > 0 && parsed[0].bookId) {
+          const p = parsed[0];
+          finalQuery = `${p.bookId}${p.chapter ? ' ' + p.chapter : ''}${p.verses ? ':' + p.verses.replace(/\s+/g, '') : ''}`;
+        }
+      } catch (e) {
+        // Fallback to original raw query
+        finalQuery = query;
       }
 
       // Usando bible-api.com con la traducción Valera (RV1909) por defecto

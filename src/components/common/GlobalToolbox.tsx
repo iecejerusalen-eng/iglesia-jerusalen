@@ -1,5 +1,6 @@
 import { lazy, Suspense, useRef, type PointerEvent as ReactPointerEvent, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { 
   Activity, 
   Briefcase, 
@@ -22,28 +23,76 @@ const QuickNotesTool = lazy(() => import('./toolbox/QuickNotesTool').then((modul
 import { BookOpen, Timer, PenTool } from 'lucide-react';
 
 export default function GlobalToolbox() {
-  const store = useToolboxStore();
+  const store = useToolboxStore(useShallow((state) => ({
+    isOpen: state.isOpen,
+    isMinimized: state.isMinimized,
+    activePanel: state.activePanel,
+    bpm: state.bpm,
+    isPlaying: state.isPlaying,
+    timerIsRunning: state.timerIsRunning,
+    tallyCount: state.tallyCount,
+    position: state.position,
+    open: state.open,
+    close: state.close,
+    toggleMinimized: state.toggleMinimized,
+    setActivePanel: state.setActivePanel,
+    setPosition: state.setPosition,
+  })));
   const { role } = useAuthStore();
   const location = useLocation();
-  const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
+  const dragFrameRef = useRef<number | null>(null);
 
-  // Auto-close or auto-minimize based on routing could be added here
   useEffect(() => {
-    // Optional: Reset to hub when changing major routes
-  }, [location.pathname]);
+    return () => {
+      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+    };
+  }, []);
+
+  const clampPosition = (x: number, y: number) => {
+    const panel = panelRef.current;
+    const width = panel?.offsetWidth ?? (store.isMinimized ? 220 : 340);
+    const height = panel?.offsetHeight ?? 90;
+    return {
+      x: Math.max(8, Math.min(window.innerWidth - width - 8, x)),
+      y: Math.max(8, Math.min(window.innerHeight - height - 8, y)),
+    };
+  };
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const panel = event.currentTarget.closest('[data-toolbox-panel]')?.getBoundingClientRect();
+    const panel = panelRef.current?.getBoundingClientRect();
     if (!panel) return;
-    dragRef.current = { offsetX: event.clientX - panel.left, offsetY: event.clientY - panel.top };
+    dragRef.current = { offsetX: event.clientX - panel.left, offsetY: event.clientY - panel.top, baseX: panel.left, baseY: panel.top, x: panel.left, y: panel.top };
+    if (panelRef.current) panelRef.current.style.willChange = 'transform';
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (!dragRef.current) return;
-    const width = store.isMinimized ? 190 : 330;
-    const x = Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - dragRef.current.offsetX));
-    const y = Math.max(8, Math.min(window.innerHeight - 90, event.clientY - dragRef.current.offsetY));
+    const next = clampPosition(event.clientX - dragRef.current.offsetX, event.clientY - dragRef.current.offsetY);
+    dragRef.current.x = next.x;
+    dragRef.current.y = next.y;
+    if (dragFrameRef.current === null) {
+      dragFrameRef.current = window.requestAnimationFrame(() => {
+        if (panelRef.current && dragRef.current) {
+          panelRef.current.style.transform = `translate3d(${dragRef.current.x - dragRef.current.baseX}px, ${dragRef.current.y - dragRef.current.baseY}px, 0)`;
+        }
+        dragFrameRef.current = null;
+      });
+    }
+  };
+
+  const finishDrag = () => {
+    if (!dragRef.current) return;
+    if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+    const { x, y } = dragRef.current;
+    if (panelRef.current) {
+      panelRef.current.style.transform = '';
+      panelRef.current.style.willChange = '';
+    }
+    dragRef.current = null;
+    dragFrameRef.current = null;
     store.setPosition({ x, y });
   };
 
@@ -81,15 +130,16 @@ export default function GlobalToolbox() {
   };
 
   return (
-    <aside 
+    <aside
+      ref={panelRef}
       data-toolbox-panel 
       style={panelStyle} 
-      className={`fixed z-[90] flex flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#09090b]/70 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_30px_60px_-10px_rgba(0,0,0,0.8)] backdrop-blur-[40px] transition-all duration-300 ${store.position ? '' : 'bottom-6 right-6'} ${store.isMinimized ? 'w-[220px]' : 'w-[min(340px,calc(100vw-32px))]'}`} 
+      className={`fixed z-[90] flex max-h-[calc(100dvh-16px)] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#09090b]/70 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_30px_60px_-10px_rgba(0,0,0,0.8)] backdrop-blur-[40px] transition-[width,opacity,box-shadow] duration-300 ${store.position ? '' : 'bottom-2 right-2 sm:bottom-6 sm:right-6'} ${store.isMinimized ? 'w-[220px]' : 'w-[min(340px,calc(100vw-16px))]'}`}
       aria-label="Centro de herramientas global"
     >
       {/* Top Drag & Control Bar */}
       <div className="relative flex items-center justify-between border-b border-white/[0.06] bg-white/[0.02] px-4 py-3">
-        <button onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={() => { dragRef.current = null; }} className="cursor-grab touch-none rounded-full p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white" aria-label="Mover herramientas">
+        <button onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} className="cursor-grab touch-none rounded-full p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white active:cursor-grabbing" aria-label="Mover herramientas">
           <GripHorizontal size={16} />
         </button>
         
@@ -181,7 +231,7 @@ export default function GlobalToolbox() {
               
             </div>
           ) : (
-            <div className="p-1">
+            <div className="min-h-0 overflow-y-auto overscroll-contain p-1">
               <Suspense fallback={<div className="p-6 text-center text-xs text-white/50">Cargando herramienta…</div>}>{renderActiveTool()}</Suspense>
             </div>
           )}

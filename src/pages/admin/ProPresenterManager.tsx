@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 type ConnectionMode = 'alpha' | 'ndi' | 'web';
 type PanelTab = 'overview' | 'connections' | 'control' | 'settings';
 type CommandType = 'test_connection' | 'show_lyrics' | 'show_chords' | 'clear_output' | 'next_slide' | 'previous_slide' | 'trigger_slide' | 'sync_service';
+type SchemaState = 'ready' | 'missing' | 'unknown';
 
 interface ProPresenterConnection {
   id: string;
@@ -82,6 +83,10 @@ const formatLastSeen = (value: string | null) => {
 
 const isOnline = (value: string | null) => Boolean(value && Date.now() - new Date(value).getTime() < 45_000);
 
+const isMissingProPresenterSchema = (error: { code?: string; message?: string } | null) => Boolean(
+  error && (error.code === 'PGRST205' || /propresenter_(connections|commands).*(schema cache|does not exist)/i.test(error.message ?? '')),
+);
+
 const hashPairingCode = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -106,6 +111,8 @@ const ProPresenterManager = () => {
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [selectedSongId, setSelectedSongId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [schemaState, setSchemaState] = useState<SchemaState>('unknown');
+  const [schemaError, setSchemaError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [pairingCode, setPairingCode] = useState('');
@@ -124,15 +131,22 @@ const ProPresenterManager = () => {
       supabase.from('propresenter_commands').select('id, connection_id, command_type, status, error_message, created_at, acknowledged_at').order('created_at', { ascending: false }).limit(20),
     ]);
 
-    if (connectionResult.error) {
+    const missingSchema = isMissingProPresenterSchema(connectionResult.error) || isMissingProPresenterSchema(commandResult.error);
+    if (missingSchema) {
+      setSchemaState('missing');
+      setSchemaError('Supabase todavía no reconoce las tablas de control de ProPresenter. Aplica la migración indicada abajo para habilitar conexiones y comandos.');
+    } else if (connectionResult.error) {
+      setSchemaState('unknown');
       toast.error(`No se pudieron cargar las conexiones: ${connectionResult.error.message}`);
     } else {
+      setSchemaState('ready');
+      setSchemaError(null);
       const loaded = (connectionResult.data ?? []) as ProPresenterConnection[];
       setConnections(loaded);
       setSelectedConnectionId((current) => current || loaded[0]?.id || '');
     }
     if (!songsResult.error) setSongs((songsResult.data ?? []) as SongOption[]);
-    if (commandResult.error) toast.error(`No se pudo cargar la cola de comandos: ${commandResult.error.message}`);
+    if (commandResult.error && !missingSchema) toast.error(`No se pudo cargar la cola de comandos: ${commandResult.error.message}`);
     else setCommands((commandResult.data ?? []) as CommandRecord[]);
     setLoading(false);
   }, []);
@@ -176,6 +190,10 @@ const ProPresenterManager = () => {
   }, [canView]);
 
   const createConnection = async () => {
+    if (schemaState !== 'ready') {
+      toast.info('Aplica primero la migración de ProPresenter en Supabase.');
+      return;
+    }
     if (readOnly || !newConnection.name.trim()) {
       toast.error('Escribe un nombre para la computadora.');
       return;
@@ -215,6 +233,10 @@ const ProPresenterManager = () => {
   };
 
   const sendCommand = async (commandType: CommandType, payload: Record<string, string | number | boolean | null> = {}) => {
+    if (schemaState !== 'ready') {
+      toast.info('Aplica primero la migración de ProPresenter en Supabase.');
+      return;
+    }
     if (readOnly || !selectedConnection) {
       toast.error('Selecciona una conexión con permisos de edición.');
       return;
@@ -281,7 +303,7 @@ const ProPresenterManager = () => {
         ))}
       </nav>
 
-      {loading ? <div className={`${glassPanel} flex min-h-52 items-center justify-center`}><Loader2 className="animate-spin text-primary" /></div> : (
+      {loading ? <div className={`${glassPanel} flex min-h-52 items-center justify-center`}><Loader2 className="animate-spin text-primary" /></div> : schemaState === 'missing' ? <SchemaSetupCard error={schemaError} onRetry={() => void loadData()} /> : (
         <>
           {tab === 'overview' && <OverviewTab connections={connections} onNew={() => setShowCreate(true)} onSelect={(id) => { setSelectedConnectionId(id); setTab('control'); }} />}
           {tab === 'connections' && <ConnectionsTab connections={connections} selectedId={selectedConnection?.id ?? ''} readOnly={readOnly} onNew={() => setShowCreate(true)} onSelect={setSelectedConnectionId} onDelete={(connection) => void removeConnection(connection)} />}
@@ -323,6 +345,8 @@ const ActionButton = ({ icon: Icon, label, onClick, disabled, danger = false }: 
 const SettingsTab = ({ readOnly }: { readOnly: boolean }) => <div className="grid gap-5 xl:grid-cols-2"><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-gold"><Settings2 size={14} /> Preferencias de salida</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Diseño del overlay</h3><div className="mt-5 space-y-3">{['Letras blancas con sombra suave', 'Acordes solo para Stage Display', 'Transición fundido de 220 ms', 'Modo seguro: no enviar contenido sin confirmación'].map((item) => <label key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/55 p-3 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"><input type="checkbox" defaultChecked disabled={readOnly} className="size-4 accent-blue-600" />{item}</label>)}</div></section><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-400"><KeyRound size={14} /> Seguridad</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Roles autorizados</h3><p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">El acceso se controla con el módulo <strong>propresenter</strong>. En Usuarios & Permisos puedes activar Ver o Editar para administradores, editores de producción, multimedia u otros roles personalizados.</p><div className="mt-5 rounded-2xl bg-blue-50 p-4 text-xs leading-5 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200"><ShieldCheck size={16} className="mb-2" /><strong>Recomendación:</strong> concede Editar únicamente a quienes dirigen la presentación. El resto puede tener solo Ver.</div></section></div>;
 
 const EmptyState = ({ onNew }: { onNew?: () => void }) => <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center dark:border-white/15"><WifiOff size={22} className="mx-auto text-slate-400" /><p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">No hay computadoras conectadas</p>{onNew && <button type="button" onClick={onNew} className="mt-3 text-xs font-black text-primary dark:text-sky-300">Registrar la primera</button>}</div>;
+
+const SchemaSetupCard = ({ error, onRetry }: { error: string | null; onRetry: () => void }) => <section className={`${glassPanel} overflow-hidden p-5 sm:p-7`}><div className="flex flex-col gap-5 md:flex-row md:items-start"><div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><AlertTriangle size={24} /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Configuración pendiente</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Falta aplicar la migración de ProPresenter</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{error ?? 'El panel está listo, pero la base de datos todavía no tiene las tablas de conexiones y comandos.'}</p><div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5"><p className="text-xs font-black text-slate-700 dark:text-slate-200">Pasos para activarlo</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-5 text-slate-500 dark:text-slate-400"><li>Abre el SQL Editor del proyecto Supabase.</li><li>Ejecuta <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">20260810210000_propresenter_control_center.sql</code>.</li><li>Vuelve aquí y pulsa “Comprobar de nuevo”.</li></ol><p className="mt-3 text-[11px] text-slate-400">Nunca coloques la clave <code className="font-mono">service_role</code> en el navegador.</p></div><button type="button" onClick={onRetry} className={`${softButton} mt-5`}><RefreshCw size={15} /> Comprobar de nuevo</button></div></div></section>;
 
 const CreateConnectionModal = ({ value, busy, onChange, onClose, onSubmit }: { value: { name: string; mode: ConnectionMode; description: string }; busy: boolean; onChange: (value: { name: string; mode: ConnectionMode; description: string }) => void; onClose: () => void; onSubmit: () => void }) => <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-md" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section className={`${glassPanel} w-full max-w-xl overflow-hidden bg-white/95 dark:bg-slate-950/95`} role="dialog" aria-modal="true" aria-labelledby="new-propresenter-title"><header className="flex items-start justify-between gap-4 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 px-5 py-5 text-white"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-sky-300">Nueva conexión</p><h2 id="new-propresenter-title" className="mt-1 font-serif text-2xl font-bold">Registrar computadora</h2></div><button type="button" onClick={onClose} className="rounded-xl p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="Cerrar"><X size={18} /></button></header><div className="space-y-4 p-5"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Nombre visible<input value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} placeholder="PC Producción · Auditorio" className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Modo de salida<select value={value.mode} onChange={(event) => onChange({ ...value, mode: event.target.value as ConnectionMode })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white">{(Object.keys(modeMeta) as ConnectionMode[]).map((mode) => <option key={mode} value={mode}>{modeMeta[mode].label} · {modeMeta[mode].description}</option>)}</select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Descripción opcional<textarea value={value.description} onChange={(event) => onChange({ ...value, description: event.target.value })} rows={3} placeholder="Computadora principal del auditorio…" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-[11px] leading-5 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200"><KeyRound size={15} className="mt-0.5 shrink-0" />Al crearla se generará un código de emparejamiento de un solo uso. El conector local lo utilizará para vincular esta computadora.</div></div><footer className="flex justify-end gap-2 border-t border-slate-200/70 p-4 dark:border-white/10"><button type="button" onClick={onClose} className={softButton}>Cancelar</button><button type="button" disabled={busy || !value.name.trim()} onClick={onSubmit} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-black text-white disabled:opacity-40">{busy && <Loader2 size={14} className="animate-spin" />} Crear conexión</button></footer></section></div>;
 
