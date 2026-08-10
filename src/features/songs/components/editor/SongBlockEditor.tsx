@@ -72,7 +72,7 @@ export function SongBlockEditor({ content, onChange, disabled = false }: Props) 
       newBlock = { ...newBlock, content: 'e|---|\nB|---|' };
     }
 
-    updateParent([...blocks, newBlock as SongStructureBlock]);
+    updateParent([...blocks, newBlock as unknown as SongStructureBlock]);
   };
 
   const updateBlock = (id: string, updates: Partial<SongStructureBlock>) => {

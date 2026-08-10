@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { SVGuitarChord } from 'svguitar';
-import { getChordData } from '../utils/chordDictionary';
+import { getChordData } from '../../utils/chordDictionary';
 
 export interface ChordPosition {
   fingers: [number, number | string, (string | undefined)?][]; // [string, fret, text]
@@ -27,7 +27,7 @@ export function StringChordDiagram({
   color = 'currentColor'
 }: StringChordDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<SVGuitarChord | null>(null);
+  const chartRef = useRef<any>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -100,7 +100,7 @@ export function StringChordDiagram({
         fontFamily: 'Inter, sans-serif',
         titleFontSize: 40,
         fixedDiagramPosition: true
-      })
+      } as any)
       .draw();
 
   }, [chord, instrument, color]);

@@ -28,36 +28,7 @@ export const SongViewer = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(0);
   const [chordPosition, setChordPosition] = useState<'above' | 'inline'>('above');
-  const [instrument, setInstrument] = useState<InstrumentType>('guitarra');
-  const [textSize, setTextSize] = useState(100);
-  const [showDiagramsAtTop, setShowDiagramsAtTop] = useState(true);
-
-  const uniqueChords = useMemo(() => {
-    const chords = new Set<string>();
-    
-    // Support modern blocks
-    if (selectedSong.structure_blocks) {
-      selectedSong.structure_blocks.forEach((block: any) => {
-        if (block.type === 'lyrics') {
-          const text = block.lyrics || '';
-          const regex = /\[(.*?)\]/g;
-          let match;
-          while ((match = regex.exec(text)) !== null) {
-            chords.add(match[1]);
-          }
-        }
-      });
-    } else if (selectedSong.lyrics) {
-      // Support legacy html 
-      const text = selectedSong.lyrics || '';
-      const regex = /\[(.*?)\]/g;
-      let match;
-      while ((match = regex.exec(text)) !== null) {
-        chords.add(match[1]);
-      }
-    }
-    return Array.from(chords).map(c => transposeNote(c, transposeAmount));
-  }, [selectedSong.structure_blocks, selectedSong.lyrics, transposeAmount]);
+  const [textSize] = useState(100);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -124,10 +95,10 @@ export const SongViewer = ({
   const copyChords = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map(b => {
-        let blockStr = `[${b.label.toUpperCase()}]\n`;
-        if (b.melody) blockStr += `(Guía: ${b.melody})\n`;
-        blockStr += `${processBracketText(b.lyrics, transposeAmount, nashvilleMode, originalKey)}\n`;
+      result = song.structure_blocks.map((b: Record<string, unknown>) => {
+        let blockStr = `[${((b.label as string) || '').toUpperCase()}]\n`;
+        if (b.melody || b.melody_guide) blockStr += `(Guía: ${(b.melody || b.melody_guide) as string})\n`;
+        blockStr += `${processBracketText((b.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey)}\n`;
         return blockStr;
       }).join('\n');
     } else {
@@ -141,9 +112,9 @@ export const SongViewer = ({
   const copyOnlyLyrics = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map(b => {
-        let blockStr = `[${b.label.toUpperCase()}]\n`;
-        const cleanLyrics = b.lyrics.replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
+      result = song.structure_blocks.map((b: Record<string, unknown>) => {
+        let blockStr = `[${((b.label as string) || '').toUpperCase()}]\n`;
+        const cleanLyrics = ((b.lyrics as string) || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
         blockStr += `${cleanLyrics}\n`;
         return blockStr;
       }).join('\n');
@@ -603,30 +574,30 @@ export const SongViewer = ({
                   {selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0 ? (
                     /* STRUCTURED RENDERING */
                     <div className="space-y-6">
-                      {selectedSong.structure_blocks.map((block) => (
+                      {selectedSong.structure_blocks.map((block: Record<string, unknown>) => (
                         <div 
-                          key={block.id} 
+                          key={block.id as string} 
                           className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
                         >
                           <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
                             <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide ${
-                              block.type === 'coro'
+                              block.section_type === 'coro' || block.type === 'coro'
                                 ? 'bg-amber-55 dark:bg-amber-950/40 text-amber-800 dark:text-gold border-amber-300/30'
-                                : block.type === 'intro'
+                                : block.section_type === 'intro' || block.type === 'intro'
                                 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
                             }`}>
-                              {block.label}
+                              {(block.label as string) || 'Sección'}
                             </span>
-                            {block.melody && (
+                            {(block.melody || block.melody_guide) && (
                               <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
-                                <Info size={10} /> {block.melody}
+                                <Info size={10} /> {(block.melody || block.melody_guide) as string}
                               </span>
                             )}
                           </div>
                           <div 
                             className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics, transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml((block.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                           />
                         </div>
                       ))}
