@@ -347,7 +347,6 @@ export const bibleCharacters: BibleCharacter[] = [
     interestingFacts: ['El primer mártir de la iglesia cristiana.', 'Tuvo una visión del cielo abierto y Jesús de pie antes de morir.'],
     firstMention: 'Hechos 6:5',
     imageUrl: '/assets/encyclopedia/characters/placeholder.png'
-  }
   },
   {
     id: 'josue_lider',
@@ -613,7 +612,6 @@ export const biblePlaces: BiblePlace[] = [
     interestingFacts: ['Zacarías profetiza que el Mesías pondrá sus pies en este monte a su regreso.', 'Aún hoy está lleno de antiguos olivos, algunos quizás de la época romana.'],
     firstMention: '2 Samuel 15:30',
     imageUrl: '/assets/encyclopedia/places/placeholder.png'
-  }
   },
   {
     id: 'ninive',
