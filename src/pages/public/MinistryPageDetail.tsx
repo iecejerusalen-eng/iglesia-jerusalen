@@ -16,6 +16,7 @@ import BlockRenderer from '../../components/public/BlockRenderer';
 import type { Ministry } from '../../types';
 import type { MinistryGalleryItem, MinistryPage, MinistryPageContent } from '../../types/ministryPages';
 import type { LessonBlock } from '../../components/admin/BlockEditor';
+import { buildMinistryPagePath, getMinistryPageAncestors, resolveMinistryPagePath } from '../../utils/ministryPages';
 
 type PublicMinistry = Pick<Ministry, 'id' | 'name' | 'slug' | 'image_url' | 'theme_color'>;
 
@@ -80,14 +81,8 @@ export default function MinistryPageDetail() {
         if (pagesError) throw pagesError;
 
         const publicPages = (pageRows || []) as MinistryPage[];
-        let parentId: string | null = null;
-        let resolved: MinistryPage | undefined;
-        for (const segment of segments) {
-          resolved = publicPages.find((candidate) => candidate.parent_id === parentId && candidate.slug === segment);
-          if (!resolved) break;
-          parentId = resolved.id;
-        }
-        if (!resolved || resolved.slug !== segments.at(-1)) throw new Error('Página no encontrada.');
+        const resolved = resolveMinistryPagePath(segments, publicPages);
+        if (!resolved) throw new Error('Página no encontrada.');
         if (cancelled) return;
         setMinistry(ministryData as PublicMinistry);
         setPages(publicPages);
@@ -107,24 +102,12 @@ export default function MinistryPageDetail() {
 
   const breadcrumbs = useMemo(() => {
     if (!page) return [];
-    const result: MinistryPage[] = [];
-    let cursor: MinistryPage | undefined = page;
-    while (cursor) {
-      result.unshift(cursor);
-      cursor = cursor.parent_id ? pages.find((candidate) => candidate.id === cursor?.parent_id) : undefined;
-    }
-    return result;
+    return getMinistryPageAncestors(page, pages);
   }, [page, pages]);
 
   const children = useMemo(() => pages.filter((candidate) => candidate.parent_id === page?.id).sort((a, b) => a.sort_order - b.sort_order), [page?.id, pages]);
   const pagePath = (target: MinistryPage) => {
-    const path: string[] = [];
-    let cursor: MinistryPage | undefined = target;
-    while (cursor) {
-      path.unshift(cursor.slug);
-      cursor = cursor.parent_id ? pages.find((candidate) => candidate.id === cursor?.parent_id) : undefined;
-    }
-    return `/ministerios/${ministrySlug}/${path.join('/')}`;
+    return `/ministerios/${ministrySlug}/${buildMinistryPagePath(target, pages)}`;
   };
 
   const unlock = async (event: FormEvent) => {

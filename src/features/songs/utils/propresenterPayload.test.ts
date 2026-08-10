@@ -29,7 +29,7 @@ describe('ProPresenter song payload', () => {
   it('separates lyrics and aligned chord information', () => {
     expect(parseProPresenterLine('[G]Mil genera[C]ciones')).toEqual({
       lyrics: 'Mil generaciones',
-      chord_line: 'G          C',
+      chord_line: 'G         C',
       chords: ['G', 'C'],
     });
   });

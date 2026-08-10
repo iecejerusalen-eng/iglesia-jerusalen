@@ -133,6 +133,9 @@ BEGIN
     IF parent_page.ministry_id <> NEW.ministry_id THEN
       RAISE EXCEPTION 'La página superior pertenece a otro ministerio.';
     END IF;
+    IF NEW.status = 'published' AND parent_page.status <> 'published' THEN
+      RAISE EXCEPTION 'Publica primero la página superior.';
+    END IF;
     IF NEW.id IS NOT NULL AND NEW.parent_id = NEW.id THEN
       RAISE EXCEPTION 'Una página no puede depender de sí misma.';
     END IF;
@@ -210,12 +213,26 @@ BEGIN
     WHERE page.id = descendants.id
       AND page.depth IS DISTINCT FROM descendants.calculated_depth;
   END IF;
+
+  IF OLD.status = 'published' AND NEW.status = 'draft' THEN
+    WITH RECURSIVE descendants AS (
+      SELECT child.id FROM public.ministry_pages child WHERE child.parent_id = NEW.id
+      UNION ALL
+      SELECT child.id
+      FROM public.ministry_pages child
+      JOIN descendants parent ON child.parent_id = parent.id
+    )
+    UPDATE public.ministry_pages page
+    SET status = 'draft', published_at = NULL
+    WHERE page.id IN (SELECT id FROM descendants)
+      AND page.status <> 'draft';
+  END IF;
   RETURN NEW;
 END;
 $$;
 
 CREATE TRIGGER refresh_ministry_page_descendant_depths_after_update
-  AFTER UPDATE OF parent_id, depth ON public.ministry_pages
+  AFTER UPDATE OF parent_id, depth, status ON public.ministry_pages
   FOR EACH ROW EXECUTE FUNCTION public.refresh_ministry_page_descendant_depths();
 
 CREATE OR REPLACE FUNCTION public.touch_ministry_page_content()

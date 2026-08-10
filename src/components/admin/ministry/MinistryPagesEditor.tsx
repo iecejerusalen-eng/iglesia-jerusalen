@@ -26,6 +26,7 @@ import MediaUploader from '../../common/MediaUploader';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import type { Ministry } from '../../../types';
 import type { MinistryGalleryItem, MinistryPage, MinistryPageStatus, MinistryPageWithContent } from '../../../types/ministryPages';
+import { buildMinistryPagePath, flattenMinistryPageTree, slugifyMinistryPage } from '../../../utils/ministryPages';
 
 interface MinistryPagesEditorProps {
   ministry: Ministry;
@@ -47,14 +48,6 @@ interface PageDraft {
   is_password_protected: boolean;
   password: string;
 }
-
-const makeSlug = (value: string) => value
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-  .slice(0, 80);
 
 const emptyDraft = (parentId: string | null = null): PageDraft => ({
   id: null,
@@ -135,29 +128,10 @@ export default function MinistryPagesEditor({ ministry, canEdit }: MinistryPages
   const selectedPage = pages.find((page) => page.id === selectedId) || null;
   const selectedPublicPath = useMemo(() => {
     if (!selectedPage) return '';
-    const segments: string[] = [];
-    let cursor: MinistryPageWithContent | undefined = selectedPage;
-    while (cursor) {
-      segments.unshift(cursor.slug);
-      cursor = cursor.parent_id ? pages.find((page) => page.id === cursor?.parent_id) : undefined;
-    }
-    return `/ministerios/${ministry.slug}/${segments.join('/')}`;
+    return `/ministerios/${ministry.slug}/${buildMinistryPagePath(selectedPage, pages)}`;
   }, [ministry.slug, pages, selectedPage]);
 
-  const orderedPages = useMemo(() => {
-    const result: MinistryPageWithContent[] = [];
-    const append = (parentId: string | null) => {
-      pages
-        .filter((page) => page.parent_id === parentId)
-        .sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title, 'es'))
-        .forEach((page) => {
-          result.push(page);
-          append(page.id);
-        });
-    };
-    append(null);
-    return result;
-  }, [pages]);
+  const orderedPages = useMemo(() => flattenMinistryPageTree(pages), [pages]);
 
   const loadPages = useCallback(async (preferredId?: string | null) => {
     setLoading(true);
@@ -204,7 +178,7 @@ export default function MinistryPagesEditor({ ministry, canEdit }: MinistryPages
   const save = async () => {
     if (!canEdit || saving) return;
     const title = draft.title.trim();
-    const slug = makeSlug(draft.slug || title);
+    const slug = slugifyMinistryPage(draft.slug || title);
     if (title.length < 2 || !slug) {
       toast.error('Escribe un título y una dirección válida.');
       return;
@@ -373,8 +347,8 @@ export default function MinistryPagesEditor({ ministry, canEdit }: MinistryPages
 
             <fieldset disabled={!canEdit || saving} className="space-y-6 disabled:opacity-75">
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-1.5 text-xs font-bold">Título visible<input value={draft.title} maxLength={120} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value, slug: current.id || current.slug ? current.slug : makeSlug(event.target.value) }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950" /></label>
-                <label className="space-y-1.5 text-xs font-bold">Dirección web<div className="flex rounded-xl border border-slate-200 bg-white focus-within:border-indigo-400 dark:border-white/10 dark:bg-slate-950"><span className="flex items-center px-3 text-slate-400"><Link2 size={14} /></span><input value={draft.slug} onChange={(event) => setDraft((current) => ({ ...current, slug: makeSlug(event.target.value) }))} className="min-w-0 flex-1 bg-transparent px-1 py-2.5 pr-3 text-sm font-medium outline-none" /></div></label>
+                <label className="space-y-1.5 text-xs font-bold">Título visible<input value={draft.title} maxLength={120} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value, slug: current.id || current.slug ? current.slug : slugifyMinistryPage(event.target.value) }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950" /></label>
+                <label className="space-y-1.5 text-xs font-bold">Dirección web<div className="flex rounded-xl border border-slate-200 bg-white focus-within:border-indigo-400 dark:border-white/10 dark:bg-slate-950"><span className="flex items-center px-3 text-slate-400"><Link2 size={14} /></span><input value={draft.slug} onChange={(event) => setDraft((current) => ({ ...current, slug: slugifyMinistryPage(event.target.value) }))} className="min-w-0 flex-1 bg-transparent px-1 py-2.5 pr-3 text-sm font-medium outline-none" /></div></label>
               </div>
               <label className="space-y-1.5 text-xs font-bold">Resumen para tarjetas y buscadores<textarea value={draft.excerpt} maxLength={320} rows={3} onChange={(event) => setDraft((current) => ({ ...current, excerpt: event.target.value }))} className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950" /><span className="block text-right text-[10px] text-slate-400">{draft.excerpt.length}/320</span></label>
 

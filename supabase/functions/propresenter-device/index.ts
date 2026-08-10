@@ -34,13 +34,21 @@ const createDeviceToken = () => `${crypto.randomUUID()}-${crypto.randomUUID()}`;
 
 const getConnectionForToken = async (admin: SupabaseClient, token: string) => {
   const tokenHash = await hashValue(token);
-  const { data, error } = await admin
-    .from('propresenter_connections')
-    .select('id, name, mode, is_enabled')
+  const { data: secret, error: secretError } = await admin
+    .from('propresenter_connection_secrets')
+    .select('connection_id')
     .eq('device_token_hash', tokenHash)
     .maybeSingle();
-  if (error) throw error;
-  return data;
+  if (secretError) throw secretError;
+  if (!secret) return null;
+
+  const { data: connection, error: connectionError } = await admin
+    .from('propresenter_connections')
+    .select('id, name, mode, is_enabled')
+    .eq('id', secret.connection_id)
+    .maybeSingle();
+  if (connectionError) throw connectionError;
+  return connection;
 };
 
 Deno.serve(async (request) => {
@@ -57,24 +65,15 @@ Deno.serve(async (request) => {
 
     if (body.action === 'pair') {
       if (!body.connection_id || !body.pairing_code) return response({ error: 'connection_id and pairing_code are required' }, 400);
-      const pairingHash = await hashValue(body.pairing_code.trim().toUpperCase());
-      const { data: connection, error } = await admin
-        .from('propresenter_connections')
-        .select('id, name, mode, is_enabled')
-        .eq('id', body.connection_id)
-        .eq('device_token_hash', pairingHash)
-        .maybeSingle();
-      if (error) throw error;
-      if (!connection || !connection.is_enabled) return response({ error: 'Invalid or disabled pairing code' }, 401);
-
       const deviceToken = createDeviceToken();
-      const { error: updateError } = await admin.from('propresenter_connections').update({
-        device_token_hash: await hashValue(deviceToken),
-        device_token_issued_at: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
-        last_error: null,
-      }).eq('id', connection.id);
-      if (updateError) throw updateError;
+      const { data, error } = await admin.rpc('pair_propresenter_device', {
+        p_connection_id: body.connection_id,
+        p_pairing_code: body.pairing_code,
+        p_device_token_hash: await hashValue(deviceToken),
+      });
+      if (error) throw error;
+      const connection = Array.isArray(data) ? data[0] : data;
+      if (!connection || !connection.is_enabled) return response({ error: 'Invalid, expired or disabled pairing code' }, 401);
       return response({ device_token: deviceToken, connection });
     }
 
@@ -95,36 +94,30 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'poll') {
-      const { data: commands, error } = await admin
-        .from('propresenter_commands')
-        .select('id, command_type, payload, created_at')
-        .eq('connection_id', connection.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(20);
+      const { data: commands, error } = await admin.rpc('claim_propresenter_commands', {
+        p_connection_id: connection.id,
+        p_limit: 20,
+      });
       if (error) throw error;
-      const commandIds = (commands ?? []).map((command) => command.id);
-      if (commandIds.length > 0) {
-        const { error: markError } = await admin.from('propresenter_commands').update({ status: 'sent' }).in('id', commandIds);
-        if (markError) throw markError;
-      }
       return response({ commands: commands ?? [] });
     }
 
     if (body.action === 'ack') {
       if (!body.command_id || !body.status) return response({ error: 'command_id and status are required' }, 400);
-      const { error } = await admin.from('propresenter_commands').update({
-        status: body.status,
-        error_message: body.error_message?.slice(0, 500) ?? null,
-        acknowledged_at: new Date().toISOString(),
-      }).eq('id', body.command_id).eq('connection_id', connection.id);
+      const { data: acknowledged, error } = await admin.rpc('ack_propresenter_command', {
+        p_connection_id: connection.id,
+        p_command_id: body.command_id,
+        p_status: body.status,
+        p_error_message: body.error_message?.slice(0, 500) ?? null,
+      });
       if (error) throw error;
+      if (!acknowledged) return response({ error: 'Command is no longer claimable by this device' }, 409);
       return response({ ok: true });
     }
 
     return response({ error: 'Unsupported action' }, 400);
   } catch (error) {
     console.error('propresenter-device error', error);
-    return response({ error: error instanceof Error ? error.message : 'Unexpected error' }, 500);
+    return response({ error: 'Unexpected device service error' }, 500);
   }
 });

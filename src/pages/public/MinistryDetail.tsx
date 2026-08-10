@@ -112,7 +112,11 @@ const MinistryDetail = () => {
               const valB = idxB === -1 ? 99 : idxB;
               return valA - valB;
             });
-            setDirectiva(sortedDirectiva as MinistryLeadership[]);
+            const normalizedDirectiva = sortedDirectiva.map((item) => ({
+              ...item,
+              members: Array.isArray(item.members) ? item.members[0] || null : item.members || null,
+            }));
+            setDirectiva(normalizedDirectiva as MinistryLeadership[]);
           }
 
           // Fetch members if it is Cuerpo de Apoyo
@@ -345,7 +349,7 @@ const MinistryDetail = () => {
                   {/* Photo or Initials */}
                   <div className="w-14 h-14 rounded-full overflow-hidden border border-white dark:border-slate-800 shadow-sm bg-primary/10 text-primary dark:text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
                     {photoUrl ? (
-                      <img loading="lazy" src={photoUrl} alt={name} className="w-full h-full object-cover" />
+                      <img loading="lazy" src={photoUrl} alt={name || 'Miembro del ministerio'} className="w-full h-full object-cover" />
                     ) : (
                       <span>{name?.[0] || 'U'}</span>
                     )}
