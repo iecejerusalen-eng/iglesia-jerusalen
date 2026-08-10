@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import { PageSkeleton } from '../components/common/Skeletons';
@@ -148,6 +148,12 @@ const AudioLibrary = lazyWithRetry(() => import('../pages/admin/games/AudioLibra
 const DesignCatalog = lazyWithRetry(() => import('../pages/admin/DesignCatalog'));
 const CertificatesManager = lazyWithRetry(() => import('../pages/admin/CertificatesManager'));
 const CrmSubmissions = lazyWithRetry(() => import('../pages/admin/CrmSubmissions'));
+const ContentHub = lazyWithRetry(() => import('../pages/admin/ContentHub'));
+const ContactInbox = lazyWithRetry(() => import('../pages/admin/ContactInbox'));
+const AuditLogViewer = lazyWithRetry(() => import('../pages/admin/AuditLogViewer'));
+const SchedulesManager = lazyWithRetry(() => import('../pages/admin/SchedulesManager'));
+const DiscipleshipManager = lazyWithRetry(() => import('../pages/admin/DiscipleshipManager'));
+const AdminNotFound = lazyWithRetry(() => import('../pages/admin/AdminNotFound'));
 
 export default function AppRouter() {
   return (
@@ -245,7 +251,7 @@ export default function AppRouter() {
           <Route path="/admin/ministerios/:id" element={<MinistryDashboard />} />
         </Route></Route>
         <Route element={<ProtectedRoute module="logos" />}><Route element={<AdminLayout />}><Route path="/admin/logos" element={<LogosManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /><Route path="/admin/horarios" element={<SchedulesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="missions" />}><Route element={<AdminLayout />}><Route path="/admin/misiones" element={<MissionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
@@ -260,7 +266,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="speakers" />}><Route element={<AdminLayout />}>
           <Route path="/admin/pastores" element={<SpeakersManager />} />
-          <Route path="/admin/liderazgo" element={<SpeakersManager />} />
+          <Route path="/admin/liderazgo" element={<Navigate to="/admin/pastores" replace />} />
         </Route></Route>
         <Route element={<ProtectedRoute module="songs" />}><Route element={<AdminLayout />}><Route path="/admin/alabanzas" element={<SongsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="programs" />}>
@@ -283,6 +289,7 @@ export default function AppRouter() {
           <Route element={<AdminLayout />}>
             <Route path="/admin/programas" element={<StudyProgramsManager />} />
             <Route path="/admin/programas/:id" element={<StudyProgramBuilder />} />
+            <Route path="/admin/discipulado" element={<DiscipleshipManager />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute module="editorial" />}>
@@ -300,7 +307,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="presentation_editor" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="design" />}><Route element={<AdminLayout />}><Route path="/admin/diseno" element={<DesignCatalog />} /></Route></Route>
         <Route element={<ProtectedRoute module="animations" />}><Route element={<AdminLayout />}><Route path="/admin/animaciones" element={<AnimationCatalog />} /></Route></Route>
-        <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
+        <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/contenido" element={<ContentHub />} /><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="analytics" />}><Route element={<AdminLayout />}><Route path="/admin/analisis" element={<AnalyticsDashboard />} /></Route></Route>
         <Route element={<ProtectedRoute module="finances" />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<DonationPageManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="products" />}>
@@ -323,11 +330,12 @@ export default function AppRouter() {
         </Route>
         <Route element={<ProtectedRoute module="menu_manager" />}><Route element={<AdminLayout />}><Route path="/admin/apariencia/menu" element={<MenuManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="components" />}><Route element={<AdminLayout />}><Route path="/admin/componentes" element={<ComponentLibrary />} /></Route></Route>
-        <Route element={<ProtectedRoute module="button_studio" />}><Route element={<AdminLayout />}><Route path="/admin/estilos" element={<ComponentStylesManager />} /><Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="users" />}><Route element={<AdminLayout />}><Route path="/admin/usuarios" element={<UsersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="button_studio" />}><Route element={<AdminLayout />}><Route path="/admin/estilos" element={<Navigate to="/admin/apariencia/botones" replace />} /><Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="users" />}><Route element={<AdminLayout />}><Route path="/admin/usuarios" element={<UsersManager />} /><Route path="/admin/actividad" element={<AuditLogViewer />} /></Route></Route>
         <Route element={<ProtectedRoute module="petitions" />}><Route element={<AdminLayout />}><Route path="/admin/peticiones" element={<PetitionsManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /><Route path="/admin/buzon" element={<ContactInbox />} /></Route></Route>
         <Route element={<ProtectedRoute module="inventory" />}><Route element={<AdminLayout />}><Route path="/admin/inventario" element={<InventoryManager />} /></Route></Route>
+        <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}><Route path="/admin/*" element={<AdminNotFound />} /></Route></Route>
       </Routes>
     </Suspense>
   );

@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay, Search } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
-import { MODULE_GROUPS, ADMIN_MODULES } from '../../config/adminModules';
+import { MODULE_GROUPS, ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 interface SidebarProps {
@@ -28,11 +28,20 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen || (!isMobile && sidebarViewMode !== 'drawer')) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isMobile, isOpen, onClose, sidebarViewMode]);
+
 
 
   // Filter items visible to the current user's permissions
   const visibleNavItems = useMemo(() => {
-    return ADMIN_MODULES.filter(item => hasPermission(item.id, 'view'));
+    return ADMIN_MODULES.filter(item => item.available !== false && hasPermission(getAdminModulePermission(item), 'view'));
   }, [hasPermission]);
 
   // Group definitions matching keys
@@ -359,7 +368,10 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
               <div key={group.key} className={`space-y-0.5 overflow-hidden ${sidebarMenuMode === 'cards_grouped' ? 'mb-4 bg-white/5 p-2' : 'bg-white/2 dark:bg-slate-950/20'} rounded-xl`}>
                 {/* Group Accordion Header */}
                 <button
+                  type="button"
                   onClick={() => sidebarAccordionMode !== 'all_open' && toggleGroup(group.key)}
+                  aria-expanded={isExpanded}
+                  aria-controls={`admin-group-${group.key}`}
                   className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-300 text-left ${sidebarAccordionMode !== 'all_open' ? 'cursor-pointer' : 'cursor-default'} border ${
                     hasActiveChild 
                       ? 'bg-white/5 border-white/10 dark:border-white/5 text-white font-bold' 
@@ -388,6 +400,8 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
 
                 {/* Collapsible Sub-items Container */}
                 <div 
+                  id={`admin-group-${group.key}`}
+                  hidden={!isExpanded}
                   className={`overflow-hidden transition-all duration-300 ease-in-out pl-4 ${
                     isExpanded 
                       ? 'max-h-[2000px] opacity-100 py-1 space-y-1' 
@@ -415,7 +429,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
                               : 'hover:bg-white/5 dark:hover:bg-slate-900/50 border-transparent text-gray-300 hover:text-white'
                           }`
                       }
-                      style={{ minHeight: '40px' }} // mobile friendly tap size
+                      style={{ minHeight: '44px' }}
                     >
                       <item.icon size={15} className={`shrink-0 transition-colors duration-200 ${sidebarMenuMode === 'cards_grouped' ? 'text-gold opacity-100' : 'opacity-70 group-hover:opacity-100 group-hover:text-gold'}`} />
                       <span className={`${sidebarMenuMode === 'cards_grouped' ? '' : 'group-hover:translate-x-1.5 transition-transform duration-200'}`}>{item.name}</span>
@@ -469,10 +483,12 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   if (isMobile || isDrawer) {
     if (!isOpen) return null;
     return (
-      <div className="fixed inset-0 z-50 flex">
-        <div
+      <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Navegación administrativa">
+        <button
+          type="button"
           className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity duration-300"
           onClick={onClose}
+          aria-label="Cerrar navegación"
         />
         <div className="relative z-10 h-[100dvh] animate-slide-in-right">
           {sidebarContent}

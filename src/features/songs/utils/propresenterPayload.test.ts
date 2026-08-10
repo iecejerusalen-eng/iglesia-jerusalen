@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Song } from '../../../types';
-import { buildProPresenterPayload, parseProPresenterLine } from './propresenterPayload';
+import {
+  buildProPresenterPayload,
+  formatProPresenterImportText,
+  formatProPresenterPayloadText,
+  parseProPresenterLine,
+} from './propresenterPayload';
 
 const baseSong: Song = {
   id: 'song-1',
@@ -47,5 +52,28 @@ describe('ProPresenter song payload', () => {
     const payload = buildProPresenterPayload(baseSong, { mode: 'lyrics-chords' });
     expect(payload.slides[0].text).toContain('G');
     expect(payload.slides[0].text).toContain('Mil generaciones');
+  });
+
+  it('formats blank-paragraph slides for ProPresenter text import', () => {
+    const result = formatProPresenterImportText(
+      '[Estrofa 1]\n[G]Mil generaciones\n[C]Se postran a adorarle\n[Coro]\n[Em]Cantamos al Cordero',
+      { mode: 'lyrics', linesPerSlide: 2 },
+    );
+    expect(result).toBe('Mil generaciones\nSe postran a adorarle\n\nCantamos al Cordero');
+  });
+
+  it('places each chord line above its lyric line for stage import', () => {
+    const result = formatProPresenterImportText('[G]Mil genera[C]ciones', {
+      mode: 'lyrics-chords',
+      linesPerSlide: 1,
+    });
+    expect(result).toBe('G         C\nMil generaciones');
+  });
+
+  it('can copy an already prepared payload without slide metadata', () => {
+    const payload = buildProPresenterPayload(baseSong, { mode: 'lyrics', linesPerSlide: 2 });
+    expect(formatProPresenterPayloadText(payload, 'lyrics')).toBe(
+      'Mil generaciones\nSe postran a adorarle\n\nCantamos al Cordero',
+    );
   });
 });

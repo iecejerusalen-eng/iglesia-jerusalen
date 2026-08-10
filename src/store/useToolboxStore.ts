@@ -357,7 +357,7 @@ export const useToolboxStore = create<ToolboxState>((set, get) => {
     persistenceError: storedInitial.error,
 
     open: (panel = 'hub') => set({ isOpen: true, isMinimized: false, activePanel: panel }),
-    close: () => set({ isOpen: false, isPlaying: false }),
+    close: () => set({ isOpen: false, isMinimized: false, activePanel: 'hub', isPlaying: false, timerIsRunning: false }),
     toggleMinimized: () => set((state) => ({ isMinimized: !state.isMinimized })),
     setActivePanel: (activePanel) => set({ activePanel, isMinimized: false }),
 

@@ -10,19 +10,27 @@ import {
   Check,
   CheckCircle2,
   Clipboard,
+  ExternalLink,
+  FileCheck2,
   Heart,
   HeartHandshake,
   Landmark,
   Loader2,
   MessageCircle,
+  Printer,
+  QrCode,
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import { useDonationPageData } from '../../features/donations/hooks/useDonationPageData';
 import { formatWhatsAppLink } from '../../utils/whatsapp';
+import MediaUploader from '../../components/common/MediaUploader';
+import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
+import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 
 const donationSchema = z.object({
   name: z.string().trim().max(120, 'El nombre es demasiado largo').optional(),
@@ -44,9 +52,13 @@ type DonationForm = z.infer<typeof donationSchema>;
 
 interface DonationReceipt {
   id: string;
+  receiptNumber: string;
   amount: number;
   category: string;
   donorName: string;
+  donorEmail: string;
+  createdAt: string;
+  proofUrl?: string | null;
 }
 
 function cleanPhone(phone: string): string {
@@ -56,6 +68,7 @@ function cleanPhone(phone: string): string {
 export default function Donations() {
   const { settings, categories, loading, error, refetch } = useDonationPageData();
   const [receipt, setReceipt] = useState<DonationReceipt | null>(null);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { register, handleSubmit, setValue, reset, control, formState: { errors, isSubmitting } } = useForm<DonationForm>({
     resolver: zodResolver(donationSchema),
@@ -70,7 +83,7 @@ export default function Donations() {
 
   const whatsappMessage = useMemo(() => {
     if (!receipt) return '';
-    return `Hola, deseo reportar mi aporte a la Iglesia Jerusalén.\nReferencia: ${receipt.id.slice(0, 8).toUpperCase()}\nMonto: $${receipt.amount.toFixed(2)}\nDestino: ${receipt.category}\nDonante: ${receipt.donorName}\nAdjunto mi comprobante de transferencia.`;
+    return `Hola, deseo reportar mi aporte a la Iglesia Jerusalén.\nRecibo Nº: ${receipt.receiptNumber}\nReferencia: ${receipt.id.slice(0, 8).toUpperCase()}\nMonto: $${receipt.amount.toFixed(2)}\nDestino: ${receipt.category}\nDonante: ${receipt.donorName}\nCorreo: ${receipt.donorEmail}\n${receipt.proofUrl ? `Comprobante: ${receipt.proofUrl}\n` : ''}Adjunto comprobante de transferencia.`;
   }, [receipt]);
 
   const copyValue = async (label: string, value: string) => {
@@ -83,6 +96,10 @@ export default function Donations() {
       console.error('Error copying donation bank detail:', caughtError);
       toast.error('No fue posible copiar el dato.');
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const onSubmit = async (formData: DonationForm) => {
@@ -99,18 +116,21 @@ export default function Donations() {
 
     const numericAmount = Number(formData.amount);
     const donorName = formData.isAnonymous ? 'Anónimo' : formData.name?.trim() || '';
+    const donorEmail = formData.email.trim();
+
     const { data, error: insertError } = await supabase
       .from('donations')
       .insert({
         donor_name: donorName,
-        donor_email: formData.email.trim(),
+        donor_email: donorEmail,
         amount: numericAmount,
         category_id: selectedCategory.id,
         category_name_backup: selectedCategory.name,
         payment_method: 'transferencia',
         status: 'pending',
+        proof_url: proofUrl || null,
       })
-      .select('id')
+      .select('id, receipt_number, created_at')
       .single();
 
     if (insertError) {
@@ -119,7 +139,20 @@ export default function Donations() {
       return;
     }
 
-    setReceipt({ id: data.id, amount: numericAmount, category: selectedCategory.name, donorName });
+    const generatedReceiptNumber = data.receipt_number || `REC-${new Date().getFullYear()}-${data.id.slice(0, 5).toUpperCase()}`;
+
+    setReceipt({
+      id: data.id,
+      receiptNumber: generatedReceiptNumber,
+      amount: numericAmount,
+      category: selectedCategory.name,
+      donorName,
+      donorEmail,
+      createdAt: data.created_at || new Date().toISOString(),
+      proofUrl: proofUrl || null,
+    });
+
+    setProofUrl(null);
     reset({ amount: '', categoryId: selectedCategory.id, isAnonymous: false, privacyAccepted: false, email: '', name: '' });
   };
 
@@ -141,24 +174,170 @@ export default function Donations() {
   }
 
   if (receipt) {
-    const whatsappUrl = formatWhatsAppLink(settings.phone, undefined, whatsappMessage);
+    const whatsappUrl = formatWhatsAppLink(cleanPhone(settings.phone || ''), undefined, whatsappMessage);
+    const formattedDate = new Date(receipt.createdAt).toLocaleDateString('es-EC', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     return (
-      <div className="relative min-h-[75vh] overflow-hidden bg-[#f6f7fb] px-4 py-16 dark:bg-slate-950">
-        <Helmet><title>Aporte registrado | Iglesia Jerusalén</title></Helmet>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.15),transparent_42%)]" />
-        <div className="relative mx-auto max-w-2xl rounded-[2.5rem] border border-white/80 bg-white/80 p-7 text-center shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80 sm:p-10">
-          <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 ring-8 ring-emerald-500/5"><CheckCircle2 size={42} /></span>
-          <span className="mt-5 inline-flex rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">Pendiente de verificación</span>
-          <h1 className="mt-3 font-serif text-3xl font-bold text-primary dark:text-white">Tu aporte fue registrado</h1>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-500 dark:text-slate-400">Todavía no está confirmado como recibido. Realiza la transferencia y envía el comprobante para que el equipo administrativo pueda conciliarlo.</p>
-          <div className="mx-auto mt-6 max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left dark:border-white/10 dark:bg-white/5">
-            <div className="flex justify-between gap-4 text-sm"><span className="text-slate-400">Referencia</span><strong className="font-mono text-primary dark:text-white">{receipt.id.slice(0, 8).toUpperCase()}</strong></div>
-            <div className="mt-3 flex justify-between gap-4 text-sm"><span className="text-slate-400">Monto reportado</span><strong className="text-primary dark:text-white">${receipt.amount.toFixed(2)}</strong></div>
-            <div className="mt-3 flex justify-between gap-4 text-sm"><span className="text-slate-400">Destino</span><strong className="text-primary dark:text-white">{receipt.category}</strong></div>
-          </div>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"><MessageCircle size={18} /> Enviar comprobante</a>}
-            <button type="button" onClick={() => setReceipt(null)} className="rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-600 transition hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-slate-300">Registrar otro aporte</button>
+      <div className="relative min-h-[75vh] overflow-hidden bg-[#f6f7fb] px-4 py-12 dark:bg-slate-950 print:bg-white print:p-0">
+        <Helmet><title>Recibo Digital de Donación | Iglesia Jerusalén</title></Helmet>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.15),transparent_45%)] print:hidden" />
+
+        {/* Certificate Container */}
+        <div className="relative mx-auto max-w-2xl">
+          <div className="overflow-hidden rounded-[2.5rem] border border-slate-200/80 bg-white p-7 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/90 sm:p-10 print:border-none print:shadow-none print:p-4">
+
+            {/* Certificate Header */}
+            <div className="border-b border-slate-100 pb-6 text-center dark:border-white/10">
+              <div className="flex items-center justify-center gap-3">
+                <img src={soloLogoColorido} alt="Iglesia Jerusalén" className="h-12 w-auto dark:hidden" />
+                <img src={soloLogoBlanco} alt="Iglesia Jerusalén" className="hidden h-12 w-auto dark:block" />
+              </div>
+              <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-church-gold/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-church-gold-dark dark:text-church-gold-light">
+                <Sparkles size={12} /> Certificado de Mayordomía
+              </span>
+              <h1 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white sm:text-3xl">
+                Comprobante de Donación Registrado
+              </h1>
+              <p className="mt-1 text-xs text-slate-400">Iglesia Evangélica Cristiana Ecuatoriana Jerusalén</p>
+            </div>
+
+            {/* Receipt Number Badge */}
+            <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-slate-900 to-primary p-4 text-white sm:flex-row dark:from-slate-800 dark:to-slate-900">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-300">Recibo Nº</span>
+                <p className="font-mono text-xl font-bold tracking-wider text-church-gold-light">{receipt.receiptNumber}</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-300 ring-1 ring-amber-400/30">
+                <CheckCircle2 size={15} className="text-amber-400" /> Pendiente de Verificación
+              </span>
+            </div>
+
+            {/* Receipt Details Table */}
+            <div className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-5 dark:border-white/5 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between border-b border-slate-200/60 pb-2.5 text-sm sm:flex-row dark:border-white/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Donante</span>
+                <strong className="font-semibold text-slate-800 dark:text-white">{receipt.donorName}</strong>
+              </div>
+              <div className="flex flex-col justify-between border-b border-slate-200/60 pb-2.5 text-sm sm:flex-row dark:border-white/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Correo Electrónico</span>
+                <span className="font-medium text-slate-700 dark:text-slate-200">{receipt.donorEmail}</span>
+              </div>
+              <div className="flex flex-col justify-between border-b border-slate-200/60 pb-2.5 text-sm sm:flex-row dark:border-white/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Destino del Aporte</span>
+                <strong className="font-semibold text-primary dark:text-blue-300">{receipt.category}</strong>
+              </div>
+              <div className="flex flex-col justify-between border-b border-slate-200/60 pb-2.5 text-sm sm:flex-row dark:border-white/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Monto Aportado</span>
+                <strong className="text-lg font-black text-emerald-600 dark:text-emerald-400">${receipt.amount.toFixed(2)} USD</strong>
+              </div>
+              <div className="flex flex-col justify-between text-sm sm:flex-row">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Fecha de Registro</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{formattedDate}</span>
+              </div>
+              {receipt.proofUrl && (
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1.5"><FileCheck2 size={15} /> Comprobante adjuntado correctamente</span>
+                  <a href={receipt.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline dark:text-blue-300">Ver <ExternalLink size={12} /></a>
+                </div>
+              )}
+            </div>
+
+            {/* Visual QR Code & Authenticity Seal */}
+            <div className="mt-6 flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-slate-200 bg-white p-5 sm:flex-row dark:border-white/10 dark:bg-slate-900/50">
+              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-inner dark:border-white/10">
+                <svg viewBox="0 0 100 100" className="h-full w-full fill-slate-900 dark:fill-white">
+                  {/* QR Position detection patterns */}
+                  <rect x="5" y="5" width="26" height="26" rx="4" fill="currentColor" />
+                  <rect x="9" y="9" width="18" height="18" fill="white" />
+                  <rect x="13" y="13" width="10" height="10" fill="currentColor" />
+
+                  <rect x="69" y="5" width="26" height="26" rx="4" fill="currentColor" />
+                  <rect x="73" y="9" width="18" height="18" fill="white" />
+                  <rect x="77" y="13" width="10" height="10" fill="currentColor" />
+
+                  <rect x="5" y="69" width="26" height="26" rx="4" fill="currentColor" />
+                  <rect x="9" y="73" width="18" height="18" fill="white" />
+                  <rect x="13" y="77" width="10" height="10" fill="currentColor" />
+
+                  {/* Simulated Data Pattern */}
+                  <rect x="38" y="8" width="6" height="6" fill="currentColor" />
+                  <rect x="50" y="8" width="6" height="6" fill="currentColor" />
+                  <rect x="38" y="20" width="12" height="6" fill="currentColor" />
+                  <rect x="56" y="20" width="6" height="6" fill="currentColor" />
+                  <rect x="8" y="38" width="6" height="12" fill="currentColor" />
+                  <rect x="20" y="38" width="12" height="6" fill="currentColor" />
+                  <rect x="38" y="38" width="8" height="8" fill="currentColor" />
+                  <rect x="52" y="38" width="12" height="6" fill="currentColor" />
+                  <rect x="70" y="38" width="10" height="6" fill="currentColor" />
+                  <rect x="86" y="38" width="6" height="12" fill="currentColor" />
+
+                  <rect x="38" y="52" width="6" height="12" fill="currentColor" />
+                  <rect x="50" y="56" width="12" height="6" fill="currentColor" />
+                  <rect x="68" y="52" width="6" height="12" fill="currentColor" />
+                  <rect x="80" y="56" width="12" height="6" fill="currentColor" />
+
+                  <rect x="38" y="70" width="10" height="6" fill="currentColor" />
+                  <rect x="54" y="70" width="6" height="10" fill="currentColor" />
+                  <rect x="68" y="70" width="12" height="6" fill="currentColor" />
+                  <rect x="86" y="70" width="6" height="12" fill="currentColor" />
+                  <rect x="38" y="84" width="18" height="6" fill="currentColor" />
+                  <rect x="62" y="84" width="12" height="6" fill="currentColor" />
+                  <rect x="80" y="84" width="12" height="6" fill="currentColor" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded bg-white/95 p-1 shadow-xs dark:bg-slate-900/95">
+                    <QrCode size={18} className="text-primary dark:text-church-gold-light" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                  <ShieldCheck size={13} /> Sello de Autenticidad Digital
+                </div>
+                <h2 className="mt-1 font-serif text-sm font-bold text-slate-800 dark:text-white">
+                  Verificación de Donación
+                </h2>
+                <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
+                  Este certificado digital acredita el registro del aporte ante la secretaría de la Iglesia Jerusalén.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col gap-3 print:hidden sm:flex-row sm:justify-center">
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-98"
+                >
+                  <MessageCircle size={18} /> Enviar a WhatsApp Secretaría
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              >
+                <Printer size={17} /> Imprimir / Guardar Recibo
+              </button>
+              <button
+                type="button"
+                onClick={() => setReceipt(null)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3.5 text-sm font-bold text-slate-600 transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20"
+              >
+                Registrar otro aporte
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
@@ -236,6 +415,54 @@ export default function Donations() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">{!isAnonymous && <div><label htmlFor="donor-name" className="sr-only">Nombre completo</label><input id="donor-name" {...register('name')} autoComplete="name" placeholder="Nombre completo" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-white/5 dark:text-white" />{errors.name && <p className="mt-1.5 text-xs text-red-500">{errors.name.message}</p>}</div>}<div className={isAnonymous ? 'sm:col-span-2' : ''}><label htmlFor="donor-email" className="sr-only">Correo electrónico</label><input id="donor-email" type="email" {...register('email')} autoComplete="email" placeholder="Correo para seguimiento" className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-white/5 dark:text-white" />{errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>}</div></div>
 
+            {/* Proof Upload Field */}
+            <div className="mt-5">
+              <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Comprobante de transferencia
+              </span>
+              <div className="mt-2 flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-white/10 dark:text-church-gold-light">
+                    <FileCheck2 size={20} />
+                  </span>
+                  <div>
+                    <span className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {proofUrl ? 'Comprobante adjuntado' : 'Adjuntar comprobante de transferencia (opcional)'}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {proofUrl ? 'Imagen subida correctamente' : 'Puedes subir la captura de pantalla de la transferencia bancaria.'}
+                    </span>
+                  </div>
+                </div>
+                {proofUrl ? (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={proofUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline dark:text-blue-300"
+                    >
+                      Ver comprobante <ExternalLink size={12} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setProofUrl(null)}
+                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                      title="Quitar comprobante"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <MediaUploader
+                    folder="donation-proofs"
+                    label="Adjuntar comprobante de transferencia (opcional)"
+                    onUploadSuccess={(url) => setProofUrl(url)}
+                  />
+                )}
+              </div>
+            </div>
+
             <div className="mt-5 rounded-2xl border border-blue-200/60 bg-blue-50/60 p-4 dark:border-blue-500/20 dark:bg-blue-500/10"><h3 className="text-xs font-black text-primary dark:text-blue-200">Proceso de transferencia</h3><ol className="mt-2 space-y-1.5">{config.transfer_instructions.map((instruction, index) => <li key={`${instruction}-${index}`} className="flex gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><span className="font-black text-church-gold-dark dark:text-church-gold-light">{index + 1}.</span>{instruction}</li>)}</ol></div>
 
             <label className="mt-5 flex items-start gap-3 text-xs leading-5 text-slate-500 dark:text-slate-400"><input type="checkbox" {...register('privacyAccepted')} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" /><span>Acepto que mis datos sean usados para registrar, verificar y dar seguimiento a este aporte según la <Link to="/privacidad" className="font-bold text-primary hover:underline dark:text-blue-300">política de privacidad</Link>.</span></label>{errors.privacyAccepted && <p className="mt-1.5 text-xs text-red-500">{errors.privacyAccepted.message}</p>}
@@ -251,3 +478,4 @@ export default function Donations() {
     </div>
   );
 }
+

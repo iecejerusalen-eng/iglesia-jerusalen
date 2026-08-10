@@ -26,7 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ADMIN_MODULES, MODULE_GROUPS } from '../../config/adminModules';
+import { PERMISSION_MODULES, MODULE_GROUPS } from '../../config/adminModules';
 import { supabase } from '../../config/supabase';
 import {
   SYSTEM_ROLES,
@@ -113,7 +113,7 @@ function PermissionMatrix({
   const setGroupLevel = (groupKey: string, level: 'none' | 'view' | 'edit') => {
     if (disabled) return;
     const next = { ...normalized };
-    for (const module of ADMIN_MODULES.filter((item) => item.group === groupKey)) {
+    for (const module of PERMISSION_MODULES.filter((item) => item.group === groupKey)) {
       next[module.id] = {
         view: level !== 'none',
         edit: level === 'edit',
@@ -131,7 +131,7 @@ function PermissionMatrix({
       </div>
       <div className="max-h-[440px] overflow-y-auto">
         {MODULE_GROUPS.map((group) => {
-          const groupModules = ADMIN_MODULES.filter((module) => module.group === group.key);
+          const groupModules = PERMISSION_MODULES.filter((module) => module.group === group.key);
           return (
             <Fragment key={group.key}>
               <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-y border-slate-200/70 bg-slate-100/95 px-4 py-2.5 backdrop-blur dark:border-white/10 dark:bg-slate-900/95">
@@ -299,7 +299,7 @@ export default function UsersManager() {
     setLoadingPermissions(true);
     try {
       if (role === 'admin') {
-        setSystemPermissions(Object.fromEntries(ADMIN_MODULES.map((module) => [module.id, { view: true, edit: true }])));
+        setSystemPermissions(Object.fromEntries(PERMISSION_MODULES.map((module) => [module.id, { view: true, edit: true }])));
         return;
       }
       const { data, error } = await supabase.from('role_permissions').select('permissions').eq('role', role).maybeSingle();

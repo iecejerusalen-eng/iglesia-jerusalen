@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ADMIN_MODULES } from '../../../config/adminModules';
+import { ADMIN_MODULES, getAdminModulePermission } from '../../../config/adminModules';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 const preferredModuleIds = ['members', 'sermons', 'ministries', 'inventory', 'analytics'];
@@ -9,7 +9,7 @@ export const QuickLinks = () => {
   const { hasPermission } = usePermissions();
   const links = preferredModuleIds
     .map((id) => ADMIN_MODULES.find((module) => module.id === id))
-    .filter((module) => module && hasPermission(module.id, 'view'));
+    .filter((module) => module && module.available !== false && hasPermission(getAdminModulePermission(module), 'view'));
 
   if (links.length === 0) return null;
 

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Circle,
   Copy,
+  Download,
   KeyRound,
   Link2,
   Loader2,
@@ -29,7 +30,11 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import type { Song, SongArrangement } from '../../types';
-import { buildProPresenterPayload, type ProPresenterContentMode } from '../../features/songs/utils/propresenterPayload';
+import {
+  buildProPresenterPayload,
+  formatProPresenterPayloadText,
+  type ProPresenterContentMode,
+} from '../../features/songs/utils/propresenterPayload';
 
 type ConnectionMode = 'alpha' | 'ndi' | 'web';
 type PanelTab = 'overview' | 'connections' | 'control' | 'settings';
@@ -115,7 +120,7 @@ const ProPresenterManager = () => {
   const [selectedSongId, setSelectedSongId] = useState(requestedSongId);
   const [selectedSongDetail, setSelectedSongDetail] = useState<Song | null>(null);
   const [selectedArrangementId, setSelectedArrangementId] = useState('original');
-  const [loadingSong, setLoadingSong] = useState(false);
+  const [loadingSong, setLoadingSong] = useState(Boolean(requestedSongId));
   const [loading, setLoading] = useState(true);
   const [schemaState, setSchemaState] = useState<SchemaState>('unknown');
   const [schemaError, setSchemaError] = useState<string | null>(null);
@@ -129,6 +134,13 @@ const ProPresenterManager = () => {
     () => connections.find((connection) => connection.id === selectedConnectionId) ?? connections[0] ?? null,
     [connections, selectedConnectionId],
   );
+
+  const selectSong = useCallback((songId: string) => {
+    setSelectedSongDetail(null);
+    setSelectedArrangementId('original');
+    setLoadingSong(Boolean(songId));
+    setSelectedSongId(songId);
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -159,13 +171,8 @@ const ProPresenterManager = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedSongId) {
-      setSelectedSongDetail(null);
-      setSelectedArrangementId('original');
-      return undefined;
-    }
+    if (!selectedSongId) return undefined;
     let active = true;
-    setLoadingSong(true);
     const loadSong = async () => {
       const [songResult, arrangementsResult] = await Promise.all([
         supabase.from('songs').select('*').eq('id', selectedSongId).single(),
@@ -357,7 +364,7 @@ const ProPresenterManager = () => {
         <>
           {tab === 'overview' && <OverviewTab connections={connections} onNew={() => setShowCreate(true)} onSelect={(id) => { setSelectedConnectionId(id); setTab('control'); }} />}
           {tab === 'connections' && <ConnectionsTab connections={connections} selectedId={selectedConnection?.id ?? ''} readOnly={readOnly} onNew={() => setShowCreate(true)} onSelect={setSelectedConnectionId} onDelete={(connection) => void removeConnection(connection)} />}
-          {tab === 'control' && <EnhancedControlTab connections={connections} selectedConnection={selectedConnection} selectedSong={selectedSong} songDetail={selectedSongDetail} selectedArrangementId={selectedArrangementId} loadingSong={loadingSong} selectedSongId={selectedSongId} songs={songs} commands={commands} readOnly={readOnly} busy={busy} onSelectConnection={setSelectedConnectionId} onSelectSong={setSelectedSongId} onSelectArrangement={setSelectedArrangementId} onSend={sendCommand} />}
+          {tab === 'control' && <EnhancedControlTab connections={connections} selectedConnection={selectedConnection} selectedSong={selectedSong} songDetail={selectedSongDetail} selectedArrangementId={selectedArrangementId} loadingSong={loadingSong} selectedSongId={selectedSongId} songs={songs} commands={commands} readOnly={readOnly} busy={busy} onSelectConnection={setSelectedConnectionId} onSelectSong={selectSong} onSelectArrangement={setSelectedArrangementId} onSend={sendCommand} />}
           {tab === 'settings' && <EnhancedSettingsTab />}
         </>
       )}
@@ -475,6 +482,57 @@ const EnhancedControlTab = ({
     void onSend(command, payload);
   };
 
+  const preparedText = (mode: ProPresenterContentMode) => {
+    if (!preparedSong) return '';
+    const content = buildProPresenterPayload(preparedSong, {
+      mode,
+      arrangementId: activeArrangement?.id ?? null,
+      linesPerSlide: mode === 'lyrics' ? linesPerSlide : 1,
+    });
+    return formatProPresenterPayloadText(content, mode);
+  };
+
+  const copyPreparedText = async (mode: ProPresenterContentMode) => {
+    const text = preparedText(mode);
+    if (!text) {
+      toast.error('Esta versión no tiene contenido para copiar.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(mode === 'lyrics'
+        ? 'Letra copiada para importar en ProPresenter'
+        : 'Pares de acordes y letra copiados para Stage');
+    } catch (error) {
+      console.error('No se pudo copiar el texto preparado para ProPresenter.', error);
+      toast.error('El navegador no permitió copiar el contenido.');
+    }
+  };
+
+  const downloadPreparedText = (mode: ProPresenterContentMode) => {
+    const text = preparedText(mode);
+    if (!text || !preparedSong) {
+      toast.error('Esta versión no tiene contenido para descargar.');
+      return;
+    }
+    const safeTitle = preparedSong.title
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'alabanza';
+    const file = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${safeTitle}-${mode === 'lyrics' ? 'letra' : 'stage-acordes'}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success('Archivo de importación descargado.');
+  };
+
   return (
     <div className="grid gap-5 xl:grid-cols-[.72fr_1.28fr]">
       <section className={`${glassPanel} h-fit p-5 sm:p-6`}>
@@ -548,7 +606,7 @@ const EnhancedControlTab = ({
 
         {preview && preview.slides.length > 0 ? (
           <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Vista previa</p><span className="text-[10px] text-slate-400">Pulsa una para enviarla</span></div>
+            <div className="mb-2 flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Vista previa</p><span className="text-[10px] text-slate-400">Pulsa una para enviarla</span></div>
             <div className="flex snap-x gap-3 overflow-x-auto pb-2">
               {preview.slides.slice(0, 12).map((slide) => (
                 <button key={slide.id} type="button" disabled={!canSendContent} onClick={() => void onSend('trigger_slide', { content: preview, slide_index: slide.index, output_mode: selectedConnection?.mode ?? 'web' })} className="min-h-28 w-48 shrink-0 snap-start rounded-2xl border border-slate-200 bg-slate-950 p-3 text-left text-white transition hover:border-sky-400 disabled:opacity-50">
@@ -556,6 +614,20 @@ const EnhancedControlTab = ({
                   <span className="mt-3 line-clamp-4 whitespace-pre-line text-xs font-bold leading-5">{slide.text}</span>
                 </button>
               ))}
+            </div>
+            <div className="mt-4 rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-4 dark:border-indigo-400/20 dark:bg-indigo-400/10">
+              <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+                <div>
+                  <p className="text-xs font-black text-indigo-950 dark:text-indigo-100">Importación manual y Stage</p>
+                  <p className="mt-1 max-w-2xl text-[11px] leading-5 text-indigo-800/75 dark:text-indigo-200/75">La letra usa párrafos vacíos como separación de diapositivas. Stage coloca una línea de acordes sobre cada frase para mantener la sincronía.</p>
+                </div>
+                <div className="grid shrink-0 gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={() => void copyPreparedText('lyrics')} className={softButton}><Copy size={14} /> Copiar letra</button>
+                  <button type="button" onClick={() => downloadPreparedText('lyrics')} className={softButton}><Download size={14} /> Descargar .txt</button>
+                  <button type="button" onClick={() => void copyPreparedText('lyrics-chords')} className={softButton}><Copy size={14} /> Copiar Stage + acordes</button>
+                  <button type="button" onClick={() => downloadPreparedText('lyrics-chords')} className={softButton}><Download size={14} /> Stage .txt</button>
+                </div>
+              </div>
             </div>
           </div>
         ) : selectedSong && !loadingSong ? <p className="mt-5 rounded-xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-200">Esta versión todavía no contiene líneas de letra válidas.</p> : null}
@@ -579,12 +651,6 @@ const EnhancedControlTab = ({
       </section>
     </div>
   );
-};
-
-const ControlTab = ({ connections, selectedConnection, selectedSong, selectedSongId, songs, commands, readOnly, busy, onSelectConnection, onSelectSong, onSend }: { connections: ProPresenterConnection[]; selectedConnection: ProPresenterConnection | null; selectedSong: SongOption | null; selectedSongId: string; songs: SongOption[]; commands: CommandRecord[]; readOnly: boolean; busy: boolean; onSelectConnection: (id: string) => void; onSelectSong: (id: string) => void; onSend: (command: CommandType, payload?: Record<string, string | number | boolean | null>) => Promise<void> }) => {
-  const online = isOnline(selectedConnection?.last_seen_at ?? null);
-  const visibleCommands = commands.filter((command) => !selectedConnection || command.connection_id === selectedConnection.id).slice(0, 5);
-  return <div className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]"><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-gold"><SlidersHorizontal size={14} /> Control en vivo</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Selecciona una salida</h3><label className="mt-5 block text-xs font-bold text-slate-500">Computadora</label><select value={selectedConnection?.id ?? ''} onChange={(event) => onSelectConnection(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una conexión…</option>{connections.map((connection) => <option key={connection.id} value={connection.id}>{connection.name} · {modeMeta[connection.mode].label}</option>)}</select>{selectedConnection && <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/55 p-4 dark:border-white/10 dark:bg-white/5"><div className="flex items-center gap-2 text-sm font-black text-slate-800 dark:text-white"><Circle size={9} fill={online ? '#10b981' : '#94a3b8'} className={online ? 'text-emerald-500' : 'text-slate-400'} />{online ? 'Conector en línea' : 'Conector esperando conexión'}</div><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{modeMeta[selectedConnection.mode].description}</p><button type="button" disabled={readOnly || busy} onClick={() => void onSend('test_connection')} className={`${softButton} mt-4 w-full`}><Wifi size={14} /> Probar conexión</button></div>}{!selectedConnection && <EmptyState />}</section><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Orden actual</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Enviar contenido</h3></div><span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-[10px] font-black uppercase text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><Radio size={13} /> Cola segura</span></div><div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]"><select value={selectedSongId} onChange={(event) => onSelectSong(event.target.value)} className="h-12 rounded-xl border border-slate-200 bg-white/80 px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-900 dark:text-white"><option value="">Selecciona una alabanza…</option>{songs.map((song) => <option key={song.id} value={song.id}>{song.title}</option>)}</select><button type="button" disabled={!selectedSong || readOnly || busy || !selectedConnection} onClick={() => void onSend('sync_service', { song_id: selectedSong?.id ?? null })} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-xs font-black text-white shadow-lg shadow-primary/20 disabled:opacity-40"><RefreshCw size={15} /> Sincronizar</button></div>{selectedSong && <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500"><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">Tonalidad: <strong>{selectedSong.original_key || '—'}</strong></span><span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-white/10">{selectedSong.bpm || '—'} BPM</span></div>}<div className="mt-6 grid gap-3 sm:grid-cols-2"><ActionButton icon={Play} label="Solo letra" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_lyrics', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={Sparkles} label="Letra + acordes" disabled={!selectedSong || !selectedConnection || readOnly || busy} onClick={() => void onSend('show_chords', { song_id: selectedSong?.id ?? null })} /><ActionButton icon={ChevronRight} label="Siguiente slide" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('next_slide')} /><ActionButton icon={ChevronRight} label="Slide anterior" disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('previous_slide')} /><ActionButton icon={Pause} label="Limpiar salida" danger disabled={!selectedConnection || readOnly || busy} onClick={() => void onSend('clear_output')} /></div><div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4 dark:border-white/15 dark:bg-white/5"><p className="flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-200"><ShieldCheck size={15} className="text-emerald-500" /> Todas las órdenes quedan registradas</p><p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">El conector local las ejecutará cuando esté emparejado. Si la computadora está offline, quedan pendientes y no se pierden.</p></div><div className="mt-5 border-t border-slate-200/70 pt-4 dark:border-white/10"><div className="flex items-center justify-between"><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Últimas órdenes</p><span className="text-[10px] text-slate-400">actualización en vivo</span></div><div className="mt-3 space-y-2">{visibleCommands.map((command) => <div key={command.id} className="flex items-center gap-2 rounded-xl bg-slate-50/80 px-3 py-2 text-[11px] dark:bg-white/5"><span className={`size-2 rounded-full ${command.status === 'acknowledged' ? 'bg-emerald-500' : command.status === 'failed' ? 'bg-red-500' : command.status === 'sent' ? 'bg-blue-500' : 'bg-amber-400'}`} /><span className="min-w-0 flex-1 truncate font-bold text-slate-600 dark:text-slate-300">{command.command_type.replaceAll('_', ' ')}</span><span className="text-slate-400">{command.status}</span></div>)}{visibleCommands.length === 0 && <p className="text-xs text-slate-400">Todavía no hay órdenes para esta conexión.</p>}</div></div></section></div>;
 };
 
 const ActionButton = ({ icon: Icon, label, onClick, disabled, danger = false }: { icon: typeof Play; label: string; onClick: () => void; disabled: boolean; danger?: boolean }) => <button type="button" disabled={disabled} onClick={onClick} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition hover:-translate-y-0.5 disabled:opacity-40 ${danger ? 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300' : 'border-slate-200 bg-white/80 text-slate-700 hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200'}`}><Icon size={16} />{label}</button>;
@@ -638,14 +704,10 @@ const EnhancedPairingCodeModal = ({ code, connectionId, onClose }: { code: strin
   );
 };
 
-const SettingsTab = ({ readOnly }: { readOnly: boolean }) => <div className="grid gap-5 xl:grid-cols-2"><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-gold"><Settings2 size={14} /> Preferencias de salida</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Diseño del overlay</h3><div className="mt-5 space-y-3">{['Letras blancas con sombra suave', 'Acordes solo para Stage Display', 'Transición fundido de 220 ms', 'Modo seguro: no enviar contenido sin confirmación'].map((item) => <label key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/55 p-3 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"><input type="checkbox" defaultChecked disabled={readOnly} className="size-4 accent-blue-600" />{item}</label>)}</div></section><section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-400"><KeyRound size={14} /> Seguridad</div><h3 className="mt-2 font-serif text-2xl font-bold text-primary dark:text-white">Roles autorizados</h3><p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">El acceso se controla con el módulo <strong>propresenter</strong>. En Usuarios & Permisos puedes activar Ver o Editar para administradores, editores de producción, multimedia u otros roles personalizados.</p><div className="mt-5 rounded-2xl bg-blue-50 p-4 text-xs leading-5 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200"><ShieldCheck size={16} className="mb-2" /><strong>Recomendación:</strong> concede Editar únicamente a quienes dirigen la presentación. El resto puede tener solo Ver.</div></section></div>;
-
 const EmptyState = ({ onNew }: { onNew?: () => void }) => <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center dark:border-white/15"><WifiOff size={22} className="mx-auto text-slate-400" /><p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">No hay computadoras conectadas</p>{onNew && <button type="button" onClick={onNew} className="mt-3 text-xs font-black text-primary dark:text-sky-300">Registrar la primera</button>}</div>;
 
-const SchemaSetupCard = ({ error, onRetry }: { error: string | null; onRetry: () => void }) => <section className={`${glassPanel} overflow-hidden p-5 sm:p-7`}><div className="flex flex-col gap-5 md:flex-row md:items-start"><div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><AlertTriangle size={24} /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Configuración pendiente</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Falta aplicar la integración de ProPresenter</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{error ?? 'El panel está listo, pero la base de datos todavía no tiene las tablas y funciones de entrega.'}</p><div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5"><p className="text-xs font-black text-slate-700 dark:text-slate-200">Migraciones requeridas, en este orden</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-5 text-slate-500 dark:text-slate-400"><li><code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">20260810210000_propresenter_control_center.sql</code></li><li><code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">20260810220000_propresenter_delivery_hardening.sql</code></li><li>Despliega de nuevo la función <code className="font-mono">propresenter-device</code> y pulsa “Comprobar de nuevo”.</li></ol><p className="mt-3 text-[11px] text-slate-400">Nunca coloques la clave <code className="font-mono">service_role</code> en el navegador.</p></div><button type="button" onClick={onRetry} className={`${softButton} mt-5`}><RefreshCw size={15} /> Comprobar de nuevo</button></div></div></section>;
+const SchemaSetupCard = ({ error, onRetry }: { error: string | null; onRetry: () => void }) => <section className={`${glassPanel} overflow-hidden p-5 sm:p-7`}><div className="flex flex-col gap-5 md:flex-row md:items-start"><div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300"><AlertTriangle size={24} /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Configuración pendiente</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">Falta aplicar la integración de ProPresenter</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{error ?? 'El panel está listo, pero la base de datos todavía no tiene las tablas y funciones de entrega.'}</p><div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5"><p className="text-xs font-black text-slate-700 dark:text-slate-200">Migraciones requeridas, en este orden</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-5 text-slate-500 dark:text-slate-400"><li><code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">20260810210000_propresenter_control_center.sql</code></li><li><code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">20260810221000_propresenter_delivery_hardening.sql</code></li><li>Despliega de nuevo la función <code className="font-mono">propresenter-device</code> y pulsa “Comprobar de nuevo”.</li></ol><p className="mt-3 text-[11px] text-slate-400">Nunca coloques la clave <code className="font-mono">service_role</code> en el navegador.</p></div><button type="button" onClick={onRetry} className={`${softButton} mt-5`}><RefreshCw size={15} /> Comprobar de nuevo</button></div></div></section>;
 
 const CreateConnectionModal = ({ value, busy, onChange, onClose, onSubmit }: { value: { name: string; mode: ConnectionMode; description: string }; busy: boolean; onChange: (value: { name: string; mode: ConnectionMode; description: string }) => void; onClose: () => void; onSubmit: () => void }) => <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-md" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section className={`${glassPanel} w-full max-w-xl overflow-hidden bg-white/95 dark:bg-slate-950/95`} role="dialog" aria-modal="true" aria-labelledby="new-propresenter-title"><header className="flex items-start justify-between gap-4 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 px-5 py-5 text-white"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-sky-300">Nueva conexión</p><h2 id="new-propresenter-title" className="mt-1 font-serif text-2xl font-bold">Registrar computadora</h2></div><button type="button" onClick={onClose} className="rounded-xl p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="Cerrar"><X size={18} /></button></header><div className="space-y-4 p-5"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Nombre visible<input value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} placeholder="PC Producción · Auditorio" className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Modo de salida<select value={value.mode} onChange={(event) => onChange({ ...value, mode: event.target.value as ConnectionMode })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white">{(Object.keys(modeMeta) as ConnectionMode[]).map((mode) => <option key={mode} value={mode}>{modeMeta[mode].label} · {modeMeta[mode].description}</option>)}</select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Descripción opcional<textarea value={value.description} onChange={(event) => onChange({ ...value, description: event.target.value })} rows={3} placeholder="Computadora principal del auditorio…" className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-[11px] leading-5 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200"><KeyRound size={15} className="mt-0.5 shrink-0" />Al crearla se generará un código de emparejamiento de un solo uso. El conector local lo utilizará para vincular esta computadora.</div></div><footer className="flex justify-end gap-2 border-t border-slate-200/70 p-4 dark:border-white/10"><button type="button" onClick={onClose} className={softButton}>Cancelar</button><button type="button" disabled={busy || !value.name.trim()} onClick={onSubmit} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-black text-white disabled:opacity-40">{busy && <Loader2 size={14} className="animate-spin" />} Crear conexión</button></footer></section></div>;
-
-const PairingCodeModal = ({ code, onClose }: { code: string; onClose: () => void }) => { const copy = async () => { await navigator.clipboard.writeText(code); toast.success('Código copiado.'); }; return <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-md" role="presentation"><section className={`${glassPanel} w-full max-w-md bg-white/95 p-6 text-center dark:bg-slate-950/95`} role="dialog" aria-modal="true" aria-labelledby="pairing-code-title"><div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"><Check size={28} /></div><h2 id="pairing-code-title" className="mt-4 font-serif text-2xl font-bold text-primary dark:text-white">Código de emparejamiento</h2><p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Muéstralo en el conector local. Por seguridad, solo se verá ahora.</p><code className="mt-5 block rounded-2xl border border-dashed border-blue-300 bg-blue-50 px-4 py-4 text-2xl font-black tracking-[.18em] text-blue-800 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-200">{code}</code><div className="mt-5 flex gap-2"><button type="button" onClick={() => void copy()} className={`${softButton} flex-1`}><Copy size={15} /> Copiar</button><button type="button" onClick={onClose} className="flex-1 rounded-xl bg-primary px-4 text-xs font-black text-white">Listo</button></div></section></div>; };
 
 export default ProPresenterManager;

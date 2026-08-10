@@ -1,4 +1,4 @@
-import { ADMIN_MODULES } from '../../config/adminModules';
+import { PERMISSION_MODULES } from '../../config/adminModules';
 import type { UserRole } from '../../types';
 import type { CustomAccessRole, PermissionMap, RoleOption } from './types';
 
@@ -21,14 +21,14 @@ export const SYSTEM_ROLES: RoleOption[] = [
 ];
 
 export const createEmptyPermissions = (): PermissionMap => Object.fromEntries(
-  ADMIN_MODULES.map((module) => [module.id, { view: false, edit: false }]),
+  PERMISSION_MODULES.map((module) => [module.id, { view: false, edit: false }]),
 );
 
 export const normalizePermissions = (permissions: PermissionMap | null | undefined): PermissionMap => {
   const normalized = createEmptyPermissions();
   if (!permissions) return normalized;
 
-  for (const module of ADMIN_MODULES) {
+  for (const module of PERMISSION_MODULES) {
     const permission = permissions[module.id];
     if (!permission) continue;
     const edit = Boolean(permission.edit);
@@ -41,7 +41,7 @@ export const mergePermissions = (...permissionSets: Array<PermissionMap | null |
   const merged = createEmptyPermissions();
   for (const permissions of permissionSets) {
     const normalized = normalizePermissions(permissions);
-    for (const module of ADMIN_MODULES) {
+    for (const module of PERMISSION_MODULES) {
       merged[module.id].view = merged[module.id].view || normalized[module.id].view;
       merged[module.id].edit = merged[module.id].edit || normalized[module.id].edit;
     }
@@ -98,4 +98,3 @@ export const resolveCustomRolePermissions = (
     .filter((role) => role.is_active && assignedIds?.includes(role.id))
     .map((role) => role.permissions),
 );
-

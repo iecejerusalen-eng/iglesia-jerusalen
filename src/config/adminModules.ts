@@ -30,16 +30,21 @@ import {
   Component,
   KeyRound,
   MonitorPlay,
+  Inbox,
+  Clock3,
+  BookOpenCheck,
+  Activity,
+  LibraryBig,
 } from 'lucide-react';
 
 export type ModuleGroup =
-  | 'admin'          // Administración y Métricas
-  | 'diseno'         // Sistema de Diseño, Componentes UI, Logos, Animaciones, Páginas
-  | 'eventos_medios' // Calendario, Sermones, Alabanzas, Sonidos y Notificaciones
-  | 'educacion'      // LMS, Aula Virtual, Cursos y Juegos
-  | 'comunidad'      // CRM Miembros, Ministerios, Misiones, Chat y Oración
-  | 'tienda'         // Tienda, Productos, Órdenes, Pagos y Envíos
-  | 'operaciones';   // Logística, Inventario, Media Vault y Reservas
+  | 'inicio'
+  | 'personas'
+  | 'contenido'
+  | 'formacion'
+  | 'finanzas_tienda'
+  | 'operaciones'
+  | 'sistema';
 
 export interface ModuleGroupMetadata {
   key: ModuleGroup;
@@ -50,57 +55,64 @@ export interface ModuleGroupMetadata {
 
 export const MODULE_GROUPS: ModuleGroupMetadata[] = [
   {
-    key: 'admin',
-    label: 'Administración & Métricas',
-    description: 'Gestión general del sistema, analítica, finanzas y configuración de iglesia.',
-    icon: Shield
+    key: 'inicio',
+    label: 'Inicio',
+    description: 'Resumen, actividad e información para tomar decisiones.',
+    icon: LayoutDashboard
   },
   {
-    key: 'diseno',
-    label: 'Sistema de Diseño & Componentes',
-    description: 'Biblioteca visual de componentes UI, Glassmorphism, logos, páginas y plugins.',
-    icon: Palette
-  },
-  {
-    key: 'eventos_medios',
-    label: 'Eventos & Medios',
-    description: 'Programación de eventos, sermones, biblioteca de alabanzas y avisos.',
-    icon: Calendar
-  },
-  {
-    key: 'educacion',
-    label: 'Educación & Aula Virtual',
-    description: 'Cursos, lecciones del LMS, solicitudes de matrícula y juegos interactivos.',
-    icon: GraduationCap
-  },
-  {
-    key: 'comunidad',
-    label: 'Comunidad & CRM',
-    description: 'Directorio de miembros, ministerios, misiones, chat y peticiones de oración.',
+    key: 'personas',
+    label: 'Personas y comunidad',
+    description: 'Miembros, ministerios, solicitudes y cuidado pastoral.',
     icon: Users
   },
   {
-    key: 'tienda',
-    label: 'Tienda & Librería',
-    description: 'Catálogo de productos de la librería, gestión de órdenes y envíos.',
-    icon: Store
+    key: 'contenido',
+    label: 'Contenido y comunicación',
+    description: 'Sitio público, publicaciones, agenda, mensajes y recursos multimedia.',
+    icon: FileText
+  },
+  {
+    key: 'formacion',
+    label: 'Formación',
+    description: 'Aula virtual, programas, discipulado y recursos educativos.',
+    icon: GraduationCap
+  },
+  {
+    key: 'finanzas_tienda',
+    label: 'Finanzas y tienda',
+    description: 'Aportes, productos, pedidos, pagos y envíos.',
+    icon: DollarSign
   },
   {
     key: 'operaciones',
-    label: 'Operaciones & Logística',
-    description: 'Producción dominical, inventario de equipos, reservas y bóveda de archivos media.',
+    label: 'Operaciones',
+    description: 'Producción, inventario, presentaciones y reservas.',
     icon: Package
+  },
+  {
+    key: 'sistema',
+    label: 'Sitio y sistema',
+    description: 'Accesos, datos de iglesia, apariencia e integraciones avanzadas.',
+    icon: Settings
   }
 ];
 
 export interface AdminModule {
-  id: string;      // Permission key used in DB (e.g. 'dashboard', 'components')
+  id: string;      // Unique navigation key.
   label: string;   // Display name for RBAC Matrix
   name: string;    // Display name for Sidebar item
   path: string;    // Router path (e.g. '/admin/componentes')
   icon: React.ElementType; // Lucide Icon component
   group: ModuleGroup;
+  permission?: string;
+  keywords?: string[];
+  showInPermissions?: boolean;
+  isAdvanced?: boolean;
+  available?: boolean;
 }
+
+export const getAdminModulePermission = (module: AdminModule) => module.permission ?? module.id;
 
 export const ADMIN_MODULES: AdminModule[] = [
   // --- 1. ADMINISTRACIÓN Y MÉTRICAS ---
@@ -110,7 +122,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Resumen',
     path: '/admin',
     icon: LayoutDashboard,
-    group: 'admin'
+    group: 'inicio'
   },
   {
     id: 'analytics',
@@ -118,7 +130,18 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Análisis & Métricas',
     path: '/admin/analisis',
     icon: BarChart3,
-    group: 'admin'
+    group: 'inicio'
+  },
+  {
+    id: 'audit_activity',
+    label: 'Actividad y auditoría',
+    name: 'Actividad del sistema',
+    path: '/admin/actividad',
+    icon: Activity,
+    group: 'inicio',
+    permission: 'users',
+    showInPermissions: false,
+    keywords: ['auditoría', 'historial', 'cambios']
   },
   {
     id: 'finances',
@@ -126,7 +149,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Gestión Financiera',
     path: '/admin/finanzas',
     icon: DollarSign,
-    group: 'admin'
+    group: 'finanzas_tienda'
   },
   {
     id: 'users',
@@ -134,7 +157,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Usuarios & Permisos',
     path: '/admin/usuarios',
     icon: UserCog,
-    group: 'admin'
+    group: 'sistema'
   },
   {
     id: 'settings',
@@ -142,7 +165,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Configuración Iglesia',
     path: '/admin/configuracion',
     icon: Settings,
-    group: 'admin'
+    group: 'sistema'
   },
   {
     id: 'map',
@@ -150,7 +173,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Mapa Estratégico',
     path: '/admin/mapa-estrategico',
     icon: Compass,
-    group: 'admin'
+    group: 'personas'
   },
   {
     id: 'appearance',
@@ -158,7 +181,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Personalizar Panel',
     path: '/admin/apariencia',
     icon: Palette,
-    group: 'admin'
+    group: 'sistema'
   },
 
   // --- 2. SISTEMA DE DISEÑO Y COMPONENTES UI ---
@@ -168,7 +191,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Biblioteca Componentes UI',
     path: '/admin/componentes',
     icon: Component,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
   {
     id: 'menu_manager',
@@ -176,7 +200,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Menú de Navegación',
     path: '/admin/apariencia/menu',
     icon: Columns,
-    group: 'diseno'
+    group: 'contenido'
   },
   {
     id: 'button_studio',
@@ -184,7 +208,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Estudio Botones & Glass',
     path: '/admin/apariencia/botones',
     icon: Sparkles,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
   {
     id: 'design',
@@ -192,7 +217,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Guía de Estilo / Tokens',
     path: '/admin/diseno',
     icon: Palette,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
   {
     id: 'animations',
@@ -200,7 +226,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Catálogo Animaciones',
     path: '/admin/animaciones',
     icon: Sparkles,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
   {
     id: 'logos',
@@ -208,7 +235,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Catálogo de Logos',
     path: '/admin/logos',
     icon: ImageIcon,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
   {
     id: 'pages',
@@ -216,7 +244,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Editor de Páginas',
     path: '/admin/paginas',
     icon: FileText,
-    group: 'diseno'
+    group: 'contenido'
   },
   {
     id: 'presentation_editor',
@@ -224,7 +252,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Editor Presentaciones',
     path: '/admin/presentacion',
     icon: Sparkles,
-    group: 'diseno'
+    group: 'operaciones'
   },
   {
     id: 'plugins',
@@ -232,17 +260,40 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Extensiones & Plugins',
     path: '/admin/extensiones',
     icon: Sparkles,
-    group: 'diseno'
+    group: 'sistema',
+    isAdvanced: true
   },
 
   // --- 3. EVENTOS, MEDIOS & NOTIFICACIONES ---
+  {
+    id: 'content_hub',
+    label: 'Centro de contenido',
+    name: 'Centro de contenido',
+    path: '/admin/contenido',
+    icon: LibraryBig,
+    group: 'contenido',
+    permission: 'pages',
+    showInPermissions: false,
+    keywords: ['sitio', 'publicar', 'editorial']
+  },
+  {
+    id: 'contact_inbox',
+    label: 'Buzón de contacto',
+    name: 'Buzón de contacto',
+    path: '/admin/buzon',
+    icon: Inbox,
+    group: 'contenido',
+    permission: 'chat',
+    showInPermissions: false,
+    keywords: ['correo', 'mensajes', 'contacto']
+  },
   {
     id: 'sermons',
     label: 'Sermones y Devocionales',
     name: 'Sermones & Predicas',
     path: '/admin/sermones',
     icon: Video,
-    group: 'eventos_medios'
+    group: 'contenido'
   },
   {
     id: 'speakers',
@@ -250,7 +301,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Liderazgo de la iglesia',
     path: '/admin/pastores',
     icon: UserCog,
-    group: 'eventos_medios'
+    group: 'contenido'
   },
   {
     id: 'songs',
@@ -258,7 +309,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Biblioteca Alabanzas',
     path: '/admin/alabanzas',
     icon: Music,
-    group: 'eventos_medios'
+    group: 'contenido'
   },
   {
     id: 'events',
@@ -266,7 +317,18 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Calendario Eventos',
     path: '/admin/eventos',
     icon: Calendar,
-    group: 'eventos_medios'
+    group: 'contenido'
+  },
+  {
+    id: 'schedules',
+    label: 'Horarios de reuniones',
+    name: 'Horarios de reuniones',
+    path: '/admin/horarios',
+    icon: Clock3,
+    group: 'contenido',
+    permission: 'events',
+    showInPermissions: false,
+    keywords: ['cultos', 'agenda', 'reuniones']
   },
   {
     id: 'notifications',
@@ -274,7 +336,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Notificaciones',
     path: '/admin/notificaciones',
     icon: Bell,
-    group: 'eventos_medios'
+    group: 'contenido'
   },
   {
     id: 'audio_library',
@@ -282,7 +344,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Biblioteca Sonidos',
     path: '/admin/juegos/audio-library',
     icon: Music,
-    group: 'eventos_medios'
+    group: 'contenido'
   },
 
   // --- 4. EDUCACIÓN Y LMS (AULA VIRTUAL) ---
@@ -292,7 +354,18 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Aula Virtual (LMS)',
     path: '/admin/lms',
     icon: GraduationCap,
-    group: 'educacion'
+    group: 'formacion'
+  },
+  {
+    id: 'discipleship',
+    label: 'Planes e insignias de discipulado',
+    name: 'Planes e insignias',
+    path: '/admin/discipulado',
+    icon: BookOpenCheck,
+    group: 'formacion',
+    permission: 'study_programs',
+    showInPermissions: false,
+    keywords: ['lectura', 'biblia', 'insignias']
   },
   {
     id: 'study_programs',
@@ -300,7 +373,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Programas & Estudios',
     path: '/admin/programas',
     icon: FileText,
-    group: 'educacion'
+    group: 'formacion'
   },
   {
     id: 'editorial',
@@ -308,7 +381,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Centro Editorial',
     path: '/admin/publicaciones',
     icon: MessageSquare,
-    group: 'educacion'
+    group: 'contenido'
   },
   {
     id: 'lms_enrollments',
@@ -316,7 +389,15 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Solicitudes Matrícula',
     path: '/admin/lms/matriculas',
     icon: Users,
-    group: 'educacion'
+    group: 'formacion'
+  },
+  {
+    id: 'open_resources',
+    label: 'Recursos educativos abiertos',
+    name: 'Recursos abiertos',
+    path: '/admin/recursos-abiertos',
+    icon: LibraryBig,
+    group: 'formacion'
   },
   {
     id: 'lms_director',
@@ -324,7 +405,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Panel de Dirección Académica',
     path: '/lms/director',
     icon: Shield,
-    group: 'educacion'
+    group: 'formacion'
   },
   {
     id: 'games',
@@ -332,7 +413,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Juegos Educativos',
     path: '/admin/juegos',
     icon: Gamepad2,
-    group: 'educacion'
+    group: 'formacion'
   },
 
   // --- 5. COMUNIDAD, CRM & CHAT ---
@@ -342,15 +423,17 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Directorio Miembros (CRM)',
     path: '/admin/miembros',
     icon: Users,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
-    id: 'members',
+    id: 'member_requests',
     label: 'Solicitudes CRM',
     name: 'Solicitudes de Ingreso',
     path: '/admin/solicitudes',
     icon: UserCog,
-    group: 'comunidad'
+    group: 'personas',
+    permission: 'members',
+    showInPermissions: false
   },
   {
     id: 'ministries',
@@ -358,7 +441,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Ministerios Activos',
     path: '/admin/ministerios',
     icon: Layers,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
     id: 'missions',
@@ -366,7 +449,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Misiones & Campos',
     path: '/admin/misiones',
     icon: Globe2,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
     id: 'volunteering',
@@ -374,7 +457,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Gestión Voluntariado',
     path: '/admin/voluntariado',
     icon: Heart,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
     id: 'petitions',
@@ -382,7 +465,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Peticiones Oración',
     path: '/admin/peticiones',
     icon: FileText,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
     id: 'chat',
@@ -390,7 +473,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Mensajería Chat',
     path: '/admin/chat',
     icon: MessageSquare,
-    group: 'comunidad'
+    group: 'personas'
   },
   {
     id: 'certificates',
@@ -398,7 +481,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Certificados & PDFs',
     path: '/admin/certificados',
     icon: FileText,
-    group: 'comunidad'
+    group: 'formacion'
   },
 
   // --- 6. TIENDA Y LIBRERÍA ---
@@ -408,7 +491,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Productos Tienda',
     path: '/admin/productos',
     icon: Store,
-    group: 'tienda'
+    group: 'finanzas_tienda'
   },
   {
     id: 'orders',
@@ -416,7 +499,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Órdenes & Pedidos',
     path: '/admin/ordenes',
     icon: Package,
-    group: 'tienda'
+    group: 'finanzas_tienda'
   },
   {
     id: 'store_settings',
@@ -424,7 +507,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Configuración Pagos',
     path: '/admin/pagos-envios',
     icon: DollarSign,
-    group: 'tienda'
+    group: 'finanzas_tienda'
   },
 
   // --- 7. OPERACIONES & LOGÍSTICA ---
@@ -458,7 +541,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Bóveda Archivos Media',
     path: '/admin/media-vault',
     icon: FolderLock,
-    group: 'operaciones'
+    group: 'contenido'
   },
   {
     id: 'bookings',
@@ -474,6 +557,12 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Credenciales & Redes',
     path: '/admin/boveda-credenciales',
     icon: KeyRound,
-    group: 'operaciones'
+    group: 'sistema',
+    available: false,
+    isAdvanced: true
   }
 ];
+
+/** Modules shown in the role matrix. Navigation aliases and workspace hubs reuse
+ * an existing permission and must not create duplicate rows. */
+export const PERMISSION_MODULES = ADMIN_MODULES.filter((module) => module.showInPermissions !== false);

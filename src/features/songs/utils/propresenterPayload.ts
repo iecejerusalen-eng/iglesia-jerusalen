@@ -39,6 +39,11 @@ interface SourceSection {
   lines: string[];
 }
 
+interface ProPresenterImportTextOptions {
+  mode: ProPresenterContentMode;
+  linesPerSlide?: number;
+}
+
 function nonEmptyLines(value: string): string[] {
   return value.split(/\r?\n/).map((line) => line.trimEnd()).filter((line) => line.trim().length > 0);
 }
@@ -107,6 +112,59 @@ export function parseProPresenterLine(value: string): ProPresenterSlideLine {
     chord_line: chordCharacters.join('').trimEnd(),
     chords,
   };
+}
+
+function importSectionsFromBracketText(value: string): string[][] {
+  const sections: string[][] = [];
+  let current: string[] = [];
+  nonEmptyLines(value).forEach((line) => {
+    const heading = line.match(/^\s*\[([^\]]+)]\s*$/);
+    if (heading && !isValidChord(heading[1].trim())) {
+      if (current.length > 0) sections.push(current);
+      current = [];
+      return;
+    }
+    current.push(line);
+  });
+  if (current.length > 0) sections.push(current);
+  return sections;
+}
+
+function formatSlideLines(lines: ProPresenterSlideLine[], mode: ProPresenterContentMode): string {
+  if (mode === 'lyrics') return lines.map((line) => line.lyrics).join('\n');
+  return lines
+    .flatMap((line) => line.chord_line ? [line.chord_line, line.lyrics] : [line.lyrics])
+    .join('\n');
+}
+
+/**
+ * Generates plain text ready for ProPresenter's text importer. Blank paragraphs
+ * delimit slides. Chord mode emits a chord line followed by its lyric line.
+ */
+export function formatProPresenterImportText(
+  bracketText: string,
+  options: ProPresenterImportTextOptions,
+): string {
+  const linesPerSlide = Math.min(4, Math.max(1, options.linesPerSlide ?? 2));
+  const slides: string[] = [];
+  importSectionsFromBracketText(bracketText).forEach((section) => {
+    for (let offset = 0; offset < section.length; offset += linesPerSlide) {
+      const lines = section.slice(offset, offset + linesPerSlide).map(parseProPresenterLine);
+      const formatted = formatSlideLines(lines, options.mode).trimEnd();
+      if (formatted.trim()) slides.push(formatted);
+    }
+  });
+  return slides.join('\n\n');
+}
+
+export function formatProPresenterPayloadText(
+  payload: ProPresenterSongPayload,
+  mode: ProPresenterContentMode = payload.mode,
+): string {
+  return payload.slides
+    .map((slide) => formatSlideLines(slide.lines, mode).trimEnd())
+    .filter((slide) => Boolean(slide.trim()))
+    .join('\n\n');
 }
 
 export function buildProPresenterPayload(

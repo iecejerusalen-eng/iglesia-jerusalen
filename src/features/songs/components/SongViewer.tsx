@@ -53,6 +53,7 @@ import { SheetMusicViewer } from './musical/SheetMusicViewer';
 import { DrumTabViewer } from './musical/DrumTabViewer';
 import { useToolboxStore } from '../../../store/useToolboxStore';
 import RichTextRenderer from '../../../components/common/RichTextRenderer';
+import { formatProPresenterImportText, type ProPresenterContentMode } from '../utils/propresenterPayload';
 
 type ViewerMode = 'lyrics' | 'lyrics-chords' | 'chords' | 'diagrams' | 'score';
 
@@ -256,6 +257,14 @@ export const SongViewer = ({
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
 
+  // Lock body scroll while the viewer is open so scrolling inside it
+  // never leaks through to the page behind.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLElement && event.target.closest('button,a,input,textarea,select,[contenteditable="true"]')) return;
@@ -284,19 +293,28 @@ export const SongViewer = ({
     }
   };
 
-  const copyText = async (onlyLyrics: boolean) => {
-    const processed = transposeBracketText(sourceText, transposeAmount, {
+  const copyForProPresenter = async (contentMode: ProPresenterContentMode) => {
+    const processed = transposeBracketText(sourceText, contentMode === 'lyrics' ? transposeAmount : chordTransposeAmount, {
       nashville: nashvilleMode,
       key: originalKey,
       preference: accidentalPreference,
     });
-    const result = onlyLyrics ? processed.replace(/\[[^\]]+]/g, '') : processed;
+    const result = formatProPresenterImportText(processed, {
+      mode: contentMode,
+      linesPerSlide: contentMode === 'lyrics' ? 2 : 1,
+    });
+    if (!result) {
+      toast.error('Esta versión no contiene texto que se pueda importar.');
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(result.trim());
-      toast.success(onlyLyrics ? 'Letra copiada' : 'Letra y acordes copiados');
+      await navigator.clipboard.writeText(result);
+      toast.success(contentMode === 'lyrics'
+        ? 'Letra copiada en bloques de dos líneas para ProPresenter'
+        : 'Acordes y letra copiados en pares para Stage');
     } catch (error) {
-      console.error('No se pudo copiar la canción.', error);
-      toast.error('No fue posible copiar la canción.');
+      console.error('No se pudo copiar el texto para ProPresenter.', error);
+      toast.error('El navegador no permitió copiar el contenido.');
     }
   };
 
@@ -448,7 +466,7 @@ export const SongViewer = ({
       <button className="absolute inset-0 cursor-default" onClick={() => !isFullscreen && close()} aria-label="Cerrar visor" />
       <div className="relative mx-auto flex h-[100dvh] w-full max-w-[1500px] overflow-hidden bg-slate-50/95 shadow-2xl dark:bg-slate-950/95 md:h-[calc(100dvh-2rem)] md:rounded-[2rem] md:border md:border-white/20 lg:h-[calc(100dvh-3.5rem)] print:h-auto print:max-w-none print:overflow-visible print:bg-white">
         <aside className={`${showTools ? 'w-[280px]' : 'w-0'} hidden shrink-0 overflow-hidden border-r border-white/50 bg-white/55 backdrop-blur-2xl transition-[width] duration-300 dark:border-white/10 dark:bg-slate-900/55 lg:block print:hidden`}>
-          <div className="flex h-full w-[280px] flex-col overflow-y-auto p-4">
+          <div className="flex h-full w-[280px] flex-col overflow-y-auto overscroll-contain p-4">
             <ToolSection title="Vista" icon={Eye}>
               <div className="grid grid-cols-2 gap-2">
                 {MODES.map((item) => <ModeButton key={item.id} active={mode === item.id} label={item.label} icon={item.icon} onClick={() => setMode(item.id)} />)}
@@ -517,7 +535,8 @@ export const SongViewer = ({
               {selectedSong.bpm ? <button onClick={() => { loadSongTempo(selectedSong.bpm ?? 80, selectedSong.time_signature, selectedSong.title); toast.success(`${selectedSong.bpm} BPM enviados al metrónomo`); }} className="toolbar-chip border-amber-200/70 text-amber-700 dark:text-amber-300"><Send size={13} /> Mandar {selectedSong.bpm} BPM</button> : <button onClick={() => openTool('metronome')} className="toolbar-chip"><Music2 size={13} /> Metrónomo</button>}
               <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/70 bg-white/75 px-2 py-1 dark:border-white/10 dark:bg-white/5"><button onClick={() => setAutoScrollActive((active) => !active)} className={`transpose-button ${autoScrollActive ? 'bg-indigo-100 text-indigo-700' : ''}`} aria-label={autoScrollActive ? 'Pausar autoscroll' : 'Iniciar autoscroll'}>{autoScrollActive ? <Pause size={13} /> : <ArrowDownToLine size={14} />}</button><input type="range" min="5" max="100" value={autoScrollSpeed} onChange={(event) => setAutoScrollSpeed(Number(event.target.value))} className="w-20 accent-indigo-500" aria-label="Velocidad del autoscroll" /><span className="w-7 text-[9px] font-black text-slate-400">{Math.round(autoScrollProgress)}%</span><button onClick={() => { if (scrollRef.current) scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' }); setAutoScrollProgress(0); }} className="transpose-button" aria-label="Volver arriba"><ArrowUpToLine size={13} /></button></div>
               <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
-              <button onClick={() => void copyText(false)} className="toolbar-chip"><Copy size={13} /> Copiar</button>
+              <button onClick={() => void copyForProPresenter('lyrics')} className="toolbar-chip" title="Dos líneas de letra por diapositiva"><FileText size={13} /> Letra → ProPresenter</button>
+              <button onClick={() => void copyForProPresenter('lyrics-chords')} className="toolbar-chip border-indigo-200/70 text-indigo-700 dark:text-indigo-300" title="Una frase por diapositiva: acordes arriba y letra abajo"><Copy size={13} /> Stage + acordes</button>
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-3">
@@ -531,7 +550,7 @@ export const SongViewer = ({
             </div>
           </header>
 
-          <main ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(circle_at_15%_10%,rgba(251,191,36,.09),transparent_28%),radial-gradient(circle_at_85%_5%,rgba(99,102,241,.08),transparent_24%)] px-4 py-6 sm:px-6 lg:px-10 print:overflow-visible print:bg-white print:p-0">
+          <main ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_15%_10%,rgba(251,191,36,.09),transparent_28%),radial-gradient(circle_at_85%_5%,rgba(99,102,241,.08),transparent_24%)] px-4 py-6 sm:px-6 lg:px-10 print:overflow-visible print:bg-white print:p-0">
             <div className="mx-auto max-w-5xl">
               {activeTab === 'resources' ? renderResources() : (
                 <>
@@ -566,7 +585,7 @@ export const SongViewer = ({
 
         {showMobileTools && (
           <div className="absolute inset-0 z-40 flex items-end bg-slate-950/45 p-3 backdrop-blur-sm lg:hidden print:hidden" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShowMobileTools(false)}>
-            <section className="max-h-[82dvh] w-full overflow-y-auto rounded-[1.75rem] border border-white/70 bg-white/95 p-4 shadow-2xl dark:border-white/10 dark:bg-slate-950/95" role="dialog" aria-modal="true" aria-labelledby="mobile-song-tools-title">
+            <section className="max-h-[82dvh] w-full overflow-y-auto overscroll-contain rounded-[1.75rem] border border-white/70 bg-white/95 p-4 shadow-2xl dark:border-white/10 dark:bg-slate-950/95" role="dialog" aria-modal="true" aria-labelledby="mobile-song-tools-title">
               <div className="flex items-center justify-between gap-3">
                 <div><p className="text-[9px] font-black uppercase tracking-[.18em] text-amber-600">Espacio musical</p><h3 id="mobile-song-tools-title" className="mt-0.5 font-serif text-xl font-black text-slate-900 dark:text-white">Herramientas de lectura</h3></div>
                 <button type="button" onClick={() => setShowMobileTools(false)} className="header-icon-button" aria-label="Cerrar herramientas"><X size={18} /></button>

@@ -197,24 +197,53 @@ export interface DonationCategory {
   id: string;
   name: string;
   description: string | null;
+  target_amount?: number | null;
+  color?: string | null;
   is_active: boolean;
   created_at: string;
 }
 
 export interface Donation {
   id: string;
+  receipt_number?: string | null;
   donor_name: string | null;
   donor_email: string;
+  donor_phone?: string | null;
+  is_anonymous?: boolean;
   amount: number;
+  currency?: string;
   category_id: string | null;
   category_name_backup: string | null;
   payment_method: string;
   status: 'pending' | 'completed' | 'failed';
-  created_at: string;
+  proof_url?: string | null;
   admin_notes?: string | null;
   verified_at?: string | null;
   verified_by?: string | null;
+  member_id?: string | null;
+  created_at: string;
   donation_categories?: DonationCategory | null;
+}
+
+export interface DonationAuditLog {
+  id: string;
+  donation_id: string;
+  actor_id: string | null;
+  action: string;
+  previous_data: Record<string, any> | null;
+  new_data: Record<string, any> | null;
+  ip_address: string | null;
+  created_at: string;
+  profiles?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  } | null;
+  donations?: {
+    receipt_number?: string | null;
+    donor_name?: string | null;
+    amount?: number | null;
+  } | null;
 }
 
 export type EcommercePaymentMethod = 'payphone' | 'de_una' | 'transfer' | string;

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { BentoGrid, BentoCard } from '../../../components/ui/magicui/bento-grid';
 import { cn } from '../../../lib/utils';
-import { MODULE_GROUPS, ADMIN_MODULES } from '../../../config/adminModules';
+import { MODULE_GROUPS, ADMIN_MODULES, getAdminModulePermission } from '../../../config/adminModules';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 export const ModuleGrid = () => {
@@ -22,16 +22,16 @@ export const ModuleGrid = () => {
           </p>
         </div>
         <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-gray-400 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider self-start sm:self-auto">
-          {ADMIN_MODULES.filter((module) => hasPermission(module.id, 'view')).length} herramientas disponibles
+          {ADMIN_MODULES.filter((module) => module.available !== false && hasPermission(getAdminModulePermission(module), 'view')).length} herramientas disponibles
         </span>
       </div>
 
       {/* Grid of groups */}
       <BentoGrid className="auto-rows-auto grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
         {MODULE_GROUPS.map((group) => {
-          const groupModules = ADMIN_MODULES.filter(m => m.group === group.key && hasPermission(m.id, 'view'));
+          const groupModules = ADMIN_MODULES.filter(m => m.available !== false && m.group === group.key && hasPermission(getAdminModulePermission(m), 'view'));
           if (groupModules.length === 0) return null;
-          const isLarge = group.key === 'comunidad' || group.key === 'educacion' || group.key === 'admin';
+          const isLarge = group.key === 'personas' || group.key === 'contenido' || group.key === 'formacion';
           
           return (
             <BentoCard

@@ -3,7 +3,7 @@ import { Command } from 'cmdk';
 import { ArrowRight, CalendarDays, ExternalLink, Phone, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ADMIN_MODULES, MODULE_GROUPS } from '../../config/adminModules';
+import { ADMIN_MODULES, MODULE_GROUPS, getAdminModulePermission } from '../../config/adminModules';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import { formatWhatsAppLink } from '../../utils/whatsapp';
@@ -27,7 +27,7 @@ export default function CommandMenu() {
   const [selectedMember, setSelectedMember] = useState<MemberSearchResult | null>(null);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
-  const visibleModules = useMemo(() => ADMIN_MODULES.filter((module) => hasPermission(module.id, 'view')), [hasPermission]);
+  const visibleModules = useMemo(() => ADMIN_MODULES.filter((module) => module.available !== false && hasPermission(getAdminModulePermission(module), 'view')), [hasPermission]);
   const visibleGroups = useMemo(() => MODULE_GROUPS.map((group) => ({ ...group, items: visibleModules.filter((module) => module.group === group.key) })).filter((group) => group.items.length), [visibleModules]);
   const canSearchMembers = hasPermission('members', 'view');
 
@@ -47,6 +47,12 @@ export default function CommandMenu() {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const openMenu = () => setOpen(true);
+    window.addEventListener('admin-command-menu:open', openMenu);
+    return () => window.removeEventListener('admin-command-menu:open', openMenu);
   }, []);
 
   useEffect(() => {

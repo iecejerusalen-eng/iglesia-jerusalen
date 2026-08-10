@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Globe, LogOut, Menu, Search, Settings, ShieldCheck, X } from 'lucide-react';
+import { Globe, LogOut, Menu, Search, Settings, ShieldCheck } from 'lucide-react';
 import Sidebar from '../components/admin/Sidebar';
 import CommandMenu from '../components/admin/CommandMenu';
 import soloLogoBlanco from '../assets/Jerusalén/solo logo blanco.svg';
@@ -8,7 +8,7 @@ import ThemeToggle from '../components/common/ThemeToggle';
 import { useThemeStore } from '../store/useThemeStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { usePermissions } from '../hooks/usePermissions';
-import { ADMIN_MODULES } from '../config/adminModules';
+import { ADMIN_MODULES, getAdminModulePermission } from '../config/adminModules';
 
 interface AccentStyle extends CSSProperties {
   '--color-gold'?: string;
@@ -50,6 +50,10 @@ const AdminLayout = () => {
     setIsSidebarOpen(true);
   };
 
+  const openCommandMenu = () => {
+    window.dispatchEvent(new Event('admin-command-menu:open'));
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
@@ -57,7 +61,7 @@ const AdminLayout = () => {
 
   const preferredMobileIds = ['dashboard', 'members', 'events'];
   const mobileLinks = ADMIN_MODULES
-    .filter((module) => hasPermission(module.id, 'view'))
+    .filter((module) => module.available !== false && hasPermission(getAdminModulePermission(module), 'view'))
     .sort((a, b) => {
       const aIndex = preferredMobileIds.indexOf(a.id);
       const bIndex = preferredMobileIds.indexOf(b.id);
@@ -103,25 +107,13 @@ const AdminLayout = () => {
             <div className="relative hidden max-w-xl flex-1 md:flex">
               <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
-                type="search"
-                placeholder="Buscar una herramienta..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onFocus={() => isDrawer && setIsSidebarOpen(true)}
+                type="button"
+                aria-label="Abrir búsqueda global"
+                value="Buscar herramientas o miembros..."
+                onClick={openCommandMenu}
                 className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-20 text-sm font-medium text-slate-800 outline-none transition focus:border-gold/50 focus:bg-white focus:ring-4 focus:ring-gold/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-900"
               />
-              {searchQuery ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                  aria-label="Limpiar búsqueda"
-                >
-                  <X size={14} />
-                </button>
-              ) : (
-                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 dark:border-white/10 dark:bg-slate-900">Ctrl K</kbd>
-              )}
+              <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 dark:border-white/10 dark:bg-slate-900">Ctrl K</kbd>
             </div>
 
             <div className="ml-auto flex items-center gap-1 sm:gap-2">
@@ -131,7 +123,7 @@ const AdminLayout = () => {
               </div>
               <button
                 type="button"
-                onClick={() => openNavigation(true)}
+                onClick={openCommandMenu}
                 className="flex size-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
                 aria-label="Buscar herramientas"
               >
@@ -145,6 +137,7 @@ const AdminLayout = () => {
                   onClick={() => navigate('/admin/apariencia')}
                   className="hidden size-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 lg:flex"
                   title="Personalizar panel"
+                  aria-label="Personalizar panel"
                 >
                   <Settings size={18} />
                 </button>
@@ -155,6 +148,7 @@ const AdminLayout = () => {
                 onClick={() => navigate('/')}
                 className="hidden size-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 lg:flex"
                 title="Ir al sitio web"
+                aria-label="Ir al sitio web"
               >
                 <Globe size={18} />
               </button>
@@ -169,6 +163,7 @@ const AdminLayout = () => {
                   onClick={handleLogout}
                   className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
                   title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
                 >
                   <LogOut size={17} />
                 </button>
@@ -183,7 +178,7 @@ const AdminLayout = () => {
       </div>
 
       <nav
-        className="fixed inset-x-3 bottom-3 z-30 grid rounded-2xl border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 md:hidden"
+        className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 grid rounded-2xl border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 md:hidden"
         style={{ gridTemplateColumns: `repeat(${mobileLinks.slice(0, 3).length + 1}, minmax(0, 1fr))` }}
         aria-label="Navegación rápida"
       >

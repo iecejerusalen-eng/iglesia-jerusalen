@@ -90,8 +90,11 @@ export default function MinistryPageDetail() {
         if (!resolved.is_password_protected) await fetchContent(resolved.id, null);
       } catch (caughtError: unknown) {
         if (cancelled) return;
-        console.error('Error loading ministry subpage:', caughtError);
-        setError(caughtError instanceof Error ? caughtError.message : 'No fue posible abrir esta página.');
+        const message = caughtError instanceof Error ? caughtError.message : 'No fue posible abrir esta página.';
+        if (!message.includes('no encontrada') && !message.includes('no encontrado')) {
+          console.error('Error loading ministry subpage:', caughtError);
+        }
+        setError(message);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -119,8 +122,13 @@ export default function MinistryPageDetail() {
       await fetchContent(page.id, password);
       setPassword('');
     } catch (caughtError: unknown) {
-      console.error('Protected ministry page unlock failed:', caughtError);
-      setPasswordError('La contraseña no es correcta. Inténtalo nuevamente.');
+      const failure = caughtError && typeof caughtError === 'object' ? caughtError as { message?: string; code?: string } : {};
+      if (failure.message?.includes('Contraseña incorrecta') || failure.code === '28000') {
+        setPasswordError('La contraseña no es correcta. Inténtalo nuevamente.');
+      } else {
+        console.error('Protected ministry page unlock failed:', caughtError);
+        setPasswordError('No pudimos validar el acceso en este momento. Inténtalo de nuevo.');
+      }
     } finally {
       setUnlocking(false);
     }

@@ -211,6 +211,16 @@ ALTER TABLE public.propresenter_commands
   ADD COLUMN IF NOT EXISTS attempt_count smallint NOT NULL DEFAULT 0 CHECK (attempt_count BETWEEN 0 AND 20),
   ADD COLUMN IF NOT EXISTS expires_at timestamptz NOT NULL DEFAULT (now() + interval '24 hours');
 
+-- La implementación anterior marcaba órdenes como enviadas antes de ejecutarlas.
+-- Devuélvelas una vez a la cola para que el nuevo lease pueda entregarlas.
+UPDATE public.propresenter_commands
+SET status = 'pending',
+    claimed_at = NULL,
+    claim_expires_at = NULL,
+    attempt_count = 0
+WHERE status = 'sent'
+  AND acknowledged_at IS NULL;
+
 DROP INDEX IF EXISTS public.propresenter_commands_pending_idx;
 CREATE INDEX IF NOT EXISTS propresenter_commands_claim_idx
   ON public.propresenter_commands (connection_id, status, claim_expires_at, created_at)
@@ -277,7 +287,7 @@ BEGIN
       AND command.attempt_count < 3
       AND (
         command.status = 'pending'
-        OR (command.status = 'sent' AND command.claim_expires_at < now())
+        OR (command.status = 'sent' AND COALESCE(command.claim_expires_at, '-infinity'::timestamptz) < now())
       )
     ORDER BY command.created_at
     FOR UPDATE SKIP LOCKED
