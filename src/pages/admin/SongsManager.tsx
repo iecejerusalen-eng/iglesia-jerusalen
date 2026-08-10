@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import SongLyricsEditor from '../../components/admin/SongLyricsEditor';
+import { SongBlockEditor } from '../../features/songs/components/editor/SongBlockEditor';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import {
@@ -962,129 +963,11 @@ const SongsManager = () => {
                 ) : (
                   /* STRUCTURED BLOCK EDITOR */
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xxs text-gray-400">Organiza las partes del himno para ensayar e imprimir</span>
-                      <button
-                        type="button"
-                        onClick={addBlock}
-                        className="flex items-center gap-1 text-xs bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-gold border border-amber-200/40 dark:border-amber-850 px-3.5 py-2 rounded-2xl font-bold transition-all cursor-pointer shadow-2xs"
-                      >
-                        <PlusCircle size={14} /> Agregar Sección
-                      </button>
-                    </div>
-
-                    {structureBlocks.length === 0 ? (
-                      <div className="text-center py-10 border border-dashed border-gray-200 dark:border-white/5 rounded-3xl text-gray-400 text-xs">
-                        No hay secciones creadas. Haz clic en "Agregar Sección" para comenzar.
-                      </div>
-                    ) : (
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-                        {structureBlocks.map((block, idx) => (
-                          <div key={block.id} className="border border-gray-250 dark:border-white/10 rounded-2xl p-4 bg-slate-50/20 dark:bg-slate-950/20 space-y-4 hover:border-gold/30 transition-all relative">
-                            {/* Block Controls */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={block.type}
-                                  onChange={(e) => {
-                                    const type = e.target.value as SongStructureBlock['type'];
-                                    const count = structureBlocks.filter((b, i) => b.type === type && i !== idx).length + 1;
-                                    const typeLabels: Record<string, string> = {
-                                      intro: 'Introducción',
-                                      estrofa: `Estrofa ${count}`,
-                                      coro: 'Coro',
-                                      puente: 'Puente',
-                                      melodia: 'Melodía / Solo',
-                                      outro: 'Final',
-                                      outro_outro: 'Final',
-                                      otro: 'Sección'
-                                    };
-                                    updateBlock(block.id, { type, label: typeLabels[type] || 'Sección' });
-                                  }}
-                                  className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-700 dark:text-gray-300 outline-none"
-                                >
-                                  <option value="intro">Introducción 🎵</option>
-                                  <option value="estrofa">Estrofa 📝</option>
-                                  <option value="coro">Coro 🎤</option>
-                                  <option value="puente">Puente 🌉</option>
-                                  <option value="melodia">Melodía / Solo 🎹</option>
-                                  <option value="outro">Final 🏁</option>
-                                  <option value="otro">Otro 🔹</option>
-                                </select>
-                                
-                                <input
-                                  type="text"
-                                  value={block.label}
-                                  onChange={(e) => updateBlock(block.id, { label: e.target.value })}
-                                  placeholder="Etiqueta..."
-                                  className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs font-extrabold text-gray-800 dark:text-gray-100 outline-none w-36 focus:border-amber-400"
-                                />
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => moveBlock(idx, 'up')}
-                                  disabled={idx === 0}
-                                  className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-30 cursor-pointer"
-                                  title="Subir"
-                                >
-                                  <ArrowUp size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveBlock(idx, 'down')}
-                                  disabled={idx === structureBlocks.length - 1}
-                                  className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-30 cursor-pointer"
-                                  title="Bajar"
-                                >
-                                  <ArrowDown size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => removeBlock(block.id)}
-                                  className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg cursor-pointer ml-1"
-                                  title="Eliminar sección"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Block Inputs */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div className="md:col-span-1 space-y-3">
-                                <div>
-                                  <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Notas / Acordes de Guía (Opcional)</label>
-                                  <input
-                                    type="text"
-                                    value={block.melody || ''}
-                                    onChange={(e) => updateBlock(block.id, { melody: e.target.value })}
-                                    placeholder="Ej: G - C - D - G"
-                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none"
-                                  />
-                                </div>
-                                <div className="p-3 bg-amber-50/30 dark:bg-amber-950/10 border border-amber-100/30 dark:border-amber-900/10 rounded-xl text-[10px] text-amber-800/80 dark:text-amber-400 leading-relaxed font-medium">
-                                  <strong>💡 Sintaxis de Acordes:</strong> Escribe corchetes con el acorde antes de la palabra, ejemplo:<br/>
-                                  <code className="text-red-600 dark:text-red-400 font-semibold">[G] Grande es tu [D] amor</code>
-                                </div>
-                              </div>
-                              
-                              <div className="md:col-span-2">
-                                <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Letra y Acordes</label>
-                                <textarea
-                                  value={block.lyrics}
-                                  onChange={(e) => updateBlock(block.id, { lyrics: e.target.value })}
-                                  rows={5}
-                                  placeholder="Escribe la letra y acordes de esta sección..."
-                                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-gray-100 font-mono focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none leading-loose"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <SongBlockEditor 
+                      blocks={structureBlocks} 
+                      onChangeBlocks={setStructureBlocks} 
+                      disabled={readOnly} 
+                    />
                   </div>
                 )}
               </div>

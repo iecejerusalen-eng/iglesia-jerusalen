@@ -3,7 +3,7 @@ import { SVGuitarChord } from 'svguitar';
 import { getChordData } from '../../utils/chordDictionary';
 
 export interface ChordPosition {
-  fingers: [number, number | string, (string | undefined)?][]; // [string, fret, text]
+  fingers?: [number, number | string, (string | undefined)?][]; // [string, fret, text]
   barres?: { fret: number; fromString: number; toString: number }[];
   title?: string;
   position?: number;

@@ -6,6 +6,7 @@ import type { Song } from '../../../types';
 import { htmlToBracketText, bracketTextToHtml, processBracketText, getOriginalKey, transposeNote } from '../utils/songUtils';
 import { exportSongToPdf } from '../utils/songPdfExport';
 import { useMetronome } from '../hooks/useMetronome';
+import { StringChordDiagram } from './musical/StringChordDiagram';
 import { toast } from 'sonner';
 
 interface SongViewerProps {
@@ -577,10 +578,118 @@ export const SongViewer = ({
                     /* STRUCTURED RENDERING */
                     <div className="space-y-6">
                       {selectedSong.structure_blocks.map((block, idx) => {
-                        const blockObj = block as unknown as { id?: string; section_type?: string; type?: string; label?: string; melody?: string; melody_guide?: string; lyrics?: string };
+                        const blockObj = block as unknown as Record<string, unknown>;
+                        const blockType = (blockObj.type as string) || 'lyrics';
+
+                        if (blockType === 'chord_diagram') {
+                          const chordsList = Array.isArray(blockObj.chords) ? (blockObj.chords as string[]) : [];
+                          const inst = ((blockObj.instrument as string) === 'ukulele' ? 'ukulele' : 'guitar') as 'guitar' | 'ukulele';
+                          return (
+                            <div key={blockObj.id as string || `block-${idx}`} className="border border-emerald-200/40 dark:border-emerald-900/30 rounded-3xl p-5 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-3">
+                              <div className="flex justify-between items-center border-b border-emerald-100 dark:border-emerald-900/20 pb-2">
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300/30">
+                                  🎸 Diagramas de Acordes ({inst === 'ukulele' ? 'Ukelele' : 'Guitarra'})
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-4 items-center justify-center pt-2">
+                                {chordsList.map((c, i) => {
+                                  const transposed = transposeNote(c, transposeAmount);
+                                  return (
+                                    <div key={i} className="flex flex-col items-center bg-white dark:bg-slate-900 p-2 rounded-2xl border border-emerald-100 dark:border-white/5 shadow-2xs">
+                                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">{transposed}</span>
+                                      <StringChordDiagram chord={{ title: transposed }} instrument={inst} width={110} height={130} />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (blockType === 'musician_note') {
+                          const target = (blockObj.target_instrument as string) || 'General';
+                          return (
+                            <div key={blockObj.id as string || `block-${idx}`} className="border border-indigo-200/40 dark:border-indigo-900/30 rounded-3xl p-5 bg-indigo-50/20 dark:bg-indigo-950/10 space-y-2">
+                              <div className="flex items-center gap-2 border-b border-indigo-100 dark:border-indigo-900/20 pb-2">
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-300/30">
+                                  📌 Nota para Músicos ({target})
+                                </span>
+                              </div>
+                              <p className="text-xs font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed pt-1">
+                                {(blockObj.content as string) || ''}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (blockType === 'sheet_music') {
+                          return (
+                            <div key={blockObj.id as string || `block-${idx}`} className="border border-violet-200/40 dark:border-violet-900/30 rounded-3xl p-5 bg-violet-50/20 dark:bg-violet-950/10 space-y-3">
+                              <div className="flex justify-between items-center border-b border-violet-100 dark:border-violet-900/20 pb-2">
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border-violet-300/30">
+                                  🎼 Partitura / Notación ABC
+                                </span>
+                                {(blockObj.title as string) && (
+                                  <span className="text-xs font-bold text-violet-700 dark:text-violet-300">
+                                    {(blockObj.title as string)}
+                                  </span>
+                                )}
+                              </div>
+                              <pre className="font-mono text-xs p-4 bg-white dark:bg-slate-900 rounded-2xl border border-violet-100 dark:border-white/5 overflow-x-auto text-violet-900 dark:text-violet-200">
+                                {(blockObj.abc_code as string) || ''}
+                              </pre>
+                            </div>
+                          );
+                        }
+
+                        if (blockType === 'media_embed') {
+                          const url = (blockObj.url as string) || '';
+                          const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+                          let embedUrl = url;
+                          if (isYoutube) {
+                            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                            if (match) embedUrl = `https://www.youtube.com/embed/${match[1]}`;
+                          }
+
+                          return (
+                            <div key={blockObj.id as string || `block-${idx}`} className="border border-red-200/40 dark:border-red-900/30 rounded-3xl p-5 bg-red-50/20 dark:bg-red-950/10 space-y-3">
+                              <div className="flex justify-between items-center border-b border-red-100 dark:border-red-900/20 pb-2">
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-300/30">
+                                  🎬 Recurso Multimedia / Audio de Referencia
+                                </span>
+                              </div>
+                              {isYoutube ? (
+                                <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xs border border-red-100 dark:border-white/5">
+                                  <iframe src={embedUrl} className="w-full h-full" title="Multimedia" allowFullScreen />
+                                </div>
+                              ) : (
+                                <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
+                                  <ExternalLink size={14} /> Abrir recurso multimedia
+                                </a>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (blockType === 'tablature') {
+                          return (
+                            <div key={blockObj.id as string || `block-${idx}`} className="border border-slate-200 dark:border-white/10 rounded-3xl p-5 bg-slate-50/40 dark:bg-slate-950/20 space-y-3">
+                              <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-white/5 pb-2">
+                                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/30">
+                                  🎸 Tablatura
+                                </span>
+                              </div>
+                              <pre className="font-mono text-xs p-4 bg-slate-900 text-slate-100 rounded-2xl overflow-x-auto leading-relaxed">
+                                {(blockObj.content as string) || ''}
+                              </pre>
+                            </div>
+                          );
+                        }
+
+                        // DEFAULT / LYRICS BLOCK
                         return (
                           <div 
-                            key={blockObj.id || `block-${idx}`} 
+                            key={blockObj.id as string || `block-${idx}`} 
                             className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
                           >
                             <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
@@ -591,17 +700,17 @@ export const SongViewer = ({
                                   ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
                                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
                               }`}>
-                                {blockObj.label || 'Sección'}
+                                {(blockObj.label as string) || 'Sección'}
                               </span>
-                              {(blockObj.melody || blockObj.melody_guide) && (
+                              {Boolean(blockObj.melody || blockObj.melody_guide) && (
                                 <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
-                                  <Info size={10} /> {blockObj.melody || blockObj.melody_guide}
+                                  <Info size={10} /> {((blockObj.melody as string) || (blockObj.melody_guide as string))}
                                 </span>
                               )}
                             </div>
                             <div 
                               className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(blockObj.lyrics || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml((blockObj.lyrics as string) || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
                             />
                           </div>
                         );
