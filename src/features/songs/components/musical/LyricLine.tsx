@@ -11,9 +11,10 @@ export function LyricLine({ line, className = '', showChords = true }: LyricLine
   // If the line contains chords, handle gracefully
   return (
     <div className={`song-line flex flex-wrap items-end gap-x-0.5 gap-y-2 my-2 ${className}`}>
-      {line.items.map((item: any, idx: number) => {
-        const chord = item.chord || '';
-        const lyrics = item.lyrics || '';
+      {line.items.map((item, idx) => {
+        const itemObj = item as unknown as { chord?: string; lyrics?: string };
+        const chord = itemObj.chord || '';
+        const lyrics = itemObj.lyrics || '';
         
         return (
           <span 

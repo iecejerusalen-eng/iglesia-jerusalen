@@ -95,10 +95,11 @@ export const SongViewer = ({
   const copyChords = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b: any) => {
-        let blockStr = `[${(b.label || '').toUpperCase()}]\n`;
-        if (b.melody || b.melody_guide) blockStr += `(Guía: ${b.melody || b.melody_guide})\n`;
-        blockStr += `${processBracketText(b.lyrics || '', transposeAmount, nashvilleMode, originalKey)}\n`;
+      result = song.structure_blocks.map((b) => {
+        const bObj = b as unknown as { label?: string; melody?: string; melody_guide?: string; lyrics?: string };
+        let blockStr = `[${(bObj.label || '').toUpperCase()}]\n`;
+        if (bObj.melody || bObj.melody_guide) blockStr += `(Guía: ${bObj.melody || bObj.melody_guide})\n`;
+        blockStr += `${processBracketText(bObj.lyrics || '', transposeAmount, nashvilleMode, originalKey)}\n`;
         return blockStr;
       }).join('\n');
     } else {
@@ -112,9 +113,10 @@ export const SongViewer = ({
   const copyOnlyLyrics = (song: Song) => {
     let result;
     if (song.structure_blocks && song.structure_blocks.length > 0) {
-      result = song.structure_blocks.map((b: any) => {
-        let blockStr = `[${(b.label || '').toUpperCase()}]\n`;
-        const cleanLyrics = (b.lyrics || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
+      result = song.structure_blocks.map((b) => {
+        const bObj = b as unknown as { label?: string; lyrics?: string };
+        let blockStr = `[${(bObj.label || '').toUpperCase()}]\n`;
+        const cleanLyrics = (bObj.lyrics || '').replace(/\[([a-zA-Z0-9#/+\-.]+?)\]/g, '');
         blockStr += `${cleanLyrics}\n`;
         return blockStr;
       }).join('\n');
@@ -574,33 +576,36 @@ export const SongViewer = ({
                   {selectedSong.structure_blocks && selectedSong.structure_blocks.length > 0 ? (
                     /* STRUCTURED RENDERING */
                     <div className="space-y-6">
-                      {selectedSong.structure_blocks.map((block: any) => (
-                        <div 
-                          key={block.id} 
-                          className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
-                        >
-                          <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
-                            <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide ${
-                              block.section_type === 'coro' || block.type === 'coro'
-                                ? 'bg-amber-55 dark:bg-amber-950/40 text-amber-800 dark:text-gold border-amber-300/30'
-                                : block.section_type === 'intro' || block.type === 'intro'
-                                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
-                            }`}>
-                              {block.label || 'Sección'}
-                            </span>
-                            {(block.melody || block.melody_guide) && (
-                              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
-                                <Info size={10} /> {block.melody || block.melody_guide}
-                              </span>
-                            )}
-                          </div>
+                      {selectedSong.structure_blocks.map((block, idx) => {
+                        const blockObj = block as unknown as { id?: string; section_type?: string; type?: string; label?: string; melody?: string; melody_guide?: string; lyrics?: string };
+                        return (
                           <div 
-                            className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(block.lyrics || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
-                          />
-                        </div>
-                      ))}
+                            key={blockObj.id || `block-${idx}`} 
+                            className="border border-slate-100 dark:border-white/5 rounded-3xl p-5 bg-slate-50/30 dark:bg-slate-950/10 space-y-3"
+                          >
+                            <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2">
+                              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border tracking-wide ${
+                                blockObj.section_type === 'coro' || blockObj.type === 'coro'
+                                  ? 'bg-amber-55 dark:bg-amber-950/40 text-amber-800 dark:text-gold border-amber-300/30'
+                                  : blockObj.section_type === 'intro' || blockObj.type === 'intro'
+                                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-300/30'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 border-slate-200/30'
+                              }`}>
+                                {blockObj.label || 'Sección'}
+                              </span>
+                              {(blockObj.melody || blockObj.melody_guide) && (
+                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-0.5 rounded-lg border border-indigo-200/20 flex items-center gap-1" title="Guía de notas">
+                                  <Info size={10} /> {blockObj.melody || blockObj.melody_guide}
+                                </span>
+                              )}
+                            </div>
+                            <div 
+                              className={`song-lyrics ${!showChords ? 'hide-chords' : `chords-${chordPosition}`}`}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bracketTextToHtml(blockObj.lyrics || '', transposeAmount, nashvilleMode, originalKey), { ADD_ATTR: ['data-chord', 'data-chord-node'] }) }}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     /* LEGACY HTML RENDERING */
