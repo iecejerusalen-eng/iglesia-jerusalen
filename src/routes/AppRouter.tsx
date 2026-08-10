@@ -1,8 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-import PublicLayout from '../layouts/PublicLayout';
-import AdminLayout from '../layouts/AdminLayout';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import { PageSkeleton } from '../components/common/Skeletons';
 
@@ -32,6 +30,12 @@ const lazyWithRetry = <T extends React.ComponentType<unknown>>(
     }
   });
 };
+
+// Los layouts cargan navegación, búsqueda y herramientas globales. Mantenerlos
+// fuera del bundle del router evita descargar el panel administrativo al visitar
+// una página pública desde un móvil.
+const PublicLayout = lazyWithRetry(() => import('../layouts/PublicLayout'));
+const AdminLayout = lazyWithRetry(() => import('../layouts/AdminLayout'));
 
 // --- PUBLIC PAGES ---
 const Home = lazyWithRetry(() => import('../pages/public/Home'));
@@ -129,6 +133,7 @@ const EditorialWorkspace = lazyWithRetry(() => import('../pages/admin/EditorialW
 const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager'));
 const MenuManager = lazyWithRetry(() => import('../pages/admin/MenuManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
+const ProPresenterManager = lazyWithRetry(() => import('../pages/admin/ProPresenterManager'));
 const MediaVault = lazyWithRetry(() => import('../pages/admin/MediaVault'));
 const InventoryManager = lazyWithRetry(() => import('../pages/admin/InventoryManager'));
 const AnimationCatalog = lazyWithRetry(() => import('../pages/admin/AnimationCatalog'));
@@ -230,6 +235,7 @@ export default function AppRouter() {
 
         {/* Protected Admin Modules */}
         <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/produccion" element={<ProductionBoard />} /></Route></Route>
+        <Route element={<ProtectedRoute module="propresenter" />}><Route element={<AdminLayout />}><Route path="/admin/propresenter" element={<ProPresenterManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="media_vault" />}><Route element={<AdminLayout />}><Route path="/admin/media-vault" element={<MediaVault />} /></Route></Route>
         <Route element={<ProtectedRoute module="ministries" />}><Route element={<AdminLayout />}>
           <Route path="/admin/ministerios" element={<MinistryManager />} />
@@ -249,7 +255,10 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="speakers" />}><Route element={<AdminLayout />}><Route path="/admin/pastores" element={<SpeakersManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="speakers" />}><Route element={<AdminLayout />}>
+          <Route path="/admin/pastores" element={<SpeakersManager />} />
+          <Route path="/admin/liderazgo" element={<SpeakersManager />} />
+        </Route></Route>
         <Route element={<ProtectedRoute module="songs" />}><Route element={<AdminLayout />}><Route path="/admin/alabanzas" element={<SongsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="programs" />}>
           <Route element={<AdminLayout />}>

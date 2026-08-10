@@ -28,7 +28,20 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectManifest: {
-        maximumFileSizeToCacheInBytes: 5000000,
+        // No precargamos chunks de mapas, editores y herramientas de más de
+        // 900 KB durante la instalación de la PWA. Se solicitan únicamente
+        // cuando la ruta los necesita y se cachean mediante el navegador.
+        maximumFileSizeToCacheInBytes: 900000,
+        globIgnores: [
+          '**/SongViewer-*.js',
+          '**/CertificatesManager-*.js',
+          '**/maplibre-*.js',
+          '**/emoji-mart-*.js',
+          '**/tiptap-*.js',
+          '**/charts-*.js',
+          '**/jspdf*.js',
+          '**/html2canvas*.js',
+        ],
       },
       manifest: {
         name: 'Iglesia del Evangelio Cuadrangular Jerusalén',
@@ -104,7 +117,10 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-core';
             }
-            return 'commons';
+            // No agrupamos dependencias desconocidas en un commons global.
+            // Ese patrón generaba un chunk de varios megabytes que se descargaba
+            // incluso en rutas móviles que no utilizaban esos módulos.
+            return undefined;
           }
         }
       }

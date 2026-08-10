@@ -29,6 +29,7 @@ import {
   Building,
   Component,
   KeyRound,
+  MonitorPlay,
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -245,8 +246,8 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'speakers',
-    label: 'Catálogo de Pastores/Oradores',
-    name: 'Pastores & Oradores',
+    label: 'Liderazgo y Oradores',
+    name: 'Liderazgo de la iglesia',
     path: '/admin/pastores',
     icon: UserCog,
     group: 'eventos_medios'
@@ -433,6 +434,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Producción Dominical',
     path: '/admin/produccion',
     icon: Columns,
+    group: 'operaciones'
+  },
+  {
+    id: 'propresenter',
+    label: 'Centro ProPresenter',
+    name: 'Panel ProPresenter',
+    path: '/admin/propresenter',
+    icon: MonitorPlay,
     group: 'operaciones'
   },
   {

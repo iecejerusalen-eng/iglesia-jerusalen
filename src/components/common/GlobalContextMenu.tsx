@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { lazy, Suspense, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ContextMenu,
@@ -27,7 +27,7 @@ import {
   MessageSquareHeart,
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
-import { RouteModal } from '@/components/map/RouteModal';
+const RouteModal = lazy(() => import('@/components/map/RouteModal').then((module) => ({ default: module.RouteModal })));
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { MobileContextDrawer } from '@/components/common/MobileContextDrawer';
@@ -130,9 +130,10 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
   };
 
   // ── Shared route modal ─────────────────────────────────────────────────────
-  const routeModal = (
+  const routeModal = isRouteOpen ? (
+    <Suspense fallback={null}>
     <RouteModal
-      isOpen={isRouteOpen}
+      isOpen
       onClose={() => setIsRouteOpen(false)}
       destination={{
         name: 'Iglesia Jerusalén Central (Milagro)',
@@ -140,7 +141,8 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
         lng: -79.5949891,
       }}
     />
-  );
+    </Suspense>
+  ) : null;
 
   // ── MOBILE: plain wrapper + Bottom Sheet (no Radix ContextMenu) ───────────
   if (isMobile) {

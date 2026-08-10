@@ -9,6 +9,7 @@ import {
   Globe, Heart, ShoppingBag, Send, ArrowRight, Loader2
 } from 'lucide-react';
 import { AnimeScaleIn, AnimeFadeUp } from '../animations/AnimeWrappers';
+import { parseBibleReferences } from '../../utils/bibleParser';
 
 const cmdkStyles = `
   [cmdk-root] {
@@ -119,6 +120,7 @@ export default function SearchPalette() {
     ministries: any[];
     products: any[];
     schedules: any[];
+    bibleRef?: any;
   }>({ songs: [], events: [], ministries: [], products: [], schedules: [] });
 
   const navigate = useNavigate();
@@ -156,6 +158,12 @@ export default function SearchPalette() {
       try {
         const q = search.trim();
 
+        const parsedBible = parseBibleReferences(q);
+        let bibleRefResult = null;
+        if (parsedBible.length > 0 && parsedBible[0].bookId) {
+          bibleRefResult = parsedBible[0];
+        }
+
         const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes] = await Promise.all([
           supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
           supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
@@ -169,7 +177,8 @@ export default function SearchPalette() {
           events: eventsRes.data || [],
           ministries: ministriesRes.data || [],
           products: productsRes.data || [],
-          schedules: schedulesRes.data || []
+          schedules: schedulesRes.data || [],
+          bibleRef: bibleRefResult
         });
       } catch (err) {
         console.error('Error executing global search:', err);

@@ -18,7 +18,8 @@ import { initLocalDatabase } from './config/localDb';
 import { usePluginStore } from './store/usePluginStore';
 
 import GlobalContextMenu from './components/common/GlobalContextMenu';
-import GlobalMusicTools from './components/common/GlobalMusicTools';
+import GlobalToolbox from './components/common/GlobalToolbox';
+import MobileRefreshButton from './components/common/MobileRefreshButton';
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -28,12 +29,14 @@ export default function App() {
     initializeAuth();
 
     // 2. Cargar plugins activos (almacenamiento en caché)
-    usePluginStore.getState().fetchPlugins();
+    const deferredStartup = window.setTimeout(() => {
+      void usePluginStore.getState().fetchPlugins();
+      void initLocalDatabase().catch((err) =>
+        console.warn('Advertencia al inicializar la BD local:', err)
+      );
+    }, 1200);
 
-    // 3. Inicializar base de datos PWA SQLite/IndexedDB
-    initLocalDatabase().catch((err) =>
-      console.warn('Advertencia al inicializar la BD local:', err)
-    );
+    return () => window.clearTimeout(deferredStartup);
   }, [initializeAuth]);
 
   useEffect(() => {
@@ -66,7 +69,7 @@ export default function App() {
 
     const timer = setTimeout(() => {
       updateFavicon();
-    }, 0);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -112,7 +115,8 @@ export default function App() {
               <BirthdayCelebrationModal />
             </Suspense>
             <AppRouter />
-            <GlobalMusicTools />
+            <GlobalToolbox />
+            <MobileRefreshButton />
           </GlobalContextMenu>
         </BrowserRouter>
       </GlobalErrorBoundary>

@@ -21,9 +21,13 @@ const speakerSchema = z.object({
   bio: z.string().optional(),
   photo_url: z.string().optional().nullable(),
   member_id: z.string().optional().nullable(),
+  leadership_roles: z.string().optional(),
+  is_public: z.boolean(),
+  display_order: z.coerce.number().int().min(0),
 });
 
-type SpeakerForm = z.infer<typeof speakerSchema>;
+type SpeakerFormInput = z.input<typeof speakerSchema>;
+type SpeakerForm = z.output<typeof speakerSchema>;
 
 const SpeakersManager = () => {
   const { isReadOnly } = usePermissions();
@@ -38,7 +42,7 @@ const SpeakersManager = () => {
   const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
-  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm<SpeakerForm>({
+  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm<SpeakerFormInput, undefined, SpeakerForm>({
     resolver: zodResolver(speakerSchema),
     defaultValues: {
       first_name: '',
@@ -47,6 +51,9 @@ const SpeakersManager = () => {
       bio: '',
       photo_url: '',
       member_id: '',
+      leadership_roles: '',
+      is_public: true,
+      display_order: 0,
     }
   });
 
@@ -110,6 +117,9 @@ const SpeakersManager = () => {
       bio: '',
       photo_url: '',
       member_id: '',
+      leadership_roles: '',
+      is_public: true,
+      display_order: 0,
     });
     setShowForm(true);
   };
@@ -123,6 +133,9 @@ const SpeakersManager = () => {
       bio: speaker.bio || '',
       photo_url: speaker.photo_url || '',
       member_id: speaker.member_id || '',
+      leadership_roles: speaker.leadership_roles?.join(', ') || '',
+      is_public: speaker.is_public ?? true,
+      display_order: speaker.display_order ?? 0,
     });
     setShowForm(true);
   };
@@ -137,6 +150,9 @@ const SpeakersManager = () => {
         bio: data.bio || null,
         photo_url: data.photo_url || null,
         member_id: data.member_id || null,
+        leadership_roles: data.leadership_roles ? data.leadership_roles.split(',').map((role) => role.trim()).filter(Boolean) : [],
+        is_public: data.is_public,
+        display_order: data.display_order,
         updated_at: new Date().toISOString()
       };
 
@@ -269,8 +285,8 @@ const SpeakersManager = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 p-4 md:p-8">
       <AdminHeader 
-        title="Catálogo de Pastores y Oradores" 
-        description="Administra los perfiles de quienes imparten prédicas y devocionales"
+        title="Liderazgo y Oradores" 
+        description="Administra perfiles del CRM, cargos, roles y quién aparece públicamente en Nosotros"
       />
 
       {!showForm ? (
@@ -278,7 +294,7 @@ const SpeakersManager = () => {
           <div className="mb-6 flex justify-between items-center">
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Estos perfiles se usan para etiquetar Sermones. Puedes vincularlos con un miembro del CRM para mantener consistencia.
+                Estos perfiles se usan para etiquetar sermones y presentar el liderazgo de la iglesia. Puedes vincularlos con un miembro del CRM para mantener consistencia.
               </p>
             </div>
             {!readOnly && (
@@ -385,6 +401,27 @@ const SpeakersManager = () => {
                       <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Roles y ministerios</label>
+                  <input
+                    type="text"
+                    {...register('leadership_roles')}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    placeholder="Ej. Familias, Discipulado, Alabanza"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">Separa cada rol con una coma.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden público</label>
+                  <input type="number" min="0" {...register('display_order')} className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all" />
+                </div>
+
+                <div className="md:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                  <input id="speaker-public" type="checkbox" {...register('is_public')} className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                  <label htmlFor="speaker-public" className="text-sm text-slate-700 dark:text-slate-300"><span className="font-semibold">Mostrar en Nosotros</span><span className="block text-xs text-slate-500">Desactívalo para perfiles que solo se usan en prédicas.</span></label>
                 </div>
 
                 <div>

@@ -49,7 +49,7 @@ import { bracketTextToHtml, getOriginalKey, htmlToBracketText } from '../utils/s
 import type { InstrumentType } from '../utils/chordDictionary';
 import { InstrumentChordCard } from './musical/InstrumentChordCard';
 import { SheetMusicViewer } from './musical/SheetMusicViewer';
-import { useMusicToolsStore } from '../../../store/useMusicToolsStore';
+import { useToolboxStore } from '../../../store/useToolboxStore';
 import RichTextRenderer from '../../../components/common/RichTextRenderer';
 
 type ViewerMode = 'lyrics' | 'lyrics-chords' | 'chords' | 'diagrams' | 'score';
@@ -197,7 +197,7 @@ export const SongViewer = ({
   }), [accidentalPreference, originalKey, selectedSong, sourceText, transposeAmount]);
   const scores = useMemo(() => manualScores(selectedSong.structure_blocks), [selectedSong.structure_blocks]);
   const structuredLyrics = useMemo(() => lyricsBlocks(selectedSong), [selectedSong]);
-  const musicTools = useMusicToolsStore();
+  const musicTools = useToolboxStore();
 
   const close = () => {
     if (onClose) onClose();

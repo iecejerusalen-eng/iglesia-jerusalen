@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import TopBar from '../components/common/TopBar';
 import Navigation from '../components/common/Navigation';
@@ -5,7 +6,7 @@ import Footer from '../components/common/Footer';
 import Preloader from '../components/public/Preloader';
 import StickyNav from '../components/public/StickyNav';
 import MobileBottomNav from '../components/common/MobileBottomNav';
-import SearchPalette from '../components/public/SearchPalette';
+const SearchPalette = lazy(() => import('../components/public/SearchPalette'));
 
 const PublicLayout = () => {
   return (
@@ -19,7 +20,7 @@ const PublicLayout = () => {
       </main>
       <Footer />
       <MobileBottomNav />
-      <SearchPalette />
+      <Suspense fallback={null}><SearchPalette /></Suspense>
     </div>
   );
 };

@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import type { BibleBook } from '../../config/bibleBooks';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { parseVerseRange } from '../../utils/bibleParser';
+import { parseVerseRange, parseBibleReferences } from '../../utils/bibleParser';
+import BibleIndexes from '../../components/public/bible/BibleIndexes';
 import { useBibleStudy } from '../../hooks/useBibleStudy';
 
 interface Verse {
@@ -128,6 +129,7 @@ export default function Bible() {
 
   // Modal selector State
   const [isIndexOpen, setIsIndexOpen] = useState(false);
+  const [isEncyclopediaOpen, setIsEncyclopediaOpen] = useState(false);
   const [indexSearch, setIndexSearch] = useState('');
   const [selectedBookForChapters, setSelectedBookForChapters] = useState<BibleBook | null>(null);
   const [indexTab, setIndexTab] = useState<'Antiguo' | 'Nuevo'>('Antiguo');
@@ -535,10 +537,29 @@ export default function Bible() {
   // Search logic handler
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (activeSearchInput.trim() === '') {
+    const query = activeSearchInput.trim();
+    if (query === '') {
       updateRoute({ q: null, page: null });
     } else {
-      updateRoute({ q: activeSearchInput.trim(), page: 1 });
+      // Intento parsear como referencia bíblica (ej. "Sa 23 7")
+      const parsed = parseBibleReferences(query);
+      if (parsed.length > 0 && parsed[0].bookId) {
+        const p = parsed[0];
+        updateRoute({ 
+          libro: p.bookId, 
+          capitulo: p.chapter || 1, 
+          versiculo: p.verses ? p.verses.replace(/\s+/g, '') : null,
+          q: null,
+          page: null
+        });
+        if (p.verses) {
+          setHighlightedVerses(parseVerseRange(p.verses));
+        }
+        setSelectedVerses([]);
+        setActiveSearchInput('');
+      } else {
+        updateRoute({ q: query, page: 1 });
+      }
     }
   };
 
@@ -603,8 +624,7 @@ export default function Bible() {
 
   const getThemeClasses = () => {
     if (theme === 'sepia') return 'bg-[#f4ecd8] text-[#5b4636] [&_*]:border-amber-900/10';
-    if (theme === 'dark') return 'bg-black text-white'; // User explicitly requested dark mode to be darker
-    return 'bg-slate-50/50 text-slate-900';
+    return 'bg-white dark:bg-[#070b14] text-slate-900 dark:text-white';
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
 
@@ -673,10 +693,20 @@ export default function Bible() {
             )}
           </div>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearchSubmit} className="relative w-full md:max-w-md">
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Enciclopedia Button */}
+            <button
+              onClick={() => setIsEncyclopediaOpen(true)}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-2.5 px-4 rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <BookOpen size={16} />
+              <span className="hidden sm:inline">Enciclopedia</span>
+            </button>
+
+            {/* Search bar */}
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 md:w-64 lg:w-80">
+              <div className="relative">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={activeSearchInput}
@@ -695,6 +725,7 @@ export default function Bible() {
               )}
             </div>
           </form>
+        </div>
         </div>
         )}
 
@@ -1260,6 +1291,15 @@ export default function Bible() {
             )}
           </div>
         </div>
+      )}
+      {/* Encyclopedia Modal */}
+      {isEncyclopediaOpen && (
+        <BibleIndexes 
+          onClose={() => setIsEncyclopediaOpen(false)} 
+          onNavigateToBible={(bookId, chapter) => {
+            updateRoute({ libro: bookId, capitulo: chapter, q: null, page: null });
+          }} 
+        />
       )}
     </div>
   );

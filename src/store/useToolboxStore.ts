@@ -1,34 +1,60 @@
 import { create } from 'zustand';
 
-export type MusicToolPanel = 'metronome' | 'tuner';
+export type ToolboxPanel = 'hub' | 'metronome' | 'tuner' | 'clicker' | 'timer' | 'bible' | 'notes';
 
-interface MusicToolsState {
+interface ToolboxState {
   isOpen: boolean;
   isMinimized: boolean;
-  activePanel: MusicToolPanel;
+  activePanel: ToolboxPanel;
+  
+  // Metronome State
   bpm: number;
   beatsPerMeasure: number;
   subdivision: 1 | 2 | 4;
   volume: number;
   isPlaying: boolean;
   sourceSongTitle: string | null;
+  
+  // Tally Clicker State
+  tallyCount: number;
+
+  // Timer State
+  timerDuration: number;
+  timerTimeLeft: number;
+  timerIsRunning: boolean;
+
+  // General State
   position: { x: number; y: number } | null;
-  open: (panel?: MusicToolPanel) => void;
+  
+  // Actions
+  open: (panel?: ToolboxPanel) => void;
   close: () => void;
   toggleMinimized: () => void;
-  setActivePanel: (panel: MusicToolPanel) => void;
+  setActivePanel: (panel: ToolboxPanel) => void;
+  
+  // Metronome Actions
   setBpm: (bpm: number) => void;
   loadSongTempo: (bpm: number, timeSignature: string | null | undefined, title: string) => void;
   setBeatsPerMeasure: (beats: number) => void;
   setSubdivision: (subdivision: 1 | 2 | 4) => void;
   setVolume: (volume: number) => void;
   setPlaying: (playing: boolean) => void;
+
+  // Tally Actions
+  setTallyCount: (count: number | ((prev: number) => number)) => void;
+  
+  // Timer Actions
+  setTimerDuration: (minutes: number) => void;
+  setTimerTimeLeft: (seconds: number | ((prev: number) => number)) => void;
+  setTimerIsRunning: (isRunning: boolean) => void;
+
+  // Position Actions
   setPosition: (position: { x: number; y: number }) => void;
 }
 
-const STORAGE_KEY = 'jerusalen-music-tools-v1';
+const STORAGE_KEY = 'jerusalen-toolbox-v1';
 
-interface StoredMusicTools {
+interface StoredToolbox {
   bpm: number;
   beatsPerMeasure: number;
   subdivision: 1 | 2 | 4;
@@ -36,18 +62,18 @@ interface StoredMusicTools {
   position: { x: number; y: number } | null;
 }
 
-function readStoredTools(): StoredMusicTools {
-  const defaults: StoredMusicTools = { bpm: 80, beatsPerMeasure: 4, subdivision: 1, volume: 0.75, position: null };
+function readStoredTools(): StoredToolbox {
+  const defaults: StoredToolbox = { bpm: 80, beatsPerMeasure: 4, subdivision: 1, volume: 0.75, position: null };
   try {
     const value = window.localStorage.getItem(STORAGE_KEY);
-    return value ? { ...defaults, ...JSON.parse(value) as Partial<StoredMusicTools> } : defaults;
+    return value ? { ...defaults, ...JSON.parse(value) as Partial<StoredToolbox> } : defaults;
   } catch (error) {
-    console.warn('No se pudieron recuperar las preferencias de las herramientas musicales.', error);
+    console.warn('No se pudieron recuperar las preferencias de las herramientas.', error);
     return defaults;
   }
 }
 
-function persist(state: Pick<MusicToolsState, 'bpm' | 'beatsPerMeasure' | 'subdivision' | 'volume' | 'position'>): void {
+function persist(state: Pick<ToolboxState, 'bpm' | 'beatsPerMeasure' | 'subdivision' | 'volume' | 'position'>): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
       bpm: state.bpm,
@@ -55,25 +81,31 @@ function persist(state: Pick<MusicToolsState, 'bpm' | 'beatsPerMeasure' | 'subdi
       subdivision: state.subdivision,
       volume: state.volume,
       position: state.position,
-    } satisfies StoredMusicTools));
+    } satisfies StoredToolbox));
   } catch (error) {
-    console.warn('No se pudieron guardar las preferencias de las herramientas musicales.', error);
+    console.warn('No se pudieron guardar las preferencias de las herramientas.', error);
   }
 }
 
 const initial = readStoredTools();
 
-export const useMusicToolsStore = create<MusicToolsState>((set, get) => ({
+export const useToolboxStore = create<ToolboxState>((set, get) => ({
   isOpen: false,
   isMinimized: false,
-  activePanel: 'metronome',
+  activePanel: 'hub',
   isPlaying: false,
   sourceSongTitle: null,
+  tallyCount: 0,
+  timerDuration: 45,
+  timerTimeLeft: 45 * 60,
+  timerIsRunning: false,
   ...initial,
-  open: (panel = 'metronome') => set({ isOpen: true, isMinimized: false, activePanel: panel }),
+  
+  open: (panel = 'hub') => set({ isOpen: true, isMinimized: false, activePanel: panel }),
   close: () => set({ isOpen: false, isPlaying: false }),
   toggleMinimized: () => set((state) => ({ isMinimized: !state.isMinimized })),
   setActivePanel: (activePanel) => set({ activePanel, isMinimized: false }),
+  
   setBpm: (bpm) => {
     const next = Math.min(300, Math.max(30, Math.round(bpm)));
     set({ bpm: next, sourceSongTitle: null });
@@ -100,6 +132,25 @@ export const useMusicToolsStore = create<MusicToolsState>((set, get) => ({
     persist({ ...get(), volume: next });
   },
   setPlaying: (isPlaying) => set({ isPlaying, isOpen: true }),
+  
+  setTallyCount: (countOrUpdater) => {
+    if (typeof countOrUpdater === 'function') {
+      set((state) => ({ tallyCount: Math.max(0, countOrUpdater(state.tallyCount)) }));
+    } else {
+      set({ tallyCount: Math.max(0, countOrUpdater) });
+    }
+  },
+
+  setTimerDuration: (minutes) => set({ timerDuration: minutes, timerTimeLeft: minutes * 60, timerIsRunning: false }),
+  setTimerTimeLeft: (timeOrUpdater) => {
+    if (typeof timeOrUpdater === 'function') {
+      set((state) => ({ timerTimeLeft: Math.max(0, timeOrUpdater(state.timerTimeLeft)) }));
+    } else {
+      set({ timerTimeLeft: Math.max(0, timeOrUpdater) });
+    }
+  },
+  setTimerIsRunning: (isRunning) => set({ timerIsRunning: isRunning }),
+
   setPosition: (position) => {
     set({ position });
     persist({ ...get(), position });

@@ -272,6 +272,9 @@ export interface Speaker {
   first_name: string;
   last_name: string;
   role: string;
+  leadership_roles: string[];
+  is_public: boolean;
+  display_order: number;
   photo_url: string | null;
   bio: string | null;
   created_at: string;
