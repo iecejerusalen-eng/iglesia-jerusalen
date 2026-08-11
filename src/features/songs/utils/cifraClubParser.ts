@@ -121,13 +121,13 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
     // Extract links
     const urlMatch = line.match(/(.*?)(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
-      const prefix = urlMatch[1].trim().replace(/[:\-]$/, '').trim();
+      const prefix = urlMatch[1].trim().replace(/[:-]$/, '').trim();
       const url = urlMatch[2];
       const lowerPrefix = prefix.toLowerCase();
 
       let category: SongResourceLink['category'] = 'other';
       let instrument: SongResourceLink['instrument'] = 'General';
-      let linkTitle = prefix || 'Recurso multimedia';
+      const linkTitle = prefix || 'Recurso multimedia';
 
       if (lowerPrefix.includes('clip') || lowerPrefix.includes('video clip')) {
         category = 'video_clip';
