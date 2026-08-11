@@ -486,6 +486,8 @@ export interface SongStyle {
   created_at: string;
 }
 
+export type MediaCategory = 'all' | 'video_clip' | 'lesson' | 'backing_track' | 'lyrics_video' | 'sheet_music' | 'other';
+
 export interface SongResourceLink {
   id: string;
   instrument: 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' | 'Viento' | 'Otro';
@@ -493,6 +495,7 @@ export interface SongResourceLink {
   comment: string | null;
   title?: string | null;
   kind?: 'video' | 'audio' | 'pdf' | 'link';
+  category?: MediaCategory;
   visibility?: 'public' | 'team';
 }
 
@@ -557,6 +560,7 @@ export interface MediaEmbedSongBlock extends BaseSongBlock {
   title?: string;
   url: string;
   provider: 'youtube' | 'audio' | 'spotify';
+  category?: MediaCategory;
 }
 
 export interface MusicianNoteSongBlock extends BaseSongBlock {

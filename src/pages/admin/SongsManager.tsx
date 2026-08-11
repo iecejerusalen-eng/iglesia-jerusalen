@@ -1403,6 +1403,10 @@ const SongsManager = () => {
                           <option value="video">Video</option><option value="audio">Audio</option><option value="pdf">PDF</option><option value="link">Enlace</option>
                         </select>
 
+                        <select value={link.category || 'all'} onChange={(e) => updateLink(link.id, { category: e.target.value as SongResourceLink['category'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
+                          <option value="all">Cat: General</option><option value="video_clip">Cat: Video Clip</option><option value="lesson">Cat: Tutorial / Lección</option><option value="backing_track">Cat: Backing Track</option><option value="lyrics_video">Cat: Con Letra</option><option value="sheet_music">Cat: Partitura</option><option value="other">Cat: Otro</option>
+                        </select>
+
                         <select value={link.visibility || 'public'} onChange={(e) => updateLink(link.id, { visibility: e.target.value as SongResourceLink['visibility'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
                           <option value="public">Público</option><option value="team">Solo equipo</option>
                         </select>

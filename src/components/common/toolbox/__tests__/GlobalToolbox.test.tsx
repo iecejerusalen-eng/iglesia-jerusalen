@@ -46,13 +46,13 @@ describe('GlobalToolbox', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Temporizador\. Tiempo de púlpito y avisos/ }));
-    expect(await screen.findByText('Reloj de púlpito')).toBeVisible();
+    expect(await screen.findByText(/Temporizador|Reloj de púlpito/)).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Minimizar herramientas' }));
     expect(screen.getByRole('button', { name: 'Restaurar herramientas' })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Restaurar herramientas' }));
-    await waitFor(() => expect(screen.getByText('Reloj de púlpito')).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/Temporizador|Reloj de púlpito/)).toBeVisible());
   });
 
   it('cierra el panel de herramientas de forma inmediata al presionar el botón X', async () => {

@@ -1,4 +1,4 @@
-import type { AccidentalPreference, LyricsSongBlock, SongStructureBlock } from '../../../types';
+import type { LyricsSongBlock, SongStructureBlock } from '../../../types';
 import { isChord, uniqueChords } from './musicEngine';
 
 export interface ParsedCifraClubSong {
@@ -92,7 +92,7 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
   const cleanedLines: string[] = [];
 
   for (let i = 0; i < rawLines.length; i++) {
-    let line = normalizeLine(rawLines[i]);
+    const line = normalizeLine(rawLines[i]);
     if (!line) {
       if (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1] !== '') {
         cleanedLines.push('');

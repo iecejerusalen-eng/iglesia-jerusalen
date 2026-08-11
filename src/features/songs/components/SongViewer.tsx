@@ -8,10 +8,12 @@ import {
   ChevronsUp,
   Copy,
   Drum,
+  ExternalLink,
   Eye,
   EyeOff,
   FileMusic,
   FileText,
+  Film,
   Guitar,
   Hash,
   Headphones,
@@ -33,10 +35,17 @@ import {
   Send,
   Sparkles,
   Type,
+  Video,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AccidentalPreference, Song, SongStructureBlock } from '../../../types';
+import type { AccidentalPreference, MediaCategory, Song, SongResourceLink, SongStructureBlock } from '../../../types';
+
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+}
 import { exportSongToPdf } from '../utils/songPdfExport';
 import {
   extractChords,
@@ -177,6 +186,8 @@ export const SongViewer = ({
   const [showTools, setShowTools] = useState(true);
   const [showMobileTools, setShowMobileTools] = useState(false);
   const [resourceAnswers, setResourceAnswers] = useState<Record<string, string[]>>({});
+  const [mediaCategoryFilter, setMediaCategoryFilter] = useState<MediaCategory>('all');
+  const [activeEmbedVideoUrl, setActiveEmbedVideoUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -410,59 +421,219 @@ export const SongViewer = ({
   );
 
   const renderResources = () => {
-    const links = (selectedSong.resource_links ?? []).filter((link) => (link.visibility ?? 'public') === 'public');
+    const rawLinks = (selectedSong.resource_links ?? []).filter((link) => (link.visibility ?? 'public') === 'public');
     const blocks = (selectedSong.structure_blocks ?? []).filter((block) => block.type !== 'lyrics' && block.type !== 'sheet_music' && block.type !== 'chord_diagram' && (block.audience ?? 'public') === 'public');
-    if (!links.length && !blocks.length) return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Agrega texto, enlaces, notas por instrumento, preguntas, encuestas o tablaturas desde el editor por bloques." />;
+
+    const filteredLinks = rawLinks.filter((link) => {
+      if (mediaCategoryFilter === 'all') return true;
+      return (link.category ?? 'all') === mediaCategoryFilter;
+    });
+
+    const categoryLabels: Record<string, string> = {
+      all: 'Todos los vídeos',
+      video_clip: 'Video clip (En vivo / Oficial)',
+      lesson: 'Video lecciones / Tutoriales',
+      backing_track: 'Backing tracks / Secuencia',
+      lyrics_video: 'Video de letras',
+      other: 'Otros recursos',
+    };
+
+    if (!rawLinks.length && !blocks.length) {
+      return <EmptyState icon={Headphones} title="Sin recursos complementarios" description="Agrega texto, enlaces, notas por instrumento, preguntas, encuestas o tablaturas desde el editor por bloques." />;
+    }
+
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        {blocks.map((block) => {
-          if (block.type === 'musician_note') return <article key={block.id} className="song-section-glass border-l-4 border-l-indigo-400"><span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {block.target_instrument}</span><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{block.content}</p></article>;
-          if (block.type === 'rich_text' && (block.audience ?? 'public') === 'public') return <article key={block.id} className="song-section-glass md:col-span-2">{block.title && <h3 className="mb-3 font-serif text-xl font-black text-slate-900 dark:text-white">{block.title}</h3>}<RichTextRenderer html={DOMPurify.sanitize(block.content)} className="text-sm leading-7 text-slate-700 dark:text-slate-200" /></article>;
-          if (block.type === 'tablature') {
-            if (block.instrument === 'drums') {
+      <div className="space-y-6">
+        {/* Media Drawer Header & Category Pills */}
+        {rawLinks.length > 0 && (
+          <div className="rounded-3xl border border-slate-200/80 bg-slate-900/90 p-5 text-white shadow-xl backdrop-blur-xl dark:border-white/10">
+            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2">
+                <Film className="text-amber-400" size={20} />
+                <h3 className="font-serif text-lg font-bold">Galería Multimedia & Recursos</h3>
+              </div>
+              <span className="text-xs font-semibold text-slate-400">
+                {filteredLinks.length} {filteredLinks.length === 1 ? 'recurso' : 'recursos'}
+              </span>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: 'all', label: 'Todos' },
+                { id: 'video_clip', label: 'Video clip' },
+                { id: 'lesson', label: 'Video lecciones' },
+                { id: 'backing_track', label: 'Backing tracks' },
+                { id: 'lyrics_video', label: 'Letras' },
+                { id: 'other', label: 'Otros' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setMediaCategoryFilter(cat.id as MediaCategory)}
+                  className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                    mediaCategoryFilter === cat.id
+                      ? 'bg-amber-400 text-slate-950 shadow-md'
+                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Media Items Cards */}
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredLinks.map((link) => {
+                const ytId = extractYouTubeId(link.url);
+                const isPlaying = activeEmbedVideoUrl === link.url;
+                const catLabel = categoryLabels[link.category ?? 'other'] || 'Recurso';
+
+                if (ytId) {
+                  return (
+                    <article
+                      key={link.id}
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-lg transition hover:border-amber-400/40"
+                    >
+                      {isPlaying ? (
+                        <div className="relative aspect-video w-full">
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1`}
+                            title={link.title || 'Video YouTube'}
+                            className="h-full w-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setActiveEmbedVideoUrl(null)}
+                            className="absolute right-2 top-2 rounded-full bg-slate-950/80 p-1.5 text-white hover:bg-slate-900"
+                            title="Cerrar video"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
+                          <img
+                            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                            alt={link.title || 'Miniatura video'}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
+                          <button
+                            type="button"
+                            onClick={() => setActiveEmbedVideoUrl(link.url)}
+                            className="absolute inset-0 grid place-items-center bg-slate-950/30 transition group-hover:bg-slate-950/10"
+                            aria-label={`Reproducir ${link.title || 'Video'}`}
+                          >
+                            <span className="grid h-12 w-12 place-items-center rounded-full bg-rose-600/90 text-white shadow-xl transition group-hover:scale-110 group-hover:bg-rose-500">
+                              <Play size={22} className="ml-0.5 fill-current" />
+                            </span>
+                          </button>
+                          <span className="absolute left-2.5 top-2.5 rounded-full border border-white/20 bg-slate-950/70 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md">
+                            {catLabel}
+                          </span>
+                          <span className="absolute right-2.5 top-2.5 rounded-full border border-white/20 bg-slate-950/70 px-2 py-0.5 text-[9px] font-bold text-slate-300 backdrop-blur-md">
+                            {link.instrument}
+                          </span>
+                        </div>
+                      )}
+                      <div className="p-3.5">
+                        <h4 className="line-clamp-2 text-xs font-bold text-white group-hover:text-amber-300">
+                          {link.title || link.comment || 'Video de referencia'}
+                        </h4>
+                        {link.comment && link.title && (
+                          <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">{link.comment}</p>
+                        )}
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2.5 inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-amber-300"
+                        >
+                          Abrir en YouTube <ExternalLink size={11} />
+                        </a>
+                      </div>
+                    </article>
+                  );
+                }
+
+                return (
+                  <article
+                    key={link.id}
+                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 p-4 shadow-lg transition hover:border-amber-400/40"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300">
+                        {catLabel}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">{link.instrument}</span>
+                    </div>
+                    <h4 className="mt-3 text-xs font-bold text-white group-hover:text-amber-300">
+                      {link.title || link.comment || 'Abrir enlace'}
+                    </h4>
+                    {link.comment && link.title && (
+                      <p className="mt-1 text-[11px] text-slate-400">{link.comment}</p>
+                    )}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/20"
+                    >
+                      <Link2 size={13} /> Visitar enlace
+                    </a>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Structured Blocks (Musician notes, Tablatures, Polls) */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {blocks.map((block) => {
+            if (block.type === 'musician_note') return <article key={block.id} className="song-section-glass border-l-4 border-l-indigo-400"><span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {block.target_instrument}</span><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{block.content}</p></article>;
+            if (block.type === 'rich_text' && (block.audience ?? 'public') === 'public') return <article key={block.id} className="song-section-glass md:col-span-2">{block.title && <h3 className="mb-3 font-serif text-xl font-black text-slate-900 dark:text-white">{block.title}</h3>}<RichTextRenderer html={DOMPurify.sanitize(block.content)} className="text-sm leading-7 text-slate-700 dark:text-slate-200" /></article>;
+            if (block.type === 'tablature') {
+              if (block.instrument === 'drums') {
+                return (
+                  <article key={block.id} className="song-section-glass md:col-span-2">
+                    <DrumTabViewer song={selectedSong} tabContent={block.content} title={block.title} tuning={block.tuning} />
+                  </article>
+                );
+              }
               return (
                 <article key={block.id} className="song-section-glass md:col-span-2">
-                  <DrumTabViewer song={selectedSong} tabContent={block.content} title={block.title} tuning={block.tuning} />
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-cyan-600">
+                        {`${block.instrument ?? 'guitar'} tab`}
+                      </span>
+                      <h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Tablatura'}</h3>
+                    </div>
+                    {block.tuning && (
+                      <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500 dark:bg-white/10">
+                        Afinación {block.tuning}
+                      </span>
+                    )}
+                  </div>
+                  <div className="overflow-x-auto rounded-xl bg-slate-950 p-4">
+                    <pre className="min-w-max font-mono text-xs leading-6 text-emerald-300">{block.content}</pre>
+                  </div>
                 </article>
               );
             }
-            return (
-              <article key={block.id} className="song-section-glass md:col-span-2">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-600">
-                      {`${block.instrument ?? 'guitar'} tab`}
-                    </span>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Tablatura'}</h3>
-                  </div>
-                  {block.tuning && (
-                    <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500 dark:bg-white/10">
-                      Afinación {block.tuning}
-                    </span>
-                  )}
-                </div>
-                <div className="overflow-x-auto rounded-xl bg-slate-950 p-4">
-                  <pre className="min-w-max font-mono text-xs leading-6 text-emerald-300">{block.content}</pre>
-                </div>
-              </article>
-            );
-          }
-          if (block.type === 'media_embed') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-rose-500">Media de ensayo</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.title || 'Referencia multimedia'}</h3><a href={block.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"><Play size={14} /> Abrir recurso</a></article>;
-          if (block.type === 'poll') {
-            const selected = resourceAnswers[block.id] ?? [];
-            return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-fuchsia-500">Encuesta de preparación</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3><div className="mt-4 space-y-2">{block.options.map((option) => <button key={option} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: block.allow_multiple ? selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] : [option] }))} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-semibold ${selected.includes(option) ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-300' : 'border-slate-200 dark:border-white/10'}`}><span className={`h-3 w-3 rounded-full border ${selected.includes(option) ? 'border-fuchsia-500 bg-fuchsia-500' : 'border-slate-300'}`} />{option}</button>)}</div><p className="mt-3 text-[9px] text-slate-400">Respuesta guardada sólo durante esta sesión de preparación.</p></article>;
-          }
-          if (block.type === 'question') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-blue-500">Pregunta</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3>{block.helper_text && <p className="mt-1 text-xs text-slate-500">{block.helper_text}</p>}{block.answer_type === 'yes_no' ? <div className="mt-4 grid grid-cols-2 gap-2">{['Sí', 'No'].map((value) => <button key={value} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: [value] }))} className={`rounded-xl border px-3 py-2 text-xs font-bold ${(resourceAnswers[block.id] ?? []).includes(value) ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 dark:border-white/10'}`}>{value}</button>)}</div> : block.answer_type === 'long' ? <textarea onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" rows={4} placeholder="Escribe una respuesta para el ensayo…" /> : <input onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" placeholder="Respuesta" />}</article>;
-          if (block.type === 'link_collection') return <article key={block.id} className="song-section-glass"><h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Enlaces'}</h3><div className="mt-3 space-y-2">{block.links.map((link) => <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-slate-200 p-3 transition hover:border-amber-300 dark:border-white/10"><span className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">{link.label}<Link2 size={13} /></span>{link.description && <p className="mt-1 text-[11px] text-slate-500">{link.description}</p>}</a>)}</div></article>;
-          return null;
-        })}
-        {links.map((link) => (
-          <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="song-section-glass group block transition hover:-translate-y-0.5 hover:border-amber-300">
-            <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-amber-600">{link.instrument}</span><Link2 size={15} className="text-slate-400 group-hover:text-amber-500" /></div>
-            <h3 className="mt-3 font-bold text-slate-900 dark:text-white">{link.title || link.comment || 'Abrir recurso'}</h3>
-            {link.comment && link.title && <p className="mt-2 text-xs leading-5 text-slate-500">{link.comment}</p>}
-          </a>
-        ))}
+            if (block.type === 'media_embed') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-rose-500">Media de ensayo</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.title || 'Referencia multimedia'}</h3><a href={block.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"><Play size={14} /> Abrir recurso</a></article>;
+            if (block.type === 'poll') {
+              const selected = resourceAnswers[block.id] ?? [];
+              return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-fuchsia-500">Encuesta de preparación</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3><div className="mt-4 space-y-2">{block.options.map((option) => <button key={option} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: block.allow_multiple ? selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] : [option] }))} className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-semibold ${selected.includes(option) ? 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-300' : 'border-slate-200 dark:border-white/10'}`}><span className={`h-3 w-3 rounded-full border ${selected.includes(option) ? 'border-fuchsia-500 bg-fuchsia-500' : 'border-slate-300'}`} />{option}</button>)}</div><p className="mt-3 text-[9px] text-slate-400">Respuesta guardada sólo durante esta sesión de preparación.</p></article>;
+            }
+            if (block.type === 'question') return <article key={block.id} className="song-section-glass"><span className="text-[10px] font-black uppercase tracking-wider text-blue-500">Pregunta</span><h3 className="mt-2 font-bold text-slate-900 dark:text-white">{block.question}</h3>{block.helper_text && <p className="mt-1 text-xs text-slate-500">{block.helper_text}</p>}{block.answer_type === 'yes_no' ? <div className="mt-4 grid grid-cols-2 gap-2">{['Sí', 'No'].map((value) => <button key={value} onClick={() => setResourceAnswers((answers) => ({ ...answers, [block.id]: [value] }))} className={`rounded-xl border px-3 py-2 text-xs font-bold ${(resourceAnswers[block.id] ?? []).includes(value) ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 dark:border-white/10'}`}>{value}</button>)}</div> : block.answer_type === 'long' ? <textarea onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" rows={4} placeholder="Escribe una respuesta para el ensayo…" /> : <input onChange={(event) => setResourceAnswers((answers) => ({ ...answers, [block.id]: [event.target.value] }))} className="mt-4 w-full rounded-xl border border-slate-200 bg-white/60 p-3 text-sm outline-none dark:border-white/10 dark:bg-white/5" placeholder="Respuesta" />}</article>;
+            if (block.type === 'link_collection') return <article key={block.id} className="song-section-glass"><h3 className="font-bold text-slate-900 dark:text-white">{block.title || 'Enlaces'}</h3><div className="mt-3 space-y-2">{block.links.map((link) => <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-slate-200 p-3 transition hover:border-amber-300 dark:border-white/10"><span className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">{link.label}<Link2 size={13} /></span>{link.description && <p className="mt-1 text-[11px] text-slate-500">{link.description}</p>}</a>)}</div></article>;
+            return null;
+          })}
+        </div>
       </div>
     );
   };
