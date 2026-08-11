@@ -59,10 +59,6 @@ export default function PublicationsHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setIsLoading(true);
@@ -79,7 +75,11 @@ export default function PublicationsHub() {
 
       if (spacesError) throw spacesError;
 
-      const formattedSpaces = (spacesData || []).map((space: any) => ({
+      interface RawSpaceQuery extends EditorialSpace {
+        editorial_documents?: Array<{ count: number }>;
+      }
+
+      const formattedSpaces = ((spacesData as unknown as RawSpaceQuery[]) || []).map((space) => ({
         ...space,
         document_count: space.editorial_documents?.[0]?.count || 0
       }));
@@ -106,6 +106,10 @@ export default function PublicationsHub() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const filteredSpaces = useMemo(() => {
     return spaces.filter(space => {
