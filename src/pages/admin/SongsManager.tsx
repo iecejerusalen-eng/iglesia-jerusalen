@@ -423,10 +423,13 @@ const SongsManager = () => {
     });
 
     setStructureBlocks(parsed.structureBlocks);
+    if (parsed.resourceLinks?.length) {
+      setResourceLinks(parsed.resourceLinks);
+    }
     setEditorMode('structured');
     setShowImportModal(false);
     setImportText('');
-    toast.success('Canción e acordes procesados desde CifraClub');
+    toast.success('Canción, acordes y enlaces multimedia procesados desde CifraClub');
   };
 
   const { register, handleSubmit, reset, getValues, control, formState: { errors } } = useForm<SongFormInput, unknown, SongFormValues>({

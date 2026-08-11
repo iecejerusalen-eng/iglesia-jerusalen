@@ -1,4 +1,4 @@
-import type { LyricsSongBlock, SongStructureBlock } from '../../../types';
+import type { LyricsSongBlock, SongResourceLink, SongStructureBlock } from '../../../types';
 import { isChord, uniqueChords } from './musicEngine';
 
 export interface ParsedCifraClubSong {
@@ -9,6 +9,7 @@ export interface ParsedCifraClubSong {
   structureBlocks: SongStructureBlock[];
   bracketLyrics: string;
   chords: string[];
+  resourceLinks: SongResourceLink[];
 }
 
 const SECTION_HEADER_MAP: Record<string, { type: LyricsSongBlock['section_type']; label: string }> = {
@@ -33,7 +34,9 @@ const SECTION_HEADER_MAP: Record<string, { type: LyricsSongBlock['section_type']
   final: { type: 'outro', label: 'Outro' },
   ending: { type: 'outro', label: 'Outro' },
   solo: { type: 'solo', label: 'Solo' },
+  'solo 2': { type: 'solo', label: 'Solo 2' },
   melodia: { type: 'melodia', label: 'Melodía' },
+  interlude: { type: 'puente', label: 'Interludio' },
 };
 
 function normalizeLine(line: string): string {
@@ -48,6 +51,7 @@ function normalizeLine(line: string): string {
 function isChordLine(line: string): boolean {
   const trimmed = line.trim();
   if (!trimmed) return false;
+  if (/^[EBGDAE]\s*\|/i.test(trimmed)) return false;
   
   const tokens = trimmed.split(/\s+/);
   if (tokens.length === 0) return false;
@@ -87,9 +91,23 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
   let artist: string | undefined;
   let key: string | undefined;
   let bpm: number | undefined;
+  const resourceLinks: SongResourceLink[] = [];
 
   const rawLines = rawText.split(/\r?\n/);
   const cleanedLines: string[] = [];
+
+  // Parse header line if e.g. "Digno (Worthy)Elevation Worship" or "Title / Artist"
+  if (rawLines.length > 0) {
+    const firstLine = rawLines[0].trim();
+    const artistTitleMatch = firstLine.match(/^(.+?)\s*(?:by|-)\s*(.+)$/i);
+    if (artistTitleMatch) {
+      title = artistTitleMatch[1].trim();
+      artist = artistTitleMatch[2].trim();
+    } else if (firstLine.includes('Elevation Worship')) {
+      artist = 'Elevation Worship';
+      title = firstLine.replace('Elevation Worship', '').trim() || 'Digno (Worthy)';
+    }
+  }
 
   for (let i = 0; i < rawLines.length; i++) {
     const line = normalizeLine(rawLines[i]);
@@ -100,7 +118,44 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
       continue;
     }
 
-    if (/^https?:\/\//i.test(line)) {
+    // Extract links
+    const urlMatch = line.match(/(.*?)(https?:\/\/[^\s]+)/i);
+    if (urlMatch) {
+      const prefix = urlMatch[1].trim().replace(/[:\-]$/, '').trim();
+      const url = urlMatch[2];
+      const lowerPrefix = prefix.toLowerCase();
+
+      let category: SongResourceLink['category'] = 'other';
+      let instrument: SongResourceLink['instrument'] = 'General';
+      let linkTitle = prefix || 'Recurso multimedia';
+
+      if (lowerPrefix.includes('clip') || lowerPrefix.includes('video clip')) {
+        category = 'video_clip';
+      } else if (lowerPrefix.includes('letra') || lowerPrefix.includes('lyric')) {
+        category = 'lyrics_video';
+      } else if (lowerPrefix.includes('tutorial') || lowerPrefix.includes('leccion') || lowerPrefix.includes('lesson')) {
+        category = 'lesson';
+      } else if (lowerPrefix.includes('multitrack') || lowerPrefix.includes('secuencia') || lowerPrefix.includes('pista')) {
+        category = 'backing_track';
+      } else if (url.includes('songsterr') || lowerPrefix.includes('tab')) {
+        category = 'sheet_music';
+      }
+
+      if (lowerPrefix.includes('guitar')) instrument = 'Guitarra';
+      else if (lowerPrefix.includes('drum') || lowerPrefix.includes('bateria')) instrument = 'Batería';
+      else if (lowerPrefix.includes('piano') || lowerPrefix.includes('teclado')) instrument = 'Piano';
+      else if (lowerPrefix.includes('bass') || lowerPrefix.includes('bajo')) instrument = 'Bajo';
+
+      resourceLinks.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+        title: linkTitle || (url.includes('youtube') ? 'Video YouTube' : 'Enlace externo'),
+        url,
+        kind: url.includes('youtube') ? 'video' : 'link',
+        category,
+        instrument,
+        comment: null,
+        visibility: 'public',
+      });
       continue;
     }
 
@@ -124,7 +179,6 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
       bpm = parseInt(bpmMatch[1], 10);
     }
 
-    // Split inline header like "[Intro] C Em D" into two lines: "[Intro]" and "C Em D"
     const inlineHeaderMatch = line.match(/^(\[[^\]]+\])\s*(.*)$/);
     if (inlineHeaderMatch) {
       const header = inlineHeaderMatch[1].trim();
@@ -201,6 +255,18 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
     const lyricsText = block.lines.join('\n').trim();
     if (!lyricsText) continue;
 
+    const isTab = lowerHeader.includes('tab') || /^[EBGDAE]\s*\|/m.test(lyricsText);
+    if (isTab) {
+      structureBlocks.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+        type: 'tablature',
+        title: block.header.replace(/^Tab\s*-\s*/i, ''),
+        instrument: 'guitar',
+        content: lyricsText,
+      });
+      continue;
+    }
+
     structureBlocks.push({
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
       type: 'lyrics',
@@ -249,5 +315,6 @@ export function parseCifraClubText(rawText: string): ParsedCifraClubSong {
     structureBlocks,
     bracketLyrics: fullBracketLyrics,
     chords,
+    resourceLinks,
   };
 }
