@@ -59,56 +59,62 @@ export default function PublicationsHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-
-      // Fetch spaces with document count
-      const { data: spacesData, error: spacesError } = await supabase
-        .from('editorial_spaces')
-        .select(`
-          id, name, slug, description, category, accent_color, cover_image, is_published,
-          editorial_documents(count)
-        `)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (spacesError) throw spacesError;
-
-      interface RawSpaceQuery extends EditorialSpace {
-        editorial_documents?: Array<{ count: number }>;
-      }
-
-      const formattedSpaces = ((spacesData as unknown as RawSpaceQuery[]) || []).map((space) => ({
-        ...space,
-        document_count: space.editorial_documents?.[0]?.count || 0
-      }));
-
-      // Fetch recent published documents
-      const { data: docsData, error: docsError } = await supabase
-        .from('editorial_documents')
-        .select(`
-          id, space_id, title, excerpt, cover_image, published_at,
-          editorial_spaces!inner(name, slug, accent_color)
-        `)
-        .eq('status', 'published')
-        .eq('visibility', 'public')
-        .order('published_at', { ascending: false })
-        .limit(12);
-
-      if (docsError) throw docsError;
-
-      setSpaces(formattedSpaces);
-      setRecentArticles((docsData as unknown) as EditorialDocument[]);
-    } catch (error) {
-      console.error('Error fetching publications:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        const { data: spacesData, error: spacesError } = await supabase
+          .from('editorial_spaces')
+          .select(`
+            id, name, slug, description, category, accent_color, cover_image, is_published,
+            editorial_documents(count)
+          `)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false });
+
+        if (spacesError) throw spacesError;
+
+        interface RawSpaceQuery extends EditorialSpace {
+          editorial_documents?: Array<{ count: number }>;
+        }
+
+        const formattedSpaces = ((spacesData as unknown as RawSpaceQuery[]) || []).map((space) => ({
+          ...space,
+          document_count: space.editorial_documents?.[0]?.count || 0
+        }));
+
+        const { data: docsData, error: docsError } = await supabase
+          .from('editorial_documents')
+          .select(`
+            id, space_id, title, excerpt, cover_image, published_at,
+            editorial_spaces!inner(name, slug, accent_color)
+          `)
+          .eq('status', 'published')
+          .eq('visibility', 'public')
+          .order('published_at', { ascending: false })
+          .limit(12);
+
+        if (docsError) throw docsError;
+
+        if (isMounted) {
+          setSpaces(formattedSpaces);
+          setRecentArticles((docsData as unknown) as EditorialDocument[]);
+        }
+      } catch (error) {
+        console.error('Error fetching publications:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredSpaces = useMemo(() => {
