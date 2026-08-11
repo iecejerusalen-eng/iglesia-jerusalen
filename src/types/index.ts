@@ -230,8 +230,8 @@ export interface DonationAuditLog {
   donation_id: string;
   actor_id: string | null;
   action: string;
-  previous_data: Record<string, any> | null;
-  new_data: Record<string, any> | null;
+  previous_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
   ip_address: string | null;
   created_at: string;
   profiles?: {
