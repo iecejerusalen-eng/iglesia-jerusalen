@@ -16,7 +16,7 @@ import {
   Link as LinkIcon, PlusCircle, Sparkles, FileText, Download,
   BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star,
   Loader2, AlertCircle, RefreshCw, MonitorPlay,
-  ArrowUp, ArrowDown, Play, ExternalLink, Film,
+  ArrowUp, ArrowDown, ExternalLink, Film,
 } from 'lucide-react';
 import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
