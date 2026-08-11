@@ -742,38 +742,6 @@ const SongsManager = () => {
     setEditorMode('free');
   };
 
-  const deleteSong = async (id: string) => {
-    const confirmed = await confirm({
-      title: 'Eliminar canción',
-      message: '¿Estás seguro de que deseas eliminar esta canción de la biblioteca?',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-      variant: 'danger',
-    });
-    if (!confirmed) return;
-    const { error } = await supabase.from('songs').delete().eq('id', id);
-    if (error) { toast.error('Error al eliminar'); return; }
-    toast.success('Canción eliminada');
-    fetchAll();
-  };
-
-  const handleSwitchToStructured = () => {
-    const currentHtml = lyrics || '';
-    if (structureBlocks.length === 0 && currentHtml.trim() !== '') {
-      const parsedBlocks = convertHtmlToBlocks(currentHtml);
-      setStructureBlocks(parsedBlocks);
-    }
-    setEditorMode('structured');
-  };
-
-  const handleSwitchToFree = () => {
-    if (structureBlocks.length > 0) {
-      const compiled = compileBlocksToHtml(structureBlocks);
-      setLyrics(compiled);
-    }
-    setEditorMode('free');
-  };
-
   // Resource Links CRUD
   const addLink = () => {
     const newLink: SongResourceLink = {
@@ -1458,62 +1426,17 @@ const SongsManager = () => {
                           Convertir ahora
                         </button>
                       </div>
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <label className="block text-xs font-bold text-gray-400 uppercase">Editor de Letra y Partitura</label>
-                  <div className="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-950 border border-gray-200 dark:border-white/5 rounded-2xl">
-                    <button
-                      type="button"
-                      onClick={handleSwitchToFree}
-                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
-                        editorMode === 'free'
-                          ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-gold shadow-xs border border-gray-200/50 dark:border-transparent'
-                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
-                      }`}
-                    >
-                      Editor Libre (Rich Text)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSwitchToStructured}
-                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
-                        editorMode === 'structured'
-                          ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-gold shadow-xs border border-gray-200/50 dark:border-transparent'
-                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
-                      }`}
-                    >
-                      Estructurado por Secciones 📋
-                    </button>
-                  </div>
-                </div>
-
-                {editorMode === 'free' ? (
-                  /* FREE TEXT LYRICS EDITOR (TIPTAP) */
-                  <div className="space-y-3">
-                    {lyrics && !structureBlocks.length && (
-                      <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 p-3 rounded-2xl">
-                        <span className="text-xxs text-indigo-700 dark:text-indigo-400 font-semibold flex items-center gap-1">
-                          <Sparkles size={12} /> Esta canción no está estructurada en secciones. ¿Deseas convertirla?
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const parsed = convertHtmlToBlocks(lyrics);
-                            setStructureBlocks(parsed);
-                            setEditorMode('structured');
-                            toast.success('Convertido a bloques estructurados');
-                          }}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-xl text-[10px] uppercase tracking-wide transition-all cursor-pointer shadow-xs"
-                        >
-                          Convertir ahora
-                        </button>
-                      </div>
                     )}
                     <SongLyricsEditor content={lyrics} onChange={setLyrics} disabled={readOnly} />
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <StructuredLyricsEditor blocks={structureBlocks} setBlocks={setStructureBlocks} disabled={readOnly} />
+                  /* STRUCTURED BLOCK EDITOR */
+                  <div className="space-y-4">
+                    <SongBlockEditor 
+                      blocks={structureBlocks} 
+                      onChangeBlocks={setStructureBlocks} 
+                      disabled={readOnly} 
+                    />
                   </div>
                 )}
               </div>
