@@ -35,11 +35,11 @@ import {
   Send,
   Sparkles,
   Type,
-  Video,
+  Mic,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AccidentalPreference, MediaCategory, Song, SongResourceLink, SongStructureBlock } from '../../../types';
+import type { AccidentalPreference, MediaCategory, Song, SongStructureBlock } from '../../../types';
 
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -458,27 +458,46 @@ export const SongViewer = ({
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {[
-                { id: 'all', label: 'Todos' },
-                { id: 'video_clip', label: 'Video clip' },
-                { id: 'lesson', label: 'Video lecciones' },
-                { id: 'backing_track', label: 'Backing tracks' },
-                { id: 'lyrics_video', label: 'Letras' },
-                { id: 'other', label: 'Otros' },
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setMediaCategoryFilter(cat.id as MediaCategory)}
-                  className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-                    mediaCategoryFilter === cat.id
-                      ? 'bg-amber-400 text-slate-950 shadow-md'
-                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+              {(() => {
+                const getCount = (catId: string) => {
+                  if (catId === 'all') return rawLinks.length;
+                  return rawLinks.filter((l) => (l.category ?? 'other') === catId).length;
+                };
+
+                return [
+                  { id: 'all', label: 'Todos' },
+                  { id: 'video_clip', label: 'Video clip' },
+                  { id: 'lesson', label: 'Lecciones / Tutoriales' },
+                  { id: 'backing_track', label: 'Backing tracks' },
+                  { id: 'lyrics_video', label: 'Con Letra' },
+                  { id: 'sheet_music', label: 'Partituras / Cifrados' },
+                  { id: 'other', label: 'Otros' },
+                ]
+                  .map((cat) => {
+                    const count = getCount(cat.id);
+                    if (cat.id !== 'all' && count === 0) return null;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setMediaCategoryFilter(cat.id as MediaCategory)}
+                        className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                          mediaCategoryFilter === cat.id
+                            ? 'bg-amber-400 text-slate-950 shadow-md'
+                            : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                        }`}
+                      >
+                        <span>{cat.label}</span>
+                        <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                          mediaCategoryFilter === cat.id ? 'bg-slate-950/20 text-slate-950' : 'bg-white/15 text-slate-300'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })
+                  .filter(Boolean);
+              })()}
             </div>
 
             {/* Media Items Cards */}
@@ -593,7 +612,37 @@ export const SongViewer = ({
         {/* Structured Blocks (Musician notes, Tablatures, Polls) */}
         <div className="grid gap-4 md:grid-cols-2">
           {blocks.map((block) => {
-            if (block.type === 'musician_note') return <article key={block.id} className="song-section-glass border-l-4 border-l-indigo-400"><span className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Nota para {block.target_instrument}</span><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">{block.content}</p></article>;
+            if (block.type === 'musician_note') {
+              const target = (block.target_instrument ?? 'General').toLowerCase();
+              let Icon = Music2;
+              let badgeBg = 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
+              if (target.includes('batería') || target.includes('drum')) {
+                Icon = Drum;
+                badgeBg = 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20';
+              } else if (target.includes('guitarr') || target.includes('bajo') || target.includes('bass')) {
+                Icon = Guitar;
+                badgeBg = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/20';
+              } else if (target.includes('piano') || target.includes('teclado') || target.includes('key')) {
+                Icon = KeyboardMusic;
+                badgeBg = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20';
+              } else if (target.includes('voz') || target.includes('vocal') || target.includes('canto')) {
+                Icon = Mic;
+                badgeBg = 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300 border-fuchsia-500/20';
+              }
+
+              return (
+                <article key={block.id} className="song-section-glass border-l-4 border-l-amber-500/70">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${badgeBg}`}>
+                      <Icon size={13} /> Nota para {block.target_instrument}
+                    </span>
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700 dark:text-slate-200">
+                    {block.content}
+                  </p>
+                </article>
+              );
+            }
             if (block.type === 'rich_text' && (block.audience ?? 'public') === 'public') return <article key={block.id} className="song-section-glass md:col-span-2">{block.title && <h3 className="mb-3 font-serif text-xl font-black text-slate-900 dark:text-white">{block.title}</h3>}<RichTextRenderer html={DOMPurify.sanitize(block.content)} className="text-sm leading-7 text-slate-700 dark:text-slate-200" /></article>;
             if (block.type === 'tablature') {
               if (block.instrument === 'drums') {

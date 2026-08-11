@@ -16,6 +16,7 @@ import {
   Link as LinkIcon, PlusCircle, Sparkles, FileText, Download,
   BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star,
   Loader2, AlertCircle, RefreshCw, MonitorPlay,
+  ArrowUp, ArrowDown, Play, ExternalLink, Film,
 } from 'lucide-react';
 import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
@@ -741,6 +742,38 @@ const SongsManager = () => {
     setEditorMode('free');
   };
 
+  const deleteSong = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Eliminar canción',
+      message: '¿Estás seguro de que deseas eliminar esta canción de la biblioteca?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    const { error } = await supabase.from('songs').delete().eq('id', id);
+    if (error) { toast.error('Error al eliminar'); return; }
+    toast.success('Canción eliminada');
+    fetchAll();
+  };
+
+  const handleSwitchToStructured = () => {
+    const currentHtml = lyrics || '';
+    if (structureBlocks.length === 0 && currentHtml.trim() !== '') {
+      const parsedBlocks = convertHtmlToBlocks(currentHtml);
+      setStructureBlocks(parsedBlocks);
+    }
+    setEditorMode('structured');
+  };
+
+  const handleSwitchToFree = () => {
+    if (structureBlocks.length > 0) {
+      const compiled = compileBlocksToHtml(structureBlocks);
+      setLyrics(compiled);
+    }
+    setEditorMode('free');
+  };
+
   // Resource Links CRUD
   const addLink = () => {
     const newLink: SongResourceLink = {
@@ -750,6 +783,7 @@ const SongsManager = () => {
       comment: '',
       title: '',
       kind: 'video',
+      category: 'video_clip',
       visibility: 'public',
     };
     setResourceLinks([...resourceLinks, newLink]);
@@ -759,8 +793,82 @@ const SongsManager = () => {
     setResourceLinks(resourceLinks.filter(l => l.id !== id));
   };
 
+  const inferResourceMetadata = (url: string, current: Partial<SongResourceLink>): Partial<SongResourceLink> => {
+    if (!url) return {};
+    const updates: Partial<SongResourceLink> = {};
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    if (ytMatch) {
+      updates.kind = 'video';
+    } else if (/\.(mp3|wav|m4a|aac)$/i.test(url)) {
+      updates.kind = 'audio';
+    } else if (/\.pdf$/i.test(url)) {
+      updates.kind = 'pdf';
+    } else if (url.includes('songsterr') || url.includes('cifraclub')) {
+      updates.kind = 'link';
+      updates.category = 'sheet_music';
+    }
+
+    const combined = `${url} ${current.title || ''} ${current.comment || ''}`.toLowerCase();
+
+    if (!current.category || current.category === 'all' || current.category === 'other') {
+      if (combined.includes('clip') || combined.includes('en vivo') || combined.includes('official') || combined.includes('oficial')) {
+        updates.category = 'video_clip';
+      } else if (combined.includes('tutorial') || combined.includes('leccion') || combined.includes('lesson') || combined.includes('como tocar')) {
+        updates.category = 'lesson';
+      } else if (combined.includes('multitrack') || combined.includes('secuencia') || combined.includes('backing') || combined.includes('pista')) {
+        updates.category = 'backing_track';
+      } else if (combined.includes('letra') || combined.includes('lyric')) {
+        updates.category = 'lyrics_video';
+      } else if (combined.includes('songsterr') || combined.includes('partitura') || combined.includes('cifra')) {
+        updates.category = 'sheet_music';
+      }
+    }
+
+    if (!current.instrument || current.instrument === 'General') {
+      if (combined.includes('bateria') || combined.includes('drum')) {
+        updates.instrument = 'Batería';
+      } else if (combined.includes('piano') || combined.includes('teclado') || combined.includes('key')) {
+        updates.instrument = 'Piano';
+      } else if (combined.includes('guitarra') || combined.includes('guitar')) {
+        updates.instrument = 'Guitarra';
+      } else if (combined.includes('bajo') || combined.includes('bass')) {
+        updates.instrument = 'Bajo';
+      } else if (combined.includes('voz') || combined.includes('vocal') || combined.includes('canto')) {
+        updates.instrument = 'Voz';
+      }
+    }
+
+    return updates;
+  };
+
   const updateLink = (id: string, updates: Partial<SongResourceLink>) => {
-    setResourceLinks(resourceLinks.map(l => l.id === id ? { ...l, ...updates } : l));
+    setResourceLinks(resourceLinks.map((l) => {
+      if (l.id !== id) return l;
+      const merged = { ...l, ...updates };
+      if (updates.url && updates.url !== l.url) {
+        const detected = inferResourceMetadata(updates.url, merged);
+        return { ...merged, ...detected };
+      }
+      return merged;
+    }));
+  };
+
+  const moveLinkUp = (index: number) => {
+    if (index <= 0) return;
+    const next = [...resourceLinks];
+    const temp = next[index];
+    next[index] = next[index - 1];
+    next[index - 1] = temp;
+    setResourceLinks(next);
+  };
+
+  const moveLinkDown = (index: number) => {
+    if (index >= resourceLinks.length - 1) return;
+    const next = [...resourceLinks];
+    const temp = next[index];
+    next[index] = next[index + 1];
+    next[index + 1] = temp;
+    setResourceLinks(next);
   };
 
   const loadArrangement = (arrangement: SongArrangement) => {
@@ -1350,99 +1458,257 @@ const SongsManager = () => {
                           Convertir ahora
                         </button>
                       </div>
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <label className="block text-xs font-bold text-gray-400 uppercase">Editor de Letra y Partitura</label>
+                  <div className="flex gap-1.5 p-1 bg-gray-100 dark:bg-slate-950 border border-gray-200 dark:border-white/5 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={handleSwitchToFree}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                        editorMode === 'free'
+                          ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-gold shadow-xs border border-gray-200/50 dark:border-transparent'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Editor Libre (Rich Text)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSwitchToStructured}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                        editorMode === 'structured'
+                          ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-gold shadow-xs border border-gray-200/50 dark:border-transparent'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Estructurado por Secciones 📋
+                    </button>
+                  </div>
+                </div>
+
+                {editorMode === 'free' ? (
+                  /* FREE TEXT LYRICS EDITOR (TIPTAP) */
+                  <div className="space-y-3">
+                    {lyrics && !structureBlocks.length && (
+                      <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 p-3 rounded-2xl">
+                        <span className="text-xxs text-indigo-700 dark:text-indigo-400 font-semibold flex items-center gap-1">
+                          <Sparkles size={12} /> Esta canción no está estructurada en secciones. ¿Deseas convertirla?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const parsed = convertHtmlToBlocks(lyrics);
+                            setStructureBlocks(parsed);
+                            setEditorMode('structured');
+                            toast.success('Convertido a bloques estructurados');
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded-xl text-[10px] uppercase tracking-wide transition-all cursor-pointer shadow-xs"
+                        >
+                          Convertir ahora
+                        </button>
+                      </div>
                     )}
                     <SongLyricsEditor content={lyrics} onChange={setLyrics} disabled={readOnly} />
                   </div>
                 ) : (
-                  /* STRUCTURED BLOCK EDITOR */
-                  <div className="space-y-4">
-                    <SongBlockEditor 
-                      blocks={structureBlocks} 
-                      onChangeBlocks={setStructureBlocks} 
-                      disabled={readOnly} 
-                    />
+                  <div className="space-y-3">
+                    <StructuredLyricsEditor blocks={structureBlocks} setBlocks={setStructureBlocks} disabled={readOnly} />
                   </div>
                 )}
               </div>
 
               {/* Resource Links Manager */}
               <div className="border-t border-gray-100 dark:border-white/5 pt-5 space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
                       <LinkIcon size={16} className="text-amber-600" />
-                      Links de Recursos y Tutoriales
+                      Galería de Recursos Multimedia y Tutoriales
                     </h3>
-                    <p className="text-[10px] text-gray-450 dark:text-gray-400 mt-0.5">Videos guía para piano, batería, bajo, etc. con comentarios</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      Agrega videoclips, lecciones, backing tracks, partituras y notas por instrumento para el equipo.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={addLink}
-                    className="flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-white/5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer shadow-2xs"
-                  >
-                    <PlusCircle size={14} /> Agregar Enlace
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={addLink}
+                      className="flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl font-bold transition-all cursor-pointer shadow-sm"
+                    >
+                      <PlusCircle size={15} /> Agregar Recurso
+                    </button>
+                  </div>
                 </div>
 
                 {resourceLinks.length === 0 ? (
-                  <div className="text-center py-6 border border-dashed border-gray-200 dark:border-white/5 rounded-2xl text-gray-400 text-xs">
-                    No hay enlaces de referencia configurados.
+                  <div className="text-center py-8 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl text-gray-400 text-xs space-y-2">
+                    <Film className="mx-auto text-gray-300 dark:text-gray-600" size={32} />
+                    <p className="font-semibold">No hay recursos multimedia configurados para esta alabanza.</p>
+                    <p className="text-[11px] text-gray-400">Haz clic en “Agregar Recurso” para vincular un video de YouTube, backing track o cifrado.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
-                    {resourceLinks.map((link) => (
-                      <div key={link.id} className="flex flex-col md:flex-row gap-3 bg-slate-50/50 dark:bg-slate-950/10 p-3 rounded-2xl border border-gray-150 dark:border-white/5 items-start md:items-center">
-                        <select
-                          value={link.instrument}
-                          onChange={(e) => updateLink(link.id, { instrument: e.target.value as 'General' | 'Batería' | 'Piano' | 'Guitarra' | 'Bajo' | 'Voz' | 'Viento' | 'Otro' })}
-                          className="bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-750 dark:text-gray-300 outline-none shrink-0"
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                    {resourceLinks.map((link, index) => {
+                      const ytMatch = (link.url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                      const ytId = ytMatch ? ytMatch[1] : null;
+
+                      return (
+                        <div
+                          key={link.id}
+                          className="group relative bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-2xl border border-gray-200/80 dark:border-white/10 space-y-3 transition-all hover:border-amber-400/50"
                         >
-                          {INSTRUMENTS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
+                          {/* Card Header & Controls */}
+                          <div className="flex items-center justify-between gap-2 border-b border-gray-200/60 dark:border-white/5 pb-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {ytId ? (
+                                <img
+                                  src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                                  alt="YouTube thumbnail"
+                                  className="w-12 h-8 rounded-lg object-cover border border-white/20 shrink-0 shadow-xs"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-300 grid place-items-center shrink-0">
+                                  <LinkIcon size={15} />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block truncate">
+                                  #{index + 1} · {link.title || 'Nuevo recurso'}
+                                </span>
+                                <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate block">
+                                  {link.url || 'Sin URL especificada'}
+                                </span>
+                              </div>
+                            </div>
 
-                        <select value={link.kind || 'video'} onChange={(e) => updateLink(link.id, { kind: e.target.value as SongResourceLink['kind'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
-                          <option value="video">Video</option><option value="audio">Audio</option><option value="pdf">PDF</option><option value="link">Enlace</option>
-                        </select>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => moveLinkUp(index)}
+                                disabled={index === 0}
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors"
+                                title="Mover arriba"
+                              >
+                                <ArrowUp size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveLinkDown(index)}
+                                disabled={index === resourceLinks.length - 1}
+                                className="p-1.5 rounded-lg text-gray-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors"
+                                title="Mover abajo"
+                              >
+                                <ArrowDown size={14} />
+                              </button>
+                              {link.url && (
+                                <a
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                                  title="Probar enlace en nueva pestaña"
+                                >
+                                  <ExternalLink size={14} />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeLink(link.id)}
+                                className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors ml-1"
+                                title="Eliminar recurso"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
 
-                        <select value={link.category || 'all'} onChange={(e) => updateLink(link.id, { category: e.target.value as SongResourceLink['category'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
-                          <option value="all">Cat: General</option><option value="video_clip">Cat: Video Clip</option><option value="lesson">Cat: Tutorial / Lección</option><option value="backing_track">Cat: Backing Track</option><option value="lyrics_video">Cat: Con Letra</option><option value="sheet_music">Cat: Partitura</option><option value="other">Cat: Otro</option>
-                        </select>
+                          {/* Controls Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Título del Recurso</label>
+                              <input
+                                type="text"
+                                value={link.title || ''}
+                                onChange={(e) => updateLink(link.id, { title: e.target.value })}
+                                placeholder="Ej. Videoclip Oficial / Tutorial Piano"
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 outline-none focus:border-amber-400"
+                              />
+                            </div>
 
-                        <select value={link.visibility || 'public'} onChange={(e) => updateLink(link.id, { visibility: e.target.value as SongResourceLink['visibility'] })} className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-gray-300">
-                          <option value="public">Público</option><option value="team">Solo equipo</option>
-                        </select>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">URL (YouTube / Archivo)</label>
+                              <input
+                                type="url"
+                                value={link.url}
+                                onChange={(e) => updateLink(link.id, { url: e.target.value })}
+                                onBlur={(e) => updateLink(link.id, { url: e.target.value })}
+                                placeholder="https://youtube.com/watch?v=..."
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 outline-none focus:border-amber-400"
+                                required
+                              />
+                            </div>
 
-                        <input type="text" value={link.title || ''} onChange={(e) => updateLink(link.id, { title: e.target.value })} placeholder="Título del recurso" className="min-w-[150px] flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-amber-400 dark:border-white/10 dark:bg-slate-800 dark:text-gray-100" />
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Categoría</label>
+                              <select
+                                value={link.category || 'video_clip'}
+                                onChange={(e) => updateLink(link.id, { category: e.target.value as SongResourceLink['category'] })}
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-750 dark:text-gray-200 outline-none focus:border-amber-400"
+                              >
+                                <option value="video_clip">🎬 Video Clip / En Vivo</option>
+                                <option value="lesson">🎸 Tutorial / Lección</option>
+                                <option value="backing_track">🎼 Backing Track / Multitrack</option>
+                                <option value="lyrics_video">🎤 Con Letras / Lyric Video</option>
+                                <option value="sheet_music">📄 Partitura / Cifrado</option>
+                                <option value="other">📦 Otro recurso</option>
+                              </select>
+                            </div>
 
-                        <input
-                          type="url"
-                          value={link.url}
-                          onChange={(e) => updateLink(link.id, { url: e.target.value })}
-                          placeholder="URL del video o archivo (ej. https://youtube.com/watch?...)"
-                          className="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none w-full"
-                          required
-                        />
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Instrumento</label>
+                              <select
+                                value={link.instrument || 'General'}
+                                onChange={(e) => updateLink(link.id, { instrument: e.target.value as SongResourceLink['instrument'] })}
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-750 dark:text-gray-200 outline-none focus:border-amber-400"
+                              >
+                                {INSTRUMENTS.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
 
-                        <input
-                          type="text"
-                          value={link.comment || ''}
-                          onChange={(e) => updateLink(link.id, { comment: e.target.value })}
-                          placeholder="Comentario (ej. Tutorial de redobles)"
-                          className="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 focus:border-amber-400 outline-none w-full"
-                        />
+                          {/* Extra Row: Comments & Visibility */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs pt-1">
+                            <div className="sm:col-span-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Comentario / Nota Corta</label>
+                              <input
+                                type="text"
+                                value={link.comment || ''}
+                                onChange={(e) => updateLink(link.id, { comment: e.target.value })}
+                                placeholder="Ej. Enfoque en los arreglos de piano del verso 2"
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-gray-800 dark:text-gray-100 outline-none focus:border-amber-400"
+                              />
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={() => removeLink(link.id)}
-                          className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors"
-                          title="Eliminar link"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Visibilidad</label>
+                              <select
+                                value={link.visibility || 'public'}
+                                onChange={(e) => updateLink(link.id, { visibility: e.target.value as SongResourceLink['visibility'] })}
+                                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-750 dark:text-gray-200 outline-none focus:border-amber-400"
+                              >
+                                <option value="public">🌐 Público (Todos los miembros)</option>
+                                <option value="team">🔒 Solo Equipo de Alabanza</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
