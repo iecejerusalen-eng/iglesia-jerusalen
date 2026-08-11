@@ -13,13 +13,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus, Edit3, Trash2, X, Search, Music, ListMusic,
   Tag, Palette as StyleIcon, ChevronDown, ChevronUp,
-  Link as LinkIcon, PlusCircle, Sparkles,
+  Link as LinkIcon, PlusCircle, Sparkles, FileText, Download,
   BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star,
   Loader2, AlertCircle, RefreshCw, MonitorPlay,
 } from 'lucide-react';
 import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
 import { isValidChord } from '../../features/songs/utils/songUtils';
 import { detectKeyCandidate, slugifySongTitle } from '../../features/songs/utils/musicEngine';
+import { parseCifraClubText } from '../../features/songs/utils/cifraClubParser';
 
 const songSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
@@ -404,6 +405,29 @@ const SongsManager = () => {
   const [showCatalogs, setShowCatalogs] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [newStyleName, setNewStyleName] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+
+  const handleImportCifraClub = () => {
+    if (!importText.trim()) return;
+    const parsed = parseCifraClubText(importText);
+    const currentValues = getValues();
+
+    reset({
+      ...currentValues,
+      title: parsed.title || currentValues.title,
+      artist: parsed.artist || currentValues.artist,
+      original_key: parsed.key || currentValues.original_key,
+      bpm: parsed.bpm ?? currentValues.bpm,
+      has_chords: true,
+    });
+
+    setStructureBlocks(parsed.structureBlocks);
+    setEditorMode('structured');
+    setShowImportModal(false);
+    setImportText('');
+    toast.success('Canción e acordes procesados desde CifraClub');
+  };
 
   const { register, handleSubmit, reset, getValues, control, formState: { errors } } = useForm<SongFormInput, unknown, SongFormValues>({
     resolver: zodResolver(songSchema),
@@ -1161,6 +1185,7 @@ const SongsManager = () => {
                 {editingSong ? 'Editar Canción' : 'Nueva Canción'}
               </h2>
               <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setShowImportModal(true)} className="flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-100 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-300"><FileText size={15} /> Importar CifraClub</button>
                 <button type="button" onClick={openPreview} className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300"><Eye size={15} /> Vista previa</button>
                 <button onClick={() => setShowForm(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-450 cursor-pointer"><X size={20} /></button>
               </div>
@@ -1440,6 +1465,44 @@ const SongsManager = () => {
           activeTab={previewTab}
           setActiveTab={setPreviewTab}
         />
+      )}
+
+      {/* CifraClub Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowImportModal(false)} />
+          <div className="relative w-full max-w-2xl rounded-3xl border border-white/20 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 z-10">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <FileText className="text-sky-500" size={20} />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Importar desde CifraClub / Texto</h3>
+              </div>
+              <button type="button" onClick={() => setShowImportModal(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="py-4">
+              <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                Pega el texto copiado de CifraClub (o cualquier letra con líneas de acordes arriba). Extraeremos automáticamente título, artista, tono, acordes y secciones.
+              </p>
+              <textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                rows={10}
+                placeholder="Pega aquí el contenido de CifraClub..."
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-mono text-slate-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/10">
+              <button type="button" onClick={() => setShowImportModal(false)} className="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleImportCifraClub} disabled={!importText.trim()} className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-sky-500 disabled:opacity-50">
+                <Download size={14} /> Procesar e Importar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

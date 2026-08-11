@@ -60,6 +60,7 @@ const Presentation = lazyWithRetry(() => import('../pages/public/Presentation').
 const ProgramDetail = lazyWithRetry(() => import('../pages/public/ProgramDetail'));
 const EditorialSpacePage = lazyWithRetry(() => import('../pages/public/EditorialSpacePage'));
 const EditorialDocumentPage = lazyWithRetry(() => import('../pages/public/EditorialDocumentPage'));
+const PublicationsHub = lazyWithRetry(() => import('../pages/public/PublicationsHub'));
 const MyPurchases = lazyWithRetry(() => import('../pages/public/MyPurchases'));
 const SundaySchool = lazyWithRetry(() => import('../pages/public/SundaySchool'));
 const ReadingPlan = lazyWithRetry(() => import('../pages/public/ReadingPlan'));
@@ -184,6 +185,7 @@ export default function AppRouter() {
           <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
           <Route path="/programas" element={<ProgramsOverview />} />
           <Route path="/programas/:id" element={<ProgramDetail />} />
+          <Route path="/publicaciones" element={<PublicationsHub />} />
           <Route path="/publicaciones/:spaceSlug" element={<EditorialSpacePage />} />
           <Route path="/publicaciones/:spaceSlug/:documentId" element={<EditorialDocumentPage />} />
           <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />
