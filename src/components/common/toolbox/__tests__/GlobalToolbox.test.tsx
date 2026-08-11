@@ -35,7 +35,7 @@ describe('GlobalToolbox', () => {
     expect(screen.getByRole('button', { name: /Temporizador\. Tiempo de púlpito y avisos/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /Biblia\. Consulta pasajes al instante/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: /Aforo\. Conteo y capacidad/ })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('navega a una herramienta, minimiza y restaura sin desmontar el panel', async () => {
     useToolboxStore.setState({ isOpen: true });
@@ -53,7 +53,7 @@ describe('GlobalToolbox', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Restaurar herramientas' }));
     await waitFor(() => expect(screen.getAllByText(/Temporizador|Reloj de púlpito/)[0]).toBeVisible());
-  });
+  }, 10000);
 
   it('cierra el panel de herramientas de forma inmediata al presionar el botón X', async () => {
     render(

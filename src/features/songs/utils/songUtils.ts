@@ -89,6 +89,8 @@ export function bracketTextToHtml(
   
   const lines = escaped.split('\n');
   const processedLines = lines.map(line => {
+    const isChordOnly = Boolean(line.trim()) && !line.replace(/\[([^\]]+)\]/g, '').trim();
+
     const compiledLine = line.replace(/\[([^\]]+)\]/g, (match, chord: string) => {
       if (!isValidChord(chord)) return match;
       let finalChord = transposeParsedChord(chord, transposeAmount, accidentalPreference, originalKey);
@@ -98,9 +100,14 @@ export function bracketTextToHtml(
           originalKey ? transposeParsedNote(originalKey, transposeAmount, accidentalPreference, originalKey) : null,
         );
       }
+      if (isChordOnly) {
+        return `<span class="chord-node-wrapper chord-only-badge" data-chord-node="true" data-chord="${finalChord}">${finalChord}</span>`;
+      }
       return `<span class="chord-node-wrapper" data-chord-node="true" data-chord="${finalChord}"></span>`;
     });
-    return `<p class="lyrics-line">${compiledLine || '&nbsp;'}</p>`;
+
+    const lineClass = isChordOnly ? 'lyrics-line chord-only-line' : 'lyrics-line';
+    return `<p class="${lineClass}">${compiledLine || '&nbsp;'}</p>`;
   }).join('');
   
   return processedLines;

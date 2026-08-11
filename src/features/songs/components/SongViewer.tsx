@@ -819,9 +819,13 @@ export const SongViewer = ({
         .song-workspace-lyrics { font-size: calc(1.05rem * var(--song-font-scale)); line-height: 2.45; color: rgb(30 41 59); }
         .dark .song-workspace-lyrics { color: rgb(226 232 240); }
         .song-workspace-lyrics .lyrics-line { margin: .25rem 0; min-height: 1.5em; }
-        .song-workspace-lyrics .chord-node-wrapper { display: inline-block; position: relative; width: .05em; height: 1em; vertical-align: baseline; margin-right: .03em; }
+        .song-workspace-lyrics .chord-node-wrapper { display: inline-block; position: relative; width: .05em; height: 1em; vertical-align: baseline; margin-right: .15em; }
         .song-workspace-lyrics .chord-node-wrapper::before { content: attr(data-chord); position: absolute; bottom: .92em; left: 0; color: rgb(180 83 9); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72em; font-weight: 900; line-height: 1; white-space: nowrap; }
         .dark .song-workspace-lyrics .chord-node-wrapper::before { color: rgb(252 211 77); }
+        .song-workspace-lyrics .chord-only-line { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .6rem 0; min-height: 2em; }
+        .song-workspace-lyrics .chord-only-badge { display: inline-flex; align-items: center; justify-content: center; position: relative; width: auto; min-width: 2.2rem; padding: .2rem .6rem; border-radius: .6rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; font-weight: 900; line-height: 1; color: rgb(180 83 9); background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .dark .song-workspace-lyrics .chord-only-badge { color: rgb(252 211 77); background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.35); }
+        .song-workspace-lyrics .chord-only-badge::before { display: none !important; }
         .song-workspace-hide-chords .chord-node-wrapper { display: none; }
         .tool-icon-button,.header-icon-button,.transpose-button { place-items:center; border-radius:.75rem; color:rgb(100 116 139); transition:.2s; }
         .tool-icon-button { display:grid; width:2.25rem;height:2.25rem;background:rgb(241 245 249 / .8); }
