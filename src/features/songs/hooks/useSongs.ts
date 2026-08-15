@@ -35,22 +35,35 @@ function asCatalogSong(row: Song): Song {
   };
 }
 
-export function useSongs() {
-  const { data: songs = [], isLoading: isLoadingSongs, isError: isSongsError } = useQuery<Song[]>({
-    queryKey: ['songs', 'public-catalog'],
+function normalizeCatalogSearch(value: string): string {
+  return value
+    .replace(/[,%()\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+}
+
+export function useSongs(search = '') {
+  const normalizedSearch = normalizeCatalogSearch(search);
+  const songsQuery = useQuery<Song[]>({
+    queryKey: ['songs', 'public-catalog', normalizedSearch],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('songs')
         .select(SONG_CATALOG_COLUMNS)
-        .eq('status', 'published')
-        .order('title');
+        .eq('status', 'published');
+      if (normalizedSearch) {
+        query = query.or(`title.ilike.%${normalizedSearch}%,artist.ilike.%${normalizedSearch}%,lyrics.ilike.%${normalizedSearch}%`);
+      }
+      const { data, error } = await query.order('title');
       if (error) throw error;
       return ((data ?? []) as unknown as Song[]).map(asCatalogSong);
     },
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previous) => previous,
   });
 
-  const { data: songTypes = [], isLoading: isLoadingTypes, isError: isTypesError } = useQuery<SongType[]>({
+  const typesQuery = useQuery<SongType[]>({
     queryKey: ['song_types'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,7 +75,7 @@ export function useSongs() {
     }
   });
 
-  const { data: songStyles = [], isLoading: isLoadingStyles, isError: isStylesError } = useQuery<SongStyle[]>({
+  const stylesQuery = useQuery<SongStyle[]>({
     queryKey: ['song_styles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -75,11 +88,14 @@ export function useSongs() {
   });
 
   return {
-    songs,
-    songTypes,
-    songStyles,
-    isLoading: isLoadingSongs || isLoadingTypes || isLoadingStyles,
-    isError: isSongsError || isTypesError || isStylesError,
+    songs: songsQuery.data ?? [],
+    songTypes: typesQuery.data ?? [],
+    songStyles: stylesQuery.data ?? [],
+    isLoading: songsQuery.isLoading || typesQuery.isLoading || stylesQuery.isLoading,
+    isError: songsQuery.isError || typesQuery.isError || stylesQuery.isError,
+    refetch: async () => {
+      await Promise.all([songsQuery.refetch(), typesQuery.refetch(), stylesQuery.refetch()]);
+    },
   };
 }
 

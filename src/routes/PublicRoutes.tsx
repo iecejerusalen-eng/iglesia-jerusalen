@@ -1,33 +1,6 @@
-import { lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PublicLayout from '../layouts/PublicLayout';
-
-const lazyWithRetry = <T extends React.ComponentType<object>>(
-  componentImport: () => Promise<{ default: T }>
-) => {
-  return lazy(async () => {
-    try {
-      const component = await componentImport();
-      window.sessionStorage.removeItem('chunk-failed-reload');
-      return component;
-    } catch (error: unknown) {
-      const err = error as { message?: string } | undefined;
-      if (
-        err?.message?.includes('Failed to fetch dynamically imported module') ||
-        err?.message?.includes('Importing a module script failed') ||
-        err?.message?.includes('error loading dynamically imported module')
-      ) {
-        if (!window.sessionStorage.getItem('chunk-failed-reload')) {
-          window.sessionStorage.setItem('chunk-failed-reload', 'true');
-          window.location.reload();
-          return new Promise(() => {});
-        }
-      }
-      window.sessionStorage.removeItem('chunk-failed-reload');
-      throw error;
-    }
-  });
-};
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
 const Home = lazyWithRetry(() => import('../pages/public/Home'));
 const Login = lazyWithRetry(() => import('../pages/auth/Login'));

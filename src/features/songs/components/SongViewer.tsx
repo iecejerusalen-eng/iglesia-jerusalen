@@ -141,7 +141,10 @@ function safeBracketHtml(
 }
 
 function manualScores(blocks: SongStructureBlock[] | null | undefined) {
-  return (blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'sheet_music' }> => block.type === 'sheet_music' && block.notation_type === 'abc' && Boolean(block.abc_code));
+  return (blocks ?? []).filter((block): block is Extract<SongStructureBlock, { type: 'sheet_music' }> => (
+    block.type === 'sheet_music'
+    && ((block.notation_type === 'abc' && Boolean(block.abc_code)) || (block.notation_type === 'image' && Boolean(block.image_url)))
+  ));
 }
 
 export const SongViewer = ({
@@ -404,7 +407,11 @@ export const SongViewer = ({
       {scores.map((score) => (
         <section key={score.id} className="song-section-glass">
           <div className="mb-4 flex items-center gap-2"><Check size={15} className="text-emerald-500" /><h3 className="font-bold text-slate-800 dark:text-white">{score.title || 'Partitura de melodía'}</h3></div>
-          <SheetMusicViewer abcNotation={score.abc_code ?? ''} responsive audioEnabled />
+          {score.notation_type === 'abc' ? (
+            <SheetMusicViewer abcNotation={score.abc_code ?? ''} responsive audioEnabled />
+          ) : (
+            <img src={score.image_url} alt={score.title || 'Partitura exacta'} className="max-h-[70vh] w-full rounded-xl border border-slate-200 object-contain dark:border-white/10" />
+          )}
         </section>
       ))}
       {generatedScore && (
@@ -416,7 +423,7 @@ export const SongViewer = ({
           <SheetMusicViewer abcNotation={generatedScore} responsive />
         </section>
       )}
-      {!scores.length && !generatedScore && <EmptyState icon={FileMusic} title="Aún no hay material para generar una partitura" description="Agrega acordes o una melodía ABC desde el editor." />}
+      {!scores.length && !generatedScore && <EmptyState icon={FileMusic} title="Aún no hay material para generar una partitura" description="Agrega acordes, una melodía ABC o una imagen exacta desde el editor." />}
     </div>
   );
 

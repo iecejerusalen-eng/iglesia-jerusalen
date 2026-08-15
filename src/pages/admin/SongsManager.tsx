@@ -22,6 +22,7 @@ import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType,
 import { isValidChord } from '../../features/songs/utils/songUtils';
 import { detectKeyCandidate, slugifySongTitle } from '../../features/songs/utils/musicEngine';
 import { parseCifraClubText } from '../../features/songs/utils/cifraClubParser';
+import { validateAbcNotation } from '../../features/songs/utils/abcValidation';
 
 const songSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
@@ -645,6 +646,26 @@ const SongsManager = () => {
       toast.error(candidate
         ? `Define la tonalidad original. La primera tonalidad detectada es ${candidate}.`
         : 'Define la tonalidad original antes de publicar una canción con acordes.');
+      return;
+    }
+
+    const invalidScore = structureBlocks.find((block) => {
+      if (block.type !== 'sheet_music' || block.notation_type !== 'abc') return false;
+      return !validateAbcNotation(block.abc_code ?? '').valid;
+    });
+    if (invalidScore?.type === 'sheet_music' && invalidScore.notation_type === 'abc') {
+      const validation = validateAbcNotation(invalidScore.abc_code ?? '');
+      toast.error(`Partitura inválida: ${validation.message ?? 'revisa la notación ABC.'}`);
+      return;
+    }
+
+    const invalidDiagram = structureBlocks.find((block) => (
+      block.type === 'chord_diagram'
+      && block.chords.some((chord) => !isValidChord(chord))
+    ));
+    if (invalidDiagram?.type === 'chord_diagram') {
+      const invalidChord = invalidDiagram.chords.find((chord) => !isValidChord(chord));
+      toast.error(`Diagrama inválido: ${invalidChord ?? 'revisa los acordes ingresados.'}`);
       return;
     }
 

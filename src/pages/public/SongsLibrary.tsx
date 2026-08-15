@@ -12,15 +12,9 @@ import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
 const INITIAL_VISIBLE_SONGS = 18;
 const SONGS_INCREMENT = 18;
 
-const normalizeText = (value: string) => value
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLocaleLowerCase('es');
-
 const SongsLibrary = () => {
   const navigate = useNavigate();
   const { songSlug } = useParams<{ songSlug?: string }>();
-  const { songs, songTypes, songStyles, isLoading, isError } = useSongs();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStyle, setFilterStyle] = useState('');
@@ -35,13 +29,11 @@ const SongsLibrary = () => {
   const [fontFamily, setFontFamily] = useState<'mono' | 'serif' | 'sans'>('sans');
   const [activeTab, setActiveTab] = useState<'lyrics' | 'resources'>('lyrics');
   const deferredSearch = useDeferredValue(search);
+  const { songs, songTypes, songStyles, isLoading, isError, refetch } = useSongs(deferredSearch);
 
   const sortedSongs = useMemo(() => {
-    const query = normalizeText(deferredSearch.trim());
     const filtered = songs.filter((song) => {
-      const searchableText = normalizeText(`${song.title} ${song.artist || ''}`);
-      return (!query || searchableText.includes(query))
-        && (!filterType || song.type_id === filterType)
+      return (!filterType || song.type_id === filterType)
         && (!filterStyle || song.style_id === filterStyle)
         && (!filterDrumStyle || song.drum_style === filterDrumStyle)
         && (filterChords === 'all' || (filterChords === 'yes' ? song.has_chords : !song.has_chords));
@@ -55,7 +47,7 @@ const SongsLibrary = () => {
       if (sortBy === 'newest') return new Date(second.created_at).getTime() - new Date(first.created_at).getTime();
       return new Date(first.created_at).getTime() - new Date(second.created_at).getTime();
     });
-  }, [deferredSearch, filterChords, filterDrumStyle, filterStyle, filterType, songs, sortBy]);
+  }, [filterChords, filterDrumStyle, filterStyle, filterType, songs, sortBy]);
 
   const activeFilterCount = [filterType, filterStyle, filterDrumStyle, filterChords !== 'all'].filter(Boolean).length;
   const visibleSongs = sortedSongs.slice(0, visibleCount);
@@ -113,6 +105,7 @@ const SongsLibrary = () => {
             loading={isLoading} error={isError} songs={visibleSongs} totalResults={sortedSongs.length} viewMode={viewMode}
             hasMore={visibleCount < sortedSongs.length} onShowMore={() => setVisibleCount((count) => count + SONGS_INCREMENT)}
             onSelectSong={handleSelectSong}
+            onRetry={() => void refetch()}
           />
         </div>
       </main>

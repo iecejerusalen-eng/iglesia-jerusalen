@@ -18,6 +18,14 @@ export function isValidChord(chord: string): boolean {
   return isChord(chord);
 }
 
+export function extractBracketTokens(text: string): string[] {
+  return [...text.matchAll(/\[([^\]\r\n]+)\]/g)].map((match) => match[1].trim()).filter(Boolean);
+}
+
+export function getInvalidChordTokens(text: string): string[] {
+  return [...new Set(extractBracketTokens(text).filter((token) => !isValidChord(token)))];
+}
+
 export function transposeNote(note: string, steps: number): string {
   return transposeParsedNote(note, steps, note.includes('b') ? 'flat' : 'sharp', note);
 }

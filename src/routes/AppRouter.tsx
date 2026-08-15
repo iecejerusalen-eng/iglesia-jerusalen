@@ -1,35 +1,9 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import { PageSkeleton } from '../components/common/Skeletons';
-
-const lazyWithRetry = <T extends React.ComponentType<unknown>>(
-  componentImport: () => Promise<{ default: T }>
-) => {
-  return lazy(async () => {
-    try {
-      const component = await componentImport();
-      window.sessionStorage.removeItem('chunk-failed-reload');
-      return component;
-    } catch (error: unknown) {
-      const message = (error as Error)?.message ?? '';
-      if (
-        message.includes('Failed to fetch dynamically imported module') ||
-        message.includes('Importing a module script failed') ||
-        message.includes('error loading dynamically imported module')
-      ) {
-        if (!window.sessionStorage.getItem('chunk-failed-reload')) {
-          window.sessionStorage.setItem('chunk-failed-reload', 'true');
-          window.location.reload();
-          return new Promise(() => {});
-        }
-      }
-      window.sessionStorage.removeItem('chunk-failed-reload');
-      throw error;
-    }
-  });
-};
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
 // Los layouts cargan navegación, búsqueda y herramientas globales. Mantenerlos
 // fuera del bundle del router evita descargar el panel administrativo al visitar

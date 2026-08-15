@@ -45,7 +45,7 @@ export function PublicSchoolCatalog() {
   const [requestingCourseId, setRequestingCourseId] = useState<string | null>(null);
 
   const selectedSchool = schools.find(school => school.id === selectedSchoolId) ?? schools[0] ?? null;
-  const availableLevels = useMemo(() => [...new Set((selectedSchool?.courses ?? []).map(course => course.levelName).filter(Boolean))].sort(), [selectedSchool]);
+  const availableLevels = useMemo(() => [...new Set((selectedSchool?.courses ?? []).map(course => course.levelName).filter((level): level is string => Boolean(level)))].sort(), [selectedSchool]);
   const groupedCourses = useMemo(() => {
     const groups = new Map<string, PublicSchoolCourse[]>();
     const query = courseSearch.trim().toLowerCase();

@@ -5,6 +5,9 @@ import {
 } from 'lucide-react';
 import type { SongStructureBlock, SongBlockType } from '@/types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import { getInvalidChordTokens, isValidChord } from '@/features/songs/utils/songUtils';
+import { validateAbcNotation } from '@/features/songs/utils/abcValidation';
+import { SheetMusicViewer } from '@/features/songs/components/musical/SheetMusicViewer';
 
 const DRUM_TEMPLATES = {
   popRock: `HH|x-x-x-x-x-x-x-x-|x-x-x-x-x-x-x-x-|
@@ -172,6 +175,16 @@ export function SongBlockEditor({
 
   const renderBlockEditor = (block: SongStructureBlock, index: number) => {
     const blockObj = block as unknown as Record<string, unknown>;
+    const lyricsValue = (blockObj.lyrics as string) || '';
+    const invalidChordTokens = block.type === 'lyrics' ? getInvalidChordTokens(lyricsValue) : [];
+    const notationType = block.type === 'sheet_music' ? (blockObj.notation_type as string) || 'abc' : '';
+    const abcValue = notationType === 'abc' ? (blockObj.abc_code as string) || '' : '';
+    const imageValue = notationType === 'image' ? (blockObj.image_url as string) || '' : '';
+    const abcValidation = notationType === 'abc' && abcValue.trim() ? validateAbcNotation(abcValue) : null;
+    const diagramChords = block.type === 'chord_diagram' && Array.isArray(blockObj.chords)
+      ? blockObj.chords.filter((chord): chord is string => typeof chord === 'string')
+      : [];
+    const invalidDiagramChords = diagramChords.filter((chord) => !isValidChord(chord));
 
     return (
       <motion.div 
@@ -317,12 +330,17 @@ export function SongBlockEditor({
 
                 <textarea 
                   id={`textarea-${block.id}`}
-                  value={(blockObj.lyrics as string) || ''}
+                      value={lyricsValue}
                   onChange={e => updateBlock(block.id, { lyrics: e.target.value })}
                   rows={5}
                   placeholder={`Ejemplo con acordes:\n[C] Cuán grande es [G] Dios\n[Am] Canta con [F]migo\n[C] Cuán grande es [G] Dios`}
                   className="w-full rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-gray-100 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 leading-loose"
-                />
+                    />
+                    {invalidChordTokens.length > 0 && (
+                      <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800 dark:border-amber-400/30 dark:bg-amber-950/30 dark:text-amber-200">
+                        Revisa estos corchetes: {invalidChordTokens.slice(0, 4).map((token) => `[${token}]`).join(', ')}. Los acordes deben escribirse como [C], [F#m7] o [G/B].
+                      </p>
+                    )}
               </div>
             </div>
           )}
@@ -345,13 +363,18 @@ export function SongBlockEditor({
                 </div>
                 <div>
                   <label className="block text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-1">Acordes a mostrar (Separados por coma)</label>
-                  <input 
+        <input
                     type="text"
                     value={Array.isArray(blockObj.chords) ? blockObj.chords.join(', ') : ''} 
                     onChange={e => updateBlock(block.id, { chords: e.target.value.split(',').map(c => c.trim()).filter(Boolean) })}
                     placeholder="Ej. G, C, D, Em"
                     className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none focus:border-amber-400"
                   />
+                  {invalidDiagramChords.length > 0 && (
+                    <p role="alert" className="mt-2 text-[11px] text-amber-700 dark:text-amber-300">
+                      Revisa estos acordes: {invalidDiagramChords.join(', ')}.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -367,15 +390,53 @@ export function SongBlockEditor({
                 placeholder="Título de la partitura"
                 className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-850 dark:text-gray-100 outline-none focus:border-amber-400"
               />
-              <textarea 
-                value={(blockObj.abc_code as string) || ''}
-                onChange={e => updateBlock(block.id, { abc_code: e.target.value })}
-                rows={4}
-                placeholder="Código de Notación ABC (ej: X:1\nT:Intro\nM:4/4\nK:G\nG2 B2 d2 g2 |)"
-                className="w-full font-mono bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none"
-              />
-            </div>
-          )}
+              <label className="block text-[9px] font-extrabold uppercase tracking-wider text-gray-400">Formato de partitura</label>
+              <select
+                value={notationType}
+                onChange={(event) => updateBlock(block.id, { notation_type: event.target.value as 'abc' | 'musicxml' | 'image' })}
+                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-100 outline-none focus:border-amber-400"
+              >
+                <option value="abc">ABC interactiva (notas y audio)</option>
+                <option value="image">Imagen exacta de la partitura</option>
+                <option value="musicxml">MusicXML (archivo externo)</option>
+              </select>
+              {notationType === 'image' ? (
+                <>
+                  <input
+                    type="url"
+                    value={imageValue}
+                    onChange={(event) => updateBlock(block.id, { image_url: event.target.value })}
+                    placeholder="URL pública de la imagen o PDF convertido a imagen"
+                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none focus:border-amber-400"
+                  />
+                  {imageValue && <img src={imageValue} alt="Vista previa de la partitura" className="max-h-96 w-full rounded-lg border border-slate-200 object-contain dark:border-white/10" />}
+                </>
+              ) : notationType === 'musicxml' ? (
+                <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-800 dark:border-blue-400/20 dark:bg-blue-950/30 dark:text-blue-200">
+                  Guarda aquí la referencia del archivo MusicXML cuando el visor externo esté configurado. Para ver la partitura ahora usa ABC o una imagen exacta.
+                </p>
+              ) : (
+                <textarea
+                  value={abcValue}
+                  onChange={e => updateBlock(block.id, { abc_code: e.target.value })}
+                  rows={4}
+                  placeholder="Código de Notación ABC (ej: X:1\nT:Intro\nM:4/4\nK:G\nG2 B2 d2 g2 |)"
+                  className="w-full font-mono bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none"
+                />
+              )}
+      {abcValidation && !abcValidation.valid && (
+        <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800 dark:border-amber-400/30 dark:bg-amber-950/30 dark:text-amber-200">
+          {abcValidation.message}
+        </p>
+      )}
+      {abcValidation?.valid && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-950/40">
+          <p className="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Vista previa real</p>
+          <SheetMusicViewer abcNotation={abcValue} responsive={false} />
+        </div>
+      )}
+    </div>
+  )}
 
           {/* 4. MEDIA EMBED BLOCK */}
           {block.type === 'media_embed' && (

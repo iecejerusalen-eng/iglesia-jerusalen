@@ -12,6 +12,7 @@ interface SongsListProps {
   hasMore: boolean;
   onShowMore: () => void;
   onSelectSong: (song: Song) => void;
+  onRetry: () => void;
 }
 
 const SongSkeleton = () => (
@@ -22,7 +23,7 @@ const SongSkeleton = () => (
   </div>
 );
 
-export const SongsList = ({ loading, error, songs, totalResults, viewMode, hasMore, onShowMore, onSelectSong }: SongsListProps) => {
+export const SongsList = ({ loading, error, songs, totalResults, viewMode, hasMore, onShowMore, onSelectSong, onRetry }: SongsListProps) => {
   if (loading) {
     return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Cargando alabanzas">{Array.from({ length: 6 }, (_, index) => <SongSkeleton key={index} />)}</div>;
   }
@@ -31,7 +32,10 @@ export const SongsList = ({ loading, error, songs, totalResults, viewMode, hasMo
     return (
       <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-6 py-12 text-center dark:border-red-900/50 dark:bg-red-950/20">
         <h2 className="font-serif text-xl font-bold text-red-900 dark:text-red-200">No pudimos cargar el cancionero</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-red-700 dark:text-red-300">Comprueba tu conexión e intenta actualizar la página.</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-red-700 dark:text-red-300">Comprueba tu conexión e intenta cargar el cancionero otra vez.</p>
+        <button type="button" onClick={onRetry} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-500/20">
+          <span aria-hidden="true">↻</span> Reintentar
+        </button>
       </div>
     );
   }
