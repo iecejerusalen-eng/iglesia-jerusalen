@@ -204,6 +204,7 @@ function TeacherSchoolDashboardContent({ school, onChangeSchool }: TeacherSchool
                 role="teacher"
                 userId={user?.id}
                 courseId={selectedCourseId || undefined}
+                periodId={selectedPeriodId || undefined}
                 editable={true}
               />
             )}

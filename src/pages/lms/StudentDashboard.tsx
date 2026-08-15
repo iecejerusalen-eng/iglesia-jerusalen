@@ -338,15 +338,20 @@ function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchool
       // Get attendance
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('lms_attendance')
-        .select('status, lms_class_sessions!inner(lms_courses!inner(school_id))')
+        .select('status, lms_class_sessions!inner(lms_courses!inner(school_id, period_id))')
         .eq('student_id', user.id)
         .eq('lms_class_sessions.lms_courses.school_id', school.id);
       if (attendanceError) throw attendanceError;
         
       let attendancePercentage = 100;
-      if (attendanceData && attendanceData.length > 0) {
-        const presentCount = attendanceData.filter(a => a.status === 'present' || a.status === 'zoom').length;
-        attendancePercentage = Math.round((presentCount / attendanceData.length) * 100);
+      const scopedAttendance = (attendanceData ?? []).filter((entry) => {
+        const session = Array.isArray(entry.lms_class_sessions) ? entry.lms_class_sessions[0] : entry.lms_class_sessions;
+        const course = session && (Array.isArray(session.lms_courses) ? session.lms_courses[0] : session.lms_courses);
+        return !selectedPeriodId || !course?.period_id || course.period_id === selectedPeriodId;
+      });
+      if (scopedAttendance.length > 0) {
+        const presentCount = scopedAttendance.filter(a => a.status === 'present' || a.status === 'zoom').length;
+        attendancePercentage = Math.round((presentCount / scopedAttendance.length) * 100);
       }
 
       setStats({
@@ -537,7 +542,7 @@ function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchool
                     {/* Content side */}
                     <div className="flex flex-grow flex-col p-5 sm:p-6">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold font-serif text-xl line-clamp-2 text-slate-900 dark:text-white pr-2">
+                        <h3 className="font-bold font-sans text-xl line-clamp-2 text-slate-900 dark:text-white pr-2">
                           {enr.lms_courses?.title || 'Curso Desconocido'}
                         </h3>
                         <div className="bg-gray-100 dark:bg-white/5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-gray-300 shrink-0 whitespace-nowrap border border-gray-200 dark:border-white/5">
@@ -559,7 +564,7 @@ function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchool
                           </span>
                           
                           <Link 
-                            to={`/lms/curso/${enr.course_id}`}
+                            to={`/lms/curso/${enr.course_id}${selectedPeriodId ? `?period=${encodeURIComponent(selectedPeriodId)}` : ''}`}
                             className="flex min-h-10 items-center gap-1 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-600 hover:text-white dark:bg-indigo-500/10 dark:text-indigo-300"
                           >
                             {enr.progressPercentage === 0 ? 'Comenzar' : enr.progressPercentage === 100 ? 'Repasar' : 'Continuar'}
@@ -577,17 +582,17 @@ function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchool
 
         {/* CALENDAR TAB */}
         {activeTab === 'calendar' && (
-          <StudentCalendar />
+          <StudentCalendar schoolId={school.id} periodId={selectedPeriodId} userId={user?.id} />
         )}
 
         {/* ATTENDANCE TAB */}
         {activeTab === 'attendance' && (
-          <MyAttendanceWidget schoolId={school.id} />
+          <MyAttendanceWidget schoolId={school.id} periodId={selectedPeriodId} />
         )}
 
         {/* GRADES TAB */}
         {activeTab === 'grades' && (
-          <StudentGrades schoolId={school.id} />
+          <StudentGrades schoolId={school.id} periodId={selectedPeriodId} />
         )}
 
         {/* STATS TAB */}

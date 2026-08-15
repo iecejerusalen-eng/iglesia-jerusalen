@@ -9,6 +9,7 @@ type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused' | 'zoom';
 
 interface AttendanceCourse {
   title: string;
+  period_id?: string | null;
 }
 
 interface AttendanceSession {
@@ -39,6 +40,7 @@ interface AttendanceRecord {
 
 interface MyAttendanceWidgetProps {
   schoolId: string;
+  periodId?: string | null;
 }
 
 const EMPTY_SUMMARY = { present: 0, absent: 0, late: 0, excused: 0, zoom: 0, total: 0 };
@@ -47,7 +49,7 @@ function firstOf<T>(value: T | T[] | null | undefined): T | undefined {
   return Array.isArray(value) ? value[0] : value ?? undefined;
 }
 
-export function MyAttendanceWidget({ schoolId }: MyAttendanceWidgetProps) {
+export function MyAttendanceWidget({ schoolId, periodId }: MyAttendanceWidgetProps) {
   const { user } = useAuthStore();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export function MyAttendanceWidget({ schoolId }: MyAttendanceWidgetProps) {
               session_date,
               location,
               sync_link,
-              lms_courses!inner (title, school_id)
+              lms_courses!inner (title, school_id, period_id)
             )
           `)
           .eq('student_id', user.id)
@@ -88,6 +90,7 @@ export function MyAttendanceWidget({ schoolId }: MyAttendanceWidgetProps) {
           const session = firstOf(row.lms_class_sessions);
           if (!session) return [];
           const course = firstOf(session.lms_courses);
+          if (periodId && course?.period_id && course.period_id !== periodId) return [];
           return [{
             id: row.id,
             date: session.session_date,
@@ -120,7 +123,7 @@ export function MyAttendanceWidget({ schoolId }: MyAttendanceWidgetProps) {
 
     void fetchAttendance();
     return () => { cancelled = true; };
-  }, [schoolId, user]);
+  }, [periodId, schoolId, user]);
 
   if (loading) {
     return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gold" size={40} /></div>;

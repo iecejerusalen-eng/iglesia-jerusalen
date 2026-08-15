@@ -9,6 +9,7 @@ interface UniversityCalendarProps {
   userId?: string;
   courseId?: string;
   schoolId?: string;
+  periodId?: string | null;
   editable?: boolean;
 }
 
@@ -43,7 +44,7 @@ interface ClassSessionItem {
   location?: string;
 }
 
-export function UniversityCalendar({ role = 'student', userId, courseId, schoolId = 'all', editable = false }: UniversityCalendarProps) {
+export function UniversityCalendar({ role = 'student', userId, courseId, schoolId = 'all', periodId, editable = false }: UniversityCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
   const [schedules, setSchedules] = useState<LMSTeacherSchedule[]>([]);
@@ -84,7 +85,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, schoolI
       const coursesRes = await coursesQuery;
       if (coursesRes.error) throw coursesRes.error;
 
-      const visibleCourses = (coursesRes.data ?? []) as LMSCourse[];
+      const visibleCourses = ((coursesRes.data ?? []) as LMSCourse[]).filter((course) => !periodId || !course.period_id || course.period_id === periodId);
       const visibleCourseIds = visibleCourses.map(course => course.id);
       setCourses(visibleCourses);
 
@@ -132,7 +133,7 @@ export function UniversityCalendar({ role = 'student', userId, courseId, schoolI
     } finally {
       setLoading(false);
     }
-  }, [courseId, formCourseId, schoolId, userId]);
+  }, [courseId, formCourseId, periodId, schoolId, userId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchData(), 0);

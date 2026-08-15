@@ -26,9 +26,10 @@ interface QuizResult {
 
 interface StudentGradesProps {
   schoolId: string;
+  periodId?: string | null;
 }
 
-export function StudentGrades({ schoolId }: StudentGradesProps) {
+export function StudentGrades({ schoolId, periodId }: StudentGradesProps) {
   const { user } = useAuthStore();
   const [grades, setGrades] = useState<GradeRecord[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
@@ -40,16 +41,21 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
       try {
         const { data: enrollments, error: enrollError } = await supabase
           .from('lms_enrollments')
-          .select('id, course_id, lms_courses!inner(title, school_id)')
+          .select('id, course_id, lms_courses!inner(title, school_id, period_id)')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .eq('lms_courses.school_id', schoolId);
 
         if (enrollError) throw enrollError;
         
-        const enrollmentIds = enrollments?.map(e => e.id) || [];
+        const scopedEnrollments = (enrollments ?? []).filter((enrollment) => {
+          const course = Array.isArray(enrollment.lms_courses) ? enrollment.lms_courses[0] : enrollment.lms_courses;
+          return !periodId || !course?.period_id || course.period_id === periodId;
+        });
+        const enrollmentIds = scopedEnrollments.map(e => e.id);
         if (enrollmentIds.length === 0) {
           setGrades([]);
+          setQuizResults([]);
           setIsLoading(false);
           return;
         }
@@ -72,7 +78,7 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
 
         // Map grades to course titles
         const enrichedGrades: GradeRecord[] = (gradesData || []).map(grade => {
-          const enrollment = enrollments.find(e => e.id === grade.enrollment_id);
+          const enrollment = scopedEnrollments.find(e => e.id === grade.enrollment_id);
           // Handle Supabase potential array or object return for joined tables
           let title = 'Curso Desconocido';
           if (enrollment?.lms_courses) {
@@ -98,7 +104,7 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
         setGrades(enrichedGrades);
 
         // Fetch quiz results
-        const courseIds = enrollments.map((enrollment) => enrollment.course_id);
+        const courseIds = scopedEnrollments.map((enrollment) => enrollment.course_id);
         const { data: lessons, error: lessonsError } = await supabase
           .from('lms_lessons')
           .select('id, lms_modules!inner(lms_subjects!inner(course_id))')
@@ -127,7 +133,7 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
       }
     }
     fetchGrades();
-  }, [schoolId, user]);
+  }, [periodId, schoolId, user]);
 
   if (isLoading) {
     return (
@@ -140,7 +146,7 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
   return (
     <AnimeFadeUp className="space-y-6">
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
-        <h2 className="text-2xl font-bold font-serif mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
+        <h2 className="text-2xl font-bold font-sans mb-6 flex items-center gap-3 text-slate-800 dark:text-white">
           <Award className="text-gold" size={28} />
           Historial de Calificaciones
         </h2>
@@ -194,7 +200,7 @@ export function StudentGrades({ schoolId }: StudentGradesProps) {
         )}
 
         {/* Quiz Results Section */}
-        <h3 className="text-xl font-bold font-serif mb-4 mt-8 flex items-center gap-2 text-slate-800 dark:text-white">
+        <h3 className="text-xl font-bold font-sans mb-4 mt-8 flex items-center gap-2 text-slate-800 dark:text-white">
           <FileText className="text-gold" size={24} />
           Evaluaciones y Cuestionarios
         </h3>

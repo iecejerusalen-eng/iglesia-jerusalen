@@ -1,5 +1,11 @@
 import { UniversityCalendar } from '../../lms/components/UniversityCalendar';
 
-export function StudentCalendar() {
-  return <UniversityCalendar role="student" />;
+interface StudentCalendarProps {
+  schoolId: string;
+  periodId?: string | null;
+  userId?: string;
+}
+
+export function StudentCalendar({ schoolId, periodId, userId }: StudentCalendarProps) {
+  return <UniversityCalendar role="student" schoolId={schoolId} periodId={periodId} userId={userId} />;
 }

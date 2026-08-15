@@ -75,7 +75,7 @@ export function SchoolPortalGate({ mode, children }: SchoolPortalGateProps) {
       <div className="flex min-h-[75vh] items-center justify-center bg-slate-950 px-4 pt-24 text-white">
         <div className="w-full max-w-xl rounded-[2rem] border border-rose-400/20 bg-rose-500/10 p-8 text-center backdrop-blur-xl">
           <LockKeyhole className="mx-auto mb-4 text-rose-300" size={36} />
-          <h1 className="font-serif text-2xl font-bold">No pudimos verificar tu acceso</h1>
+          <h1 className="font-sans text-2xl font-bold">No pudimos verificar tu acceso</h1>
           <p className="mt-2 text-sm text-rose-100/80">{error instanceof Error ? error.message : 'Ocurrió un error al consultar las escuelas.'}</p>
           <button type="button" onClick={() => void refetch()} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-slate-950">
             <RefreshCw size={16} /> Intentar nuevamente
@@ -98,7 +98,7 @@ export function SchoolPortalGate({ mode, children }: SchoolPortalGateProps) {
             {mode === 'teacher' ? <BookOpenCheck size={26} /> : <GraduationCap size={27} />}
           </span>
           <p className="mt-5 text-xs font-black uppercase tracking-[0.28em] text-amber-300">Aula Virtual Jerusalén</p>
-          <h1 className="mt-3 font-serif text-4xl font-black tracking-tight sm:text-5xl">
+          <h1 className="mt-3 font-sans text-4xl font-black tracking-tight sm:text-5xl">
             {mode === 'teacher' ? '¿En qué escuela enseñarás hoy?' : 'Elige tu escuela para continuar'}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
@@ -138,7 +138,7 @@ export function SchoolPortalGate({ mode, children }: SchoolPortalGateProps) {
                     </div>
                     <div className="mt-auto pt-10">
                       <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{schoolModelLabel(school.school_type)}</p>
-                      <h2 className="mt-2 font-serif text-2xl font-black">{school.name}</h2>
+                      <h2 className="mt-2 font-sans text-2xl font-black">{school.name}</h2>
                       <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-300">{school.description || 'Formación y acompañamiento para nuestra comunidad.'}</p>
                     </div>
                   </div>

@@ -12,6 +12,7 @@ import {
   Loader2,
   LockKeyhole,
   RefreshCw,
+  Search,
   School,
   ShieldCheck,
   UsersRound,
@@ -39,17 +40,31 @@ export function PublicSchoolCatalog() {
   const navigate = useNavigate();
   const { schools, isLoading, error, refetch, requestEnrollment, isAuthenticated } = usePublicSchoolCatalog();
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [courseSearch, setCourseSearch] = useState('');
+  const [levelFilter, setLevelFilter] = useState('all');
   const [requestingCourseId, setRequestingCourseId] = useState<string | null>(null);
 
   const selectedSchool = schools.find(school => school.id === selectedSchoolId) ?? schools[0] ?? null;
+  const availableLevels = useMemo(() => [...new Set((selectedSchool?.courses ?? []).map(course => course.levelName).filter(Boolean))].sort(), [selectedSchool]);
   const groupedCourses = useMemo(() => {
     const groups = new Map<string, PublicSchoolCourse[]>();
-    selectedSchool?.courses.forEach(course => {
+    const query = courseSearch.trim().toLowerCase();
+    selectedSchool?.courses.filter((course) => {
+      const matchesQuery = !query || `${course.title} ${course.description ?? ''}`.toLowerCase().includes(query);
+      const matchesLevel = levelFilter === 'all' || course.levelName === levelFilter;
+      return matchesQuery && matchesLevel;
+    }).forEach(course => {
       const group = course.levelName || 'Formación general';
       groups.set(group, [...(groups.get(group) ?? []), course]);
     });
     return [...groups.entries()];
-  }, [selectedSchool]);
+  }, [courseSearch, levelFilter, selectedSchool]);
+
+  const handleSchoolChange = (schoolId: string) => {
+    setSelectedSchoolId(schoolId);
+    setCourseSearch('');
+    setLevelFilter('all');
+  };
 
   const handleCourseAction = async (course: PublicSchoolCourse) => {
     if (course.access === 'enrolled') {
@@ -80,7 +95,7 @@ export function PublicSchoolCatalog() {
         <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/75 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-700 shadow-sm backdrop-blur-xl dark:border-indigo-400/20 dark:bg-indigo-500/10 dark:text-indigo-200">
           <School size={13} /> Escuelas de formación
         </span>
-        <h2 id="lms-schools-title" className="mt-4 font-serif text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">Primero elige tu escuela</h2>
+        <h2 id="lms-schools-title" className="mt-4 font-sans text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">Primero elige tu escuela</h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
           Cada escuela reúne sus niveles y cursos. Puedes explorar el catálogo públicamente; para abrir las clases necesitas una matrícula aprobada.
         </p>
@@ -93,7 +108,7 @@ export function PublicSchoolCatalog() {
       ) : error ? (
         <div className="mx-auto mt-9 max-w-2xl rounded-[2rem] border border-rose-200 bg-rose-50/90 p-7 text-center dark:border-rose-400/20 dark:bg-rose-500/10">
           <LockKeyhole className="mx-auto text-rose-500" size={34} />
-          <h3 className="mt-4 font-serif text-xl font-bold text-rose-950 dark:text-rose-100">No pudimos cargar las escuelas</h3>
+          <h3 className="mt-4 font-sans text-xl font-bold text-rose-950 dark:text-rose-100">No pudimos cargar las escuelas</h3>
           <p className="mt-2 text-sm text-rose-700 dark:text-rose-200/80">{error instanceof Error ? error.message : 'Ocurrió un error al consultar el catálogo académico.'}</p>
           <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-600 px-5 text-sm font-bold text-white transition hover:bg-rose-700"><RefreshCw size={16} /> Reintentar</button>
         </div>
@@ -117,7 +132,7 @@ export function PublicSchoolCatalog() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedSchoolId(school.id)}
+                  onClick={() => handleSchoolChange(school.id)}
                   aria-pressed={isSelected}
                   className={`group relative min-h-64 overflow-hidden rounded-[2rem] border p-6 text-left shadow-sm transition duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 sm:p-7 ${isSelected ? 'border-indigo-300 bg-slate-950 text-white shadow-2xl shadow-indigo-950/20 dark:border-indigo-400/40' : 'border-white/80 bg-white/75 text-slate-900 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.055] dark:text-white'}`}
                 >
@@ -129,7 +144,7 @@ export function PublicSchoolCatalog() {
                       <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${isSelected ? 'bg-white/10 text-indigo-100' : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-200'}`}>{schoolModelLabel(school.schoolType)}</span>
                     </div>
                     <div className="mt-auto pt-12">
-                      <h3 className="font-serif text-2xl font-black sm:text-3xl">{school.name}</h3>
+                      <h3 className="font-sans text-2xl font-black sm:text-3xl">{school.name}</h3>
                       <p className={`mt-2 line-clamp-2 text-sm leading-6 ${isSelected ? 'text-slate-300' : 'text-slate-500 dark:text-slate-300'}`}>{school.description || 'Formación bíblica y acompañamiento para cada etapa de vida.'}</p>
                       <div className={`mt-5 flex items-center gap-4 border-t pt-4 text-xs font-bold ${isSelected ? 'border-white/10 text-slate-300' : 'border-slate-200/70 text-slate-500 dark:border-white/10 dark:text-slate-300'}`}>
                         <span className="flex items-center gap-1.5"><BookMarked size={14} /> {school.courses.length} {school.courses.length === 1 ? 'curso' : 'cursos'}</span>
@@ -149,7 +164,7 @@ export function PublicSchoolCatalog() {
                 <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">Cursos dentro de la escuela</p>
-                    <h3 className="mt-2 font-serif text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">{selectedSchool.name}</h3>
+                    <h3 className="mt-2 font-sans text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">{selectedSchool.name}</h3>
                   </div>
                   <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-xs font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
                     <CheckCircle2 size={16} className="text-emerald-500" /> Acceso únicamente con matrícula activa
@@ -157,9 +172,25 @@ export function PublicSchoolCatalog() {
                 </div>
               </header>
 
+              <div className="mx-4 mt-5 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/[0.04] sm:mx-7 sm:flex-row">
+                <label className="relative flex-1">
+                  <span className="sr-only">Buscar cursos</span>
+                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input value={courseSearch} onChange={(event) => setCourseSearch(event.target.value)} placeholder="Buscar curso por nombre..." className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-white/10 dark:bg-slate-950/50 dark:text-white" />
+                </label>
+                <label className="sm:w-56">
+                  <span className="sr-only">Filtrar por nivel</span>
+                  <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-200">
+                    <option value="all">Todos los niveles</option>
+                    {availableLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+                  </select>
+                </label>
+              </div>
+
               {groupedCourses.length === 0 ? (
                 <div className="p-10 text-center sm:p-14">
                   <GraduationCap className="mx-auto text-slate-300 dark:text-slate-600" size={40} />
+                  {(courseSearch || levelFilter !== 'all') && <p className="mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-300" role="status">No hay resultados para los filtros actuales. Prueba otra búsqueda o nivel.</p>}
                   <h4 className="mt-4 font-bold text-slate-800 dark:text-white">Esta escuela todavía no tiene cursos publicados</h4>
                   <p className="mt-2 text-sm text-slate-500">Los cursos aparecerán aquí cuando estén vinculados y publicados desde el panel académico.</p>
                 </div>
@@ -183,7 +214,7 @@ export function PublicSchoolCatalog() {
                                 {course.access === 'enrolled' ? <span className="absolute left-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white">Inscrito</span> : null}
                               </div>
                               <div className="flex min-w-0 flex-col p-5">
-                                <h5 className="line-clamp-2 font-serif text-xl font-bold text-slate-950 dark:text-white">{course.title}</h5>
+                                <h5 className="line-clamp-2 font-sans text-xl font-bold text-slate-950 dark:text-white">{course.title}</h5>
                                 <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{course.description || 'Contenido organizado para avanzar paso a paso con acompañamiento docente.'}</p>
                                 <div className="mt-4 flex flex-wrap gap-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                                   <span className="flex items-center gap-1.5"><CalendarDays size={13} /> {course.duration || course.schedule || 'Horario por confirmar'}</span>

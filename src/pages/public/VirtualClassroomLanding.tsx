@@ -139,7 +139,7 @@ const VirtualClassroomLanding = () => {
               <Sparkles size={13} />
               {heroContent.subtitle}
             </span>
-            <h1 className="max-w-3xl font-serif text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-7xl">
+            <h1 className="max-w-3xl font-sans text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-7xl">
               {heroContent.title}
             </h1>
             <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
@@ -173,7 +173,7 @@ const VirtualClassroomLanding = () => {
                   <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">Formación activa</span>
                 </div>
                 <p className="mt-12 text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">Tu aprendizaje, organizado</p>
-                <h2 className="mt-2 max-w-md font-serif text-2xl font-bold sm:text-3xl">Todo lo que necesitas para avanzar, en un solo lugar.</h2>
+                <h2 className="mt-2 max-w-md font-sans text-2xl font-bold sm:text-3xl">Todo lo que necesitas para avanzar, en un solo lugar.</h2>
                 <div className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
                     { value: '24/7', label: 'Acceso', icon: Clock3 },
@@ -231,7 +231,7 @@ const VirtualClassroomLanding = () => {
             ].map((portal) => (
               <article key={portal.title} className="group rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-slate-900 sm:p-7">
                 <span className={`flex size-12 items-center justify-center rounded-2xl ${portal.accent === 'indigo' ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300'}`}><portal.icon size={22} /></span>
-                <h2 className="mt-6 font-serif text-2xl font-bold">{portal.title}</h2>
+                <h2 className="mt-6 font-sans text-2xl font-bold">{portal.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{portal.text}</p>
                 <Link to={portal.href} className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-300">{portal.action}<ArrowRight size={16} className="transition group-hover:translate-x-1" /></Link>
               </article>
@@ -243,7 +243,7 @@ const VirtualClassroomLanding = () => {
           <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
             <div>
               <span className="flex size-12 items-center justify-center rounded-2xl bg-gold/15 text-gold"><ShieldCheck size={22} /></span>
-              <h2 className="mt-5 font-serif text-3xl font-bold">Una experiencia pensada para avanzar</h2>
+              <h2 className="mt-5 font-sans text-3xl font-bold">Una experiencia pensada para avanzar</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-300">Menos distracciones, más claridad y acompañamiento en cada etapa de tu formación.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
