@@ -1,22 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { getDb } from '../../../config/localDb';
-import type { Schedule, Sermon, Event as DbEvent } from '../../../types';
+import type { Member, Schedule, Sermon, Event as DbEvent } from '../../../types';
 import type { BirthdayMember, PageSection } from '../types';
 import { DEFAULT_SECTIONS, FALLBACK_SCHEDULES, MOCK_SERMONS } from '../constants';
 import { isPublicBirthdayMember, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
+import { fetchPublicChurchAnnouncements } from '../../announcements/service';
+import type { ChurchAnnouncement } from '../../announcements/types';
+
+type HomeMemberSnapshot = Pick<Member, 'birth_date' | 'baptism_date'> & { deleted_at?: string | null };
 
 export const useHomeData = () => {
   const statsQuery = useQuery({
     queryKey: ['homeStats'],
     queryFn: async () => {
       const db = await getDb();
-      let allMembers = await db.getAll('local_members');
-      allMembers = allMembers.filter((m: any) => !m.deleted_at);
+      let allMembers = (await db.getAll('local_members')) as HomeMemberSnapshot[];
+      allMembers = allMembers.filter((member) => !member.deleted_at);
 
       if (allMembers.length === 0) {
         const { data, error } = await supabase.from('members').select('id, birth_date, baptism_date').is('deleted_at', null);
-        if (!error && data) allMembers = data;
+        if (!error && data) allMembers = data as HomeMemberSnapshot[];
       }
 
       const { count: cellsCount } = await supabase.from('cells').select('id', { count: 'exact', head: true });
@@ -27,10 +31,10 @@ export const useHomeData = () => {
 
       const currentYear = new Date().getFullYear();
 
-      allMembers.forEach((m: any) => {
-        if (m.baptism_date) baptizedCount++;
-        if (m.birth_date) {
-          const bYear = Number(m.birth_date.split('-')[0]);
+      allMembers.forEach((member) => {
+        if (member.baptism_date) baptizedCount++;
+        if (member.birth_date) {
+          const bYear = Number(member.birth_date.split('-')[0]);
           if (!isNaN(bYear)) {
             const age = currentYear - bYear;
             if (age <= 12) kidsCount++;
@@ -74,8 +78,8 @@ export const useHomeData = () => {
       let localData: Schedule[] = [];
       try {
         const db = await getDb();
-        const allSchedules = await db.getAll('local_schedules');
-        allSchedules.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+        const allSchedules = (await db.getAll('local_schedules')) as Schedule[];
+        allSchedules.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
         localData = allSchedules;
       } catch (dbErr) {
         console.warn('Local database query failed, trying Supabase:', dbErr);
@@ -135,6 +139,19 @@ export const useHomeData = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const announcementsQuery = useQuery<ChurchAnnouncement[]>({
+    queryKey: ['homeChurchAnnouncements'],
+    queryFn: async () => {
+      try {
+        return await fetchPublicChurchAnnouncements(3);
+      } catch (error) {
+        console.error('No se pudieron cargar los anuncios de la iglesia:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const birthdaysQuery = useQuery({
     queryKey: ['homeBirthdays'],
     queryFn: async (): Promise<BirthdayMember[]> => {
@@ -168,6 +185,10 @@ export const useHomeData = () => {
     
     events: eventsQuery.data || [],
     loadingEvents: eventsQuery.isLoading,
+
+    announcements: announcementsQuery.data || [],
+    loadingAnnouncements: announcementsQuery.isLoading,
+    announcementsError: announcementsQuery.error,
     
     birthdayMembers: birthdaysQuery.data || [],
     isBirthdaysLoading: birthdaysQuery.isLoading,

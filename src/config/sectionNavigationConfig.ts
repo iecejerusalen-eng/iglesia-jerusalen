@@ -26,7 +26,8 @@ import {
   Smile,
   ShieldCheck,
   CheckCircle2,
-  Tv
+  Tv,
+  Megaphone
 } from 'lucide-react';
 
 export interface SectionItem {
@@ -58,6 +59,7 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
       { id: 'home_hero', label: 'Inicio', icon: Home },
       { id: 'home_welcome', label: 'Bienvenida', icon: Info },
       { id: 'home_schedules', label: 'Horarios', icon: Calendar },
+      { id: 'home_announcements', label: 'Anuncios', icon: Megaphone },
       { id: 'home_events', label: 'Eventos', icon: Users },
       { id: 'home_sermons', label: 'Prédicas', icon: BookOpen },
       { id: 'home_birthdays', label: 'Cumpleaños', icon: Gift },
@@ -111,6 +113,14 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
       { id: 'events_hero', label: 'Eventos', icon: Calendar },
       { id: 'events_upcoming', label: 'Próximos Eventos', icon: Sparkles },
       { id: 'events_calendar', label: 'Calendario', icon: Clock }
+    ]
+  },
+  {
+    pathPattern: '^/anuncios$',
+    title: 'Anuncios de la Iglesia',
+    sections: [
+      { id: 'announcements_hero', label: 'Anuncios', icon: Megaphone },
+      { id: 'announcements_list', label: 'Comunicados', icon: Sparkles }
     ]
   },
   {

@@ -25,6 +25,7 @@ const Sermons = lazyWithRetry(() => import('../pages/public/Sermons'));
 const Expositores = lazyWithRetry(() => import('../pages/public/Expositores'));
 const Contact = lazyWithRetry(() => import('../pages/public/Contact'));
 const Events = lazyWithRetry(() => import('../pages/public/Events'));
+const ChurchAnnouncementsPage = lazyWithRetry(() => import('../pages/public/ChurchAnnouncementsPage'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
 const ProgramsOverview = lazyWithRetry(() => import('../pages/public/ProgramsOverview'));
@@ -85,6 +86,7 @@ const SettingsManager = lazyWithRetry(() => import('../pages/admin/SettingsManag
 const AdminSettings = lazyWithRetry(() => import('../pages/admin/Settings/AdminSettings'));
 const MembersManager = lazyWithRetry(() => import('../pages/admin/MembersManager'));
 const EventsManager = lazyWithRetry(() => import('../pages/admin/EventsManager'));
+const ChurchAnnouncementsManager = lazyWithRetry(() => import('../pages/admin/ChurchAnnouncementsManager'));
 const StrategicMap = lazyWithRetry(() => import('../pages/admin/StrategicMap'));
 const PageEditor = lazyWithRetry(() => import('../pages/admin/PageEditor'));
 const AnalyticsDashboard = lazyWithRetry(() => import('../pages/admin/AnalyticsDashboard'));
@@ -154,6 +156,7 @@ export default function AppRouter() {
           <Route path="/terminos" element={<Terms />} />
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eventos" element={<Events />} />
+          <Route path="/anuncios" element={<ChurchAnnouncementsPage />} />
           <Route path="/peticiones" element={<Petitions />} />
           <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
           <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
@@ -272,6 +275,7 @@ export default function AppRouter() {
           <Route element={<AdminLayout />}>
             <Route path="/admin/publicaciones" element={<EditorialManager />} />
             <Route path="/admin/publicaciones/:id" element={<EditorialWorkspace />} />
+            <Route path="/admin/anuncios" element={<ChurchAnnouncementsManager />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute module="open_resources" />}>

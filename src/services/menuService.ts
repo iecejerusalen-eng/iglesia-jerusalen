@@ -19,6 +19,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { id: 'default-3-1', label: 'Ministerios', url: '/ministerios', order_index: 10, parent_id: 'default-3', is_visible: true, icon: 'Heart' },
   { id: 'default-3-1-b', label: 'Publicaciones 📰', url: '/publicaciones', order_index: 15, parent_id: 'default-3', is_visible: true, icon: 'FileText' },
   { id: 'default-3-2', label: 'Eventos (Calendario)', url: '/eventos', order_index: 20, parent_id: 'default-3', is_visible: true, icon: 'Calendar' },
+  { id: 'default-3-2-announcements', label: 'Anuncios importantes', url: '/anuncios', order_index: 25, parent_id: 'default-3', is_visible: true, icon: 'Megaphone' },
   { id: 'default-3-3', label: 'Peticiones', url: '/peticiones', order_index: 30, parent_id: 'default-3', is_visible: true, icon: 'MessageSquare' },
   { id: 'default-3-4', label: 'Cumpleaños 🎂', url: '/cumpleanos', order_index: 40, parent_id: 'default-3', is_visible: true, icon: 'Cake' },
   { id: 'default-3-5', label: 'Misiones 🌍', url: '/misiones', order_index: 50, parent_id: 'default-3', is_visible: true, icon: 'Globe' },

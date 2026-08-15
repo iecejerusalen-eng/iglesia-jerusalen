@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { supabase } from "../../config/supabase";
@@ -42,6 +43,8 @@ interface NotificationLog {
   category?:
     "general" | "cumpleanos" | "aniversario" | "reunion" | "evento" | null;
   target_ministry_id?: string | null;
+  announcement_id?: string | null;
+  announcement_expires_at?: string | null;
 }
 
 const EMOJIS = ["😊", "😂", "❤️", "👍", "🙏", "🙌", "🎉", "🌟", "⚠️"];
@@ -148,6 +151,7 @@ export default function NotificationTray() {
         .select("*")
         .eq("type", "push")
         .eq("status", "enviado")
+        .or(`announcement_expires_at.is.null,announcement_expires_at.gt.${new Date().toISOString()}`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -701,6 +705,7 @@ export default function NotificationTray() {
                           })}
                         </span>
 
+                        {ann.announcement_id && <Link to={`/anuncios#${ann.announcement_id}`} onClick={() => setIsOpen(false)} className="font-bold text-blue-700 hover:underline dark:text-amber-300">Ver anuncio</Link>}
                         <span className="font-semibold text-slate-450 dark:text-slate-500">
                           Iglesia Jerusalén
                         </span>

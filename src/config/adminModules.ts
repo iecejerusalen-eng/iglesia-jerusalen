@@ -13,6 +13,7 @@ import {
   FileText,
   BarChart3,
   Bell,
+  Megaphone,
   Music,
   GraduationCap,
   Image as ImageIcon,
@@ -322,6 +323,17 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/eventos',
     icon: Calendar,
     group: 'contenido'
+  },
+  {
+    id: 'announcements',
+    label: 'Anuncios de la Iglesia',
+    name: 'Anuncios importantes',
+    path: '/admin/anuncios',
+    icon: Megaphone,
+    group: 'contenido',
+    permission: 'editorial',
+    showInPermissions: false,
+    keywords: ['anuncios', 'comunicados', 'iglesia', 'eventos']
   },
   {
     id: 'schedules',

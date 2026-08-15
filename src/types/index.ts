@@ -469,6 +469,8 @@ export interface NotificationLog {
   scheduled_at?: string | null;
   sender_id?: string | null;
   target_ministry_id?: string | null;
+  announcement_id?: string | null;
+  announcement_expires_at?: string | null;
 }
 
 export interface CloudinaryAsset {

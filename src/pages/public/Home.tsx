@@ -7,6 +7,7 @@ import { WelcomeSection } from '../../features/home/components/WelcomeSection';
 import { DailyVerseSection } from '../../features/home/components/DailyVerseSection';
 import { SchedulesSection } from '../../features/home/components/SchedulesSection';
 import { EventsSection } from '../../features/home/components/EventsSection';
+import { ChurchAnnouncementsSection } from '../../features/announcements/components/ChurchAnnouncementsSection';
 import { SermonsSection } from '../../features/home/components/SermonsSection';
 import { BirthdaysSection } from '../../features/home/components/BirthdaysSection';
 import { GenericSection } from '../../features/home/components/GenericSection';
@@ -28,7 +29,10 @@ const Home = () => {
     birthdayMembers,
     loadingSchedules,
     loadingSermons,
-    loadingEvents
+    loadingEvents,
+    announcements,
+    loadingAnnouncements,
+    announcementsError
   } = useHomeData();
 
   useEffect(() => {
@@ -95,6 +99,7 @@ const Home = () => {
           case 'system_events':
             return (
               <div key={id} id={id}>
+                <div id="home_announcements">{announcementsError ? <p role="status" className="mx-auto mb-8 max-w-6xl px-4 text-sm text-slate-500 dark:text-slate-400">Los anuncios no están disponibles temporalmente.</p> : <ChurchAnnouncementsSection announcements={announcements} loading={loadingAnnouncements} />}</div>
                 <EventsSection 
                   sectionData={section} 
                   events={events} 
