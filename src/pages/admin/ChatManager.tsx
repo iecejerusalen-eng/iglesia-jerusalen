@@ -464,10 +464,26 @@ export default function ChatManager() {
           }`}
         >
           {/* Header Search & Tabs */}
-          <div className="p-4 border-b border-gray-150 dark:border-white/10 space-y-3">
+          <div className="space-y-3 border-b border-slate-200/70 p-4 dark:border-white/10">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">Bandeja privada</p>
+                <h2 className="mt-1 text-base font-bold text-slate-900 dark:text-white">Conversaciones</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => { void refetchChats(); void refetchContacts(); }}
+                className="grid size-9 place-items-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-white/10 dark:hover:bg-blue-400/10 dark:hover:text-blue-200"
+                aria-label="Actualizar conversaciones y contactos"
+                title="Actualizar"
+              >
+                <RefreshCw size={15} />
+              </button>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
               <input
+                aria-label={activeTab === 'chats' ? 'Buscar conversaciones' : 'Buscar contactos'}
                 type="text"
                 placeholder={activeTab === 'chats' ? 'Buscar chats...' : 'Buscar contactos...'}
                 value={searchQuery}
@@ -484,7 +500,7 @@ export default function ChatManager() {
               )}
             </div>
 
-            <div className="flex bg-gray-55 dark:bg-slate-950/60 p-1 rounded-xl gap-1">
+            <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-950/60">
               <button
                 onClick={() => {
                   setActiveTab('chats');
@@ -496,8 +512,9 @@ export default function ChatManager() {
                     : 'text-gray-550 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                <MessageSquare size={13} />
-                Chats
+                  <MessageSquare size={13} />
+                  <span>Chats</span>
+                  <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-black text-slate-600 dark:bg-white/10 dark:text-slate-300">{chats.length}</span>
               </button>
               <button
                 onClick={() => {
@@ -510,8 +527,9 @@ export default function ChatManager() {
                     : 'text-gray-550 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                <Users size={13} />
-                Contactos
+                  <Users size={13} />
+                  <span>Contactos</span>
+                  <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-black text-slate-600 dark:bg-white/10 dark:text-slate-300">{contacts.length}</span>
               </button>
             </div>
           </div>
@@ -533,7 +551,7 @@ export default function ChatManager() {
                   <p className="text-xxs text-gray-400">Ve a Contactos para iniciar una conversación.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50 dark:divide-white/5">
+                <div className="space-y-2 p-3">
                   {filteredChats.map((chat) => {
                     const otherParticipant = chat.participants?.find((p) => p.id !== user?.id);
                     const chatName = chat.is_group
@@ -549,15 +567,20 @@ export default function ChatManager() {
                     const isActive = activeChat?.id === chat.id;
 
                     return (
-                      <button
+                      <div
                         key={chat.id}
-                        onClick={() => setActiveChat(chat)}
-                        className={`w-full text-left p-3.5 flex items-start gap-3 transition cursor-pointer border-l-3 group/chat relative ${
+                        className={`group/chat relative flex w-full items-start gap-3 rounded-2xl border p-3.5 transition ${
                           isActive
-                            ? 'bg-primary/5 dark:bg-primary/10 border-primary'
-                            : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-850/50'
+                            ? 'border-primary/30 bg-primary/5 shadow-sm dark:border-blue-400/25 dark:bg-blue-400/[0.08]'
+                            : 'border-slate-200/80 bg-white/60 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]'
                         }`}
                       >
+                        <button
+                          type="button"
+                          onClick={() => setActiveChat(chat)}
+                          aria-label={`Abrir conversación con ${chatName}`}
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+                        >
                         {/* Profile Image / Initials */}
                         <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {otherParticipant?.photo_url ? (
@@ -581,32 +604,6 @@ export default function ChatManager() {
                                   {new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               )}
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const confirmed = await confirm({
-                                     title: 'Salir de la conversación',
-                                     message: `La conversación con "${chatName}" dejará de aparecer para ti. Los mensajes no se borrarán para la otra persona.`,
-                                     confirmText: 'Salir',
-                                     cancelText: 'Cancelar',
-                                     variant: 'danger',
-                                   });
-                                   if (confirmed) {
-                                     try {
-                                       await leaveChat.mutateAsync(chat.id);
-                                       if (activeChat?.id === chat.id) setActiveChat(null);
-                                       toast.success('Saliste de la conversación.');
-                                     } catch (err) {
-                                       toast.error('No se pudo salir de la conversación: ' + (err instanceof Error ? err.message : String(err)));
-                                     }
-                                   }
-                                }}
-                                className="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/35 text-gray-300 dark:text-gray-500 hover:text-rose-600 dark:hover:text-rose-450 rounded-lg transition-all ml-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/chat:opacity-100"
-                                title="Salir de la conversación"
-                                aria-label={`Salir de la conversación con ${chatName}`}
-                              >
-                                <Trash2 size={12} />
-                              </button>
                             </div>
                           </div>
                           
@@ -621,7 +618,33 @@ export default function ChatManager() {
                             {lastMsg ? lastMsg.content : 'Sin mensajes'}
                           </p>
                         </div>
-                      </button>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Salir de la conversación',
+                              message: `La conversación con "${chatName}" dejará de aparecer para ti. Los mensajes no se borrarán para la otra persona.`,
+                              confirmText: 'Salir',
+                              cancelText: 'Cancelar',
+                              variant: 'danger',
+                            });
+                            if (!confirmed) return;
+                            try {
+                              await leaveChat.mutateAsync(chat.id);
+                              if (activeChat?.id === chat.id) setActiveChat(null);
+                              toast.success('Saliste de la conversación.');
+                            } catch (err) {
+                              toast.error('No se pudo salir de la conversación: ' + (err instanceof Error ? err.message : String(err)));
+                            }
+                          }}
+                          className="grid size-8 shrink-0 place-items-center self-start rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-950/35 dark:hover:text-rose-300 md:opacity-0 md:group-hover/chat:opacity-100"
+                          title="Salir de la conversación"
+                          aria-label={`Salir de la conversación con ${chatName}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -640,7 +663,7 @@ export default function ChatManager() {
                   <p className="text-xs text-gray-500 dark:text-gray-455 font-medium">No se encontraron contactos</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50 dark:divide-white/5">
+                <div className="space-y-2 p-3">
                   {filteredContacts.map((contact) => {
                     const contactName = contact.first_name || contact.last_name
                       ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
@@ -651,7 +674,7 @@ export default function ChatManager() {
                       <button
                         key={contact.id}
                         onClick={() => handleStartConversation(contact.id)}
-                        className="w-full text-left p-3.5 flex items-center gap-3 hover:bg-gray-55 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                        className="w-full rounded-2xl border border-slate-200/80 bg-white/60 p-3.5 text-left flex items-center gap-3 transition hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-blue-950/20 text-primary dark:text-church-gold-bright flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
                           {contact.photo_url ? (

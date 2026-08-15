@@ -408,7 +408,7 @@ export const SongViewer = ({
         <section key={score.id} className="song-section-glass">
           <div className="mb-4 flex items-center gap-2"><Check size={15} className="text-emerald-500" /><h3 className="font-bold text-slate-800 dark:text-white">{score.title || 'Partitura de melodía'}</h3></div>
           {score.notation_type === 'abc' ? (
-            <SheetMusicViewer abcNotation={score.abc_code ?? ''} responsive audioEnabled />
+            <SheetMusicViewer abcNotation={score.abc_code ?? ''} responsive audioEnabled instrument={instrument} />
           ) : (
             <img src={score.image_url} alt={score.title || 'Partitura exacta'} className="max-h-[70vh] w-full rounded-xl border border-slate-200 object-contain dark:border-white/10" />
           )}
@@ -420,7 +420,7 @@ export const SongViewer = ({
             <div className="flex items-center gap-2"><Sparkles size={15} className="text-amber-500" /><h3 className="font-bold text-slate-800 dark:text-white">Partitura armónica generada</h3></div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Acordes sobre pulso · no inventa melodía</span>
           </div>
-          <SheetMusicViewer abcNotation={generatedScore} responsive />
+          <SheetMusicViewer abcNotation={generatedScore} responsive instrument={instrument} />
         </section>
       )}
       {!scores.length && !generatedScore && <EmptyState icon={FileMusic} title="Aún no hay material para generar una partitura" description="Agrega acordes, una melodía ABC o una imagen exacta desde el editor." />}

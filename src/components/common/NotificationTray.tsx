@@ -22,7 +22,10 @@ import {
   Calendar,
   Volume2,
   Gift,
-  Check,
+  Archive,
+  Inbox,
+  RefreshCw,
+  ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Chat } from "../../types";
@@ -88,6 +91,7 @@ export default function NotificationTray() {
   // Announcements local state
   const [announcements, setAnnouncements] = useState<NotificationLog[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [announcementError, setAnnouncementError] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const [readAnnouncementIds, setReadAnnouncementIds] = useState<string[]>([]);
 
@@ -137,6 +141,7 @@ export default function NotificationTray() {
   async function fetchAnnouncements() {
     if (!user) return;
     setLoadingAnnouncements(true);
+    setAnnouncementError(null);
     try {
       const { data, error } = await supabase
         .from("notification_logs")
@@ -193,6 +198,7 @@ export default function NotificationTray() {
       }
     } catch (err) {
       console.error("Error fetching announcements:", err);
+      setAnnouncementError(err instanceof Error ? err.message : "No se pudieron cargar los avisos.");
     } finally {
       setLoadingAnnouncements(false);
     }
@@ -393,16 +399,18 @@ export default function NotificationTray() {
     <>
       {/* Bell Notification Button */}
       <button
+        type="button"
         onClick={() => {
           fetchChats();
           setIsOpen(true);
         }}
-        className="relative p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition text-gray-650 hover:text-primary dark:text-white dark:hover:text-gold cursor-pointer"
+        className="relative grid size-10 place-items-center rounded-2xl border border-transparent text-gray-650 transition hover:border-slate-200 hover:bg-gray-100 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:text-white dark:hover:border-white/10 dark:hover:bg-white/10 dark:hover:text-gold"
         title="Bandeja de Mensajes y Avisos"
+        aria-label={`Abrir mensajes y avisos${totalUnreadCount > 0 ? `, ${totalUnreadCount} pendientes` : ''}`}
       >
-        <Bell size={18} />
+        <Bell size={19} strokeWidth={1.8} />
         {totalUnreadCount > 0 && (
-          <span className="absolute top-0 right-0 bg-accent-red text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-slate-900 animate-pulse">
+          <span className="absolute right-0.5 top-0.5 grid min-w-4 place-items-center rounded-full border-2 border-white bg-rose-500 px-1 text-[8px] font-black leading-3 text-white dark:border-slate-950">
             {totalUnreadCount}
           </span>
         )}
@@ -410,6 +418,7 @@ export default function NotificationTray() {
 
       {/* Slide-over Drawer Panel */}
       <div
+        role="presentation"
         className={`fixed inset-0 z-[100] flex justify-end transition-all duration-300 ${isOpen ? "pointer-events-auto" : "pointer-events-none"}`}
       >
         {/* Backdrop */}
@@ -423,38 +432,56 @@ export default function NotificationTray() {
 
         {/* Tray Content */}
         <div
-          className={`relative w-full max-w-sm bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col z-10 border-l border-gray-150 dark:border-slate-800 transition-transform duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notification-tray-title"
+          className={`relative flex h-full w-full max-w-[min(100vw,30rem)] flex-col border-l border-slate-200/80 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-[#0d172b] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
         >
           {/* Drawer Header */}
-          <div className="p-4 border-b border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-950">
-            <div className="flex items-center gap-2">
-              <Bell className="text-primary dark:text-gold" size={18} />
-              <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-white">
+          <div className="border-b border-slate-200/80 bg-white/95 px-5 py-4 dark:border-white/10 dark:bg-[#080f20]/95 sm:px-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300">
+                  <Bell size={19} strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0">
+                  <h3 id="notification-tray-title" className="truncate font-serif text-base font-bold text-slate-950 dark:text-white">
                 Notificaciones de la Iglesia
-              </h3>
+                  </h3>
+                  <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Tu bandeja de mensajes y avisos importantes</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsOpen(false); setActiveChat(null); }}
+                className="grid size-9 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:hover:bg-white/10 dark:hover:text-white"
+                aria-label="Cerrar bandeja de notificaciones"
+              >
+                <X size={19} />
+              </button>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 text-gray-400 hover:text-gray-650 dark:hover:text-white rounded-lg cursor-pointer"
-            >
-              <X size={18} />
-            </button>
+            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+              <span>{totalUnreadCount > 0 ? `${totalUnreadCount} pendientes de revisar` : 'Todo al día'}</span>
+            </div>
           </div>
 
           {/* Double-Tab Menu */}
-          <div className="flex border-b border-gray-100 dark:border-slate-800/80 bg-gray-50/50 dark:bg-slate-950/20 p-1">
+          <div className="border-b border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-[#0a1426] sm:px-5">
+            <div className="flex gap-1 rounded-2xl bg-slate-200/60 p-1 dark:bg-white/[0.06]">
             <button
               onClick={() => setActiveTab("chats")}
-              className={`flex-1 py-2 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 rounded-xl cursor-pointer ${
+              type="button"
+              className={`flex-1 rounded-xl py-2.5 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "chats"
-                  ? "bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs"
-                  : "text-gray-450 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                  ? "bg-white text-primary shadow-sm dark:bg-slate-800 dark:text-gold"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
               <MessageSquare size={14} />
               <span>Mensajes</span>
               {unreadChatsCount > 0 && (
-                <span className="bg-accent-red text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-black text-white">
                   {unreadChatsCount}
                 </span>
               )}
@@ -464,24 +491,26 @@ export default function NotificationTray() {
                 setActiveTab("announcements");
                 void fetchAnnouncements();
               }}
-              className={`flex-1 py-2 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 rounded-xl cursor-pointer ${
+              type="button"
+              className={`flex-1 rounded-xl py-2.5 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "announcements"
-                  ? "bg-white dark:bg-slate-800 text-primary dark:text-gold shadow-xs"
-                  : "text-gray-455 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                  ? "bg-white text-primary shadow-sm dark:bg-slate-800 dark:text-gold"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
               <Volume2 size={14} />
               <span>Avisos Generales</span>
               {unreadAnnouncementsCount > 0 && (
-                <span className="bg-accent-red text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-black text-white">
                   {unreadAnnouncementsCount}
                 </span>
               )}
             </button>
+            </div>
           </div>
 
           {/* Drawer Body */}
-          <div className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/10">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70 dark:bg-[#0d172b]">
             {activeTab === "chats" ? (
               /* TAB 1: CHATS */
               loadingChats ? (
@@ -506,7 +535,7 @@ export default function NotificationTray() {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 dark:divide-slate-800/60 animate-fadeIn">
+                <div className="space-y-2 p-3 animate-fadeIn sm:p-4">
                   {chats.map((chat) => {
                     const otherParticipant = chat.participants?.find(
                       (p) => p.id !== user.id,
@@ -535,13 +564,13 @@ export default function NotificationTray() {
                       <button
                         key={chat.id}
                         onClick={() => handleOpenChat(chat)}
-                        className={`w-full text-left p-4 flex items-start gap-3 transition cursor-pointer border-l-3 ${
+                        className={`group w-full rounded-2xl border p-3.5 text-left flex items-start gap-3 transition cursor-pointer ${
                           isUnread
-                            ? "bg-primary/5 dark:bg-primary/10 border-primary"
-                            : "border-transparent hover:bg-gray-50 dark:hover:bg-slate-850/30"
+                            ? "border-primary/30 bg-primary/[0.07] shadow-sm dark:border-blue-400/25 dark:bg-blue-400/[0.08]"
+                            : "border-slate-200/80 bg-white/70 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:text-gold flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative shadow-inner">
+                        <div className="relative size-11 shrink-0 overflow-hidden rounded-2xl bg-primary/10 text-primary shadow-inner dark:bg-blue-400/10 dark:text-gold">
                           {otherParticipant?.photo_url ? (
                             <img
                               loading="lazy"
@@ -555,12 +584,12 @@ export default function NotificationTray() {
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex justify-between items-baseline">
-                            <h4 className="font-bold text-xs text-gray-800 dark:text-white truncate">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="truncate text-sm font-bold text-slate-900 dark:text-white">
                               {chatName}
                             </h4>
                             {lastMsg && (
-                              <span className="text-[10px] text-gray-450 shrink-0">
+                              <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500">
                                 {new Date(
                                   lastMsg.created_at,
                                 ).toLocaleDateString([], {
@@ -572,16 +601,16 @@ export default function NotificationTray() {
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-primary/10 text-primary dark:bg-gold/10 dark:text-gold">
+                            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary dark:bg-gold/10 dark:text-gold">
                               {getRoleLabel(senderRole)}
                             </span>
                             {isUnread && (
-                              <span className="w-1.5 h-1.5 bg-accent-red rounded-full"></span>
+                              <span className="size-1.5 rounded-full bg-rose-500" aria-label="No leído" />
                             )}
                           </div>
 
                           <p
-                            className={`text-xs truncate ${isUnread ? "font-semibold text-gray-855 dark:text-slate-200" : "text-gray-400"}`}
+                            className={`truncate text-xs leading-5 ${isUnread ? "font-semibold text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}
                           >
                             {lastMsg ? lastMsg.content : "Sin mensajes"}
                           </p>
@@ -599,59 +628,70 @@ export default function NotificationTray() {
                   Buscando avisos...
                 </span>
               </div>
+            ) : announcementError ? (
+              <div className="mx-3 my-4 rounded-2xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-400/20 dark:bg-rose-400/10 sm:mx-4">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="mt-0.5 shrink-0 text-rose-500" size={18} />
+                  <div>
+                    <p className="text-sm font-bold text-rose-900 dark:text-rose-100">No pudimos cargar los avisos</p>
+                    <p className="mt-1 text-xs leading-5 text-rose-700 dark:text-rose-200/80">Comprueba tu conexión e inténtalo de nuevo.</p>
+                    <button type="button" onClick={() => void fetchAnnouncements()} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-xl bg-rose-600 px-3 text-xs font-bold text-white transition hover:bg-rose-700">
+                      <RefreshCw size={13} /> Reintentar
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : visibleAnnouncements.length === 0 ? (
-              <div className="text-center py-20 px-6 space-y-3 animate-fadeIn">
-                <Volume2
-                  className="mx-auto text-gray-300 dark:text-slate-700"
-                  size={38}
-                />
-                <p className="text-xs font-semibold text-gray-700 dark:text-slate-350">
-                  Cartelera limpia
-                </p>
-                <p className="text-xxs text-gray-400 leading-relaxed max-w-[220px] mx-auto">
-                  No hay comunicados generales activos en este momento. ¡Que
-                  tengas un excelente día!
-                </p>
+              <div className="flex min-h-[22rem] flex-col items-center justify-center px-6 text-center animate-fadeIn">
+                <span className="grid size-16 place-items-center rounded-3xl border border-slate-200 bg-white text-slate-400 shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-500">
+                  <Inbox size={29} strokeWidth={1.6} />
+                </span>
+                <p className="mt-4 text-sm font-bold text-slate-800 dark:text-white">No hay avisos pendientes</p>
+                <p className="mt-1 max-w-[240px] text-xs leading-5 text-slate-500 dark:text-slate-400">Los comunicados generales aparecerán aquí cuando la iglesia publique uno.</p>
               </div>
             ) : (
-              <div className="p-4 space-y-4 animate-fadeIn">
+              <div className="space-y-3 p-3 animate-fadeIn sm:p-4">
                 {visibleAnnouncements.map((ann) => {
                   const styles = getAnnouncementStyles(ann.category);
+                  const isUnread = !readAnnouncementIds.includes(ann.id);
                   return (
                     <div
                       key={ann.id}
-                      className={`p-3.5 rounded-2xl border bg-white dark:bg-slate-900 transition-all shadow-2xs hover:shadow-xs space-y-2.5 relative overflow-hidden ${styles.bgColor}`}
+                      className={`relative overflow-hidden rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md space-y-3 ${isUnread ? "border-primary/25 bg-primary/[0.05] shadow-sm dark:border-blue-400/20 dark:bg-blue-400/[0.06]" : "border-slate-200/80 bg-white/75 dark:border-white/10 dark:bg-white/[0.03]"}`}
                     >
                       {/* Card header */}
                       <div className="flex justify-between items-start gap-2">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           {styles.icon}
-                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                          <span className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                             {styles.badgeText}
                           </span>
+                          {isUnread && <span className="size-1.5 rounded-full bg-rose-500" aria-label="No leído" />}
                         </div>
 
                         <button
+                          type="button"
                           onClick={() => handleDismissAnnouncement(ann.id)}
-                          className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer"
-                          title="Entendido / Archivar aviso"
+                          className="grid size-8 place-items-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+                          title="Archivar aviso"
+                          aria-label={`Archivar aviso ${ann.title}`}
                         >
-                          <Check size={14} />
+                          <Archive size={14} />
                         </button>
                       </div>
 
                       {/* Title & Body */}
                       <div className="space-y-1">
-                        <h4 className="font-bold text-xs text-gray-850 dark:text-white leading-tight">
+                        <h4 className="text-sm font-bold leading-tight text-slate-900 dark:text-white">
                           {ann.title}
                         </h4>
-                        <p className="text-xs text-gray-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed break-words">
+                        <p className="break-words whitespace-pre-wrap text-xs leading-5 text-slate-600 dark:text-slate-300">
                           {ann.message}
                         </p>
                       </div>
 
                       {/* Card Footer */}
-                      <div className="flex justify-between items-center text-[9px] text-gray-400 pt-1 border-t border-gray-100/50 dark:border-slate-800/40">
+                      <div className="flex items-center justify-between border-t border-slate-200/60 pt-2 text-[10px] text-slate-400 dark:border-white/10 dark:text-slate-500">
                         <span>
                           {new Date(ann.created_at).toLocaleDateString([], {
                             month: "short",
@@ -674,15 +714,23 @@ export default function NotificationTray() {
 
           {/* Chat View Popover Modal */}
           <div
-            className={`absolute inset-0 bg-white dark:bg-slate-900 flex flex-col z-20 transition-all duration-300 ${
+            className={`absolute inset-0 z-20 flex flex-col bg-slate-50 dark:bg-[#0d172b] transition-all duration-300 ${
               activeChat
                 ? "opacity-100 translate-y-0 pointer-events-auto"
                 : "opacity-0 translate-y-4 pointer-events-none"
             }`}
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-950">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 p-4 dark:border-white/10 dark:bg-[#080f20]/95">
               <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveChat(null)}
+                  className="grid size-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+                  aria-label="Volver a la bandeja"
+                >
+                  <ChevronLeft size={19} />
+                </button>
                 {activeChat &&
                   (() => {
                     const otherParticipant = activeChat.participants?.find(
@@ -713,11 +761,11 @@ export default function NotificationTray() {
                           )}
                         </div>
                         <div>
-                          <h4 className="font-bold text-xs text-gray-850 dark:text-white truncate max-w-[150px]">
+                          <h4 className="max-w-[180px] truncate text-sm font-bold text-slate-900 dark:text-white">
                             {chatName}
                           </h4>
                           <span className="text-[10px] text-gray-400">
-                            Mensajes de Administración
+                            Conversación privada
                           </span>
                         </div>
                       </>
@@ -725,24 +773,26 @@ export default function NotificationTray() {
                   })()}
               </div>
               <button
+                type="button"
                 onClick={() => setActiveChat(null)}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-lg cursor-pointer"
+                className="grid size-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+                aria-label="Cerrar conversación"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Warning privacy banner */}
-            <div className="bg-amber-50/70 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30 p-2 px-4 flex items-center gap-2">
+            <div className="flex items-center gap-2 border-b border-amber-200/70 bg-amber-50/80 p-3 px-4 dark:border-amber-400/15 dark:bg-amber-400/[0.08]">
               <ShieldAlert className="text-amber-600 shrink-0" size={13} />
-              <p className="text-[9.5px] font-medium text-amber-800 dark:text-amber-300 leading-normal">
+              <p className="text-[10px] font-medium leading-4 text-amber-800 dark:text-amber-300">
                 Mensajes efímeros: Se borrarán automáticamente después de{" "}
                 {retentionDays} días.
               </p>
             </div>
 
             {/* Messages History */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40 dark:bg-slate-900/30">
+            <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 p-4 dark:bg-[#0d172b]">
               {loadingMessages ? (
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="animate-spin text-primary" size={20} />
@@ -762,10 +812,10 @@ export default function NotificationTray() {
                         className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl p-2.5 shadow-xxs text-xs leading-relaxed ${
+                          className={`max-w-[85%] rounded-2xl p-3 text-xs leading-5 shadow-sm ${
                             isMe
-                              ? "bg-primary text-white rounded-tr-none"
-                              : "bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-105 border border-gray-150 dark:border-slate-800 rounded-tl-none"
+                              ? "rounded-tr-md bg-primary text-white"
+                              : "rounded-tl-md border border-slate-200/80 bg-white text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
                           }`}
                         >
                           <p className="break-words whitespace-pre-wrap">
@@ -788,13 +838,14 @@ export default function NotificationTray() {
             </div>
 
             {/* Quick Reply Form input */}
-            <div className="p-3 border-t border-gray-150 dark:border-slate-800 relative bg-white dark:bg-slate-950">
+            <div className="relative border-t border-slate-200/80 bg-white p-3 dark:border-white/10 dark:bg-[#080f20]">
               {/* Emoji Quick Shortcut */}
               <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-gray-100 dark:border-slate-800 overflow-x-auto">
                 <button
                   type="button"
                   onClick={() => setShowEmojis(!showEmojis)}
-                  className="p-0.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="grid size-8 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+                  aria-label="Mostrar emojis"
                 >
                   <Smile size={15} />
                 </button>
@@ -802,7 +853,8 @@ export default function NotificationTray() {
                   <button
                     key={emoji}
                     onClick={() => setReplyText((prev) => prev + emoji)}
-                    className="text-xs p-0.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded cursor-pointer"
+                  type="button"
+                  className="rounded-lg p-1 text-xs transition hover:bg-slate-100 dark:hover:bg-white/10"
                   >
                     {emoji}
                   </button>
@@ -839,7 +891,7 @@ export default function NotificationTray() {
                   placeholder="Escribe una respuesta..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value.slice(0, 1000))}
-                  className="flex-1 px-3 py-2 border border-gray-205 dark:border-slate-800 rounded-xl text-xs bg-transparent dark:text-white focus:outline-none"
+                  className="min-h-11 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 dark:border-white/10 dark:bg-white/[0.05] dark:text-white"
                   maxLength={1000}
                   disabled={sending}
                 />
