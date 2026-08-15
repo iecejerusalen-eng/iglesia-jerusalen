@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Package, Search, Loader2, CheckCircle2, XCircle, Clock, FileText, TrendingUp, AlertCircle, Truck } from 'lucide-react';
 import { useOrders } from '../../hooks/useOrders';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminHeader from '../../components/admin/AdminHeader';
+import { AdminErrorState } from '../../components/admin/AdminState';
+import { Button } from '../../components/ui/button';
 
 type TabType = 'verifying' | 'unfulfilled' | 'completed';
 
 export default function OrdersManager() {
-  const { orders, loading, updatePaymentStatus, updateFulfillmentStatus } = useOrders();
+  const { orders, loading, error, refetch, updatePaymentStatus, updateFulfillmentStatus } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('verifying');
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
@@ -40,8 +43,13 @@ export default function OrdersManager() {
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
+    <div className="space-y-6">
+      <AdminHeader
+        title="Órdenes y logística"
+        description="Administra pagos, transferencias y el cumplimiento de las órdenes físicas y digitales."
+        action={<Button type="button" variant="outline" onClick={() => { void refetch(); }} disabled={loading}><Loader2 className={loading ? 'animate-spin' : ''} size={16} /> Actualizar</Button>}
+      />
+      <div className="mb-8 hidden">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
           <Package className="w-8 h-8 mr-3 text-blue-600" />
           Gestión de Órdenes y Logística
@@ -115,10 +123,18 @@ export default function OrdersManager() {
         />
       </div>
 
+      {error && orders.length > 0 && (
+        <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
+          Mostrando la última información disponible. No se pudo actualizar el listado: {error}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
+      ) : error && orders.length === 0 ? (
+        <AdminErrorState description={`Detalle: ${error}`} onAction={() => { void refetch(); }} />
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">

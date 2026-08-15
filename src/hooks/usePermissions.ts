@@ -4,7 +4,8 @@ import { useCallback, useMemo } from 'react';
 export const usePermissions = () => {
   const { permissions, role, user, ministryId, allowedMinistries, roles } = useAuthStore();
   const userRoles = useMemo(() => roles || (role ? [role] : []), [role, roles]);
-  const hasAdministrativeRole = userRoles.some((item) => item === 'admin' || String(item) === 'superadmin');
+  const normalizedRoles = useMemo(() => userRoles.map((item) => String(item).toLowerCase()), [userRoles]);
+  const hasAdministrativeRole = normalizedRoles.some((item) => item === 'admin' || item === 'superadmin');
 
   /**
    * Checks if the current user has permission to view or edit a specific module.
@@ -33,7 +34,7 @@ export const usePermissions = () => {
     if (!user) return false;
 
     // 1. Explicit leader check
-    if (userRoles.includes('leader') && minId === ministryId) return true;
+    if (normalizedRoles.includes('leader') && minId === ministryId) return true;
 
     // 2. Allowed list override check
     if (allowedMinistries && allowedMinistries.includes(minId)) return true;
@@ -45,7 +46,7 @@ export const usePermissions = () => {
     }
 
     return false;
-  }, [allowedMinistries, hasAdministrativeRole, hasPermission, ministryId, user, userRoles]);
+  }, [allowedMinistries, hasAdministrativeRole, hasPermission, ministryId, normalizedRoles, user]);
 
   /**
    * Helper that returns true if the user can only view a module but cannot edit it.

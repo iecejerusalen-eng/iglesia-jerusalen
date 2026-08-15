@@ -5,6 +5,8 @@ import Sidebar from '../components/admin/Sidebar';
 import CommandMenu from '../components/admin/CommandMenu';
 import soloLogoBlanco from '../assets/Jerusalén/solo logo blanco.svg';
 import ThemeToggle from '../components/common/ThemeToggle';
+import { GlobalErrorBoundary } from '../components/common/ErrorBoundary';
+import { toast } from 'sonner';
 import { useThemeStore } from '../store/useThemeStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { usePermissions } from '../hooks/usePermissions';
@@ -55,8 +57,13 @@ const AdminLayout = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión:', error);
+      toast.error('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+    }
   };
 
   const preferredMobileIds = ['dashboard', 'members', 'events'];
@@ -173,7 +180,9 @@ const AdminLayout = () => {
         </header>
 
         <main className={`mx-auto w-full max-w-[1600px] flex-1 px-3 pb-28 pt-4 sm:px-5 sm:pt-5 md:px-6 md:pb-8 md:pt-6 xl:px-8 ${isFloating ? 'md:pt-8' : ''}`}>
-          <Outlet />
+          <GlobalErrorBoundary key={location.pathname}>
+            <Outlet />
+          </GlobalErrorBoundary>
         </main>
       </div>
 

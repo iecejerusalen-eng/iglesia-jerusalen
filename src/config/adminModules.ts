@@ -114,6 +114,10 @@ export interface AdminModule {
 
 export const getAdminModulePermission = (module: AdminModule) => module.permission ?? module.id;
 
+export const getAdminModuleById = (id: string) => ADMIN_MODULES.find((module) => module.id === id);
+
+export const isAdminModuleAvailable = (id: string) => getAdminModuleById(id)?.available !== false;
+
 export const ADMIN_MODULES: AdminModule[] = [
   // --- 1. ADMINISTRACIÓN Y MÉTRICAS ---
   {

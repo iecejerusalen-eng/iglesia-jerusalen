@@ -48,7 +48,7 @@ const DashboardHome = () => {
     <div className="space-y-5 text-left md:space-y-7">
       <DashboardHero 
         displayName={displayName} 
-        membersCount={stats.membersCount} 
+        membersCount={data?.stats.membersCount}
       />
 
       {isError && (
@@ -57,13 +57,13 @@ const DashboardHome = () => {
         </div>
       )}
 
-      <DashboardStats 
+      {!isError && <DashboardStats
         stats={stats} 
         loading={isLoading}
         access={access}
-      />
+      />}
 
-      {access.members && (
+      {!isError && access.members && (
         <DashboardCharts
           loading={isLoading}
           ageData={ageData}

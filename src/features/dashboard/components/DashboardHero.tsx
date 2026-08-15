@@ -4,7 +4,7 @@ import { BIBLE_VERSES } from '../constants';
 
 interface DashboardHeroProps {
   displayName: string;
-  membersCount: number;
+  membersCount?: number;
 }
 
 export const DashboardHero = ({ displayName, membersCount }: DashboardHeroProps) => {
@@ -34,7 +34,7 @@ export const DashboardHero = ({ displayName, membersCount }: DashboardHeroProps)
             <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-amber-300">
               <Sparkles size={13} /> Promesa para hoy
             </span>
-            <p className="mt-2 text-xs italic leading-5 text-blue-50/90">{BIBLE_VERSES[membersCount % BIBLE_VERSES.length]}</p>
+            <p className="mt-2 text-xs italic leading-5 text-blue-50/90">{BIBLE_VERSES[(membersCount ?? 0) % BIBLE_VERSES.length]}</p>
           </aside>
         </div>
       </section>
