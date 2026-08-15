@@ -25,6 +25,8 @@ import { NumberTicker } from '../../components/ui/magicui/number-ticker';
 import type { PendingTask } from '../../features/student-dashboard/components/PendingTasksWidget';
 import { SchoolPortalGate } from '../../features/lms/components/SchoolPortalGate';
 import type { SchoolPortalSchool } from '../../features/lms/hooks/useSchoolPortal';
+import { AcademicWorkspaceProvider } from '../../features/lms/context/AcademicWorkspaceProvider';
+import { useAcademicWorkspace } from '../../features/lms/context/useAcademicWorkspace';
 
 
 // Define the interface for the enrollment progress object to replace `any`
@@ -70,8 +72,9 @@ interface StudentSchoolDashboardProps {
   onChangeSchool: () => void;
 }
 
-function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboardProps) {
+function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchoolDashboardProps) {
   const { user } = useAuthStore();
+  const { periods, activePeriod, selectedPeriodId, setSelectedPeriodId, isLoading: periodsLoading } = useAcademicWorkspace();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [enrollments, setEnrollments] = useState<CourseProgress[]>([]);
@@ -104,7 +107,8 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
             title,
             description,
             cover_image_url,
-            school_id
+            school_id,
+            period_id
           )
         `)
         .eq('user_id', user.id)
@@ -113,7 +117,11 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
 
       if (enrollError) throw enrollError;
       
-      const coursesWithProgress = await Promise.all((enrollData || []).map(async (enr) => {
+      const scopedEnrollData = (enrollData || []).filter((enrollment) => {
+        const course = Array.isArray(enrollment.lms_courses) ? enrollment.lms_courses[0] : enrollment.lms_courses;
+        return !selectedPeriodId || !course?.period_id || course.period_id === selectedPeriodId;
+      });
+      const coursesWithProgress = await Promise.all(scopedEnrollData.map(async (enr) => {
         // Dual content model support:
         // 1. Lessons model (lms_lessons)
         const { data: totalLessons } = await supabase
@@ -190,7 +198,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       setBadges(badgesData || []);
 
       // Fetch pending tasks checking both lms_lesson_submissions and lms_assignment_submissions
-      const courseIds = (enrollData || []).map((e) => e.course_id);
+      const courseIds = scopedEnrollData.map((e) => e.course_id);
       if (courseIds.length > 0) {
         const allPendingTasks: PendingTask[] = [];
 
@@ -342,7 +350,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       }
 
       setStats({
-        activeCourses: enrollData?.length || 0,
+        activeCourses: scopedEnrollData.length,
         totalXp: statsData?.xp_total || 0,
         level: statsData?.level || 1,
         streak: statsData?.current_streak || 0,
@@ -356,7 +364,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
     } finally {
       setIsLoading(false);
     }
-  }, [school.id, user]);
+  }, [school.id, user, selectedPeriodId]);
 
   useEffect(() => {
     if (!user) {
@@ -367,7 +375,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
       fetchDashboardData();
     }, 0);
     return () => clearTimeout(timer);
-  }, [user, navigate, fetchDashboardData]);
+  }, [user, navigate, fetchDashboardData, selectedPeriodId]);
 
   const selectTab = (tabId: StudentTabId) => {
     setActiveTab(tabId);
@@ -398,9 +406,15 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
         <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-indigo-200/70 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-indigo-400/15 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"><School size={19} /></span>
-            <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Escuela activa</p><p className="font-bold text-slate-900 dark:text-white">{school.name}</p></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Escuela activa</p><p className="font-bold text-slate-900 dark:text-white">{school.name}</p>{activePeriod && <p className="text-xs text-slate-500 dark:text-slate-400">{activePeriod.name}</p>}</div>
           </div>
-          <button type="button" onClick={onChangeSchool} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Cambiar escuela</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="student-period">Periodo académico</label>
+            <select id="student-period" value={selectedPeriodId} onChange={(event) => setSelectedPeriodId(event.target.value)} disabled={periodsLoading || periods.length === 0} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              {periods.length === 0 ? <option value="">Sin periodos configurados</option> : periods.map((period) => <option key={period.id} value={period.id}>{period.name}{period.is_active ? ' · Activo' : ''}</option>)}
+            </select>
+            <button type="button" onClick={onChangeSchool} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Cambiar escuela</button>
+          </div>
         </div>
         <ProgressHero 
           userFullName={user?.user_metadata?.full_name || 'Estudiante'}
@@ -615,7 +629,7 @@ function StudentSchoolDashboard({ school, onChangeSchool }: StudentSchoolDashboa
 export default function StudentDashboard() {
   return (
     <SchoolPortalGate mode="student">
-      {(school, leaveSchool) => <StudentSchoolDashboard school={school} onChangeSchool={leaveSchool} />}
+      {(school, leaveSchool) => <AcademicWorkspaceProvider school={school}><StudentSchoolDashboardContent school={school} onChangeSchool={leaveSchool} /></AcademicWorkspaceProvider>}
     </SchoolPortalGate>
   );
 }

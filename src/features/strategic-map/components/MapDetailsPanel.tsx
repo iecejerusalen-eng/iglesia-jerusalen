@@ -1,19 +1,18 @@
-import { Phone, MapPin, Calendar, Crosshair, Users, Compass, X } from 'lucide-react';
+import { Phone, MapPin, Calendar, Crosshair, Users, Compass, X, ShieldCheck } from 'lucide-react';
 import DOMPurify from 'dompurify';
-import type { Member, Cell } from '../../../types';
+import type { Cell } from '../../../types';
+import type { StrategicMapMember, StrategicMapSelection } from '../types';
 import { formatWhatsAppLink } from '../../../utils/whatsapp';
 
 interface MapDetailsPanelProps {
-  selectedItem: {
-    type: 'member' | 'cell' | 'church' | 'location';
-    data: any;
-  };
+  selectedItem: StrategicMapSelection;
   onClose: () => void;
   onFocusLocation: (lat: number, lng: number) => void;
+  canViewSensitive: boolean;
 }
 
-export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapDetailsPanelProps) => {
-  const renderMemberDetails = (member: Member) => {
+export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation, canViewSensitive }: MapDetailsPanelProps) => {
+  const renderMemberDetails = (member: StrategicMapMember) => {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center text-center space-y-3">
@@ -39,7 +38,7 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
-          {member.phone && (
+          {canViewSensitive && member.phone && (
             <div className="flex items-center gap-3.5 text-xs">
               <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600 shadow-3xs">
                 <Phone size={16} />
@@ -61,19 +60,7 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
             </div>
           )}
 
-          {member.dni && (
-            <div className="flex items-center gap-3.5 text-xs">
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl text-slate-500 dark:text-gray-450 shadow-3xs">
-                <span className="text-base font-bold">🪪</span>
-              </div>
-              <div>
-                <p className="text-slate-400 font-bold">Cédula / DNI</p>
-                <p className="text-slate-700 dark:text-gray-300 font-semibold">{member.dni}</p>
-              </div>
-            </div>
-          )}
-
-          {member.address && (
+          {canViewSensitive && member.address && (
             <div className="flex items-start gap-3.5 text-xs">
               <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600 shadow-3xs mt-0.5">
                 <MapPin size={16} />
@@ -82,42 +69,6 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
                 <p className="text-slate-400 font-bold">Dirección</p>
                 <p className="text-slate-700 dark:text-gray-300 font-semibold leading-relaxed">
                   {member.address}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {member.birth_date && (
-            <div className="flex items-center gap-3.5 text-xs">
-              <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600 shadow-3xs">
-                <Calendar size={16} />
-              </div>
-              <div>
-                <p className="text-slate-400 font-bold">Fecha de Nacimiento</p>
-                <p className="text-slate-700 dark:text-gray-300 font-semibold">
-                  {new Date(member.birth_date).toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {member.conversion_date && (
-            <div className="flex items-center gap-3.5 text-xs">
-              <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600 shadow-3xs">
-                <Calendar size={16} />
-              </div>
-              <div>
-                <p className="text-slate-400 font-bold">Fecha de Conversión</p>
-                <p className="text-slate-700 dark:text-gray-300 font-semibold">
-                  {new Date(member.conversion_date).toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
                 </p>
               </div>
             </div>
@@ -138,6 +89,13 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
                   })}
                 </p>
               </div>
+            </div>
+          )}
+
+          {!canViewSensitive && (
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
+              <ShieldCheck className="mt-0.5 shrink-0 text-primary" size={16} />
+              <p>La información de contacto se muestra únicamente a los roles con permiso de gestión del mapa.</p>
             </div>
           )}
         </div>
@@ -208,6 +166,21 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
               </p>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-50 p-3 text-xs dark:bg-slate-950">
+            <div>
+              <p className="text-slate-400 font-bold">Estado</p>
+              <p className="mt-1 font-bold capitalize text-slate-700 dark:text-slate-200">{cell.status === 'active' || !cell.status ? 'Activa' : cell.status}</p>
+            </div>
+            <div>
+              <p className="text-slate-400 font-bold">Cobertura</p>
+              <p className="mt-1 font-bold text-slate-700 dark:text-slate-200">{cell.coverage_radius_m ?? 500} m</p>
+            </div>
+            <div>
+              <p className="text-slate-400 font-bold">Capacidad</p>
+              <p className="mt-1 font-bold text-slate-700 dark:text-slate-200">{cell.capacity ?? 'Sin definir'}</p>
+            </div>
+          </div>
         </div>
 
         <button
@@ -220,7 +193,7 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
     );
   };
 
-  const renderChurchDetails = (church: any) => {
+  const renderChurchDetails = (church: Extract<StrategicMapSelection, { type: 'church' }>['data']) => {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center text-center space-y-3">
@@ -286,7 +259,7 @@ export const MapDetailsPanel = ({ selectedItem, onClose, onFocusLocation }: MapD
     );
   };
 
-  const renderLocationDetails = (loc: any) => {
+  const renderLocationDetails = (loc: Extract<StrategicMapSelection, { type: 'location' }>['data']) => {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center text-center space-y-3">

@@ -13,20 +13,26 @@ interface Period {
   school_id: string;
   lms_schools?: { name: string };
 }
+interface SchoolOption { id: string; name: string; }
 
 export function PeriodsManager() {
   const [periods, setPeriods] = useState<Period[]>([]);
+  const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', schoolId: '', startDate: '', endDate: '' });
+  const [saving, setSaving] = useState(false);
 
   const fetchPeriods = async () => {
     try {
-      const { data, error } = await supabase
-        .from('lms_academic_periods')
-        .select(`*, lms_schools(name)`)
-        .order('start_date', { ascending: false });
-        
+      const [{ data, error }, { data: schoolsData, error: schoolsError }] = await Promise.all([
+        supabase.from('lms_academic_periods').select(`*, lms_schools(name)`).order('start_date', { ascending: false }),
+        supabase.from('lms_schools').select('id, name').eq('is_active', true).order('sort_order', { ascending: true }),
+      ]);
       if (error) throw error;
+      if (schoolsError) throw schoolsError;
       setPeriods(data || []);
+      setSchools((schoolsData || []) as SchoolOption[]);
     } catch (err: unknown) {
       toast.error('Error cargando períodos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
@@ -59,6 +65,31 @@ export function PeriodsManager() {
     }
   };
 
+  const createPeriod = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.name.trim() || !form.schoolId || !form.startDate || !form.endDate) {
+      toast.error('Completa el nombre, escuela y fechas del periodo.');
+      return;
+    }
+    if (form.endDate < form.startDate) {
+      toast.error('La fecha final debe ser posterior a la fecha inicial.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('lms_academic_periods').insert({ name: form.name.trim(), school_id: form.schoolId, start_date: form.startDate, end_date: form.endDate, is_active: false });
+      if (error) throw error;
+      toast.success('Periodo académico creado.');
+      setForm({ name: '', schoolId: '', startDate: '', endDate: '' });
+      setShowForm(false);
+      await fetchPeriods();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo crear el periodo.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando períodos...</div>;
 
   return (
@@ -73,10 +104,20 @@ export function PeriodsManager() {
             <p className="text-sm text-gray-500">Solo los períodos activos son visibles para los alumnos.</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm">
+        <button type="button" onClick={() => setShowForm((current) => !current)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm">
           <Plus size={18} /> Nuevo Período
         </button>
       </div>
+
+      {showForm && (
+        <form onSubmit={createPeriod} className="grid gap-4 rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-400/20 dark:bg-slate-900 sm:grid-cols-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">Nombre<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="2026 - 2027" className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-normal outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950" /></label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">Escuela<select value={form.schoolId} onChange={(event) => setForm((current) => ({ ...current, schoolId: event.target.value }))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-normal outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950"><option value="">Selecciona una escuela</option>{schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}</select></label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">Inicio<input type="date" value={form.startDate} onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-normal outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950" /></label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">Fin<input type="date" value={form.endDate} onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-normal outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950" /></label>
+          <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={saving} className="min-h-11 rounded-xl bg-emerald-600 px-5 font-bold text-white disabled:opacity-50">{saving ? 'Guardando…' : 'Crear periodo'}</button><button type="button" onClick={() => setShowForm(false)} className="min-h-11 rounded-xl border border-slate-200 px-5 font-bold dark:border-white/10">Cancelar</button></div>
+        </form>
+      )}
 
       <div className="overflow-x-auto bg-white dark:bg-slate-900 rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm">
         <table className="w-full text-left">

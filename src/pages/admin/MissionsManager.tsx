@@ -1,534 +1,141 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../config/supabase';
-import type { Mission } from '../../types';
-import { Globe, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Globe2,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Search,
+  Target,
+  Trash2,
+  UploadCloud,
+  UsersRound,
+  X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import AdminHeader from '../../components/admin/AdminHeader';
+import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { Button } from '../../components/ui/button';
+import { supabase } from '../../config/supabase';
+import { usePermissions } from '../../hooks/usePermissions';
+import type { Mission } from '../../types';
 import { uploadImage } from '../../utils/cloudinary';
-import { motion, AnimatePresence } from 'framer-motion';
+
+const PAGE_SIZE = 12;
+type MissionScope = NonNullable<Mission['scope']>;
+type MissionStatus = Mission['status'];
+type FilterStatus = 'all' | MissionStatus;
+type FilterScope = 'all' | MissionScope;
+
+interface MissionFormData {
+  title: string; description: string; location: string; goal_amount: string; current_amount: string;
+  status: MissionStatus; image_url: string; scope: MissionScope; country_code: string; region: string;
+  city: string; is_published: boolean; start_date: string; end_date: string;
+}
+
+const emptyForm = (): MissionFormData => ({ title: '', description: '', location: '', goal_amount: '0', current_amount: '0', status: 'active', image_url: '', scope: 'local', country_code: 'EC', region: '', city: '', is_published: true, start_date: '', end_date: '' });
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+const statusLabel: Record<MissionStatus, string> = { active: 'Activa', completed: 'Completada', paused: 'Pausada' };
+const scopeLabel: Record<MissionScope, string> = { local: 'Local', national: 'Ecuador', international: 'Internacional' };
+const statusStyle: Record<MissionStatus, string> = { active: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200', completed: 'border-blue-400/30 bg-blue-400/10 text-blue-700 dark:text-blue-200', paused: 'border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-200' };
+const money = (value: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`)) : 'Sin fecha';
 
 export default function MissionsManager() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  
-  // Pagination State
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<FilterStatus>('all');
+  const [scope, setScope] = useState<FilterScope>('all');
   const [page, setPage] = useState(0);
-  const pageSize = 10;
   const [totalCount, setTotalCount] = useState(0);
-  
-  const [formData, setFormData] = useState<Partial<Mission>>({
-    title: '',
-    description: '',
-    location: '',
-    goal_amount: 0,
-    current_amount: 0,
-    status: 'active',
-    image_url: '',
-    scope: 'local',
-    country_code: 'EC',
-    region: '',
-    city: '',
-    is_published: true,
-    metadata: {},
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Debounce search term
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(0); // Reset page on new search
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
+  const [editing, setEditing] = useState<Mission | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [form, setForm] = useState<MissionFormData>(emptyForm);
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('missions', 'edit');
 
   const loadMissions = useCallback(async () => {
-    setLoading(true);
+    setLoading(true); setError(null);
     try {
-      let query = supabase
-        .from('missions')
-        .select('*', { count: 'exact' });
+      let query = supabase.from('missions').select('*', { count: 'exact' });
+      if (search.trim()) query = query.ilike('title', `%${search.trim().replace(/[%_]/g, '')}%`);
+      if (status !== 'all') query = query.eq('status', status);
+      if (scope !== 'all') query = query.eq('scope', scope);
+      const { data, count, error: queryError } = await query.order('created_at', { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      if (queryError) throw queryError;
+      setMissions((data ?? []) as Mission[]); setTotalCount(count ?? 0);
+    } catch (loadError: unknown) {
+      const message = `No se pudieron cargar los proyectos: ${getErrorMessage(loadError)}`;
+      setError(message); toast.error(message); console.error('Missions load failed', loadError);
+    } finally { setLoading(false); }
+  }, [page, scope, search, status]);
 
-      if (debouncedSearch) {
-        query = query.ilike('title', `%${debouncedSearch}%`);
-      }
+  useEffect(() => { const timer = window.setTimeout(() => { void loadMissions(); }, 0); return () => window.clearTimeout(timer); }, [loadMissions]);
+  const stats = useMemo(() => ({ active: missions.filter((item) => item.status === 'active').length, published: missions.filter((item) => item.is_published).length, raised: missions.reduce((sum, item) => sum + (Number(item.current_amount) || 0), 0) }), [missions]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-      const { data, count, error } = await query
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (error) throw error;
-      setMissions(data || []);
-      if (count !== null) setTotalCount(count);
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al cargar proyectos misioneros');
-    } finally {
-      setLoading(false);
-    }
-  }, [debouncedSearch, page]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void loadMissions(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadMissions]);
-
-  const handleOpenModal = (mission?: Mission) => {
-    if (mission) {
-      setFormData(mission);
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        location: '',
-        goal_amount: 0,
-        current_amount: 0,
-        status: 'active',
-        image_url: '',
-        scope: 'local',
-        country_code: 'EC',
-        region: '',
-        city: '',
-        is_published: true,
-        metadata: {},
-      });
-    }
-    setSelectedFile(null);
-    setIsModalOpen(true);
+  const openForm = (mission?: Mission) => {
+    if (!canEdit) { toast.error('Tu rol solo permite consultar proyectos.'); return; }
+    setEditing(mission ?? null);
+    setIsFormOpen(true);
+    setFile(null);
+    setForm(mission ? { title: mission.title, description: mission.description ?? '', location: mission.location ?? '', goal_amount: String(mission.goal_amount ?? 0), current_amount: String(mission.current_amount ?? 0), status: mission.status, image_url: mission.image_url ?? '', scope: mission.scope ?? 'local', country_code: mission.country_code ?? 'EC', region: mission.region ?? '', city: mission.city ?? '', is_published: mission.is_published ?? true, start_date: mission.start_date ?? '', end_date: mission.end_date ?? '' } : emptyForm());
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title) return toast.error('El título es requerido');
-    
-    setIsSubmitting(true);
+  const saveMission = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canEdit) { toast.error('No tienes permisos para modificar misiones.'); return; }
+    if (!form.title.trim()) { toast.error('El título es obligatorio.'); return; }
+    setSaving(true);
     try {
-      let finalImageUrl = formData.image_url;
-
-      if (selectedFile) {
-        toast.loading('Subiendo imagen...', { id: 'upload' });
-        const result = await uploadImage(selectedFile, 'missions');
-        if (result.secure_url) {
-          finalImageUrl = result.secure_url;
-        }
-        toast.dismiss('upload');
-      }
-
-      const { id, ...missionFields } = formData;
-      const payload = {
-        ...missionFields,
-        image_url: finalImageUrl
-      };
-
-      if (id) {
-        const { error } = await supabase
-          .from('missions')
-          .update(payload)
-          .eq('id', id);
-        if (error) throw error;
-        toast.success('Proyecto actualizado');
-      } else {
-        const { error } = await supabase
-          .from('missions')
-          .insert([payload]);
-        if (error) throw error;
-        toast.success('Proyecto creado');
-      }
-
-      setIsModalOpen(false);
-      loadMissions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al guardar el proyecto');
-      toast.dismiss('upload');
-    } finally {
-      setIsSubmitting(false);
-    }
+      let imageUrl = form.image_url.trim() || null;
+      if (file) { toast.loading('Subiendo imagen…', { id: 'mission-upload' }); imageUrl = (await uploadImage(file, 'missions')).secure_url; toast.dismiss('mission-upload'); }
+      const payload = { title: form.title.trim(), description: form.description.trim() || null, location: form.location.trim() || null, goal_amount: Math.max(0, Number(form.goal_amount) || 0), current_amount: Math.max(0, Number(form.current_amount) || 0), status: form.status, image_url: imageUrl, scope: form.scope, country_code: form.country_code.trim().toUpperCase() || null, region: form.region.trim() || null, city: form.city.trim() || null, is_published: form.is_published, start_date: form.start_date || null, end_date: form.end_date || null };
+      const result = editing ? await supabase.from('missions').update(payload).eq('id', editing.id) : await supabase.from('missions').insert(payload);
+      if (result.error) throw result.error;
+      toast.success(editing ? 'Proyecto actualizado.' : 'Proyecto creado.'); setEditing(null); setIsFormOpen(false); await loadMissions();
+    } catch (saveError: unknown) { toast.dismiss('mission-upload'); toast.error(`No se pudo guardar el proyecto: ${getErrorMessage(saveError)}`); console.error('Mission save failed', saveError); }
+    finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este proyecto misionero?')) return;
-    try {
-      const { error } = await supabase.from('missions').delete().eq('id', id);
-      if (error) throw error;
-      toast.success('Proyecto eliminado');
-      loadMissions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al eliminar');
-    }
+  const deleteMission = async (mission: Mission) => {
+    if (!canEdit) { toast.error('No tienes permisos para eliminar proyectos.'); return; }
+    if (!window.confirm(`¿Eliminar “${mission.title}”? Esta acción no se puede deshacer.`)) return;
+    setDeletingId(mission.id);
+    try { const { error: deleteError } = await supabase.from('missions').delete().eq('id', mission.id); if (deleteError) throw deleteError; toast.success('Proyecto eliminado.'); await loadMissions(); }
+    catch (deleteError: unknown) { toast.error(`No se pudo eliminar: ${getErrorMessage(deleteError)}`); console.error('Mission delete failed', deleteError); }
+    finally { setDeletingId(null); }
   };
 
-  const totalPages = Math.ceil(totalCount / pageSize);
-
-  return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-      {/* HEADER */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6"
-      >
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3">
-            <Globe className="w-8 h-8 text-rose-500" /> 
-            Proyectos Misioneros
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-            Gestiona el impacto global y el fondo de misiones.
-          </p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 cursor-pointer"
-        >
-          <Plus className="w-5 h-5" /> Nuevo Proyecto
-        </button>
-      </motion.div>
-
-      {/* SEARCH AND FILTERS */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl p-4"
-      >
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar proyectos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white transition-all outline-none"
-          />
-        </div>
-      </motion.div>
-
-      {/* DATA TABLE (GLASSMORPHISM) */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-xs uppercase font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
-              <tr>
-                <th className="px-6 py-4">Proyecto</th>
-                <th className="px-6 py-4">Ubicación</th>
-                <th className="px-6 py-4">Progreso (Recaudado)</th>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-              {loading ? (
-                // SKELETON LOADER
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4 flex gap-3 items-center">
-                      <div className="w-10 h-10 bg-gray-200 dark:bg-slate-800 rounded-lg"></div>
-                      <div className="w-32 h-4 bg-gray-200 dark:bg-slate-800 rounded"></div>
-                    </td>
-                    <td className="px-6 py-4"><div className="w-24 h-4 bg-gray-200 dark:bg-slate-800 rounded"></div></td>
-                    <td className="px-6 py-4"><div className="w-40 h-8 bg-gray-200 dark:bg-slate-800 rounded"></div></td>
-                    <td className="px-6 py-4"><div className="w-20 h-6 bg-gray-200 dark:bg-slate-800 rounded-full"></div></td>
-                    <td className="px-6 py-4 text-right"><div className="w-16 h-8 bg-gray-200 dark:bg-slate-800 rounded ml-auto"></div></td>
-                  </tr>
-                ))
-              ) : missions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3 text-gray-400">
-                      <Target className="w-12 h-12 opacity-20" />
-                      <p>No se encontraron proyectos misioneros.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <AnimatePresence>
-                  {missions.map((mission, index) => {
-                    const goal = Number(mission.goal_amount) || 0;
-                    const current = Number(mission.current_amount) || 0;
-                    const percent = goal > 0 ? Math.min(Math.round((current / goal) * 100), 100) : 0;
-                    
-                    return (
-                      <motion.tr 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ delay: index * 0.05 }}
-                        key={mission.id} 
-                        className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors group"
-                      >
-                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-slate-800 flex-shrink-0 shadow-inner">
-                            {mission.image_url ? (
-                              <img src={mission.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
-                            ) : (
-                              <Globe className="w-5 h-5 text-gray-400 m-2.5" />
-                            )}
-                          </div>
-                          {mission.title}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">{mission.location}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1.5 w-48">
-                            <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                              <span className="text-rose-500 dark:text-rose-400">${current.toLocaleString()}</span>
-                              {goal > 0 && <span>Meta: ${goal.toLocaleString()}</span>}
-                            </div>
-                            {goal > 0 && (
-                              <div className="w-full h-2 bg-gray-100 dark:bg-slate-950 rounded-full overflow-hidden shadow-inner">
-                                <motion.div 
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${percent}%` }}
-                                  transition={{ duration: 1, ease: 'easeOut' }}
-                                  className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full" 
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                            mission.status === 'active' ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/50' :
-                            mission.status === 'completed' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50' :
-                            'bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700'
-                          }`}>
-                            {mission.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleOpenModal(mission)} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors cursor-pointer">
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete(mission.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* PAGINATION */}
-        {!loading && totalPages > 1 && (
-          <div className="p-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between bg-gray-50/30 dark:bg-slate-900/30">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Mostrando {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount)} de {totalCount}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </motion.div>
-
-      {/* MODAL CRUD */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-white/10 shadow-2xl z-10"
-            >
-              <div className="p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-10 flex justify-between items-center">
-                <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                  <Globe className="text-rose-500 w-5 h-5" />
-                  {formData.id ? 'Editar Proyecto' : 'Nuevo Proyecto Misionero'}
-                </h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer">
-                  ✕
-                </button>
-              </div>
-              
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Título del Proyecto</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title}
-                      onChange={e => setFormData({...formData, title: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Descripción Corta</label>
-                    <textarea
-                      rows={3}
-                      value={formData.description || ''}
-                      onChange={e => setFormData({...formData, description: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ubicación (País/Ciudad)</label>
-                    <input
-                      type="text"
-                      value={formData.location || ''}
-                      onChange={e => setFormData({...formData, location: e.target.value})}
-                      placeholder="Ej. Bucay, Ecuador"
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Estado</label>
-                    <select
-                      value={formData.status}
-                      onChange={e => setFormData({...formData, status: e.target.value as Mission['status']})}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    >
-                      <option value="active">Activo</option>
-                      <option value="completed">Completado</option>
-                      <option value="paused">Pausado</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ámbito</label>
-                    <select
-                      value={formData.scope || 'local'}
-                      onChange={e => setFormData({ ...formData, scope: e.target.value as NonNullable<Mission['scope']> })}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none"
-                    >
-                      <option value="local">Local</option>
-                      <option value="national">Nacional</option>
-                      <option value="international">Internacional</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Código de país</label>
-                    <input value={formData.country_code || ''} maxLength={2} onChange={e => setFormData({ ...formData, country_code: e.target.value.toUpperCase() })} placeholder="EC" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Provincia / Región</label>
-                    <input value={formData.region || ''} onChange={e => setFormData({ ...formData, region: e.target.value })} placeholder="Guayas" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Ciudad</label>
-                    <input value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="Milagro" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Latitud pública</label>
-                    <input type="number" step="any" value={typeof formData.metadata?.latitude === 'number' ? formData.metadata.latitude : ''} onChange={e => setFormData({ ...formData, metadata: { ...formData.metadata, latitude: e.target.value === '' ? null : Number(e.target.value) } })} placeholder="-2.134" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Longitud pública</label>
-                    <input type="number" step="any" value={typeof formData.metadata?.longitude === 'number' ? formData.metadata.longitude : ''} onChange={e => setFormData({ ...formData, metadata: { ...formData.metadata, longitude: e.target.value === '' ? null : Number(e.target.value) } })} placeholder="-79.594" className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 dark:text-white outline-none" />
-                  </div>
-
-                  <label className="md:col-span-2 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-200">
-                    <input type="checkbox" checked={formData.is_published ?? true} onChange={e => setFormData({ ...formData, is_published: e.target.checked })} className="h-4 w-4" />
-                    Publicar este proyecto en el centro de misiones
-                  </label>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Económica ($)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.goal_amount || 0}
-                      onChange={e => setFormData({...formData, goal_amount: parseFloat(e.target.value)})}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Recaudado Actualmente ($)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.current_amount || 0}
-                      onChange={e => setFormData({...formData, current_amount: parseFloat(e.target.value)})}
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 dark:text-white outline-none transition-all"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Imagen Representativa</label>
-                    {formData.image_url && (
-                      <img src={formData.image_url} alt="Preview" className="h-32 rounded-xl object-cover mb-4 border border-gray-200 dark:border-white/10 shadow-sm" />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={e => {
-                        if (e.target.files && e.target.files[0]) {
-                          setSelectedFile(e.target.files[0]);
-                        }
-                      }}
-                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 dark:file:bg-rose-900/30 dark:file:text-rose-400 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-6 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/20 transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {isSubmitting ? 'Guardando...' : 'Guardar Proyecto'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return <AnimeFadeUp className="mx-auto max-w-[1600px] space-y-6">
+    <AdminHeader title="Centro de misiones" description="Organiza proyectos, destinos, objetivos y avances de la obra misionera." action={canEdit ? <Button type="button" onClick={() => openForm()}><Plus size={17} /> Nuevo proyecto</Button> : undefined} />
+    <section className="grid gap-4 sm:grid-cols-3"><StatCard label="Proyectos visibles" value={totalCount} icon={Globe2} tone="text-sky-600" /><StatCard label="Proyectos activos" value={stats.active} icon={Target} tone="text-emerald-600" /><StatCard label="Fondos registrados" value={money(stats.raised)} icon={UsersRound} tone="text-amber-600" /></section>
+    <section className="rounded-3xl border border-white/70 bg-white/60 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55"><div className="flex flex-col gap-3 lg:flex-row"><label className="relative flex-1"><Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} placeholder="Buscar por título…" className="h-12 w-full rounded-2xl border border-slate-200 bg-white/70 pl-11 pr-4 text-sm outline-none focus:border-primary dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><select value={status} onChange={(event) => { setStatus(event.target.value as FilterStatus); setPage(0); }} className="h-12 rounded-2xl border border-slate-200 bg-white/70 px-4 text-sm font-semibold outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="completed">Completadas</option></select><select value={scope} onChange={(event) => { setScope(event.target.value as FilterScope); setPage(0); }} className="h-12 rounded-2xl border border-slate-200 bg-white/70 px-4 text-sm font-semibold outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"><option value="all">Todos los ámbitos</option><option value="local">Local</option><option value="national">Ecuador</option><option value="international">Internacional</option></select><Button type="button" variant="outline" onClick={() => void loadMissions()} disabled={loading}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Actualizar</Button></div><p className="mt-3 text-xs text-slate-500">{totalCount} proyectos encontrados · {stats.published} publicados en esta página</p></section>
+    {error && <div role="alert" className="flex items-center justify-between gap-4 rounded-2xl border border-rose-300/50 bg-rose-50/80 p-4 text-sm text-rose-800 dark:bg-rose-950/30 dark:text-rose-200"><span>{error}</span><Button type="button" variant="outline" onClick={() => void loadMissions()}>Reintentar</Button></div>}
+    <section className="rounded-3xl border border-white/70 bg-white/60 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55">{loading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-72 animate-pulse rounded-3xl bg-slate-200/70 dark:bg-white/10" />)}</div> : missions.length === 0 ? <div className="flex flex-col items-center justify-center py-16 text-center"><Target size={42} className="text-slate-300" /><h2 className="mt-4 text-lg font-black text-slate-800 dark:text-white">No hay proyectos con estos filtros</h2><p className="mt-1 text-sm text-slate-500">Prueba otra búsqueda o crea el primer proyecto.</p></div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{missions.map((mission) => <MissionCard key={mission.id} mission={mission} canEdit={canEdit} deleting={deletingId === mission.id} onEdit={() => openForm(mission)} onDelete={() => void deleteMission(mission)} />)}</div>} {!loading && totalPages > 1 && <div className="mt-5 flex items-center justify-between border-t border-slate-200/70 pt-4 text-xs text-slate-500 dark:border-white/10"><span>Página {page + 1} de {totalPages}</span><div className="flex gap-2"><Button type="button" variant="outline" size="icon" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}><ChevronLeft size={16} /></Button><Button type="button" variant="outline" size="icon" disabled={page >= totalPages - 1} onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}><ChevronRight size={16} /></Button></div></div>}</section>
+    {isFormOpen ? <MissionForm form={form} setForm={setForm} file={file} setFile={setFile} editing={editing} saving={saving} onSubmit={saveMission} onClose={() => { setEditing(null); setIsFormOpen(false); }} /> : null}
+  </AnimeFadeUp>;
 }
+
+function StatCard({ label, value, icon: Icon, tone }: { label: string; value: string | number; icon: typeof Globe2; tone: string }) { return <div className="rounded-3xl border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55"><div className="flex items-center justify-between"><span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span><Icon size={20} className={tone} /></div><p className="mt-3 text-2xl font-black text-slate-900 dark:text-white">{value}</p></div>; }
+
+function MissionCard({ mission, canEdit, deleting, onEdit, onDelete }: { mission: Mission; canEdit: boolean; deleting: boolean; onEdit: () => void; onDelete: () => void }) {
+  const goal = Number(mission.goal_amount) || 0; const current = Number(mission.current_amount) || 0; const percent = goal ? Math.min(100, Math.round(current / goal * 100)) : 0;
+  return <article className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/5"><div className="relative aspect-[16/8] overflow-hidden bg-slate-100 dark:bg-slate-800">{mission.image_url ? <img src={mission.image_url} alt={mission.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Globe2 size={42} className="text-slate-300" /></div>}<div className="absolute left-4 top-4 flex gap-2"><span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusStyle[mission.status]}`}>{statusLabel[mission.status]}</span><span className="rounded-full border border-white/50 bg-slate-950/40 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">{scopeLabel[mission.scope ?? 'local']}</span></div>{mission.is_published === false && <span className="absolute bottom-3 left-4 rounded-full bg-slate-950/70 px-2.5 py-1 text-[11px] font-bold text-white">Borrador</span>}</div><div className="p-5"><p className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300"><MapPin size={14} />{mission.location || mission.city || 'Ubicación por confirmar'}</p><h2 className="mt-2 line-clamp-2 text-xl font-black text-slate-900 dark:text-white">{mission.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{mission.description || 'Sin descripción publicada.'}</p><div className="mt-4 flex items-center gap-2 text-xs text-slate-500"><CalendarDays size={14} />{formatDate(mission.start_date)} {mission.end_date ? `→ ${formatDate(mission.end_date)}` : ''}</div>{goal > 0 && <div className="mt-5"><div className="mb-2 flex justify-between text-xs font-bold"><span className="text-emerald-700 dark:text-emerald-300">{money(current)}</span><span className="text-slate-500">{percent}% de {money(goal)}</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-sky-500" style={{ width: `${percent}%` }} /></div></div>} {canEdit && <div className="mt-5 flex gap-2 border-t border-slate-200/70 pt-4 dark:border-white/10"><Button type="button" variant="outline" className="flex-1" onClick={onEdit}><Edit3 size={15} /> Editar</Button><Button type="button" variant="ghost" size="icon" className="text-rose-600" onClick={onDelete} disabled={deleting} aria-label={`Eliminar ${mission.title}`}>{deleting ? <RefreshCw size={16} className="animate-spin" /> : <Trash2 size={16} />}</Button></div>}</div></article>;
+}
+
+function MissionForm({ form, setForm, file, setFile, editing, saving, onSubmit, onClose }: { form: MissionFormData; setForm: React.Dispatch<React.SetStateAction<MissionFormData>>; file: File | null; setFile: React.Dispatch<React.SetStateAction<File | null>>; editing: Mission | null; saving: boolean; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onClose: () => void }) {
+  const update = <K extends keyof MissionFormData>(key: K, value: MissionFormData[K]) => setForm((current) => ({ ...current, [key]: value }));
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"><div className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-white/60 bg-white/95 shadow-2xl dark:border-white/10 dark:bg-slate-900/95"><div className="flex items-center justify-between border-b border-slate-200/70 p-6 dark:border-white/10"><div><p className="text-xs font-black uppercase tracking-wider text-emerald-600">Centro de misiones</p><h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white">{editing ? 'Editar proyecto' : 'Nuevo proyecto misionero'}</h2></div><Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario"><X size={20} /></Button></div><form onSubmit={onSubmit} className="overflow-y-auto p-6"><div className="grid gap-5 sm:grid-cols-2"><Field label="Título" required className="sm:col-span-2"><input required value={form.title} onChange={(event) => update('title', event.target.value)} className="input-glass" placeholder="Ej. Apoyo a misioneros en la Amazonía" /></Field><Field label="Descripción" className="sm:col-span-2"><textarea rows={4} value={form.description} onChange={(event) => update('description', event.target.value)} className="input-glass" placeholder="Explica el propósito, alcance y próximos pasos…" /></Field><Field label="Ubicación"><input value={form.location} onChange={(event) => update('location', event.target.value)} className="input-glass" placeholder="Ciudad, país" /></Field><Field label="Ámbito"><select value={form.scope} onChange={(event) => update('scope', event.target.value as MissionScope)} className="input-glass"><option value="local">Local</option><option value="national">Ecuador</option><option value="international">Internacional</option></select></Field><Field label="País (código)"><input maxLength={3} value={form.country_code} onChange={(event) => update('country_code', event.target.value)} className="input-glass" placeholder="EC" /></Field><Field label="Región / provincia"><input value={form.region} onChange={(event) => update('region', event.target.value)} className="input-glass" /></Field><Field label="Ciudad"><input value={form.city} onChange={(event) => update('city', event.target.value)} className="input-glass" /></Field><Field label="Estado"><select value={form.status} onChange={(event) => update('status', event.target.value as MissionStatus)} className="input-glass"><option value="active">Activa</option><option value="paused">Pausada</option><option value="completed">Completada</option></select></Field><Field label="Meta (USD)"><input type="number" min="0" step="0.01" value={form.goal_amount} onChange={(event) => update('goal_amount', event.target.value)} className="input-glass" /></Field><Field label="Recaudado (USD)"><input type="number" min="0" step="0.01" value={form.current_amount} onChange={(event) => update('current_amount', event.target.value)} className="input-glass" /></Field><Field label="Inicio"><input type="date" value={form.start_date} onChange={(event) => update('start_date', event.target.value)} className="input-glass" /></Field><Field label="Cierre"><input type="date" value={form.end_date} onChange={(event) => update('end_date', event.target.value)} className="input-glass" /></Field><Field label="Imagen"><label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 px-4 text-sm text-slate-500 dark:border-white/15 dark:bg-white/5"><UploadCloud size={17} />{file?.name || 'Seleccionar imagen'}<input type="file" accept="image/*" className="sr-only" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label></Field><Field label="URL de imagen"><input value={form.image_url} onChange={(event) => update('image_url', event.target.value)} className="input-glass" placeholder="https://…" /></Field></div><label className="mt-5 flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/50 p-4 text-sm font-semibold dark:border-white/10 dark:bg-white/5 dark:text-white"><input type="checkbox" checked={form.is_published} onChange={(event) => update('is_published', event.target.checked)} className="h-4 w-4 accent-emerald-600" /><span><span className="block">Publicar en el sitio</span><span className="text-xs font-normal text-slate-500">Si está desactivado, queda guardado como borrador.</span></span></label><div className="mt-6 flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {editing ? 'Guardar cambios' : 'Crear proyecto'}</Button></div></form></div></div>;
+}
+
+function Field({ label, required, className, children }: { label: string; required?: boolean; className?: string; children: React.ReactNode }) { return <label className={`block ${className ?? ''}`}><span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}{required ? ' *' : ''}</span>{children}</label>; }

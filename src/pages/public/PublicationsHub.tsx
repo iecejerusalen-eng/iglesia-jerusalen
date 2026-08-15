@@ -1,389 +1,67 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../config/supabase';
-import { 
-  Sparkles, 
-  Search, 
-  BookOpen, 
-  Layers, 
-  FileText, 
-  Calendar, 
-  X, 
-  ArrowRight, 
-  Heart, 
-  Building2, 
-  Church, 
-  GraduationCap 
-} from 'lucide-react';
+import { ArrowRight, BookOpen, Church, FileText, Heart, Layers3, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { supabase } from '../../config/supabase';
 
-interface EditorialSpace {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  accent_color: string;
-  cover_image: string | null;
-  is_published: boolean;
-  document_count?: number;
-}
+type OwnerType = 'church' | 'ministry' | 'study_program';
+interface PublicSpace { id: string; name: string; slug: string; description: string; owner_type: OwnerType; accent_color: string; cover_image_url: string | null; allow_comments: boolean; document_count: number; }
+interface PublicDocument { id: string; space_id: string; title: string; slug: string; excerpt: string; cover_image_url: string | null; published_at: string | null; is_featured: boolean; space: { name: string; slug: string; owner_type: OwnerType; accent_color: string }; }
+interface PublicIndex { spaces: PublicSpace[]; recent_documents: PublicDocument[]; }
 
-interface EditorialDocument {
-  id: string;
-  space_id: string;
-  title: string;
-  excerpt: string;
-  cover_image: string | null;
-  published_at: string;
-  editorial_spaces: {
-    name: string;
-    slug: string;
-    accent_color: string;
-  };
-}
-
-const CATEGORY_MAP: Record<string, { label: string; icon: React.ElementType }> = {
-  'department': { label: 'Departamentos', icon: Building2 },
-  'ministry': { label: 'Ministerios de Servicio', icon: Heart },
-  'program': { label: 'Programas de Formación', icon: GraduationCap },
-  'general': { label: 'General', icon: Church },
+const ownerMeta: Record<OwnerType, { label: string; icon: typeof Church; color: string }> = {
+  church: { label: 'Iglesia', icon: Church, color: '#C99A49' },
+  ministry: { label: 'Ministerio', icon: Heart, color: '#3B82F6' },
+  study_program: { label: 'Programa', icon: BookOpen, color: '#A855F7' },
 };
+const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(value)) : 'Publicado recientemente';
 
 export default function PublicationsHub() {
-  const [spaces, setSpaces] = useState<EditorialSpace[]>([]);
-  const [recentArticles, setRecentArticles] = useState<EditorialDocument[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [index, setIndex] = useState<PublicIndex>({ spaces: [], recent_documents: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [owner, setOwner] = useState<'all' | OwnerType>('all');
 
-  useEffect(() => {
-    let isMounted = true;
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const { data, error: rpcError } = await supabase.rpc('get_public_editorial_index', { p_limit: 18 });
+      if (rpcError) throw rpcError;
+      const parsed = data as unknown as Partial<PublicIndex> | null;
+      setIndex({ spaces: Array.isArray(parsed?.spaces) ? parsed.spaces as PublicSpace[] : [], recent_documents: Array.isArray(parsed?.recent_documents) ? parsed.recent_documents as PublicDocument[] : [] });
+    } catch (loadError: unknown) {
+      setError('No pudimos cargar las publicaciones en este momento.');
+      console.error('Public editorial index failed', loadError);
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, []);
 
-    const loadData = async () => {
-      try {
-        const { data: spacesData, error: spacesError } = await supabase
-          .from('editorial_spaces')
-          .select(`
-            id, name, slug, description, category, accent_color, cover_image, is_published,
-            editorial_documents(count)
-          `)
-          .eq('is_published', true)
-          .order('created_at', { ascending: false });
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredSpaces = useMemo(() => index.spaces.filter((space) => {
+    const matchesOwner = owner === 'all' || space.owner_type === owner;
+    const matchesSearch = !normalizedQuery || `${space.name} ${space.description}`.toLowerCase().includes(normalizedQuery);
+    return matchesOwner && matchesSearch;
+  }), [index.spaces, normalizedQuery, owner]);
+  const filteredDocuments = useMemo(() => index.recent_documents.filter((document) => {
+    const matchesOwner = owner === 'all' || document.space.owner_type === owner;
+    const matchesSearch = !normalizedQuery || `${document.title} ${document.excerpt} ${document.space.name}`.toLowerCase().includes(normalizedQuery);
+    return matchesOwner && matchesSearch;
+  }), [index.recent_documents, normalizedQuery, owner]);
+  const totalDocuments = index.spaces.reduce((sum, space) => sum + space.document_count, 0);
 
-        if (spacesError) throw spacesError;
-
-        interface RawSpaceQuery extends EditorialSpace {
-          editorial_documents?: Array<{ count: number }>;
-        }
-
-        const formattedSpaces = ((spacesData as unknown as RawSpaceQuery[]) || []).map((space) => ({
-          ...space,
-          document_count: space.editorial_documents?.[0]?.count || 0
-        }));
-
-        const { data: docsData, error: docsError } = await supabase
-          .from('editorial_documents')
-          .select(`
-            id, space_id, title, excerpt, cover_image, published_at,
-            editorial_spaces!inner(name, slug, accent_color)
-          `)
-          .eq('status', 'published')
-          .eq('visibility', 'public')
-          .order('published_at', { ascending: false })
-          .limit(12);
-
-        if (docsError) throw docsError;
-
-        if (isMounted) {
-          setSpaces(formattedSpaces);
-          setRecentArticles((docsData as unknown) as EditorialDocument[]);
-        }
-      } catch (error) {
-        console.error('Error fetching publications:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const filteredSpaces = useMemo(() => {
-    return spaces.filter(space => {
-      const matchesSearch = space.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           space.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === 'all' || space.category === activeCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [spaces, searchQuery, activeCategory]);
-
-  const filteredArticles = useMemo(() => {
-    if (!searchQuery) return recentArticles;
-    return recentArticles.filter(article => 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.editorial_spaces.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [recentArticles, searchQuery]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#030817] text-slate-900 dark:text-slate-100 font-sans pb-24">
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-16 overflow-hidden">
-        {/* Radial Gradient Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-100/40 via-slate-50 to-slate-50 dark:from-indigo-900/20 dark:via-[#030817] dark:to-[#030817] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <AnimeFadeUp>
-            <div className="text-center max-w-3xl mx-auto space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
-                <Sparkles className="w-4 h-4" />
-                <span>Centro Editorial & Bitácoras</span>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Publicaciones & Bitácoras de la Iglesia
-              </h1>
-              
-              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400">
-                Reflexiones, devocionales, guías de estudio y comunicados oficiales de nuestros departamentos y ministerios.
-              </p>
-            </div>
-          </AnimeFadeUp>
-
-          {/* Search and Filters */}
-          <AnimeFadeUp delay={0.1}>
-            <div className="mt-10 max-w-3xl mx-auto">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Buscar espacios, artículos, devocionales..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-11 pr-10 py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm backdrop-blur-sm"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Filter Pills */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={() => setActiveCategory('all')}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    activeCategory === 'all'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
-                  }`}
-                >
-                  Todos
-                </button>
-                {Object.entries(CATEGORY_MAP).map(([key, { label, icon: Icon }]) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveCategory(key)}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      activeCategory === key
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </AnimeFadeUp>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
-        
-        {/* Spaces Grid */}
-        <section>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-              <Layers className="w-6 h-6 text-indigo-500" />
-              Espacios Editoriales
-            </h2>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse bg-white dark:bg-slate-800/50 rounded-2xl h-64 border border-slate-200 dark:border-slate-700" />
-              ))}
-            </div>
-          ) : filteredSpaces.length > 0 ? (
-            <AnimeStaggerGrid>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSpaces.map((space) => {
-                  const categoryInfo = CATEGORY_MAP[space.category] || CATEGORY_MAP['general'];
-                  const CategoryIcon = categoryInfo.icon;
-                  
-                  return (
-                    <Link 
-                      key={space.id} 
-                      to={`/publicaciones/${space.slug}`}
-                      className="group relative flex flex-col bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                    >
-                      {/* Cover/Header */}
-                      <div 
-                        className="h-32 w-full relative overflow-hidden"
-                        style={{ backgroundColor: space.accent_color || '#4f46e5' }}
-                      >
-                        {space.cover_image && (
-                          <img 
-                            src={space.cover_image} 
-                            alt={space.name}
-                            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60 group-hover:scale-105 transition-transform duration-500"
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-md text-white text-xs font-medium border border-white/20">
-                            <CategoryIcon className="w-3.5 h-3.5" />
-                            {categoryInfo.label}
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 text-white group-hover:bg-white group-hover:text-slate-900 transition-colors">
-                            <ArrowRight className="w-5 h-5" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Body */}
-                      <div className="p-6 flex-1 flex flex-col">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-1">
-                          {space.name}
-                        </h3>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 mb-6 flex-1">
-                          {space.description}
-                        </p>
-                        
-                        <div className="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
-                          <span className="flex items-center gap-1.5">
-                            <FileText className="w-4 h-4" />
-                            {space.document_count} artículos
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </AnimeStaggerGrid>
-          ) : (
-            <div className="text-center py-12 bg-white dark:bg-slate-800/20 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed">
-              <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No se encontraron espacios</h3>
-              <p className="text-slate-500 dark:text-slate-400">Intenta ajustar tus filtros o término de búsqueda.</p>
-            </div>
-          )}
-        </section>
-
-        {/* Recent Articles Feed */}
-        <section>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-              <Calendar className="w-6 h-6 text-indigo-500" />
-              Últimas Publicaciones
-            </h2>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="animate-pulse bg-white dark:bg-slate-800/50 rounded-2xl h-80 border border-slate-200 dark:border-slate-700" />
-              ))}
-            </div>
-          ) : filteredArticles.length > 0 ? (
-            <AnimeStaggerGrid>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredArticles.map((article) => (
-                  <Link 
-                    key={article.id}
-                    to={`/publicaciones/${article.editorial_spaces.slug}/${article.id}`}
-                    className="group flex flex-col bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="aspect-[16/10] relative overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      {article.cover_image ? (
-                        <img 
-                          src={article.cover_image} 
-                          alt={article.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div 
-                          className="w-full h-full flex items-center justify-center opacity-80"
-                          style={{ backgroundColor: `${article.editorial_spaces.accent_color}20` }}
-                        >
-                          <BookOpen className="w-10 h-10 opacity-40" style={{ color: article.editorial_spaces.accent_color }} />
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-5 flex-1 flex flex-col">
-                      <div className="mb-3">
-                        <span 
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                          style={{ 
-                            backgroundColor: `${article.editorial_spaces.accent_color}15`,
-                            color: article.editorial_spaces.accent_color 
-                          }}
-                        >
-                          {article.editorial_spaces.name}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
-                        {article.title}
-                      </h3>
-                      
-                      {article.excerpt && (
-                        <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 mb-4 flex-1">
-                          {article.excerpt}
-                        </p>
-                      )}
-                      
-                      <div className="mt-auto flex items-center justify-between text-xs text-slate-500">
-                        <time dateTime={article.published_at}>
-                          {format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}
-                        </time>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </AnimeStaggerGrid>
-          ) : (
-            <div className="text-center py-12 bg-white dark:bg-slate-800/20 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed">
-              <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No hay publicaciones recientes</h3>
-              <p className="text-slate-500 dark:text-slate-400">Las publicaciones aparecerán aquí una vez que sean compartidas.</p>
-            </div>
-          )}
-        </section>
-      </main>
+  return <main className="min-h-screen bg-slate-50 pb-24 text-slate-950 dark:bg-[#030817] dark:text-white">
+    <section className="relative isolate overflow-hidden bg-[#07132f] px-4 pb-16 pt-20 text-white sm:px-6 lg:px-8"><div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-amber-400/15 blur-3xl" /><div className="absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" /><div className="relative mx-auto max-w-7xl"><AnimeFadeUp><div className="max-w-3xl"><span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-xs font-black uppercase tracking-[.2em] text-amber-200 backdrop-blur-xl"><Sparkles size={14} /> Centro editorial</span><h1 className="mt-6 font-serif text-4xl font-black leading-tight sm:text-6xl">Historias que acompañan el camino</h1><p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Devocionales, guías, noticias y bitácoras creadas por la Iglesia Jerusalén y sus ministerios.</p></div></AnimeFadeUp><div className="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Espacios" value={index.spaces.length} /><Metric label="Publicaciones" value={totalDocuments} /><Metric label="Ministerios" value={index.spaces.filter((space) => space.owner_type === 'ministry').length} /><Metric label="Actualizado" value="Vivo" /></div></div></section>
+    <section className="relative z-10 mx-auto -mt-7 max-w-5xl px-4 sm:px-6"><div className="rounded-3xl border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/80"><div className="relative"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar espacios, artículos o devocionales…" className="h-14 w-full rounded-2xl border border-slate-200 bg-white/80 pl-11 pr-11 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />{query && <button type="button" onClick={() => setQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" aria-label="Limpiar búsqueda"><X size={17} /></button>}</div><div className="mt-3 flex flex-wrap gap-2">{([['all', 'Todo'], ['church', 'Iglesia'], ['ministry', 'Ministerios'], ['study_program', 'Programas']] as Array<['all' | OwnerType, string]>).map(([key, label]) => <button key={key} type="button" onClick={() => setOwner(key)} className={`rounded-full px-4 py-2 text-xs font-black transition ${owner === key ? 'bg-[#0b2a68] text-white shadow-lg dark:bg-amber-300 dark:text-slate-950' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}>{label}</button>)}<button type="button" onClick={() => void load()} className="ml-auto inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 dark:border-white/10 dark:text-slate-300"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Actualizar</button></div></div></section>
+    <div className="mx-auto max-w-7xl space-y-16 px-4 pt-16 sm:px-6 lg:px-8">{error && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{error}</div>}
+      <section><div className="mb-7 flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">Explora por comunidad</p><h2 className="mt-2 font-serif text-3xl font-black">Espacios editoriales</h2></div><span className="text-sm text-slate-500">{filteredSpaces.length} disponibles</span></div>{loading ? <SkeletonGrid /> : filteredSpaces.length ? <AnimeStaggerGrid className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{filteredSpaces.map((space) => <SpaceCard key={space.id} space={space} />)}</AnimeStaggerGrid> : <EmptyState label="No encontramos espacios con esos filtros." />}</section>
+      <section><div className="mb-7 flex items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">Lo más reciente</p><h2 className="mt-2 font-serif text-3xl font-black">Publicaciones destacadas</h2></div><FileText className="text-amber-500" /></div>{loading ? <SkeletonGrid /> : filteredDocuments.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{filteredDocuments.map((document) => <DocumentCard key={document.id} document={document} />)}</div> : <EmptyState label="Aún no hay publicaciones públicas para mostrar." />}</section>
     </div>
-  );
+  </main>;
 }
+
+function Metric({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"><span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</span><strong className="mt-1 block text-lg text-white">{value}</strong></div>; }
+function SpaceCard({ space }: { space: PublicSpace }) { const meta = ownerMeta[space.owner_type]; const Icon = meta.icon; return <Link to={`/publicaciones/${space.slug}`} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5"><div className="relative aspect-[16/8] overflow-hidden bg-[#0b2a68]" style={{ backgroundColor: space.accent_color || meta.color }}>{space.cover_image_url ? <img src={space.cover_image_url} alt={space.name} className="h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><Icon size={48} className="text-white/40" /> </div>}<div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" /><span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-950/50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur-xl"><Icon size={13} /> {meta.label}</span></div><div className="p-5"><h3 className="font-serif text-xl font-black text-slate-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-amber-300">{space.name}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{space.description || 'Un espacio para compartir el camino.'}</p><div className="mt-5 flex items-center justify-between text-xs font-bold text-blue-700 dark:text-amber-300"><span>{space.document_count} publicaciones</span><ArrowRight size={15} className="transition group-hover:translate-x-1" /></div></div></Link>; }
+function DocumentCard({ document }: { document: PublicDocument }) { const meta = ownerMeta[document.space.owner_type]; return <Link to={`/publicaciones/${document.space.slug}/${document.id}`} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5"><div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-blue-950 to-indigo-900">{document.cover_image_url ? <img src={document.cover_image_url} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><BookOpen size={42} className="text-white/30" /></div>}<div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />{document.is_featured && <span className="absolute right-4 top-4 rounded-full bg-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-950">Destacada</span>}</div><div className="p-5"><span className="text-[10px] font-black uppercase tracking-[.16em]" style={{ color: document.space.accent_color || meta.color }}>{document.space.name}</span><h3 className="mt-2 line-clamp-2 font-serif text-xl font-black text-slate-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-amber-300">{document.title}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{document.excerpt || 'Abre esta publicación para conocer todos los detalles.'}</p><div className="mt-5 flex items-center justify-between text-xs font-bold text-slate-400"><span>{formatDate(document.published_at)}</span><ArrowRight size={15} className="text-blue-700 transition group-hover:translate-x-1 dark:text-amber-300" /></div></div></Link>; }
+function SkeletonGrid() { return <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-72 animate-pulse rounded-3xl bg-slate-200 dark:bg-white/5" />)}</div>; }
+function EmptyState({ label }: { label: string }) { return <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/50 p-12 text-center text-sm text-slate-500 dark:border-white/15 dark:bg-white/5"><Layers3 className="mx-auto text-slate-300" size={38} /><p className="mt-4">{label}</p></div>; }

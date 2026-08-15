@@ -60,7 +60,7 @@ export function generateCoverageGeoJSON(cells: Cell[], radiusInMeters: number = 
   const features = cells
     .filter(c => c.latitude !== null && c.longitude !== null && c.latitude !== undefined && c.longitude !== undefined)
     .map(c => {
-      const circleFeature = createGeoJSONCircle([c.longitude, c.latitude], radiusInMeters);
+      const circleFeature = createGeoJSONCircle([c.longitude, c.latitude], c.coverage_radius_m ?? radiusInMeters);
       return {
         ...circleFeature,
         properties: {

@@ -14,6 +14,9 @@ export const useMapMutations = () => {
       leader_id: string;
       latitude: number;
       longitude: number;
+      status: 'active' | 'paused' | 'planning' | 'archived';
+      capacity: number | null;
+      coverage_radius_m: number;
     }) => {
       const { error } = await supabase
         .from('cells')
@@ -22,7 +25,10 @@ export const useMapMutations = () => {
           sector: newCell.sector || null,
           leader_id: newCell.leader_id || null,
           latitude: newCell.latitude,
-          longitude: newCell.longitude
+          longitude: newCell.longitude,
+          status: newCell.status,
+          capacity: newCell.capacity,
+          coverage_radius_m: newCell.coverage_radius_m,
         }]);
 
       if (error) throw error;
@@ -31,8 +37,9 @@ export const useMapMutations = () => {
       toast.success(`Célula "${variables.name}" creada con éxito.`);
       queryClient.invalidateQueries({ queryKey: ['map-cells'] });
     },
-    onError: (err: any) => {
-      toast.error('Error al guardar la célula: ' + err.message);
+    onError: (error) => {
+      console.error('Map cell create failed:', error);
+      toast.error(`No se pudo guardar la célula: ${error.message}`);
     }
   });
 
@@ -48,8 +55,9 @@ export const useMapMutations = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['map-cells'] });
     },
-    onError: (err: any) => {
-      toast.error('Error al eliminar célula: ' + err.message);
+    onError: (error) => {
+      console.error('Map cell deletion failed:', error);
+      toast.error(`No se pudo eliminar la célula: ${error.message}`);
     }
   });
 

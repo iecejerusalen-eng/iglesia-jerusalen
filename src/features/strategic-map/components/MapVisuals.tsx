@@ -1,34 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
 import Map, { Marker, NavigationControl, Layer, Source } from 'react-map-gl/maplibre';
+import type { LayerProps, MapLayerMouseEvent, MapRef } from 'react-map-gl/maplibre';
 import Supercluster from 'supercluster';
 import { Search, Ruler, Camera, MapPin, Compass, Phone } from 'lucide-react';
 import { generateCoverageGeoJSON } from '../../../utils/geoUtils';
-import type { Member, Cell } from '../../../types';
+import type { Cell } from '../../../types';
+import type { StrategicMapLocation, StrategicMapMember, StrategicMapSelection } from '../types';
 
+type MapViewState = { longitude: number; latitude: number; zoom: number; pitch: number; bearing: number };
+type MemberPointProperties = { cluster: false; memberId: string; member: StrategicMapMember };
+type MapPoint = Supercluster.ClusterFeature<Record<string, never>> | Supercluster.PointFeature<MemberPointProperties>;
+type LocatedStrategicMapMember = StrategicMapMember & { latitude: number; longitude: number };
 
 interface MapVisualsProps {
-  mapRef: React.RefObject<any>;
-  viewState: any;
-  setViewState: (vs: any) => void;
+  mapRef: React.RefObject<MapRef | null>;
+  viewState: MapViewState;
+  setViewState: React.Dispatch<React.SetStateAction<MapViewState>>;
   mapStyle: string;
   isMeasuring: boolean;
   setIsMeasuring: (val: boolean) => void;
   measurePoints: [number, number][];
-  setMeasurePoints: (val: [number, number][]) => void;
+  setMeasurePoints: React.Dispatch<React.SetStateAction<[number, number][]>>;
   isCreatingCell: boolean;
-  handleMapClick: (e: any) => void;
+  handleMapClick: (event: MapLayerMouseEvent) => void;
   showChurch: boolean;
   showCells: boolean;
   showCoverage: boolean;
   showMembers: boolean;
   showHeatmap: boolean;
   showOtherChurches: boolean;
-  members: Member[];
+  members: StrategicMapMember[];
   cells: Cell[];
-  locations: any[];
+  locations: StrategicMapLocation[];
   CHURCH_COORDS: { lat: number; lng: number };
-  setSelectedItem: (item: any) => void;
+  setSelectedItem: React.Dispatch<React.SetStateAction<StrategicMapSelection | null>>;
   focusLocation: (lat: number, lng: number) => void;
   handleScreenshot: () => void;
   searchQuery: string;
@@ -49,44 +55,28 @@ export const MapVisuals = ({
   calculateTotalDistance
 }: MapVisualsProps) => {
   
-  const [superclusterInstance, setSuperclusterInstance] = useState<Supercluster<any, any> | null>(null);
-  const [visiblePoints, setVisiblePoints] = useState<any[]>([]);
+  const superclusterInstance = useMemo(() => {
+    const validMembers = members.filter((member): member is LocatedStrategicMapMember => (
+      typeof member.latitude === 'number' && typeof member.longitude === 'number'
+    ));
+    if (validMembers.length === 0) return null;
 
-  // Initialize Supercluster
-  useEffect(() => {
-    const validMembers = members.filter(
-      m => m.latitude !== null && m.longitude !== null && m.latitude !== undefined && m.longitude !== undefined
-    );
-
-    if (validMembers.length === 0) {
-      setSuperclusterInstance(null);
-      setVisiblePoints([]);
-      return;
-    }
-
-    const points = validMembers.map(m => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [Number(m.longitude), Number(m.latitude)] as [number, number],
-      },
-      properties: {
-        cluster: false,
-        memberId: m.id,
-        member: m,
-      },
+    const points: Array<Supercluster.PointFeature<MemberPointProperties>> = validMembers.map((member) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [member.longitude, member.latitude] },
+      properties: { cluster: false, memberId: member.id, member },
     }));
-
-    const sc = new Supercluster({ radius: 50, maxZoom: 15 });
-    sc.load(points);
-    setSuperclusterInstance(sc);
+    const cluster = new Supercluster<MemberPointProperties, Record<string, never>>({ radius: 50, maxZoom: 15 });
+    cluster.load(points);
+    return cluster;
   }, [members]);
+  const [visiblePoints, setVisiblePoints] = useState<MapPoint[]>([]);
 
   // Update clusters when viewport or supercluster changes
   useEffect(() => {
     if (!superclusterInstance) {
-      setVisiblePoints([]);
-      return;
+      const emptyHandler = window.setTimeout(() => setVisiblePoints([]), 0);
+      return () => window.clearTimeout(emptyHandler);
     }
 
     const handler = setTimeout(() => {
@@ -98,7 +88,8 @@ export const MapVisuals = ({
             bounds.getWest(), bounds.getSouth(),
             bounds.getEast(), bounds.getNorth(),
           ];
-        } catch (err) {
+        } catch (error) {
+          console.error('No se pudieron leer los límites del mapa:', error);
           const zoom = viewState.zoom;
           const lat = viewState.latitude;
           const lng = viewState.longitude;
@@ -119,8 +110,8 @@ export const MapVisuals = ({
         const zoom = Math.round(viewState.zoom);
         const clusters = superclusterInstance.getClusters(bbox, zoom);
         setVisiblePoints(clusters);
-      } catch (err) {
-        console.error('Error updating visible clusters:', err);
+      } catch (error) {
+        console.error('Error updating visible clusters:', error);
       }
     }, 100);
 
@@ -142,7 +133,7 @@ export const MapVisuals = ({
       }))
   };
 
-  const heatmapLayer: any = {
+  const heatmapLayer: LayerProps = {
     id: 'member-heatmap',
     type: 'heatmap',
     maxzoom: 15,
@@ -165,13 +156,13 @@ export const MapVisuals = ({
 
   const coverageGeoJSON = generateCoverageGeoJSON(cells, 500);
 
-  const coverageFillLayer: any = {
+  const coverageFillLayer: LayerProps = {
     id: 'cell-coverage-fill',
     type: 'fill',
     paint: { 'fill-color': '#1E3A8A', 'fill-opacity': 0.15 }
   };
 
-  const coverageLineLayer: any = {
+  const coverageLineLayer: LayerProps = {
     id: 'cell-coverage-line',
     type: 'line',
     paint: { 'line-color': '#D4AF37', 'line-width': 1.5, 'line-opacity': 0.5 }
@@ -180,12 +171,13 @@ export const MapVisuals = ({
   return (
     <>
       {/* Floating Geocoding Search Box */}
-      <div className="absolute top-5 left-5 z-10 w-72 max-w-[calc(100vw-40px)] flex gap-2">
+      <div className="absolute top-32 left-5 z-10 hidden w-72 max-w-[calc(100vw-40px)] gap-2 md:flex">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleGeocodeSearch() }}
+          aria-label="Buscar ubicación geográfica"
           placeholder="Buscar ubicación (ej: Guayaquil)..."
           className="flex-1 bg-white/95 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary backdrop-blur-md shadow-lg min-w-0 font-medium"
         />
@@ -342,9 +334,9 @@ export const MapVisuals = ({
 
         {showMembers && visiblePoints.map((point, idx) => {
           const [longitude, latitude] = point.geometry.coordinates;
-          const { cluster, point_count: pointCount, member } = point.properties;
-
-          if (cluster) {
+          if ('point_count' in point.properties) {
+            const pointCount = point.properties.point_count;
+            const clusterId = point.properties.cluster_id;
             let sizeClass = 'w-9 h-9 bg-blue-500/90 ring-4 ring-blue-500/35';
             if (pointCount > 50) sizeClass = 'w-12 h-12 bg-rose-600/95 ring-4 ring-rose-600/35';
             else if (pointCount > 15) sizeClass = 'w-10 h-10 bg-amber-500/95 ring-4 ring-amber-500/35';
@@ -356,10 +348,11 @@ export const MapVisuals = ({
                     e.stopPropagation();
                     if (superclusterInstance) {
                       try {
-                        const nextZoom = superclusterInstance.getClusterExpansionZoom(point.properties.cluster_id);
+                        const nextZoom = superclusterInstance.getClusterExpansionZoom(clusterId);
                         const targetZoom = Math.min(Math.max(nextZoom, Math.ceil(viewState.zoom + 1)), 20);
                         mapRef.current?.flyTo({ center: [longitude, latitude], zoom: targetZoom, duration: 1000, essential: true });
-                      } catch (err) {
+                      } catch (error) {
+                        console.error('No se pudo ampliar el grupo de miembros:', error);
                         mapRef.current?.flyTo({ center: [longitude, latitude], zoom: Math.min(viewState.zoom + 2, 20), duration: 1000, essential: true });
                       }
                     }
@@ -372,6 +365,7 @@ export const MapVisuals = ({
             );
           }
 
+          const { member } = point.properties;
           return (
             <Marker key={`member-${member.id}`} longitude={longitude} latitude={latitude} anchor="bottom">
               <div 

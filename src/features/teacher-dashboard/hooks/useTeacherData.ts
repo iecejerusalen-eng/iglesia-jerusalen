@@ -99,7 +99,7 @@ function memberDetails(value: unknown): MemberDetails | null {
   };
 }
 
-export function useTeacherData(selectedCourseId: string | undefined, activeTab: string, selectedSchoolId: string) {
+export function useTeacherData(selectedCourseId: string | undefined, activeTab: string, selectedSchoolId: string, selectedPeriodId?: string) {
   const { user, roles, role: primaryRole } = useAuthStore();
 
   const { data: profile, isLoading: isProfileLoading } = useQuery({
@@ -122,13 +122,15 @@ export function useTeacherData(selectedCourseId: string | undefined, activeTab: 
   const isTeacher = Boolean(profile?.is_teacher) || isAdmin || userRoles.some((role) => ['teacher', 'maestro', 'docente'].includes(role));
 
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
-    queryKey: ['teacher-courses', user?.id, selectedSchoolId, isAdmin],
+    queryKey: ['teacher-courses', user?.id, selectedSchoolId, selectedPeriodId, isAdmin],
     queryFn: async () => {
       if (!user?.id) throw new Error('No hay una sesión docente activa.');
       let query = supabase
         .from('lms_courses')
-        .select('id, title, description, cover_image_url, school_id, level_id, format, grading_scale, is_published, created_at, updated_at')
+        .select('id, title, description, cover_image_url, school_id, level_id, period_id, format, grading_scale, is_published, created_at, updated_at')
         .eq('school_id', selectedSchoolId);
+
+      if (selectedPeriodId) query = query.or(`period_id.eq.${selectedPeriodId},period_id.is.null`);
 
       if (!isAdmin) {
         const { data: assignments, error: assignmentsError } = await supabase

@@ -15,8 +15,6 @@ import {
   Trash2,
   Edit3,
   X,
-  Globe,
-  Lock,
   Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -59,7 +57,8 @@ export default function EditorialManager() {
   }, []);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const visible = useMemo(() => {
@@ -128,7 +127,7 @@ export default function EditorialManager() {
     e.preventDefault();
     e.stopPropagation();
 
-    let confirmed = false;
+    let confirmed: boolean;
     if (confirmStore) {
       confirmed = await confirmStore({
         title: '¿Eliminar Espacio Editorial?',
@@ -156,7 +155,7 @@ export default function EditorialManager() {
 
       setSpaces((prev) => prev.filter((item) => item.id !== space.id));
       toast.success(`Espacio "${space.name}" eliminado correctamente`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al eliminar espacio editorial:', err);
       toast.error('Ocurrió un error al eliminar el espacio.');
     }

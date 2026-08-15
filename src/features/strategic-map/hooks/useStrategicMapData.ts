@@ -1,56 +1,57 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '../../../config/supabase';
-import type { Member, Cell, Profile } from '../../../types';
+import type { Cell, Profile } from '../../../types';
+import type { StrategicMapLocation, StrategicMapMember } from '../types';
 
 export const useStrategicMapData = () => {
   const queryClient = useQueryClient();
 
   // Members Query
-  const { data: members = [], isLoading: isLoadingMembers } = useQuery({
+  const { data: members, isLoading: isLoadingMembers, error: membersError, refetch: refetchMembers } = useQuery({
     queryKey: ['map-members'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .is('deleted_at', null);
+      const { data, error } = await supabase.rpc('get_strategic_map_members');
       if (error) throw error;
-      return data as Member[];
+      return (data ?? []) as StrategicMapMember[];
     }
   });
 
   // Cells Query
-  const { data: cells = [], isLoading: isLoadingCells } = useQuery({
+  const { data: cells, isLoading: isLoadingCells, error: cellsError, refetch: refetchCells } = useQuery({
     queryKey: ['map-cells'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cells')
-        .select('*, profiles(first_name, last_name)')
+        .select('id, name, leader_id, sector, latitude, longitude, deleted_at, status, capacity, coverage_radius_m, created_at, updated_at, profiles(first_name, last_name)')
         .is('deleted_at', null);
       if (error) throw error;
-      return data as Cell[];
+      return (data ?? []).map((cell) => ({
+        ...cell,
+        profiles: Array.isArray(cell.profiles) ? cell.profiles[0] ?? null : cell.profiles ?? null,
+      })) as Cell[];
     }
   });
 
   // Locations Query
-  const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
+  const { data: locations, isLoading: isLoadingLocations, error: locationsError, refetch: refetchLocations } = useQuery({
     queryKey: ['map-locations'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('locations')
-        .select('*');
+        .select('id, name, lat, lng, icon_type, icon_value, address_street, description');
       if (error) throw error;
-      return data;
+      return (data ?? []) as StrategicMapLocation[];
     }
   });
 
   // Profiles Query
-  const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
+  const { data: profiles, isLoading: isLoadingProfiles, error: profilesError, refetch: refetchProfiles } = useQuery({
     queryKey: ['map-profiles'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('id, first_name, last_name');
       if (error) throw error;
       return data as Profile[];
     }
@@ -79,5 +80,19 @@ export const useStrategicMapData = () => {
 
   const isLoading = isLoadingMembers || isLoadingCells || isLoadingLocations || isLoadingProfiles;
 
-  return { members, cells, locations, profiles, isLoading };
+  const errors = [membersError, cellsError, locationsError, profilesError].filter(
+    (error): error is Error => error instanceof Error,
+  );
+
+  return {
+    members: members ?? [],
+    cells: cells ?? [],
+    locations: locations ?? [],
+    profiles: profiles ?? [],
+    isLoading,
+    error: errors[0] ?? null,
+    refetch: async () => {
+      await Promise.all([refetchMembers(), refetchCells(), refetchLocations(), refetchProfiles()]);
+    },
+  };
 };

@@ -359,6 +359,10 @@ export interface Cell {
   latitude: number;
   longitude: number;
   deleted_at?: string | null;
+  status?: 'active' | 'paused' | 'planning' | 'archived';
+  capacity?: number | null;
+  coverage_radius_m?: number;
+  updated_at?: string;
   created_at: string;
   profiles?: { first_name: string | null; last_name: string | null } | null;
 }
@@ -836,6 +840,17 @@ export interface LMSSchool {
   lms_levels?: LMSLevel[];
 }
 
+export interface LMSAcademicPeriod {
+  id: string;
+  school_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LMSLevel {
   id: string;
   school_id: string;
@@ -898,6 +913,7 @@ export interface LMSCourse {
   category_id?: string;
   school_id?: string | null;
   level_id?: string | null;
+  period_id?: string | null;
   created_at: string;
   updated_at: string;
   lms_sections?: LMSSection[];

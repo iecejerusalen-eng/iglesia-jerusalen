@@ -1,7 +1,9 @@
 import { Layers, Compass, Users, Crosshair, Plus, X, Trash2, AlertTriangle } from 'lucide-react';
-import type { Cell, Profile } from '../../../types';
+import type { Cell } from '../../../types';
+import type { StrategicMapLeader, StrategicMapSelection } from '../types';
 
 interface MapSidebarProps {
+  className?: string;
   showChurch: boolean;
   setShowChurch: (val: boolean) => void;
   showCells: boolean;
@@ -16,28 +18,30 @@ interface MapSidebarProps {
   setShowOtherChurches: (val: boolean) => void;
   
   cells: Cell[];
-  profiles: Profile[];
+  profiles: StrategicMapLeader[];
+  canManageCells: boolean;
   
   isCreatingCell: boolean;
   setIsCreatingCell: (val: boolean) => void;
-  cellForm: any;
-  setCellForm: (val: any) => void;
+  cellForm: { name: string; sector: string; leader_id: string; latitude: number; longitude: number; status: 'active' | 'paused' | 'planning' | 'archived'; capacity: number | null; coverage_radius_m: number };
+  setCellForm: React.Dispatch<React.SetStateAction<{ name: string; sector: string; leader_id: string; latitude: number; longitude: number; status: 'active' | 'paused' | 'planning' | 'archived'; capacity: number | null; coverage_radius_m: number }>>;
   handleCreateCell: (e: React.FormEvent) => void;
   handleDeleteCell: (id: string, name: string) => void;
   getCurrentLocation: () => void;
   onFocusLocation: (lat: number, lng: number) => void;
-  setSelectedItem: (item: any) => void;
+  setSelectedItem: React.Dispatch<React.SetStateAction<StrategicMapSelection | null>>;
   locationsCount: number;
 }
 
 export const MapSidebar = ({
+  className = '',
   showChurch, setShowChurch,
   showCells, setShowCells,
   showCoverage, setShowCoverage,
   showMembers, setShowMembers,
   showHeatmap, setShowHeatmap,
   showOtherChurches, setShowOtherChurches,
-  cells, profiles,
+  cells, profiles, canManageCells,
   isCreatingCell, setIsCreatingCell,
   cellForm, setCellForm,
   handleCreateCell, handleDeleteCell,
@@ -46,7 +50,7 @@ export const MapSidebar = ({
 }: MapSidebarProps) => {
 
   return (
-    <div className="w-80 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex flex-col flex-shrink-0 overflow-y-auto custom-scrollbar p-6 space-y-6 shadow-sm">
+    <aside aria-label="Controles del mapa" className={`w-80 border-r border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex flex-col flex-shrink-0 overflow-y-auto custom-scrollbar p-5 space-y-6 shadow-xl shadow-slate-950/5 ${className}`}>
       
       {/* Layer Visibility */}
       <div className="space-y-4">
@@ -145,7 +149,7 @@ export const MapSidebar = ({
             <Compass size={14} className="text-emerald-600" />
             Células / Hogares
           </h3>
-          {!isCreatingCell ? (
+          {canManageCells && !isCreatingCell ? (
             <button
               onClick={() => setIsCreatingCell(true)}
               className="p-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white transition-colors cursor-pointer shadow-sm shadow-emerald-600/10"
@@ -153,7 +157,7 @@ export const MapSidebar = ({
             >
               <Plus size={14} />
             </button>
-          ) : (
+          ) : canManageCells ? (
             <button
               onClick={() => setIsCreatingCell(false)}
               className="p-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 dark:text-gray-300 transition-colors cursor-pointer border border-slate-200 dark:border-white/10"
@@ -161,7 +165,7 @@ export const MapSidebar = ({
             >
               <X size={14} />
             </button>
-          )}
+          ) : null}
         </div>
 
         {isCreatingCell ? (
@@ -171,7 +175,7 @@ export const MapSidebar = ({
               <input
                 type="text"
                 value={cellForm.name}
-                onChange={e => setCellForm((prev: any) => ({ ...prev, name: e.target.value }))}
+                onChange={e => setCellForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Ej. Célula La Roca"
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:ring-1 focus:ring-gold focus:border-gold focus:outline-none shadow-2xs transition-all"
                 required
@@ -182,7 +186,7 @@ export const MapSidebar = ({
               <input
                 type="text"
                 value={cellForm.sector}
-                onChange={e => setCellForm((prev: any) => ({ ...prev, sector: e.target.value }))}
+                onChange={e => setCellForm((prev) => ({ ...prev, sector: e.target.value }))}
                 placeholder="Ej. Sector Norte"
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:ring-1 focus:ring-gold focus:border-gold focus:outline-none shadow-2xs transition-all"
               />
@@ -191,7 +195,7 @@ export const MapSidebar = ({
               <label className="block text-slate-500 dark:text-gray-450 font-bold">Líder a Cargo</label>
               <select
                 value={cellForm.leader_id}
-                onChange={e => setCellForm((prev: any) => ({ ...prev, leader_id: e.target.value }))}
+                onChange={e => setCellForm((prev) => ({ ...prev, leader_id: e.target.value }))}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-700 dark:text-gray-300 focus:ring-1 focus:ring-gold focus:border-gold focus:outline-none shadow-2xs transition-all"
               >
                 <option value="">Selecciona un Líder...</option>
@@ -209,7 +213,7 @@ export const MapSidebar = ({
                   type="number"
                   step="any"
                   value={cellForm.latitude}
-                  onChange={e => setCellForm((prev: any) => ({ ...prev, latitude: Number(e.target.value) }))}
+                  onChange={e => setCellForm((prev) => ({ ...prev, latitude: Number(e.target.value) }))}
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-600 dark:text-gray-400 font-mono shadow-2xs focus:outline-none"
                 />
               </div>
@@ -219,10 +223,28 @@ export const MapSidebar = ({
                   type="number"
                   step="any"
                   value={cellForm.longitude}
-                  onChange={e => setCellForm((prev: any) => ({ ...prev, longitude: Number(e.target.value) }))}
+                  onChange={e => setCellForm((prev) => ({ ...prev, longitude: Number(e.target.value) }))}
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-600 dark:text-gray-400 font-mono shadow-2xs focus:outline-none"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="block text-slate-500 dark:text-gray-450 font-bold">Estado</label>
+                <select value={cellForm.status} onChange={e => setCellForm((prev) => ({ ...prev, status: e.target.value as typeof prev.status }))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-700 dark:text-gray-300 focus:ring-1 focus:ring-gold focus:border-gold focus:outline-none shadow-2xs transition-all">
+                  <option value="active">Activa</option>
+                  <option value="planning">En planificación</option>
+                  <option value="paused">Pausada</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-slate-500 dark:text-gray-450 font-bold">Capacidad</label>
+                <input type="number" min="1" value={cellForm.capacity ?? ''} onChange={e => setCellForm((prev) => ({ ...prev, capacity: e.target.value ? Number(e.target.value) : null }))} placeholder="Opcional" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-600 dark:text-gray-400 shadow-2xs focus:outline-none" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-slate-500 dark:text-gray-450 font-bold">Radio de cobertura (metros)</label>
+              <input type="number" min="100" max="10000" value={cellForm.coverage_radius_m} onChange={e => setCellForm((prev) => ({ ...prev, coverage_radius_m: Number(e.target.value) }))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-600 dark:text-gray-400 shadow-2xs focus:outline-none" />
             </div>
 
             <div className="bg-amber-50 p-2.5 rounded-xl text-[10px] text-amber-800 leading-normal flex items-start gap-2 border border-amber-200/50">
@@ -275,7 +297,7 @@ export const MapSidebar = ({
                       </span>
                     )}
                   </div>
-                  <button
+                  {canManageCells && <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteCell(cell.id, cell.name);
@@ -284,13 +306,13 @@ export const MapSidebar = ({
                     title="Eliminar célula"
                   >
                     <Trash2 size={13} />
-                  </button>
+                  </button>}
                 </div>
               ))
             )}
           </div>
         )}
       </div>
-    </div>
+    </aside>
   );
 };

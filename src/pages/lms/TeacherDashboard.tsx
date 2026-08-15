@@ -19,14 +19,17 @@ import { NotificationCenter } from '../../features/lms/components/NotificationCe
 import { ForumManager } from '../../features/lms/components/ForumManager';
 import { SchoolPortalGate } from '../../features/lms/components/SchoolPortalGate';
 import type { SchoolPortalSchool } from '../../features/lms/hooks/useSchoolPortal';
+import { AcademicWorkspaceProvider } from '../../features/lms/context/AcademicWorkspaceProvider';
+import { useAcademicWorkspace } from '../../features/lms/context/useAcademicWorkspace';
 
 interface TeacherSchoolDashboardProps {
   school: SchoolPortalSchool;
   onChangeSchool: () => void;
 }
 
-function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboardProps) {
+function TeacherSchoolDashboardContent({ school, onChangeSchool }: TeacherSchoolDashboardProps) {
   const { user } = useAuthStore();
+  const { periods, activePeriod, selectedPeriodId, setSelectedPeriodId, isLoading: periodsLoading } = useAcademicWorkspace();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedSessionIdForAttendance, setSelectedSessionIdForAttendance] = useState('');
@@ -47,7 +50,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
     finalGrades,
     pendingAttendanceCount = 0,
     isLoading
-  } = useTeacherData(selectedCourseId, activeTab, school.id);
+  } = useTeacherData(selectedCourseId, activeTab, school.id, selectedPeriodId || undefined);
 
   const {
     addSession: createSessionMutation,
@@ -118,7 +121,13 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-indigo-200/70 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-indigo-400/15 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"><School size={19} /></span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Escuela docente</p><p className="font-bold text-slate-900 dark:text-white">{school.name}</p></div></div>
-          <button type="button" onClick={onChangeSchool} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Cambiar escuela</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="teacher-period">Periodo académico</label>
+            <select id="teacher-period" value={selectedPeriodId} onChange={(event) => setSelectedPeriodId(event.target.value)} disabled={periodsLoading || periods.length === 0} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+              {periods.length === 0 ? <option value="">Sin periodos configurados</option> : periods.map((period) => <option key={period.id} value={period.id}>{period.name}{period.is_active ? ' · Activo' : ''}</option>)}
+            </select>
+            <button type="button" onClick={onChangeSchool} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Cambiar escuela</button>
+          </div>
         </div>
         <div className="mb-6 flex flex-col gap-5 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6 md:flex-row md:items-end md:justify-between lg:mb-8">
           <div>
@@ -131,7 +140,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
               </h1>
             </div>
             <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xl">
-              Bienvenido, {user?.user_metadata?.first_name || 'Profesor'}. Gestiona tus clases, califica alumnos y estructura tu contenido.
+              Bienvenido, {user?.user_metadata?.first_name || 'Profesor'}. Gestiona tus clases, califica alumnos y estructura tu contenido.{activePeriod ? ` Periodo: ${activePeriod.name}.` : ''}
             </p>
           </div>
 
@@ -296,7 +305,7 @@ function TeacherSchoolDashboard({ school, onChangeSchool }: TeacherSchoolDashboa
 export default function TeacherDashboard() {
   return (
     <SchoolPortalGate mode="teacher">
-      {(school, leaveSchool) => <TeacherSchoolDashboard school={school} onChangeSchool={leaveSchool} />}
+      {(school, leaveSchool) => <AcademicWorkspaceProvider school={school}><TeacherSchoolDashboardContent school={school} onChangeSchool={leaveSchool} /></AcademicWorkspaceProvider>}
     </SchoolPortalGate>
   );
 }
