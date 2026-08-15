@@ -17,7 +17,7 @@ const AdminHeader = ({ title, description, action, eyebrow = 'Panel administrati
           <ShieldCheck size={13} />
           {eyebrow}
         </p>
-        <h1 className="font-serif text-xl font-bold tracking-tight text-primary dark:text-church-gold-bright sm:text-2xl md:text-3xl">
+        <h1 className="font-sans text-xl font-bold tracking-tight text-primary dark:text-church-gold-bright sm:text-2xl md:text-3xl">
           {title}
         </h1>
         {description && (

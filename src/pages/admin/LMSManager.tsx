@@ -167,7 +167,7 @@ export default function LMSManager() {
                 <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-200">Administración académica</span>
                 <span className="text-xs text-slate-400">Aula Virtual</span>
               </div>
-              <h1 className="mt-2 font-serif text-2xl font-bold text-slate-950 dark:text-white sm:text-3xl">{currentNavigationItem.label}</h1>
+              <h1 className="mt-2 font-sans text-2xl font-bold text-slate-950 dark:text-white sm:text-3xl">{currentNavigationItem.label}</h1>
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{currentNavigationItem.description}. El contenido visible respeta el alcance autorizado para tu cuenta.</p>
             </div>
           </div>

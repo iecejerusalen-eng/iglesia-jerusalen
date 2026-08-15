@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { 
   Sparkles, ToggleLeft, ToggleRight, Settings, 
@@ -28,6 +28,8 @@ export default function PluginManager() {
   const [plugins, setPlugins] = useState<PluginItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'activity' | 'block' | 'theme' | 'filter'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | PluginItem['status']>('all');
   
   // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -225,17 +227,24 @@ export default function PluginManager() {
     }
   };
 
-  const filteredPlugins = plugins.filter(
-    p => activeTab === 'all' || p.type === activeTab
-  );
+  const filteredPlugins = useMemo(() => plugins.filter((plugin) => {
+    const matchesType = activeTab === 'all' || plugin.type === activeTab;
+    const matchesStatus = statusFilter === 'all' || plugin.status === statusFilter;
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch = !query || `${plugin.name} ${plugin.description}`.toLowerCase().includes(query);
+    return matchesType && matchesStatus && matchesSearch;
+  }), [activeTab, plugins, searchQuery, statusFilter]);
+
+  const activeCount = plugins.filter((plugin) => plugin.status === 'active').length;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="min-h-full bg-slate-50/60 p-4 font-sans dark:bg-slate-950/30 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-sans text-slate-900 dark:text-white flex items-center gap-3">
             <Sparkles className="text-gold animate-pulse" size={32} />
             Gestor de Extensiones (Plugins)
           </h1>
@@ -252,13 +261,32 @@ export default function PluginManager() {
         </button>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[['Total', plugins.length], ['Activas', activeCount], ['Inactivas', plugins.length - activeCount], ['Tipos', new Set(plugins.map((plugin) => plugin.type)).size]].map(([label, value]) => (
+          <div key={String(label)} className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/65">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="mt-1 text-2xl font-black text-primary dark:text-white">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 sm:flex-row">
+        <label className="relative flex-1">
+          <span className="sr-only">Buscar extensiones</span>
+          <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Buscar por nombre o descripción..." className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 dark:border-white/10 dark:bg-slate-950/50 dark:text-white" />
+        </label>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | PluginItem['status'])} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-primary dark:border-white/10 dark:bg-slate-950/50 dark:text-white">
+          <option value="all">Todos los estados</option><option value="active">Activas</option><option value="inactive">Inactivas</option>
+        </select>
+      </div>
+
       {/* Tabs Menu */}
-      <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto pb-px gap-2">
+      <div className="flex overflow-x-auto gap-2 rounded-2xl border border-white/70 bg-white/60 p-2 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60">
         {(['all', 'activity', 'block', 'theme', 'filter'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-5 py-3 font-serif font-bold text-xs uppercase tracking-wider border-b-2 transition-all shrink-0 cursor-pointer ${
+            className={`rounded-xl px-5 py-3 font-sans font-bold text-xs uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
               activeTab === tab 
                 ? 'border-gold text-gold font-extrabold' 
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -310,7 +338,7 @@ export default function PluginManager() {
                     }`}>
                       {plugin.type}
                     </span>
-                    <h3 className="font-serif font-bold text-sm text-gray-800 dark:text-gray-100 mt-1 line-clamp-1">{plugin.name}</h3>
+                    <h3 className="font-sans font-bold text-sm text-gray-800 dark:text-gray-100 mt-1 line-clamp-1">{plugin.name}</h3>
                   </div>
                   <span className="text-[10px] text-gray-400 font-mono font-bold">v{plugin.version}</span>
                 </div>
@@ -371,7 +399,7 @@ export default function PluginManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between p-6 border-b border-gray-150 dark:border-white/10">
-              <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-xl font-bold font-sans text-slate-900 dark:text-white flex items-center gap-2">
                 <Settings size={20} className="text-gold" />
                 Configurar: {selectedPlugin.name}
               </h2>
@@ -423,7 +451,7 @@ export default function PluginManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <form onSubmit={handleInstallPlugin} className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between p-6 border-b border-gray-150 dark:border-white/10">
-              <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-xl font-bold font-sans text-slate-900 dark:text-white flex items-center gap-2">
                 <PlusCircle size={20} className="text-gold" />
                 Subir Extensión
               </h2>
@@ -496,6 +524,7 @@ export default function PluginManager() {
         </div>
       )}
       
+      </div>
     </div>
   );
 }

@@ -71,7 +71,7 @@ const AdminLayout = () => {
 
   return (
     <div
-      className="min-h-[100dvh] bg-[#f6f7f9] text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
+      className="min-h-[100dvh] bg-[#f6f7f9] font-sans text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
       style={accentStyle}
     >
       <Sidebar

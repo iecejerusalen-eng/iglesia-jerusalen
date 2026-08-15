@@ -13,7 +13,7 @@ export const ModuleGrid = () => {
     <AnimeFadeUp delay={350} duration={850} className="space-y-5 rounded-[1.4rem] border border-gray-150 bg-white p-4 shadow-2xs dark:border-white/10 dark:bg-slate-900 sm:p-6 md:rounded-3xl md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h2 className="text-lg font-serif font-bold text-primary dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-sans font-bold text-primary dark:text-white flex items-center gap-2">
             <Layers className="text-gold" size={20} />
             Módulos del Sistema
           </h2>

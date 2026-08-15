@@ -243,7 +243,7 @@ const SettingsManager = () => {
   }
 
   return (
-    <AnimeFadeUp className="space-y-6 max-w-5xl">
+    <AnimeFadeUp className="min-h-full max-w-6xl space-y-6 bg-slate-50/50 p-4 font-sans dark:bg-slate-950/20 sm:p-6">
       <AdminHeader 
         title="Datos y Parámetros del Sistema" 
         description="Gestiona la información global de la iglesia, enlaces a redes sociales y las listas dinámicas de cargos, talentos y dones."
@@ -287,7 +287,7 @@ const SettingsManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Contact Information */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <h3 className="font-sans font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                   <Phone size={18} className="text-gold" />
                   Información de Contacto
                 </h3>
@@ -366,7 +366,7 @@ const SettingsManager = () => {
 
               {/* Card 2: Financial Details */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+                <h3 className="font-sans font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                   <Landmark size={18} className="text-gold" />
                   Cuentas y Finanzas
                 </h3>
@@ -431,7 +431,7 @@ const SettingsManager = () => {
 
             {/* Card 3: Social Media Links */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+              <h3 className="font-sans font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                 <Share2 size={18} className="text-gold" />
                 Redes Sociales
               </h3>
@@ -480,7 +480,7 @@ const SettingsManager = () => {
 
             {/* Card 4: Payment Gateways */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+              <h3 className="font-sans font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                 <Landmark size={18} className="text-gold" />
                 Pasarelas de Pago e Impuestos
               </h3>
@@ -526,7 +526,7 @@ const SettingsManager = () => {
 
             {/* Card 5: System Preferences */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-xs space-y-4">
-              <h3 className="font-serif font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
+              <h3 className="font-sans font-bold text-lg text-primary dark:text-church-gold-bright flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-2">
                 <Settings size={18} className="text-gold" />
                 Preferencias del Sistema
               </h3>
@@ -614,7 +614,7 @@ const SettingsManager = () => {
             {/* Catalog content panel (right 3 cols) */}
             <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 p-6 rounded-2xl shadow-xs space-y-6">
               <div>
-                <h3 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-lg">
+                <h3 className="font-sans font-bold text-gray-800 dark:text-gray-100 text-lg">
                   {CATEGORIES.find(c => c.id === selectedCategory)?.label}
                 </h3>
                 <p className="text-gray-400 text-xs mt-1">

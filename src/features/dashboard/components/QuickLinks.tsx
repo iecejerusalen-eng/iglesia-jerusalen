@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ADMIN_MODULES, getAdminModulePermission } from '../../../config/adminModules';
 import { usePermissions } from '../../../hooks/usePermissions';
 
-const preferredModuleIds = ['members', 'sermons', 'ministries', 'inventory', 'analytics'];
+const preferredModuleIds = ['members', 'programs', 'notifications', 'editorial', 'analytics', 'settings'];
 
 export const QuickLinks = () => {
   const { hasPermission } = usePermissions();
