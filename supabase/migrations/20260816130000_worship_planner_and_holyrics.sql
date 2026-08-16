@@ -258,52 +258,52 @@ ALTER TABLE public.worship_sync_links ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Worship managers read rules" ON public.worship_service_rules;
 CREATE POLICY "Worship managers read rules" ON public.worship_service_rules FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage rules" ON public.worship_service_rules;
 CREATE POLICY "Worship managers manage rules" ON public.worship_service_rules FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read services" ON public.worship_services;
 CREATE POLICY "Worship managers read services" ON public.worship_services FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage services" ON public.worship_services;
 CREATE POLICY "Worship managers manage services" ON public.worship_services FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read assignments" ON public.worship_service_assignments;
 CREATE POLICY "Worship managers read assignments" ON public.worship_service_assignments FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage assignments" ON public.worship_service_assignments;
 CREATE POLICY "Worship managers manage assignments" ON public.worship_service_assignments FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read items" ON public.worship_service_items;
 CREATE POLICY "Worship managers read items" ON public.worship_service_items FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage items" ON public.worship_service_items;
 CREATE POLICY "Worship managers manage items" ON public.worship_service_items FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read Holyrics connections" ON public.holyrics_connections;
 CREATE POLICY "Worship managers read Holyrics connections" ON public.holyrics_connections FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage Holyrics connections" ON public.holyrics_connections;
 CREATE POLICY "Worship managers manage Holyrics connections" ON public.holyrics_connections FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read Holyrics commands" ON public.holyrics_commands;
 CREATE POLICY "Worship managers read Holyrics commands" ON public.holyrics_commands FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers create Holyrics commands" ON public.holyrics_commands;
 CREATE POLICY "Worship managers create Holyrics commands" ON public.holyrics_commands FOR INSERT TO authenticated
-  WITH CHECK (private.current_user_can_manage_service());
+  WITH CHECK (public.current_user_can_worship_manager());
 
 DROP POLICY IF EXISTS "Worship managers read sync links" ON public.worship_sync_links;
 CREATE POLICY "Worship managers read sync links" ON public.worship_sync_links FOR SELECT TO authenticated
-  USING (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager());
 DROP POLICY IF EXISTS "Worship managers manage sync links" ON public.worship_sync_links;
 CREATE POLICY "Worship managers manage sync links" ON public.worship_sync_links FOR ALL TO authenticated
-  USING (private.current_user_can_manage_service()) WITH CHECK (private.current_user_can_manage_service());
+  USING (public.current_user_can_worship_manager()) WITH CHECK (public.current_user_can_worship_manager());
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.worship_service_rules TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.worship_services TO authenticated;
