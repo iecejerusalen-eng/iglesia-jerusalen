@@ -347,6 +347,16 @@ export const ADMIN_MODULES: AdminModule[] = [
     keywords: ['cultos', 'agenda', 'reuniones']
   },
   {
+    id: 'worship_planner',
+    label: 'Tiempo de Culto',
+    name: 'Tiempo de Culto',
+    path: '/admin/tiempo-de-culto',
+    icon: Clock3,
+    group: 'operaciones',
+    permission: 'events',
+    keywords: ['culto', 'planificador', 'alabanza', 'ujieres', 'holyrics']
+  },
+  {
     id: 'notifications',
     label: 'Notificaciones',
     name: 'Notificaciones',

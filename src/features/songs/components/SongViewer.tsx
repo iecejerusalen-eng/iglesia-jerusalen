@@ -23,6 +23,7 @@ import {
   Maximize2,
   Minimize2,
   Minus,
+  Music,
   Music2,
   PauseCircle,
   Play,
@@ -97,6 +98,20 @@ const DEFAULT_PREFERENCES: StoredViewerPreferences = {
   accidentalPreference: 'auto',
   mode: 'lyrics-chords',
 };
+
+const ProPresenterIcon = ({ size = 13, className = "" }: { size?: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 7V17M7 12H17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const HolylyricsIcon = ({ size = 13, className = "" }: { size?: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9 16V8l8 4-8 4z" fill="currentColor" />
+  </svg>
+);
 
 const INSTRUMENTS: Array<{ id: InstrumentType; label: string; icon: typeof Guitar }> = [
   { id: 'guitarra', label: 'Guitarra', icon: Guitar },
@@ -344,6 +359,51 @@ export const SongViewer = ({
           : 'Acordes y letra copiados en pares para Stage');
     } catch (error) {
       console.error('No se pudo copiar el texto para ProPresenter.', error);
+      toast.error('El navegador no permitió copiar el contenido.');
+    }
+  };
+
+  const copyPlainText = async (includeChords: boolean) => {
+    const processed = transposeBracketText(sourceText, includeChords ? chordTransposeAmount : transposeAmount, {
+      nashville: nashvilleMode,
+      key: originalKey,
+      preference: accidentalPreference,
+    });
+    
+    const lines = processed.split('\n');
+    let plainText = '';
+    
+    if (!includeChords) {
+      plainText = lines.map(line => line.replace(/\[.*?\]/g, '')).join('\n');
+    } else {
+      plainText = lines.map(line => {
+        if (!line.includes('[')) return line;
+        let chordLine = '';
+        let lyricsLine = '';
+        let currentIndex = 0;
+        const regex = /\[(.*?)\]/g;
+        let match;
+        while ((match = regex.exec(line)) !== null) {
+          const chord = match[1];
+          const position = match.index;
+          lyricsLine += line.substring(currentIndex, position);
+          while (chordLine.length < lyricsLine.length) {
+            chordLine += ' ';
+          }
+          chordLine += chord + ' ';
+          currentIndex = regex.lastIndex;
+        }
+        lyricsLine += line.substring(currentIndex);
+        if (chordLine.trim() === '') return lyricsLine;
+        return `${chordLine.trimEnd()}\n${lyricsLine}`;
+      }).join('\n');
+    }
+
+    try {
+      await navigator.clipboard.writeText(plainText);
+      toast.success(includeChords ? 'Letras y acordes copiados' : 'Letras copiadas');
+    } catch (error) {
+      console.error('No se pudo copiar el texto.', error);
       toast.error('El navegador no permitió copiar el contenido.');
     }
   };
@@ -836,10 +896,11 @@ export const SongViewer = ({
                   <ChevronsUp size={16} />
                 </button>
               </div>
-              <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
-              <button onClick={() => void copyForProPresenter('lyrics')} className="toolbar-chip" title="Dos líneas de letra por diapositiva"><FileText size={13} /> Letra → ProPresenter</button>
-              <button onClick={() => void copyForProPresenter('lyrics-chords')} className="toolbar-chip border-indigo-200/70 text-indigo-700 dark:text-indigo-300" title="Una frase por diapositiva: acordes arriba y letra abajo"><Copy size={13} /> Stage + acordes</button>
-              <button type="button" onClick={() => void copyForProPresenter('lyrics-chords', '//')} className="toolbar-chip border-emerald-200/70 text-emerald-700 dark:text-emerald-300" title="Una frase por diapositiva: acordes como comentarios para Holylyrics"><Copy size={13} /> Holylyrics</button>
+              <button onClick={printSong} className="toolbar-chip justify-center px-2" aria-label="Imprimir PDF" title="Imprimir PDF"><Printer size={13} /></button>
+              <button onClick={() => void copyPlainText(false)} className="toolbar-chip" title="Copiar solo letras"><Copy size={13} /> Letras</button>
+              <button onClick={() => void copyPlainText(true)} className="toolbar-chip" title="Copiar letras y acordes"><div className="flex items-center -space-x-1"><Copy size={13}/><Music size={10} className="relative top-0.5 text-indigo-500 dark:text-indigo-400" /></div> Acordes</button>
+              <button onClick={() => void copyForProPresenter('lyrics')} className="toolbar-chip border-orange-200/70 text-orange-700 dark:text-orange-300" title="Copiar para ProPresenter"><ProPresenterIcon size={13} /> ProPresenter</button>
+              <button type="button" onClick={() => void copyForProPresenter('lyrics-chords', '//')} className="toolbar-chip border-blue-200/70 text-blue-700 dark:text-blue-300" title="Copiar para Holylyrics"><HolylyricsIcon size={13} /> Holylyrics</button>
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-3">

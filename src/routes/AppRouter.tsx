@@ -129,6 +129,7 @@ const ContentHub = lazyWithRetry(() => import('../pages/admin/ContentHub'));
 const ContactInbox = lazyWithRetry(() => import('../pages/admin/ContactInbox'));
 const AuditLogViewer = lazyWithRetry(() => import('../pages/admin/AuditLogViewer'));
 const SchedulesManager = lazyWithRetry(() => import('../pages/admin/SchedulesManager'));
+const WorshipPlanner = lazyWithRetry(() => import('../pages/admin/WorshipPlanner'));
 const DiscipleshipManager = lazyWithRetry(() => import('../pages/admin/DiscipleshipManager'));
 const AdminNotFound = lazyWithRetry(() => import('../pages/admin/AdminNotFound'));
 
@@ -230,7 +231,7 @@ export default function AppRouter() {
           <Route path="/admin/ministerios/:id" element={<MinistryDashboard />} />
         </Route></Route>
         <Route element={<ProtectedRoute module="logos" />}><Route element={<AdminLayout />}><Route path="/admin/logos" element={<LogosManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /><Route path="/admin/horarios" element={<SchedulesManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /><Route path="/admin/horarios" element={<SchedulesManager />} /><Route path="/admin/tiempo-de-culto" element={<WorshipPlanner />} /></Route></Route>
         <Route element={<ProtectedRoute module="missions" />}><Route element={<AdminLayout />}><Route path="/admin/misiones" element={<MissionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>

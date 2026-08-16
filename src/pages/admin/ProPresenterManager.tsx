@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
+import ConnectionInstructions from '../../components/admin/ConnectionInstructions';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import { toast } from 'sonner';
@@ -376,7 +377,8 @@ const ProPresenterManager = () => {
 };
 
 const OverviewTab = ({ connections, onNew, onSelect }: { connections: ProPresenterConnection[]; onNew: () => void; onSelect: (id: string) => void }) => (
-  <div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+  <div className="space-y-5">
+    <div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
     <section className={`${glassPanel} p-5 sm:p-6`}>
       <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-gold">Flujo recomendado</p><h3 className="mt-1 font-serif text-2xl font-bold text-primary dark:text-white">De la alabanza a la pantalla</h3></div><button type="button" onClick={onNew} className="inline-flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20" aria-label="Agregar conexión"><Plus size={18} /></button></div>
       <div className="mt-6 space-y-3">
@@ -384,6 +386,24 @@ const OverviewTab = ({ connections, onNew, onSelect }: { connections: ProPresent
       </div>
     </section>
     <section className={`${glassPanel} p-5 sm:p-6`}><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Dispositivos recientes</p><h3 className="mt-1 text-xl font-bold text-slate-800 dark:text-white">Conexiones</h3></div><button type="button" onClick={onNew} className={softButton}><Plus size={15} /> Nueva</button></div><div className="mt-5 space-y-2">{connections.slice(0, 4).map((connection) => <button key={connection.id} type="button" onClick={() => onSelect(connection.id)} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/55 p-3 text-left transition hover:-translate-y-0.5 hover:border-blue-300 dark:border-white/10 dark:bg-white/5"><span className={`flex size-10 items-center justify-center rounded-xl bg-gradient-to-br ${modeMeta[connection.mode].accent} text-white`}><MonitorPlay size={18} /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-slate-800 dark:text-white">{connection.name}</strong><span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500"><Circle size={8} fill={isOnline(connection.last_seen_at) ? '#10b981' : '#94a3b8'} className={isOnline(connection.last_seen_at) ? 'text-emerald-500' : 'text-slate-400'} />{formatLastSeen(connection.last_seen_at)}</span></span><ChevronRight size={16} className="text-slate-400" /></button>)}{connections.length === 0 && <EmptyState onNew={onNew} />}</div></section>
+    </div>
+    <ConnectionInstructions
+      eyebrow="Conexión sencilla · ProPresenter"
+      title="Conecta la computadora de producción en 5 minutos"
+      description="La página genera un código temporal. El conector instalado en la misma computadora lo usa para vincularse y luego mantiene la conexión saliente sin abrir puertos públicos."
+      steps={[
+        { title: 'Activa la API', description: 'Abre ProPresenter 7 y ve a Settings → Network. Activa la API y deja ProPresenter abierto.' },
+        { title: 'Registra la computadora aquí', description: 'Pulsa “Nueva”, escribe un nombre y crea la conexión. Guarda el ID y el código de un solo uso.' },
+        { title: 'Prepara el conector', description: 'Instala Node.js 20+ en la computadora de producción y abre una terminal dentro de tools/propresenter-bridge.' },
+        { title: 'Ejecuta el emparejamiento', description: 'Pega los valores en las variables del comando. El código caduca en 15 minutos y solo funciona una vez.' },
+        { title: 'Confirma el estado', description: 'Vuelve a este panel: la computadora debe aparecer como Online. Después prueba una alabanza desde Control en vivo.' },
+      ]}
+      command={'$env:SUPABASE_FUNCTION_URL="https://TU_PROYECTO.supabase.co/functions/v1/propresenter-device"\n$env:PROPRESENTER_CONNECTION_ID="ID_COPIADO_DEL_PANEL"\n$env:PROPRESENTER_PAIRING_CODE="JER-XXXX-XXXX-XXXX-XXXX"\n$env:PROPRESENTER_URL="http://127.0.0.1:50001"\ncd tools/propresenter-bridge\nnpm install\nnpm start'}
+      commandLabel="PowerShell · ejecutar en la PC de producción"
+      helpUrl="https://openapi.propresenter.com/"
+      helpLabel="Ver API oficial"
+      note="Si aparece Offline, revisa primero que el puente siga abierto, que la URL de Supabase sea correcta y que ProPresenter esté abierto con su API habilitada. No pongas service_role en este comando."
+    />
   </div>
 );
 
