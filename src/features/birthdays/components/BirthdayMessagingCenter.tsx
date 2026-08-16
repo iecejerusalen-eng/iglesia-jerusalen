@@ -56,6 +56,7 @@ export function BirthdayMessagingCenter({ birthdays, initialBirthday = null, onC
   const [scope, setScope] = useState<CampaignScope>(initialBirthday ? 'todos' : 'mes');
   const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => initialBirthday ? new Set([initialBirthday.member.id]) : new Set());
+  const [selectionMode, setSelectionMode] = useState<'auto' | 'manual'>(initialBirthday ? 'manual' : 'auto');
   const [openedIds, setOpenedIds] = useState<Set<string>>(new Set());
   const [activeRecipientId, setActiveRecipientId] = useState<string | null>(initialBirthday?.member.id || null);
 
@@ -125,17 +126,19 @@ export function BirthdayMessagingCenter({ birthdays, initialBirthday = null, onC
     return true;
   }).sort((a, b) => a.daysRemaining - b.daysRemaining), [birthdays, initialBirthday, scope]);
 
-  useEffect(() => {
-    if (initialBirthday) return;
-    setSelectedIds(new Set(scopedBirthdays.filter((birthday) => contacts.get(birthday.member.id)?.phone).map((birthday) => birthday.member.id)));
-  }, [contacts, initialBirthday, scope, scopedBirthdays]);
+  const automaticallySelectedIds = useMemo(
+    () => new Set(scopedBirthdays.filter((birthday) => contacts.get(birthday.member.id)?.phone).map((birthday) => birthday.member.id)),
+    [contacts, scopedBirthdays]
+  );
+  const effectiveSelectedIds = selectionMode === 'auto' && !initialBirthday ? automaticallySelectedIds : selectedIds;
 
-  const selectedBirthdays = useMemo(() => scopedBirthdays.filter((birthday) => selectedIds.has(birthday.member.id)), [scopedBirthdays, selectedIds]);
+  const selectedBirthdays = useMemo(() => scopedBirthdays.filter((birthday) => effectiveSelectedIds.has(birthday.member.id)), [effectiveSelectedIds, scopedBirthdays]);
   const eligibleBirthdays = useMemo(() => selectedBirthdays.filter((birthday) => Boolean(contacts.get(birthday.member.id)?.phone)), [contacts, selectedBirthdays]);
   const pendingBirthdays = eligibleBirthdays.filter((birthday) => !openedIds.has(birthday.member.id));
   const activeRecipient = birthdays.find((birthday) => birthday.member.id === activeRecipientId) || eligibleBirthdays[0] || null;
 
   const toggleRecipient = (memberId: string) => {
+    setSelectionMode('manual');
     setSelectedIds((current) => {
       const next = new Set(current);
       if (next.has(memberId)) next.delete(memberId);
@@ -226,10 +229,10 @@ export function BirthdayMessagingCenter({ birthdays, initialBirthday = null, onC
             <div className="flex items-center justify-between gap-3 px-5 py-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white">Destinatarios</h3>
-                <p className="text-xs text-slate-400">{selectedIds.size} seleccionados · {eligibleBirthdays.length} con WhatsApp</p>
+              <p className="text-xs text-slate-400">{effectiveSelectedIds.size} seleccionados · {eligibleBirthdays.length} con WhatsApp</p>
               </div>
               {!initialBirthday && scopedBirthdays.length > 0 && (
-                <button type="button" onClick={() => setSelectedIds((current) => current.size > 0 ? new Set() : new Set(scopedBirthdays.filter((birthday) => contacts.get(birthday.member.id)?.phone).map((birthday) => birthday.member.id)))} className="text-xs font-bold text-primary dark:text-blue-300">{selectedIds.size > 0 ? 'Limpiar' : 'Elegir todos'}</button>
+                <button type="button" onClick={() => { setSelectionMode('manual'); setSelectedIds(() => effectiveSelectedIds.size > 0 ? new Set() : new Set(scopedBirthdays.filter((birthday) => contacts.get(birthday.member.id)?.phone).map((birthday) => birthday.member.id))); }} className="text-xs font-bold text-primary dark:text-blue-300">{effectiveSelectedIds.size > 0 ? 'Limpiar' : 'Elegir todos'}</button>
               )}
             </div>
             <div className="min-h-[13rem] flex-1 overflow-y-auto px-4 pb-4 sm:px-5">
@@ -243,7 +246,7 @@ export function BirthdayMessagingCenter({ birthdays, initialBirthday = null, onC
                 <div className="space-y-2">
                   {scopedBirthdays.map((birthday) => {
                     const hasPhone = Boolean(contacts.get(birthday.member.id)?.phone);
-                    const isSelected = selectedIds.has(birthday.member.id);
+                    const isSelected = effectiveSelectedIds.has(birthday.member.id);
                     const wasOpened = openedIds.has(birthday.member.id);
                     return (
                       <button key={birthday.member.id} type="button" disabled={!hasPhone || Boolean(initialBirthday)} onClick={() => toggleRecipient(birthday.member.id)} className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${isSelected ? 'border-emerald-500/35 bg-emerald-500/10' : 'border-slate-200 bg-white dark:border-white/10 dark:bg-white/5'} disabled:cursor-default disabled:opacity-70`}>

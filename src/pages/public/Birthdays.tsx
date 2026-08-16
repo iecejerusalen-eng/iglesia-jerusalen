@@ -23,7 +23,7 @@ function matchesSearch(item: BirthdayInfo, query: string): boolean {
 }
 
 export default function Birthdays() {
-  const { birthdayList, loading, error, lastUpdated, refetch } = useBirthdays();
+  const { birthdayList, loading, refreshing, error, lastUpdated, refetch } = useBirthdays();
   const { user, hasPermission } = usePermissions();
   const { width, height } = useWindowSize();
   const [activeTab, setActiveTab] = useState<BirthdayTab>('semana');
@@ -54,7 +54,7 @@ export default function Birthdays() {
       if (activeTab === 'semana') return item.isThisWeek;
       return item.isThisMonth;
     });
-    return filtered.sort((a, b) => activeTab === 'semana' ? a.daysRemaining - b.daysRemaining : a.day - b.day);
+    return filtered.sort((a, b) => activeTab === 'semana' ? a.daysRemaining - b.daysRemaining : a.day - b.day || a.member.last_name.localeCompare(b.member.last_name, 'es'));
   }, [activeTab, searchedBirthdays]);
 
   const handleCelebrate = (name: string) => {
@@ -115,12 +115,12 @@ export default function Birthdays() {
 
       <div className="relative z-10">
         <div id="birthdays_hero" className="scroll-mt-24">
-          <BirthdaysHero todayCount={counts.hoy} weekCount={counts.semana} monthCount={counts.mes} totalCount={birthdayList.length} />
+          <BirthdaysHero todayCount={counts.hoy} weekCount={counts.semana} monthCount={counts.mes} totalCount={birthdayList.length} nextBirthday={birthdayList[0]} />
         </div>
 
         <div className="mt-6 space-y-5">
           <div id="birthdays_today" className="scroll-mt-24">
-            <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} />
+            <BirthdaysFilters activeTab={activeTab} setActiveTab={setActiveTab} viewMode={viewMode} setViewMode={setViewMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} counts={counts} onExportPdf={() => setShowPdfDialog(true)} canExport={(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length > 0} onRefresh={() => void refetch()} isRefreshing={refreshing} />
           </div>
 
           {canManageMessages && (
@@ -134,11 +134,12 @@ export default function Birthdays() {
           )}
 
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-1 text-xs text-slate-400">
-            <span>{loading ? 'Sincronizando con el CRM…' : `${filteredBirthdays.length} resultado${filteredBirthdays.length === 1 ? '' : 's'} en la selección`}</span>
+            <span>{loading ? 'Sincronizando con el CRM…' : `${(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length} resultado${(viewMode === 'calendar' || viewMode === 'year' ? searchedBirthdays : filteredBirthdays).length === 1 ? '' : 's'} en la selección`}</span>
             {lastUpdated && <span className="inline-flex items-center gap-1.5"><ShieldCheck size={13} /> Actualizado {lastUpdated.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</span>}
           </div>
 
-          <div id="birthdays_card" className="scroll-mt-24">
+          <div id="birthdays-results" role="tabpanel" aria-labelledby={`birthday-tab-${activeTab}`} className="scroll-mt-24">
+            <div id="birthdays_card">
             {loading ? (
               <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Cargando cumpleaños" aria-busy="true">
                 {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-80 animate-pulse rounded-[1.75rem] border border-white/70 bg-white/60 dark:border-white/10 dark:bg-slate-900/60" />)}
@@ -150,15 +151,64 @@ export default function Birthdays() {
                 <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">La información no se reemplazó con datos ficticios. Verifica que la migración de cumpleaños públicos esté aplicada y vuelve a intentarlo.</p>
                 <button type="button" onClick={() => void refetch()} className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark"><RefreshCw size={15} /> Reintentar conexión</button>
               </div>
+            ) : birthdayList.length === 0 ? (
+              <BirthdayEmptyState kind="not-configured" onOpenYear={() => setViewMode('year')} />
+            ) : searchQuery.trim() && searchedBirthdays.length === 0 ? (
+              <BirthdayEmptyState kind="search" onClearSearch={() => setSearchQuery('')} />
+            ) : filteredBirthdays.length === 0 && viewMode !== 'calendar' && viewMode !== 'year' ? (
+              <BirthdayEmptyState kind="period" onOpenYear={() => setViewMode('year')} />
             ) : (
               <BirthdaysList birthdays={filteredBirthdays} allBirthdays={searchedBirthdays} viewMode={viewMode} onCelebrate={handleCelebrate} onMessage={canManageMessages ? handleMessage : undefined} currentCalendarDate={currentCalendarDate} setCurrentCalendarDate={setCurrentCalendarDate} />
             )}
+            </div>
           </div>
         </div>
       </div>
 
       {showPdfDialog && <CalendarPdfDialog onClose={() => setShowPdfDialog(false)} onExport={handleExportPdf} title="Exportar cumpleaños públicos" />}
       {showMessagingCenter && canManageMessages && <BirthdayMessagingCenter birthdays={searchedBirthdays} initialBirthday={messageRecipient} onClose={closeMessagingCenter} />}
+    </div>
+  );
+}
+
+function BirthdayEmptyState({
+  kind,
+  onOpenYear,
+  onClearSearch,
+}: {
+  kind: 'not-configured' | 'search' | 'period';
+  onOpenYear?: () => void;
+  onClearSearch?: () => void;
+}) {
+  const content = {
+    'not-configured': {
+      title: 'Aún no hay cumpleaños públicos configurados',
+      message: 'Cuando un miembro autorice publicar su nombre y día de cumpleaños, aparecerá aquí. La información privada del CRM no se muestra.',
+      icon: ShieldCheck,
+    },
+    search: {
+      title: 'No encontramos coincidencias',
+      message: 'Prueba con otro nombre o ministerio, o limpia la búsqueda para ver todos los registros públicos.',
+      icon: AlertCircle,
+    },
+    period: {
+      title: 'No hay cumpleaños en este periodo',
+      message: 'Puedes consultar el calendario anual para ver la distribución completa de cumpleaños públicos.',
+      icon: Gift,
+    },
+  }[kind];
+  const Icon = content.icon;
+
+  return (
+    <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/70 bg-white/65 px-6 py-14 text-center shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/60">
+      <Icon className="mx-auto text-church-gold-medium" size={42} />
+      <h2 className="mt-4 font-serif text-xl font-bold text-slate-800 dark:text-white">{content.title}</h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">{content.message}</p>
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        {onOpenYear && <button type="button" onClick={onOpenYear} className="rounded-2xl bg-primary px-5 py-3 text-xs font-bold text-white transition hover:bg-primary-dark">Ver calendario anual</button>}
+        {onClearSearch && <button type="button" onClick={onClearSearch} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 transition hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-slate-300">Limpiar búsqueda</button>}
+        {kind === 'not-configured' && <a href="/contacto" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-600 transition hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-slate-300">Contactar a la iglesia</a>}
+      </div>
     </div>
   );
 }

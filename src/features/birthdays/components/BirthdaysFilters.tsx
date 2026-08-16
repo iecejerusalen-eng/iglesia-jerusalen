@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, CalendarDays, CakeSlice, FileDown, LayoutGrid, Search, Table } from 'lucide-react';
+import { Calendar as CalendarIcon, CalendarDays, CakeSlice, FileDown, LayoutGrid, RefreshCw, Search, Table, X } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 
 export type BirthdayTab = 'hoy' | 'semana' | 'mes';
@@ -14,6 +14,8 @@ interface BirthdaysFiltersProps {
   counts: Record<BirthdayTab, number>;
   onExportPdf: () => void;
   canExport: boolean;
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
 const views: Array<{ id: BirthdayViewMode; label: string; icon: typeof LayoutGrid }> = [
@@ -23,7 +25,7 @@ const views: Array<{ id: BirthdayViewMode; label: string; icon: typeof LayoutGri
   { id: 'year', label: 'Año', icon: CalendarDays },
 ];
 
-export function BirthdaysFilters({ activeTab, setActiveTab, viewMode, setViewMode, searchQuery, setSearchQuery, counts, onExportPdf, canExport }: BirthdaysFiltersProps) {
+export function BirthdaysFilters({ activeTab, setActiveTab, viewMode, setViewMode, searchQuery, setSearchQuery, counts, onExportPdf, canExport, onRefresh, isRefreshing }: BirthdaysFiltersProps) {
   const tabs: Array<{ id: BirthdayTab; label: string }> = [
     { id: 'hoy', label: 'Hoy' },
     { id: 'semana', label: '7 días' },
@@ -36,7 +38,7 @@ export function BirthdaysFilters({ activeTab, setActiveTab, viewMode, setViewMod
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="flex overflow-x-auto rounded-2xl bg-slate-100/80 p-1 dark:bg-slate-950/70" role="tablist" aria-label="Periodo">
             {tabs.map((tab) => (
-              <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${activeTab === tab.id ? 'bg-white text-primary shadow-sm dark:bg-slate-800 dark:text-church-gold-light' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}>
+              <button key={tab.id} id={`birthday-tab-${tab.id}`} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls="birthdays-results" onClick={() => setActiveTab(tab.id)} className={`flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${activeTab === tab.id ? 'bg-white text-primary shadow-sm dark:bg-slate-800 dark:text-church-gold-light' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}>
                 {tab.label}<span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] dark:bg-white/10">{counts[tab.id]}</span>
               </button>
             ))}
@@ -45,7 +47,8 @@ export function BirthdaysFilters({ activeTab, setActiveTab, viewMode, setViewMod
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Buscar por nombre o ministerio</span>
             <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-            <input type="search" placeholder="Buscar por nombre o ministerio…" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-12 w-full rounded-2xl border border-slate-200/80 bg-white/70 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-church-gold-medium focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950/70 dark:text-white" />
+            <input id="birthday-search" type="search" placeholder="Buscar por nombre o ministerio…" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-12 w-full rounded-2xl border border-slate-200/80 bg-white/70 pl-11 pr-11 text-sm text-slate-900 outline-none transition focus:border-church-gold-medium focus:ring-4 focus:ring-church-gold/10 dark:border-white/10 dark:bg-slate-950/70 dark:text-white" />
+            {searchQuery && <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white" aria-label="Limpiar búsqueda"><X size={15} /></button>}
           </label>
 
           <div className="flex items-center gap-2 overflow-x-auto">
@@ -58,6 +61,9 @@ export function BirthdaysFilters({ activeTab, setActiveTab, viewMode, setViewMod
             </div>
             <button type="button" onClick={onExportPdf} disabled={!canExport} className="inline-flex h-12 min-w-max items-center gap-2 rounded-2xl border border-church-gold/30 bg-church-gold/10 px-4 text-xs font-bold text-church-gold-dark transition hover:bg-church-gold/20 disabled:cursor-not-allowed disabled:opacity-45 dark:text-church-gold-light">
               <FileDown size={16} /> PDF
+            </button>
+            <button type="button" onClick={onRefresh} disabled={isRefreshing} className="inline-flex h-12 min-w-max items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/70 px-4 text-xs font-bold text-slate-600 transition hover:text-primary disabled:cursor-wait disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-300 dark:hover:text-white" aria-label="Actualizar cumpleaños" title="Actualizar cumpleaños">
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} /> Actualizar
             </button>
           </div>
         </div>

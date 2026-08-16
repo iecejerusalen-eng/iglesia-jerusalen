@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { getDb } from '../../../config/localDb';
 import type { Member, Schedule, Sermon, Event as DbEvent } from '../../../types';
 import type { BirthdayMember, PageSection } from '../types';
 import { DEFAULT_SECTIONS, FALLBACK_SCHEDULES, MOCK_SERMONS } from '../constants';
-import { isPublicBirthdayMember, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
+import { fetchPublicBirthdays, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
 import { fetchPublicChurchAnnouncements } from '../../announcements/service';
 import type { ChurchAnnouncement } from '../../announcements/types';
 
@@ -153,22 +154,18 @@ export const useHomeData = () => {
   });
 
   const birthdaysQuery = useQuery({
-    queryKey: ['homeBirthdays'],
-    queryFn: async (): Promise<BirthdayMember[]> => {
-      const { data, error } = await supabase.rpc('get_public_birthdays');
-      if (error) throw error;
-      if (!Array.isArray(data)) throw new Error('La fuente pública de cumpleaños devolvió un formato inesperado.');
+    queryKey: ['publicBirthdaysRaw'],
+    queryFn: fetchPublicBirthdays,
+  });
 
-      const now = new Date();
-      return data
-        .filter(isPublicBirthdayMember)
+  const homeBirthdayMembers = useMemo((): BirthdayMember[] => {
+    const now = new Date();
+    return (birthdaysQuery.data || [])
         .map((member) => toBirthdayInfo(member, now))
         .filter((birthday) => birthday.isThisWeek)
         .sort((a, b) => a.daysRemaining - b.daysRemaining)
         .map(({ member }) => member);
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  }, [birthdaysQuery.data]);
 
   return {
     stats: statsQuery.data || { members: 350, baptized: 180, cells: 18, kids: 120, youth: 80 },
@@ -190,7 +187,7 @@ export const useHomeData = () => {
     loadingAnnouncements: announcementsQuery.isLoading,
     announcementsError: announcementsQuery.error,
     
-    birthdayMembers: birthdaysQuery.data || [],
+    birthdayMembers: homeBirthdayMembers,
     isBirthdaysLoading: birthdaysQuery.isLoading,
   };
 };

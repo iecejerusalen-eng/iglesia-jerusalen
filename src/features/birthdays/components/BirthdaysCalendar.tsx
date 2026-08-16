@@ -1,20 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Gift, Cake, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Gift, Cake, MessageCircle, X } from 'lucide-react';
 import type { BirthdayInfo } from '../hooks/useBirthdays';
-import { WEEK_DAYS, MONTH_NAMES } from '../hooks/useBirthdays';
+import { getBirthdayDayForYear, WEEK_DAYS, MONTH_NAMES } from '../hooks/useBirthdays';
 
 interface BirthdaysCalendarProps {
   birthdays: BirthdayInfo[];
   currentCalendarDate: Date;
   setCurrentCalendarDate: (date: Date) => void;
   onCelebrate: (name: string) => void;
+  onMessage?: (birthday: BirthdayInfo) => void;
 }
 
 export function BirthdaysCalendar({
   birthdays,
   currentCalendarDate,
   setCurrentCalendarDate,
-  onCelebrate
+  onCelebrate,
+  onMessage,
 }: BirthdaysCalendarProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -76,9 +78,12 @@ export function BirthdaysCalendar({
         >
           <ChevronLeft size={16} />
         </button>
-        <h3 className="font-serif font-bold text-lg md:text-xl text-primary dark:text-church-gold-bright uppercase tracking-wide">
-          {MONTH_NAMES[month]} {year}
-        </h3>
+        <div className="flex flex-col items-center gap-2">
+          <h3 className="font-serif font-bold text-lg md:text-xl text-primary dark:text-church-gold-bright uppercase tracking-wide">
+            {MONTH_NAMES[month]} {year}
+          </h3>
+          <button type="button" onClick={() => setCurrentCalendarDate(new Date(today.getFullYear(), today.getMonth(), 1))} disabled={isTodayInView} className="rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 transition hover:bg-church-gold/10 hover:text-church-gold-dark disabled:cursor-default disabled:opacity-40 dark:text-slate-500 dark:hover:text-church-gold-light">Ir a hoy</button>
+        </div>
         <button
           onClick={() => handleNavigate(1)}
           className="p-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer transition-colors shadow-sm"
@@ -106,7 +111,7 @@ export function BirthdaysCalendar({
             );
           }
 
-          const dayBirthdays = monthBirthdays.filter(item => item.day === cell.day);
+            const dayBirthdays = monthBirthdays.filter(item => getBirthdayDayForYear(item.member, year) === cell.day);
           const isToday = isTodayInView && cell.day === today.getDate();
           const hasBirthdays = dayBirthdays.length > 0;
           const isSelected = selectedDay === cell.day;
@@ -119,6 +124,7 @@ export function BirthdaysCalendar({
             >
               <button
                 type="button"
+                disabled={!hasBirthdays}
                 onClick={() => hasBirthdays ? setSelectedDay(isSelected ? null : cell.day) : undefined}
                 className={`w-full min-h-[90px] md:min-h-[110px] rounded-xl p-2 flex flex-col gap-1.5 text-left transition-all duration-200 border ${
                   isSelected
@@ -129,7 +135,8 @@ export function BirthdaysCalendar({
                         ? 'bg-white dark:bg-slate-950/50 border-slate-150 dark:border-white/5 hover:border-church-gold/30 hover:bg-church-gold/[0.03] hover:shadow-sm cursor-pointer'
                         : 'bg-white dark:bg-slate-950/50 border-slate-100 dark:border-white/5'
                 } ${!hasBirthdays ? 'cursor-default' : ''}`}
-                aria-label={hasBirthdays ? `${cell.day} de ${MONTH_NAMES[month]} - ${dayBirthdays.length} cumpleaños` : undefined}
+                aria-label={`${cell.day} de ${MONTH_NAMES[month]} - ${hasBirthdays ? `${dayBirthdays.length} cumpleaños` : 'sin cumpleaños'}`}
+                aria-expanded={hasBirthdays ? isSelected : undefined}
               >
                 {/* Day number + indicator */}
                 <div className="flex items-center justify-between w-full">
@@ -236,7 +243,8 @@ export function BirthdaysCalendar({
                           </div>
 
                           {/* Celebrate button */}
-                          <button
+                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               onCelebrate(`${item.member.first_name} ${item.member.last_name}`);
@@ -250,6 +258,7 @@ export function BirthdaysCalendar({
                           >
                             <Gift size={16} />
                           </button>
+                          {onMessage && <button type="button" onClick={(e) => { e.stopPropagation(); onMessage(item); }} className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2 text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-300" title={`Enviar felicitación a ${item.member.first_name}`} aria-label={`Enviar felicitación a ${item.member.first_name}`}><MessageCircle size={16} /></button>}
                         </div>
                       );
                     })}

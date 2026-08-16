@@ -10,7 +10,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import type { BirthdayInfo } from '../hooks/useBirthdays';
+import { getBirthdayStatusLabel, type BirthdayInfo } from '../hooks/useBirthdays';
 import { MONTH_NAMES } from '../hooks/useBirthdays';
 import { AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 
@@ -27,14 +27,15 @@ function getFullName(item: BirthdayInfo): string {
 }
 
 function BirthdayAvatar({ item, size = 'sm' }: { item: BirthdayInfo; size?: 'sm' | 'lg' }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const fullName = getFullName(item);
   const initials = `${item.member.first_name[0] || ''}${item.member.last_name[0] || ''}`.toUpperCase();
   const sizeClass = size === 'lg' ? 'h-14 w-14 text-sm' : 'h-9 w-9 text-[10px]';
 
   return (
     <div className={`${sizeClass} shrink-0 overflow-hidden rounded-full bg-slate-100 font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-white/10`}>
-      {item.member.photo_url ? (
-        <img loading="lazy" src={item.member.photo_url} alt={`Foto de ${fullName}`} className="h-full w-full object-cover" />
+      {item.member.photo_url && !imageFailed ? (
+        <img loading="lazy" src={item.member.photo_url} alt={`Foto de ${fullName}`} onError={() => setImageFailed(true)} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center">{initials}</span>
       )}
@@ -59,7 +60,7 @@ function BirthdayQuickPreview({
         <BirthdayAvatar item={item} size="lg" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold leading-5 text-slate-900 dark:text-white">{fullName}</p>
-          <p className="mt-0.5 text-xs text-church-gold-dark dark:text-church-gold-light">{item.formattedDate}</p>
+           <p className="mt-0.5 text-xs text-church-gold-dark dark:text-church-gold-light">{item.formattedDate} · {getBirthdayStatusLabel(item)}</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.member.ministry_name || 'Familia Jerusalén'}</p>
         </div>
       </div>

@@ -32,6 +32,7 @@ export function BirthdaysList({
           currentCalendarDate={currentCalendarDate}
           setCurrentCalendarDate={setCurrentCalendarDate}
           onCelebrate={onCelebrate}
+          onMessage={onMessage}
         />
       </div>
     );
@@ -40,7 +41,7 @@ export function BirthdaysList({
   if (viewMode === 'table') {
     return (
       <div className="max-w-7xl mx-auto mt-6">
-        <BirthdaysTable birthdays={birthdays} onCelebrate={onCelebrate} />
+          <BirthdaysTable birthdays={birthdays} onCelebrate={onCelebrate} onMessage={onMessage} />
       </div>
     );
   }
@@ -56,7 +57,7 @@ export function BirthdaysList({
   // Cards view
   return (
     <div className="max-w-7xl mx-auto mt-6">
-      <BirthdaysCards birthdays={birthdays} onCelebrate={onCelebrate} />
+      <BirthdaysCards birthdays={birthdays} onCelebrate={onCelebrate} onMessage={onMessage} />
     </div>
   );
 }

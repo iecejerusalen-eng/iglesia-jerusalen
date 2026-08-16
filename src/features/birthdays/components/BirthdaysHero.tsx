@@ -1,11 +1,13 @@
 import { CalendarHeart, CakeSlice, Gift, ShieldCheck, Sparkles } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
+import type { BirthdayInfo } from '../hooks/useBirthdays';
 
 interface BirthdaysHeroProps {
   todayCount: number;
   weekCount: number;
   monthCount: number;
   totalCount: number;
+  nextBirthday?: BirthdayInfo;
 }
 
 const Metric = ({ value, label }: { value: number; label: string }) => (
@@ -15,7 +17,9 @@ const Metric = ({ value, label }: { value: number; label: string }) => (
   </div>
 );
 
-export function BirthdaysHero({ todayCount, weekCount, monthCount, totalCount }: BirthdaysHeroProps) {
+export function BirthdaysHero({ todayCount, weekCount, monthCount, totalCount, nextBirthday }: BirthdaysHeroProps) {
+  const nextBirthdayName = nextBirthday ? `${nextBirthday.member.first_name} ${nextBirthday.member.last_name}` : null;
+
   return (
     <AnimeFadeUp delay={0.05} duration={500} distance={18}>
       <section className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-primary px-6 py-8 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.8)] md:px-10 md:py-12">
@@ -51,6 +55,12 @@ export function BirthdaysHero({ todayCount, weekCount, monthCount, totalCount }:
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 text-xs text-slate-400">
               <CakeSlice size={14} className="text-church-gold-light" /> Actualizado desde el CRM de la iglesia
+            </div>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-center backdrop-blur-xl">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Próximo cumpleaños</span>
+              <span className="mt-1 block truncate text-sm font-bold text-white">
+                {nextBirthday ? `${nextBirthdayName} · ${nextBirthday.formattedDate}` : 'Aún no hay registros públicos'}
+              </span>
             </div>
           </div>
         </div>

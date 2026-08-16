@@ -56,7 +56,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       last_name: editingMember?.last_name || '',
       photo_url: editingMember?.photo_url || '',
       birth_date: editingMember?.birth_date || '',
-      birthday_public: editingMember?.birthday_public ?? true,
+      birthday_public: editingMember?.birthday_public ?? false,
       conversion_date: editingMember?.conversion_date || '',
       baptism_date: editingMember?.baptism_date || '',
       phone: editingMember?.phone || '',
@@ -279,9 +279,9 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <span>
-                <span className="block text-sm font-bold text-slate-800 dark:text-white">Mostrar en la página pública de cumpleaños</span>
+                <span className="block text-sm font-bold text-slate-800 dark:text-white">Publicar en la página de cumpleaños</span>
                 <span className="mt-1 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  Confirma el consentimiento para publicar únicamente nombre, foto, día y mes de cumpleaños, ministerio y versículo dedicado. Nunca se publica el año de nacimiento, edad, teléfono ni información privada del CRM.
+                  Activa esta opción solo con autorización confirmada. Se publican únicamente nombre, foto, día y mes de cumpleaños, ministerio y versículo dedicado; nunca el año, edad, teléfono ni información privada del CRM.
                 </span>
               </span>
             </label>

@@ -1,12 +1,14 @@
-import { Sparkles, Gift } from 'lucide-react';
-import type { BirthdayInfo } from '../hooks/useBirthdays';
+import { Gift, MessageCircle, Sparkles } from 'lucide-react';
+import { getBirthdayStatusLabel, type BirthdayInfo } from '../hooks/useBirthdays';
+import { BirthdayAvatar } from './BirthdayAvatar';
 
 interface BirthdaysTableProps {
   birthdays: BirthdayInfo[];
   onCelebrate: (name: string) => void;
+  onMessage?: (birthday: BirthdayInfo) => void;
 }
 
-export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) {
+export function BirthdaysTable({ birthdays, onCelebrate, onMessage }: BirthdaysTableProps) {
   if (birthdays.length === 0) {
     return (
       <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-white/10 rounded-3xl p-12 text-center shadow-sm">
@@ -31,8 +33,6 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {birthdays.map((item) => {
-              const initials = `${item.member.first_name[0]}${item.member.last_name[0]}`.toUpperCase();
-              
               return (
                 <tr 
                   key={item.member.id} 
@@ -42,17 +42,7 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
                 >
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                        item.isToday 
-                          ? 'bg-church-gold/20 text-church-gold-dark dark:text-church-gold-bright border border-church-gold/50' 
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-transparent dark:text-slate-300'
-                      } overflow-hidden`}>
-                        {item.member.photo_url ? (
-                          <img loading="lazy" src={item.member.photo_url} alt={item.member.first_name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{initials}</span>
-                        )}
-                      </div>
+                      <BirthdayAvatar item={item} />
                       <div>
                         <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           {item.member.first_name} {item.member.last_name}
@@ -69,32 +59,25 @@ export function BirthdaysTable({ birthdays, onCelebrate }: BirthdaysTableProps) 
                     {item.member.ministry_name || 'Familia Jerusalén'}
                   </td>
                   <td className="py-4 px-6">
-                    {item.isToday ? (
-                      <span className="inline-flex px-2.5 py-1 bg-accent-red/10 text-accent-red font-bold text-xs rounded-full border border-accent-red/20 animate-pulse">
-                        ¡Es hoy!
-                      </span>
-                    ) : (
-                      <span className="text-slate-500 dark:text-slate-400 text-xs">
-                        {item.daysRemaining === 1 
-                          ? 'Mañana' 
-                          : item.daysRemaining > 0 
-                            ? `Faltan ${item.daysRemaining} días`
-                            : 'Ya pasó'}
-                      </span>
-                    )}
+                    <span className={`inline-flex px-2.5 py-1 font-bold text-xs rounded-full border ${item.isToday ? 'bg-accent-red/10 text-accent-red border-accent-red/20 animate-pulse' : 'bg-slate-100 text-slate-500 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}>
+                      {getBirthdayStatusLabel(item)}
+                    </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button
+                      <div className="flex justify-end gap-2">
+                        <button
                       onClick={() => onCelebrate(`${item.member.first_name} ${item.member.last_name}`)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                         item.isToday
                           ? 'bg-primary text-white hover:bg-primary-dark shadow-sm'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                       }`}
-                    >
-                      <Gift size={14} />
-                      Celebrar
-                    </button>
+                        >
+                          <Gift size={14} />
+                          Celebrar
+                        </button>
+                        {onMessage && <button type="button" onClick={() => onMessage(item)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-300" aria-label={`Enviar felicitación a ${item.member.first_name} ${item.member.last_name}`}><MessageCircle size={14} /></button>}
+                      </div>
                   </td>
                 </tr>
               );
