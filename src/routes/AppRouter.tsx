@@ -112,6 +112,7 @@ const PluginManager = lazyWithRetry(() => import('../pages/admin/PluginManager')
 const MenuManager = lazyWithRetry(() => import('../pages/admin/MenuManager'));
 const ProductionBoard = lazyWithRetry(() => import('../pages/admin/ProductionBoard'));
 const ProPresenterManager = lazyWithRetry(() => import('../pages/admin/ProPresenterManager'));
+const HolyricsConnectionManager = lazyWithRetry(() => import('../pages/admin/HolyricsConnectionManager'));
 const MediaVault = lazyWithRetry(() => import('../pages/admin/MediaVault'));
 const InventoryManager = lazyWithRetry(() => import('../pages/admin/InventoryManager'));
 const AnimationCatalog = lazyWithRetry(() => import('../pages/admin/AnimationCatalog'));
@@ -225,6 +226,7 @@ export default function AppRouter() {
         {/* Protected Admin Modules */}
         <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/produccion" element={<ProductionBoard />} /></Route></Route>
         <Route element={<ProtectedRoute module="propresenter" />}><Route element={<AdminLayout />}><Route path="/admin/propresenter" element={<ProPresenterManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/holyrics" element={<HolyricsConnectionManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="media_vault" />}><Route element={<AdminLayout />}><Route path="/admin/media-vault" element={<MediaVault />} /></Route></Route>
         <Route element={<ProtectedRoute module="ministries" />}><Route element={<AdminLayout />}>
           <Route path="/admin/ministerios" element={<MinistryManager />} />

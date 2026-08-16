@@ -31,6 +31,7 @@ import {
   Component,
   KeyRound,
   MonitorPlay,
+  Radio,
   Inbox,
   Clock3,
   BookOpenCheck,
@@ -552,6 +553,16 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/propresenter',
     icon: MonitorPlay,
     group: 'operaciones'
+  },
+  {
+    id: 'holyrics_connection',
+    label: 'Conexión Holyrics',
+    name: 'Conexión Holyrics',
+    path: '/admin/holyrics',
+    icon: Radio,
+    group: 'operaciones',
+    permission: 'production',
+    keywords: ['holyrics', 'letras', 'stage', 'conexión', 'api']
   },
   {
     id: 'inventory',
