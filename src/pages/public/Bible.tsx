@@ -12,6 +12,7 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { parseVerseRange, parseBibleReferences } from '../../utils/bibleParser';
 import BibleIndexes from '../../components/public/bible/BibleIndexes';
 import { useBibleStudy } from '../../hooks/useBibleStudy';
+import PremiumBibleHero from './components/PremiumBibleHero';
 
 interface Verse {
   verse: string;
@@ -627,12 +628,20 @@ export default function Bible() {
     return 'bg-white dark:bg-[#070b14] text-slate-900 dark:text-white';
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
+  const showLegacyBibleBanner = import.meta.env.VITE_BIBLE_LEGACY_BANNER === 'true';
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses()}`}>
-      {/* Banner */}
       {!focusMode && (
-      <div id="bible_hero" className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden scroll-mt-28">
+        <PremiumBibleHero
+          bookName={currentBook.name}
+          chapter={chapterNum}
+          versionName={BIBLE_VERSIONS.find(v => v.id === version)?.name || version.toUpperCase()}
+        />
+      )}
+
+      {showLegacyBibleBanner && (
+      <div id="bible_hero_legacy" className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden scroll-mt-28">
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
