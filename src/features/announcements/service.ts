@@ -22,7 +22,6 @@ const announcementSelect = `
     end_date,
     start_time,
     end_time,
-    location_name,
     is_public
   )
 `;

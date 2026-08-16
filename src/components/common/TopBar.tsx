@@ -76,14 +76,15 @@ const TopBar = () => {
   }, []);
 
   const isHome = location.pathname === '/';
-  const isTransparent = isHome && !isScrolled;
+  const isHomeAtTop = isHome && !isScrolled;
+  const isTransparent = isHomeAtTop && document.documentElement.classList.contains('dark');
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
 
   return (
     <div className={`transition-all duration-500 ease-in-out ${
-      isTransparent 
-        ? 'absolute top-0 left-0 right-0 w-full bg-transparent border-transparent text-white/95 z-[60]' 
+      isHomeAtTop
+        ? `absolute top-0 left-0 right-0 w-full z-[60] ${isTransparent ? 'bg-transparent border-transparent text-white/95' : 'bg-white/90 dark:bg-slate-950/90 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 backdrop-blur-md'}`
         : 'bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 relative z-[60]'
     } text-sm py-2.5 px-4 md:px-8 flex justify-between items-center`}>
       <div className="flex gap-4">

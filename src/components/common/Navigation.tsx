@@ -15,6 +15,7 @@ const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const previousScrollY = useRef(0);
 
   // Dynamic Menu State
@@ -39,10 +40,23 @@ const Navigation = () => {
     previousScrollY.current = window.scrollY;
   }, [location.pathname]);
 
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHoveredItemId(null);
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, []);
+
   const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   const isHome = location.pathname === '/';
-  const isTransparent = isHome && !isScrolled && document.documentElement.classList.contains('dark');
+  const isHomeAtTop = isHome && (!isScrolled || window.scrollY <= 24);
+  const isTransparent = isHomeAtTop && document.documentElement.classList.contains('dark');
 
   const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
 
@@ -72,11 +86,11 @@ const Navigation = () => {
       initial={false}
       transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       style={{ willChange: 'transform' }}
-      className={` ${
-      isTransparent 
-        ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50' 
-        : 'glass-nav sticky top-0 z-50'
-    }`}
+      className={`absolute left-0 right-0 w-full z-[70] ${
+        isHomeAtTop
+          ? 'top-[46px]'
+          : 'glass-nav sticky top-0 z-50'
+      } ${isTransparent ? 'bg-transparent border-transparent' : 'glass-nav'}`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         <Link 
@@ -131,6 +145,17 @@ const Navigation = () => {
                 className="relative py-2"
               >
                 <button 
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={hoveredItemId === item.id || openMenuId === item.id}
+                  onClick={() => {
+                    if (openMenuId === item.id) {
+                      setOpenMenuId(null);
+                      setHoveredItemId(null);
+                    } else {
+                      setOpenMenuId(item.id);
+                    }
+                  }}
                   className={`transition-colors duration-300 flex items-center gap-1 cursor-pointer font-semibold ${
                     isTransparent
                       ? (active ? 'text-gold' : 'hover:text-gold text-white/90')
@@ -141,13 +166,15 @@ const Navigation = () => {
                   <ChevronDown size={14} className={`transition-transform duration-200 ${hoveredItemId === item.id ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
-                  {hoveredItemId === item.id && (
+                  {(hoveredItemId === item.id || openMenuId === item.id) && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.15 }}
-                      className={`absolute left-0 mt-2 w-52 rounded-xl py-3 z-50 transition-all duration-300 ${
+                      role="menu"
+                      aria-label={`Opciones de ${item.label}`}
+                      className={`absolute left-0 mt-2 w-56 rounded-xl py-3 z-50 transition-all duration-300 ${
                         isTransparent 
                           ? 'bg-slate-950/80 backdrop-blur-md border border-white/10 text-white/90 transform-gpu' 
                           : 'glass-card text-gray-700 dark:text-gray-300'
@@ -157,7 +184,11 @@ const Navigation = () => {
                         <Link
                           key={child.id}
                           to={child.url}
-                          onClick={() => setHoveredItemId(null)}
+                          role="menuitem"
+                          onClick={() => {
+                            setHoveredItemId(null);
+                            setOpenMenuId(null);
+                          }}
                           className={`block px-4 py-2 text-xs font-semibold transition-colors ${
                             isTransparent 
                               ? 'hover:bg-white/10 hover:text-gold text-white/80' 

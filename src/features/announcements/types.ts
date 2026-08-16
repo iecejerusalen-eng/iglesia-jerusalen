@@ -7,7 +7,7 @@ export interface AnnouncementEvent {
   end_date: string;
   start_time: string | null;
   end_time: string | null;
-  location_name: string | null;
+  location_name?: string | null;
   is_public?: boolean;
 }
 
