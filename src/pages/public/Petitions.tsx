@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import type { Petition, PetitionCategory } from '../../types';
-import { Send, Clock, BookOpen, CheckCircle, Flame, Plus, HeartHandshake, Globe, Lock, Heart, Users } from 'lucide-react';
+import { Send, Clock, BookOpen, CheckCircle, Flame, Plus, HeartHandshake, Globe, Lock, Heart, Users, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeRubberBandHover } from '../../components/animations/AnimeWrappers';
+import { AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import PetitionsHeroPremium from './components/PetitionsHeroPremium';
 
 const petitionSchema = z.object({
   categoryId: z.string().min(1, 'Selecciona una categoría'),
@@ -224,7 +225,7 @@ const Petitions = () => {
       case 'en_oracion':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/30">
-            <Flame size={12} className="text-amber-500 animate-pulse" />
+            <Flame size={12} className="text-amber-500 animate-pulse motion-reduce:animate-none" />
             En Oración
           </span>
         );
@@ -242,7 +243,9 @@ const Petitions = () => {
 
   if (!user) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 bg-gray-50 dark:bg-slate-950 transition-colors">
+      <div className="relative min-h-screen overflow-hidden bg-slate-50 transition-colors dark:bg-slate-950">
+        <PetitionsHeroPremium isAuthenticated={false} />
+        <div className="hidden">
         <HeartHandshake size={64} className="text-gold mb-4 animate-bounce" />
         <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2">Peticiones de Oración</h2>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
@@ -254,6 +257,21 @@ const Petitions = () => {
         >
           Iniciar Sesión
         </a>
+        </div>
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-8 lg:grid-cols-2 lg:px-10">
+          <section id="petitions_form" className="scroll-mt-24 rounded-3xl border border-slate-200/80 bg-white/85 p-7 text-center shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 sm:p-10">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-blue-700/10 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200"><Lock size={26} aria-hidden="true" /></div>
+            <h2 className="mt-5 font-serif text-2xl font-bold text-slate-900 dark:text-white">Tu espacio comienza con una sesión</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">Inicia sesión para enviar una petición, elegir quién puede verla y recibir acompañamiento pastoral.</p>
+            <a href="/login" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25">Iniciar sesión <Send size={16} aria-hidden="true" /></a>
+          </section>
+          <section id="petitions_wall" className="scroll-mt-24 rounded-3xl border border-amber-200/70 bg-amber-50/80 p-7 text-center shadow-xl shadow-amber-900/5 backdrop-blur-xl dark:border-amber-400/15 dark:bg-amber-950/20 sm:p-10">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-300"><Users size={26} aria-hidden="true" /></div>
+            <h2 className="mt-5 font-serif text-2xl font-bold text-slate-900 dark:text-white">Una comunidad que intercede</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 dark:text-slate-300">El muro comunitario está disponible para quienes han iniciado sesión y deciden compartir su petición.</p>
+            <a href="/login" className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-700/20 bg-white/70 px-5 py-3 text-sm font-bold text-amber-900 transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/25 dark:border-amber-300/20 dark:bg-white/5 dark:text-amber-200 dark:hover:bg-white/10">Conocer el muro <MessageCircle size={16} aria-hidden="true" /></a>
+          </section>
+        </div>
       </div>
     );
   }
@@ -263,14 +281,16 @@ const Petitions = () => {
       
       {/* Sutil efecto de partículas CSS en el fondo (Opcional, muy suave) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20 dark:opacity-30">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gold/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse motion-reduce:animate-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gold/20 rounded-full blur-3xl animate-pulse motion-reduce:animate-none" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <AnimeFadeUp delay={100} duration={800} className="relative z-10 max-w-5xl mx-auto space-y-10">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-10">
         
-        {/* Header Section */}
-        <div id="petitions_hero" className="text-center space-y-4 scroll-mt-24">
+        <PetitionsHeroPremium />
+
+        {/* Legacy heading retained only as a non-rendered compatibility block during migration. */}
+        <div className="hidden" aria-hidden="true">
           <div className="inline-flex p-3 bg-primary/5 rounded-full text-gold border border-gold/10 relative">
             <HeartHandshake size={32} />
           </div>
@@ -299,6 +319,8 @@ const Petitions = () => {
                 <select
                   id="categoryId"
                   {...register('categoryId')}
+                  aria-invalid={Boolean(errors.categoryId)}
+                  aria-describedby={errors.categoryId ? 'categoryId-error' : undefined}
                   className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-700 dark:text-gray-200 cursor-pointer transition-colors"
                 >
                   {categories.map((cat) => (
@@ -306,7 +328,7 @@ const Petitions = () => {
                   ))}
                 </select>
                 {errors.categoryId && (
-                  <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>
+                  <p id="categoryId-error" role="alert" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.categoryId.message}</p>
                 )}
               </div>
 
@@ -316,11 +338,13 @@ const Petitions = () => {
                   id="content"
                   rows={5}
                   {...register('content')}
+                  aria-invalid={Boolean(errors.content)}
+                  aria-describedby={errors.content ? 'content-error' : undefined}
                   placeholder="Describe aquí tu necesidad o acción de gracias..."
                   className="w-full text-sm border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-xs text-gray-750 dark:text-gray-100 resize-none transition-colors"
                 />
                 {errors.content && (
-                  <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>
+                  <p id="content-error" role="alert" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.content.message}</p>
                 )}
               </div>
 
@@ -346,25 +370,24 @@ const Petitions = () => {
                 </div>
               </div>
 
-              <AnimeRubberBandHover>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="relative w-full flex items-center justify-center gap-2 py-3.5 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-55 cursor-pointer text-sm overflow-hidden group"
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                aria-label={isSubmitting ? 'Enviando petición' : 'Enviar petición'}
+                className="relative w-full flex items-center justify-center gap-2 py-3.5 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:opacity-55 disabled:cursor-not-allowed cursor-pointer text-sm overflow-hidden group motion-reduce:transition-none"
                 >
                   {/* Shimmer Effect */}
-                  <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"></div>
+                  <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] motion-reduce:animate-none bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"></div>
                   
                   {isSubmitting ? (
-                    <span className="inline-block animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></span>
+                    <><span aria-hidden="true" className="inline-block animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white motion-reduce:animate-none"></span><span className="sr-only">Enviando petición</span></>
                   ) : (
                     <>
                       <Send size={18} />
                       Enviar Petición
                     </>
                   )}
-                </button>
-              </AnimeRubberBandHover>
+              </button>
             </form>
           </div>
 
@@ -372,8 +395,12 @@ const Petitions = () => {
           <div id="petitions_wall" className="lg:col-span-7 space-y-6 scroll-mt-24">
             
             {/* Tabs */}
-            <div className="flex bg-gray-200/50 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-fit mx-auto lg:mx-0 shadow-inner">
+            <div role="tablist" aria-label="Tus peticiones y el muro comunitario" className="flex bg-gray-200/50 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-fit mx-auto lg:mx-0 shadow-inner">
               <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'mine'}
+                aria-controls="petitions-panel"
                 onClick={() => setActiveTab('mine')}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   activeTab === 'mine' 
@@ -385,6 +412,10 @@ const Petitions = () => {
                 Mis Peticiones
               </button>
               <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'public'}
+                aria-controls="petitions-panel"
                 onClick={() => setActiveTab('public')}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   activeTab === 'public' 
@@ -397,10 +428,11 @@ const Petitions = () => {
               </button>
             </div>
 
+            <div id="petitions-panel" role="tabpanel" aria-label={activeTab === 'mine' ? 'Mis peticiones' : 'Muro comunitario'} className="outline-none">
             {loading ? (
               <div className="space-y-4 pt-2">
                 {Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={idx} className="bg-white/60 dark:bg-slate-900/60 p-6 rounded-2xl border border-white/50 dark:border-white/5 animate-pulse space-y-4 shadow-sm">
+                  <div key={idx} className="bg-white/60 dark:bg-slate-900/60 p-6 rounded-2xl border border-white/50 dark:border-white/5 animate-pulse motion-reduce:animate-none space-y-4 shadow-sm">
                     <div className="flex justify-between">
                       <div className="h-6 w-28 bg-gray-200 dark:bg-slate-800 rounded-md"></div>
                       <div className="h-6 w-24 bg-gray-200 dark:bg-slate-800 rounded-full"></div>
@@ -449,7 +481,7 @@ const Petitions = () => {
                     >
                       {/* Borde brillante si está en oración */}
                       {pet.status === 'en_oracion' && (
-                        <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/20 dark:border-amber-500/20 pointer-events-none animate-pulse"></div>
+                        <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/20 dark:border-amber-500/20 pointer-events-none animate-pulse motion-reduce:animate-none"></div>
                       )}
 
                       <div className="flex justify-between items-start gap-3 relative z-10">
@@ -501,9 +533,10 @@ const Petitions = () => {
                 })}
               </AnimeStaggerGrid>
             )}
+            </div>
           </div>
         </div>
-      </AnimeFadeUp>
+      </div>
     </div>
   );
 };
