@@ -42,11 +42,15 @@ Múltiples niveles de acceso (Pastor, Admin, Docente, Estudiante, etc). Controla
 
 ---
 
-## 3. Pautas de Código y Estilos
+## 3. Pautas de Código, Estilos y Diseño Visual
 
 - **TypeScript Estricto**: Evitar el uso de `any`. Las interfaces de base de datos se generan/mapean desde Supabase.
-- **Estética "Premium"**: Uso intensivo de glassmorphism, gradientes (gold a emerald/indigo), keyframes CSS, y Framer Motion (`<AnimeFadeUp>`, `BorderBeam`, `ShinyButton`).
-- **UI UX**: Notificaciones con `sonner`, íconos con `lucide-react`.
+- **Estética "Premium" (Taste-Skill & UI/UX Pro Max)**: Ver [`docs/DESIGN_AND_AI_TOOLKIT.md`](file:///g:/CODE/Iglesia%20Jerusal%C3%A9n/docs/DESIGN_AND_AI_TOOLKIT.md) y la skill [`.agents/skills/taste-skill/SKILL.md`](file:///g:/CODE/Iglesia%20Jerusal%C3%A9n/.agents/skills/taste-skill/SKILL.md).
+  - Uso de bloque `design_plan` previo al código.
+  - Paleta oficial: Azul primario `#1E3A8A` y Dorado de la iglesia `#C79D3F` (`--color-church-gold`).
+  - Tipografías oficiales: Playfair Display (Serif) e Inter (Sans-serif).
+  - Prevención de *card-ception* (cajas anidadas excesivas) y layouts con flujo natural sin recortes de texto.
+- **UI UX**: Notificaciones con `sonner`, íconos con `lucide-react`, componentes interactivos de Magic UI y Framer Motion.
 
 ---
 
@@ -63,3 +67,14 @@ Las tablas utilizan el prefijo según su dominio:
 - **Verificación de Tipos**: `npx tsc --noEmit`
 - **Levantar Servidor Dev**: `npm run dev`
 - **Construir Producción**: `npm run build`
+
+---
+
+## 6. Herramientas de IA y Servidores MCP del Ecosistema
+Consultar [`docs/DESIGN_AND_AI_TOOLKIT.md`](file:///g:/CODE/Iglesia%20Jerusal%C3%A9n/docs/DESIGN_AND_AI_TOOLKIT.md) para la configuración de:
+- **UI/UX Pro Max GO** (`uipro-cli`): Heurísticas de diseño y estilos.
+- **NanoBanana MCP** & **Google Stitch MCP**: Mockups y maquetación UI con Gemini.
+- **21st.dev Magic**: Catálogo de componentes React + Tailwind.
+- **Bright Data MCP**: Web scraping sin bloqueos para investigación.
+- **Graphiti MCP**: Memoria a largo plazo en Neo4j.
+- **Meshy AI & WebGL 3D**: Generación e integración de modelos y objetos 3D.
