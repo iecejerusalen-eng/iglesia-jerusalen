@@ -10,8 +10,6 @@ import {
   Droplets,
   Flame,
   Globe2,
-  HeartHandshake,
-  Landmark,
   Maximize2,
   MapPin,
   Users,
@@ -22,6 +20,7 @@ import type { Speaker } from '../../types';
 import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 import InternationalHistory from '../../components/public/about/InternationalHistory';
 import NationalHistory from '../../components/public/about/NationalHistory';
+import PremiumAboutHero from './components/PremiumAboutHero';
 import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.png';
 import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.png';
 import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
@@ -32,6 +31,7 @@ interface PageContent {
   id: string;
   title: string | null;
   subtitle: string | null;
+  cover_image_url: string | null;
 }
 
 interface Pillar {
@@ -132,7 +132,7 @@ const About = () => {
   useEffect(() => {
     const load = async () => {
       const [{ data: pageData, error: pageError }, { data: speakerData, error: speakerError }] = await Promise.all([
-        supabase.from('page_contents').select('id,title,subtitle').eq('page', 'about').eq('id', 'about_hero').maybeSingle(),
+        supabase.from('page_contents').select('id,title,subtitle,cover_image_url').eq('page', 'about').eq('id', 'about_hero').maybeSingle(),
         supabase.from('speakers').select('id,member_id,first_name,last_name,role,leadership_roles,is_public,display_order,photo_url,bio,created_at,updated_at').eq('is_public', true).order('display_order', { ascending: true }).order('created_at', { ascending: true }),
       ]);
 
@@ -187,21 +187,7 @@ const About = () => {
       <div className="pointer-events-none absolute -right-32 top-[38rem] h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl dark:bg-indigo-500/10" />
 
       <div className="relative mx-auto max-w-6xl">
-        <section className="relative mb-14 flex min-h-[560px] items-center justify-center overflow-hidden rounded-[2.25rem] border border-white/15 bg-slate-950 px-5 py-14 text-center text-white shadow-[0_32px_90px_-36px_rgba(15,23,42,.9)] sm:px-10 lg:px-14">
-          <img src={churchFacadePhoto} alt="Fachada de la Iglesia Jerusalén" className="absolute inset-0 h-full w-full scale-[1.02] object-cover opacity-35" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,8,23,.72),rgba(7,21,47,.88)_55%,rgba(2,8,23,.96)),radial-gradient(circle_at_50%_20%,rgba(245,180,54,.22),transparent_38%)]" />
-          <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
-          <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-slate-950/35 px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-amber-200 backdrop-blur-xl"><HeartHandshake size={15} /> Nuestra identidad</span>
-            <h1 className="mt-6 max-w-3xl text-balance font-serif text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">{heroTitle}</h1>
-            <p className="mt-6 max-w-2xl text-pretty text-base leading-8 text-slate-200 sm:text-lg">{heroSubtitle}</p>
-            {notice && <p className="mt-4 text-xs text-slate-400">{notice}</p>}
-            <div className="mt-8 flex flex-wrap justify-center gap-3"><a href="#historia" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-400/20 transition hover:-translate-y-0.5 hover:bg-amber-300">Conoce nuestra historia <ArrowRight size={16} /></a><a href="#liderazgo" className="inline-flex min-h-12 items-center rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/15">Conoce al equipo</a></div>
-            <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-2 sm:grid-cols-3">
-              {[{ icon: Landmark, value: '1', label: 'Iglesia local' }, { icon: Globe2, value: '4', label: 'Pilares de fe' }, { icon: Users, value: 'Una familia', label: 'Todas las generaciones' }].map(({ icon: Icon, value, label }) => <div key={label} className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.08] px-4 py-3 text-left backdrop-blur-xl"><Icon size={18} className="shrink-0 text-amber-300" /><span><strong className="block text-sm text-white">{value}</strong><span className="text-[11px] text-slate-300">{label}</span></span></div>)}
-            </div>
-          </div>
-        </section>
+        <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
 
         <section id="historia" className="scroll-mt-24 space-y-7">
           <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Raíces y horizonte</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Una historia, tres perspectivas</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Explora el recorrido de nuestra iglesia local y su conexión con la obra cuadrangular en Ecuador y el mundo.</p></div>

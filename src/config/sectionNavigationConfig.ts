@@ -75,12 +75,11 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
     pathPattern: '^/nosotros$',
     title: 'Nosotros',
     sections: [
-      { id: 'about_hero', label: 'Quiénes Somos', icon: Info },
-      { id: 'about_vision_mission', label: 'Misión & Visión', icon: Compass },
-      { id: 'about_history', label: 'Nuestra Historia', icon: BookOpen },
-      { id: 'about_pillars', label: '4 Pilares', icon: Flame },
-      { id: 'about_principles', label: 'Principios de Fe', icon: ShieldCheck },
-      { id: 'about_pastoral', label: 'Liderazgo', icon: Users }
+      { id: 'nosotros-hero', label: 'Quiénes Somos', icon: Info },
+      { id: 'historia', label: 'Nuestra Historia', icon: BookOpen },
+      { id: 'pilares', label: '4 Pilares', icon: Flame },
+      { id: 'principios', label: 'Principios de Fe', icon: ShieldCheck },
+      { id: 'liderazgo', label: 'Liderazgo', icon: Users }
     ]
   },
 

@@ -42,7 +42,7 @@ const Navigation = () => {
   const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   const isHome = location.pathname === '/';
-  const isTransparent = isHome && !isScrolled;
+  const isTransparent = isHome && !isScrolled && document.documentElement.classList.contains('dark');
 
   const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
 

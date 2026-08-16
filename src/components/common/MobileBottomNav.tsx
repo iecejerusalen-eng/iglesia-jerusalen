@@ -4,14 +4,63 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useMenuStore } from '../../store/useMenuStore';
 import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
-import * as LucideIcons from 'lucide-react';
-import type { LucideProps } from 'lucide-react';
+import {
+  Book,
+  BookOpen,
+  Calendar,
+  Cake,
+  ChevronRight,
+  Circle,
+  FileText,
+  Gamepad2,
+  Globe,
+  GraduationCap,
+  HandHeart,
+  Heart,
+  Home,
+  Info,
+  Mail,
+  Megaphone,
+  Menu,
+  MessageSquare,
+  Music,
+  Search,
+  ShoppingBag,
+  Star,
+  Users,
+  Video,
+  type LucideIcon,
+} from 'lucide-react';
 import type { MenuItem } from '../../services/menuService';
 
+const ICON_MAP: Record<string, LucideIcon> = {
+  Book,
+  BookOpen,
+  Calendar,
+  Cake,
+  ChevronRight,
+  FileText,
+  Gamepad2,
+  Globe,
+  GraduationCap,
+  HandHeart,
+  Heart,
+  Home,
+  Info,
+  Mail,
+  Megaphone,
+  Menu,
+  MessageSquare,
+  Music,
+  Search,
+  ShoppingBag,
+  Star,
+  Users,
+  Video,
+};
+
 const DynamicIcon = ({ name, active, defaultIcon }: { name?: string, active: boolean, defaultIcon: string }) => {
-  const iconName = name && name in LucideIcons ? name : defaultIcon;
-  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[iconName];
-  if (!IconComponent) return <LucideIcons.Circle size={24} className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`} />;
+  const IconComponent = ICON_MAP[name ?? ''] ?? ICON_MAP[defaultIcon] ?? Circle;
   return <IconComponent size={24} strokeWidth={active ? 2.5 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`} />;
 };
 

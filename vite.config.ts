@@ -41,6 +41,7 @@ export default defineConfig({
           '**/charts-*.js',
           '**/jspdf*.js',
           '**/html2canvas*.js',
+          '**/react-core-*.js',
         ],
       },
       manifest: {
@@ -89,9 +90,6 @@ export default defineConfig({
             }
             if (id.includes('framer-motion')) {
               return 'framer-motion';
-            }
-            if (id.includes('lucide-react')) {
-              return 'icons';
             }
             if (id.includes('@tiptap')) {
               return 'tiptap';

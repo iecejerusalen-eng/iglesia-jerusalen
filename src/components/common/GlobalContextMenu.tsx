@@ -33,9 +33,9 @@ import {
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
 const RouteModal = lazy(() => import('@/components/map/RouteModal').then((module) => ({ default: module.RouteModal })));
+const MobileContextDrawer = lazy(() => import('@/components/common/MobileContextDrawer').then((module) => ({ default: module.MobileContextDrawer })));
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobileContextDrawer } from '@/components/common/MobileContextDrawer';
 import { CONTEXT_MENU_GROUPS } from '@/components/common/contextMenuItems';
 import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
 
@@ -208,12 +208,14 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
           {children}
         </div>
 
-        <MobileContextDrawer
-          isOpen={isMobileDrawerOpen}
-          onClose={() => setIsMobileDrawerOpen(false)}
-          onOpenRoute={() => setIsRouteOpen(true)}
-          onOpenSearch={handleOpenSearch}
-        />
+        <Suspense fallback={null}>
+          <MobileContextDrawer
+            isOpen={isMobileDrawerOpen}
+            onClose={() => setIsMobileDrawerOpen(false)}
+            onOpenRoute={() => setIsRouteOpen(true)}
+            onOpenSearch={handleOpenSearch}
+          />
+        </Suspense>
 
         {routeModal}
       </>
