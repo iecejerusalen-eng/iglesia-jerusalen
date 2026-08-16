@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ContextMenu,
@@ -71,6 +71,12 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const isMobile = useIsMobile();
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+    };
+  }, []);
 
   const isDarkMode = getEffectiveTheme() === 'dark';
 
@@ -151,8 +157,15 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
 
   // ── Touch: long-press opens the mobile drawer ──────────────────────────────
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1 || isMobileDrawerOpen) return;
+
+    const target = e.target;
+    if (target instanceof HTMLElement && target.closest('input, textarea, select, button, a, [data-no-context-menu]')) {
+      return;
+    }
+
     touchTimerRef.current = setTimeout(() => {
+      touchTimerRef.current = null;
       setIsMobileDrawerOpen(true);
       navigator.vibrate?.(50);
     }, 450);
@@ -185,10 +198,11 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
     return (
       <>
         <div
-          className="min-h-screen flex flex-col w-full select-none outline-none [-webkit-touch-callout:none]"
+          className="min-h-screen flex w-full flex-col touch-pan-y outline-none [-webkit-touch-callout:none]"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchEndOrMove}
           onTouchEnd={handleTouchEndOrMove}
+          onTouchCancel={handleTouchEndOrMove}
           onContextMenu={(e) => e.preventDefault()} // suppress native context menu on mobile
         >
           {children}

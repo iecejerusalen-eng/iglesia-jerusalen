@@ -78,7 +78,7 @@ const AdminLayout = () => {
 
   return (
     <div
-      className="min-h-[100dvh] bg-[#f6f7f9] font-sans text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
+      className="min-h-[100dvh] overflow-x-hidden bg-[#f6f7f9] font-sans text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
       style={accentStyle}
     >
       <Sidebar
@@ -89,7 +89,7 @@ const AdminLayout = () => {
       />
 
       <div className={`flex min-h-[100dvh] flex-col transition-[padding] duration-300 ${desktopPadding}`}>
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-3 py-2.5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 sm:px-5 md:px-6">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 sm:px-5 md:px-6">
           <div className="mx-auto flex min-h-11 max-w-[1600px] items-center gap-3">
             <button
               type="button"
@@ -179,7 +179,7 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        <main className={`mx-auto w-full max-w-[1600px] flex-1 px-3 pb-28 pt-4 sm:px-5 sm:pt-5 md:px-6 md:pb-8 md:pt-6 xl:px-8 ${isFloating ? 'md:pt-8' : ''}`}>
+        <main className={`mx-auto w-full max-w-[1600px] flex-1 px-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-5 md:px-6 md:pb-8 md:pt-6 xl:px-8 ${isFloating ? 'md:pt-8' : ''}`}>
           <GlobalErrorBoundary key={location.pathname}>
             <Outlet />
           </GlobalErrorBoundary>
@@ -187,7 +187,7 @@ const AdminLayout = () => {
       </div>
 
       <nav
-        className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 grid rounded-2xl border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 md:hidden"
+        className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 mx-auto grid max-w-md rounded-2xl border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 md:hidden"
         style={{ gridTemplateColumns: `repeat(${mobileLinks.slice(0, 3).length + 1}, minmax(0, 1fr))` }}
         aria-label="Navegación rápida"
       >

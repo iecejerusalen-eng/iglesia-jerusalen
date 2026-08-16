@@ -221,7 +221,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
       )}
       
       {/* Navigation Links */}
-      <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar-dark space-y-1 px-3">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4 custom-scrollbar-dark">
         {searchQuery.trim() !== '' ? (
           /* Search Results view: Flat list of matching items */
           <div className="space-y-1">
@@ -444,35 +444,35 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
 
       {/* Mobile Footer Actions */}
       {(isMobile || isDrawer) && (
-        <div className="p-4 border-t border-white/10 bg-black/20 shrink-0 space-y-2">
+        <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-white/10 bg-black/20 p-3">
           {hasPermission('appearance', 'view') && (
             <button 
               onClick={() => { navigate('/admin/apariencia'); if (isMobile) onClose(); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+              className="flex min-h-11 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-gray-300 transition-all duration-200 hover:bg-white/10 hover:text-white"
             >
-              <Settings size={18} className="shrink-0 text-gold/80" />
+              <Settings size={17} className="shrink-0 text-gold/80" />
               <span>Configuración</span>
             </button>
           )}
           {hasPermission('presentation_editor', 'view') && <button 
             onClick={() => { window.open('/presentacion', '_blank'); if (isMobile) onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+            className="flex min-h-11 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-gray-300 transition-all duration-200 hover:bg-white/10 hover:text-white"
           >
-            <MonitorPlay size={18} className="shrink-0 text-blue-400" />
+            <MonitorPlay size={17} className="shrink-0 text-blue-400" />
             <span>Ver Presentación</span>
           </button>}
           <button 
             onClick={() => { navigate('/'); if (isMobile) onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-300 hover:bg-white/10 hover:text-white font-medium text-xs"
+            className="flex min-h-11 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-gray-300 transition-all duration-200 hover:bg-white/10 hover:text-white"
           >
-            <Globe size={18} className="shrink-0 text-green-400" />
+            <Globe size={17} className="shrink-0 text-green-400" />
             <span>Ir a la web</span>
           </button>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 font-bold text-xs"
+            className="col-span-2 flex min-h-11 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-red-400 transition-all duration-200 hover:bg-red-500/10"
           >
-            <LogOut size={18} className="shrink-0" />
+            <LogOut size={17} className="shrink-0" />
             <span>Cerrar Sesión</span>
           </button>
         </div>
@@ -490,7 +490,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
           onClick={onClose}
           aria-label="Cerrar navegación"
         />
-        <div className="relative z-10 h-[100dvh] animate-slide-in-right">
+        <div className="relative z-10 h-[100dvh] animate-[admin-drawer-in_240ms_cubic-bezier(0.22,1,0.36,1)]">
           {sidebarContent}
         </div>
       </div>

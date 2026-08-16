@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchStore } from '../../store/useSearchStore';
@@ -33,9 +33,27 @@ const MobileBottomNav: React.FC = () => {
   const getChildren = (parentId: string) => 
     menuSource.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
 
-  // We take up to 4 items for the bottom bar, 5th is 'Buscar'
-  const bottomBarItems = topLevelItems.slice(0, 4);
-  const overflowItems = topLevelItems.slice(4); // These will go into a "Más" sheet if they exist
+  // Reservamos una barra estable de cinco accesos: tres secciones, buscar y más.
+  // El resto de destinos sigue disponible desde el panel "Más".
+  const bottomBarItems = topLevelItems.slice(0, 3);
+  const overflowItems = topLevelItems.slice(3);
+
+  useEffect(() => {
+    if (!activeSheet) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActiveSheet(null);
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activeSheet]);
 
   const toggleSheet = (id: string) => {
     if (activeSheet === id) {
@@ -66,10 +84,12 @@ const MobileBottomNav: React.FC = () => {
 
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-bold font-serif text-primary dark:text-white border-b border-gray-100 dark:border-white/10 pb-2">
-          {sheetTitle}
-        </h3>
-        <div className="grid grid-cols-1 gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent-red dark:text-gold">Navegación</p>
+          <h3 className="mt-1 font-serif text-xl font-bold text-primary dark:text-white">{sheetTitle}</h3>
+        </div>
+        {children.length > 0 ? (
+          <div className="grid grid-cols-1 gap-2">
           {children.map(child => {
              const active = isActive(child.url);
              return (
@@ -77,7 +97,7 @@ const MobileBottomNav: React.FC = () => {
                 key={child.id}
                 to={child.url}
                 onClick={closeSheet}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${active ? 'bg-primary/5 dark:bg-primary/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                className={`flex min-h-14 items-center gap-3 rounded-2xl border p-3 text-left transition-colors active:scale-[0.99] ${active ? 'border-primary/20 bg-primary/5 dark:border-gold/20 dark:bg-gold/10' : 'border-gray-100 bg-gray-50/80 hover:bg-gray-100 dark:border-white/5 dark:bg-slate-800/60 dark:hover:bg-slate-800'}`}
               >
                 <div className={`p-2 rounded-lg ${active ? 'bg-primary/10 text-primary dark:text-gold' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>
                   <DynamicIcon name={child.icon} active={active} defaultIcon="ChevronRight" />
@@ -86,9 +106,14 @@ const MobileBottomNav: React.FC = () => {
                   <div className={`font-semibold ${active ? 'text-primary dark:text-gold' : 'text-gray-800 dark:text-gray-200'}`}>{child.label}</div>
                 </div>
               </Link>
-             )
+             );
           })}
-        </div>
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+            No hay más accesos disponibles.
+          </p>
+        )}
       </div>
     );
   };
@@ -97,8 +122,8 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-gray-200/80 dark:border-white/10 px-2 py-1 md:hidden pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)] transition-all duration-300">
-        <div className="flex justify-around items-center max-w-lg mx-auto h-12">
+      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 rounded-2xl border border-gray-200/80 bg-white/90 px-1.5 py-1.5 shadow-[0_12px_34px_rgba(15,23,42,0.16)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 dark:shadow-[0_12px_34px_rgba(0,0,0,0.35)] md:hidden">
+        <div className="mx-auto flex h-12 max-w-lg items-center justify-around gap-1">
           
           {bottomBarItems.map((item, index) => {
             const hasChildren = getChildren(item.id).length > 0;
@@ -110,7 +135,7 @@ const MobileBottomNav: React.FC = () => {
                   key={item.id}
                   onClick={() => toggleSheet(item.id)}
                   aria-label={`Menú ${item.label}`}
-                  className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors cursor-pointer"
+                  className="flex h-full min-w-0 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-[10px] font-medium transition-colors active:scale-95"
                 >
                   <div className={`mb-0.5 ${isItemActive ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
                     <DynamicIcon name={item.icon} active={isItemActive} defaultIcon={defaultIcons[index % defaultIcons.length]} />
@@ -128,7 +153,7 @@ const MobileBottomNav: React.FC = () => {
                 to={item.url || '#'}
                 onClick={closeSheet}
                 aria-label={item.label}
-                className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors"
+                className="flex h-full min-w-0 flex-1 flex-col items-center justify-center rounded-xl py-1 text-[10px] font-medium transition-colors active:scale-95"
               >
                 <div className={`mb-0.5 ${isItemActive ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
                   <DynamicIcon name={item.icon} active={isItemActive} defaultIcon={defaultIcons[index % defaultIcons.length]} />
@@ -147,7 +172,7 @@ const MobileBottomNav: React.FC = () => {
               useSearchStore.getState().open();
             }}
             aria-label="Buscar"
-            className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors cursor-pointer"
+            className="flex h-full min-w-0 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-[10px] font-medium transition-colors active:scale-95"
           >
             <div className={`mb-0.5 ${isSearchOpen ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
               <DynamicIcon name="Search" active={isSearchOpen} defaultIcon="Search" />
@@ -162,7 +187,7 @@ const MobileBottomNav: React.FC = () => {
              <button
              onClick={() => toggleSheet('mas')}
              aria-label="Más opciones"
-             className="flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-medium transition-colors cursor-pointer"
+             className="flex h-full min-w-0 flex-1 cursor-pointer flex-col items-center justify-center rounded-xl py-1 text-[10px] font-medium transition-colors active:scale-95"
            >
              <div className={`mb-0.5 ${activeSheet === 'mas' ? 'text-accent-red dark:text-gold' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'}`}>
                <DynamicIcon name="Menu" active={activeSheet === 'mas'} defaultIcon="Menu" />
@@ -185,19 +210,23 @@ const MobileBottomNav: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeSheet}
-              className="fixed inset-0 bg-black/40 dark:bg-black/60 z-30 md:hidden backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm dark:bg-black/60 md:hidden"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed left-0 right-0 z-35 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-white/10 rounded-t-2xl px-5 pt-6 pb-8 md:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.12)] max-w-lg mx-auto"
-              style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Opciones de navegación"
+              className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 z-50 max-h-[min(70dvh,34rem)] overflow-hidden rounded-3xl border border-gray-200 bg-white px-5 pb-5 pt-4 shadow-[0_-8px_32px_rgba(0,0,0,0.16)] dark:border-white/10 dark:bg-slate-900 md:hidden"
             >
               {/* Drag Handle */}
-              <div className="w-12 h-1 bg-gray-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />
-              {renderSheetContent()}
+              <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-gray-200 dark:bg-slate-700" />
+              <div className="max-h-[calc(min(70dvh,34rem)-3rem)] overflow-y-auto overscroll-contain pr-1">
+                {renderSheetContent()}
+              </div>
             </motion.div>
           </>
         )}
