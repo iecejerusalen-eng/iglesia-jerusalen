@@ -8,6 +8,7 @@ interface PremiumMissionsHeroProps {
   missionCount: number;
   activeMissionCount: number;
   countryCount: number;
+  markerCount: number;
   loading: boolean;
 }
 
@@ -16,6 +17,7 @@ export default function PremiumMissionsHero({
   missionCount,
   activeMissionCount,
   countryCount,
+  markerCount,
   loading,
 }: PremiumMissionsHeroProps) {
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -101,7 +103,7 @@ export default function PremiumMissionsHero({
           <button
             type="button"
             onClick={scrollToFields}
-            className="group mt-8 inline-flex items-center gap-2 text-xs font-extrabold text-slate-500 transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 dark:text-slate-400 dark:hover:text-blue-300"
+            className="group mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-xs font-extrabold text-slate-500 transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 dark:text-slate-400 dark:hover:text-blue-300"
           >
             Ver el centro misionero
             <ArrowDown size={15} className="transition-transform duration-300 group-hover:translate-y-1" aria-hidden="true" />
@@ -126,6 +128,13 @@ export default function PremiumMissionsHero({
 
             <div className="relative z-10 mx-auto mt-2 w-full max-w-[32rem]">
               <Globe config={globeConfig} className="w-full" autoRotate={!reducedMotion} interactive={!reducedMotion} autoRotateSpeed={0.0028} />
+              {!loading && markerCount === 0 && (
+                <div className="absolute left-1/2 top-1/2 w-[min(82%,18rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-slate-950/75 p-4 text-center shadow-2xl backdrop-blur-xl">
+                  <MapPin size={18} className="mx-auto text-amber-300" aria-hidden="true" />
+                  <p className="mt-2 text-xs font-extrabold text-white">Atlas en preparación</p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-400">Aún no hay proyectos geolocalizados publicados.</p>
+                </div>
+              )}
               <div className="pointer-events-none absolute inset-x-8 bottom-6 rounded-2xl border border-white/10 bg-slate-950/65 p-3 text-center text-[10px] font-medium leading-relaxed text-slate-300 backdrop-blur-xl sm:inset-x-12">
                 Los marcadores aparecen únicamente cuando existen coordenadas publicadas por la administración.
               </div>

@@ -22,7 +22,7 @@ export const fetchJoshuaProject = async (request: JoshuaRequest): Promise<Joshua
   const { data, error } = await supabase.functions.invoke('joshua-project', { body: request });
 
   if (error) {
-    console.error('Falló la función segura de Joshua Project:', error);
+    console.warn('La fuente internacional de Joshua Project no está disponible:', error);
     throw new Error('No se pudo contactar la fuente internacional. Verifica que la función segura esté desplegada.');
   }
   if (!isJoshuaResponse(data)) throw new Error('Joshua Project devolvió una respuesta con formato inesperado.');

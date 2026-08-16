@@ -3,15 +3,15 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import type { COBEOptions } from 'cobe';
 import {
-  ArrowRight, BookOpen, Church, Compass, Database, Globe2, HandHeart,
-  Languages, Map as MapIcon, MapPin, RefreshCw, ShieldCheck, Sparkles, Users,
+  ArrowRight, BookOpen, Church, Compass, Database, Globe2,
+  Languages, Map as MapIcon, MapPin, RefreshCw, Users,
 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import type { Mission } from '../../types';
-import { Globe } from '../../components/ui/globe';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
+import { AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { fetchJoshuaProject, formatMissionNumber } from '../../features/missions/joshuaProject';
 import type { JoshuaRecord } from '../../features/missions/types';
+import { useThemeStore } from '../../store/useThemeStore';
 import PremiumMissionsHero from './components/PremiumMissionsHero';
 
 const explorationLinks = [
@@ -66,9 +66,11 @@ export default function Missions() {
   const [dailyPeople, setDailyPeople] = useState<JoshuaRecord | null>(null);
   const [joshuaError, setJoshuaError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const theme = useThemeStore((state) => state.theme);
+  const globeIsDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (!window.location.hash) window.scrollTo(0, 0);
     const load = async () => {
       setLoading(true);
       const [missionsResult, dailyResult] = await Promise.allSettled([
@@ -87,7 +89,7 @@ export default function Missions() {
       if (dailyResult.status === 'fulfilled') {
         setDailyPeople(dailyResult.value.records[0] || null);
       } else {
-        console.error('No se pudo cargar Joshua Project:', dailyResult.reason);
+        console.warn('No se pudo cargar Joshua Project:', dailyResult.reason);
         setJoshuaError(dailyResult.reason instanceof Error ? dailyResult.reason.message : 'La fuente internacional no está disponible.');
       }
       setLoading(false);
@@ -106,10 +108,12 @@ export default function Missions() {
   }), [missions]);
   const globeConfig = useMemo<COBEOptions>(() => ({
     width: 720, height: 720, onRender: () => {}, devicePixelRatio: 1.2,
-    phi: 0.5, theta: 0.2, dark: 1, diffuse: 1.1, mapSamples: 7000,
-    mapBrightness: 2.2, baseColor: [0.04, 0.09, 0.18], markerColor: [0.96, 0.65, 0.15],
-    glowColor: [0.08, 0.18, 0.32], markers,
-  }), [markers]);
+    phi: 0.5, theta: 0.2, dark: globeIsDark ? 1 : 0.15, diffuse: globeIsDark ? 1.1 : 0.8, mapSamples: 7000,
+    mapBrightness: globeIsDark ? 2.2 : 1.6,
+    baseColor: globeIsDark ? [0.04, 0.09, 0.18] : [0.38, 0.53, 0.72],
+    markerColor: globeIsDark ? [0.96, 0.65, 0.15] : [0.78, 0.36, 0.04],
+    glowColor: globeIsDark ? [0.08, 0.18, 0.32] : [0.62, 0.76, 1], markers,
+  }), [globeIsDark, markers]);
 
   return (
     <>
@@ -117,7 +121,7 @@ export default function Missions() {
         <title>Misiones | Iglesia Jerusalén</title>
         <meta name="description" content="Conoce la obra misionera de Iglesia Jerusalén y explora datos de pueblos, países e idiomas con atribución a Joshua Project." />
       </Helmet>
-      <main className="relative min-h-screen overflow-hidden bg-slate-50 pb-24 dark:bg-slate-950">
+      <div className="relative min-h-screen overflow-hidden bg-slate-50 pb-24 dark:bg-slate-950">
         <div className="pointer-events-none absolute -left-56 top-96 h-[32rem] w-[32rem] rounded-full bg-amber-300/15 blur-[130px]" />
 
         <div className="px-4 pt-8 md:px-8 md:pt-12">
@@ -127,29 +131,11 @@ export default function Missions() {
               missionCount={missions.length}
               activeMissionCount={activeMissions.length}
               countryCount={countries}
+              markerCount={markers.length}
               loading={loading}
             />
           </div>
         </div>
-
-        {false && <section id="missions_legacy_hero" className="hidden">
-          <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.7rem] border border-white/10 bg-[#07152d] shadow-2xl lg:grid-cols-[1.05fr_.95fr]">
-            <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
-              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-300"><Sparkles size={13} /> De Milagro a las naciones</span>
-              <h1 className="mt-7 max-w-3xl font-serif text-5xl font-black leading-[.98] tracking-[-.04em] md:text-7xl">Una iglesia que ora, sirve y envía.</h1>
-              <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-slate-300 md:text-lg">Conoce nuestras obras verificadas y usa información misionera responsable para aprender, interceder y actuar con sabiduría.</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/misiones/pueblos" className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-amber-300">Explorar pueblos <ArrowRight size={16} /></Link>
-                <Link to="/donations" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white backdrop-blur-xl"><HandHeart size={16} /> Apoyar misiones</Link>
-              </div>
-            </div>
-            <div className="relative min-h-[25rem] overflow-hidden lg:min-h-[38rem]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,.18),transparent_62%)]" />
-              <Globe config={globeConfig} className="absolute left-1/2 top-1/2 w-[38rem] max-w-none -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-6 left-6 right-6 rounded-2xl border border-white/10 bg-slate-950/55 p-4 text-xs text-slate-300 backdrop-blur-xl"><ShieldCheck className="mr-2 inline text-emerald-300" size={15} />Los marcadores institucionales solo aparecen cuando la administración publica coordenadas apropiadas.</div>
-            </div>
-          </AnimeFadeUp>
-        </section>}
 
         <section className="relative z-10 mx-auto -mt-5 max-w-6xl px-4 md:px-8">
           <div className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:grid-cols-4">
@@ -198,7 +184,7 @@ export default function Missions() {
             <div className="flex items-start gap-3"><BookOpen className="mt-0.5 shrink-0 text-amber-600" size={19} /><div><p className="font-bold text-slate-900 dark:text-white">Cómo interpretar estos datos</p><p className="mt-1">Las poblaciones, porcentajes y escalas son estimaciones para oración, enseñanza e investigación. No deben usarse como localización operativa ni sustituir la verificación con líderes locales.</p><p className="mt-3 text-xs">Datos proporcionados por <a href="https://joshuaproject.net" target="_blank" rel="noreferrer" className="font-extrabold text-amber-700 underline">Joshua Project</a>. Acceso: agosto de 2026.</p></div></div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   );
 }
