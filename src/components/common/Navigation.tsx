@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 import ThemeToggle from './ThemeToggle';
@@ -9,14 +9,13 @@ import { useSearchStore } from '../../store/useSearchStore';
 import { useMenuStore } from '../../store/useMenuStore';
 import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
 import type { MenuItem } from '../../services/menuService';
+import { useScrollVisibility } from '../../hooks/useScrollVisibility';
 
 const Navigation = () => {
   const location = useLocation();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const previousScrollY = useRef(0);
+  const { isScrolled, isHidden: hidden } = useScrollVisibility();
 
   // Dynamic Menu State
   const { items, fetchMenu } = useMenuStore();
@@ -24,21 +23,6 @@ const Navigation = () => {
   useEffect(() => {
     fetchMenu();
   }, [fetchMenu]);
-
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    const delta = latest - previousScrollY.current;
-    setIsScrolled(latest > 24);
-    if (latest <= 72) setHidden(false);
-    else if (delta > 2) setHidden(true);
-    else if (delta < -2) setHidden(false);
-    previousScrollY.current = latest;
-  });
-
-  useEffect(() => {
-    previousScrollY.current = window.scrollY;
-  }, [location.pathname]);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -55,7 +39,7 @@ const Navigation = () => {
   const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   const isHome = location.pathname === '/';
-  const isHomeAtTop = isHome && (!isScrolled || window.scrollY <= 24);
+  const isHomeAtTop = isHome && !isScrolled;
   const isTransparent = isHomeAtTop && document.documentElement.classList.contains('dark');
 
   const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
@@ -86,10 +70,8 @@ const Navigation = () => {
       initial={false}
       transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       style={{ willChange: 'transform' }}
-      className={`absolute left-0 right-0 w-full z-[70] ${
-        isHomeAtTop
-          ? 'top-[46px]'
-          : 'glass-nav sticky top-0 z-50'
+      className={`fixed left-0 right-0 w-full z-[70] transition-[top] duration-300 ease-out ${
+        isScrolled ? 'top-0' : 'top-[46px]'
       } ${isTransparent ? 'bg-transparent border-transparent' : 'glass-nav'}`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
