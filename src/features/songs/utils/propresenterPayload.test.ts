@@ -70,6 +70,15 @@ describe('ProPresenter song payload', () => {
     expect(result).toBe('G         C\nMil generaciones');
   });
 
+  it('prefixes only chord lines for Holylyrics comments', () => {
+    const result = formatProPresenterImportText('[G]Mil genera[C]ciones\nSin acordes', {
+      mode: 'lyrics-chords',
+      linesPerSlide: 1,
+      chordLinePrefix: '//',
+    });
+    expect(result).toBe('//G         C\nMil generaciones\n\nSin acordes');
+  });
+
   it('can copy an already prepared payload without slide metadata', () => {
     const payload = buildProPresenterPayload(baseSong, { mode: 'lyrics', linesPerSlide: 2 });
     expect(formatProPresenterPayloadText(payload, 'lyrics')).toBe(

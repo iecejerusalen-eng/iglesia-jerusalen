@@ -42,6 +42,7 @@ interface SourceSection {
 interface ProPresenterImportTextOptions {
   mode: ProPresenterContentMode;
   linesPerSlide?: number;
+  chordLinePrefix?: string;
 }
 
 function nonEmptyLines(value: string): string[] {
@@ -130,10 +131,14 @@ function importSectionsFromBracketText(value: string): string[][] {
   return sections;
 }
 
-function formatSlideLines(lines: ProPresenterSlideLine[], mode: ProPresenterContentMode): string {
+function formatSlideLines(
+  lines: ProPresenterSlideLine[],
+  mode: ProPresenterContentMode,
+  chordLinePrefix = '',
+): string {
   if (mode === 'lyrics') return lines.map((line) => line.lyrics).join('\n');
   return lines
-    .flatMap((line) => line.chord_line ? [line.chord_line, line.lyrics] : [line.lyrics])
+    .flatMap((line) => line.chord_line ? [`${chordLinePrefix}${line.chord_line}`, line.lyrics] : [line.lyrics])
     .join('\n');
 }
 
@@ -150,7 +155,7 @@ export function formatProPresenterImportText(
   importSectionsFromBracketText(bracketText).forEach((section) => {
     for (let offset = 0; offset < section.length; offset += linesPerSlide) {
       const lines = section.slice(offset, offset + linesPerSlide).map(parseProPresenterLine);
-      const formatted = formatSlideLines(lines, options.mode).trimEnd();
+      const formatted = formatSlideLines(lines, options.mode, options.chordLinePrefix).trimEnd();
       if (formatted.trim()) slides.push(formatted);
     }
   });

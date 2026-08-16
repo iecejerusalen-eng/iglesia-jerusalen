@@ -320,7 +320,7 @@ export const SongViewer = ({
     }
   };
 
-  const copyForProPresenter = async (contentMode: ProPresenterContentMode) => {
+  const copyForProPresenter = async (contentMode: ProPresenterContentMode, chordLinePrefix = '') => {
     const processed = transposeBracketText(sourceText, contentMode === 'lyrics' ? transposeAmount : chordTransposeAmount, {
       nashville: nashvilleMode,
       key: originalKey,
@@ -329,6 +329,7 @@ export const SongViewer = ({
     const result = formatProPresenterImportText(processed, {
       mode: contentMode,
       linesPerSlide: contentMode === 'lyrics' ? 2 : 1,
+      chordLinePrefix,
     });
     if (!result) {
       toast.error('Esta versión no contiene texto que se pueda importar.');
@@ -336,9 +337,11 @@ export const SongViewer = ({
     }
     try {
       await navigator.clipboard.writeText(result);
-      toast.success(contentMode === 'lyrics'
-        ? 'Letra copiada en bloques de dos líneas para ProPresenter'
-        : 'Acordes y letra copiados en pares para Stage');
+      toast.success(chordLinePrefix === '//'
+        ? 'Formato Holylyrics copiado con acordes como comentarios'
+        : contentMode === 'lyrics'
+          ? 'Letra copiada en bloques de dos líneas para ProPresenter'
+          : 'Acordes y letra copiados en pares para Stage');
     } catch (error) {
       console.error('No se pudo copiar el texto para ProPresenter.', error);
       toast.error('El navegador no permitió copiar el contenido.');
@@ -836,6 +839,7 @@ export const SongViewer = ({
               <button onClick={printSong} className="toolbar-chip"><Printer size={13} /> PDF</button>
               <button onClick={() => void copyForProPresenter('lyrics')} className="toolbar-chip" title="Dos líneas de letra por diapositiva"><FileText size={13} /> Letra → ProPresenter</button>
               <button onClick={() => void copyForProPresenter('lyrics-chords')} className="toolbar-chip border-indigo-200/70 text-indigo-700 dark:text-indigo-300" title="Una frase por diapositiva: acordes arriba y letra abajo"><Copy size={13} /> Stage + acordes</button>
+              <button type="button" onClick={() => void copyForProPresenter('lyrics-chords', '//')} className="toolbar-chip border-emerald-200/70 text-emerald-700 dark:text-emerald-300" title="Una frase por diapositiva: acordes como comentarios para Holylyrics"><Copy size={13} /> Holylyrics</button>
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-3">
