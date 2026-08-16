@@ -96,14 +96,14 @@ export const PremiumHeroVisual = ({ title, subtitle, contentBlocks, coverImage }
 
       <div className="relative mx-auto grid min-h-[min(860px,calc(100svh-4rem))] max-w-7xl items-center gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:gap-8 lg:px-10 lg:py-24 xl:px-12">
         <div className="relative z-10 max-w-2xl lg:order-none">
-          <div className="hero-reveal inline-flex items-center gap-3 rounded-full border border-blue-900/10 bg-white/70 px-3 py-2 pr-4 text-[10px] font-black uppercase tracking-[0.2em] text-blue-900 shadow-[0_14px_35px_-22px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] dark:text-blue-200">
+          <div className="hero-reveal mt-8 lg:mt-12 inline-flex items-center gap-3 rounded-full border border-blue-900/10 bg-white/70 px-3 py-2 pr-4 text-[10px] font-black uppercase tracking-[0.2em] text-blue-900 shadow-[0_14px_35px_-22px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] dark:text-blue-200">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-700 to-indigo-500 text-white shadow-lg shadow-blue-900/20 dark:from-blue-500 dark:to-indigo-400">
               <Church size={14} strokeWidth={2.4} />
             </span>
             {subtitle || 'Una casa de restauración y bendición'}
           </div>
 
-          <h1 id="hero-title" className="hero-reveal hero-reveal-delay-1 mt-8 max-w-3xl font-serif text-[clamp(3.25rem,8vw,7.4rem)] font-black leading-[.9] tracking-[-.055em] text-slate-950 dark:text-white">
+          <h1 id="hero-title" className="hero-reveal hero-reveal-delay-1 mt-8 max-w-3xl font-serif text-[clamp(2.75rem,7vw,6.2rem)] font-black leading-[.9] tracking-[-.055em] text-slate-950 dark:text-white">
             {title && title.trim() && title.trim() !== 'Bienvenido a la Iglesia Jerusalén' ? (
               title
             ) : (

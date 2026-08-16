@@ -28,6 +28,18 @@ async function refreshApplicationAssets(): Promise<void> {
   window.location.replace(refreshedUrl.toString());
 }
 
+function removeAssetRefreshParam(): void {
+  const currentUrl = new URL(window.location.href);
+  if (!currentUrl.searchParams.has('_asset_refresh')) return;
+
+  currentUrl.searchParams.delete('_asset_refresh');
+  window.history.replaceState(
+    window.history.state,
+    document.title,
+    `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
+  );
+}
+
 export function lazyWithRetry<T extends ComponentType<unknown>>(
   componentImport: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {
@@ -35,6 +47,7 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
     try {
       const component = await componentImport();
       window.sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      removeAssetRefreshParam();
       return component;
     } catch (error: unknown) {
       if (!isChunkLoadError(error)) throw error;

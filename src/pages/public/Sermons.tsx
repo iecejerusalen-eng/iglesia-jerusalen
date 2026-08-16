@@ -18,6 +18,7 @@ import {
   type AutocompleteItemType,
 } from '@/components/ui/autocomplete';
 import VideoPlayer from '@/components/ui/video-player';
+import PremiumSermonsHero from './components/PremiumSermonsHero';
 
 const MOCK_SERMONS: Sermon[] = [
   {
@@ -157,26 +158,7 @@ const Sermons = () => {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
       <AnimeFadeUp delay={100} duration={800}>
         
-      {/* HEADER HERO */}
-      <div id="sermons_hero" className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-16 mb-12 shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden group border border-white/5 scroll-mt-28">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-slate-900 to-slate-950"></div>
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] group-hover:bg-blue-500/30 transition-colors duration-1000"></div>
-        <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none transform group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-[3s] ease-out">
-          <Video size={320} />
-        </div>
-        
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-gold shadow-inner">
-            <Video size={14} className="mr-1" /> Enseñanzas & Mensajes
-          </div>
-          <h1 className="text-4xl md:text-6xl font-serif font-extrabold text-white tracking-tight leading-tight drop-shadow-lg">
-            Prédicas y Devocionales
-          </h1>
-          <p className="text-slate-300 text-base md:text-xl leading-relaxed font-light max-w-2xl">
-            Repasa las prédicas dominicales, series doctrinales y mensajes de edificación compartidos por nuestros pastores y líderes invitados.
-          </p>
-        </div>
-      </div>
+      <PremiumSermonsHero latestSermon={sermons[0]} sermonCount={sermons.length} />
 
       {/* PANEL DE CONTROL: Buscador y Filtros */}
       <div id="sermons_latest" className="relative z-50 w-full mb-12 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] p-4 sm:p-6 border border-gray-200/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex flex-col gap-4 scroll-mt-28">
