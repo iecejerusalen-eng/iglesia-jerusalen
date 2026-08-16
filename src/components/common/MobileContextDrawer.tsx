@@ -11,12 +11,17 @@ import {
   MapPin,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   RotateCw,
   Copy,
+  FileText,
+  Megaphone,
+  Music2,
   Sun,
   Moon,
   Search,
   MessageSquareHeart,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
@@ -32,9 +37,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
   GraduationCap,
   ShoppingBag,
   MessageSquareHeart,
+  Megaphone,
+  FileText,
+  UsersRound,
+  Music2,
   MapPin,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   RotateCw,
   Copy,
   Search,
@@ -48,7 +58,7 @@ const NAV_ITEMS = CONTEXT_MENU_GROUPS.flatMap((g) =>
 );
 
 // Toolbar actions (flat): back, forward, reload, copy
-const TOOLBAR_KEYS = ['historyBack', 'historyForward', 'reload', 'copyLink'];
+const TOOLBAR_KEYS = ['historyBack', 'historyForward', 'reload', 'copyLink', 'copyTitle', 'scrollTop'];
 const TOOLBAR_ITEMS = CONTEXT_MENU_GROUPS.flatMap((g) =>
   g.items.filter(
     (i): i is ContextMenuActionItem =>
@@ -84,9 +94,38 @@ export function MobileContextDrawer({
     navigate(path);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Enlace copiado al portapapeles');
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Enlace copiado al portapapeles');
+    } catch (error) {
+      console.error('No se pudo copiar el enlace.', error);
+      toast.error('El navegador no permitió copiar el enlace.');
+    } finally {
+      onClose();
+    }
+  };
+
+  const handleCopyTitle = async () => {
+    const title = document.title.trim() || document.querySelector('h1')?.textContent?.trim();
+    if (!title) {
+      toast.error('Esta página no tiene un título para copiar.');
+      onClose();
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(title);
+      toast.success('Título de página copiado');
+    } catch (error) {
+      console.error('No se pudo copiar el título de la página.', error);
+      toast.error('El navegador no permitió copiar el título.');
+    } finally {
+      onClose();
+    }
+  };
+
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     onClose();
   };
 
@@ -96,8 +135,10 @@ export function MobileContextDrawer({
       case 'historyBack':    return () => { onClose(); window.history.back(); };
       case 'historyForward': return () => { onClose(); window.history.forward(); };
       case 'reload':         return () => { onClose(); window.location.reload(); };
-      case 'copyLink':       return handleCopyLink;
-      default:               return () => {};
+      case 'copyLink':       return () => { void handleCopyLink(); };
+      case 'copyTitle':      return () => { void handleCopyTitle(); };
+      case 'scrollTop':      return handleScrollTop;
+      default:               return () => toast.error('Esta acción no está disponible en esta página.');
     }
   };
 
@@ -107,6 +148,8 @@ export function MobileContextDrawer({
       historyForward: 'Adelante',
       reload: 'Recargar',
       copyLink: 'Copiar',
+      copyTitle: 'Copiar título',
+      scrollTop: 'Arriba',
     };
     return short[actionKey] ?? label;
   };

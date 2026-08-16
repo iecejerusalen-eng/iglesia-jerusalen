@@ -20,10 +20,15 @@ import {
   RotateCw,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   Copy,
+  FileText,
+  Megaphone,
+  Music2,
   Moon,
   Sun,
   Search,
+  UsersRound,
   MessageSquareHeart,
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
@@ -42,9 +47,14 @@ const DESKTOP_ICONS: Record<string, React.ReactNode> = {
   GraduationCap: <GraduationCap className="w-4 h-4 mr-2 text-emerald-500" />,
   ShoppingBag: <ShoppingBag className="w-4 h-4 mr-2 text-purple-500" />,
   MessageSquareHeart: <MessageSquareHeart className="w-4 h-4 mr-2 text-rose-500" />,
+  Megaphone: <Megaphone className="w-4 h-4 mr-2 text-amber-500" />,
+  FileText: <FileText className="w-4 h-4 mr-2 text-indigo-500" />,
+  UsersRound: <UsersRound className="w-4 h-4 mr-2 text-cyan-500" />,
+  Music2: <Music2 className="w-4 h-4 mr-2 text-fuchsia-500" />,
   MapPin: <MapPin className="w-4 h-4 mr-2 text-rose-600 animate-bounce" />,
   ArrowLeft: <ArrowLeft className="w-4 h-4 mr-2 text-gray-500" />,
   ArrowRight: <ArrowRight className="w-4 h-4 mr-2 text-gray-500" />,
+  ArrowUp: <ArrowUp className="w-4 h-4 mr-2 text-gray-500" />,
   RotateCw: <RotateCw className="w-4 h-4 mr-2 text-gray-500" />,
   Copy: <Copy className="w-4 h-4 mr-2 text-gray-500" />,
   Search: <Search className="w-4 h-4 mr-2 text-blue-500" />,
@@ -68,9 +78,33 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
     setTheme(isDarkMode ? 'light' : 'dark');
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Enlace copiado al portapapeles');
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Enlace copiado al portapapeles');
+    } catch (error) {
+      console.error('No se pudo copiar el enlace.', error);
+      toast.error('El navegador no permitió copiar el enlace.');
+    }
+  };
+
+  const handleCopyTitle = async () => {
+    const title = document.title.trim() || document.querySelector('h1')?.textContent?.trim();
+    if (!title) {
+      toast.error('Esta página no tiene un título para copiar.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(title);
+      toast.success('Título de página copiado');
+    } catch (error) {
+      console.error('No se pudo copiar el título de la página.', error);
+      toast.error('El navegador no permitió copiar el título.');
+    }
+  };
+
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenSearch = () => {
@@ -89,10 +123,12 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
       case 'historyBack':   return () => window.history.back();
       case 'historyForward':return () => window.history.forward();
       case 'reload':        return () => window.location.reload();
-      case 'copyLink':      return handleCopyLink;
+      case 'copyLink':      return () => { void handleCopyLink(); };
+      case 'copyTitle':     return () => { void handleCopyTitle(); };
+      case 'scrollTop':     return handleScrollTop;
       case 'toggleTheme':   return toggleTheme;
       case 'openSearch':    return handleOpenSearch;
-      default:              return () => {};
+      default:              return () => toast.error('Esta acción no está disponible en esta página.');
     }
   };
 

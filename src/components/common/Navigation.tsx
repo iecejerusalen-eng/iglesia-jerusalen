@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
@@ -15,6 +15,7 @@ const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const previousScrollY = useRef(0);
 
   // Dynamic Menu State
   const { items, fetchMenu } = useMenuStore();
@@ -26,33 +27,32 @@ const Navigation = () => {
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 50);
-
-    const previous = scrollY.getPrevious();
-    if (previous !== undefined && latest > previous && latest > 100) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
+    const delta = latest - previousScrollY.current;
+    setIsScrolled(latest > 24);
+    if (latest <= 72) setHidden(false);
+    else if (delta > 2) setHidden(true);
+    else if (delta < -2) setHidden(false);
+    previousScrollY.current = latest;
   });
+
+  useEffect(() => {
+    previousScrollY.current = window.scrollY;
+  }, [location.pathname]);
 
   const isPathActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
   const isHome = location.pathname === '/';
   const isTransparent = isHome && !isScrolled;
 
+  const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
+
   const topLevelItems = useMemo(() => {
-    const calculated = items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    const calculated = menuSource.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
     return calculated.length > 0 ? calculated : DEFAULT_MENU_ITEMS;
-  }, [items]);
+  }, [menuSource]);
 
   const getChildren = (parentId: string) => {
-    const children = items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
-    if (children.length === 0 && topLevelItems === DEFAULT_MENU_ITEMS) {
-        // Fallback para hijos de los items por defecto (no aplica en esta lógica simple pero por seguridad)
-        return [];
-    }
-    return children;
+    return menuSource.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
   };
 
   const isItemActive = (item: MenuItem) => {
@@ -63,12 +63,15 @@ const Navigation = () => {
 
   return (
     <motion.nav 
+      key={location.pathname}
       variants={{
         visible: { y: 0 },
         hidden: { y: "-100%" }
       }}
       animate={hidden ? "hidden" : "visible"}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      initial={false}
+      transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      style={{ willChange: 'transform' }}
       className={` ${
       isTransparent 
         ? 'absolute top-[38px] sm:top-[40px] left-0 right-0 w-full bg-transparent border-transparent z-50' 

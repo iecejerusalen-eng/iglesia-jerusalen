@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import DOMPurify from 'dompurify';
 import {
   BookOpenText,
@@ -83,6 +83,12 @@ interface StoredViewerPreferences {
   fontSize: number;
   accidentalPreference: AccidentalPreference;
   mode: ViewerMode;
+}
+
+interface HoveredChord {
+  chord: string;
+  left: number;
+  top: number;
 }
 
 const DEFAULT_PREFERENCES: StoredViewerPreferences = {
@@ -191,6 +197,7 @@ export const SongViewer = ({
   const [resourceAnswers, setResourceAnswers] = useState<Record<string, string[]>>({});
   const [mediaCategoryFilter, setMediaCategoryFilter] = useState<MediaCategory>('all');
   const [activeEmbedVideoUrl, setActiveEmbedVideoUrl] = useState<string | null>(null);
+  const [hoveredChord, setHoveredChord] = useState<HoveredChord | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -358,11 +365,43 @@ export const SongViewer = ({
     toast.success('Preparando el PDF de la canción');
   };
 
+  const handleChordPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (mode === 'lyrics' || instrument === 'ninguno' || instrument === 'bateria') {
+      setHoveredChord(null);
+      return;
+    }
+    if (!(event.target instanceof Element)) return;
+    const chordNode = event.target.closest<HTMLElement>('[data-chord-node="true"]');
+    const chord = chordNode?.dataset.chord;
+    if (!chord || !chordNode) {
+      setHoveredChord(null);
+      return;
+    }
+    const rect = chordNode.getBoundingClientRect();
+    const popupWidth = 190;
+    const popupHeight = 250;
+    const gap = 12;
+    const left = Math.max(12, Math.min(window.innerWidth - popupWidth - 12, rect.left + rect.width / 2 - popupWidth / 2));
+    const top = rect.top >= popupHeight + gap
+      ? rect.top - popupHeight - gap
+      : Math.min(window.innerHeight - popupHeight - 12, rect.bottom + gap);
+    setHoveredChord((current) => current?.chord === chord && Math.abs(current.left - left) < 1 && Math.abs(current.top - top) < 1
+      ? current
+      : { chord, left, top: Math.max(12, top) });
+  };
+
+  const handleChordPointerLeave = (event: PointerEvent<HTMLDivElement>) => {
+    const relatedTarget = event.relatedTarget;
+    if (!(relatedTarget instanceof Element) || !relatedTarget.closest('[data-chord-node="true"]')) setHoveredChord(null);
+  };
+
   const renderLyrics = () => {
     const withChords = mode !== 'lyrics';
     const renderText = (text: string) => (
       <div
         className={`song-workspace-lyrics ${withChords ? '' : 'song-workspace-hide-chords'}`}
+        onPointerMove={handleChordPointerMove}
+        onPointerLeave={handleChordPointerLeave}
         dangerouslySetInnerHTML={{ __html: safeBracketHtml(text, chordTransposeAmount, nashvilleMode, originalKey, accidentalPreference) }}
       />
     );
@@ -869,13 +908,28 @@ export const SongViewer = ({
         )}
       </div>
 
+      {hoveredChord && instrument !== 'ninguno' && instrument !== 'bateria' && (
+        <div
+          className="pointer-events-none fixed z-[120] w-[190px] rounded-[1.35rem] border border-amber-200/80 bg-white/95 p-2 shadow-[0_24px_70px_-22px_rgba(15,23,42,.7)] backdrop-blur-xl dark:border-amber-300/20 dark:bg-slate-900/95"
+          style={{ left: hoveredChord.left, top: hoveredChord.top }}
+          role="status"
+          aria-label={`Vista previa del acorde ${hoveredChord.chord}`}
+        >
+          <div className="mb-1 flex items-center justify-between px-1">
+            <span className="text-[9px] font-black uppercase tracking-[.16em] text-amber-600 dark:text-amber-300">Vista previa</span>
+            <span className="font-mono text-[10px] font-black text-slate-400">{hoveredChord.chord}</span>
+          </div>
+          <InstrumentChordCard chord={hoveredChord.chord} instrument={instrument} compact />
+        </div>
+      )}
+
       <style>{`
         .song-section-glass { border: 1px solid rgb(255 255 255 / .68); background: rgb(255 255 255 / .72); border-radius: 1.5rem; padding: 1.25rem; box-shadow: 0 18px 55px -42px rgb(15 23 42 / .65); backdrop-filter: blur(22px); }
         .dark .song-section-glass { border-color: rgb(255 255 255 / .09); background: rgb(15 23 42 / .62); }
         .song-workspace-lyrics { font-size: calc(1.05rem * var(--song-font-scale)); line-height: 2.45; color: rgb(30 41 59); }
         .dark .song-workspace-lyrics { color: rgb(226 232 240); }
         .song-workspace-lyrics .lyrics-line { margin: .25rem 0; min-height: 1.5em; }
-        .song-workspace-lyrics .chord-node-wrapper { display: inline-block; position: relative; width: .05em; height: 1em; vertical-align: baseline; margin-right: .15em; }
+        .song-workspace-lyrics .chord-node-wrapper { display: inline-block; position: relative; width: .25em; height: 1em; vertical-align: baseline; margin-right: .08em; cursor: help; }
         .song-workspace-lyrics .chord-node-wrapper::before { content: attr(data-chord); position: absolute; bottom: .92em; left: 0; color: rgb(180 83 9); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72em; font-weight: 900; line-height: 1; white-space: nowrap; }
         .dark .song-workspace-lyrics .chord-node-wrapper::before { color: rgb(252 211 77); }
         .song-workspace-lyrics .chord-only-line { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .6rem 0; min-height: 2em; }

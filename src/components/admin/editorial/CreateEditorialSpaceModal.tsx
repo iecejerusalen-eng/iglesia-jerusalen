@@ -7,15 +7,7 @@ import {
   Building2,
   BookOpen,
   FileText,
-  Palette,
-  Image as ImageIcon,
-  Check,
-  Globe,
-  Lock,
   RefreshCw,
-  Layers,
-  ChevronRight,
-  ShieldCheck,
   Church,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,7 +15,7 @@ import { supabase } from '../../../config/supabase';
 import MediaUploader from '../../common/MediaUploader';
 import type { EditorialOwnerType } from '../../../features/editorial/types';
 
-export function slugify(text: string): string {
+function slugify(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
@@ -50,7 +42,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     owner_type: 'church',
     accent_color: '#d97706',
     description: 'Noticias, comunicados e historias oficiales de la iglesia.',
-    badgeText: 'Iglesia',
+    badgeText: 'Iglesia general',
   },
   {
     id: 'daily-devotionals',
@@ -59,7 +51,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     owner_type: 'church',
     accent_color: '#059669',
     description: 'Reflexiones y lecturas bíblicas diarias para la congregación.',
-    badgeText: 'Iglesia',
+    badgeText: 'Iglesia general',
   },
   {
     id: 'ministry-posts',
@@ -68,7 +60,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     owner_type: 'ministry',
     accent_color: '#2563eb',
     description: 'Espacio editorial para publicar eventos, noticias y artículos del ministerio.',
-    badgeText: 'Ministerio',
+    badgeText: 'Ministerio / departamento',
   },
   {
     id: 'discipleship-log',
@@ -103,6 +95,17 @@ interface CreateEditorialSpaceModalProps {
 interface OptionItem {
   id: string;
   name: string;
+}
+
+interface MinistryOptionRow {
+  id: string | number;
+  name: string | null;
+}
+
+interface ProgramOptionRow {
+  id: string | number;
+  title: string | null;
+  name: string | null;
 }
 
 export default function CreateEditorialSpaceModal({
@@ -141,7 +144,7 @@ export default function CreateEditorialSpaceModal({
 
       if (minRes.data) {
         setMinistries(
-          minRes.data.map((m: any) => ({
+          (minRes.data as MinistryOptionRow[]).map((m) => ({
             id: String(m.id),
             name: String(m.name || 'Ministerio sin nombre'),
           }))
@@ -150,7 +153,7 @@ export default function CreateEditorialSpaceModal({
 
       if (progRes.data) {
         setPrograms(
-          progRes.data.map((p: any) => ({
+          (progRes.data as ProgramOptionRow[]).map((p) => ({
             id: String(p.id),
             name: String(p.title || p.name || 'Programa de estudio'),
           }))
@@ -165,8 +168,10 @@ export default function CreateEditorialSpaceModal({
 
   useEffect(() => {
     if (isOpen) {
-      void fetchOptions();
+      const loadTimer = window.setTimeout(() => { void fetchOptions(); }, 0);
+      return () => window.clearTimeout(loadTimer);
     }
+    return undefined;
   }, [isOpen, fetchOptions]);
 
   // Handle auto slug logic
@@ -261,7 +266,7 @@ export default function CreateEditorialSpaceModal({
       resetForm();
       onSuccess?.();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al insertar espacio editorial:', err);
       toast.error('Ocurrió un error inesperado al guardar el espacio.');
     } finally {
@@ -406,6 +411,9 @@ export default function CreateEditorialSpaceModal({
               <label className="mb-2 block text-xs font-bold text-slate-200">
                 Propietario / Pertenece a (`owner_type`)
               </label>
+              <p className="mb-3 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[11px] leading-5 text-amber-100">
+                Usa <strong>Iglesia general</strong> sólo para comunicaciones de toda la congregación y espacios como Cuerpo de Apoyo. Damas, Caballeros, Jóvenes, Niños, Alabanza y cualquier otro departamento deben registrarse como <strong>Ministerio / departamento</strong>.
+              </p>
               <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
@@ -417,7 +425,7 @@ export default function CreateEditorialSpaceModal({
                   }`}
                 >
                   <Church size={20} />
-                  <span className="text-xs font-bold">Iglesia</span>
+                  <span className="text-xs font-bold">Iglesia general</span>
                 </button>
 
                 <button
@@ -430,7 +438,7 @@ export default function CreateEditorialSpaceModal({
                   }`}
                 >
                   <Building2 size={20} />
-                  <span className="text-xs font-bold">Ministerio</span>
+                  <span className="text-xs font-bold">Ministerio / departamento</span>
                 </button>
 
                 <button
@@ -443,7 +451,7 @@ export default function CreateEditorialSpaceModal({
                   }`}
                 >
                   <BookOpen size={20} />
-                  <span className="text-xs font-bold">Programa</span>
+                  <span className="text-xs font-bold">Programa / formación</span>
                 </button>
               </div>
             </div>
@@ -456,7 +464,7 @@ export default function CreateEditorialSpaceModal({
                 exit={{ opacity: 0, height: 0 }}
               >
                 <label className="mb-1.5 block text-xs font-bold text-slate-200">
-                  Selecciona el Ministerio <span className="text-amber-400">*</span>
+                  Selecciona el ministerio o departamento <span className="text-amber-400">*</span>
                 </label>
                 {loadingOptions ? (
                   <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-400">
@@ -469,7 +477,7 @@ export default function CreateEditorialSpaceModal({
                     required
                     className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none focus:border-amber-400"
                   >
-                    <option value="">-- Seleccionar Ministerio --</option>
+                    <option value="">-- Seleccionar ministerio / departamento --</option>
                     {ministries.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name}

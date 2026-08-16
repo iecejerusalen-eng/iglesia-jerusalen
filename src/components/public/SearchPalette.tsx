@@ -5,11 +5,84 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useSearchStore } from '../../store/useSearchStore';
 import { 
-  Search, BookOpen, Music, Calendar, MapPin, 
+  Search, BookOpen, Music, Calendar, MapPin, Megaphone,
   Globe, Heart, ShoppingBag, Send, ArrowRight, Loader2
 } from 'lucide-react';
 import { AnimeScaleIn, AnimeFadeUp } from '../animations/AnimeWrappers';
-import { parseBibleReferences } from '../../utils/bibleParser';
+import { parseBibleReferences, type ParsedVerse } from '../../utils/bibleParser';
+import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
+
+interface SearchSong {
+  id: string;
+  title: string;
+  slug: string | null;
+  artist: string | null;
+  lyrics: string;
+}
+
+interface SearchEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  start_time: string | null;
+  emoji: string | null;
+}
+
+interface SearchMinistry {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
+interface SearchProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+}
+
+interface SearchSchedule {
+  id: string;
+  title: string;
+  day: string;
+  description: string | null;
+  time_range: string;
+}
+
+interface SearchAnnouncement {
+  id: string;
+  title: string;
+  summary: string;
+  body: string;
+  event_id: string | null;
+}
+
+interface SearchResults {
+  songs: SearchSong[];
+  events: SearchEvent[];
+  ministries: SearchMinistry[];
+  products: SearchProduct[];
+  schedules: SearchSchedule[];
+  announcements: SearchAnnouncement[];
+  bibleRef: ParsedVerse | null;
+}
+
+const EMPTY_RESULTS: SearchResults = {
+  songs: [],
+  events: [],
+  ministries: [],
+  products: [],
+  schedules: [],
+  announcements: [],
+  bibleRef: null,
+};
+
+function escapeIlikeTerm(value: string): string {
+  return value.trim().slice(0, 80).replace(/[(),]/g, ' ').replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
 
 const cmdkStyles = `
   [cmdk-root] {
@@ -114,17 +187,12 @@ export default function SearchPalette() {
   const { isOpen, close } = useSearchStore();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<{
-    songs: any[];
-    events: any[];
-    ministries: any[];
-    products: any[];
-    schedules: any[];
-    bibleRef?: any;
-  }>({ songs: [], events: [], ministries: [], products: [], schedules: [] });
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
 
   const navigate = useNavigate();
   const paletteRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
 
   // Esc / Shortcut Listener
   useEffect(() => {
@@ -141,22 +209,34 @@ export default function SearchPalette() {
   // Reset search when dialog opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setSearch('');
-      setResults({ songs: [], events: [], ministries: [], products: [], schedules: [] });
+      const resetTimer = window.setTimeout(() => {
+        setSearch('');
+        setResults(EMPTY_RESULTS);
+        setSearchError(null);
+      }, 0);
+      return () => window.clearTimeout(resetTimer);
     }
+    return undefined;
   }, [isOpen]);
 
   // Debounced search query
   useEffect(() => {
     if (!search.trim()) {
-      setResults({ songs: [], events: [], ministries: [], products: [], schedules: [] });
-      return;
+      const resetTimer = window.setTimeout(() => {
+        setResults(EMPTY_RESULTS);
+        setSearchError(null);
+        setLoading(false);
+      }, 0);
+      return () => window.clearTimeout(resetTimer);
     }
 
-    setLoading(true);
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     const timer = setTimeout(async () => {
+      setLoading(true);
+      setSearchError(null);
       try {
-        const q = search.trim();
+        const q = escapeIlikeTerm(search);
 
         const parsedBible = parseBibleReferences(q);
         let bibleRefResult = null;
@@ -164,26 +244,33 @@ export default function SearchPalette() {
           bibleRefResult = parsedBible[0];
         }
 
-        const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes] = await Promise.all([
+        const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes, announcementsRes] = await Promise.all([
           supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
           supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('ministries').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('products').select('id, name, description, price, image_url, category, type, stock, created_at').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,day.ilike.%${q}%,description.ilike.%${q}%`).limit(4)
+          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,day.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('church_announcements').select('id, title, summary, body, event_id').eq('status', 'published').lte('publish_at', new Date().toISOString()).or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(4),
         ]);
 
+        const failed = [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes, announcementsRes].find((response) => response.error);
+        if (failed?.error) throw failed.error;
+        if (requestId !== requestIdRef.current) return;
+
         setResults({
-          songs: songsRes.data || [],
-          events: eventsRes.data || [],
-          ministries: ministriesRes.data || [],
-          products: productsRes.data || [],
-          schedules: schedulesRes.data || [],
+          songs: (songsRes.data ?? []) as SearchSong[],
+          events: (eventsRes.data ?? []) as SearchEvent[],
+          ministries: (ministriesRes.data ?? []) as SearchMinistry[],
+          products: (productsRes.data ?? []) as SearchProduct[],
+          schedules: (schedulesRes.data ?? []) as SearchSchedule[],
+          announcements: (announcementsRes.data ?? []) as SearchAnnouncement[],
           bibleRef: bibleRefResult
         });
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error executing global search:', err);
+        if (requestId === requestIdRef.current) setSearchError('No pudimos completar la búsqueda. Intenta de nuevo en unos segundos.');
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) setLoading(false);
       }
     }, 250);
 
@@ -205,6 +292,7 @@ export default function SearchPalette() {
   const showPetition = /peti|orar|orac|pedido|ayuda|rezar|necesi/i.test(normalizedSearch) || search.length === 0;
   const showDonation = /dona|ofren|diez|pagar|dinero|dar|apoyar/i.test(normalizedSearch) || search.length === 0;
   const showStore = /tienda|produ|comprar|venta|libro|biblia|camisa|agenda|precio/i.test(normalizedSearch);
+  const showAnnouncements = /anun|aviso|comunic|actividad|importante/i.test(normalizedSearch);
   return (
     <>
       <style>{cmdkStyles}</style>
@@ -244,8 +332,28 @@ export default function SearchPalette() {
             <Command.List className="max-h-[60vh] overflow-y-auto p-3 custom-scrollbar space-y-4">
               <Command.Empty>No se encontraron resultados específicos.</Command.Empty>
 
+              {searchError && <div role="alert" className="mx-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{searchError}</div>}
+
+              {results.bibleRef && (
+                <AnimeFadeUp delay={0.05}>
+                  <Command.Group heading="Referencia bíblica detectada">
+                    <Command.Item
+                      value={`biblia ${results.bibleRef.bookName} ${results.bibleRef.chapter} ${results.bibleRef.verses}`}
+                      onSelect={() => handleSelect(`/recursos/biblia?libro=${encodeURIComponent(results.bibleRef?.bookId ?? '')}&capitulo=${encodeURIComponent(results.bibleRef?.chapter ?? '')}`)}
+                    >
+                      <BookOpen size={18} className="text-indigo-500 shrink-0" />
+                      <div className="flex-1 text-left">
+                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Abrir {results.bibleRef.bookName} {results.bibleRef.chapter}:{results.bibleRef.verses}</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-400">Ir directamente al lector bíblico</span>
+                      </div>
+                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                    </Command.Item>
+                  </Command.Group>
+                </AnimeFadeUp>
+              )}
+
               {/* INTENTS / ACTION SHORTCUTS */}
-              {(showLocation || showSocials || showPetition || showDonation || showStore) && (
+              {(showLocation || showSocials || showPetition || showDonation || showStore || showAnnouncements) && (
                 <AnimeFadeUp delay={0.1}>
                   <Command.Group heading="Accesos Directos y Ayuda">
                   {showLocation && (
@@ -316,6 +424,19 @@ export default function SearchPalette() {
                       <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
                     </Command.Item>
                   )}
+                  {showAnnouncements && (
+                    <Command.Item
+                      value="anuncios avisos comunicados actividades iglesia general"
+                      onSelect={() => handleSelect('/anuncios')}
+                    >
+                      <Megaphone className="text-amber-500" size={18} />
+                      <div className="flex-1 text-left">
+                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Anuncios importantes</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-400">Actividades y comunicados de la Iglesia general</span>
+                      </div>
+                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                    </Command.Item>
+                  )}
                 </Command.Group>
                 </AnimeFadeUp>
               )}
@@ -328,7 +449,7 @@ export default function SearchPalette() {
                     <Command.Item 
                       key={song.id} 
                       value={`letra cancion himno musica ${song.title} ${song.artist || ''} ${song.lyrics.slice(0, 50)}`}
-                      onSelect={() => handleSelect('/recursos/alabanzas')}
+                      onSelect={() => handleSelect(`/recursos/alabanzas/${song.slug || slugifySongTitle(song.title)}`)}
                     >
                       <Music size={18} className="text-emerald-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
@@ -352,7 +473,7 @@ export default function SearchPalette() {
                     <Command.Item 
                       key={event.id} 
                       value={`evento reunion fecha horario ${event.title} ${event.description || ''}`}
-                      onSelect={() => handleSelect('/eventos')}
+                      onSelect={() => handleSelect(`/eventos#${event.id}`)}
                     >
                       <Calendar size={18} className="text-violet-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
@@ -369,6 +490,28 @@ export default function SearchPalette() {
                     </Command.Item>
                   ))}
                 </Command.Group>
+                </AnimeFadeUp>
+              )}
+
+              {/* ANNOUNCEMENTS RESULTS */}
+              {results.announcements.length > 0 && (
+                <AnimeFadeUp delay={0.22}>
+                  <Command.Group heading="Anuncios importantes">
+                  {results.announcements.map((announcement) => (
+                    <Command.Item
+                      key={announcement.id}
+                      value={`anuncio aviso comunicado actividad ${announcement.title} ${announcement.summary} ${announcement.body.slice(0, 80)}`}
+                      onSelect={() => handleSelect(`/anuncios#${announcement.id}`)}
+                    >
+                      <Megaphone size={18} className="text-amber-500 shrink-0" />
+                      <div className="flex-1 text-left truncate">
+                        <span className="font-bold text-gray-800 dark:text-slate-100 block">{announcement.title}</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">{announcement.summary || announcement.body.replace(/<[^>]*>/g, '').slice(0, 90)}</span>
+                      </div>
+                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                    </Command.Item>
+                  ))}
+                  </Command.Group>
                 </AnimeFadeUp>
               )}
 
@@ -406,7 +549,7 @@ export default function SearchPalette() {
                     <Command.Item 
                       key={min.id} 
                       value={`ministerio departamento directiva ${min.name} ${min.description || ''}`}
-                      onSelect={() => handleSelect(`/ministerio/${min.slug}`)}
+                      onSelect={() => handleSelect(`/ministerios/${min.slug}`)}
                     >
                       <BookOpen size={18} className="text-sky-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
@@ -463,6 +606,22 @@ export default function SearchPalette() {
                   <Command.Item value="contacto correo telefono oficina" onSelect={() => handleSelect('/contacto')}>
                     <Globe size={18} className="text-slate-400" />
                     <span>Contacto y Oficinas</span>
+                  </Command.Item>
+                  <Command.Item value="anuncios avisos comunicados actividades" onSelect={() => handleSelect('/anuncios')}>
+                    <Megaphone size={18} className="text-amber-500" />
+                    <span>Anuncios importantes</span>
+                  </Command.Item>
+                  <Command.Item value="publicaciones artículos devocionales" onSelect={() => handleSelect('/publicaciones')}>
+                    <BookOpen size={18} className="text-indigo-500" />
+                    <span>Publicaciones</span>
+                  </Command.Item>
+                  <Command.Item value="ministerios departamentos equipos" onSelect={() => handleSelect('/ministerios')}>
+                    <Heart size={18} className="text-rose-500" />
+                    <span>Ministerios y departamentos</span>
+                  </Command.Item>
+                  <Command.Item value="alabanzas canciones himnos acordes" onSelect={() => handleSelect('/recursos/alabanzas')}>
+                    <Music size={18} className="text-emerald-500" />
+                    <span>Biblioteca de alabanzas</span>
                   </Command.Item>
                 </Command.Group>
                 </AnimeFadeUp>

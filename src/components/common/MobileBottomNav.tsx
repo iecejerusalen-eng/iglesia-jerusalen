@@ -23,13 +23,15 @@ const MobileBottomNav: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
+  const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
+
   const topLevelItems = useMemo(() => {
-    const calculated = items.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    const calculated = menuSource.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
     return calculated.length > 0 ? calculated : DEFAULT_MENU_ITEMS;
-  }, [items]);
+  }, [menuSource]);
 
   const getChildren = (parentId: string) => 
-    items.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    menuSource.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
 
   // We take up to 4 items for the bottom bar, 5th is 'Buscar'
   const bottomBarItems = topLevelItems.slice(0, 4);

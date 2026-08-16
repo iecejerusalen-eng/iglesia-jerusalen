@@ -237,19 +237,19 @@ export default function EditorialManager() {
               <FilterPill
                 active={categoryFilter === 'church'}
                 onClick={() => setCategoryFilter('church')}
-                label="Iglesia"
+                label="Iglesia general"
                 icon={Church}
               />
               <FilterPill
                 active={categoryFilter === 'ministry'}
                 onClick={() => setCategoryFilter('ministry')}
-                label="Ministerios"
+                label="Ministerios / departamentos"
                 icon={Building2}
               />
               <FilterPill
                 active={categoryFilter === 'study_program'}
                 onClick={() => setCategoryFilter('study_program')}
-                label="Programas"
+                label="Programas / formación"
                 icon={BookOpen}
               />
             </div>
@@ -322,7 +322,7 @@ export default function EditorialManager() {
                     ) : (
                       <Church size={13} className="text-amber-400" />
                     )}
-                    {isMinistry ? 'Ministerio' : isProgram ? 'Programa' : 'Iglesia'}
+                    {isMinistry ? 'Ministerio / departamento' : isProgram ? 'Programa / formación' : 'Iglesia general'}
                   </span>
 
                   {/* Interactive Publish Toggle Switch */}
