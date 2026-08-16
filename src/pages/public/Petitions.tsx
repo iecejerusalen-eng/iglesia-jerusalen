@@ -277,7 +277,7 @@ const Petitions = () => {
   }
 
   return (
-    <div className="relative bg-gray-50 dark:bg-slate-950 min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200 overflow-hidden">
+    <div className="relative bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-200 overflow-hidden">
       
       {/* Sutil efecto de partículas CSS en el fondo (Opcional, muy suave) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20 dark:opacity-30">
@@ -285,22 +285,10 @@ const Petitions = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gold/20 rounded-full blur-3xl animate-pulse motion-reduce:animate-none" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl space-y-10">
+      <PetitionsHeroPremium />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-10">
         
-        <PetitionsHeroPremium />
-
-        {/* Legacy heading retained only as a non-rendered compatibility block during migration. */}
-        <div className="hidden" aria-hidden="true">
-          <div className="inline-flex p-3 bg-primary/5 rounded-full text-gold border border-gold/10 relative">
-            <HeartHandshake size={32} />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold text-primary dark:text-white">Orando Juntos</h1>
-          <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
-            "Clama a mí, y yo te responderé, y te enseñaré cosas grandes y ocultas que tú no conoces." — Jeremías 33:3. 
-            Comparte tu necesidad; estamos aquí para interceder por ti.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Form Column */}

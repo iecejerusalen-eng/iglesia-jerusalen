@@ -29,7 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BibleVerseLink } from '../ui/BibleVerseLink';
 
 // Dynamic icon mapping to render icons dynamically based on string ID
-const iconMap: { [key: string]: React.ComponentType<any> } = {
+const iconMap: { [key: string]: React.ElementType } = {
   BookOpen,
   Sun,
   AlertTriangle,
@@ -390,7 +390,7 @@ export default function PrinciplesOfFaith() {
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Buscar doctrina o versículo..."
-            className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 text-gray-800 dark:text-white rounded-2xl border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-church-gold-medium/40 focus:border-church-gold-medium transition-all shadow-xs"
+            className="w-full pl-10 pr-10 py-3 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md text-gray-800 dark:text-white rounded-2xl border border-white/60 dark:border-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-church-gold-medium/40 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]"
           />
           {searchQuery && (
             <button
@@ -407,7 +407,7 @@ export default function PrinciplesOfFaith() {
       {isSearching ? (
         /* SEARCH RESULTS VIEW */
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 border border-gray-150 dark:border-white/5 rounded-2xl py-4 px-6">
+          <div className="flex items-center justify-between bg-white/60 dark:bg-slate-900/30 backdrop-blur-md shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white/50 dark:border-white/5 rounded-2xl py-4 px-6">
             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
               Se encontraron <span className="font-semibold text-primary dark:text-church-gold-bright">{filteredPrinciples.length}</span> resultados para "<span className="text-gray-800 dark:text-gray-200 italic font-normal">{searchQuery}</span>"
             </p>
@@ -435,9 +435,10 @@ export default function PrinciplesOfFaith() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.3 }}
-                      className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 shadow-xs hover:shadow-md hover:border-church-gold-medium/30 dark:hover:border-church-gold-medium/30 transition-all duration-300 flex flex-col justify-between group"
+                      className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] border border-white/60 dark:border-white/5 transition-all duration-500 flex flex-col justify-between group relative overflow-hidden"
                     >
-                      <div className="space-y-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-transparent to-transparent group-hover:from-primary/[0.02] dark:group-hover:from-church-gold-medium/[0.03] transition-all duration-500 pointer-events-none" />
+                      <div className="space-y-4 relative z-10">
                         <div className="flex items-center justify-between">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${principle.iconColor}`}>
                             <IconComponent size={20} />
@@ -453,8 +454,8 @@ export default function PrinciplesOfFaith() {
                           {principle.description}
                         </p>
                       </div>
-                      <div className="pt-4 border-t border-gray-50 dark:border-slate-800/50 mt-5">
-                        <span className="inline-block bg-primary/5 dark:bg-slate-800 border border-primary/10 dark:border-slate-700/60 px-3 py-1 rounded-full text-primary dark:text-church-gold-pale font-serif font-medium text-[10px] uppercase tracking-wider">
+                      <div className="pt-4 border-t border-gray-50 dark:border-slate-800/50 mt-5 relative z-10">
+                        <span className="inline-block bg-primary/5 dark:bg-slate-800/60 border border-primary/10 dark:border-slate-700/60 px-3 py-1 rounded-full text-primary dark:text-church-gold-pale font-serif font-medium text-[10px] uppercase tracking-wider">
                           <BibleVerseLink reference={principle.reference} />
                         </span>
                       </div>
@@ -466,7 +467,7 @@ export default function PrinciplesOfFaith() {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-gray-200 dark:border-slate-800"
+                className="text-center py-16 bg-white/60 dark:bg-slate-900/30 backdrop-blur-xl rounded-3xl border border-dashed border-gray-200 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.02)]"
               >
                 <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto opacity-70 mb-4 animate-pulse" />
                 <h3 className="font-serif text-lg font-bold text-gray-800 dark:text-white">Sin resultados</h3>
@@ -506,7 +507,7 @@ export default function PrinciplesOfFaith() {
 
           {/* B. DESKTOP STICKY SIDEBAR NAVIGATION */}
           <div className="hidden lg:block lg:col-span-3 sticky top-24 self-start space-y-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-5 shadow-xs">
+            <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] border border-white/60 dark:border-white/5">
               <h3 className="font-serif font-bold text-xs uppercase tracking-widest text-gray-400 dark:text-slate-500 mb-4 px-2">
                 Temas Doctrinales
               </h3>
@@ -533,7 +534,7 @@ export default function PrinciplesOfFaith() {
                 ))}
               </nav>
             </div>
-            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent dark:from-slate-900/60 dark:to-transparent border border-primary/10 dark:border-white/5 rounded-3xl p-6 space-y-3">
+            <div className="bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent dark:from-slate-900/40 dark:to-transparent rounded-3xl p-6 space-y-3 shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-none border border-white/60 dark:border-white/5">
               <span className="text-[9px] font-black text-church-gold-medium dark:text-church-gold-bright uppercase tracking-widest block">Fundado en la Roca</span>
               <p className="text-[11px] text-gray-500 dark:text-slate-400 leading-relaxed font-light">
                 "Jesucristo es el mismo ayer, y hoy, y por los siglos."
@@ -576,7 +577,7 @@ export default function PrinciplesOfFaith() {
                     return (
                       <div
                         key={principle.id}
-                        className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-150 dark:border-white/10 p-6 shadow-xs hover:shadow-md hover:border-church-gold-medium/30 dark:hover:border-church-gold-medium/30 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                        className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] border border-white/60 dark:border-white/5 transition-all duration-500 flex flex-col justify-between group relative overflow-hidden"
                       >
                         {/* Background subtle light accent on hover */}
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-transparent to-transparent group-hover:from-primary/[0.02] dark:group-hover:from-church-gold-medium/[0.03] transition-all duration-500 pointer-events-none" />

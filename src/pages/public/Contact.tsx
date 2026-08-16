@@ -10,16 +10,17 @@ import {
   ExternalLink,
   Mail,
   MapPin,
-  MessageCircle,
   Phone,
   Send,
   Navigation,
   Compass,
 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
-import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
+import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
 import { GoogleChurchMap, CHURCH_LOCATION } from '../../components/map/GoogleChurchMap';
+import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import PremiumContactHero from './components/PremiumContactHero';
 
 const CHURCH_ADDRESS = 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Guayas, Ecuador';
 const CHURCH_PHONE = '+593 98 526 3122';
@@ -104,29 +105,7 @@ const Contact = () => {
     <div className="bg-slate-50/60 py-6 transition-colors dark:bg-slate-950 md:py-10 font-sans">
       <div className="mx-auto max-w-7xl space-y-8 px-4 md:space-y-12 md:px-8">
         
-        {/* Hero Section */}
-        <section id="contact_hero" className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-2xl shadow-slate-950/10 md:px-10 md:py-14">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(199,157,63,0.2),transparent_30%),radial-gradient(circle_at_5%_100%,rgba(59,130,246,0.14),transparent_34%)]" />
-          <AnimeZoomIn className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-church-gold/25 bg-church-gold/10 px-3 py-1.5 text-xs font-semibold text-church-gold-bright">
-                <MessageCircle size={14} aria-hidden="true" /> Estamos para servirte
-              </span>
-              <h1 className="mt-5 font-serif text-4xl font-bold tracking-tight md:text-5xl">Hablemos</h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
-                Escríbenos si necesitas oración, consejería o información sobre nuestras actividades en Milagro, Ecuador. Queremos acompañarte.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <a href={`https://wa.me/${CHURCH_PHONE_LINK.replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/40">
-                <MessageCircle size={18} aria-hidden="true" /> WhatsApp
-              </a>
-              <a href="#contact_form" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20">
-                Enviar mensaje <ArrowRight size={17} aria-hidden="true" />
-              </a>
-            </div>
-          </AnimeZoomIn>
-        </section>
+        <PremiumContactHero phoneLink={CHURCH_PHONE_LINK} facadeImage={churchFacadePhoto} />
 
         {/* Contact Information & Direct Channels */}
         <section id="contact_info" className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">

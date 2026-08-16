@@ -307,7 +307,8 @@ export const PAGE_SECTIONS_CONFIG: PageSectionConfig[] = [
       { id: 'missions_hero', label: 'Misiones Globales', icon: Globe },
       { id: 'missions_fields', label: 'Campos Misioneros', icon: MapPin },
       { id: 'missions_projects', label: 'Proyectos Activos', icon: Sparkles },
-      { id: 'missions_support', label: 'Apoyo', icon: Heart }
+      { id: 'missions_support', label: 'Apoyo', icon: Heart },
+      { id: 'missions_guide', label: 'Cómo leer los datos', icon: BookOpen }
     ]
   }
 ];

@@ -12,6 +12,7 @@ import { Globe } from '../../components/ui/globe';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { fetchJoshuaProject, formatMissionNumber } from '../../features/missions/joshuaProject';
 import type { JoshuaRecord } from '../../features/missions/types';
+import PremiumMissionsHero from './components/PremiumMissionsHero';
 
 const explorationLinks = [
   { to: '/misiones/local', label: 'Misión local', description: 'Obras verificadas en Milagro y nuestra comunidad.', icon: Church, tone: 'emerald' },
@@ -96,13 +97,13 @@ export default function Missions() {
 
   const activeMissions = missions.filter((mission) => mission.status === 'active');
   const countries = new Set(missions.map((mission) => mission.country_code).filter(Boolean)).size;
-  const markers = missions.flatMap((mission) => {
+  const markers = useMemo(() => missions.flatMap((mission) => {
     const latitude = mission.metadata?.latitude;
     const longitude = mission.metadata?.longitude;
     return typeof latitude === 'number' && typeof longitude === 'number'
       ? [{ location: [latitude, longitude] as [number, number], size: 0.055 }]
       : [];
-  });
+  }), [missions]);
   const globeConfig = useMemo<COBEOptions>(() => ({
     width: 720, height: 720, onRender: () => {}, devicePixelRatio: 1.2,
     phi: 0.5, theta: 0.2, dark: 1, diffuse: 1.1, mapSamples: 7000,
@@ -119,7 +120,19 @@ export default function Missions() {
       <main className="relative min-h-screen overflow-hidden bg-slate-50 pb-24 dark:bg-slate-950">
         <div className="pointer-events-none absolute -left-56 top-96 h-[32rem] w-[32rem] rounded-full bg-amber-300/15 blur-[130px]" />
 
-        <section id="missions_hero" className="px-4 pt-8 md:px-8 md:pt-12 scroll-mt-28">
+        <div className="px-4 pt-8 md:px-8 md:pt-12">
+          <div className="mx-auto max-w-7xl">
+            <PremiumMissionsHero
+              globeConfig={globeConfig}
+              missionCount={missions.length}
+              activeMissionCount={activeMissions.length}
+              countryCount={countries}
+              loading={loading}
+            />
+          </div>
+        </div>
+
+        {false && <section id="missions_legacy_hero" className="hidden">
           <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.7rem] border border-white/10 bg-[#07152d] shadow-2xl lg:grid-cols-[1.05fr_.95fr]">
             <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-amber-300"><Sparkles size={13} /> De Milagro a las naciones</span>
@@ -136,7 +149,7 @@ export default function Missions() {
               <div className="absolute bottom-6 left-6 right-6 rounded-2xl border border-white/10 bg-slate-950/55 p-4 text-xs text-slate-300 backdrop-blur-xl"><ShieldCheck className="mr-2 inline text-emerald-300" size={15} />Los marcadores institucionales solo aparecen cuando la administración publica coordenadas apropiadas.</div>
             </div>
           </AnimeFadeUp>
-        </section>
+        </section>}
 
         <section className="relative z-10 mx-auto -mt-5 max-w-6xl px-4 md:px-8">
           <div className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:grid-cols-4">
@@ -180,7 +193,7 @@ export default function Missions() {
           </div>
         </section>
 
-        <section id="missions_support" className="mx-auto mt-16 max-w-7xl px-4 md:px-8 scroll-mt-28">
+        <section id="missions_guide" className="mx-auto mt-16 max-w-7xl px-4 md:px-8 scroll-mt-28">
           <div className="rounded-[2rem] border border-slate-200 bg-white/70 p-6 text-sm leading-relaxed text-slate-600 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-300">
             <div className="flex items-start gap-3"><BookOpen className="mt-0.5 shrink-0 text-amber-600" size={19} /><div><p className="font-bold text-slate-900 dark:text-white">Cómo interpretar estos datos</p><p className="mt-1">Las poblaciones, porcentajes y escalas son estimaciones para oración, enseñanza e investigación. No deben usarse como localización operativa ni sustituir la verificación con líderes locales.</p><p className="mt-3 text-xs">Datos proporcionados por <a href="https://joshuaproject.net" target="_blank" rel="noreferrer" className="font-extrabold text-amber-700 underline">Joshua Project</a>. Acceso: agosto de 2026.</p></div></div>
           </div>
