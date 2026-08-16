@@ -371,7 +371,7 @@ export const SongViewer = ({
     });
     
     const lines = processed.split('\n');
-    let plainText = '';
+    let plainText: string;
     
     if (!includeChords) {
       plainText = lines.map(line => line.replace(/\[.*?\]/g, '')).join('\n');
