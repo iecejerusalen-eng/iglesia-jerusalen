@@ -2,6 +2,7 @@
 
 ## 1. Memoria y Conocimiento
 - **Fuente Principal**: Revisa siempre [`docs/PROJECT_KNOWLEDGE.md`](file:///G:/CODE/Iglesia%20Jerusal%C3%A9n/docs/PROJECT_KNOWLEDGE.md).
+- **Regla de UI**: Para crear o modificar componentes visuales, lee también [`context.md`](../context.md) y sigue su flujo de Magic UI, accesibilidad, rendimiento y verificación.
 - **Consistencia**: Consultar Supabase y los scripts de semillas (`seed_biblionario.js`, `seed_games.js`).
 
 ## 2. Pautas de Código

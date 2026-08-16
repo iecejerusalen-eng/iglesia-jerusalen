@@ -1,0 +1,7 @@
+[mcp_servers.magicui]
+command = "npx"
+args = ["-y", "@magicuidesign/mcp@latest"]
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+enabled = true
+default_tools_approval_mode = "prompt"
