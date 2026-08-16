@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AnimeFadeUp, AnimeZoomIn, AnimePulseHover } from '../../components/animations/AnimeWrappers';
@@ -8,6 +8,10 @@ import {
 } from 'lucide-react';
 import type { Badge } from '../../types';
 
+interface UnlockedBadgeRow {
+  badge_id: string;
+}
+
 const SundaySchool = () => {
   const { user } = useAuthStore();
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -15,7 +19,7 @@ const SundaySchool = () => {
   const [loading, setLoading] = useState(true);
   const [key, setKey] = useState(0); // to reload iframe
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch all badges
@@ -35,7 +39,7 @@ const SundaySchool = () => {
           .eq('user_id', user.id);
 
         if (unlockedError) throw unlockedError;
-        setUnlockedBadgeIds(unlockedData ? unlockedData.map((ub: any) => ub.badge_id) : []);
+        setUnlockedBadgeIds(unlockedData ? (unlockedData as UnlockedBadgeRow[]).map((ub) => ub.badge_id) : []);
       } else {
         setUnlockedBadgeIds([]);
       }
@@ -45,11 +49,14 @@ const SundaySchool = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchData]);
 
   // Listen for WebGL build message
   useEffect(() => {
@@ -112,7 +119,7 @@ const SundaySchool = () => {
 
     window.addEventListener('message', handleGameMessage);
     return () => window.removeEventListener('message', handleGameMessage);
-  }, [user, unlockedBadgeIds]);
+  }, [fetchData, user, unlockedBadgeIds]);
 
   const reloadGame = () => {
     setKey(prev => prev + 1);

@@ -1,4 +1,4 @@
-import { type ReactNode, useRef, Children, cloneElement, isValidElement } from 'react';
+import { type ReactElement, type ReactNode, useRef, Children, cloneElement, isValidElement } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 // ==========================================
@@ -36,7 +36,7 @@ export const ScrollReveal = ({
       transition: {
         duration,
         delay,
-        ease: [0.16, 1, 0.3, 1] as any // easeOutExpo
+        ease: [0.16, 1, 0.3, 1] as const // easeOutExpo
       }
     }
   };
@@ -114,7 +114,7 @@ export const StaggerItem = ({ children, className = '' }: StaggerItemProps) => {
       filter: 'blur(0px)',
       transition: {
         duration: 0.6,
-        ease: [0.16, 1, 0.3, 1] as any
+        ease: [0.16, 1, 0.3, 1] as const
       }
     }
   };
@@ -230,7 +230,7 @@ export const TextReveal = ({
       filter: 'blur(0px)',
       transition: {
         duration,
-        ease: [0.16, 1, 0.3, 1] as any
+        ease: [0.16, 1, 0.3, 1] as const
       }
     }
   };
@@ -270,6 +270,19 @@ interface SVGDrawRevealProps {
   strokeWidth?: number;
 }
 
+type SvgShape = 'path' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polyline' | 'polygon';
+type SvgShapeProps = {
+  children?: ReactNode;
+  stroke?: string;
+  strokeWidth?: number;
+  fill?: string;
+  [key: string]: unknown;
+};
+
+const SVG_SHAPES: readonly SvgShape[] = ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'];
+
+const isSvgShape = (value: string): value is SvgShape => SVG_SHAPES.includes(value as SvgShape);
+
 export const SVGDrawReveal = ({
   children,
   duration = 1.5,
@@ -288,7 +301,7 @@ export const SVGDrawReveal = ({
       pathLength: 1,
       opacity: 1,
       transition: {
-        pathLength: { duration, delay, ease: 'easeInOut' },
+        pathLength: { duration, delay, ease: 'easeInOut' as const },
         opacity: { duration: 0.2, delay }
       }
     }
@@ -299,11 +312,11 @@ export const SVGDrawReveal = ({
     return Children.map(node, (child) => {
       if (!isValidElement(child)) return child;
 
-      const type = child.type as any;
-      const props = child.props as any;
+      const type = child.type;
+      const props = child.props as SvgShapeProps;
 
-      if (typeof type === 'string' && ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(type)) {
-        const MotionTag = (motion as any)[type];
+      if (typeof type === 'string' && isSvgShape(type)) {
+        const MotionTag = motion[type];
         return (
           <MotionTag
             {...props}
@@ -316,9 +329,9 @@ export const SVGDrawReveal = ({
       }
 
       if (props.children) {
-        return cloneElement(child, {
+        return cloneElement(child as ReactElement<{ children?: ReactNode }>, {
           children: renderChildren(props.children)
-        } as any);
+        });
       }
 
       return child;

@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import { CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { toast } from 'sonner';
 import type { LMSActivity } from '../../../types';
+
+interface QuizSubmission {
+  grade: string | null;
+  text_content: string | null;
+}
 
 interface Question {
   id: string;
@@ -20,25 +25,21 @@ interface LMSQuizProps {
 
 const LMSQuiz: React.FC<LMSQuizProps> = ({ activity, onComplete }) => {
   const { user } = useAuthStore();
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const questions = useMemo<Question[]>(() => {
+    if (!activity.content) return [];
+    try {
+      const parsed = JSON.parse(activity.content) as { questions?: Question[] };
+      return Array.isArray(parsed.questions) ? parsed.questions : [];
+    } catch (error) {
+      console.error('Error parsing quiz content', error);
+      return [];
+    }
+  }, [activity.content]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [submission, setSubmission] = useState<any>(null);
+  const [submission, setSubmission] = useState<QuizSubmission | null>(null);
 
-  useEffect(() => {
-    if (activity.content) {
-      try {
-        const parsed = JSON.parse(activity.content);
-        if (parsed.questions) setQuestions(parsed.questions);
-      } catch (e) {
-        console.error("Error parsing quiz content", e);
-      }
-    }
-    
-    checkPreviousSubmission();
-  }, [activity]);
-
-  const checkPreviousSubmission = async () => {
+  const checkPreviousSubmission = useCallback(async () => {
     if (!user || !activity.id) return;
     
     try {
@@ -55,13 +56,22 @@ const LMSQuiz: React.FC<LMSQuizProps> = ({ activity, onComplete }) => {
           try {
             const parsedAnswers = JSON.parse(data.text_content);
             setAnswers(parsedAnswers);
-          } catch (e) {}
+          } catch (error) {
+            console.error('Error parsing previous quiz answers:', error);
+          }
         }
       }
     } catch (err) {
       console.error('Error fetching submission:', err);
     }
-  };
+  }, [activity.id, user]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void checkPreviousSubmission();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [checkPreviousSubmission]);
 
   const handleSelectAnswer = (questionId: string, optionId: string) => {
     if (submission) return; // Cannot change if already submitted

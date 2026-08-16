@@ -1,4 +1,5 @@
 import type { Schedule, Sermon } from '../../types';
+import type { PageSection } from './types';
 
 export const FALLBACK_SCHEDULES: Schedule[] = [
   { id: '1', day: 'Martes', title: 'Culto de Damas y Caballeros', time_range: '7:30pm - 9:00pm', description: 'Culto especial dirigido por el departamento de Damas y Caballeros.', order_index: 1, created_at: '' },
@@ -31,7 +32,7 @@ export const BIRTHDAY_VERSES = [
   { text: "En tu mano están mis tiempos; líbrame de la mano de mis enemigos y de mis perseguidores.", ref: "Salmo 31:15" }
 ];
 
-export const DEFAULT_SECTIONS = [
+export const DEFAULT_SECTIONS: PageSection[] = [
   { id: 'home_hero', section_type: 'custom', name: 'Sección Principal (Héroe)', title: 'Bienvenido a la Iglesia Jerusalén', subtitle: 'Una Casa de Restauración y Bendición', content_blocks: [] },
   { id: 'home_welcome', section_type: 'custom', name: 'Nuestra Doctrina (4 Pilares)', title: 'Nuestra Doctrina', subtitle: 'Como Iglesia del Evangelio Cuadrangular, fundamentamos nuestra fe en cuatro grandes verdades bíblicas.', content_blocks: [] },
   { id: 'home_schedules', section_type: 'system_schedules', name: 'Horarios de Reunión', title: 'Horarios de Reunión', subtitle: 'Te invitamos a acompañarnos en nuestras diversas actividades de la semana. ¡Nuestras puertas están abiertas!' },
@@ -41,36 +42,42 @@ export const DEFAULT_SECTIONS = [
     id: 'home_gallery', section_type: 'system_gallery', name: 'Galería de Imágenes', title: 'Nuestra Comunidad en Imágenes', subtitle: 'Momentos especiales de adoración, comunión y servicio en la Iglesia Jerusalén.', content_blocks: [
       {
         id: 'slide_1',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&q=80&w=1200',
         caption: 'Alabanza y adoración congregacional',
         category: 'Adoración'
       },
       {
         id: 'slide_2',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1504052434569-7c9302e09150?auto=format&fit=crop&q=80&w=1200',
         caption: 'Tiempo de enseñanza y estudio de la Palabra',
         category: 'Enseñanza'
       },
       {
         id: 'slide_3',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=1200',
         caption: 'Comunión fraternal de los miembros',
         category: 'Comunidad'
       },
       {
         id: 'slide_4',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1200',
         caption: 'Grupos de crecimiento en hogares (Células)',
         category: 'Comunidad'
       },
       {
         id: 'slide_5',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&q=80&w=1200',
         caption: 'Escuela Dominical y formación en la fe',
         category: 'Niños'
       },
       {
         id: 'slide_6',
+        type: 'image',
         url: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&q=80&w=1200',
         caption: 'Proyectos de ayuda y servicio a la comunidad',
         category: 'Servicio'

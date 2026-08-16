@@ -19,7 +19,8 @@ export const MapPickerModal = ({ initialLat, initialLng, onClose, onConfirm }: M
 
   // When component mounts or initial coords change, update local state
   useEffect(() => {
-    setPickerCoords({ lat: initialLat, lng: initialLng });
+    const timer = window.setTimeout(() => setPickerCoords({ lat: initialLat, lng: initialLng }), 0);
+    return () => window.clearTimeout(timer);
   }, [initialLat, initialLng]);
 
   const handleModalSearch = async () => {

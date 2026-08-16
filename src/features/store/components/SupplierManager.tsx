@@ -156,7 +156,7 @@ const SupplierManager = ({
                     </div>
                     <select
                       value={editingSupplier.kyc_tax_id_status || 'pending'}
-                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_tax_id_status: e.target.value as any })}
+                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_tax_id_status: e.target.value as Supplier['kyc_tax_id_status'] })}
                       className="bg-white dark:bg-slate-900 border border-gray-200 rounded p-1"
                     >
                       <option value="pending">Pendiente</option>
@@ -172,7 +172,7 @@ const SupplierManager = ({
                     </div>
                     <select
                       value={editingSupplier.kyc_bank_status || 'pending'}
-                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_bank_status: e.target.value as any })}
+                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_bank_status: e.target.value as Supplier['kyc_bank_status'] })}
                       className="bg-white dark:bg-slate-900 border border-gray-200 rounded p-1"
                     >
                       <option value="pending">Pendiente</option>
@@ -188,7 +188,7 @@ const SupplierManager = ({
                     </div>
                     <select
                       value={editingSupplier.kyc_agreement_status || 'pending'}
-                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_agreement_status: e.target.value as any })}
+                      onChange={(e) => onSupplierChange({ ...editingSupplier, kyc_agreement_status: e.target.value as Supplier['kyc_agreement_status'] })}
                       className="bg-white dark:bg-slate-900 border border-gray-200 rounded p-1"
                     >
                       <option value="pending">Pendiente</option>
@@ -215,7 +215,7 @@ const SupplierManager = ({
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Estado Operacional</label>
                   <select
                     value={editingSupplier.status || 'pending'}
-                    onChange={(e) => onSupplierChange({ ...editingSupplier, status: e.target.value as any })}
+                    onChange={(e) => onSupplierChange({ ...editingSupplier, status: e.target.value as Supplier['status'] })}
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none cursor-pointer"
                   >
                     <option value="pending">Pendiente de Aprobación</option>

@@ -18,7 +18,8 @@ import {
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
-import { GoogleChurchMap, CHURCH_LOCATION } from '../../components/map/GoogleChurchMap';
+import { GoogleChurchMap } from '../../components/map/GoogleChurchMap';
+import { CHURCH_LOCATION } from '../../components/map/churchLocation';
 import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import PremiumContactHero from './components/PremiumContactHero';
 

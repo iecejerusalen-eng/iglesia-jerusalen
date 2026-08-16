@@ -5,6 +5,7 @@ import { TableSkeleton } from '../../../components/common/Skeletons';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { formatWhatsAppLink } from '../../../utils/whatsapp';
 import type { MemberWithRelations } from '../utils/schema';
+import type { Career } from '../../../types';
 import { useLookups } from '../hooks/useLookups';
 import { useCareers } from '../hooks/useCareers';
 
@@ -13,7 +14,7 @@ interface MembersTableProps {
   onEdit: (member: MemberWithRelations) => void;
   onDelete: (id: string) => void;
   actionLoading: boolean;
-  careersList?: any[];
+  careersList?: Career[];
 }
 
 const MembersTable = ({ list, onEdit, onDelete, actionLoading, careersList = [] }: MembersTableProps) => {

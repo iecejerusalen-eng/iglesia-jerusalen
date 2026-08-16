@@ -22,6 +22,36 @@ interface MediaUploaderProps {
   multiple?: boolean;
 }
 
+interface CloudinaryUploadInfo {
+  secure_url: string;
+  public_id: string;
+  resource_type: 'image' | 'video' | 'raw';
+  format: string;
+}
+
+interface CloudinaryUploadResult {
+  event: string;
+  info?: CloudinaryUploadInfo;
+}
+
+interface CloudinaryUploadWidget {
+  open: () => void;
+  destroy: () => void;
+}
+
+interface CloudinaryApi {
+  createUploadWidget: (
+    options: Record<string, unknown>,
+    callback: (error: unknown, result: CloudinaryUploadResult) => void
+  ) => CloudinaryUploadWidget;
+}
+
+declare global {
+  interface Window {
+    cloudinary?: CloudinaryApi;
+  }
+}
+
 // ── Cloudinary Upload Widget script loader ─────────────────────────────
 const WIDGET_SCRIPT_URL = 'https://upload-widget.cloudinary.com/global/all.js';
 let scriptLoaded = false;
@@ -56,7 +86,7 @@ export default function MediaUploader({
   className = '',
   multiple = false,
 }: MediaUploaderProps) {
-  const widgetRef = useRef<any>(null);
+  const widgetRef = useRef<CloudinaryUploadWidget | null>(null);
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -66,7 +96,7 @@ export default function MediaUploader({
 
     // Lazily create the widget once
     if (!widgetRef.current) {
-      const cld = (window as any).cloudinary;
+      const cld = window.cloudinary;
       if (!cld) {
         console.error('Cloudinary global not found after script load');
         return;
@@ -119,12 +149,12 @@ export default function MediaUploader({
             },
           },
         },
-        (error: any, result: any) => {
+        (error: unknown, result: CloudinaryUploadResult) => {
           if (error) {
             console.error('Cloudinary Upload Error:', error);
             return;
           }
-          if (result.event === 'success') {
+          if (result.event === 'success' && result.info) {
             const info = result.info;
             onUploadSuccess(
               info.secure_url,

@@ -38,7 +38,7 @@ export interface MemberPayload extends BasePayload {
 }
 
 export interface SchedulePayload extends BasePayload {
-  day: number;
+  day: string;
   title: string;
   time_range: string;
   description?: string | null;
@@ -100,7 +100,7 @@ export const enqueueMutation = async (
       if (tableName === 'members') {
         const store = tx.objectStore('local_members');
         const existing = await store.get(recordId);
-        const m = payload;
+        const m = payload as MemberPayload;
         
         const newRecord = {
             id: recordId,
@@ -143,7 +143,7 @@ export const enqueueMutation = async (
       } else if (tableName === 'schedules') {
         const store = tx.objectStore('local_schedules');
         const existing = await store.get(recordId);
-        const s = payload;
+        const s = payload as SchedulePayload;
         await store.put({
             id: recordId,
             day: s.day,
@@ -158,11 +158,11 @@ export const enqueueMutation = async (
       } else if (tableName === 'sermon_notes') {
         const store = tx.objectStore('local_sermon_notes');
         const existing = await store.get(recordId);
-        const sn = payload;
+        const sn = payload as SermonNotePayload;
         await store.put({
             id: recordId,
             user_id: sn.user_id,
-            sermon_id: sn.sermon_id || null,
+            sermon_id: sn.sermon_id || '',
             content: sn.content,
             created_at: existing?.created_at || createdAt,
             updated_at,

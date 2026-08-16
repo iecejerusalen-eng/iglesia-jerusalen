@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ShoppingBag, CreditCard, UploadCloud, MapPin, Loader2, CheckCircle2, QrCode, Truck } from 'lucide-react';
@@ -38,7 +38,7 @@ export default function Checkout() {
   const [shippingMethods, setShippingMethods] = useState<StoreShippingMethod[]>([]);
   const [bankInfo, setBankInfo] = useState({ name: '', account: '', ruc: '' });
   
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CheckoutForm>({
+  const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       paymentMethod: '',
@@ -69,8 +69,8 @@ export default function Checkout() {
 
   const hasPhysicalItems = items.some(item => item.product.ecommerce_product_type === 'physical');
 
-  const paymentMethodId = watch('paymentMethod');
-  const shippingMethodId = watch('shippingMethod');
+  const paymentMethodId = useWatch({ control, name: 'paymentMethod' });
+  const shippingMethodId = useWatch({ control, name: 'shippingMethod' });
 
   const selectedPayment = paymentMethods.find(m => m.id === paymentMethodId);
   const selectedShipping = shippingMethods.find(m => m.id === shippingMethodId);
@@ -164,9 +164,9 @@ export default function Checkout() {
       toast.success('¡Orden creada con éxito!');
       navigate(`/order-success?id=${orderData.id}`);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error in checkout:', error);
-      toast.error(error.message || 'Error al procesar la orden');
+      toast.error(error instanceof Error ? error.message : 'Error al procesar la orden');
     } finally {
       setIsSubmitting(false);
       setShowDeUnaModal(false);

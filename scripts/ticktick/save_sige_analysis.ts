@@ -83,8 +83,8 @@ async function main() {
   const token = tokenData.access_token;
   
   const pRes = await fetch('https://api.ticktick.com/open/v1/project', { headers: { 'Authorization': 'Bearer ' + token } });
-  const projects = await pRes.json();
-  const contextList = projects.find((p: any) => p.name === 'Context');
+  const projects = await pRes.json() as Array<{ id: string; name: string }>;
+  const contextList = projects.find((p) => p.name === 'Context');
   const projectId = contextList ? contextList.id : undefined;
   
   for (const part of parts) {

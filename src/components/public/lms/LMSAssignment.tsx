@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Upload, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import type { LMSAssignmentSubmission, LMSActivity } from '../../../types';
@@ -18,11 +18,15 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
   const [file, setFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState('');
 
-  useEffect(() => {
-    fetchSubmission();
-  }, [activity.id, studentId]);
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+      return error.message;
+    }
+    return String(error);
+  };
 
-  const fetchSubmission = async () => {
+  const fetchSubmission = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('lms_assignment_submissions')
@@ -35,7 +39,7 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
         throw error;
       }
       if (data) {
-        setSubmission(data as any);
+        setSubmission(data as LMSAssignmentSubmission);
         setTextContent(data.text_content || '');
       }
     } catch (err) {
@@ -43,7 +47,14 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activity.id, studentId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchSubmission();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSubmission]);
 
   const handleSubmit = async () => {
     setUploading(true);
@@ -82,10 +93,10 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
       }
 
       toast.success('Tarea entregada con éxito');
-      fetchSubmission();
+      await fetchSubmission();
       if (onComplete) onComplete();
-    } catch (err: any) {
-      toast.error('Error al entregar la tarea: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error al entregar la tarea: ' + getErrorMessage(err));
     } finally {
       setUploading(false);
     }

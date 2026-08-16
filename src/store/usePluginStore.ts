@@ -6,7 +6,7 @@ interface PluginItem {
   name: string;
   type: 'activity' | 'block' | 'theme' | 'filter';
   status: 'active' | 'inactive';
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   version: string;
 }
 
@@ -60,20 +60,22 @@ export const usePluginStore = create<PluginState>((set, get) => ({
     if (!isActive) return text;
 
     const settings = filterPlugin?.settings || {};
-    const customWords = Array.isArray(settings.words) ? settings.words : [];
+    const customWords = Array.isArray(settings.words)
+      ? settings.words.filter((word): word is string => typeof word === 'string')
+      : [];
     const customReplacement = typeof settings.replacement === 'string' ? settings.replacement : '*';
 
     // Combine default words with custom ones from settings
     const allWords = Array.from(new Set([
       ...DEFAULT_OFFENSIVE_WORDS,
-      ...customWords.map((w: string) => w.trim().toLowerCase())
+      ...customWords.map((w) => w.trim().toLowerCase())
     ])).filter(Boolean);
 
     let censoredText = text;
 
     for (const word of allWords) {
       try {
-        const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const escapedWord = word.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
         // Word boundary regex safe for Spanish accents
         const regex = new RegExp(`(?<=^|[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ])${escapedWord}(?=$|[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ])`, 'gi');
         

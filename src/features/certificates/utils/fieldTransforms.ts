@@ -1,5 +1,7 @@
 import type { TextTransform } from '../types';
 
+const asText = (value: unknown): string => typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+
 export const applyTextTransform = (text: string, transform: TextTransform): string => {
   if (!text) return '';
   switch (transform) {
@@ -17,14 +19,14 @@ export const applyTextTransform = (text: string, transform: TextTransform): stri
 
 export const resolveFieldValue = (
   memberField: string,
-  memberData: Record<string, any>
+  memberData: Record<string, unknown>
 ): string => {
   if (!memberField) return '';
 
   // Casos especiales y combinaciones
   if (memberField === 'full_name') {
-    const first = memberData.first_name || '';
-    const last = memberData.last_name || '';
+    const first = asText(memberData.first_name);
+    const last = asText(memberData.last_name);
     return `${first} ${last}`.trim();
   }
 
@@ -37,28 +39,30 @@ export const resolveFieldValue = (
   }
   
   if (memberField === 'ministry_name') {
-    return memberData.ministries?.name || '';
+    const ministries = memberData.ministries;
+    return typeof ministries === 'object' && ministries !== null && 'name' in ministries ? asText(ministries.name) : '';
   }
 
   // Campo libre
   if (memberField.startsWith('custom_')) {
-    return memberData[memberField] || ''; // Asumimos que viene inyectado en memberData
+    return asText(memberData[memberField]); // Asumimos que viene inyectado en memberData
   }
 
   // Fecha (formateada si existe)
-  if (memberField.endsWith('_date') && memberData[memberField]) {
+  const rawValue = memberData[memberField];
+  if (memberField.endsWith('_date') && rawValue) {
     try {
-      const date = new Date(memberData[memberField]);
+      const date = new Date(asText(rawValue));
       return date.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       });
     } catch {
-      return memberData[memberField];
+      return asText(rawValue);
     }
   }
 
   // Fallback simple
-  return memberData[memberField]?.toString() || '';
+  return asText(rawValue);
 };

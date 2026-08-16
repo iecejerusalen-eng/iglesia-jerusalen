@@ -16,16 +16,42 @@ interface BlockRendererProps {
   blocks: (ContentBlock | LessonBlock)[] | null | undefined;
 }
 
+type FormAnswer = string | string[];
+type FormAnswers = Record<string, FormAnswer>;
+type FormDataState = Record<string, FormAnswers>;
+
+interface BlockContentFields {
+  text?: string;
+  textContent?: string;
+  html?: string;
+  htmlContent?: string;
+  image_url?: string;
+  imageUrl?: string;
+  imageCaption?: string;
+  imageAlign?: 'left' | 'right' | 'center';
+  imageText?: string;
+}
+
+const getBlockContentFields = (block: ContentBlock | LessonBlock): BlockContentFields => block;
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return String(error);
+};
+
 const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
   const { user, firstName, lastName } = useAuthStore();
-  const [formData, setFormData] = useState<{ [blockId: string]: { [qId: string]: any } }>({});
+  const [formData, setFormData] = useState<FormDataState>({});
   const [guestInfo, setGuestInfo] = useState<{ name: string; email: string }>({ name: '', email: '' });
   const [submitting, setSubmitting] = useState<{ [blockId: string]: boolean }>({});
   const [results, setResults] = useState<{ [blockId: string]: { submitted: boolean; score?: number; maxScore?: number; gradedQuestions?: { [qId: string]: boolean } } }>({});
 
   if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return null;
 
-  const handleInputChange = (blockId: string, qId: string, val: any) => {
+  const handleInputChange = (blockId: string, qId: string, val: FormAnswer) => {
     setFormData(prev => ({
       ...prev,
       [blockId]: {
@@ -36,13 +62,11 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
   };
 
   const handleCheckboxChange = (blockId: string, qId: string, option: string, isChecked: boolean) => {
-    const currentAnswers = formData[blockId]?.[qId] || [];
-    let newAnswers = [];
-    if (isChecked) {
-      newAnswers = [...currentAnswers, option];
-    } else {
-      newAnswers = currentAnswers.filter((item: string) => item !== option);
-    }
+    const currentValue = formData[blockId]?.[qId];
+    const currentAnswers = Array.isArray(currentValue) ? currentValue : [];
+    const newAnswers = isChecked
+      ? [...currentAnswers, option]
+      : currentAnswers.filter((item) => item !== option);
     handleInputChange(blockId, qId, newAnswers);
   };
 
@@ -81,16 +105,14 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
         let isCorrect = false;
         if (q.type === 'text') {
           // Case insensitive comparison for text
-          isCorrect = userAns && correctAns && userAns.trim().toLowerCase() === correctAns.trim().toLowerCase();
+          isCorrect = typeof userAns === 'string' && Boolean(correctAns) && userAns.trim().toLowerCase() === correctAns?.trim().toLowerCase();
         } else if (q.type === 'radio') {
-          isCorrect = userAns && correctAns && userAns === correctAns;
+          isCorrect = typeof userAns === 'string' && Boolean(correctAns) && userAns === correctAns;
         } else if (q.type === 'checkbox') {
           // Check if arrays match
           const userArr = Array.isArray(userAns) ? [...userAns].sort() : [];
           // Assuming correctAns is stored as array or comma-separated string
-          const correctArr = Array.isArray(correctAns) 
-            ? [...correctAns].sort() 
-            : (correctAns ? correctAns.split(',').map(s => s.trim()).sort() : []);
+          const correctArr = correctAns ? correctAns.split(',').map((s) => s.trim()).sort() : [];
           
           isCorrect = userArr.length === correctArr.length && userArr.every((v, i) => v === correctArr[i]);
         }
@@ -134,9 +156,9 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
         }
       }));
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting questionnaire answers:', err);
-      alert('Error al enviar las respuestas: ' + err.message);
+      alert('Error al enviar las respuestas: ' + getErrorMessage(err));
     } finally {
       setSubmitting(prev => ({ ...prev, [blockId]: false }));
     }
@@ -146,10 +168,11 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
     <div className="space-y-8">
       {blocks.map((block) => {
         const key = block.id;
+        const fields = getBlockContentFields(block);
 
         switch (block.type) {
           case 'text': {
-            const rawText = (block as any).text || (block as any).textContent || '';
+            const rawText = fields.text || fields.textContent || '';
             return (
               <RichTextRenderer 
                 key={key} 
@@ -160,7 +183,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
           }
 
           case 'html': {
-            const rawHtml = (block as any).html || (block as any).htmlContent || '';
+            const rawHtml = fields.html || fields.htmlContent || '';
             return (
               <RichTextRenderer 
                 key={key}
@@ -171,10 +194,10 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
           }
 
           case 'image': {
-            const imageUrl = (block as any).image_url || (block as any).imageUrl || '';
-            const caption = (block as any).text || (block as any).imageCaption || '';
-            const align = (block as any).imageAlign || 'center';
-            const imageText = (block as any).imageText || '';
+            const imageUrl = fields.image_url || fields.imageUrl || '';
+            const caption = fields.text || fields.imageCaption || '';
+            const align = fields.imageAlign || 'center';
+            const imageText = fields.imageText || '';
             const isCenter = align === 'center';
             const isRight = align === 'right';
 

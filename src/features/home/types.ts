@@ -17,8 +17,10 @@ export interface PageSection {
   name: string;
   title: string | null;
   subtitle: string | null;
-  content_blocks?: any;
+  content_blocks?: (ContentBlock | LessonBlock)[];
   order_index?: number;
   cover_image_url?: string | null;
   updated_at?: string;
 }
+import type { ContentBlock } from '../../components/admin/BlockBuilder';
+import type { LessonBlock } from '../../components/admin/BlockEditor';

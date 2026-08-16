@@ -1,5 +1,19 @@
 import type { Cell } from '../types';
 
+interface GeoJSONPolygonFeature {
+  type: 'Feature';
+  properties: Record<string, string>;
+  geometry: {
+    type: 'Polygon';
+    coordinates: [[number, number][]];
+  };
+}
+
+interface GeoJSONFeatureCollection {
+  type: 'FeatureCollection';
+  features: GeoJSONPolygonFeature[];
+}
+
 /**
  * Generates a GeoJSON Polygon Feature representing a circle on the Earth's surface.
  * @param center The [longitude, latitude] coordinates of the circle's center.
@@ -10,7 +24,7 @@ export function createGeoJSONCircle(
   center: [number, number],
   radiusInMeters: number,
   steps: number = 64
-): any {
+): GeoJSONPolygonFeature {
   const [longitude, latitude] = center;
   const coordinates: [number, number][] = [];
   const earthRadius = 6371000; // Earth's mean radius in meters
@@ -56,7 +70,7 @@ export function createGeoJSONCircle(
  * @param cells The list of growth cells.
  * @param radiusInMeters The coverage radius (defaults to 500m).
  */
-export function generateCoverageGeoJSON(cells: Cell[], radiusInMeters: number = 500): any {
+export function generateCoverageGeoJSON(cells: Cell[], radiusInMeters: number = 500): GeoJSONFeatureCollection {
   const features = cells
     .filter(c => c.latitude !== null && c.longitude !== null && c.latitude !== undefined && c.longitude !== undefined)
     .map(c => {

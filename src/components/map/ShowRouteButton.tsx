@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RouteModal } from './RouteModal';
 import type { RoutePoint } from './ChurchRouteMap';
-import { Navigation, MapPin } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 
 export interface ShowRouteButtonProps {
   destination: RoutePoint;

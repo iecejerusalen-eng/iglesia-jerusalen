@@ -3,13 +3,16 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 
+type ExportCell = string | number | boolean | null | undefined;
+type ExportRow = Record<string, ExportCell>;
+
 /**
  * Export data to an Excel (.xlsx) file
  * @param data Array of objects to export
  * @param filename Name of the file (without extension)
  * @param sheetName Name of the sheet (optional)
  */
-export const exportToExcel = (data: any[], filename: string, sheetName: string = 'Datos') => {
+export const exportToExcel = (data: ExportRow[], filename: string, sheetName: string = 'Datos') => {
   try {
     if (!data || data.length === 0) {
       toast.error('No hay datos para exportar');
@@ -54,7 +57,7 @@ export const exportToExcel = (data: any[], filename: string, sheetName: string =
  * @param data Array of arrays (rows) matching the headers
  * @param filename Name of the file (without extension)
  */
-export const exportToPDF = (title: string, headers: string[], data: any[][], filename: string) => {
+export const exportToPDF = (title: string, headers: string[], data: ExportCell[][], filename: string) => {
   try {
     if (!data || data.length === 0) {
       toast.error('No hay datos para exportar');
@@ -74,7 +77,7 @@ export const exportToPDF = (title: string, headers: string[], data: any[][], fil
     // Generate table
     autoTable(doc, {
       head: [headers],
-      body: data,
+      body: data.map((row) => row.map((cell) => cell ?? '')),
       startY: 28,
       theme: 'grid',
       styles: { fontSize: 8 },

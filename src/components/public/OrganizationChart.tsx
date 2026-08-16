@@ -16,8 +16,20 @@ const isLider = (cargo: string) => {
   return ['Pastor', 'Coordinador', 'Coordinadora', 'Superintendente'].includes(cargo);
 };
 
+interface DirectivaMember {
+  cargo: string;
+  nombre: string | null;
+}
+
+interface DepartmentChartEntry {
+  id: string;
+  slug: string;
+  nombre: string;
+  directiva: DirectivaMember[];
+}
+
 export default function OrganizationChart() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<DepartmentChartEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -124,7 +136,7 @@ export default function OrganizationChart() {
                 Directiva no asignada.
               </div>
             ) : (
-              dept.directiva.map((miembro: any, idx: number) => {
+              dept.directiva.map((miembro: DirectivaMember, idx: number) => {
                 const lider = isLider(miembro.cargo);
                 const vacante = miembro.nombre === null || miembro.nombre === '';
                 

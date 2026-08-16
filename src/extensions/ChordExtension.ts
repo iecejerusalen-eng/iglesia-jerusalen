@@ -2,7 +2,7 @@ import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { ChordNodeView } from '../components/admin/ChordNodeView';
 export interface ChordOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -37,7 +37,7 @@ export const ChordExtension = Node.create<ChordOptions>({
         parseHTML: (element: HTMLElement) => {
           return element.getAttribute('data-chord');
         },
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: Record<string, unknown>) => {
           if (!attributes.chord) return {};
           return { 'data-chord': attributes.chord };
         },

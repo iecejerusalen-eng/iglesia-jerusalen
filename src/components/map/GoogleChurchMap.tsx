@@ -1,20 +1,9 @@
 import { useState } from 'react';
 import { MapPin, Navigation, ExternalLink, Copy, Check, Compass, Share2, Church, Car } from 'lucide-react';
 import { toast } from 'sonner';
+import { CHURCH_LOCATION as SHARED_CHURCH_LOCATION } from './churchLocation';
 
-export const CHURCH_LOCATION = {
-  name: 'Iglesia Evangélica Cuadrangular Jerusalén',
-  city: 'Milagro, Ecuador',
-  address: 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Guayas, Ecuador',
-  coords: {
-    lat: -2.139188,
-    lng: -79.5949891,
-  },
-  embedUrl: 'https://maps.google.com/maps?q=Iglesia+Cuadrangular+Jerusalen,+Milagro,+Ecuador&t=&z=17&ie=UTF8&iwloc=&output=embed',
-  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Iglesia+Cuadrangular+Jerusalen+Milagro+Ecuador',
-  wazeUrl: 'https://waze.com/ul?ll=-2.139188,-79.5949891&navigate=yes',
-  appleMapsUrl: 'https://maps.apple.com/?daddr=-2.139188,-79.5949891',
-};
+const CHURCH_LOCATION = SHARED_CHURCH_LOCATION;
 
 interface GoogleChurchMapProps {
   height?: string;

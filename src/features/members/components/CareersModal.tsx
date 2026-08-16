@@ -27,8 +27,8 @@ export const CareersModal = ({ onClose }: CareersModalProps) => {
       await addCareerMutation.mutateAsync(newCareerName);
       toast.success('Carrera agregada exitosamente.');
       setNewCareerName('');
-    } catch (err: any) {
-      toast.error('Error al agregar carrera: ' + (err.message || 'Nombre duplicado o sin conexión.'));
+    } catch (err: unknown) {
+      toast.error('Error al agregar carrera: ' + (err instanceof Error ? err.message : 'Nombre duplicado o sin conexión.'));
     }
   };
 
@@ -39,8 +39,8 @@ export const CareersModal = ({ onClose }: CareersModalProps) => {
       toast.success('Carrera actualizada exitosamente.');
       setEditingCareerId(null);
       setEditingCareerName('');
-    } catch (err: any) {
-      toast.error('Error al actualizar carrera: ' + (err.message || 'Error desconocido'));
+    } catch (err: unknown) {
+      toast.error('Error al actualizar carrera: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 
@@ -57,8 +57,8 @@ export const CareersModal = ({ onClose }: CareersModalProps) => {
     try {
       await deleteCareerMutation.mutateAsync(id);
       toast.success('Carrera eliminada exitosamente.');
-    } catch (err: any) {
-      toast.error('Error al eliminar carrera: ' + (err.message || 'Error desconocido'));
+    } catch (err: unknown) {
+      toast.error('Error al eliminar carrera: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 

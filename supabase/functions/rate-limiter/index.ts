@@ -1,5 +1,10 @@
-// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+
+interface RateLimitPayload {
+  endpoint?: unknown;
+}
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +12,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -22,7 +27,8 @@ Deno.serve(async (req: any) => {
     }
 
     // Parse Request Body
-    const { endpoint } = await req.json();
+    const body = await req.json() as RateLimitPayload;
+    const endpoint = typeof body.endpoint === 'string' ? body.endpoint : undefined;
     if (!endpoint) {
       return new Response(
         JSON.stringify({ error: 'Missing endpoint field in request body' }),
@@ -73,9 +79,9 @@ Deno.serve(async (req: any) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

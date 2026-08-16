@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -10,6 +10,10 @@ import type { ReadingPlan as Plan } from '../../types';
 
 const CONGREGATIONAL_GOAL = 5000; // church goal
 
+interface ProgressRow {
+  completed_chapters: number;
+}
+
 const ReadingPlan = () => {
   const { user } = useAuthStore();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -19,7 +23,7 @@ const ReadingPlan = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const fetchPlansAndProgress = async () => {
+  const fetchPlansAndProgress = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch reading plans
@@ -40,7 +44,7 @@ const ReadingPlan = () => {
         .select('completed_chapters');
       
       if (!progressError && progressList) {
-        const totalRead = progressList.reduce((acc: number, curr: any) => acc + curr.completed_chapters, 0);
+        const totalRead = (progressList as ProgressRow[]).reduce((acc, curr) => acc + curr.completed_chapters, 0);
         setCongregationalProgress(totalRead);
       }
 
@@ -87,11 +91,14 @@ const ReadingPlan = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    fetchPlansAndProgress();
-  }, [user]);
+    const timer = window.setTimeout(() => {
+      void fetchPlansAndProgress();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchPlansAndProgress]);
 
   const toggleChapter = async (chapNum: number) => {
     if (!user) {
@@ -132,7 +139,7 @@ const ReadingPlan = () => {
         .from('user_reading_progress')
         .select('completed_chapters');
       if (progressList) {
-        const totalRead = progressList.reduce((acc: number, curr: any) => acc + curr.completed_chapters, 0);
+        const totalRead = (progressList as ProgressRow[]).reduce((acc, curr) => acc + curr.completed_chapters, 0);
         setCongregationalProgress(totalRead);
       }
 

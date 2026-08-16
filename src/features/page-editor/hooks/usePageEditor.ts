@@ -26,6 +26,7 @@ export const usePageEditor = () => {
 
   // Sync server state to local state
   useEffect(() => {
+    const timer = window.setTimeout(() => {
     if (serverSections && serverSections.length > 0) {
       setSections(serverSections);
       setSelectedSection(current => {
@@ -55,6 +56,8 @@ export const usePageEditor = () => {
       setSections(defaults);
       setSelectedSection(defaults[0].id);
     }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [serverSections, selectedPage]);
 
   // Local state updaters

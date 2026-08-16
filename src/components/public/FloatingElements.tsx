@@ -111,7 +111,7 @@ export default function FloatingElements() {
         blur: Math.random() > 0.6 ? Math.random() * 2 + 0.5 : 0
       };
     });
-    setItems(generated);
+    window.setTimeout(() => setItems(generated), 0);
   }, []);
 
   return (

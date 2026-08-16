@@ -15,7 +15,7 @@ import { DonationsSection } from '../../features/home/components/DonationsSectio
 import { CtaBanner } from '../../features/home/components/CtaBanner';
 import { BentoGridSection } from '../../features/home/components/BentoGridSection';
 import { HomeAtmosphere } from '../../features/home/components/HomeAtmosphere';
-import { ImageGallerySection } from '../../components/public/ImageGallerySection';
+import { ImageGallerySection, type GalleryImage } from '../../components/public/ImageGallerySection';
 import { Helmet } from 'react-helmet-async';
 import { DEFAULT_SECTIONS } from '../../features/home/constants';
 import type { PageSection } from '../../features/home/types';
@@ -135,7 +135,7 @@ const Home = () => {
                 <ImageGallerySection
                   title={title || ''}
                   subtitle={subtitle || ''}
-                  slides={(content_blocks && content_blocks.length > 0) ? content_blocks : (DEFAULT_SECTIONS.find(s => s.id === 'home_gallery')?.content_blocks || [])}
+                  slides={((content_blocks && content_blocks.length > 0) ? content_blocks : (DEFAULT_SECTIONS.find(s => s.id === 'home_gallery')?.content_blocks || [])) as GalleryImage[]}
                 />
               </div>
             );

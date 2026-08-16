@@ -4,6 +4,14 @@ import type { LogoData } from '../types';
 import { toast } from 'sonner';
 import { uploadFileToCloudinary } from '../../../lib/cloudinaryService';
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return String(error);
+};
+
 interface UploadLogoArgs {
   file: File;
   ministryId: string;
@@ -39,9 +47,9 @@ export const useUploadLogo = () => {
       toast.success('Logo subido y registrado con éxito.');
       queryClient.invalidateQueries({ queryKey: ['logos'] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error uploading logo:', err);
-      toast.error('Error al subir el logo: ' + err.message);
+      toast.error('Error al subir el logo: ' + getErrorMessage(err));
     }
   });
 };
@@ -69,9 +77,9 @@ export const useDeleteLogo = () => {
       toast.success('Logo eliminado correctamente.');
       queryClient.invalidateQueries({ queryKey: ['logos'] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error deleting logo:', err);
-      toast.error('Error al eliminar el logo: ' + err.message);
+      toast.error('Error al eliminar el logo: ' + getErrorMessage(err));
     }
   });
 };

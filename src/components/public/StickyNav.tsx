@@ -13,11 +13,11 @@ export default function StickyNav() {
     return getSectionsForPath(pathname);
   }, [pathname]);
 
-  const sections = pageNavInfo?.sections || [];
+  const sections = useMemo(() => pageNavInfo?.sections ?? [], [pageNavInfo]);
 
   useEffect(() => {
     if (sections.length === 0) {
-      setActiveSection('');
+      window.setTimeout(() => setActiveSection(''), 0);
       return;
     }
 

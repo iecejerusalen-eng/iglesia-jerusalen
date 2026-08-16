@@ -1,22 +1,55 @@
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
+import type { Schedule } from '../types';
+import type { LocalMemberRow } from '../features/members/utils/schema';
+import type { SyncQueueItem } from '../features/sync/services/syncWorker';
+
+type LocalMemberRecord = Omit<LocalMemberRow, 'emails' | 'phones' | 'service_areas' | 'talents' | 'spiritual_gifts'> & {
+  emails?: string;
+  phones?: string;
+  service_areas?: string;
+  talents?: string;
+  spiritual_gifts?: string;
+  photo_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  version?: number;
+  dedicated_verse?: string | null;
+  [key: string]: unknown;
+};
+
+type LocalScheduleRecord = Schedule & {
+  updated_at?: string;
+  version?: number;
+};
+
+interface LocalSermonNote {
+  id: string;
+  user_id: string;
+  sermon_id: string;
+  content?: string;
+  created_at?: string;
+  updated_at?: string;
+  version?: number;
+  [key: string]: unknown;
+}
 
 export interface JerusalenDB extends DBSchema {
   local_members: {
     key: string;
-    value: any;
+    value: LocalMemberRecord;
   };
   local_schedules: {
     key: string;
-    value: any;
+    value: LocalScheduleRecord;
   };
   local_sermon_notes: {
     key: string;
-    value: any;
+    value: LocalSermonNote;
   };
   sync_queue: {
     key: string;
-    value: any;
+    value: SyncQueueItem;
   };
 }
 

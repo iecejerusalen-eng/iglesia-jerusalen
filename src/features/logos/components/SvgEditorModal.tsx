@@ -133,9 +133,9 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
         });
         setColorReplacements(initialReplacements);
         
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading SVG:', err);
-        toast.error('Error al abrir el editor de SVG: ' + err.message);
+        toast.error('Error al abrir el editor de SVG: ' + (err instanceof Error ? err.message : String(err)));
         onClose();
       } finally {
         setFetchingSvg(false);
@@ -204,7 +204,7 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
             if (style) {
               let newStyle = style;
               Object.entries(colorReplacements).forEach(([orig, repl]) => {
-                const escapedOrig = orig.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                const escapedOrig = orig.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
                 const fillRegex = new RegExp(`(fill\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
                 const strokeRegex = new RegExp(`(stroke\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
                 const stopColorRegex = new RegExp(`(stop-color\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
@@ -219,7 +219,7 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
           styleElements.forEach((styleEl) => {
             let content = styleEl.textContent || '';
             Object.entries(colorReplacements).forEach(([orig, repl]) => {
-              const escapedOrig = orig.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+              const escapedOrig = orig.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
               const fillRegex = new RegExp(`(fill\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
               const strokeRegex = new RegExp(`(stroke\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
               const stopColorRegex = new RegExp(`(stop-color\\s*:\\s*)${escapedOrig}(?=[;}\\s]|$)`, 'gi');
@@ -281,9 +281,10 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
       }
       
       const serialized = new XMLSerializer().serializeToString(doc);
-      setModifiedSvg(serialized);
-    } catch (e) {
-      console.error('Error applying SVG edits:', e);
+      const timer = window.setTimeout(() => setModifiedSvg(serialized), 0);
+      return () => window.clearTimeout(timer);
+    } catch (error: unknown) {
+      console.error('Error applying SVG edits:', error);
     }
   }, [svgSource, editorTab, solidPreset, colorReplacements, gradStartColor, gradEndColor, gradAngle]);
 
@@ -364,9 +365,9 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
       
       queryClient.invalidateQueries({ queryKey: ['logos'] });
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving edited SVG:', err);
-      toast.error('Error al guardar cambios del logo: ' + err.message);
+      toast.error('Error al guardar cambios del logo: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSavingChanges(false);
     }

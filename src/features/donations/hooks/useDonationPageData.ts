@@ -60,7 +60,10 @@ export function useDonationPageData(): DonationPageState {
   }, []);
 
   useEffect(() => {
-    void fetchData();
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   return { settings, categories, loading, error, refetch: fetchData };

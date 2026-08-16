@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import MediaUploader from '../../../components/common/MediaUploader';
@@ -51,7 +51,7 @@ const ProductForm = ({
   const mutations = useStoreMutations();
   const actionLoading = mutations.createProduct.isPending || mutations.updateProduct.isPending;
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<ProductFormType>({
+  const { register, handleSubmit, setValue, control, reset, formState: { errors } } = useForm<ProductFormType>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
@@ -111,14 +111,19 @@ const ProductForm = ({
         is_active: editingProduct.is_active ?? true,
         tags: editingProduct.metadata?.tags?.join(', ') || '',
       });
-      setImagePreview(editingProduct.image_url || null);
-      setVariants(editingProduct.product_variants || []);
-      setPriceTiers(editingProduct.metadata?.price_tiers || []);
-      setGallery(editingProduct.metadata?.media || []);
+      const syncProductState = window.setTimeout(() => {
+        setImagePreview(editingProduct.image_url || null);
+        setVariants(editingProduct.product_variants || []);
+        setPriceTiers(editingProduct.metadata?.price_tiers || []);
+        setGallery(editingProduct.metadata?.media || []);
+      }, 0);
+
+      return () => window.clearTimeout(syncProductState);
     }
   }, [editingProduct, reset]);
 
-  const productType = watch('type');
+  const productType = useWatch({ control, name: 'type' });
+  const productName = useWatch({ control, name: 'name' });
 
   const onSubmitForm = (data: ProductFormType) => {
     let featuresArray: string[] = [];
@@ -356,7 +361,7 @@ const ProductForm = ({
               label="Añadir fotos"
               onUploadSuccess={(url, publicId) => {
                 const optimizedUrl = getOptimizedCloudinaryImage(url, { width: 1600, crop: 'limit' });
-                setGallery(current => [...current, { id: publicId, url: optimizedUrl, alt: watch('name') || 'Producto' }]);
+                 setGallery(current => [...current, { id: publicId, url: optimizedUrl, alt: productName || 'Producto' }]);
               }}
             />
           </div>

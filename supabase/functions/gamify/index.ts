@@ -1,5 +1,20 @@
-// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+
+interface GamifyPayload {
+  action?: unknown;
+  badgeName?: unknown;
+  planId?: unknown;
+}
+
+interface ReadingPlanRelation {
+  total_chapters?: unknown;
+}
+
+interface UnlockedBadgeRow {
+  badges?: { name?: string } | null;
+}
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +22,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -53,13 +68,15 @@ Deno.serve(async (req: any) => {
     }
 
     // Parse Request Body
-    const { action, ...payload } = await req.json();
+    const body = await req.json() as GamifyPayload;
+    const action = typeof body.action === 'string' ? body.action : undefined;
+    const payload = body;
 
     // Initialize Admin Client (service_role) to execute writes bypassing RLS constraints
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === 'complete_sunday_school') {
-      const badgeName = payload.badgeName || 'Campeón Dominical';
+      const badgeName = typeof payload.badgeName === 'string' ? payload.badgeName : 'Campeón Dominical';
 
       // 1. Fetch Badge ID by Name
       const { data: badge, error: badgeError } = await supabaseAdmin
@@ -119,7 +136,7 @@ Deno.serve(async (req: any) => {
     } 
     
     if (action === 'check_reading_milestones') {
-      const { planId } = payload;
+      const planId = typeof payload.planId === 'string' ? payload.planId : undefined;
       if (!planId) {
         return new Response(
           JSON.stringify({ error: 'Missing planId in request payload' }),
@@ -143,7 +160,8 @@ Deno.serve(async (req: any) => {
       }
 
       const completed = progress.completed_chapters;
-      const total = (progress.reading_plans as any)?.total_chapters;
+      const readingPlan = progress.reading_plans as ReadingPlanRelation | null;
+      const total = readingPlan?.total_chapters;
 
       if (typeof completed !== 'number' || typeof total !== 'number') {
         throw new Error('Invalid chapter metadata in reading plan.');
@@ -165,7 +183,7 @@ Deno.serve(async (req: any) => {
       if (unlockedError) throw unlockedError;
 
       const unlockedNames = unlockedBadges 
-        ? unlockedBadges.map((ub: any) => ub.badges?.name).filter(Boolean) 
+        ? (unlockedBadges as UnlockedBadgeRow[]).map((ub) => ub.badges?.name).filter((name): name is string => Boolean(name))
         : [];
 
       const newlyUnlocked: string[] = [];
@@ -221,9 +239,9 @@ Deno.serve(async (req: any) => {
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: getErrorMessage(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

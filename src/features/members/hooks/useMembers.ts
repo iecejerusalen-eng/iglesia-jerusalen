@@ -29,7 +29,7 @@ export const useMembers = () => {
         console.warn('Local DB failed or timed out, fallback to Supabase:', dbErr);
       }
 
-      let loadedMembers: MemberWithRelations[] = [];
+      let loadedMembers: MemberWithRelations[];
 
       if (cached && cached.length > 0) {
         // Map SQLite attributes back to type model

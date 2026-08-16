@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bracketTextToHtml, getInvalidChordTokens, getOriginalKey, isValidChord, processBracketText } from './songUtils';
+import { bracketTextToHtml, getOriginalKey, isValidChord, processBracketText } from './songUtils';
 
 describe('song chord notation', () => {
   it('accepts common chord names', () => {

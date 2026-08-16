@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle,
   Check,
   CircleDollarSign,
   ExternalLink,
   Eye,
-  FileCheck2,
   Landmark,
   Loader2,
   Plus,
@@ -19,26 +17,14 @@ import {
   FileText,
   Download,
   Search,
-  Filter,
   DollarSign,
   History,
   Image as ImageIcon,
   Edit2,
-  Copy,
-  PieChart,
-  Layers,
   CheckCircle2,
   XCircle,
   Clock,
-  HelpCircle,
   FileCode,
-  User,
-  Phone,
-  Mail,
-  Receipt,
-  FileEdit,
-  SlidersHorizontal,
-  ChevronDown,
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,6 +37,9 @@ import { DEFAULT_DONATION_PAGE_CONFIG, parseDonationPageConfig, type DonationPag
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 
 type ManagerTab = 'donations' | 'categories' | 'public_config' | 'audit_logs';
+type DonationStatusFilter = 'all' | 'pending' | 'completed' | 'failed';
+type ManualPaymentMethod = 'efectivo' | 'transferencia' | 'tarjeta';
+type ManualDonationStatus = 'completed' | 'pending';
 
 interface DonationSettingsForm {
   phone: string;
@@ -131,7 +120,7 @@ export default function DonationPageManager() {
 
   // Filters for donations table
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'failed'>('all');
+  const [statusFilter, setStatusFilter] = useState<DonationStatusFilter>('all');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -149,8 +138,8 @@ export default function DonationPageManager() {
   const [manualDonorPhone, setManualDonorPhone] = useState('');
   const [manualCategoryId, setManualCategoryId] = useState('');
   const [manualAmount, setManualAmount] = useState('');
-  const [manualPaymentMethod, setManualPaymentMethod] = useState<'efectivo' | 'transferencia' | 'tarjeta'>('efectivo');
-  const [manualStatus, setManualStatus] = useState<'completed' | 'pending'>('completed');
+  const [manualPaymentMethod, setManualPaymentMethod] = useState<ManualPaymentMethod>('efectivo');
+  const [manualStatus, setManualStatus] = useState<ManualDonationStatus>('completed');
   const [manualReceiptNumber, setManualReceiptNumber] = useState('');
   const [manualAdminNotes, setManualAdminNotes] = useState('');
   const [savingManual, setSavingManual] = useState(false);
@@ -237,16 +226,18 @@ export default function DonationPageManager() {
 
   useEffect(() => {
     if (activeTab === 'audit_logs') {
-      void loadAuditLogs();
+      const timer = window.setTimeout(() => {
+        void loadAuditLogs();
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
+    return undefined;
   }, [activeTab, loadAuditLogs]);
 
-  // Proof note sync
-  useEffect(() => {
-    if (selectedDonationForProof) {
-      setProofAdminNote(selectedDonationForProof.admin_notes || '');
-    }
-  }, [selectedDonationForProof]);
+  const openProofInspector = (donation: Donation) => {
+    setProofAdminNote(donation.admin_notes || '');
+    setSelectedDonationForProof(donation);
+  };
 
   // Public config helper
   const updateConfig = <Key extends keyof DonationPageConfig>(key: Key, value: DonationPageConfig[Key]) => {
@@ -346,7 +337,7 @@ export default function DonationPageManager() {
     setSaving(true);
     try {
       const targetVal = catTargetAmount.trim() ? parseFloat(catTargetAmount) : null;
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         name,
         description: catDescription.trim() || null,
         is_active: catIsActive,
@@ -399,7 +390,7 @@ export default function DonationPageManager() {
     setActionId(donation.id);
     try {
       const nowIso = new Date().toISOString();
-      const updateData: Record<string, any> = {
+      const updateData: Pick<Donation, 'status' | 'verified_at' | 'verified_by'> = {
         status,
         verified_at: status === 'pending' ? null : nowIso,
         verified_by: status === 'pending' ? null : user?.id || null,
@@ -471,7 +462,7 @@ export default function DonationPageManager() {
       const selectedCat = categories.find((c) => c.id === manualCategoryId);
       const nowIso = new Date().toISOString();
 
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         donor_name: manualIsAnonymous ? 'Anónimo' : manualDonorName.trim() || 'Anónimo',
         donor_email: manualDonorEmail.trim() || 'tesoreria@iglesia.org',
         donor_phone: manualDonorPhone.trim() || null,
@@ -780,7 +771,7 @@ export default function DonationPageManager() {
               {/* Status Filter */}
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as DonationStatusFilter)}
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
               >
                 <option value="all">Todos los Estados</option>
@@ -921,7 +912,7 @@ export default function DonationPageManager() {
                             {donation.proof_url ? (
                               <button
                                 type="button"
-                                onClick={() => setSelectedDonationForProof(donation)}
+                                onClick={() => openProofInspector(donation)}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
                               >
                                 <ImageIcon size={13} /> Ver Comprobante
@@ -951,7 +942,7 @@ export default function DonationPageManager() {
                               {/* Open Details / Inspector */}
                               <button
                                 type="button"
-                                onClick={() => setSelectedDonationForProof(donation)}
+                                onClick={() => openProofInspector(donation)}
                                 className="rounded-xl border border-slate-200 bg-white p-1.5 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
                                 title="Inspeccionar detalle y comprobante"
                               >
@@ -1389,7 +1380,7 @@ export default function DonationPageManager() {
                   <label className="block text-[10px] font-black uppercase text-slate-500">Método de Pago</label>
                   <select
                     value={manualPaymentMethod}
-                    onChange={(e) => setManualPaymentMethod(e.target.value as any)}
+                    onChange={(e) => setManualPaymentMethod(e.target.value as ManualPaymentMethod)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   >
                     <option value="efectivo">Efectivo (Sobres de Culto)</option>
@@ -1401,7 +1392,7 @@ export default function DonationPageManager() {
                   <label className="block text-[10px] font-black uppercase text-slate-500">Estado del Registro</label>
                   <select
                     value={manualStatus}
-                    onChange={(e) => setManualStatus(e.target.value as any)}
+                    onChange={(e) => setManualStatus(e.target.value as ManualDonationStatus)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                   >
                     <option value="completed">✓ Verificado / Recibido</option>

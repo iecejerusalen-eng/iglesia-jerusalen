@@ -5,8 +5,9 @@ import { Users, Award, LayoutGrid, List as ListIcon, Calendar, User as UserIcon 
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { motion, AnimatePresence } from 'framer-motion';
 import MagneticButton from '../../components/animations/MagneticButton';
+import type { Ministry } from '../../types';
 
-const stripHtmlAndTruncate = (html: string, maxLength: number = 120) => {
+const stripHtmlAndTruncate = (html: string | null | undefined, maxLength: number = 120) => {
   if (!html) return '';
   const plainText = html.replace(/<[^>]*>/g, '');
   if (plainText.length <= maxLength) return plainText;
@@ -14,7 +15,7 @@ const stripHtmlAndTruncate = (html: string, maxLength: number = 120) => {
 };
 
 const MinistriesOverview = () => {
-  const [ministries, setMinistries] = useState<any[]>([]);
+  const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Persist view mode preference

@@ -61,7 +61,7 @@ export default function OrderSuccess() {
         schema: 'public', 
         table: 'orders',
         filter: `id=eq.${orderId}`
-      }, (payload: any) => {
+      }, (payload) => {
         setOrder(payload.new as Order);
       })
       .subscribe();

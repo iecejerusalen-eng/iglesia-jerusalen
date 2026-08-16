@@ -12,9 +12,11 @@ export default function Preloader() {
   useEffect(() => {
     const hasSeen = sessionStorage.getItem('jerusalen_preloader_seen');
     if (hasSeen === 'true') {
-      setIsRendered(false);
-      setShow(false);
-      return;
+      const timer = window.setTimeout(() => {
+        setIsRendered(false);
+        setShow(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     // Safety fallback: force unmount after 2.2 seconds no matter what
@@ -88,7 +90,7 @@ export default function Preloader() {
             }
           });
         } catch {
-          setIsRendered(false);
+          window.setTimeout(() => setIsRendered(false), 0);
         }
       }
 

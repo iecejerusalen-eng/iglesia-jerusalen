@@ -19,6 +19,9 @@ export interface ContentBlock {
   imageAlign?: 'left' | 'right' | 'center';
   imageCaption?: string;
   imageText?: string;
+  url?: string;
+  category?: string;
+  caption?: string;
   columns?: string[];
   ctaText?: string;
   ctaUrl?: string;

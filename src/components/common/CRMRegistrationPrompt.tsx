@@ -21,22 +21,26 @@ const CRMRegistrationPrompt = () => {
 
   // Initialization
   useEffect(() => {
-    if (isLoading || !user || memberId) return;
+    if (isLoading || !user || memberId) return undefined;
 
-    const dismissed = localStorage.getItem(`crm_prompt_dismissed_${user.id}`);
-    if (dismissed === 'true') {
-      setIsDismissed(true);
-      setShowModal(false);
-    } else {
-      setIsDismissed(false);
-      setShowModal(true);
-    }
+    const timer = window.setTimeout(() => {
+      const dismissed = localStorage.getItem(`crm_prompt_dismissed_${user.id}`);
+      if (dismissed === 'true') {
+        setIsDismissed(true);
+        setShowModal(false);
+      } else {
+        setIsDismissed(false);
+        setShowModal(true);
+      }
 
-    setFormData({
-      firstName: firstName || user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || '',
-      lastName: lastName || user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
-      phone: '',
-    });
+      setFormData({
+        firstName: firstName || user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || '',
+        lastName: lastName || user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+        phone: '',
+      });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [user, memberId, isLoading, firstName, lastName]);
 
   const handleDismiss = () => {
@@ -174,9 +178,9 @@ const CRMRegistrationPrompt = () => {
       setMemberId(finalMemberId);
       setShowModal(false);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      toast.error('Ocurrió un error al intentar registrarte: ' + err.message);
+      toast.error('Ocurrió un error al intentar registrarte: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }

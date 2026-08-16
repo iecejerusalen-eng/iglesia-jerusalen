@@ -4,7 +4,7 @@ import { ScrollReveal } from '../animations/MotionWrappers';
 import { X, ChevronLeft, ChevronRight, Maximize2, ImageIcon, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface GalleryImage {
+export interface GalleryImage {
   id: string;
   url: string;
   caption?: string;

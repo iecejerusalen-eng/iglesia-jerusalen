@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { Trophy, Heart, Users, Phone, X, Play, 
+import { Trophy, Heart, Users, X, Play,
   Volume2, VolumeX, Shield, Crown, Sparkles, BookOpen,
   ArrowRight
 } from 'lucide-react';
@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import confetti from 'canvas-confetti';
-import { logger } from '../../../utils/logger';
 import { gameAudioService } from '../../../features/games/services/gameAudioService';
 
 const getRandomFloat = () => {
@@ -61,7 +60,6 @@ export const Biblionario = () => {
   // Game State
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover' | 'won' | 'leaderboard'>('menu');
   const [mode, setMode] = useState<'normal' | 'infinite'>('normal');
-  const [musicType, setMusicType] = useState<'tv' | 'instrumental'>('tv');
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   
@@ -95,7 +93,7 @@ export const Biblionario = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardMode, setLeaderboardMode] = useState<'normal' | 'infinite'>('normal');
-  const [leaderboardTimeframe, setLeaderboardTimeframe] = useState<'all_time' | 'monthly'>('all_time');
+  const [leaderboardTimeframe] = useState<'all_time' | 'monthly'>('all_time');
 
   // Toggle Mute Audio
   const handleToggleSound = () => {

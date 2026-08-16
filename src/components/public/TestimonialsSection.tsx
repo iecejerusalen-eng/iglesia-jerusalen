@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import anime from 'animejs/lib/anime.es.js';
 
@@ -44,13 +44,18 @@ export default function TestimonialsSection() {
   const [isHovered, setIsHovered] = useState(false);
   const slideRef = useRef<HTMLDivElement>(null);
 
+  const handleNext = useCallback(() => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
+  }, []);
+
   useEffect(() => {
     if (isHovered) return;
     const timer = setInterval(() => {
       handleNext();
     }, 6000);
     return () => clearInterval(timer);
-  }, [currentIndex, isHovered]);
+  }, [currentIndex, isHovered, handleNext]);
 
   useEffect(() => {
     if (slideRef.current) {
@@ -68,11 +73,6 @@ export default function TestimonialsSection() {
   const handlePrev = () => {
     setDirection(-1);
     setCurrentIndex((prev) => (prev === 0 ? TESTIMONIALS.length - 1 : prev - 1));
-  };
-
-  const handleNext = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev === TESTIMONIALS.length - 1 ? 0 : prev + 1));
   };
 
   const active = TESTIMONIALS[currentIndex];

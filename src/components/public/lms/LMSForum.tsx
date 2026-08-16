@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../config/supabase';
 import { MessageSquare, Send, User, Trash2 } from 'lucide-react';
 import type { LMSForumPost, LMSActivity } from '../../../types';
@@ -20,28 +20,15 @@ const LMSForum = ({ activity }: Props) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
 
-  useEffect(() => {
-    fetchPosts();
-    
-    // Subscribe to realtime changes
-    const subscription = supabase
-      .channel(`forum_${activity.id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'lms_forum_posts',
-        filter: `activity_id=eq.${activity.id}`
-      }, () => {
-        fetchPosts();
-      })
-      .subscribe();
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+      return error.message;
+    }
+    return String(error);
+  };
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [activity.id]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('lms_forum_posts')
@@ -70,13 +57,36 @@ const LMSForum = ({ activity }: Props) => {
         replies: replies.filter(r => r.parent_id === t.id)
       }));
 
-      setPosts(structuredPosts as any[]);
+      setPosts(structuredPosts as LMSForumPost[]);
     } catch (err) {
       console.error('Error fetching forum posts:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activity.id]);
+
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => {
+      void fetchPosts();
+    }, 0);
+
+    const subscription = supabase
+      .channel(`forum_${activity.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'lms_forum_posts',
+        filter: `activity_id=eq.${activity.id}`
+      }, () => {
+        void fetchPosts();
+      })
+      .subscribe();
+
+    return () => {
+      window.clearTimeout(initialLoad);
+      void subscription.unsubscribe();
+    };
+  }, [activity.id, fetchPosts]);
 
   const handlePostSubmit = async (parentId: string | null = null) => {
     if (!user) {
@@ -105,8 +115,8 @@ const LMSForum = ({ activity }: Props) => {
       } else {
         setNewPost('');
       }
-    } catch (err: any) {
-      toast.error('Error al publicar: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error al publicar: ' + getErrorMessage(err));
     }
   };
 
@@ -121,8 +131,8 @@ const LMSForum = ({ activity }: Props) => {
 
       if (error) throw error;
       toast.success('Publicación eliminada');
-    } catch (err: any) {
-      toast.error('Error al eliminar: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Error al eliminar: ' + getErrorMessage(err));
     }
   };
 
@@ -147,7 +157,7 @@ const LMSForum = ({ activity }: Props) => {
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">{authorName}</span>
                 {(() => {
                   const postRoles = post.profiles?.roles || (post.profiles?.role ? [post.profiles.role] : []);
-                  const isInstructor = postRoles.some((r: any) => ['maestro', 'docente', 'pastor', 'admin'].includes(r));
+                  const isInstructor = postRoles.some((r: string) => ['maestro', 'docente', 'pastor', 'admin'].includes(r));
                   return isInstructor ? (
                     <span className="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-bold">
                       Instructor
@@ -215,7 +225,7 @@ const LMSForum = ({ activity }: Props) => {
         {/* Replies */}
         {post.replies && post.replies.length > 0 && (
           <div className="mt-3">
-            {post.replies.map((reply: any) => renderPost(reply, true))}
+            {post.replies.map((reply: LMSForumPost) => renderPost(reply, true))}
           </div>
         )}
       </div>

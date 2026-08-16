@@ -11,7 +11,7 @@ interface Props {
 export const FieldConfigPanel = ({ field, onUpdate, onDelete }: Props) => {
   const { data: fonts } = useFonts();
 
-  const handleChange = (key: keyof FieldMapping, value: any) => {
+  const handleChange = (key: keyof FieldMapping, value: FieldMapping[keyof FieldMapping]) => {
     onUpdate({ ...field, [key]: value });
   };
 

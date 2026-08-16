@@ -78,8 +78,8 @@ export default function MissionExplorer() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setLoading(true);
-    setError(null);
+    window.setTimeout(() => setLoading(true), 0);
+    window.setTimeout(() => setError(null), 0);
     const load = async () => {
       try {
         if (config.scope) {

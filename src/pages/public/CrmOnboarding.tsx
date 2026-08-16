@@ -78,9 +78,9 @@ export default function CrmOnboarding() {
       });
       if (error) throw error;
       setCurrentStep(STEPS.length); // go to success screen
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error('Ocurrió un error enviando el formulario: ' + err.message);
+      toast.error('Ocurrió un error enviando el formulario: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -252,7 +252,21 @@ export default function CrmOnboarding() {
 
 // Subcomponents
 
-const GlassInput = ({ label, ...props }: any) => (
+interface GlassInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface GlassSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  options: SelectOption[];
+}
+
+const GlassInput = ({ label, ...props }: GlassInputProps) => (
   <div>
     <label className="block text-sm font-medium text-white/70 mb-1">{label}</label>
     <input 
@@ -262,14 +276,14 @@ const GlassInput = ({ label, ...props }: any) => (
   </div>
 );
 
-const GlassSelect = ({ label, options, ...props }: any) => (
+const GlassSelect = ({ label, options, ...props }: GlassSelectProps) => (
   <div>
     <label className="block text-sm font-medium text-white/70 mb-1">{label}</label>
     <select 
       className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-sm transition-all appearance-none"
       {...props}
     >
-      {options.map((opt: any) => (
+      {options.map((opt) => (
         <option key={opt.value} value={opt.value} className="bg-slate-800">{opt.label}</option>
       ))}
     </select>

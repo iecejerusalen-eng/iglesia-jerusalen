@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { parseBibleReferences } from '../../utils/bibleParser';
+import { parseBibleReferences, type ParsedVerse } from '../../utils/bibleParser';
 
 interface BibleVerseLinkProps {
   reference: string;
@@ -34,7 +34,7 @@ export function BibleVerseLink({ reference, className = '' }: BibleVerseLinkProp
 }
 
 interface BibleVerseItemProps {
-  parsedRef: any;
+  parsedRef: ParsedVerse;
   className?: string;
 }
 

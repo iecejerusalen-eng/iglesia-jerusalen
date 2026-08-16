@@ -2,7 +2,7 @@ interface VersionedRecord {
   id: string;
   version: number;
   updated_at: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ConflictResult<T> {

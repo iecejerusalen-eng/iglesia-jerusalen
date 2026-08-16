@@ -3,6 +3,14 @@ import { supabase } from '../../../config/supabase';
 import type { DBPageSection } from '../types';
 import { toast } from 'sonner';
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return String(error);
+};
+
 export const usePageMutations = () => {
   const queryClient = useQueryClient();
 
@@ -31,9 +39,9 @@ export const usePageMutations = () => {
       toast.success('Sección guardada correctamente.');
       queryClient.invalidateQueries({ queryKey: ['page_contents', data.page] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error saving section:', err);
-      toast.error('No se pudo guardar la sección: ' + (err.message || String(err)));
+      toast.error('No se pudo guardar la sección: ' + getErrorMessage(err));
     }
   });
 
@@ -63,9 +71,9 @@ export const usePageMutations = () => {
         queryClient.invalidateQueries({ queryKey: ['page_contents', data[0].page] });
       }
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error saving new section order:', err);
-      toast.error('No se pudo persistir el orden: ' + (err.message || String(err)));
+      toast.error('No se pudo persistir el orden: ' + getErrorMessage(err));
     }
   });
 
@@ -104,9 +112,9 @@ export const usePageMutations = () => {
         queryClient.invalidateQueries({ queryKey: ['page_contents', data.remaining[0].page] });
       }
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error deleting section:', err);
-      toast.error('Error al eliminar la sección: ' + (err.message || String(err)));
+      toast.error('Error al eliminar la sección: ' + getErrorMessage(err));
     }
   });
 
@@ -135,9 +143,9 @@ export const usePageMutations = () => {
       toast.success('Sección agregada con éxito.');
       queryClient.invalidateQueries({ queryKey: ['page_contents', data.page] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error adding new section:', err);
-      toast.error('No se pudo crear la sección: ' + (err.message || String(err)));
+      toast.error('No se pudo crear la sección: ' + getErrorMessage(err));
     }
   });
 

@@ -25,6 +25,7 @@ export interface AdminPreferences {
   sidebarGridColumns?: number;
   sidebarGridSort?: SidebarGridSort;
   sidebarCustomOrder?: string[];
+  globalEffects?: Partial<GlobalUIEffects>;
 }
 
 interface ThemeState {
@@ -141,8 +142,8 @@ export const useThemeStore = create<ThemeState>()(
         if (prefs.sidebarCustomOrder) updates.sidebarCustomOrder = prefs.sidebarCustomOrder;
         
         // Convert old boolean string formats if needed (legacy edge case, but safe)
-        if ((prefs as any).globalEffects) {
-           updates.globalEffects = (prefs as any).globalEffects;
+        if (prefs.globalEffects) {
+           updates.globalEffects = { ...get().globalEffects, ...prefs.globalEffects };
         }
 
         if (Object.keys(updates).length > 0) {
@@ -171,7 +172,7 @@ export const useThemeStore = create<ThemeState>()(
           sidebarGridSort: state.sidebarGridSort,
           sidebarCustomOrder: state.sidebarCustomOrder,
           globalEffects: state.globalEffects,
-        } as any;
+        };
         
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.user) {

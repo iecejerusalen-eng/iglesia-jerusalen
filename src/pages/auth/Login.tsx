@@ -121,8 +121,8 @@ const Login = () => {
         }
       });
       if (error) throw error;
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
   };

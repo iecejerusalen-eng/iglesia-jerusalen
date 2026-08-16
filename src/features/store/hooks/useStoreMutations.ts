@@ -4,6 +4,21 @@ import { toast } from 'sonner';
 import type { DbProduct, FormVariant, StoreCategory, Supplier } from '../types';
 import type { Order, OrderStatus } from '../../../types';
 
+interface ShippingOverrideData {
+  recipient_name: string;
+  phone: string;
+  override_address: string;
+  status_notes: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return String(error);
+};
+
 export const useStoreMutations = () => {
   const queryClient = useQueryClient();
 
@@ -31,7 +46,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Producto creado exitosamente');
     },
-    onError: (error: any) => toast.error('Error al crear: ' + error.message)
+    onError: (error: unknown) => toast.error('Error al crear: ' + getErrorMessage(error))
   });
 
   const updateProduct = useMutation({
@@ -48,7 +63,8 @@ export const useStoreMutations = () => {
 
       if (variants.length > 0) {
         const variantsToInsert = variants.map(v => {
-          const { id: _, ...rest } = v;
+          const rest = { ...v };
+          delete rest.id;
           return { ...rest, product_id: id };
         });
         const { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
@@ -59,7 +75,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Producto actualizado');
     },
-    onError: (error: any) => toast.error('Error al actualizar: ' + error.message)
+    onError: (error: unknown) => toast.error('Error al actualizar: ' + getErrorMessage(error))
   });
 
   const deleteProduct = useMutation({
@@ -74,7 +90,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Producto eliminado');
     },
-    onError: (error: any) => toast.error('Error al eliminar: ' + error.message)
+    onError: (error: unknown) => toast.error('Error al eliminar: ' + getErrorMessage(error))
   });
 
   const saveCategory = useMutation({
@@ -91,7 +107,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['storeCategories'] });
       toast.success('Categoría guardada');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const deleteCategory = useMutation({
@@ -103,7 +119,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['storeCategories'] });
       toast.success('Categoría eliminada');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const updateOrderStatus = useMutation({
@@ -115,7 +131,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Estado actualizado');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const cancelOrder = useMutation({
@@ -141,11 +157,11 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Pedido cancelado y stock devuelto');
     },
-    onError: (error: any) => toast.error('Error al cancelar: ' + error.message)
+    onError: (error: unknown) => toast.error('Error al cancelar: ' + getErrorMessage(error))
   });
 
   const saveShippingOverride = useMutation({
-    mutationFn: async ({ orderId, data }: { orderId: string, data: any }) => {
+    mutationFn: async ({ orderId, data }: { orderId: string, data: ShippingOverrideData }) => {
       const { error } = await supabase.from('orders').update({
         shipping_recipient_name: data.recipient_name,
         shipping_phone: data.phone,
@@ -158,7 +174,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Datos de envío actualizados');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const saveRefund = useMutation({
@@ -174,7 +190,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Reembolso registrado');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const saveSupplier = useMutation({
@@ -191,7 +207,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       toast.success('Proveedor guardado');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   const saveDisputeResolution = useMutation({
@@ -206,7 +222,7 @@ export const useStoreMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['disputes'] });
       toast.success('Controversia resuelta');
     },
-    onError: (error: any) => toast.error('Error: ' + error.message)
+    onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
 
   return {

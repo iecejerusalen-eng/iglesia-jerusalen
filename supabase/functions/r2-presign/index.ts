@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand, GetObjectCommand } from "npm:@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3"
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 

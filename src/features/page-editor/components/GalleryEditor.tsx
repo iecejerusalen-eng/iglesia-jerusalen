@@ -12,7 +12,7 @@ interface GalleryEditorProps {
 }
 
 export const GalleryEditor = ({ slides, onUpdateSlides, onSearchMedia }: GalleryEditorProps) => {
-  const confirm = useConfirmStore((state: any) => state.confirm);
+  const confirm = useConfirmStore((state) => state.confirm);
   const [gallerySubTab, setGallerySubTab] = useState<'photos' | 'categories'>('photos');
   const [gallerySearchQuery, setGallerySearchQuery] = useState('');
   const [galleryFilterCategory, setGalleryFilterCategory] = useState('Todos');

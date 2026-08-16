@@ -36,7 +36,7 @@ export const TemplateUploader = ({ onClose }: { onClose: () => void }) => {
       });
       
       onClose();
-    } catch (error) {
+    } catch {
       toast.error('Error al subir la plantilla');
     } finally {
       setIsUploading(false);

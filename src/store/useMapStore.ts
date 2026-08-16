@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import { supabase } from '../config/supabase';
 import type { Member, Cell, Profile } from '../types';
+import type { StrategicMapLocation } from '../features/strategic-map/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface MapState {
   members: Member[];
   cells: Cell[];
   profiles: Profile[];
-  locations: any[];
+  locations: StrategicMapLocation[];
   isLoading: boolean;
   channel: RealtimeChannel | null;
   fetchMapData: () => Promise<void>;
@@ -60,7 +61,7 @@ export const useMapStore = create<MapState>((set, get) => {
           profiles: profilesData || [],
           isLoading: false
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching strategic map data:', err);
         set({ isLoading: false });
         throw err;
@@ -114,7 +115,7 @@ export const useMapStore = create<MapState>((set, get) => {
             const currentCells = [...get().cells];
             const profiles = get().profiles;
 
-            const attachProfile = (c: any) => {
+            const attachProfile = (c: Cell): Cell => {
               if (!c.leader_id) return { ...c, profiles: null };
               const prof = profiles.find(p => p.id === c.leader_id);
               return {

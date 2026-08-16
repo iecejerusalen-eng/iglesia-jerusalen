@@ -19,7 +19,7 @@ export async function logAuditEvent(
   action: AuditAction,
   resource: string,
   resourceId: string | null,
-  details: Record<string, any> = {}
+  details: Record<string, unknown> = {}
 ): Promise<void> {
   const { user } = useAuthStore.getState();
   if (!user) {
