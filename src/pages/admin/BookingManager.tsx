@@ -47,10 +47,10 @@ export default function BookingManager() {
 
   const upcomingBookings = useMemo(() => bookings.filter((booking) => booking.status === 'approved' && new Date(booking.end_time).getTime() >= now), [bookings, now]);
   const pendingBookings = useMemo(() => bookings.filter((booking) => booking.status === 'pending'), [bookings]);
-  const openCreate = () => { setEditingSpace(null); setSpaceForm(emptyForm()); setSelectedFile(null); setActiveTab('spaces'); };
+  const openCreate = () => { setEditingSpace(null); setSpaceForm(emptyForm()); setActiveTab('spaces'); };
   const openEdit = (space: Space) => {
     setEditingSpace(space); setSpaceForm({ name: space.name, description: space.description || '', capacity: space.capacity ? String(space.capacity) : '', features: (space.features || []).join(', '), image_url: space.image_url || '', gallery_urls: Array.isArray(space.gallery_urls) ? space.gallery_urls.join('\n') : '', address: space.address || '', map_url: space.map_url || '', latitude: space.latitude != null ? String(space.latitude) : '', longitude: space.longitude != null ? String(space.longitude) : '', is_active: space.is_active, is_bookable: space.is_bookable ?? true, booking_requires_approval: space.booking_requires_approval ?? true });
-    setSelectedFile(null); setActiveTab('spaces');
+    setActiveTab('spaces');
   };
   const saveSpace = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
