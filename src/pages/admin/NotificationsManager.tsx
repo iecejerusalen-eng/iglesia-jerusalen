@@ -3,22 +3,18 @@ import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatContacts, useChatMutations } from '../../features/chat/hooks';
 import {
-  Bell,
   MessageSquare,
   Send,
-  CheckCircle,
   Gift,
   Award,
   RefreshCw,
   Phone,
   Copy,
   Search,
-  Check,
   Clock,
   Trash2,
   Calendar,
   Eye,
-  Sparkles,
   Users,
   Megaphone,
 } from 'lucide-react';
@@ -85,10 +81,18 @@ const MOCK_CELEBRANTS: Member[] = [
     id: 'mock-1',
     first_name: 'Hermano Carlos',
     last_name: 'Mendoza',
-    email: 'carlos.mendoza@ejemplo.com',
+    photo_url: null,
+    dni: null,
+    address: null,
+    maps_link: null,
+    leadership_role: 'Líder de Servidores',
+    ministry_id: null,
+    role_id: null,
     phone: '+593991234567',
     phone_country_code: '+593',
     birth_date: new Date().toISOString(),
+    conversion_date: null,
+    baptism_date: null,
     is_leader: true,
     created_at: new Date().toISOString(),
   },
@@ -96,10 +100,18 @@ const MOCK_CELEBRANTS: Member[] = [
     id: 'mock-2',
     first_name: 'Hna. Beatriz',
     last_name: 'Morales',
-    email: 'beatriz.m@ejemplo.com',
+    photo_url: null,
+    dni: null,
+    address: null,
+    maps_link: null,
+    leadership_role: null,
+    ministry_id: null,
+    role_id: null,
     phone: '+593987654321',
     phone_country_code: '+593',
     birth_date: new Date().toISOString(),
+    conversion_date: null,
+    baptism_date: null,
     is_leader: false,
     created_at: new Date().toISOString(),
   },
@@ -457,6 +469,7 @@ export default function NotificationsManager() {
   };
 
   const copyToClipboard = (text: string) => {
+    if (!text.trim()) return;
     navigator.clipboard.writeText(text);
     toast.success('Mensaje copiado al portapapeles');
   };
@@ -817,9 +830,20 @@ export default function NotificationsManager() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Mensaje *
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                    Mensaje *
+                  </label>
+                  {notifMessage && (
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(notifMessage)}
+                      className="text-xs text-indigo-500 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy size={12} /> Copiar texto
+                    </button>
+                  )}
+                </div>
                 <textarea
                   required
                   rows={4}
@@ -887,14 +911,64 @@ export default function NotificationsManager() {
                 <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-indigo-500" /> Destinatarios Seleccionados ({filteredRecipients.length})
                 </h4>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar destinatario..."
-                    className="px-3 py-1.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-xs dark:text-white"
-                  />
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex gap-1 bg-gray-100 dark:bg-slate-900 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
+                        statusFilter === 'all'
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('pending')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
+                        statusFilter === 'pending'
+                          ? 'bg-amber-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      Pendientes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('sent')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
+                        statusFilter === 'sent'
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      Enviados
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('no-phone')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
+                        statusFilter === 'no-phone'
+                          ? 'bg-rose-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}
+                    >
+                      Sin Teléfono
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar..."
+                      className="pl-8 pr-3 py-1.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-xs dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
