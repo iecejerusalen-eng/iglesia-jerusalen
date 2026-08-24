@@ -30,6 +30,7 @@ const AdminLayout = () => {
   const isDrawer = sidebarViewMode === 'drawer';
 
   let desktopPadding = 'md:pl-64';
+  if (sidebarViewMode === 'full') desktopPadding = 'md:pl-0';
   if (isCollapsed) desktopPadding = 'md:pl-20';
   if (isFloating) desktopPadding = 'md:pl-[18rem]';
   if (isDrawer) desktopPadding = 'md:pl-0';

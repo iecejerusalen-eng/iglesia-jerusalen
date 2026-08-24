@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -20,6 +20,8 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   const { hasPermission } = usePermissions();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  const [isPeeked, setIsPeeked] = useState(false);
+  const peekHideTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -156,6 +158,45 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   const isCollapsed = !isMobile && sidebarViewMode === 'compact';
   const isFloating = !isMobile && sidebarViewMode === 'floating';
   const isDrawer = !isMobile && sidebarViewMode === 'drawer';
+  const isAutoHide = !isMobile && !isDrawer && !isCollapsed && !isFloating;
+
+  const clearPeekHideTimer = useCallback(() => {
+    if (peekHideTimerRef.current !== null) {
+      window.clearTimeout(peekHideTimerRef.current);
+      peekHideTimerRef.current = null;
+    }
+  }, []);
+
+  const revealSidebar = useCallback(() => {
+    clearPeekHideTimer();
+    setIsPeeked(true);
+  }, [clearPeekHideTimer]);
+
+  const scheduleSidebarHide = useCallback(() => {
+    clearPeekHideTimer();
+    if (!isAutoHide) return;
+    peekHideTimerRef.current = window.setTimeout(() => {
+      setIsPeeked(false);
+      peekHideTimerRef.current = null;
+    }, 650);
+  }, [clearPeekHideTimer, isAutoHide]);
+
+  useEffect(() => () => clearPeekHideTimer(), [clearPeekHideTimer]);
+
+  useEffect(() => {
+    if (!isAutoHide) {
+      return;
+    }
+    const resetHandle = window.setTimeout(() => setIsPeeked(false), 0);
+    const revealFromEdge = (event: PointerEvent) => {
+      if (event.clientX <= 28) revealSidebar();
+    };
+    window.addEventListener('pointermove', revealFromEdge, { passive: true });
+    return () => {
+      window.clearTimeout(resetHandle);
+      window.removeEventListener('pointermove', revealFromEdge);
+    };
+  }, [isAutoHide, location.pathname, revealSidebar]);
   
   const sidebarWidthClass = isCollapsed ? 'w-20' : 'w-64';
   const responsiveWidthClass = isMobile ? 'w-[min(88vw,20rem)]' : sidebarWidthClass;
@@ -498,8 +539,27 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   }
 
   return (
-    <div className={`fixed top-0 bottom-0 left-0 z-20 ${isFloating ? 'w-auto' : sidebarWidthClass} hidden md:block transition-all duration-500`}>
+    <div
+      className={`fixed top-0 bottom-0 left-0 z-20 ${isFloating ? 'w-auto' : sidebarWidthClass} hidden md:block ${isAutoHide ? 'transition-transform duration-300 ease-out motion-reduce:transition-none' : 'transition-all duration-500'} ${isAutoHide && !isPeeked ? '-translate-x-[calc(100%-1.25rem)]' : 'translate-x-0'}`}
+      onMouseEnter={revealSidebar}
+      onMouseLeave={scheduleSidebarHide}
+      onFocusCapture={revealSidebar}
+      onBlurCapture={scheduleSidebarHide}
+    >
       {sidebarContent}
+      {isAutoHide && !isPeeked && (
+        <button
+          type="button"
+          onClick={revealSidebar}
+          onMouseEnter={revealSidebar}
+          onFocus={revealSidebar}
+          className="absolute left-full top-1/2 flex h-16 w-8 -translate-y-1/2 items-center justify-center rounded-r-xl border border-l-0 border-white/15 bg-[#0b1938]/95 text-white/80 shadow-xl backdrop-blur-xl transition-[width,color] hover:w-10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold motion-reduce:transition-none"
+          aria-label="Mostrar menú lateral"
+          title="Mostrar menú lateral"
+        >
+          <ChevronRight size={17} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 };

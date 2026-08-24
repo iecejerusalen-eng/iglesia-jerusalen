@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import BlockEditor from '../../components/admin/BlockEditor';
 import type { LessonBlock } from '../../components/admin/BlockEditor';
-import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Users, Image as ImageIcon, Gift, Eye, Search, Settings, Activity } from 'lucide-react';
 import MediaUploader from '../../components/common/MediaUploader';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -435,6 +435,20 @@ const MinistryManager = () => {
           </button>
         )}
       </div>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de ministerios">
+        {[
+          { label: 'Ministerios activos', value: ministries.length, icon: Activity, tone: 'text-emerald-600 dark:text-emerald-300' },
+          { label: 'Departamentos', value: ministries.filter((ministry) => ministry.category === 'departamento').length, icon: Users, tone: 'text-blue-700 dark:text-blue-300' },
+          { label: 'Servicios', value: ministries.filter((ministry) => ministry.category === 'servicio').length, icon: Gift, tone: 'text-amber-700 dark:text-amber-300' },
+          { label: 'Con portada', value: ministries.filter((ministry) => Boolean(ministry.image_url)).length, icon: ImageIcon, tone: 'text-violet-700 dark:text-violet-300' },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+            <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</span><Icon size={17} className={tone} /></div>
+            <p className={`mt-2 text-2xl font-black ${tone}`}>{value}</p>
+          </div>
+        ))}
+      </section>
 
       {/* Controles de Búsqueda, Filtrado y Vista */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center bg-gray-50/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-gray-100 dark:border-white/5 shadow-xs">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Eye, FileText, Layers3, Loader2, Plus, RefreshCw, Sparkles, WandSparkles } from 'lucide-react';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import AdminHeader from '../../components/admin/AdminHeader';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
@@ -10,6 +10,7 @@ import { PageTabs } from '../../features/page-editor/components/PageTabs';
 import { SectionSidebar } from '../../features/page-editor/components/SectionSidebar';
 import { SectionEditor } from '../../features/page-editor/components/SectionEditor';
 import { AddSectionModal } from '../../features/page-editor/components/AddSectionModal';
+import { PAGES_METADATA } from '../../features/page-editor/constants';
 
 const PageEditor = () => {
   const confirm = useConfirmStore((state) => state.confirm);
@@ -108,12 +109,46 @@ const PageEditor = () => {
     });
   };
 
+  const systemSections = sections.filter((section) => section.section_type !== 'custom').length;
+  const customSections = sections.length - systemSections;
+  const pageMeta = PAGES_METADATA[selectedPage];
+
   return (
-    <div className="space-y-6 max-w-6xl animate-fadeUp">
+    <div className="mx-auto max-w-7xl space-y-6 animate-fadeUp">
+      <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 p-6 text-white shadow-xl sm:p-8">
+        <div className="absolute -right-16 -top-20 size-64 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-200"><WandSparkles size={13} /> Editor visual del sitio</span>
+            <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl">Páginas públicas, ordenadas y listas para publicar</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-300">Construye la estructura de Inicio y Nosotros con secciones, bloques y módulos conectados a los datos reales de la iglesia.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={selectedPage === 'home' ? '/' : '/nosotros'} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 text-sm font-bold transition hover:bg-white/15"><Eye size={16} /> Ver página</a>
+            <button type="button" onClick={() => setShowAddModal(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"><Plus size={17} /> Añadir sección</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen del editor">
+        {[
+          { label: 'Página activa', value: pageMeta.name.replace('Página ', ''), icon: FileText, tone: 'text-blue-700 dark:text-blue-300' },
+          { label: 'Secciones', value: sections.length, icon: Layers3, tone: 'text-slate-900 dark:text-white' },
+          { label: 'Módulos conectados', value: systemSections, icon: Sparkles, tone: 'text-emerald-700 dark:text-emerald-300' },
+          { label: 'Bloques editables', value: customSections, icon: WandSparkles, tone: 'text-amber-700 dark:text-amber-300' },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+            <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</span><Icon size={17} className={tone} /></div>
+            <p className={`mt-2 truncate text-xl font-black ${tone}`}>{value}</p>
+          </div>
+        ))}
+      </section>
+
       <div className="flex justify-between items-center">
         <AdminHeader 
-          title="Gestor Dinámico de Páginas" 
-          description="Personaliza y estructura visualmente las secciones del Inicio y Nosotros. Puedes añadir, eliminar y reordenar."
+          eyebrow="Arquitectura pública"
+          title="Estructura de páginas"
+          description="Selecciona una página, ordena sus secciones y edita el contenido sin perder la conexión con los módulos del sistema."
         />
         
         <button
@@ -141,7 +176,7 @@ const PageEditor = () => {
           onDeleteSection={handleDeleteSection}
         />
 
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-2xs space-y-6">
+        <div className="lg:col-span-3 min-w-0 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6">
           {loading ? (
             <div className="flex justify-center items-center py-24">
               <Loader2 className="animate-spin text-primary mr-2" size={24} />

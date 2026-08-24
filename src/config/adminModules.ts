@@ -12,7 +12,6 @@ import {
   Compass,
   FileText,
   BarChart3,
-  Bell,
   Megaphone,
   Music,
   GraduationCap,
@@ -32,7 +31,6 @@ import {
   KeyRound,
   MonitorPlay,
   Radio,
-  Inbox,
   Clock3,
   BookOpenCheck,
   Activity,
@@ -285,10 +283,10 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'contact_inbox',
-    label: 'Buzón de contacto',
-    name: 'Buzón de contacto',
-    path: '/admin/buzon',
-    icon: Inbox,
+    label: 'Centro de comunicaciones',
+    name: 'Centro de comunicaciones',
+    path: '/admin/comunicaciones',
+    icon: MessageSquare,
     group: 'contenido',
     permission: 'chat',
     showInPermissions: false,
@@ -367,14 +365,6 @@ export const ADMIN_MODULES: AdminModule[] = [
     permission: 'events',
     showInPermissions: false,
     keywords: ['culto', 'planificador', 'alabanza', 'ujieres', 'holyrics']
-  },
-  {
-    id: 'notifications',
-    label: 'Notificaciones',
-    name: 'Notificaciones',
-    path: '/admin/notificaciones',
-    icon: Bell,
-    group: 'contenido'
   },
   {
     id: 'audio_library',

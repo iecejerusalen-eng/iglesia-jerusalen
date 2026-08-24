@@ -104,7 +104,9 @@ export default function GlobalToolbox() {
   const wasOpenRef = useRef(store.isOpen);
   const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
   const dragFrameRef = useRef<number | null>(null);
+  const launcherHideTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [isLauncherVisible, setIsLauncherVisible] = useState(false);
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 
   const availableTools = useMemo(
@@ -114,6 +116,27 @@ export default function GlobalToolbox() {
   const availableToolIds = useMemo(() => new Set(availableTools.map((tool) => tool.id)), [availableTools]);
   const activeDefinition = getToolDefinition(store.activePanel);
   const hasBackgroundActivity = store.isPlaying || store.timerIsRunning;
+
+  const clearLauncherHideTimer = useCallback(() => {
+    if (launcherHideTimerRef.current !== null) {
+      window.clearTimeout(launcherHideTimerRef.current);
+      launcherHideTimerRef.current = null;
+    }
+  }, []);
+
+  const revealLauncher = useCallback(() => {
+    clearLauncherHideTimer();
+    setIsLauncherVisible(true);
+  }, [clearLauncherHideTimer]);
+
+  const scheduleLauncherHide = useCallback(() => {
+    clearLauncherHideTimer();
+    if (store.isOpen) return;
+    launcherHideTimerRef.current = window.setTimeout(() => {
+      setIsLauncherVisible(false);
+      launcherHideTimerRef.current = null;
+    }, 4200);
+  }, [clearLauncherHideTimer, store.isOpen]);
 
   useEffect(() => {
     if (store.activePanel !== 'hub' && !availableToolIds.has(store.activePanel)) store.setActivePanel('hub');
@@ -134,10 +157,13 @@ export default function GlobalToolbox() {
       window.requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
     }
     if (wasOpenRef.current && !store.isOpen) {
+      revealLauncher();
       window.requestAnimationFrame(() => launcherRef.current?.focus({ preventScroll: true }));
     }
     wasOpenRef.current = store.isOpen;
-  }, [store.isOpen]);
+  }, [revealLauncher, store.isOpen]);
+
+  useEffect(() => () => clearLauncherHideTimer(), [clearLauncherHideTimer]);
 
   useEffect(() => () => {
     if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
@@ -243,18 +269,35 @@ export default function GlobalToolbox() {
 
   if (!store.isOpen) {
     return (
-      <button
-        ref={launcherRef}
-        type="button"
-        onClick={() => store.open('hub')}
-        className="group fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-[85] flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/80 text-white shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 sm:bottom-6 sm:right-6"
-        aria-label="Abrir centro de herramientas"
-      >
-        <BriefcaseBusiness size={23} aria-hidden="true" />
-        {hasBackgroundActivity && (
-          <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-950 bg-amber-300" aria-label="Hay herramientas activas" />
-        )}
-      </button>
+      <div className="pointer-events-none fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-0 z-[85] flex items-center sm:bottom-6">
+        <button
+          type="button"
+          onClick={revealLauncher}
+          onMouseEnter={revealLauncher}
+          onFocus={revealLauncher}
+          className="pointer-events-auto flex h-14 w-7 items-center justify-center rounded-l-xl border border-r-0 border-white/15 bg-slate-950/90 text-white/80 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:w-9 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300"
+          aria-label="Mostrar botón de herramientas"
+          title="Mostrar herramientas"
+        >
+          <ChevronLeft size={17} aria-hidden="true" />
+        </button>
+        <button
+          ref={launcherRef}
+          type="button"
+          onClick={() => { clearLauncherHideTimer(); setIsLauncherVisible(false); store.open('hub'); }}
+          onMouseEnter={revealLauncher}
+          onMouseLeave={scheduleLauncherHide}
+          onFocus={revealLauncher}
+          className={`pointer-events-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/90 text-white shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-[transform,opacity,margin] duration-300 hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 motion-reduce:transition-none sm:mr-1 ${isLauncherVisible ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-16 opacity-0'}`}
+          aria-label="Abrir centro de herramientas"
+          tabIndex={isLauncherVisible ? 0 : -1}
+        >
+          <BriefcaseBusiness size={23} aria-hidden="true" />
+          {hasBackgroundActivity && (
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-950 bg-amber-300" aria-label="Hay herramientas activas" />
+          )}
+        </button>
+      </div>
     );
   }
 

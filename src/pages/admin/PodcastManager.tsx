@@ -7,6 +7,7 @@ import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import type { PodcastEpisode, PodcastShow, AudioChapter } from '../../features/podcast/types';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 export const PodcastManager = () => {
   const [activeTab, setActiveTab] = useState<'episodes' | 'series' | 'settings'>('episodes');
@@ -86,7 +87,7 @@ export const PodcastManager = () => {
 
   const handleOpenEdit = (ep: PodcastEpisode) => {
     setEditingEpisode({ ...ep });
-    setAudioInputMode(ep.audio_url?.includes('supabase') ? 'file' : 'url');
+    setAudioInputMode(ep.audio_source_type === 'file' ? 'file' : 'url');
     setShowModal(true);
   };
 
@@ -112,28 +113,15 @@ export const PodcastManager = () => {
         if (audio.duration && !isNaN(audio.duration)) {
           setEditingEpisode(prev => prev ? { ...prev, audio_duration_seconds: Math.round(audio.duration) } : null);
         }
+        URL.revokeObjectURL(tempAudioUrl);
       };
 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const filePath = `episodes/${Date.now()}_${cleanFileName}`;
-
       setUploadProgress(45);
-      const { data, error } = await supabase.storage
-        .from('podcasts')
-        .upload(filePath, file, { upsert: true });
-
+      const publicAudioUrl = await uploadMediaFile(file, 'podcasts/episodes', 'raw');
       setUploadProgress(85);
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('podcasts')
-        .getPublicUrl(data.path);
-
-      const publicAudioUrl = publicUrlData.publicUrl;
-
       setEditingEpisode(prev => prev ? { ...prev, audio_url: publicAudioUrl, audio_source_type: 'file' } : null);
       setUploadProgress(100);
-      toast.success('Archivo de audio subido con éxito a Supabase Storage.');
+      toast.success('Audio subido y catalogado con el proveedor multimedia activo.');
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('Error al subir audio:', err);
@@ -166,7 +154,8 @@ export const PodcastManager = () => {
       };
 
       if (editingEpisode.id) {
-        await supabase.from('podcast_episodes').update(payload).eq('id', editingEpisode.id);
+        const { error } = await supabase.from('podcast_episodes').update(payload).eq('id', editingEpisode.id);
+        if (error) throw error;
         setEpisodes(prev => prev.map(e => e.id === editingEpisode.id ? ({ ...e, ...payload } as PodcastEpisode) : e));
         toast.success('Episodio actualizado correctamente.');
       } else {
@@ -177,7 +166,8 @@ export const PodcastManager = () => {
           created_at: new Date().toISOString(),
         } as PodcastEpisode;
         
-        await supabase.from('podcast_episodes').insert([payload]);
+        const { error } = await supabase.from('podcast_episodes').insert([payload]);
+        if (error) throw error;
         setEpisodes(prev => [newEp, ...prev]);
         toast.success('Nuevo episodio guardado y publicado.');
       }

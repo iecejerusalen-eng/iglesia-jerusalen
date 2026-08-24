@@ -294,6 +294,20 @@ const PetitionsManager = () => {
         </div>
       </div>
 
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de peticiones">
+        {[
+          { label: 'Total', value: petitions.length, tone: 'text-slate-900 dark:text-white', icon: HeartHandshake },
+          { label: 'Recibidas', value: petitions.filter((petition) => petition.status === 'pendiente').length, tone: 'text-slate-700 dark:text-slate-200', icon: Clock },
+          { label: 'En oración', value: petitions.filter((petition) => petition.status === 'en_oracion').length, tone: 'text-amber-700 dark:text-amber-300', icon: Flame },
+          { label: 'Respondidas', value: petitions.filter((petition) => petition.status === 'respondida').length, tone: 'text-emerald-700 dark:text-emerald-300', icon: CheckCircle },
+        ].map(({ label, value, tone, icon: Icon }) => (
+          <div key={label} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70">
+            <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</span><Icon size={17} className={tone} /></div>
+            <p className={`mt-2 text-2xl font-black ${tone}`}>{value}</p>
+          </div>
+        ))}
+      </section>
+
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-white/10">
         <button

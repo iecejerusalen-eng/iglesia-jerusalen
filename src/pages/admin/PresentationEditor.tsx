@@ -1,509 +1,77 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../config/supabase';
-import { Plus, Edit2, Trash2, Presentation, AlertCircle, Save, X, Image as ImageIcon } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp, Copy, ExternalLink, FileImage, FileText, GripVertical, Image as ImageIcon, LayoutGrid, MonitorPlay, MoreHorizontal, Plus, Save, Shapes, Trash2, Type, Upload, Video } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminHeader from '../../components/admin/AdminHeader';
+import { presentationService } from '../../features/presentations/services/presentationService';
+import type { PresentationBlock, PresentationBlockType, PresentationDocument, PresentationSlideDocument } from '../../features/presentations/types';
 import { uploadMediaFile } from '../../lib/mediaService';
 
-interface PresentationSlide {
-  id: string;
-  order_index: number;
-  title: string;
-  subtitle: string | null;
-  content: string | null;
-  department: string | null;
-  icon: string | null;
-  image_url: string | null;
-  theme_color: string;
-  animation_type: string;
-  layout: string;
-  features: string[];
-  is_active: boolean;
+const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const slugify = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+const cloneDocument = (document: PresentationDocument): PresentationDocument => ({ ...document, slides: document.slides.map((slide) => ({ ...slide, blocks: slide.blocks.map((block) => ({ ...block, columns: block.columns ? [...block.columns] : undefined })) })), theme: { ...document.theme } });
+const createSlide = (index: number): PresentationSlideDocument => ({ id: makeId('slide'), title: `Diapositiva ${index + 1}`, background: '#0b1538', blocks: [{ id: makeId('block'), type: 'text', content: 'Añade un título para esta diapositiva', color: '#ffffff', size: 'xl', align: 'center' }] });
+const createDocument = (): PresentationDocument => ({ id: '', title: 'Nueva presentación', slug: 'nueva-presentacion', description: 'Presentación institucional de la Iglesia Jerusalén.', cover_url: null, slides: [createSlide(0)], theme: { accent: '#C79D3F', font: 'Inter' }, is_published: false });
+
+const BLOCK_LIBRARY: Array<{ type: PresentationBlockType; label: string; description: string; icon: typeof Type }> = [
+  { type: 'text', label: 'Texto', description: 'Títulos, subtítulos y párrafos', icon: Type },
+  { type: 'image', label: 'Imagen', description: 'Fotos y portadas', icon: ImageIcon },
+  { type: 'video', label: 'Vídeo', description: 'YouTube, Vimeo o archivo', icon: Video },
+  { type: 'columns', label: 'Columnas', description: 'Dos o tres contenidos', icon: LayoutGrid },
+  { type: 'shape', label: 'Forma', description: 'Círculo, tarjeta o banda', icon: Shapes },
+  { type: 'divider', label: 'Separador', description: 'Línea visual', icon: MoreHorizontal },
+];
+
+function BlockVisual({ block }: { block: PresentationBlock }) {
+  const align = block.align === 'right' ? 'text-right' : block.align === 'center' ? 'text-center' : 'text-left';
+  if (block.type === 'text') return <div className={`${align} ${block.size === 'xl' ? 'text-3xl font-black' : block.size === 'lg' ? 'text-2xl font-bold' : block.size === 'sm' ? 'text-sm' : 'text-lg'} leading-tight`} style={{ color: block.color || '#ffffff' }}>{block.content || 'Texto de la diapositiva'}</div>;
+  if (block.type === 'image') return block.url ? <img src={block.url} alt={block.alt || ''} className="max-h-52 w-full rounded-xl object-cover" /> : <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-white/20 text-xs text-white/50"><ImageIcon size={20} className="mr-2" /> Añade una imagen</div>;
+  if (block.type === 'video') return <div className="flex aspect-video items-center justify-center rounded-xl border border-white/15 bg-slate-950/70 text-sm text-white/70"><Video size={22} className="mr-2 text-amber-300" /> {block.url || 'Añade un enlace de vídeo'}</div>;
+  if (block.type === 'columns') return <div className="grid gap-3 sm:grid-cols-2">{(block.columns || ['Columna 1', 'Columna 2']).map((column, index) => <div key={`${column}-${index}`} className="rounded-xl border border-white/15 bg-white/10 p-4 text-sm text-white/85">{column}</div>)}</div>;
+  if (block.type === 'shape') return <div className="mx-auto h-20 w-20 rounded-2xl" style={{ background: block.background || '#C79D3F' }} aria-label="Forma decorativa" />;
+  return <div className="h-px w-full bg-white/35" />;
 }
 
-const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+function SlideCanvas({ slide, selectedBlockId, onSelectBlock }: { slide: PresentationSlideDocument; selectedBlockId: string | null; onSelectBlock: (id: string) => void }) {
+  return <div className="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-700/40 shadow-2xl" style={{ background: slide.background || '#0b1538' }}><div className="flex h-full flex-col justify-center gap-4 overflow-y-auto p-6 sm:p-10">{slide.blocks.map((block) => <button key={block.id} type="button" onClick={() => onSelectBlock(block.id)} className={`rounded-xl p-2 text-left transition ${selectedBlockId === block.id ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-transparent' : 'hover:bg-white/5'}`}><BlockVisual block={block} /></button>)}</div></div>;
+}
 
 export const PresentationEditor = () => {
-  const [slides, setSlides] = useState<PresentationSlide[]>([]);
+  const [documents, setDocuments] = useState<PresentationDocument[]>([]);
+  const [document, setDocument] = useState<PresentationDocument | null>(null);
+  const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<'cover' | 'image' | 'video'>('image');
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingSlide, setEditingSlide] = useState<PresentationSlide | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  
-  // Form State
-  const [formData, setFormData] = useState<Partial<PresentationSlide>>({
-    title: '',
-    subtitle: '',
-    content: '',
-    department: 'General',
-    icon: 'Presentation',
-    image_url: '',
-    layout: 'standard',
-    theme_color: 'indigo',
-    animation_type: 'fade',
-    features: [],
-    is_active: true,
-    order_index: 0
-  });
+  const loadDocuments = async () => { setLoading(true); setError(null); try { setDocuments(await presentationService.list()); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudieron cargar las presentaciones.'); } finally { setLoading(false); } };
+  useEffect(() => { Promise.resolve().then(() => loadDocuments()); }, []);
+  const currentSlide = useMemo(() => document?.slides.find((slide) => slide.id === selectedSlideId) ?? null, [document, selectedSlideId]);
+  const selectedBlock = useMemo(() => currentSlide?.blocks.find((block) => block.id === selectedBlockId) ?? null, [currentSlide, selectedBlockId]);
+  const openNew = () => { const draft = createDocument(); setDocument(draft); setSelectedSlideId(draft.slides[0].id); setSelectedBlockId(draft.slides[0].blocks[0].id); };
+  const openEdit = (item: PresentationDocument) => { const draft = cloneDocument(item); setDocument(draft); setSelectedSlideId(draft.slides[0]?.id ?? null); setSelectedBlockId(draft.slides[0]?.blocks[0]?.id ?? null); };
+  const updateDocument = (changes: Partial<PresentationDocument>) => setDocument((current) => current ? { ...current, ...changes } : current);
+  const updateSlide = (changes: Partial<PresentationSlideDocument>) => setDocument((current) => current ? { ...current, slides: current.slides.map((slide) => slide.id === selectedSlideId ? { ...slide, ...changes } : slide) } : current);
+  const updateBlock = (changes: Partial<PresentationBlock>) => setDocument((current) => current ? { ...current, slides: current.slides.map((slide) => slide.id === selectedSlideId ? { ...slide, blocks: slide.blocks.map((block) => block.id === selectedBlockId ? { ...block, ...changes } : block) } : slide) } : current);
+  const addSlide = () => { const slide = createSlide(document?.slides.length ?? 0); setDocument((current) => current ? { ...current, slides: [...current.slides, slide] } : current); setSelectedSlideId(slide.id); setSelectedBlockId(slide.blocks[0].id); };
+  const addBlock = (type: PresentationBlockType) => { const block: PresentationBlock = { id: makeId('block'), type, content: type === 'text' ? 'Nuevo texto' : undefined, columns: type === 'columns' ? ['Columna 1', 'Columna 2'] : undefined, color: '#ffffff', size: 'md', align: 'left', background: type === 'shape' ? '#C79D3F' : undefined }; setDocument((current) => current ? { ...current, slides: current.slides.map((slide) => slide.id === selectedSlideId ? { ...slide, blocks: [...slide.blocks, block] } : slide) } : current); setSelectedBlockId(block.id); };
+  const removeBlock = () => { if (!selectedBlockId) return; setDocument((current) => current ? { ...current, slides: current.slides.map((slide) => slide.id === selectedSlideId ? { ...slide, blocks: slide.blocks.filter((block) => block.id !== selectedBlockId) } : slide) } : current); setSelectedBlockId(null); };
+  const duplicateBlock = () => { if (!selectedBlock || !currentSlide) return; const copy = { ...selectedBlock, id: makeId('block'), columns: selectedBlock.columns ? [...selectedBlock.columns] : undefined }; updateSlide({ blocks: [...currentSlide.blocks, copy] }); setSelectedBlockId(copy.id); };
+  const moveSlide = (id: string, direction: -1 | 1) => setDocument((current) => { if (!current) return current; const index = current.slides.findIndex((slide) => slide.id === id); const next = index + direction; if (index < 0 || next < 0 || next >= current.slides.length) return current; const slides = [...current.slides]; [slides[index], slides[next]] = [slides[next], slides[index]]; return { ...current, slides }; });
+  const dropSlide = (targetId: string) => { if (!draggedSlideId || draggedSlideId === targetId) return; setDocument((current) => { if (!current) return current; const from = current.slides.findIndex((slide) => slide.id === draggedSlideId); const to = current.slides.findIndex((slide) => slide.id === targetId); if (from < 0 || to < 0) return current; const slides = [...current.slides]; const [moved] = slides.splice(from, 1); slides.splice(to, 0, moved); return { ...current, slides }; }); setDraggedSlideId(null); };
+  const deleteSlide = (id: string) => setDocument((current) => { if (!current || current.slides.length <= 1) return current; const slides = current.slides.filter((slide) => slide.id !== id); const next = slides[0]; setSelectedSlideId(next.id); setSelectedBlockId(next.blocks[0]?.id ?? null); return { ...current, slides }; });
+  const duplicateDocument = (item: PresentationDocument) => { const copy = cloneDocument(item); copy.id = ''; copy.title = `${item.title} (copia)`; copy.slug = `${item.slug}-copia`; copy.is_published = false; setDocument(copy); setSelectedSlideId(copy.slides[0]?.id ?? null); setSelectedBlockId(copy.slides[0]?.blocks[0]?.id ?? null); };
+  const save = async (publish: boolean) => { if (!document) return; if (!document.title.trim()) return toast.error('Escribe un título.'); if (!document.slides.length) return toast.error('Agrega al menos una diapositiva.'); setSaving(true); try { const payload = { title: document.title.trim(), slug: slugify(document.slug || document.title), description: document.description || null, cover_url: document.cover_url || null, slides: document.slides, theme: document.theme, is_published: publish }; const saved = await presentationService.save(payload, document.id || undefined); setDocuments((current) => document.id ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]); setDocument(cloneDocument(saved)); toast.success(publish ? 'Presentación publicada.' : 'Borrador guardado.'); } catch (err) { toast.error(err instanceof Error ? err.message : 'No se pudo guardar.'); } finally { setSaving(false); } };
+  const deleteDocument = async (item: PresentationDocument) => { if (!window.confirm(`¿Eliminar “${item.title}”?`)) return; try { await presentationService.remove(item.id); setDocuments((current) => current.filter((entry) => entry.id !== item.id)); toast.success('Presentación eliminada.'); } catch (err) { toast.error(err instanceof Error ? err.message : 'No se pudo eliminar.'); } };
+  const startUpload = (target: 'cover' | 'image' | 'video') => { setUploadTarget(target); fileInputRef.current?.click(); };
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; event.target.value = ''; if (!file || !document) return; try { const url = await uploadMediaFile(file, 'presentations', uploadTarget === 'video' ? 'video' : 'image'); if (uploadTarget === 'cover') updateDocument({ cover_url: url }); else updateBlock({ url }); toast.success('Recurso cargado.'); } catch (err) { toast.error(err instanceof Error ? err.message : 'No se pudo subir el recurso.'); } };
 
-  const fetchSlides = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('presentation_slides')
-        .select('*')
-        .order('order_index', { ascending: true });
+  if (document) return <div className="space-y-4 pb-8"><input ref={fileInputRef} type="file" accept={uploadTarget === 'video' ? 'video/*' : 'image/*'} onChange={(event) => void handleUpload(event)} className="hidden" /><div className="sticky top-0 z-30 -mx-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90 md:-mx-8 md:px-8"><div className="flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={() => setDocument(null)} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white"><ArrowLeft size={17} /> Presentaciones</button><div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase ${document.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{document.is_published ? 'Publicado' : 'Borrador'}</span><button type="button" onClick={() => void save(false)} disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-xs font-black dark:border-white/10 dark:text-white"><Save size={15} /> Guardar</button><button type="button" onClick={() => void save(true)} disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950"><MonitorPlay size={15} /> Publicar</button></div></div></div><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.2em] text-indigo-600 dark:text-indigo-300">Editor visual</p><h1 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">{document.title}</h1></div><button type="button" onClick={() => window.open(`/presentation`, '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 dark:border-white/10 dark:text-slate-300"><ExternalLink size={14} /> Ver presentación</button></div><div className="grid gap-4 xl:grid-cols-[230px_minmax(0,1fr)_290px]"><aside className="rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center justify-between px-2 pb-3"><div><h2 className="text-sm font-black text-slate-900 dark:text-white">Diapositivas</h2><p className="text-[11px] text-slate-500">{document.slides.length} en la presentación</p></div><button type="button" onClick={addSlide} className="rounded-lg bg-indigo-50 p-2 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300" aria-label="Añadir diapositiva"><Plus size={15} /></button></div><div className="space-y-2">{document.slides.map((slide, index) => <article key={slide.id} draggable onDragStart={() => setDraggedSlideId(slide.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => dropSlide(slide.id)} className={`group rounded-xl border p-2 transition ${selectedSlideId === slide.id ? 'border-indigo-400 bg-indigo-50/70 dark:border-indigo-400 dark:bg-indigo-400/10' : 'border-slate-200 dark:border-white/10'}`}><button type="button" onClick={() => { setSelectedSlideId(slide.id); setSelectedBlockId(slide.blocks[0]?.id ?? null); }} className="w-full text-left"><div className="flex aspect-video items-center justify-center rounded-lg p-2 text-center text-[10px] font-bold text-white" style={{ background: slide.background || '#0b1538' }}>{slide.title}</div><span className="mt-2 flex items-center gap-1 text-[10px] font-bold text-slate-500"><GripVertical size={12} /> {index + 1}. {slide.title}</span></button><div className="mt-1 flex justify-end gap-1"><button type="button" onClick={() => moveSlide(slide.id, -1)} disabled={index === 0} className="rounded p-1 text-slate-400 disabled:opacity-30" aria-label="Subir diapositiva"><ChevronUp size={13} /></button><button type="button" onClick={() => moveSlide(slide.id, 1)} disabled={index === document.slides.length - 1} className="rounded p-1 text-slate-400 disabled:opacity-30" aria-label="Bajar diapositiva"><ChevronDown size={13} /></button><button type="button" onClick={() => deleteSlide(slide.id)} className="rounded p-1 text-slate-400 hover:text-rose-600" aria-label="Eliminar diapositiva"><Trash2 size={13} /></button></div></article>)}</div></aside><main className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-slate-100/70 p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/40 sm:p-6"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-sm font-black text-slate-900 dark:text-white">Lienzo</h2><p className="text-xs text-slate-500">Selecciona un bloque para editarlo.</p></div><div className="flex flex-wrap gap-2">{BLOCK_LIBRARY.map((item) => <button key={item.type} type="button" onClick={() => addBlock(item.type)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[10px] font-black text-slate-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"><item.icon size={13} /> {item.label}</button>)}</div></div>{currentSlide && <><SlideCanvas slide={currentSlide} selectedBlockId={selectedBlockId} onSelectBlock={setSelectedBlockId} /><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">Título de diapositiva<input value={currentSlide.title} onChange={(event) => updateSlide({ title: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label></>}</main><aside className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center justify-between"><div><h2 className="text-sm font-black text-slate-900 dark:text-white">Propiedades</h2><p className="text-[11px] text-slate-500">Edita la diapositiva o bloque.</p></div><MoreHorizontal size={16} className="text-slate-400" /></div>{selectedBlock ? <div className="mt-4 space-y-3"><div className="flex gap-2"><button type="button" onClick={duplicateBlock} className="flex-1 rounded-lg border border-slate-200 py-2 text-[10px] font-black dark:border-white/10 dark:text-white"><Copy size={13} className="mx-auto" /></button><button type="button" onClick={removeBlock} className="flex-1 rounded-lg border border-rose-200 py-2 text-[10px] font-black text-rose-600"><Trash2 size={13} className="mx-auto" /></button></div><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Tipo<select value={selectedBlock.type} onChange={(event) => updateBlock({ type: event.target.value as PresentationBlockType })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white">{BLOCK_LIBRARY.map((item) => <option key={item.type} value={item.type}>{item.label}</option>)}</select></label>{['text', 'video'].includes(selectedBlock.type) && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">{selectedBlock.type === 'video' ? 'Enlace de vídeo' : 'Texto'}<textarea value={selectedBlock.type === 'video' ? selectedBlock.url || '' : selectedBlock.content || ''} onChange={(event) => updateBlock(selectedBlock.type === 'video' ? { url: event.target.value } : { content: event.target.value })} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>}{['image', 'video'].includes(selectedBlock.type) && <button type="button" onClick={() => startUpload(selectedBlock.type)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-300 py-3 text-xs font-black text-indigo-700 dark:border-indigo-400/30 dark:text-indigo-300"><Upload size={14} /> Subir {selectedBlock.type === 'video' ? 'vídeo' : 'imagen'}</button>}{selectedBlock.type === 'image' && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">URL de imagen<input value={selectedBlock.url || ''} onChange={(event) => updateBlock({ url: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>}{selectedBlock.type === 'columns' && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Contenido de columnas<span className="mt-1 block text-[10px] font-normal text-slate-400">Una columna por línea</span><textarea value={(selectedBlock.columns || []).join('\n')} onChange={(event) => updateBlock({ columns: event.target.value.split('\n').map((value) => value.trim()).filter(Boolean) })} rows={5} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>}{selectedBlock.type === 'shape' && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Color<input type="color" value={selectedBlock.background || '#C79D3F'} onChange={(event) => updateBlock({ background: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5" /></label>}{['text', 'image'].includes(selectedBlock.type) && <><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Alineación<select value={selectedBlock.align || 'left'} onChange={(event) => updateBlock({ align: event.target.value as PresentationBlock['align'] })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Color<input type="color" value={selectedBlock.color || '#ffffff'} onChange={(event) => updateBlock({ color: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5" /></label></>}</div> : currentSlide ? <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Fondo de diapositiva<input type="color" value={currentSlide.background || '#0b1538'} onChange={(event) => updateSlide({ background: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5" /></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Notas del presentador<textarea value={currentSlide.notes || ''} onChange={(event) => updateSlide({ notes: event.target.value })} rows={5} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label></div> : null}</aside></div></div>;
 
-      if (error) {
-        if (error.code === '42P01') {
-           setError('La tabla presentation_slides no existe. Por favor ejecuta el archivo SQL de migración en Supabase.');
-           setLoading(false);
-           return;
-        }
-        throw error;
-      }
-      setSlides(data || []);
-      setError(null);
-    } catch (err: unknown) {
-      console.error('Error fetching slides:', err);
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void fetchSlides(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const handleOpenModal = (slide?: PresentationSlide) => {
-    if (slide) {
-      setEditingSlide(slide);
-      setFormData(slide);
-    } else {
-      setEditingSlide(null);
-      setFormData({
-        title: '',
-        subtitle: '',
-        content: '',
-        department: 'General',
-        icon: 'Presentation',
-        image_url: '',
-        layout: 'standard',
-        theme_color: 'indigo',
-        animation_type: 'fade',
-        features: [],
-        is_active: true,
-        order_index: slides.length + 1
-      });
-    }
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingSlide(null);
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!e.target.files || e.target.files.length === 0) return;
-      
-      const file = e.target.files[0];
-      setUploadingImage(true);
-      const publicUrl = await uploadMediaFile(file, 'presentation_slides', 'image');
-      setFormData({ ...formData, image_url: publicUrl });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Error subiendo imagen.');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!formData.title) {
-      toast.error('El título es requerido');
-      return;
-    }
-
-    try {
-      if (editingSlide) {
-        // Update
-        const { error } = await supabase
-          .from('presentation_slides')
-          .update(formData)
-          .eq('id', editingSlide.id);
-        
-        if (error) throw error;
-        toast.success('Diapositiva actualizada');
-      } else {
-        // Create
-        const { error } = await supabase
-          .from('presentation_slides')
-          .insert([formData]);
-        
-        if (error) throw error;
-        toast.success('Diapositiva creada');
-      }
-      
-      handleCloseModal();
-      fetchSlides();
-    } catch (err: unknown) {
-      console.error('Error saving slide:', err);
-      toast.error('Error al guardar: ' + getErrorMessage(err));
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta diapositiva?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('presentation_slides')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      toast.success('Diapositiva eliminada');
-      fetchSlides();
-    } catch (err: unknown) {
-      console.error('Error deleting slide:', err);
-      toast.error('Error al eliminar: ' + getErrorMessage(err));
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* HEADER PREMIUM */}
-      <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 rounded-2xl p-8 text-white mb-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 flex items-center justify-center">
-          <Presentation size={200} className="text-white" />
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <span className="bg-indigo-500/30 text-indigo-100 border border-indigo-400/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-              Gestor Visual
-            </span>
-            <h1 className="text-3xl md:text-4xl font-bold mt-4 mb-2 flex items-center gap-3">
-              Editor de Presentación (Pitch Deck)
-            </h1>
-            <p className="text-indigo-100 text-sm max-w-xl">
-              Configura las diapositivas de la ruta pública `/presentacion`. Modifica imágenes, textos, layouts y características para brindar la mejor primera impresión de la iglesia.
-            </p>
-          </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-indigo-900 font-bold rounded-xl hover:bg-indigo-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
-          >
-            <Plus className="h-5 w-5" />
-            Nueva Diapositiva
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 rounded-2xl flex items-center gap-3 text-amber-700 dark:text-amber-400 shadow-sm text-sm">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <p className="font-medium">{error}</p>
-        </div>
-      )}
-
-      {!error && slides.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-dashed border-gray-300 dark:border-gray-700 shadow-sm">
-          <Presentation className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay diapositivas</h3>
-          <p className="text-gray-500">Crea la primera diapositiva para tu presentación institucional.</p>
-        </div>
-      )}
-
-      {/* GRID DE DIAPOSITIVAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {slides.map((slide) => (
-          <div key={slide.id} className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-xl flex flex-col ${slide.is_active ? 'border-gray-200 dark:border-gray-700 shadow-md' : 'border-dashed border-gray-300 opacity-70'}`}>
-            <div className="h-40 w-full relative bg-gray-100 dark:bg-slate-800 shrink-0">
-              {slide.image_url ? (
-                <img src={slide.image_url} alt={slide.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full text-gray-400">
-                  <ImageIcon size={48} />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent"></div>
-              
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/80 backdrop-blur-sm uppercase">
-                    Orden: {slide.order_index}
-                  </span>
-                  {!slide.is_active && (
-                    <span className="text-[10px] font-bold bg-red-500/80 backdrop-blur-sm px-2 py-0.5 rounded uppercase">Inactiva</span>
-                  )}
-                </div>
-                <h3 className="font-bold text-lg leading-tight line-clamp-1">{slide.title}</h3>
-              </div>
-            </div>
-            
-            <div className="p-5 flex flex-col flex-1">
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4 flex-1">
-                {slide.subtitle || slide.content || "Sin descripción..."}
-              </p>
-              
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
-                <div className="text-xs text-gray-500 font-medium">
-                  {slide.layout} layout
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleOpenModal(slide)}
-                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg dark:text-indigo-400 dark:hover:bg-indigo-900/30 transition-colors"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(slide.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-gray-100 dark:border-gray-800">
-            
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50 rounded-t-3xl">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Presentation className="h-5 w-5 text-indigo-500" />
-                {editingSlide ? 'Editar Diapositiva' : 'Nueva Diapositiva'}
-              </h2>
-              <button onClick={handleCloseModal} className="p-2 bg-white dark:bg-slate-800 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full shadow-sm hover:shadow transition-all">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-6 flex-1">
-              {/* IMAGEN - NUEVO CAMPO AÑADIDO Y MEJORADO */}
-              <div className="bg-gray-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  Imagen de Fondo (Cloudinary)
-                </label>
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  {formData.image_url ? (
-                    <div className="relative group rounded-xl overflow-hidden shadow-md">
-                      <img src={formData.image_url} alt="Preview" className="h-32 w-56 object-cover" />
-                      <button 
-                        onClick={() => setFormData({ ...formData, image_url: '' })}
-                        className="absolute inset-0 bg-red-500/80 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-6 w-6 mb-1" />
-                        <span className="text-xs font-bold">Quitar</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="h-32 w-56 bg-gray-200 dark:bg-slate-700 rounded-xl flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 dark:border-gray-600">
-                      <ImageIcon className="h-10 w-10 opacity-50" />
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 w-full space-y-3">
-                    <label className="cursor-pointer flex items-center justify-center gap-2 w-full px-4 py-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-all font-semibold shadow-sm">
-                      <ImageIcon className="h-5 w-5 text-indigo-500" />
-                      {uploadingImage ? 'Subiendo imagen...' : 'Subir Imagen'}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={handleImageUpload}
-                        disabled={uploadingImage}
-                      />
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1"></div>
-                      <span className="text-xs text-gray-500 font-medium">O pega la URL</span>
-                      <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1"></div>
-                    </div>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:text-white"
-                      value={formData.image_url || ''}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* CAMPOS TEXTUALES */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Título</label>
-                  <input
-                    type="text"
-                    value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Subtítulo</label>
-                  <input
-                    type="text"
-                    value={formData.subtitle || ''}
-                    onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Contenido / Descripción</label>
-                  <textarea
-                    value={formData.content || ''}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm"
-                  />
-                </div>
-              </div>
-
-              {/* CONFIGURACIÓN VISUAL (NUEVOS CAMPOS AÑADIDOS) */}
-              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
-                <h4 className="font-bold text-indigo-900 dark:text-indigo-300 mb-4 text-sm">Configuración Visual y Avanzada</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Layout</label>
-                    <select
-                      value={formData.layout || 'standard'}
-                      onChange={(e) => setFormData({ ...formData, layout: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    >
-                      <option value="standard">Estándar</option>
-                      <option value="split">Dividido (Split)</option>
-                      <option value="centered">Centrado</option>
-                      <option value="grid">Grid (Rejilla)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Animación</label>
-                    <select
-                      value={formData.animation_type || 'fade'}
-                      onChange={(e) => setFormData({ ...formData, animation_type: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    >
-                      <option value="fade">Fade In (Suave)</option>
-                      <option value="slide_up">Slide Up (Arriba)</option>
-                      <option value="zoom">Zoom</option>
-                      <option value="spring">Spring (Rebote)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Color Tema</label>
-                    <select
-                      value={formData.theme_color || 'indigo'}
-                      onChange={(e) => setFormData({ ...formData, theme_color: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    >
-                      <option value="indigo">Indigo / Púrpura</option>
-                      <option value="blue">Azul</option>
-                      <option value="emerald">Esmeralda</option>
-                      <option value="rose">Rosa</option>
-                      <option value="amber">Ambar / Dorado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Ícono (Lucide)</label>
-                    <input
-                      type="text"
-                      value={formData.icon || ''}
-                      onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                      placeholder="Ej: Church, Globe"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Departamento</label>
-                    <input
-                      type="text"
-                      value={formData.department || ''}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-400 mb-1">Orden (Index)</label>
-                    <input
-                      type="number"
-                      value={formData.order_index || 0}
-                      onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Características (Features) - Separadas por comas
-                </label>
-                <input
-                  type="text"
-                  value={formData.features?.join(', ') || ''}
-                  onChange={(e) => {
-                    const vals = e.target.value.split(',').map(s => s.trim()).filter(s => s);
-                    setFormData({ ...formData, features: vals });
-                  }}
-                  placeholder="Ej: Modernidad, Escalabilidad, Comunidad"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:border-gray-700 dark:text-white shadow-sm"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-colors"
-                />
-                <label htmlFor="isActive" className="text-sm font-bold text-gray-900 dark:text-white cursor-pointer select-none">
-                  Diapositiva Activa (Visible en la presentación pública)
-                </label>
-              </div>
-            </div>
-
-            <div className="p-5 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-4 bg-gray-50/80 dark:bg-slate-800/80 rounded-b-3xl">
-              <button
-                onClick={handleCloseModal}
-                className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 font-bold rounded-xl hover:bg-gray-50 dark:bg-slate-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-slate-600 transition-colors shadow-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
-              >
-                <Save className="h-5 w-5" />
-                Guardar Cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="space-y-6"><AdminHeader title="Presentaciones" description="Crea presentaciones visuales con diapositivas, texto, columnas, imágenes, vídeos y formas." /><div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.6rem] bg-gradient-to-r from-indigo-950 via-indigo-800 to-violet-700 p-6 text-white shadow-xl"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-indigo-200">Gestor visual</p><h1 className="mt-2 font-serif text-3xl font-bold">Presentaciones institucionales</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-indigo-100/80">Cada presentación es un documento independiente, editable y listo para publicar.</p></div><button type="button" onClick={openNew} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-indigo-900 shadow-lg"><Plus size={17} /> Nueva presentación</button></div>{error && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{error} <button type="button" onClick={() => void loadDocuments()} className="ml-2 underline">Reintentar</button></div>}<div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-slate-900 dark:text-white">Tu biblioteca</h2><p className="mt-1 text-sm text-slate-500">{loading ? 'Cargando…' : `${documents.length} presentación${documents.length === 1 ? '' : 'es'}`}</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500 dark:bg-white/10 dark:text-slate-300">{documents.filter((item) => item.is_published).length} publicadas</span></div>{!loading && !documents.length ? <div className="rounded-[1.6rem] border border-dashed border-slate-300 px-6 py-16 text-center dark:border-white/10"><FileText className="mx-auto text-indigo-500" size={30} /><h2 className="mt-3 font-bold text-slate-800 dark:text-white">Todavía no hay presentaciones</h2><p className="mt-1 text-sm text-slate-500">Crea una para comenzar a trabajar con bloques.</p><button type="button" onClick={openNew} className="mt-5 rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-black text-white">Crear presentación</button></div> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{documents.map((item) => <article key={item.id} className="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"><div className="relative flex aspect-video items-center justify-center overflow-hidden bg-slate-950 p-5 text-center text-white">{item.cover_url ? <img src={item.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" /> : <FileImage className="text-white/25" size={50} />}<div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent" /><div className="relative mt-auto w-full text-left"><span className={`rounded-full px-2 py-1 text-[10px] font-black ${item.is_published ? 'bg-emerald-400/20 text-emerald-200' : 'bg-amber-400/20 text-amber-200'}`}>{item.is_published ? 'Publicado' : 'Borrador'}</span><h3 className="mt-2 truncate text-lg font-bold">{item.title}</h3></div></div><div className="p-4"><p className="line-clamp-2 min-h-10 text-sm leading-6 text-slate-500 dark:text-slate-400">{item.description || 'Sin descripción.'}</p><div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-white/10"><span className="text-xs font-bold text-slate-500">{item.slides.length} diapositivas</span><div className="flex gap-1"><button type="button" onClick={() => openEdit(item)} className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300">Editar</button><button type="button" onClick={() => duplicateDocument(item)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-indigo-700 dark:hover:bg-white/10" aria-label="Duplicar"><Copy size={14} /></button><button type="button" onClick={() => void deleteDocument(item)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Eliminar"><Trash2 size={14} /></button></div></div></div></article>)}</div>}</div>;
 };
+
+export default PresentationEditor;

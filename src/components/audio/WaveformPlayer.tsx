@@ -36,9 +36,13 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [showChapters, setShowChapters] = useState(false);
   const [isHoveredWave, setIsHoveredWave] = useState(false);
   const [hoverPosition, setHoverPosition] = useState(0);
+  const [liveWaveform, setLiveWaveform] = useState<number[] | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
-  // Generate synthetic waveform bars for visual excellence (40 bars)
-  const waveformBars = useMemo(() => {
+  const fallbackWaveform = useMemo(() => {
     // Generate deterministic pseudo-random heights based on index
     const bars: number[] = [];
     for (let i = 0; i < 60; i++) {
@@ -46,6 +50,58 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       bars.push(Math.min(0.95, Math.max(0.15, height)));
     }
     return bars;
+  }, []);
+  const waveformBars = liveWaveform || fallbackWaveform;
+
+  const stopWaveformReader = () => {
+    if (animationFrameRef.current !== null) window.cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = null;
+  };
+
+  const readLiveWaveform = () => {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(data);
+    const bars = Array.from({ length: 60 }, (_, index) => {
+      const start = Math.floor(index * data.length / 60);
+      const end = Math.max(start + 1, Math.floor((index + 1) * data.length / 60));
+      let energy = 0;
+      for (let i = start; i < end; i += 1) energy += Math.abs(data[i] - 128);
+      return Math.max(0.12, Math.min(1, energy / ((end - start) * 46)));
+    });
+    setLiveWaveform(bars);
+    animationFrameRef.current = window.requestAnimationFrame(readLiveWaveform);
+  };
+
+  const startWaveformReader = () => {
+    const audio = audioRef.current;
+    if (!audio || typeof window === 'undefined' || !('AudioContext' in window)) return;
+    try {
+      const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+      const context = audioContextRef.current || new AudioContextCtor();
+      audioContextRef.current = context;
+      if (!sourceRef.current) {
+        sourceRef.current = context.createMediaElementSource(audio);
+        analyserRef.current = context.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        sourceRef.current.connect(analyserRef.current);
+        analyserRef.current.connect(context.destination);
+      }
+      void context.resume();
+      stopWaveformReader();
+      readLiveWaveform();
+    } catch (error) {
+      console.warn('No fue posible activar el waveform dinámico; se conserva la vista de respaldo.', error);
+    }
+  };
+
+  useEffect(() => () => {
+    stopWaveformReader();
+    sourceRef.current?.disconnect();
+    analyserRef.current?.disconnect();
+    void audioContextRef.current?.close();
   }, []);
 
   useEffect(() => {
@@ -63,7 +119,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(err => console.error("Audio playback error:", err));
+      audioRef.current.play().then(startWaveformReader).catch(err => console.error("Audio playback error:", err));
     }
     setIsPlaying(!isPlaying);
   };
@@ -125,12 +181,15 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       <audio
         ref={audioRef}
         src={audioUrl}
+        crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => {
+          stopWaveformReader();
           setIsPlaying(false);
           if (onEnded) onEnded();
         }}
+        onPause={stopWaveformReader}
       />
 
       <div className="flex flex-col md:flex-row items-center gap-5">

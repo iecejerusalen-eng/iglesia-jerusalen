@@ -147,6 +147,7 @@ const CertificatesManager = lazyWithRetry(() => import('../pages/admin/Certifica
 const CrmSubmissions = lazyWithRetry(() => import('../pages/admin/CrmSubmissions'));
 const ContentHub = lazyWithRetry(() => import('../pages/admin/ContentHub'));
 const ContactInbox = lazyWithRetry(() => import('../pages/admin/ContactInbox'));
+const CommunicationCenter = lazyWithRetry(() => import('../pages/admin/CommunicationCenter'));
 const AuditLogViewer = lazyWithRetry(() => import('../pages/admin/AuditLogViewer'));
 const SchedulesManager = lazyWithRetry(() => import('../pages/admin/SchedulesManager'));
 const WorshipPlanner = lazyWithRetry(() => import('../pages/admin/WorshipPlanner'));
@@ -276,6 +277,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/comunicaciones" element={<CommunicationCenter />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="podcast" />}><Route element={<AdminLayout />}><Route path="/admin/podcast" element={<PodcastManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="families" />}><Route element={<AdminLayout />}><Route path="/admin/familias" element={<FamiliesManager />} /></Route></Route>

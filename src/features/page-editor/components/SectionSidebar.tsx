@@ -19,11 +19,9 @@ export const SectionSidebar = ({
   onDeleteSection
 }: SectionSidebarProps) => {
   return (
-    <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-4 rounded-2xl shadow-2xs flex flex-col space-y-3">
+    <div className="lg:col-span-1 lg:sticky lg:top-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-4 rounded-2xl shadow-sm flex flex-col space-y-3">
       <div className="flex justify-between items-center px-1">
-        <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider">
-          Estructura de Secciones
-        </span>
+        <div><span className="block text-[10px] text-slate-450 font-bold uppercase tracking-wider">Estructura</span><span className="text-xs font-semibold text-slate-400">{sections.length} secciones</span></div>
         <button
           onClick={onAddSection}
           className="text-primary hover:bg-blue-50/50 p-1 rounded-lg transition-colors cursor-pointer flex items-center gap-0.5 text-[10px] font-bold uppercase"
@@ -55,10 +53,8 @@ export const SectionSidebar = ({
                   onClick={() => onSelectSection(sec.id)}
                   className="flex-grow text-left px-2.5 py-1.5 text-xs font-bold flex flex-col gap-0.5 min-w-0"
                 >
-                  <span className="truncate">{sec.name}</span>
-                  <span className="text-[9px] font-normal text-slate-400 dark:text-gray-500">
-                    {isSystemComponent ? 'Módulo Especial' : 'Contenido por Bloques'}
-                  </span>
+                  <span className="flex items-center gap-2 truncate"><span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[9px] font-black text-slate-500 dark:bg-white/5">{String(idx + 1).padStart(2, '0')}</span>{sec.name}</span>
+                  <span className="pl-7 text-[9px] font-normal text-slate-400 dark:text-gray-500">{isSystemComponent ? 'Módulo conectado' : 'Bloques editables'}</span>
                 </button>
                 
                 {/* Action buttons visible on hover or if active */}
