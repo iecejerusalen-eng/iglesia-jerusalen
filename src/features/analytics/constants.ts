@@ -10,5 +10,7 @@ export const PRESETS: Widget[] = [
   { id: 'p5', title: 'Métodos de Pago Preferidos', source: 'donations', dimension: 'payment_method', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'pie' },
   { id: 'p6', title: 'Crecimiento de Miembros (Mes)', source: 'members', dimension: 'month', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'line' },
   { id: 'p7', title: 'Estado del Inventario', source: 'inventory', dimension: 'status', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'bar' },
-  { id: 'p8', title: 'Respuestas a Cuestionarios (Mes)', source: 'form_responses', dimension: 'month', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'area' }
+  { id: 'p8', title: 'Respuestas a Cuestionarios (Mes)', source: 'form_responses', dimension: 'month', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'area' },
+  { id: 'p9', title: 'Atención Pastoral (Peticiones)', source: 'petitions', dimension: 'status', metric: 'Conteo', aggregation: 'count', targetField: '', chartType: 'pie' },
+  { id: 'p10', title: 'Ventas E-Commerce (Métodos de Pago)', source: 'orders', dimension: 'payment_method', metric: 'Suma Montos', aggregation: 'sum', targetField: 'total', chartType: 'bar' },
 ];
