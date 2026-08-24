@@ -330,6 +330,7 @@ export interface Sermon {
   thumbnail_url?: string | null;
   video_url?: string | null;
   metadata?: {
+    cover_media_type?: 'image' | 'video' | null;
     cover_image_url?: string | null;
     cover_video_url?: string | null;
     [key: string]: unknown;

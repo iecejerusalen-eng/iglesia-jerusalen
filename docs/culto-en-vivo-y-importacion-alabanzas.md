@@ -77,8 +77,9 @@ El cierre debe ser idempotente: repetirlo no puede crear dos prédicas.
 1. **Base ya disponible:** URL pública, CTA desde Comunidad, importador editable, catálogo de artistas y conexión Holyrics.
 2. **Sesión persistente:** implementada en `20260824040000_live_service_sessions.sql`, con sesión activa, agenda pública, resumen editorial, encuestas, preguntas moderables y suscripción Realtime. El control administrativo está disponible en `/admin/culto-en-vivo`.
 3. **Participación editorial:** implementada la creación/publicación/cierre de encuestas y la moderación de preguntas desde `/admin/culto-en-vivo`. El contenido se escribe manualmente y el bloque de resumen automático está desactivado para esta experiencia.
-4. **Moderación avanzada:** chat persistente, límites anti-spam, historial de participación y permisos separados para anfitrión, moderador y editor.
-5. **Cierre:** automatización idempotente hacia `sermons`, reporte del culto y reutilización de los bloques en la página pública de la prédica.
+4. **Producción y asistencia:** implementadas múltiples URLs de transmisión, selector de plataforma, estado vacío sin video, contador agregado de asistencia y peticiones de oración sin nombres en `20260824050000_live_streams_attendance_prayer.sql`.
+5. **Moderación avanzada:** chat persistente, límites anti-spam, historial de participación y permisos separados para anfitrión, moderador y editor.
+6. **Cierre:** automatización idempotente hacia `sermons`, reporte del culto y reutilización de los bloques en la página pública de la prédica.
 
 ### Activación de la fase 2
 

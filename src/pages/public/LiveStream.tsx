@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import {
-  MessageSquare, Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame
+  MessageSquare, Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame, Radio
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
@@ -13,6 +14,7 @@ interface LiveSession {
   status: 'scheduled' | 'live' | 'ended' | 'archived';
   title: string;
   stream_url: string | null;
+  stream_links: unknown;
   current_item_id: string | null;
   active_song_id: string | null;
   content_blocks: unknown[];
@@ -44,6 +46,56 @@ interface LiveQuestion {
   answer: string | null;
 }
 
+interface StreamLink {
+  platform: 'youtube' | 'facebook' | 'vimeo' | 'twitch' | 'other';
+  url: string;
+  label?: string;
+}
+
+interface LiveSong {
+  id: string;
+  title: string;
+  artist: string | null;
+  lyrics: string | null;
+  has_chords: boolean;
+}
+
+function getStreamLinks(value: unknown, legacyUrl: string | null): StreamLink[] {
+  const source = Array.isArray(value) ? value : [];
+  const links = source.map((item): StreamLink | null => {
+    if (!item || typeof item !== 'object') return null;
+    const record = item as Record<string, unknown>;
+    if (typeof record.url !== 'string' || !record.url.startsWith('https://')) return null;
+    const platform = record.platform;
+    const validPlatform: StreamLink['platform'] = platform === 'youtube' || platform === 'facebook' || platform === 'vimeo' || platform === 'twitch' ? platform : 'other';
+    return { platform: validPlatform, url: record.url, label: typeof record.label === 'string' ? record.label : undefined };
+  }).filter((item): item is StreamLink => item !== null);
+  if (links.length || !legacyUrl?.startsWith('https://')) return links;
+  return [{ platform: legacyUrl.includes('youtube') ? 'youtube' : 'other', url: legacyUrl }];
+}
+
+function getEmbedUrl(link: StreamLink): string | null {
+  try {
+    const url = new URL(link.url);
+    if (link.platform === 'youtube') {
+      const videoId = url.hostname.includes('youtu.be') ? url.pathname.slice(1) : url.searchParams.get('v') || url.pathname.split('/').filter(Boolean).pop();
+      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1` : null;
+    }
+    if (link.platform === 'facebook') return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link.url)}&show_text=false`;
+    if (link.platform === 'vimeo') {
+      const videoId = url.pathname.split('/').filter(Boolean).pop();
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+    if (link.platform === 'twitch') {
+      const channel = url.pathname.split('/').filter(Boolean).pop();
+      return channel ? `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${window.location.hostname}` : null;
+    }
+  } catch (error) {
+    console.error('No se pudo interpretar el enlace de transmisión.', error);
+  }
+  return null;
+}
+
 function asLiveSession(value: unknown): LiveSession | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
@@ -54,6 +106,7 @@ function asLiveSession(value: unknown): LiveSession | null {
     status: record.status as LiveSession['status'],
     title: record.title,
     stream_url: typeof record.stream_url === 'string' ? record.stream_url : null,
+    stream_links: record.stream_links,
     current_item_id: typeof record.current_item_id === 'string' ? record.current_item_id : null,
     active_song_id: typeof record.active_song_id === 'string' ? record.active_song_id : null,
     content_blocks: Array.isArray(record.content_blocks) ? record.content_blocks : [],
@@ -119,6 +172,9 @@ export default function LiveStream() {
   const [questionName, setQuestionName] = useState('');
   const [liveDataError, setLiveDataError] = useState<string | null>(null);
   const [liveDataReady, setLiveDataReady] = useState(false);
+  const [activeStreamIndex, setActiveStreamIndex] = useState(0);
+  const [attendanceCount, setAttendanceCount] = useState<number | null>(null);
+  const [activeSong, setActiveSong] = useState<LiveSong | null>(null);
 
   // Auto-scroll chat
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -132,7 +188,7 @@ export default function LiveStream() {
     const loadLiveData = async () => {
       const sessionResult = await supabase
         .from('live_service_sessions')
-        .select('id,service_id,status,title,stream_url,current_item_id,active_song_id,content_blocks,live_summary,started_at,ended_at,archived_sermon_id')
+        .select('id,service_id,status,title,stream_url,stream_links,current_item_id,active_song_id,content_blocks,live_summary,started_at,ended_at,archived_sermon_id')
         .in('status', ['scheduled', 'live'])
         .order('started_at', { ascending: false, nullsFirst: false })
         .limit(1)
@@ -152,14 +208,15 @@ export default function LiveStream() {
         return;
       }
 
-      const [agendaResult, pollsResult, questionsResult] = await Promise.all([
+      const [agendaResult, pollsResult, questionsResult, attendanceResult] = await Promise.all([
         supabase.from('worship_service_items').select('id,position,item_type,title,duration_minutes,song_id').eq('service_id', session.service_id).order('position'),
         supabase.from('live_polls').select('id,session_id,question,options').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
         supabase.from('live_questions').select('id,question,answer').eq('session_id', session.id).in('status', ['approved', 'answered']).order('created_at', { ascending: false }).limit(20),
+        supabase.from('live_service_attendance').select('attendance_count').eq('session_id', session.id).maybeSingle(),
       ]);
 
       if (!mounted) return;
-      const firstError = agendaResult.error ?? pollsResult.error ?? questionsResult.error;
+      const firstError = agendaResult.error ?? pollsResult.error ?? questionsResult.error ?? attendanceResult.error;
       if (firstError) {
         console.error('No se pudo cargar el contenido interactivo del culto.', firstError);
         setLiveDataError(firstError.message);
@@ -167,8 +224,18 @@ export default function LiveStream() {
         setAgenda((agendaResult.data ?? []) as LiveAgendaItem[]);
         setPolls((pollsResult.data ?? []) as LivePoll[]);
         setApprovedQuestions((questionsResult.data ?? []) as LiveQuestion[]);
+        setAttendanceCount(attendanceResult.data?.attendance_count ?? 0);
       }
       setLiveDataReady(true);
+
+      if (session.active_song_id) {
+        const songResult = await supabase.from('songs').select('id,title,artist,lyrics,has_chords').eq('id', session.active_song_id).maybeSingle();
+        if (songResult.error) {
+          console.error('No se pudo cargar la alabanza activa del culto.', songResult.error);
+        } else {
+          setActiveSong((songResult.data ?? null) as LiveSong | null);
+        }
+      }
     };
 
     void loadLiveData();
@@ -237,9 +304,26 @@ export default function LiveStream() {
     toast.success('¡Glorioso! Hemos registrado tu decisión por Cristo. Un pastor te contactará pronto.');
   };
 
-  const handlePrayerSubmit = (e: React.FormEvent) => {
+  const handlePrayerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prayerRequest.trim()) return;
+
+    if (!liveSession) {
+      toast.error('No hay un culto activo para recibir peticiones en este momento.');
+      return;
+    }
+
+    const { error } = await supabase.from('live_prayer_requests').insert({
+      session_id: liveSession.id,
+      request: prayerRequest.trim(),
+      is_private: isPrivatePrayer,
+      status: 'pending',
+    });
+    if (error) {
+      console.error('No se pudo enviar la petición de oración del culto.', error);
+      toast.error(`No se pudo enviar la petición: ${error.message}`);
+      return;
+    }
 
     setPrayerSubmitted(true);
     toast.success('Tu petición de oración ha sido recibida por el equipo pastoral.');
@@ -282,7 +366,9 @@ export default function LiveStream() {
     toast.success('Pregunta enviada para moderación.');
   };
 
-  const streamUrl = liveSession?.stream_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  const streamLinks = getStreamLinks(liveSession?.stream_links, liveSession?.stream_url ?? null);
+  const activeStream = streamLinks[activeStreamIndex] ?? streamLinks[0] ?? null;
+  const activeEmbedUrl = activeStream ? getEmbedUrl(activeStream) : null;
   const currentAgendaItem = agenda.find((item) => item.id === liveSession?.current_item_id) ?? agenda[0] ?? null;
   const pollOptions = (poll: LivePoll): string[] => Array.isArray(poll.options) ? poll.options.filter((option): option is string => typeof option === 'string') : [];
 
@@ -304,14 +390,15 @@ export default function LiveStream() {
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-widest text-red-500 bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">
-                  🔴 EN VIVO
+                <span className={`text-[11px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${liveSession?.status === 'live' ? 'border-red-500/20 bg-red-500/10 text-red-500' : 'border-slate-500/20 bg-slate-500/10 text-slate-400'}`}>
+                  {liveSession?.status === 'live' ? '🔴 EN VIVO' : 'PRÓXIMAMENTE'}
                 </span>
                 <span className="text-xs text-slate-400">Servicio Dominical de Alabanza y Predicación</span>
               </div>
               <h1 className="font-serif text-2xl font-bold text-white mt-0.5">
                 {liveSession?.title || 'Culto en Vivo · Iglesia Jerusalén'}
               </h1>
+              {attendanceCount !== null && <p className="mt-1 text-xs text-emerald-300">{attendanceCount} personas en el templo ahora</p>}
             </div>
           </div>
 
@@ -345,7 +432,7 @@ export default function LiveStream() {
           
           {/* VIDEO PLAYER (LEFT 8 COLS) */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="relative aspect-video rounded-3xl overflow-hidden bg-slate-900 border border-white/10 shadow-2xl group">
+            <div className={`relative rounded-3xl border border-white/10 bg-slate-900 shadow-2xl group ${activeEmbedUrl ? 'aspect-video overflow-hidden' : 'min-h-[22rem]'}`}>
               {/* Floating Emoticons Container */}
               <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
                 {reactions.map(r => (
@@ -359,15 +446,16 @@ export default function LiveStream() {
                 ))}
               </div>
 
-              {/* Video Embed */}
-              <iframe
-                src={streamUrl.includes('youtube.com/watch?v=') ? streamUrl.replace('watch?v=', 'embed/') : streamUrl}
-                title="Transmisión en Vivo Iglesia Jerusalén"
-                className="w-full h-full border-0"
+              {activeEmbedUrl ? <iframe
+                src={activeEmbedUrl}
+                title={`Transmisión ${activeStream?.label || activeStream?.platform || ''} · Iglesia Jerusalén`}
+                className="h-full w-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-              />
+              /> : <div className="flex min-h-[22rem] flex-col items-center justify-center px-6 text-center"><div className="flex size-16 items-center justify-center rounded-3xl bg-amber-400/10 text-amber-300"><Radio size={28} /></div><h2 className="mt-5 font-serif text-2xl font-bold text-white">El culto aún no tiene una transmisión configurada</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">Aquí aparecerá YouTube, Facebook, Vimeo o Twitch cuando el equipo agregue un enlace desde el control administrativo.</p></div>}
             </div>
+
+            {streamLinks.length > 1 && <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-slate-900/80 p-3"><span className="mr-1 flex items-center text-xs font-bold text-slate-400">Ver en:</span>{streamLinks.map((link, index) => <button key={`${link.url}-${index}`} type="button" onClick={() => setActiveStreamIndex(index)} className={`rounded-xl px-3 py-2 text-xs font-bold transition ${index === activeStreamIndex ? 'bg-amber-400 text-slate-950' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'}`}>{link.label || link.platform}</button>)}</div>}
 
             {/* QUICK REACTION FLOATING TOOLBAR */}
             <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -387,6 +475,8 @@ export default function LiveStream() {
                 ))}
               </div>
             </div>
+
+            {activeSong && <section className="overflow-hidden rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[.12] to-slate-900/90 p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Alabanza actual</p><h2 className="mt-1 font-serif text-2xl font-bold text-white">{activeSong.title}</h2>{activeSong.artist && <p className="mt-1 text-xs text-slate-400">{activeSong.artist}</p>}</div><Link to="/recursos/alabanzas" className="rounded-xl border border-emerald-300/20 px-3 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-300/10">Abrir biblioteca</Link></div><div className="mt-4 max-h-56 overflow-y-auto rounded-2xl bg-slate-950/60 p-4 text-sm leading-7 text-slate-200" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeSong.lyrics || 'El equipo aún no ha publicado la letra de esta alabanza.') }} /></section>}
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">

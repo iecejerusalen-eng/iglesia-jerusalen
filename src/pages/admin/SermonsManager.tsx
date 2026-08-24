@@ -26,6 +26,7 @@ const sermonSchema = z.object({
   audio_source_type: z.enum(['upload', 'url', 'embed']).optional().nullable(),
   cover_image_url: z.string().url('Ingresa una URL de imagen válida').or(z.literal('')).optional().nullable(),
   cover_video_url: z.string().url('Ingresa una URL de video válida').or(z.literal('')).optional().nullable(),
+  cover_media_type: z.enum(['image', 'video']),
   content: z.string().min(1, 'El contenido del mensaje es obligatorio'),
   category_id: z.string().optional().nullable(),
   speaker_id: z.string().optional().nullable(),
@@ -102,6 +103,7 @@ const SermonsManager = () => {
       youtube_url: '',
       cover_image_url: '',
       cover_video_url: '',
+      cover_media_type: 'image',
       content: '',
       category_id: '',
       speaker_id: '',
@@ -114,6 +116,7 @@ const SermonsManager = () => {
   });
 
   const watchedYoutubeUrl = useWatch({ control, name: 'youtube_url' });
+  const watchedCoverMediaType = useWatch({ control, name: 'cover_media_type' });
   const youtubeId = getYoutubeId(watchedYoutubeUrl);
 
   useEffect(() => {
@@ -186,6 +189,7 @@ const SermonsManager = () => {
       youtube_url: '',
       cover_image_url: '',
       cover_video_url: '',
+      cover_media_type: 'image',
       content: '',
       category_id: '',
       speaker_id: '',
@@ -202,6 +206,7 @@ const SermonsManager = () => {
       youtube_url: sermon.youtube_url || '',
       cover_image_url: sermon.metadata?.cover_image_url || '',
       cover_video_url: sermon.metadata?.cover_video_url || '',
+      cover_media_type: sermon.metadata?.cover_media_type || (sermon.metadata?.cover_image_url ? 'image' : 'video'),
       content: sermon.content || '',
       category_id: sermon.category_id || '',
       speaker_id: sermon.speaker_id || '',
@@ -265,6 +270,7 @@ const SermonsManager = () => {
           ...(editingSermon?.metadata || {}),
           cover_image_url: data.cover_image_url || null,
           cover_video_url: data.cover_video_url || null,
+          cover_media_type: data.cover_media_type,
         },
       };
 
@@ -667,6 +673,18 @@ const SermonsManager = () => {
             </div>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Usar como portada</span>
+                  <div className="flex flex-wrap gap-3">
+                    {(['image', 'video'] as const).map((type) => (
+                      <label key={type} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${watchedCoverMediaType === type ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500 dark:border-white/10'}`}>
+                        <input type="radio" value={type} {...register('cover_media_type')} disabled={readOnly} />
+                        {type === 'image' ? 'Imagen' : 'Vídeo'}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">La portada de vídeo se mostrará como miniatura y no se reproducirá automáticamente en los listados.</p>
+                </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título de la Prédica</label>
                   <input type="text" {...register('title')} disabled={readOnly} className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none shadow-sm" />

@@ -17,7 +17,7 @@ import {
   AutocompleteGroup,
   type AutocompleteItemType,
 } from '@/components/ui/autocomplete';
-import VideoPlayer from '@/components/ui/video-player';
+import ContentCover, { getCoverMediaType } from '../../components/public/ContentCover';
 import PremiumSermonsHero from './components/PremiumSermonsHero';
 
 const MOCK_SERMONS: Sermon[] = [
@@ -423,17 +423,11 @@ const Sermons = () => {
                     ></div>
                   )}
 
-                  {/* Contenedor de Video (Opcional) */}
-                  {sermon.youtube_url && (
+                  {/* Portada contextual: nunca reproduce automáticamente en el listado */}
+                  {(sermon.youtube_url || sermon.thumbnail_url || sermon.metadata?.cover_image_url || sermon.metadata?.cover_video_url) && (
                     <div className={`relative z-10 ${viewMode === 'list' ? 'w-full md:w-5/12 shrink-0 flex flex-col' : 'w-full flex flex-col'}`}>
                       <div className="relative rounded-[1.5rem] overflow-hidden shadow-inner ring-1 ring-black/5 dark:ring-white/10 bg-slate-100 dark:bg-slate-950 aspect-video group-hover:shadow-lg transition-shadow duration-500">
-                        <div className="absolute inset-0">
-                          <VideoPlayer
-                            youtubeUrl={sermon.youtube_url}
-                            title={sermon.title}
-                            className="w-full h-full"
-                          />
-                        </div>
+                        <ContentCover title={sermon.title} imageUrl={sermon.metadata?.cover_image_url || sermon.thumbnail_url} videoUrl={sermon.metadata?.cover_video_url || sermon.youtube_url} mediaType={getCoverMediaType(sermon.metadata?.cover_media_type, sermon.metadata?.cover_image_url || sermon.thumbnail_url, sermon.metadata?.cover_video_url || sermon.youtube_url)} className="h-full" />
                       </div>
                     </div>
                   )}
