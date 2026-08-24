@@ -61,6 +61,15 @@ CREATE INDEX IF NOT EXISTS strategic_metrics_objective_idx ON public.strategic_m
 CREATE INDEX IF NOT EXISTS strategic_initiatives_objective_idx ON public.strategic_initiatives(objective_id, status, due_date);
 CREATE INDEX IF NOT EXISTS strategic_reviews_objective_idx ON public.strategic_reviews(objective_id, reviewed_at DESC);
 
+-- Concede al Centro de Estrategia la misma base de acceso que ya existe para
+-- el mapa territorial; los administradores globales siguen teniendo acceso
+-- por la función de permisos existente.
+UPDATE public.role_permissions
+SET permissions = permissions || jsonb_build_object(
+  'strategy', COALESCE(permissions->'map', '{"view": false, "edit": false}'::jsonb)
+)
+WHERE NOT (permissions ? 'strategy');
+
 CREATE OR REPLACE FUNCTION private.touch_strategic_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql

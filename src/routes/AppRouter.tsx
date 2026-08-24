@@ -106,6 +106,7 @@ const MembersManager = lazyWithRetry(() => import('../pages/admin/MembersManager
 const EventsManager = lazyWithRetry(() => import('../pages/admin/EventsManager'));
 const ChurchAnnouncementsManager = lazyWithRetry(() => import('../pages/admin/ChurchAnnouncementsManager'));
 const StrategicMap = lazyWithRetry(() => import('../pages/admin/StrategicMap'));
+const StrategyCenter = lazyWithRetry(() => import('../pages/admin/StrategyCenter'));
 const PageEditor = lazyWithRetry(() => import('../pages/admin/PageEditor'));
 const AnalyticsDashboard = lazyWithRetry(() => import('../pages/admin/AnalyticsDashboard'));
 const NotificationsManager = lazyWithRetry(() => import('../pages/admin/NotificationsManager'));
@@ -276,6 +277,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="checkin_kiosk_admin" />}><Route element={<AdminLayout />}><Route path="/admin/checkin-kiosk" element={<QRCheckInKiosk />} /></Route></Route>
         <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
+        <Route element={<ProtectedRoute module="strategy" />}><Route element={<AdminLayout />}><Route path="/admin/estrategia" element={<StrategyCenter />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/comunicaciones" element={<CommunicationCenter />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>

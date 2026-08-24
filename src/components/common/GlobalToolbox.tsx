@@ -105,8 +105,10 @@ export default function GlobalToolbox() {
   const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
   const dragFrameRef = useRef<number | null>(null);
   const launcherHideTimerRef = useRef<number | null>(null);
+  const panelHideTimerRef = useRef<number | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [isLauncherVisible, setIsLauncherVisible] = useState(false);
+  const [isPanelPeeked, setIsPanelPeeked] = useState(false);
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 
   const availableTools = useMemo(
@@ -138,6 +140,27 @@ export default function GlobalToolbox() {
     }, 4200) as unknown as number;
   }, [clearLauncherHideTimer, store.isOpen]);
 
+  const clearPanelHideTimer = useCallback(() => {
+    if (panelHideTimerRef.current !== null) {
+      window.clearTimeout(panelHideTimerRef.current);
+      panelHideTimerRef.current = null;
+    }
+  }, []);
+
+  const revealPanel = useCallback(() => {
+    clearPanelHideTimer();
+    setIsPanelPeeked(false);
+  }, [clearPanelHideTimer]);
+
+  const schedulePanelHide = useCallback(() => {
+    clearPanelHideTimer();
+    if (!store.isOpen || hasBackgroundActivity || window.innerWidth < 640) return;
+    panelHideTimerRef.current = window.setTimeout(() => {
+      setIsPanelPeeked(true);
+      panelHideTimerRef.current = null;
+    }, 4200) as unknown as number;
+  }, [clearPanelHideTimer, hasBackgroundActivity, store.isOpen]);
+
   useEffect(() => {
     if (store.activePanel !== 'hub' && !availableToolIds.has(store.activePanel)) store.setActivePanel('hub');
   }, [availableToolIds, store]);
@@ -164,6 +187,28 @@ export default function GlobalToolbox() {
   }, [revealLauncher, store.isOpen]);
 
   useEffect(() => () => clearLauncherHideTimer(), [clearLauncherHideTimer]);
+  useEffect(() => () => clearPanelHideTimer(), [clearPanelHideTimer]);
+
+  useEffect(() => {
+    if (!store.isOpen || window.innerWidth < 640) return undefined;
+    const revealFromEdge = (event: PointerEvent) => {
+      if (event.clientX >= window.innerWidth - 34) revealPanel();
+    };
+    window.addEventListener('pointermove', revealFromEdge, { passive: true });
+    return () => window.removeEventListener('pointermove', revealFromEdge);
+  }, [revealPanel, store.isOpen]);
+
+  useEffect(() => {
+    if (!store.isOpen) {
+      Promise.resolve().then(() => setIsPanelPeeked(false));
+      clearPanelHideTimer();
+      return;
+    }
+    Promise.resolve().then(() => {
+      revealPanel();
+      schedulePanelHide();
+    });
+  }, [clearPanelHideTimer, revealPanel, schedulePanelHide, store.isOpen]);
 
   useEffect(() => () => {
     if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
@@ -311,9 +356,24 @@ export default function GlobalToolbox() {
         data-toolbox-panel
         style={panelStyle}
         tabIndex={-1}
-        className={`fixed z-[90] flex max-h-[calc(100dvh-16px)] flex-col overflow-hidden border border-white/10 bg-slate-950/88 text-white shadow-[0_28px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-[width,height,opacity,box-shadow] duration-200 focus:outline-none motion-reduce:transition-none max-sm:!inset-x-2 max-sm:!bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:!top-auto max-sm:!w-auto max-sm:max-h-[calc(100dvh-5.5rem)] max-sm:rounded-[1.5rem] ${store.position ? '' : 'bottom-6 right-6'} ${store.isMinimized ? 'w-[280px] rounded-2xl' : 'w-[min(400px,calc(100vw-16px))] rounded-[1.75rem]'}`}
+        onMouseEnter={revealPanel}
+        onMouseLeave={schedulePanelHide}
+        onFocusCapture={revealPanel}
+        className={`fixed z-[90] flex max-h-[calc(100dvh-16px)] flex-col overflow-hidden border border-white/10 bg-slate-950/88 text-white shadow-[0_28px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-[width,height,transform,box-shadow] duration-300 focus:outline-none motion-reduce:transition-none max-sm:!inset-x-2 max-sm:!bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:!top-auto max-sm:!w-auto max-sm:max-h-[calc(100dvh-5.5rem)] max-sm:rounded-[1.5rem] ${store.position ? '' : 'bottom-6 right-6'} ${store.isMinimized ? 'w-[280px] rounded-2xl' : 'w-[min(400px,calc(100vw-16px))] rounded-[1.75rem]'} ${isPanelPeeked && !store.position ? 'translate-x-[calc(100%-2rem)]' : 'translate-x-0'}`}
         aria-label="Centro de herramientas global"
       >
+        {isPanelPeeked && !store.position && (
+          <button
+            type="button"
+            onClick={revealPanel}
+            onFocus={revealPanel}
+            className="absolute left-0 top-1/2 z-20 flex h-16 w-8 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 border-white/15 bg-slate-950/95 text-white/80 shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300"
+            aria-label="Mostrar herramientas"
+            title="Mostrar herramientas"
+          >
+            <ChevronLeft size={17} aria-hidden="true" />
+          </button>
+        )}
         <header className="grid min-h-14 grid-cols-[44px_1fr_auto] items-center border-b border-white/10 bg-white/[0.035] px-2">
           <button
             type="button"

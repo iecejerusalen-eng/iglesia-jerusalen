@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Layers3, LocateFixed, Menu, RefreshCw, Search, UsersRound, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Layers3, LocateFixed, Menu, RefreshCw, Search, Target, UsersRound, X } from 'lucide-react';
 import { useStrategicMapData } from '../../features/strategic-map/hooks/useStrategicMapData';
 import { useMapMutations } from '../../features/strategic-map/hooks/useMapMutations';
 import { MapSidebar } from '../../features/strategic-map/components/MapSidebar';
@@ -257,10 +257,10 @@ const StrategicMap = () => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-primary dark:text-church-gold-bright">
-            Mapa Estratégico y Análisis Espacial
+            Mapa Territorial y Cobertura Pastoral
           </h1>
           <p className="text-slate-500 dark:text-gray-450 text-xs mt-1 leading-relaxed font-medium">
-            Zonificación geográfica de miembros, células de oración e Iglesias de la congregación.
+            Visualiza cobertura pastoral, células, sectores y oportunidades de expansión sin mezclarlo con los objetivos institucionales.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -273,6 +273,9 @@ const StrategicMap = () => {
           <button type="button" onClick={() => void refetch()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-primary/30 hover:text-primary dark:border-white/10 dark:bg-slate-800 dark:text-slate-200">
             <RefreshCw size={15} /> Actualizar
           </button>
+          <a href="/admin/estrategia" className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800">
+            <Target size={15} /> Centro de estrategia
+          </a>
         <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 dark:border-white/10 shadow-2xs">
           <button
             type="button"

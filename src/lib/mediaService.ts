@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import { uploadFileToCloudinary } from './cloudinaryService';
+export { getPreferredMediaProvider } from './mediaProviderPreference';
 import { getPreferredMediaProvider } from './mediaProviderPreference';
 
 export type MediaProvider = 'cloudinary' | 'supabase' | 'r2';

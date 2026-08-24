@@ -189,7 +189,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
     }
     const resetHandle = window.setTimeout(() => setIsPeeked(false), 0);
     const revealFromEdge = (event: PointerEvent) => {
-      if (event.clientX <= 28) revealSidebar();
+      if (event.clientX <= 48) revealSidebar();
     };
     window.addEventListener('pointermove', revealFromEdge, { passive: true });
     return () => {
@@ -543,8 +543,11 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
       className={`fixed top-0 bottom-0 left-0 z-20 ${isFloating ? 'w-auto' : sidebarWidthClass} hidden md:block ${isAutoHide ? 'transition-transform duration-300 ease-out motion-reduce:transition-none' : 'transition-all duration-500'} ${isAutoHide && !isPeeked ? '-translate-x-[calc(100%-1.25rem)]' : 'translate-x-0'}`}
       onMouseEnter={revealSidebar}
       onMouseLeave={scheduleSidebarHide}
+      onPointerMove={(event) => { if (event.clientX <= 48) revealSidebar(); }}
       onFocusCapture={revealSidebar}
-      onBlurCapture={scheduleSidebarHide}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) scheduleSidebarHide();
+      }}
     >
       {sidebarContent}
       {isAutoHide && !isPeeked && (

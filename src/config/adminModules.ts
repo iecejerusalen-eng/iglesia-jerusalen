@@ -36,6 +36,7 @@ import {
   Activity,
   LibraryBig,
   ClipboardCheck,
+  Target,
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -174,11 +175,20 @@ export const ADMIN_MODULES: AdminModule[] = [
   },
   {
     id: 'map',
-    label: 'Mapa Estratégico',
-    name: 'Mapa Estratégico',
+    label: 'Mapa Territorial y Cobertura Pastoral',
+    name: 'Mapa Territorial',
     path: '/admin/mapa-estrategico',
     icon: Compass,
     group: 'personas'
+  },
+  {
+    id: 'strategy',
+    label: 'Centro de Estrategia',
+    name: 'Centro de Estrategia',
+    path: '/admin/estrategia',
+    icon: Target,
+    group: 'inicio',
+    keywords: ['objetivos', 'indicadores', 'metas', 'iniciativas', 'plan estratégico']
   },
   {
     id: 'appearance',
