@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { BookOpen, ChevronRight, FileText, LockKeyhole, MessageCircle, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronRight, LockKeyhole, MessageCircle, Sparkles } from 'lucide-react';
 import { fetchEditorialSpace, isEditorialSchemaMissing } from '../../features/editorial/service';
 import type { EditorialSpaceFeed } from '../../features/editorial/types';
+import ContentCover from '../../components/public/ContentCover';
 
 export default function EditorialSpacePage() {
   const { spaceSlug = '' } = useParams<{ spaceSlug: string }>();
@@ -42,7 +43,7 @@ export default function EditorialSpacePage() {
       {feed.documents.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 p-14 text-center text-slate-500 dark:border-white/15">Todavía no hay publicaciones disponibles.</div> : <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{feed.documents.map((document) => {
         const category = document.category_id ? categories.get(document.category_id) : null;
         return <Link key={document.id} to={`/publicaciones/${feed.space.slug}/${document.id}`} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5">
-          <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-blue-950 to-indigo-900">{document.cover_image_url ? <img src={document.cover_image_url} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center"><FileText size={42} className="text-white/35" /></div>}<div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />{document.is_locked && <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full border border-white/15 bg-slate-950/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xl"><LockKeyhole size={12} /> {document.visibility === 'members' ? 'Integrantes' : document.visibility === 'editors' ? 'Equipo' : 'Protegido'}</span>}</div>
+          <div className="relative"><ContentCover title={document.title} imageUrl={document.cover_image_url} videoUrl={document.cover_video_url} mediaType={document.cover_media_type} /><div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent pointer-events-none" />{document.is_locked && <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full border border-white/15 bg-slate-950/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xl"><LockKeyhole size={12} /> {document.visibility === 'members' ? 'Integrantes' : document.visibility === 'editors' ? 'Equipo' : 'Protegido'}</span>}</div>
           <div className="p-5">{category && <span className="text-[10px] font-black uppercase tracking-[.16em]" style={{ color: category.color }}>{category.name}</span>}<h3 className="mt-2 font-serif text-xl font-bold group-hover:text-blue-700 dark:group-hover:text-amber-300">{document.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{document.excerpt}</p><span className="mt-5 flex items-center gap-1 text-xs font-black text-blue-700 dark:text-amber-300">Abrir <ChevronRight size={14} /></span></div>
         </Link>;
       })}</div>}

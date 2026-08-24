@@ -40,6 +40,8 @@ export interface EditorialDocumentSummary {
   slug: string;
   excerpt: string;
   cover_image_url: string | null;
+  cover_media_type: 'image' | 'video';
+  cover_video_url: string | null;
   visibility: EditorialVisibility;
   is_locked: boolean;
   is_featured: boolean;
@@ -76,4 +78,3 @@ export interface EditorialEditor {
   editor_role: EditorialEditorRole;
   profiles?: { first_name: string | null; last_name: string | null; email: string | null; photo_url: string | null } | null;
 }
-

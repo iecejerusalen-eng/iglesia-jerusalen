@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Image as ImageIcon, Play } from 'lucide-react';
-
-export type CoverMediaType = 'image' | 'video';
+import { getCoverMediaType, type CoverMediaType } from './coverMedia';
+import VideoPlayer from '../ui/video-player';
 
 interface ContentCoverProps {
   title: string;
@@ -9,30 +10,16 @@ interface ContentCoverProps {
   mediaType?: CoverMediaType | null;
   className?: string;
   imageClassName?: string;
+  interactive?: boolean;
 }
 
 const getYouTubeId = (value: string): string | null => {
-  try {
-    const url = new URL(value);
-    if (url.hostname === 'youtu.be') return url.pathname.slice(1) || null;
-    if (url.hostname.endsWith('youtube.com')) {
-      if (url.pathname === '/watch') return url.searchParams.get('v');
-      const embedMatch = url.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/);
-      return embedMatch?.[1] ?? null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-};
-
-export const getCoverMediaType = (
-  mediaType: CoverMediaType | null | undefined,
-  imageUrl: string | null | undefined,
-  videoUrl: string | null | undefined,
-): CoverMediaType => {
-  if (mediaType === 'image' || mediaType === 'video') return mediaType;
-  return imageUrl ? 'image' : videoUrl ? 'video' : 'image';
+  const compactMatch = value.match(/^https?:\/\/(?:www\.)?youtu\.be\/([^/?#]+)/i);
+  if (compactMatch?.[1]) return compactMatch[1];
+  const pathMatch = value.match(/^https?:\/\/(?:www\.)?youtube\.com\/(?:embed|shorts)\/([^/?#]+)/i);
+  if (pathMatch?.[1]) return pathMatch[1];
+  const queryMatch = value.match(/[?&]v=([^&#]+)/i);
+  return queryMatch?.[1] ?? null;
 };
 
 export default function ContentCover({
@@ -42,10 +29,27 @@ export default function ContentCover({
   mediaType,
   className = '',
   imageClassName = '',
+  interactive = false,
 }: ContentCoverProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
   const resolvedType = getCoverMediaType(mediaType, imageUrl, videoUrl);
   const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
   const posterUrl = imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : null);
+
+  if (interactive && resolvedType === 'video' && videoUrl && isPlaying) {
+    return (
+      <div className={`relative aspect-video overflow-hidden bg-slate-950 ${className}`}>
+        <VideoPlayer
+          src={youtubeId ? undefined : videoUrl}
+          youtubeUrl={youtubeId ? videoUrl : undefined}
+          poster={posterUrl}
+          title={title}
+          autoPlay
+          className="h-full max-w-none rounded-none border-0 shadow-none"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative aspect-video overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 ${className}`}>
@@ -62,9 +66,23 @@ export default function ContentCover({
         </div>
       )}
       {resolvedType === 'video' && videoUrl && (
-        <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/75 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md">
-          <Play size={13} fill="currentColor" aria-hidden="true" /> Vídeo
-        </span>
+        <>
+          {interactive ? (
+            <button
+              type="button"
+              onClick={() => setIsPlaying(true)}
+              className="absolute inset-0 flex cursor-pointer items-center justify-center bg-slate-950/10 transition hover:bg-slate-950/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-300/80"
+              aria-label={`Reproducir vídeo: ${title}`}
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow-2xl transition-transform hover:scale-110">
+                <Play size={28} fill="currentColor" aria-hidden="true" />
+              </span>
+            </button>
+          ) : null}
+          <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/75 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md">
+            <Play size={13} fill="currentColor" aria-hidden="true" /> Vídeo
+          </span>
+        </>
       )}
     </div>
   );

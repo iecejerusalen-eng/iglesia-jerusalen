@@ -566,257 +566,31 @@ const FinanceDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-full space-y-7 text-slate-800 dark:text-slate-100">
+      {/* Atmosphere Background Glow */}
+      <div className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-96 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.11),transparent_38%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.09),transparent_35%)]" aria-hidden="true" />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-primary dark:text-church-gold-bright">Gestión de Finanzas</h1>
-          <p className="text-gray-500 dark:text-gray-450 text-sm">Visualiza ingresos e-commerce, diezmos y administra las categorías de donación.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
+            Contabilidad & Transacciones
+          </p>
+          <h1 className="mt-1 text-2xl font-serif font-bold text-slate-950 dark:text-white">
+            Gestión de Finanzas
+          </h1>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Visualiza ingresos e-commerce, diezmos y administra las categorías de donación.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <Link to="/admin/finanzas/donaciones" className="inline-flex items-center gap-2 rounded-xl border border-church-gold/25 bg-church-gold/10 px-3.5 py-2 text-xs font-bold text-church-gold-dark transition hover:bg-church-gold/15 dark:text-church-gold-light">
+          <Link 
+            to="/admin/finanzas/donaciones" 
+            className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/25 bg-blue-500/10 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 transition-all shadow-xs"
+          >
             <Settings2 size={14} /> Página de donaciones
           </Link>
-          {/* Time range filter */}
-          {activeTab === 'metrics' && (
-            <div className="relative">
-              <select
-                value={dateFilter}
-                onChange={(e) => handleDateFilterChange(e.target.value as '30days' | '90days' | 'year' | 'all')}
-                className="bg-white dark:bg-slate-800 border border-gray-150 dark:border-white/10 rounded-xl px-3.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-              >
-                <option value="30days">Últimos 30 días</option>
-                <option value="90days">Últimos 90 días</option>
-                <option value="year">Este año ({new Date().getFullYear()})</option>
-                <option value="all">Todo el tiempo</option>
-              </select>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex bg-gray-100 dark:bg-slate-800 p-1.5 rounded-xl border border-gray-150 dark:border-white/10">
-            <button
-              onClick={() => setActiveTab('metrics')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === 'metrics'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Métricas e Ingresos
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === 'categories'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Categorías de Donación
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="space-y-6 animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-          </div>
-          <ChartSkeleton />
-          <TableSkeleton rows={4} cols={5} />
-        </div>
-      ) : activeTab === 'metrics' ? (
-        /* METRICS AND REVENUE TAB */
-        <div className="space-y-6 animate-fadeIn">
-          
-          {/* Real-time Ticker Marquee */}
-          {filteredTransactions.length > 0 && (
-            <div className="relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-gray-150 dark:border-white/10 bg-white/50 dark:bg-slate-800/30 backdrop-blur-md">
-              <Marquee pauseOnHover className="[--duration:40s] py-3">
-                {filteredTransactions.slice(0, 10).map((tx, idx) => (
-                  <div key={idx} className="flex items-center gap-3 px-6 border-r border-gray-200/50 dark:border-white/10 last:border-0">
-                    <div className={`w-2 h-2 rounded-full ${tx.type === 'donation' ? 'bg-primary' : 'bg-emerald-500'}`} />
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                      {tx.name}
-                    </span>
-                    <span className={`font-mono text-sm font-bold ${tx.type === 'donation' ? 'text-primary dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      +${tx.amount.toLocaleString('es-EC', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                ))}
-              </Marquee>
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-white dark:from-slate-900"></div>
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-white dark:from-slate-900"></div>
-            </div>
-          )}
-
-          {/* KPI Cards Grid */}
-          <BentoGrid className="lg:grid-cols-4 md:grid-cols-2 auto-rows-[12rem] gap-6">
-            <BentoCard
-              name="Ingreso Total"
-              Icon={DollarSign}
-              description="Suma consolidada"
-              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
-              background={<div className="absolute inset-0 bg-green-50/20 dark:bg-green-900/10 pointer-events-none" />}
-            >
-              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
-                <div className="text-3xl font-extrabold text-gray-800 dark:text-white tracking-tight flex items-center">
-                  $<NumberTicker value={stats.totalIncome} decimalPlaces={2} />
-                </div>
-                <div className="text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-2 flex items-center gap-2">
-                  <span className="text-primary dark:text-church-gold-bright">Donaciones: {stats.totalIncome > 0 ? ((stats.donationsTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">Tienda: {stats.totalIncome > 0 ? ((stats.storeTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
-                </div>
-              </div>
-              <BorderBeam size={100} duration={12} delay={9} colorFrom="#10B981" colorTo="#34D399" />
-            </BentoCard>
-
-            <BentoCard
-              name="Donaciones Recibidas"
-              Icon={Heart}
-              description="Diezmos y Ofrendas"
-              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
-              background={<div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-900/10 pointer-events-none" />}
-            >
-              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
-                <div className="text-3xl font-extrabold text-primary dark:text-church-gold-bright tracking-tight flex items-center">
-                  $<NumberTicker value={stats.donationsTotal} decimalPlaces={2} />
-                </div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
-                  Recibos: {stats.donationsCount} | Prom: ${stats.donationsAvg.toFixed(0)}
-                </span>
-              </div>
-            </BentoCard>
-
-            <BentoCard
-              name="Ventas e-Commerce"
-              Icon={ShoppingBag}
-              description="Ingresos de la tienda"
-              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
-              background={<div className="absolute inset-0 bg-emerald-50/20 dark:bg-emerald-900/10 pointer-events-none" />}
-            >
-              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
-                <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center">
-                  $<NumberTicker value={stats.storeTotal} decimalPlaces={2} />
-                </div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
-                  Pedidos: {stats.storeCount} | Ticket: ${stats.storeAvg.toFixed(0)}
-                </span>
-              </div>
-            </BentoCard>
-
-            <BentoCard
-              name="Canal Dominante"
-              Icon={Tag}
-              description="Método de pago preferido"
-              className="col-span-1 lg:col-span-1 border border-gray-150 dark:border-white/10 shadow-sm relative overflow-hidden"
-              background={<div className="absolute inset-0 bg-amber-50/20 dark:bg-amber-900/10 pointer-events-none" />}
-            >
-              <div className="absolute inset-0 flex flex-col justify-center px-6 pointer-events-none">
-                <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 tracking-tight">{stats.paymentMethodDominant}</p>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-semibold mt-2">
-                  Volumen: <NumberTicker value={stats.paymentMethodDominantCount} /> transacciones
-                </span>
-              </div>
-            </BentoCard>
-          </BentoGrid>
-
-          {/* Chart Row: Progress & Share */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Combined Progression (Left 2 cols) */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm flex flex-col justify-between">
-              <h3 className="font-serif font-bold text-slate-800 dark:text-white text-base mb-6 flex items-center gap-1.5">
-                <TrendingUp size={18} className="text-gold" />
-                Evolución Temporal de Ingresos
-              </h3>
-              <div className="h-80 w-full text-[10px]">
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="diezmosGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.85}/>
-                        <stop offset="100%" stopColor="#1e3a8a" stopOpacity={0.25}/>
-                      </linearGradient>
-                      <linearGradient id="ofrendasGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#d97706" stopOpacity={0.85}/>
-                        <stop offset="100%" stopColor="#d97706" stopOpacity={0.25}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontWeight: 'bold' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontWeight: 'bold' }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '15px' }} />
-                    <Bar dataKey="diezmos" fill="url(#diezmosGrad)" name="Diezmos" radius={[4, 4, 0, 0]} barSize={14} />
-                    <Bar dataKey="ofrendas" fill="url(#ofrendasGrad)" name="Ofrendas" radius={[4, 4, 0, 0]} barSize={14} />
-                    <Line type="monotone" dataKey="tienda" stroke="#10b981" strokeWidth={2.5} name="Tienda" dot={{ r: 4, fill: '#10b981', strokeWidth: 1.5, stroke: '#fff' }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Income breakdown share donut (Right 1 col) */}
-            <div className="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm flex flex-col justify-between">
-              <h3 className="font-serif font-bold text-slate-800 dark:text-white text-base mb-4 flex items-center gap-1.5">
-                <PieChartIcon size={18} className="text-gold" />
-                Distribución por Origen
-              </h3>
-              <div className="h-60 flex items-center justify-center relative">
-                {participationData.length > 0 ? (
-                  <>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                      <PieChart>
-                        <Pie
-                          data={participationData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={75}
-                          paddingAngle={3}
-                          dataKey="value"
-                          nameKey="name"
-                        >
-                          {participationData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: unknown) => `$${Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total</span>
-                      <span className="text-lg font-extrabold text-slate-800 dark:text-white font-mono">${stats.totalIncome.toLocaleString('es-EC', { maximumFractionDigits: 0 })}</span>
-                    </div>
-                  </>
-                ) : (
-                  <span className="text-xs text-gray-400 italic font-semibold">Sin ingresos acumulados</span>
-                )}
-              </div>
-
-              {/* Legends details */}
-              <div className="border-t border-gray-100 dark:border-white/10 pt-4 space-y-2">
-                {participationData.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                      <span className="text-gray-500 dark:text-gray-400 font-semibold">{item.name}</span>
-                    </div>
-                    <span className="font-mono font-bold text-gray-700 dark:text-gray-300">${item.value.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* E-Commerce Section: Top products & payment types */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Top selling items */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-sm flex flex-col justify-between">
               <h3 className="font-serif font-bold text-slate-800 dark:text-white text-base mb-6 flex items-center gap-1.5">
                 <ShoppingBag size={18} className="text-gold" />

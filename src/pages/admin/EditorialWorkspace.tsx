@@ -44,6 +44,8 @@ interface DocumentDraft {
   slug: string;
   excerpt: string;
   cover_image_url: string;
+  cover_media_type: "image" | "video";
+  cover_video_url: string;
   content: string;
   visibility: EditorialVisibility;
   status: EditorialStatus;
@@ -71,6 +73,8 @@ const emptyDraft: DocumentDraft = {
   slug: "",
   excerpt: "",
   cover_image_url: "",
+  cover_media_type: "image",
+  cover_video_url: "",
   content: "[]",
   visibility: "public",
   status: "draft",
@@ -188,6 +192,8 @@ export default function EditorialWorkspace() {
             slug: document.slug,
             excerpt: document.excerpt,
             cover_image_url: document.cover_image_url ?? "",
+            cover_media_type: document.cover_media_type ?? (document.cover_image_url ? "image" : "video"),
+            cover_video_url: document.cover_video_url ?? "",
             content: blocksAsString(document.content_blocks),
             visibility: document.visibility,
             status: document.status ?? "draft",
@@ -260,6 +266,8 @@ export default function EditorialWorkspace() {
       slug: draft.slug || slugify(draft.title),
       excerpt: draft.excerpt,
       cover_image_url: draft.cover_image_url || null,
+      cover_media_type: draft.cover_media_type,
+      cover_video_url: draft.cover_video_url || null,
       content_blocks: JSON.parse(draft.content) as unknown,
       visibility:
         draft.visibility === "password"
@@ -1067,6 +1075,19 @@ export default function EditorialWorkspace() {
                     allowedFormats={["jpg", "jpeg", "png", "webp"]}
                     label="Portada"
                   />
+                  <div className="mt-4 space-y-3">
+                    <span className="block text-xs font-black uppercase tracking-wider text-slate-500">Usar como portada</span>
+                    <div className="flex gap-2">
+                      {(["image", "video"] as const).map((type) => (
+                        <label key={type} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${draft.cover_media_type === type ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-amber-200" : "border-slate-200 text-slate-500 dark:border-white/10"}`}>
+                          <input type="radio" value={type} checked={draft.cover_media_type === type} onChange={() => setDraft({ ...draft, cover_media_type: type })} />
+                          {type === "image" ? "Imagen" : "Vídeo"}
+                        </label>
+                      ))}
+                    </div>
+                    <input type="url" value={draft.cover_video_url} onChange={(event) => setDraft({ ...draft, cover_video_url: event.target.value })} placeholder="URL del vídeo de portada" className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm dark:border-white/10 dark:bg-slate-950" />
+                    <p className="text-[11px] leading-5 text-slate-500">En las tarjetas se verá una miniatura. El vídeo no se reproduce automáticamente.</p>
+                  </div>
                 </div>
                 {draft.id && (
                   <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-950 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-100">

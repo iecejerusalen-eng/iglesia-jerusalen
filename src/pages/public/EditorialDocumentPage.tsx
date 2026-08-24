@@ -10,6 +10,7 @@ import {
 } from "../../features/editorial/service";
 import type { EditorialDocumentResponse } from "../../features/editorial/types";
 import EditorialComments from "../../features/editorial/components/EditorialComments";
+import ContentCover from "../../components/public/ContentCover";
 
 export default function EditorialDocumentPage() {
   const { spaceSlug = "", documentId = "" } = useParams<{
@@ -120,13 +121,7 @@ export default function EditorialDocumentPage() {
           <ArrowLeft size={14} /> Volver a la bitácora
         </Link>
         <header className="mt-8 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white/80 shadow-xl dark:border-white/10 dark:bg-white/5">
-          {result.document.cover_image_url && (
-            <img
-              src={result.document.cover_image_url}
-              alt=""
-              className="aspect-[21/9] w-full object-cover"
-            />
-          )}
+          {(result.document.cover_image_url || result.document.cover_video_url) && <ContentCover title={result.document.title} imageUrl={result.document.cover_image_url} videoUrl={result.document.cover_video_url} mediaType={result.document.cover_media_type} interactive className="aspect-[21/9]" />}
           <div className="p-7 sm:p-10">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">

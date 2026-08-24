@@ -26,7 +26,7 @@ const MOCK_SERMONS: Sermon[] = [
     id: 's-1',
     title: 'El Ancla de Nuestra Alma',
     content: '<p>Una reflexión profunda en <strong>Hebreos 6</strong> sobre cómo la esperanza en Cristo nos mantiene firmes en medio de las tormentas de la vida diaria.</p><p>El autor de Hebreos nos recuerda que la esperanza es un ancla del alma, segura y firme, que penetra hasta detrás del velo. Cuando las circunstancias externas se agiten, recuerda fijar tus ojos en el Salvador, quien ya venció al mundo y nos garantiza una herencia incorruptible.</p>',
-    youtube_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    youtube_url: null,
     pastor_name: 'Pastor Roberto Gómez',
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString()
   },
