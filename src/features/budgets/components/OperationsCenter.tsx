@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Boxes, ClipboardList, Plus, RefreshCw, ShieldCheck, ShoppingCart, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { createAsset, createOrder, createWorkOrder, listAssets, listOrders, listWorkOrders } from '../services/operationsService';
+import ApprovalQueue from './ApprovalQueue';
 import type { ChurchAsset, MaintenanceWorkOrder, ProcurementOrder } from '../operationsTypes';
 import type { BudgetProposal, MaintenanceRequest } from '../types';
 
@@ -34,7 +35,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <label className="block"><span className="mb-1.5 block text-[10px] font-black uppercase tracking-[.12em] text-slate-500">{label}</span>{children}</label>; 
 }
 
-export default function OperationsCenter({ view, budgets, repairs }: { view: OperationsView; budgets: BudgetProposal[]; repairs: MaintenanceRequest[] }) {
+export default function OperationsCenter({ view, budgets, repairs, onChanged }: { view: OperationsView; budgets: BudgetProposal[]; repairs: MaintenanceRequest[]; onChanged?: () => Promise<void> }) {
   const [orders, setOrders] = useState<ProcurementOrder[]>([]); 
   const [assets, setAssets] = useState<ChurchAsset[]>([]); 
   const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([]); 
@@ -56,11 +57,12 @@ export default function OperationsCenter({ view, budgets, repairs }: { view: Ope
     } 
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { const timer = window.setTimeout(() => { void refresh(); }, 0); return () => window.clearTimeout(timer); }, []);
 
+  const [now] = useState(() => Date.now());
   const openWork = workOrders.filter((item) => !['completed', 'cancelled'].includes(item.status)).length; 
   const expected = orders.filter((item) => !['received', 'cancelled'].includes(item.status)).length; 
-  const warranty = assets.filter((item) => item.warranty_until && new Date(item.warranty_until).getTime() > Date.now() && new Date(item.warranty_until).getTime() < Date.now() + 45 * 86400000).length; 
+  const warranty = assets.filter((item) => item.warranty_until && new Date(item.warranty_until).getTime() > now && new Date(item.warranty_until).getTime() < now + 45 * 86400000).length; 
   const summaryCards: Array<{ icon: React.ComponentType<{ size?: number; className?: string }>; value: number; label: string }> = [
     { icon: ShoppingCart, value: expected, label: 'Compras abiertas' }, 
     { icon: Wrench, value: openWork, label: 'Trabajos pendientes' }, 
@@ -91,6 +93,7 @@ export default function OperationsCenter({ view, budgets, repairs }: { view: Ope
 
       {view === 'overview' && (
         <>
+          <ApprovalQueue budgets={budgets} onChanged={onChanged ?? refresh} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {summaryCards.map(({ icon: Icon, value, label }) => (
               <div key={label} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[.04]">
@@ -220,7 +223,7 @@ function OrderModal({ budgets, onClose, onSaved }: { budgets: BudgetProposal[]; 
     subtotal: number;
     tax: number;
     notes: string;
-  }>({ 
+  }>(() => ({ 
     proposal_id: budgets[0]?.id ?? '', 
     order_number: `OC-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`, 
     vendor: '', 
@@ -228,7 +231,7 @@ function OrderModal({ budgets, onClose, onSaved }: { budgets: BudgetProposal[]; 
     subtotal: 0, 
     tax: 0, 
     notes: '' 
-  }); 
+  })); 
   const [saving, setSaving] = useState(false); 
 
   const submit = async () => { 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { CalendarDays, Eye, EyeOff, Image as ImageIcon, Loader2, Save, Smile, X } from 'lucide-react';
 import MediaUploader from '../../../components/common/MediaUploader';
-import type { Event as DbEvent, Profile } from '../../../types';
+import type { Event as DbEvent, Profile, Space } from '../../../types';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { RoutePickerSection, type RouteConfig } from '@/components/map/RoutePickerSection';
@@ -26,6 +26,7 @@ const eventSchema = z.object({
   cover_image_url: z.union([z.literal(''), z.string().url('Escribe una URL de imagen válida')]).nullable().optional(),
   emoji: z.string().nullable().optional(),
   ministry_id: z.string().nullable(),
+  space_id: z.string().nullable().optional(),
   leaders_in_charge_raw: z.string().max(500, 'La lista de encargados es demasiado larga').or(z.literal('')),
 }).superRefine((values, context) => {
   if (values.end_date < values.start_date) {
@@ -87,6 +88,12 @@ export default function EventFormModal({
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(editingEvent?.emoji || null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(editingEvent?.recurrence_days || []);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+
+  useEffect(() => {
+    void supabase.from('spaces').select('*').eq('is_active', true).eq('is_bookable', true).order('name')
+      .then(({ data }) => setSpaces((data || []) as Space[]));
+  }, []);
 
   const [routeConfig, setRouteConfig] = useState<RouteConfig>(() => ({
     has_route: editingEvent?.has_route ?? Boolean(editingEvent?.latitude && editingEvent?.longitude),
@@ -117,6 +124,7 @@ export default function EventFormModal({
       cover_image_url: editingEvent?.cover_image_url || '',
       emoji: editingEvent?.emoji || '',
       ministry_id: editingEvent?.ministry_id || defaultMinistry,
+      space_id: editingEvent?.space_id || null,
       leaders_in_charge_raw: editingEvent?.leaders_in_charge ? editingEvent.leaders_in_charge.join(', ') : '',
     }
   });
@@ -164,6 +172,7 @@ export default function EventFormModal({
         cover_image_url: finalCoverUrl,
         emoji: selectedEmoji || null,
         ministry_id: formData.ministry_id || null,
+        space_id: formData.space_id || null,
         leaders_in_charge: leadersList,
         location_name: routeConfig.has_route ? routeConfig.destination_name : null,
         latitude: routeConfig.has_route ? routeConfig.destination_lat : null,
@@ -513,6 +522,15 @@ export default function EventFormModal({
               )}
             </div>
           )}
+          </section>
+
+          <section className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-5 dark:border-white/10 dark:bg-white/[0.025]">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-450">Espacio del evento <span className="font-normal normal-case">(opcional)</span></label>
+            <select {...register('space_id')} className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm dark:border-white/10 dark:bg-slate-900">
+              <option value="">Sin espacio asignado</option>
+              {spaces.map((space) => <option key={space.id} value={space.id}>{space.name}{space.capacity ? ` · ${space.capacity} personas` : ''}</option>)}
+            </select>
+            <p className="mt-2 text-xs text-slate-500">Se guardará junto al evento para que el equipo vea dónde se realizará.</p>
           </section>
 
           {/* Route Map Picker Section */}

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white;
+  }
+}
+
 @theme {
   --color-surface: #F8FAFC;
   --color-primary: #1E3A8A;

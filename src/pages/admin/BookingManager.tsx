@@ -1,357 +1,96 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calendar, Check, Clock3, Edit2, ExternalLink, Home, ImagePlus, MapPin, Plus, Trash2, X, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import type { Space, SpaceBooking } from '../../types';
-import { Home, Plus, Trash2, Calendar, Clock, Edit2, X } from 'lucide-react';
-import { toast } from 'sonner';
 import { uploadImage } from '../../utils/cloudinary';
+import MediaUploader from '../../components/common/MediaUploader';
+
+type ReservationTab = 'calendar' | 'requests' | 'spaces';
+type SpaceForm = {
+  name: string; description: string; capacity: string; features: string; image_url: string; gallery_urls: string;
+  address: string; map_url: string; latitude: string; longitude: string; is_active: boolean; is_bookable: boolean;
+  booking_requires_approval: boolean;
+};
+const emptyForm = (): SpaceForm => ({ name: '', description: '', capacity: '', features: '', image_url: '', gallery_urls: '', address: '', map_url: '', latitude: '', longitude: '', is_active: true, is_bookable: true, booking_requires_approval: true });
+const statusLabel: Record<SpaceBooking['status'], string> = { pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada', cancelled: 'Cancelada' };
+const formatDateTime = (value: string) => new Date(value).toLocaleString('es-EC', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const isOverlapping = (start: string, end: string, booking: SpaceBooking) => new Date(start).getTime() < new Date(booking.end_time).getTime() && new Date(end).getTime() > new Date(booking.start_time).getTime();
 
 export default function BookingManager() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [bookings, setBookings] = useState<SpaceBooking[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ReservationTab>('calendar');
+  const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const [editingSpace, setEditingSpace] = useState<Space | null>(null);
-  const [spaceFormData, setSpaceFormData] = useState<Partial<Space>>({
-    name: '',
-    description: '',
-    capacity: 0,
-    features: [],
-    is_active: true,
-    image_url: ''
-  });
+  const [spaceForm, setSpaceForm] = useState<SpaceForm>(emptyForm);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [featuresInput, setFeaturesInput] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [now] = useState(() => Date.now());
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // 1. Fetch spaces
-      const spacesRes = await supabase.from('spaces').select('*').order('name');
-      if (spacesRes.data) {
-        setSpaces(spacesRes.data);
-      }
-
-      // 2. Fetch bookings with fallback for profiles join
-      let bookingsData: SpaceBooking[] = [];
-      const bookingsWithProfiles = await supabase
-        .from('space_bookings')
-        .select('*, spaces(name), profiles(email, first_name, last_name)')
-        .order('start_time', { ascending: false });
-
-      if (!bookingsWithProfiles.error && bookingsWithProfiles.data) {
-        bookingsData = bookingsWithProfiles.data as SpaceBooking[];
-      } else {
-        // Fallback: fetch without profiles join, then manual enrichment
-        const basicBookings = await supabase
-          .from('space_bookings')
-          .select('*, spaces(name)')
-          .order('start_time', { ascending: false });
-
-        if (basicBookings.data) {
-          bookingsData = basicBookings.data as SpaceBooking[];
-          const userIds = Array.from(new Set(bookingsData.map(b => b.user_id).filter(Boolean)));
-          if (userIds.length > 0) {
-            const profilesRes = await supabase
-              .from('profiles')
-              .select('id, email, first_name, last_name')
-              .in('id', userIds);
-
-            if (profilesRes.data) {
-              const profilesMap = new Map(profilesRes.data.map(p => [p.id, p]));
-              bookingsData = bookingsData.map(b => ({
-                ...b,
-                profiles: b.user_id ? profilesMap.get(b.user_id) : undefined
-              }));
-            }
-          }
-        }
-      }
-
-      setBookings(bookingsData);
-    } catch (err) {
-      console.error('Error al cargar datos de reservas:', err);
-      toast.error('Error al cargar datos');
-    } finally {
-      setLoading(false);
-    }
+      const [spacesRes, bookingsRes] = await Promise.all([
+        supabase.from('spaces').select('*').order('name'),
+        supabase.from('space_bookings').select('*, spaces(name)').order('start_time', { ascending: true }),
+      ]);
+      if (spacesRes.error) throw spacesRes.error;
+      if (bookingsRes.error) throw bookingsRes.error;
+      setSpaces((spacesRes.data || []) as Space[]);
+      setBookings((bookingsRes.data || []) as SpaceBooking[]);
+    } catch (error) {
+      console.error('Error al cargar reservas:', error);
+      toast.error('No se pudieron cargar los espacios y reservas.');
+    } finally { setLoading(false); }
   };
+  useEffect(() => { Promise.resolve().then(() => loadData()); }, []);
 
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      loadData();
-    });
-  }, []);
-
-  const handleOpenSpaceModal = (spaceToEdit?: Space) => {
-    if (spaceToEdit) {
-      setEditingSpace(spaceToEdit);
-      setSpaceFormData({
-        name: spaceToEdit.name,
-        description: spaceToEdit.description || '',
-        capacity: spaceToEdit.capacity || 0,
-        features: spaceToEdit.features || [],
-        is_active: spaceToEdit.is_active ?? true,
-        image_url: spaceToEdit.image_url || ''
-      });
-      setFeaturesInput((spaceToEdit.features || []).join(', '));
-    } else {
-      setEditingSpace(null);
-      setSpaceFormData({
-        name: '',
-        description: '',
-        capacity: 0,
-        features: [],
-        is_active: true,
-        image_url: ''
-      });
-      setFeaturesInput('');
-    }
-    setSelectedFile(null);
-    setIsSpaceModalOpen(true);
+  const upcomingBookings = useMemo(() => bookings.filter((booking) => booking.status === 'approved' && new Date(booking.end_time).getTime() >= now), [bookings, now]);
+  const pendingBookings = useMemo(() => bookings.filter((booking) => booking.status === 'pending'), [bookings]);
+  const openCreate = () => { setEditingSpace(null); setSpaceForm(emptyForm()); setSelectedFile(null); setActiveTab('spaces'); };
+  const openEdit = (space: Space) => {
+    setEditingSpace(space); setSpaceForm({ name: space.name, description: space.description || '', capacity: space.capacity ? String(space.capacity) : '', features: (space.features || []).join(', '), image_url: space.image_url || '', gallery_urls: Array.isArray(space.gallery_urls) ? space.gallery_urls.join('\n') : '', address: space.address || '', map_url: space.map_url || '', latitude: space.latitude != null ? String(space.latitude) : '', longitude: space.longitude != null ? String(space.longitude) : '', is_active: space.is_active, is_bookable: space.is_bookable ?? true, booking_requires_approval: space.booking_requires_approval ?? true });
+    setSelectedFile(null); setActiveTab('spaces');
   };
-
-  const handleSpaceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!spaceFormData.name) return toast.error('El nombre es requerido');
-
+  const saveSpace = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!spaceForm.name.trim()) { toast.error('El nombre del espacio es obligatorio.'); return; }
+    setSaving(true);
     try {
-      let finalImageUrl = spaceFormData.image_url;
-
-      if (selectedFile) {
-        toast.loading('Subiendo imagen...', { id: 'upload' });
-        const result = await uploadImage(selectedFile, 'spaces');
-        if (result.secure_url) {
-          finalImageUrl = result.secure_url;
-        }
-        toast.dismiss('upload');
-      }
-
-      const featuresArray = featuresInput.split(',').map(f => f.trim()).filter(f => f);
-
-      const payload = {
-        name: spaceFormData.name,
-        description: spaceFormData.description,
-        capacity: spaceFormData.capacity,
-        features: featuresArray,
-        is_active: spaceFormData.is_active,
-        image_url: finalImageUrl
-      };
-
-      if (editingSpace) {
-        const { error } = await supabase.from('spaces').update(payload).eq('id', editingSpace.id);
-        if (error) throw error;
-        toast.success('Espacio actualizado');
-      } else {
-        const { error } = await supabase.from('spaces').insert([payload]);
-        if (error) throw error;
-        toast.success('Espacio creado');
-      }
-      
-      setIsSpaceModalOpen(false);
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al guardar espacio');
-      toast.dismiss('upload');
-    }
+      let imageUrl = spaceForm.image_url.trim() || null;
+      if (selectedFile) { toast.loading('Subiendo imagen…', { id: 'space-upload' }); const result = await uploadImage(selectedFile, 'spaces'); toast.dismiss('space-upload'); if (!result.secure_url) throw new Error('La imagen no devolvió una URL válida.'); imageUrl = result.secure_url; }
+      const payload = { name: spaceForm.name.trim(), description: spaceForm.description.trim() || null, capacity: spaceForm.capacity ? Number(spaceForm.capacity) : null, features: spaceForm.features.split(',').map((feature) => feature.trim()).filter(Boolean), image_url: imageUrl, gallery_urls: spaceForm.gallery_urls.split('\n').map((url) => url.trim()).filter(Boolean), address: spaceForm.address.trim() || null, map_url: spaceForm.map_url.trim() || null, latitude: spaceForm.latitude ? Number(spaceForm.latitude) : null, longitude: spaceForm.longitude ? Number(spaceForm.longitude) : null, is_active: spaceForm.is_active, is_bookable: spaceForm.is_bookable, booking_requires_approval: spaceForm.booking_requires_approval };
+      const query = editingSpace ? supabase.from('spaces').update(payload).eq('id', editingSpace.id) : supabase.from('spaces').insert(payload);
+      const { error } = await query; if (error) throw error;
+      toast.success(editingSpace ? 'Espacio actualizado.' : 'Espacio creado.'); setEditingSpace(null); setSpaceForm(emptyForm()); setSelectedFile(null); await loadData();
+    } catch (error) { console.error('Error al guardar espacio:', error); toast.error(error instanceof Error ? error.message : 'No se pudo guardar el espacio.'); }
+    finally { setSaving(false); toast.dismiss('space-upload'); }
+  };
+  const updateBookingStatus = async (booking: SpaceBooking, status: 'approved' | 'rejected') => {
+    if (status === 'approved' && bookings.some((item) => item.id !== booking.id && item.space_id === booking.space_id && item.status === 'approved' && isOverlapping(booking.start_time, booking.end_time, item))) { toast.error('No se puede aprobar: el espacio está ocupado en ese horario.'); return; }
+    const { error } = await supabase.from('space_bookings').update({ status, approved_at: status === 'approved' ? new Date().toISOString() : null }).eq('id', booking.id);
+    if (error) { toast.error(error.message || 'No se pudo actualizar la solicitud.'); return; } toast.success(status === 'approved' ? 'Reserva aprobada.' : 'Solicitud rechazada.'); await loadData();
+  };
+  const deleteSpace = async (space: Space) => {
+    if (!window.confirm(`¿Eliminar “${space.name}”? Las reservas vinculadas también se eliminarán.`)) return;
+    const { error } = await supabase.from('spaces').delete().eq('id', space.id); if (error) { toast.error(error.message || 'No se pudo eliminar el espacio.'); return; }
+    if (selectedSpace?.id === space.id) setSelectedSpace(null); toast.success('Espacio eliminado.'); await loadData();
+  };
+  const spaceState = (space: Space) => {
+    const active = upcomingBookings.find((booking) => booking.space_id === space.id);
+    return active ? { label: 'Ocupado', className: 'bg-rose-50 text-rose-700 border-rose-200' } : !space.is_active || space.is_bookable === false ? { label: 'No reservable', className: 'bg-slate-100 text-slate-600 border-slate-200' } : { label: 'Disponible', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
   };
 
-  const handleDeleteSpace = async (id: string) => {
-    if (!confirm('¿Eliminar este espacio y todas sus reservas?')) return;
-    try {
-      const { error } = await supabase.from('spaces').delete().eq('id', id);
-      if (error) throw error;
-      toast.success('Espacio eliminado');
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al eliminar');
-    }
-  };
-
-  const handleUpdateBookingStatus = async (id: string, status: string) => {
-    try {
-      const { error } = await supabase.from('space_bookings').update({ status }).eq('id', id);
-      if (error) throw error;
-      toast.success('Estado de reserva actualizado');
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al actualizar estado');
-    }
-  };
-
-  const formatDateTime = (isoString: string) => {
-    return new Date(isoString).toLocaleString('es-ES', { 
-      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
-    });
-  };
-
-  return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto font-sans space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold dark:text-white flex items-center gap-3">
-            <Home className="w-8 h-8 text-emerald-500" /> Reservas de Espacios
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Gestiona templos, aulas y aprueba las solicitudes de reserva de la congregación.</p>
-        </div>
-        <button
-          onClick={() => handleOpenSpaceModal()}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-md transition-colors"
-        >
-          <Plus className="w-5 h-5" /> Nuevo Espacio
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Espacios Físicos */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/70 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50">
-            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Home className="w-5 h-5 text-emerald-500" /> Espacios Administrados ({spaces.length})
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {loading ? <p className="text-center text-slate-500 py-10">Cargando espacios...</p> : spaces.map(space => (
-              <div key={space.id} className="border border-slate-200 dark:border-white/10 rounded-xl p-4 flex gap-4 bg-white/50 dark:bg-slate-950/40 hover:border-emerald-500/50 transition-colors">
-                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex-shrink-0 border border-slate-200 dark:border-white/10 flex items-center justify-center">
-                  {space.image_url ? (
-                    <img src={space.image_url} alt={space.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Home className="w-8 h-8 text-slate-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-1 gap-2">
-                    <h3 className="font-bold text-slate-900 dark:text-white truncate">{space.name}</h3>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => handleOpenSpaceModal(space)} className="p-1 text-slate-400 hover:text-emerald-500 transition-colors" title="Editar Espacio">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDeleteSpace(space.id)} className="p-1 text-slate-400 hover:text-rose-500 transition-colors" title="Eliminar Espacio">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">{space.description || 'Sin descripción.'}</p>
-                  <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Capacidad: {space.capacity} personas</div>
-                  <div className="flex flex-wrap gap-1">
-                    {space.features?.map(f => (
-                      <span key={f} className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-md font-semibold">
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Solicitudes de Reservas */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/70 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden h-[600px] flex flex-col">
-          <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50">
-            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-500" /> Solicitudes de Reserva ({bookings.length})
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-             {bookings.map(booking => (
-               <div key={booking.id} className="border border-slate-200 dark:border-white/10 rounded-xl p-4 bg-white/50 dark:bg-slate-950/40">
-                 <div className="flex justify-between items-start mb-2 gap-2">
-                   <div>
-                     <h4 className="font-bold text-slate-900 dark:text-white">{booking.title}</h4>
-                     <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5"><strong>Espacio:</strong> {booking.spaces?.name || 'Espacio'}</div>
-                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                       {booking.profiles ? (
-                         <>
-                           {booking.profiles.first_name} {booking.profiles.last_name} &lt;{booking.profiles.email}&gt;
-                         </>
-                       ) : 'Usuario registrado'}
-                     </div>
-                   </div>
-                   <span className={`text-[10px] font-extrabold px-2.5 py-1 uppercase tracking-wider rounded-full border ${
-                     booking.status === 'approved' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40' :
-                     booking.status === 'rejected' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-900/40' :
-                     booking.status === 'cancelled' ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700' :
-                     'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-900/40'
-                   }`}>
-                     {booking.status === 'approved' ? 'Aprobada' : booking.status === 'rejected' ? 'Rechazada' : booking.status === 'pending' ? 'Pendiente' : booking.status}
-                   </span>
-                 </div>
-                 
-                 <div className="text-xs text-slate-600 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-white/5 flex flex-col gap-1">
-                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-emerald-500" /> Inicio: {formatDateTime(booking.start_time)}</span>
-                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-emerald-500" /> Fin: {formatDateTime(booking.end_time)}</span>
-                 </div>
-
-                 {booking.status === 'pending' && (
-                   <div className="flex gap-2 mt-3 border-t border-slate-100 dark:border-white/5 pt-3">
-                     <button onClick={() => handleUpdateBookingStatus(booking.id, 'approved')} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded-xl transition-colors">Aprobar Reserva</button>
-                     <button onClick={() => handleUpdateBookingStatus(booking.id, 'rejected')} className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold py-2 rounded-xl transition-colors">Rechazar</button>
-                   </div>
-                 )}
-               </div>
-             ))}
-             {bookings.length === 0 && (
-               <p className="text-center text-slate-500 dark:text-slate-400 py-10 text-sm">No hay solicitudes de reserva registradas.</p>
-             )}
-          </div>
-        </div>
-      </div>
-
-      {isSpaceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-              <h2 className="text-xl font-bold dark:text-white">{editingSpace ? 'Editar Espacio' : 'Nuevo Espacio'}</h2>
-              <button onClick={() => setIsSpaceModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleSpaceSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Nombre del Espacio *</label>
-                <input type="text" required value={spaceFormData.name} onChange={e => setSpaceFormData({...spaceFormData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Ej. Aula 1, Templo Principal" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Descripción</label>
-                <textarea rows={2} value={spaceFormData.description || ''} onChange={e => setSpaceFormData({...spaceFormData, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Capacidad (Personas)</label>
-                  <input type="number" value={spaceFormData.capacity || 0} onChange={e => setSpaceFormData({...spaceFormData, capacity: parseInt(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Estado</label>
-                  <select value={spaceFormData.is_active ? 'true' : 'false'} onChange={e => setSpaceFormData({...spaceFormData, is_active: e.target.value === 'true'})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none">
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Características (separadas por coma)</label>
-                <input type="text" value={featuresInput} onChange={e => setFeaturesInput(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none" placeholder="Ej. Proyector, Aire Acondicionado, Sonido" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1 dark:text-slate-300">Foto del Espacio</label>
-                <input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 dark:file:bg-slate-800 dark:file:text-slate-300" />
-              </div>
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-slate-800/50 -mx-6 -mb-6 p-4">
-                <button type="button" onClick={() => setIsSpaceModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 font-bold text-sm">Cancelar</button>
-                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md">
-                  {editingSpace ? 'Guardar Cambios' : 'Crear Espacio'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="mx-auto max-w-[1500px] space-y-7 p-5 font-sans md:p-9">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-600"><Home size={16} /> Operación de espacios</div><h1 className="font-serif text-4xl font-black tracking-tight text-slate-950 dark:text-white">Reservas de espacios</h1><p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Consulta disponibilidad, aprueba solicitudes y conserva la información práctica de cada lugar.</p></div><button onClick={openCreate} className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700"><Plus size={18} /> Nuevo espacio</button></header>
+    <div className="grid gap-4 sm:grid-cols-3">{[['Espacios activos', spaces.filter((space) => space.is_active).length, Home], ['Solicitudes pendientes', pendingBookings.length, Calendar], ['Reservas próximas', upcomingBookings.length, Clock3]].map(([label, value, Icon]) => { const CardIcon = Icon as typeof Home; return <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center justify-between"><span className="text-sm font-semibold text-slate-500">{String(label)}</span><CardIcon size={18} className="text-emerald-600" /></div><strong className="mt-2 block text-3xl font-black text-slate-950 dark:text-white">{String(value)}</strong></div>; })}</div>
+    <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">{([['calendar', 'Disponibilidad'], ['requests', `Solicitudes${pendingBookings.length ? ` · ${pendingBookings.length}` : ''}`], ['spaces', 'Espacios']] as const).map(([id, label]) => <button key={id} onClick={() => setActiveTab(id)} className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${activeTab === id ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'}`}>{label}</button>)}</nav>
+    {activeTab === 'spaces' && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/60 p-4 dark:border-emerald-500/30 dark:bg-emerald-950/20"><div><p className="text-sm font-black text-emerald-900 dark:text-emerald-200">Imagen rápida para el espacio</p><p className="text-xs text-emerald-800/70 dark:text-emerald-300/70">Puedes elegir un archivo o enfocar el botón y pegar una imagen con Ctrl+V.</p></div><MediaUploader folder="spaces" allowedFormats={['jpg', 'jpeg', 'png', 'webp', 'avif']} label="Subir o pegar imagen" onUploadSuccess={(url) => setSpaceForm((current) => ({ ...current, image_url: url }))} /></div>}
+    {activeTab === 'calendar' && <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black text-slate-950 dark:text-white">Estado actual</h2><p className="text-sm text-slate-500">Una vista rápida para decidir dónde programar.</p></div><Calendar className="text-emerald-600" /></div><div className="grid gap-3 sm:grid-cols-2">{spaces.map((space) => { const state = spaceState(space); return <button key={space.id} onClick={() => setSelectedSpace(space)} className="rounded-2xl border border-slate-200 p-4 text-left transition hover:-translate-y-0.5 hover:border-emerald-400 dark:border-white/10"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">{space.image_url ? <img src={space.image_url} alt="" className="h-full w-full object-cover" /> : <Home className="m-3 text-slate-400" />}</div><div><h3 className="font-black text-slate-900 dark:text-white">{space.name}</h3><p className="text-xs text-slate-500">{space.capacity ? `${space.capacity} personas` : 'Capacidad no definida'}</p></div></div><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${state.className}`}>{state.label}</span></div></button>; })}</div>{!spaces.length && !loading && <p className="rounded-2xl bg-slate-50 p-8 text-center text-sm text-slate-500">Aún no hay espacios. Crea el primero para comenzar.</p>}</div><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><h2 className="text-xl font-black text-slate-950 dark:text-white">Próximas reservas</h2><div className="mt-4 space-y-3">{upcomingBookings.slice(0, 8).map((booking) => <div key={booking.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10"><div className="flex justify-between gap-3"><div><p className="font-bold text-slate-900 dark:text-white">{booking.title}</p><p className="text-xs text-emerald-700">{booking.spaces?.name || 'Espacio'}</p></div><Clock3 size={16} className="text-slate-400" /></div><p className="mt-2 text-xs text-slate-500">{formatDateTime(booking.start_time)} — {formatDateTime(booking.end_time)}</p></div>)}{!upcomingBookings.length && <p className="py-8 text-center text-sm text-slate-500">No hay reservas aprobadas próximas.</p>}</div></div></section>}
+    {activeTab === 'requests' && <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="mb-5"><h2 className="text-xl font-black text-slate-950 dark:text-white">Panel de solicitudes</h2><p className="text-sm text-slate-500">Revisa cada solicitud antes de ocupar un espacio.</p></div><div className="grid gap-4 md:grid-cols-2">{bookings.map((booking) => <article key={booking.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10"><div className="flex items-start justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">{booking.title}</h3><p className="mt-1 text-sm text-emerald-700">{booking.spaces?.name || 'Espacio'}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${booking.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : booking.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{statusLabel[booking.status]}</span></div><p className="mt-3 text-xs text-slate-500">{formatDateTime(booking.start_time)} — {formatDateTime(booking.end_time)}</p>{booking.description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{booking.description}</p>}{booking.status === 'pending' && <div className="mt-4 flex gap-2"><button onClick={() => void updateBookingStatus(booking, 'approved')} className="flex-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"><Check size={14} className="mr-1 inline" /> Aprobar</button><button onClick={() => void updateBookingStatus(booking, 'rejected')} className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 dark:border-white/10 dark:text-slate-300"><XCircle size={14} className="mr-1 inline" /> Rechazar</button></div>}</article>)}{!bookings.length && <p className="col-span-full py-10 text-center text-sm text-slate-500">No hay solicitudes registradas.</p>}</div></section>}
+    {activeTab === 'spaces' && <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]"><div className="space-y-3">{spaces.map((space) => <article key={space.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900"><div className="h-20 w-24 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">{space.image_url ? <img src={space.image_url} alt={space.name} className="h-full w-full object-cover" /> : <Home className="m-7 text-slate-400" />}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="font-black text-slate-950 dark:text-white">{space.name}</h3><span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${spaceState(space).className}`}>{spaceState(space).label}</span></div><p className="mt-1 line-clamp-1 text-sm text-slate-500">{space.description || 'Sin descripción.'}</p><p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{space.capacity ? `${space.capacity} personas` : 'Capacidad no definida'} · {(space.features || []).slice(0, 3).join(' · ') || 'Sin equipamiento registrado'}</p></div><div className="flex gap-1"><button onClick={() => setSelectedSpace(space)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-emerald-600" title="Ver detalles"><MapPin size={17} /></button><button onClick={() => openEdit(space)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-emerald-600" title="Editar"><Edit2 size={17} /></button><button onClick={() => void deleteSpace(space)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" title="Eliminar"><Trash2 size={17} /></button></div></article>)}{!spaces.length && !loading && <p className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Crea espacios con ubicación, capacidad y equipamiento para que las reservas sean claras.</p>}</div><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">{editingSpace || !spaces.length ? <form onSubmit={(event) => void saveSpace(event)} className="space-y-4"><div className="flex items-center justify-between"><div><h2 className="text-xl font-black text-slate-950 dark:text-white">{editingSpace ? 'Editar espacio' : 'Nuevo espacio'}</h2><p className="text-xs text-slate-500">La información ayuda a evitar reservas equivocadas.</p></div>{editingSpace && <button type="button" onClick={() => setEditingSpace(null)}><X size={18} className="text-slate-400" /></button>}</div><input required value={spaceForm.name} onChange={(e) => setSpaceForm({ ...spaceForm, name: e.target.value })} placeholder="Nombre del espacio" className="field" /><textarea value={spaceForm.description} onChange={(e) => setSpaceForm({ ...spaceForm, description: e.target.value })} placeholder="Descripción y recomendaciones" rows={3} className="field" /><div className="grid grid-cols-2 gap-3"><input type="number" min="0" value={spaceForm.capacity} onChange={(e) => setSpaceForm({ ...spaceForm, capacity: e.target.value })} placeholder="Capacidad" className="field" /><input value={spaceForm.features} onChange={(e) => setSpaceForm({ ...spaceForm, features: e.target.value })} placeholder="Equipamiento, separado por coma" className="field" /></div><input value={spaceForm.address} onChange={(e) => setSpaceForm({ ...spaceForm, address: e.target.value })} placeholder="Dirección" className="field" /><div className="grid grid-cols-2 gap-3"><input value={spaceForm.latitude} onChange={(e) => setSpaceForm({ ...spaceForm, latitude: e.target.value })} placeholder="Latitud" className="field" /><input value={spaceForm.longitude} onChange={(e) => setSpaceForm({ ...spaceForm, longitude: e.target.value })} placeholder="Longitud" className="field" /></div><input value={spaceForm.map_url} onChange={(e) => setSpaceForm({ ...spaceForm, map_url: e.target.value })} placeholder="Enlace de Google Maps u OpenStreetMap" className="field" /><textarea value={spaceForm.gallery_urls} onChange={(e) => setSpaceForm({ ...spaceForm, gallery_urls: e.target.value })} placeholder="URLs de galería, una por línea" rows={2} className="field" /><label className="flex items-center gap-3 rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500"><ImagePlus size={18} />{selectedFile ? selectedFile.name : 'Añadir foto principal'}<input type="file" accept="image/*" className="hidden" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} /></label><div className="grid gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300"><label><input type="checkbox" checked={spaceForm.is_bookable} onChange={(e) => setSpaceForm({ ...spaceForm, is_bookable: e.target.checked })} className="mr-2" />Disponible para reservas</label><label><input type="checkbox" checked={spaceForm.booking_requires_approval} onChange={(e) => setSpaceForm({ ...spaceForm, booking_requires_approval: e.target.checked })} className="mr-2" />Requiere aprobación</label><label><input type="checkbox" checked={spaceForm.is_active} onChange={(e) => setSpaceForm({ ...spaceForm, is_active: e.target.checked })} className="mr-2" />Visible y activo</label></div><button disabled={saving} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white disabled:opacity-50">{saving ? 'Guardando…' : editingSpace ? 'Guardar cambios' : 'Crear espacio'}</button></form> : <div className="flex h-full min-h-80 flex-col items-center justify-center text-center text-slate-500"><Home size={32} className="mb-3 text-emerald-600" /><p className="max-w-xs text-sm">Selecciona un espacio para editarlo o crea uno nuevo.</p><button onClick={openCreate} className="mt-4 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white dark:bg-white dark:text-slate-950">Crear espacio</button></div>}</div></section>}
+    {selectedSpace && <div className="fixed inset-0 z-50 flex items-end justify-end bg-slate-950/40 p-0 backdrop-blur-sm sm:p-5" onClick={() => setSelectedSpace(null)}><aside className="h-full w-full max-w-lg overflow-y-auto bg-white p-6 shadow-2xl dark:bg-slate-950 sm:h-auto sm:max-h-[calc(100vh-2.5rem)] sm:rounded-3xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-600">Detalle del espacio</span><h2 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">{selectedSpace.name}</h2></div><button onClick={() => setSelectedSpace(null)}><X className="text-slate-400" /></button></div>{selectedSpace.image_url && <img src={selectedSpace.image_url} alt={selectedSpace.name} className="mt-5 h-48 w-full rounded-2xl object-cover" />}<div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-xl bg-slate-50 p-3 dark:bg-white/5"><p className="text-xs text-slate-500">Capacidad</p><strong className="text-sm text-slate-900 dark:text-white">{selectedSpace.capacity || '—'} personas</strong></div><div className="rounded-xl bg-slate-50 p-3 dark:bg-white/5"><p className="text-xs text-slate-500">Estado</p><strong className="text-sm text-slate-900 dark:text-white">{spaceState(selectedSpace).label}</strong></div></div>{selectedSpace.description && <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-slate-300">{selectedSpace.description}</p>}<div className="mt-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">{selectedSpace.address && <p className="flex items-start gap-2"><MapPin size={17} className="mt-0.5 shrink-0 text-emerald-600" />{selectedSpace.address}</p>}{selectedSpace.features?.length ? <p><strong className="text-slate-900 dark:text-white">Equipamiento:</strong> {selectedSpace.features.join(' · ')}</p> : null}</div>{selectedSpace.latitude != null && selectedSpace.longitude != null && <iframe title={`Mapa de ${selectedSpace.name}`} className="mt-5 h-56 w-full rounded-2xl border-0" src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedSpace.longitude - 0.01}%2C${selectedSpace.latitude - 0.01}%2C${selectedSpace.longitude + 0.01}%2C${selectedSpace.latitude + 0.01}&layer=mapnik&marker=${selectedSpace.latitude}%2C${selectedSpace.longitude}`} loading="lazy" />}{selectedSpace.map_url && <a href={selectedSpace.map_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-700">Abrir mapa completo <ExternalLink size={15} /></a>}{Array.isArray(selectedSpace.gallery_urls) && selectedSpace.gallery_urls.length > 0 && <div className="mt-5 grid grid-cols-2 gap-2">{selectedSpace.gallery_urls.map((url) => <img key={url} src={url} alt="Vista del espacio" className="h-28 w-full rounded-xl object-cover" />)}</div>}<button onClick={() => openEdit(selectedSpace)} className="mt-6 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-700 dark:border-white/10 dark:text-slate-200">Editar información</button></aside></div>}
+  </div>;
 }

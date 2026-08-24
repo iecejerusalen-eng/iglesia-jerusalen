@@ -14,7 +14,9 @@ import {
   Cloud,
   RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
+import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 
 const YoutubeIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
   <svg
@@ -168,6 +170,7 @@ export default function MediaSearchModal({
   // Church Vault & Cloudinary Media states
   const [churchMedia, setChurchMedia] = useState<ChurchMedia[]>([]);
   const [loadingChurchMedia, setLoadingChurchMedia] = useState(false);
+  const [uploadingClipboard, setUploadingClipboard] = useState(false);
 
   const fetchChurchMedia = async () => {
     setLoadingChurchMedia(true);
@@ -484,6 +487,32 @@ export default function MediaSearchModal({
     onClose();
   };
 
+  const handleImagePaste = async (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) => item.type.startsWith('image/'));
+    const file = imageItem?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    setUploadingClipboard(true);
+    try {
+      const extension = file.type.split('/')[1] || 'png';
+      const pastedFile = new File([file], `imagen-portapapeles-${Date.now()}.${extension}`, { type: file.type });
+      const url = await uploadFileToCloudinary(pastedFile, 'biblioteca', 'image');
+      const { error } = await supabase.from('media_vault_files').insert({ name: pastedFile.name, url, mimetype: pastedFile.type, size: pastedFile.size });
+      if (error) {
+        console.error('La imagen se subió, pero no se pudo registrar en la biblioteca:', error);
+        toast.warning('Imagen subida; no pudo registrarse en la biblioteca central.');
+      } else {
+        toast.success('Imagen pegada y guardada en la biblioteca.');
+      }
+      setPastedUrl(url);
+    } catch (error) {
+      console.error('Error al subir imagen pegada:', error);
+      toast.error(error instanceof Error ? error.message : 'No se pudo subir la imagen pegada.');
+    } finally {
+      setUploadingClipboard(false);
+    }
+  };
+
   const selectStockImage = (img: StockImage) => {
     onSelect(img.url, { thumbnailUrl: img.thumbnail || img.url });
     onClose();
@@ -585,10 +614,12 @@ export default function MediaSearchModal({
                   type="url"
                   value={pastedUrl}
                   onChange={(e) => setPastedUrl(e.target.value)}
+                  onPaste={(event) => { void handleImagePaste(event); }}
                   placeholder="https://ejemplo.com/imagen.jpg o https://www.youtube.com/watch?v=..."
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   autoFocus
                 />
+                {uploadingClipboard && <p className="text-[10px] font-bold text-emerald-600">Subiendo la imagen del portapapeles…</p>}
                 <p className="text-[10px] text-gray-450 leading-relaxed font-medium">
                   {allowedTypes.includes('video')
                     ? 'Soporta enlaces directos de imágenes y direcciones URL de videos de YouTube o Vimeo.'

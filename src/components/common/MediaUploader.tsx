@@ -1,5 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Upload, Cloud } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '../../config/supabase';
+import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface MediaUploaderProps {
@@ -170,6 +173,35 @@ export default function MediaUploader({
     widgetRef.current.open();
   }, [cloudName, uploadPreset, folder, multiple, allowedFormats, onUploadSuccess]);
 
+  const handleClipboardPaste = useCallback(async (event: React.ClipboardEvent<HTMLButtonElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) => item.type.startsWith('image/'));
+    const file = imageItem?.getAsFile();
+    if (!file) return;
+
+    event.preventDefault();
+    try {
+      const extension = file.type.split('/')[1] || 'png';
+      const pastedFile = new File([file], `imagen-portapapeles-${Date.now()}.${extension}`, { type: file.type });
+      const url = await uploadFileToCloudinary(pastedFile, folder, 'image');
+      const { error: catalogError } = await supabase.from('media_vault_files').insert({
+        name: pastedFile.name,
+        url,
+        mimetype: pastedFile.type,
+        size: pastedFile.size,
+      });
+      if (catalogError) {
+        console.error('La imagen se subió, pero no se pudo registrar en la biblioteca:', catalogError);
+        toast.warning('Imagen subida; no pudo registrarse en la biblioteca central.');
+      } else {
+        toast.success('Imagen pegada y guardada en la biblioteca.');
+      }
+      onUploadSuccess(url, '', 'image', extension);
+    } catch (error) {
+      console.error('Error al subir imagen desde el portapapeles:', error);
+      toast.error(error instanceof Error ? error.message : 'No se pudo subir la imagen pegada.');
+    }
+  }, [folder, onUploadSuccess]);
+
   // Clean up on unmount
   useEffect(() => {
     return () => {
@@ -184,6 +216,8 @@ export default function MediaUploader({
     <button
       type="button"
       onClick={openWidget}
+      onPaste={(event) => { void handleClipboardPaste(event); }}
+      title="También puedes enfocar este botón y presionar Ctrl+V para pegar una imagen"
       className={`
         inline-flex items-center gap-2 px-4 py-2.5
         bg-gradient-to-br from-emerald-600 to-emerald-700

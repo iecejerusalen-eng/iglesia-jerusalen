@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import type { VolunteerShift, VolunteerAssignment, Ministry } from '../../types';
+import type { VolunteerShift, VolunteerAssignment, Ministry, Space } from '../../types';
 import { Shield, Plus, Calendar, Users, Trash2, CheckCircle2, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ export default function VolunteersManager() {
   const [shifts, setShifts] = useState<VolunteerShift[]>([]);
   const [assignments, setAssignments] = useState<VolunteerAssignment[]>([]);
   const [ministries, setMinistries] = useState<Pick<Ministry, 'id' | 'name'>[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,24 +31,28 @@ export default function VolunteersManager() {
     effort_level: 'moderado',
     skills_needed: [],
     location: '',
+    space_id: '',
     is_published: true,
   });
 
   const loadData = async () => {
     try {
-      const [shiftsRes, assignRes, minRes] = await Promise.all([
+      const [shiftsRes, assignRes, minRes, spacesRes] = await Promise.all([
         supabase.from('volunteer_shifts').select('*, ministries(name)').order('start_time', { ascending: false }).limit(50),
         supabase.from('volunteer_assignments').select('*, members(first_name, last_name)').order('created_at', { ascending: false }).limit(100),
-        supabase.from('ministries').select('id, name').order('name')
+        supabase.from('ministries').select('id, name').order('name'),
+        supabase.from('spaces').select('*').eq('is_active', true).eq('is_bookable', true).order('name')
       ]);
 
       if (shiftsRes.error) throw shiftsRes.error;
       if (assignRes.error) throw assignRes.error;
       if (minRes.error) throw minRes.error;
+      if (spacesRes.error) throw spacesRes.error;
 
       setShifts(shiftsRes.data || []);
       setAssignments(assignRes.data || []);
       setMinistries(minRes.data || []);
+      setSpaces((spacesRes.data || []) as Space[]);
     } catch (err) {
       console.error(err);
       toast.error('Error al cargar datos de voluntariado');
@@ -72,6 +77,7 @@ export default function VolunteersManager() {
       effort_level: 'moderado',
       skills_needed: [],
       location: '',
+      space_id: '',
       is_published: true,
     });
     setIsModalOpen(true);
@@ -84,6 +90,7 @@ export default function VolunteersManager() {
       end_time: '',
       ministry_id: '',
       location: '',
+      space_id: '',
       is_published: true,
     });
     setIsModalOpen(true);
@@ -126,6 +133,7 @@ export default function VolunteersManager() {
         effort_level: validEffortLevel,
         skills_needed: Array.isArray(formData.skills_needed) ? formData.skills_needed : [],
         location: formData.location?.trim() || null,
+        space_id: formData.space_id || null,
         ministry_id: validMinistryId,
         is_published: formData.is_published ?? true,
       };
@@ -405,6 +413,13 @@ export default function VolunteersManager() {
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Lugar</label>
                     <input value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 dark:text-white outline-none" placeholder="Ej. Cocina" />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Espacio asignado <span className="font-normal normal-case">(opcional)</span></label>
+                  <select value={formData.space_id || ''} onChange={e => setFormData({...formData, space_id: e.target.value})} className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 dark:text-white outline-none">
+                    <option value="">Sin espacio asignado</option>
+                    {spaces.map(space => <option key={space.id} value={space.id}>{space.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Habilidades útiles <span className="font-normal normal-case">(separadas por coma)</span></label>

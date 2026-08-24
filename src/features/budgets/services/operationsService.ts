@@ -1,5 +1,6 @@
 import { supabase } from '../../../config/supabase';
 import type { ChurchAsset, MaintenanceWorkOrder, ProcurementActivity, ProcurementOrder } from '../operationsTypes';
+import type { BudgetStatus } from '../types';
 
 const asArray = <T>(value: unknown): T[] => Array.isArray(value) ? value as T[] : [];
 
@@ -53,4 +54,17 @@ export async function addActivity(payload: Pick<ProcurementActivity, 'proposal_i
   if (userError) throw userError;
   const { error } = await supabase.from('church_procurement_activity').insert({ ...payload, actor_id: userData.user?.id ?? null });
   if (error) throw error;
+}
+
+export async function updateProposalWorkflow(proposalId: string, status: BudgetStatus, comment = ''): Promise<void> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  const { error } = await supabase.from('church_budget_proposals').update({ status }).eq('id', proposalId);
+  if (error) throw error;
+  const actorId = userData.user?.id ?? null;
+  if (actorId && (status === 'approved' || status === 'rejected')) {
+    const { error: approvalError } = await supabase.from('church_budget_approvals').insert({ proposal_id: proposalId, approver_id: actorId, status, comment, decided_at: new Date().toISOString(), step_order: 1 });
+    if (approvalError) throw approvalError;
+  }
+  await addActivity({ proposal_id: proposalId, request_id: null, action: `proposal_${status}`, comment, payload: { status } });
 }

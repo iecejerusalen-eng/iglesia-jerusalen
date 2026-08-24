@@ -115,6 +115,7 @@ export interface VolunteerShift {
   start_time: string;
   end_time: string;
   ministry_id: string | null;
+  space_id?: string | null;
   required_volunteers: number;
   category?: string;
   location?: string | null;
@@ -146,6 +147,13 @@ export interface Space {
   capacity: number | null;
   features: string[] | null;
   image_url: string | null;
+  address?: string | null;
+  map_url?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  gallery_urls?: string[] | null;
+  booking_requires_approval?: boolean;
+  is_bookable?: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -390,6 +398,7 @@ export interface Event {
   leaders_in_charge: string[];
   is_public?: boolean;
   location_name?: string | null;
+  space_id?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   has_route?: boolean | null;

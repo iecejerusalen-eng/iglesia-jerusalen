@@ -1,0 +1,13 @@
+import React, { useState } from 'react';
+import { Check, Clock3, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { updateProposalWorkflow } from '../services/operationsService';
+import type { BudgetProposal } from '../types';
+
+export default function ApprovalQueue({ budgets, onChanged }: { budgets: BudgetProposal[]; onChanged: () => Promise<void> }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const pending = budgets.filter((item) => item.status === 'review');
+  if (pending.length === 0) return <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-center text-sm text-slate-500 dark:border-white/10 dark:bg-white/[.02]">No hay propuestas esperando aprobación.</div>;
+  const decide = async (proposalId: string, status: 'approved' | 'rejected') => { setBusy(proposalId); try { await updateProposalWorkflow(proposalId, status); toast.success(status === 'approved' ? 'Propuesta aprobada.' : 'Propuesta rechazada.'); await onChanged(); } catch (error) { console.error('No se pudo actualizar la aprobación', error); toast.error('No se pudo actualizar la aprobación.'); } finally { setBusy(null); } };
+  return <section className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-5 dark:border-amber-400/20 dark:bg-amber-400/[.06]"><div className="mb-4 flex items-center gap-2"><Clock3 size={18} className="text-amber-600" /><div><h3 className="font-black text-primary dark:text-white">Aprobaciones pendientes</h3><p className="text-xs text-slate-500">Revisa y decide antes de convertir una propuesta en compra.</p></div></div><div className="space-y-2">{pending.map((item) => <div key={item.id} className="flex flex-col gap-3 rounded-xl bg-white p-3 sm:flex-row sm:items-center sm:justify-between dark:bg-slate-950/50"><div><b className="text-sm text-primary dark:text-white">{item.title}</b><p className="text-xs text-slate-500">Estimado: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: item.currency, maximumFractionDigits: 0 }).format(item.total_estimated)}</p></div><div className="flex gap-2"><button type="button" disabled={busy === item.id} onClick={() => void decide(item.id, 'rejected')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-3 py-2 text-xs font-black text-rose-600 disabled:opacity-50"><X size={14} />Rechazar</button><button type="button" disabled={busy === item.id} onClick={() => void decide(item.id, 'approved')} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50"><Check size={14} />Aprobar</button></div></div>)}</div></section>;
+}

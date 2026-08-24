@@ -27,8 +27,8 @@ const AdminSettings = () => {
   return (
     <AnimeFadeUp className="max-w-5xl space-y-6">
       <AdminHeader 
-        title="Personalizar Panel" 
-        description="Ajusta el panel de administración a tu medida. Elige el tema, los colores y la disposición de los menús. Tus preferencias se guardarán en tu cuenta."
+        title="Apariencia y preferencias" 
+        description="Personaliza la identidad pública de la iglesia y la forma en que trabajas dentro del panel."
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
