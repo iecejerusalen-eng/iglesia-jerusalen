@@ -104,7 +104,7 @@ export default function GlobalToolbox() {
   const wasOpenRef = useRef(store.isOpen);
   const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
   const dragFrameRef = useRef<number | null>(null);
-  const launcherHideTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const launcherHideTimerRef = useRef<number | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [isLauncherVisible, setIsLauncherVisible] = useState(false);
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
@@ -135,7 +135,7 @@ export default function GlobalToolbox() {
     launcherHideTimerRef.current = window.setTimeout(() => {
       setIsLauncherVisible(false);
       launcherHideTimerRef.current = null;
-    }, 4200);
+    }, 4200) as unknown as number;
   }, [clearLauncherHideTimer, store.isOpen]);
 
   useEffect(() => {

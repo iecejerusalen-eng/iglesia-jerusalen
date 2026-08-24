@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   const [isPeeked, setIsPeeked] = useState(false);
-  const peekHideTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const peekHideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -178,7 +178,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
     peekHideTimerRef.current = window.setTimeout(() => {
       setIsPeeked(false);
       peekHideTimerRef.current = null;
-    }, 650);
+    }, 650) as unknown as number;
   }, [clearPeekHideTimer, isAutoHide]);
 
   useEffect(() => () => clearPeekHideTimer(), [clearPeekHideTimer]);
