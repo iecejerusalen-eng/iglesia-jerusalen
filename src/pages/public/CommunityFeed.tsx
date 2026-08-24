@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   MessageSquare, Heart, Sparkles, Send, ShieldCheck, Plus
 } from 'lucide-react';
@@ -81,6 +82,13 @@ export const CommunityFeed = () => {
           <p className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
             {t('community.subtitle', 'Testimonios, peticiones y noticias de nuestra familia en la fe.')}
           </p>
+          <Link
+            to="/comunidad/culto-en-vivo"
+            className="mx-auto inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-xs font-bold text-amber-300 transition hover:bg-amber-400/20"
+          >
+            <span className="relative flex size-2.5"><span className="absolute inline-flex size-full animate-ping rounded-full bg-rose-400 opacity-70" /><span className="relative inline-flex size-2.5 rounded-full bg-rose-500" /></span>
+            Entrar al Culto en Vivo
+          </Link>
         </AnimeFadeUp>
 
         {/* CONTROLS BAR */}

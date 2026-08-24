@@ -409,6 +409,7 @@ const SongsManager = () => {
   const [newStyleName, setNewStyleName] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
+  const artistOptions = Array.from(new Set(songs.map((song) => song.artist?.trim()).filter((artist): artist is string => Boolean(artist)))).sort((a, b) => a.localeCompare(b, 'es'));
 
   const handleImportCifraClub = () => {
     if (!importText.trim()) return;
@@ -1301,7 +1302,8 @@ const SongsManager = () => {
                 </div>
                 <div>
                   <label htmlFor="song-artist" className="block text-xs font-bold text-gray-400 uppercase mb-1">Artista / Autor</label>
-                  <input id="song-artist" {...register('artist')} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-850 dark:text-gray-100 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Thomas Chisholm" />
+                  <input id="song-artist" list="song-artist-options" {...register('artist')} className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-850 dark:text-gray-100 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none" placeholder="Ej: Thomas Chisholm" />
+                  <datalist id="song-artist-options">{artistOptions.map((artist) => <option key={artist} value={artist} />)}</datalist>
                 </div>
               </div>
 

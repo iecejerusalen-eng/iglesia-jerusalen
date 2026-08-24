@@ -16,6 +16,7 @@ const Expositores = lazyWithRetry(() => import('../pages/public/Expositores'));
 const Contact = lazyWithRetry(() => import('../pages/public/Contact'));
 const Events = lazyWithRetry(() => import('../pages/public/Events'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
+const LiveStream = lazyWithRetry(() => import('../pages/public/LiveStream'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
 const ProgramsOverview = lazyWithRetry(() => import('../pages/public/ProgramsOverview'));
 const VirtualClassroomLanding = lazyWithRetry(() => import('../pages/public/VirtualClassroomLanding'));
@@ -57,6 +58,7 @@ export default function PublicRoutes() {
         <Route path="/contacto" element={<Contact />} />
         <Route path="/eventos" element={<Events />} />
         <Route path="/peticiones" element={<Petitions />} />
+        <Route path="/comunidad/culto-en-vivo" element={<LiveStream />} />
         <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
         <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
         <Route path="/programas" element={<ProgramsOverview />} />

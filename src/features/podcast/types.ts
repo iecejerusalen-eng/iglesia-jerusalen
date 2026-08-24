@@ -1,4 +1,4 @@
-export type AudioSourceType = 'upload' | 'url' | 'embed';
+export type AudioSourceType = 'upload' | 'file' | 'url' | 'embed';
 
 export interface AudioChapter {
   id: string;

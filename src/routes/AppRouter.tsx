@@ -61,6 +61,7 @@ const PodcastManager = lazyWithRetry(() => import('../pages/admin/PodcastManager
 const CommunityFeed = lazyWithRetry(() => import('../pages/public/CommunityFeed'));
 const DynamicFormRenderer = lazyWithRetry(() => import('../pages/public/DynamicFormRenderer'));
 const LiveStream = lazyWithRetry(() => import('../pages/public/LiveStream'));
+const LiveServiceControl = lazyWithRetry(() => import('../pages/admin/LiveServiceControl'));
 const FamiliesManager = lazyWithRetry(() => import('../pages/admin/FamiliesManager'));
 const ChildCheckInKiosk = lazyWithRetry(() => import('../pages/admin/ChildCheckInKiosk'));
 const FormBuilderManager = lazyWithRetry(() => import('../pages/admin/FormBuilderManager'));
@@ -132,6 +133,7 @@ const ProPresenterManager = lazyWithRetry(() => import('../pages/admin/ProPresen
 const HolyricsConnectionManager = lazyWithRetry(() => import('../pages/admin/HolyricsConnectionManager'));
 const MediaVault = lazyWithRetry(() => import('../pages/admin/MediaVault'));
 const InventoryManager = lazyWithRetry(() => import('../pages/admin/InventoryManager'));
+const BudgetsRepairsManager = lazyWithRetry(() => import('../pages/admin/BudgetsRepairsManager'));
 const AnimationCatalog = lazyWithRetry(() => import('../pages/admin/AnimationCatalog'));
 const PresentationEditor = lazyWithRetry(() => import('../pages/admin/PresentationEditor').then(m => ({ default: m.PresentationEditor })));
 const GamesManager = lazyWithRetry(() => import('../pages/admin/GamesManager').then(m => ({ default: m.GamesManager })));
@@ -202,6 +204,7 @@ export default function AppRouter() {
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/reservas" element={<Bookings />} />
           <Route path="/comunidad" element={<CommunityFeed />} />
+          <Route path="/comunidad/culto-en-vivo" element={<LiveStream />} />
           <Route path="/en-vivo" element={<LiveStream />} />
           <Route path="/formularios/:formId" element={<DynamicFormRenderer />} />
           <Route path="/cert-verify/:hash" element={<CertificateVerification />} />
@@ -248,7 +251,8 @@ export default function AppRouter() {
         {/* Protected Admin Modules */}
         <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/produccion" element={<ProductionBoard />} /></Route></Route>
         <Route element={<ProtectedRoute module="propresenter" />}><Route element={<AdminLayout />}><Route path="/admin/propresenter" element={<ProPresenterManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/holyrics" element={<HolyricsConnectionManager />} /></Route></Route>
+          <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/holyrics" element={<HolyricsConnectionManager />} /></Route></Route>
+          <Route element={<ProtectedRoute module="production" />}><Route element={<AdminLayout />}><Route path="/admin/culto-en-vivo" element={<LiveServiceControl />} /></Route></Route>
         <Route element={<ProtectedRoute module="media_vault" />}><Route element={<AdminLayout />}><Route path="/admin/media-vault" element={<MediaVault />} /></Route></Route>
         <Route element={<ProtectedRoute module="ministries" />}><Route element={<AdminLayout />}>
           <Route path="/admin/ministerios" element={<MinistryManager />} />
@@ -352,6 +356,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="petitions" />}><Route element={<AdminLayout />}><Route path="/admin/peticiones" element={<PetitionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /><Route path="/admin/buzon" element={<ContactInbox />} /></Route></Route>
         <Route element={<ProtectedRoute module="inventory" />}><Route element={<AdminLayout />}><Route path="/admin/inventario" element={<InventoryManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="budgets_repairs" />}><Route element={<AdminLayout />}><Route path="/admin/presupuestos-arreglos" element={<BudgetsRepairsManager />} /></Route></Route>
         <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}><Route path="/admin/*" element={<AdminNotFound />} /></Route></Route>
       </Routes>
     </Suspense>

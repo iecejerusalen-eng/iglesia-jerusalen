@@ -154,7 +154,7 @@ export const PodcastManager = () => {
         title: editingEpisode.title,
         description: editingEpisode.description || '',
         audio_url: editingEpisode.audio_url,
-        audio_source_type: editingEpisode.audio_source_type || 'file',
+        audio_source_type: (editingEpisode.audio_source_type as 'upload' | 'file' | 'url' | 'embed') || 'file',
         audio_duration_seconds: editingEpisode.audio_duration_seconds || 1200,
         cover_image_url: editingEpisode.cover_image_url || '',
         status: editingEpisode.status || 'published',
@@ -167,7 +167,7 @@ export const PodcastManager = () => {
 
       if (editingEpisode.id) {
         await supabase.from('podcast_episodes').update(payload).eq('id', editingEpisode.id);
-        setEpisodes(prev => prev.map(e => e.id === editingEpisode.id ? { ...e, ...payload } : e));
+        setEpisodes(prev => prev.map(e => e.id === editingEpisode.id ? ({ ...e, ...payload } as PodcastEpisode) : e));
         toast.success('Episodio actualizado correctamente.');
       } else {
         const newEp: PodcastEpisode = {

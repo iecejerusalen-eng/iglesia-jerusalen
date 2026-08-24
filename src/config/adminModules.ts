@@ -37,6 +37,7 @@ import {
   BookOpenCheck,
   Activity,
   LibraryBig,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -667,6 +668,17 @@ export const ADMIN_MODULES: AdminModule[] = [
     keywords: ['holyrics', 'letras', 'stage', 'conexión', 'api']
   },
   {
+    id: 'live_service_control',
+    label: 'Control Culto en Vivo',
+    name: 'Control de Culto en Vivo',
+    path: '/admin/culto-en-vivo',
+    icon: Radio,
+    group: 'operaciones',
+    permission: 'production',
+    showInPermissions: false,
+    keywords: ['culto', 'en vivo', 'transmisión', 'agenda', 'resumen']
+  },
+  {
     id: 'inventory',
     label: 'Inventario de Equipos',
     name: 'Inventario Equipos',
@@ -688,6 +700,14 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Reserva Espacios',
     path: '/admin/reservas',
     icon: Building,
+    group: 'operaciones'
+  },
+  {
+    id: 'budgets_repairs',
+    label: 'Presupuestos & Arreglos',
+    name: 'Centro de Decisión',
+    path: '/admin/presupuestos-arreglos',
+    icon: ClipboardCheck,
     group: 'operaciones'
   },
   {

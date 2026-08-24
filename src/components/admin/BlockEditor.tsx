@@ -69,6 +69,7 @@ interface Props {
   content: string;
   onChange: (html: string) => void;
   disabled?: boolean;
+  excludeTypes?: BlockType[];
 }
 
 /* Category definitions for the Add Block toolbar */
@@ -187,7 +188,7 @@ const countWords = (html: string | undefined): number => {
   return text ? text.split(' ').length : 0;
 };
 
-const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
+const BlockEditor = ({ content, onChange, disabled = false, excludeTypes = [] }: Props) => {
   const [blocks, setBlocks] = useState<LessonBlock[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
@@ -1433,7 +1434,7 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
 
               {/* Block type buttons for active category */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                {BLOCK_CATEGORIES.find(c => c.id === activeCategory)?.types.map((bt) => {
+                {BLOCK_CATEGORIES.find(c => c.id === activeCategory)?.types.filter((bt) => !excludeTypes.includes(bt.type)).map((bt) => {
                   const BtIcon = bt.icon;
                   return (
                     <button
