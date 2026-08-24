@@ -66,6 +66,11 @@ const ChildCheckInKiosk = lazyWithRetry(() => import('../pages/admin/ChildCheckI
 const FormBuilderManager = lazyWithRetry(() => import('../pages/admin/FormBuilderManager'));
 const PredictiveEngagementDashboard = lazyWithRetry(() => import('../pages/admin/PredictiveEngagementDashboard'));
 const CampusManager = lazyWithRetry(() => import('../pages/admin/CampusManager'));
+const CrmPipelineManager = lazyWithRetry(() => import('../pages/admin/CrmPipelineManager'));
+const WorkflowsManager = lazyWithRetry(() => import('../pages/admin/WorkflowsManager'));
+const CampaignsManager = lazyWithRetry(() => import('../pages/admin/CampaignsManager'));
+const GroupsManager = lazyWithRetry(() => import('../pages/admin/GroupsManager'));
+const QRCheckInKiosk = lazyWithRetry(() => import('../features/checkin/components/QRCheckInKiosk').then(m => ({ default: m.QRCheckInKiosk })));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -259,6 +264,11 @@ export default function AppRouter() {
           <Route path="/admin/miembros" element={<MembersManager />} />
           <Route path="/admin/solicitudes" element={<CrmSubmissions />} />
         </Route></Route>
+        <Route element={<ProtectedRoute module="crm_pipeline" />}><Route element={<AdminLayout />}><Route path="/admin/crm-pipeline" element={<CrmPipelineManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="workflows_automations" />}><Route element={<AdminLayout />}><Route path="/admin/automatizaciones" element={<WorkflowsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="mass_campaigns" />}><Route element={<AdminLayout />}><Route path="/admin/campanas" element={<CampaignsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="small_groups_admin" />}><Route element={<AdminLayout />}><Route path="/admin/grupos" element={<GroupsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="checkin_kiosk_admin" />}><Route element={<AdminLayout />}><Route path="/admin/checkin-kiosk" element={<QRCheckInKiosk />} /></Route></Route>
         <Route element={<ProtectedRoute module="certificates" />}><Route element={<AdminLayout />}><Route path="/admin/certificados" element={<CertificatesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
