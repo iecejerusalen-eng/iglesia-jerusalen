@@ -172,6 +172,28 @@ export default function HolyricsConnectionManager() {
         const body = await res.json() as { ok?: boolean; error?: string; message?: string };
         if (!res.ok || !body.ok) throw new Error(body.message || body.error || `HTTP ${res.status}`);
       }
+      if (['ShowLyrics', 'ShowText', 'ShowVerse', 'ShowAnnouncement', 'ShowAlert', 'HideAlert', 'ClearLyrics', 'ClearScreen'].includes(action)) {
+        const { data: liveSession, error: sessionError } = await supabase.from('live_service_sessions').select('id').eq('status', 'live').order('started_at', { ascending: false }).limit(1).maybeSingle();
+        if (sessionError) {
+          console.error('Holyrics respondió, pero no se pudo localizar el Culto en Vivo.', sessionError);
+        } else if (liveSession) {
+          const isClear = ['ClearLyrics', 'ClearScreen'].includes(action);
+          const isAnnouncement = ['ShowAnnouncement', 'ShowAlert', 'HideAlert'].includes(action);
+          const text = typeof payload.text === 'string' ? payload.text : typeof payload.lyrics === 'string' ? payload.lyrics : typeof payload.message === 'string' ? payload.message : null;
+          const title = typeof payload.title === 'string' ? payload.title : action;
+          const { error: stateError } = await supabase.from('live_service_production_state').upsert({
+            session_id: liveSession.id,
+            source: 'holyrics',
+            is_visible: true,
+            current_title: isClear ? null : isAnnouncement ? 'Anuncio de Holyrics' : title,
+            current_text: isClear || isAnnouncement ? null : text,
+            announcement: isAnnouncement && !isClear ? text : null,
+            announcement_visible: isAnnouncement && !isClear,
+            last_synced_at: new Date().toISOString(),
+          }, { onConflict: 'session_id' });
+          if (stateError) console.error('Holyrics ejecutó la acción, pero no publicó el estado del Culto en Vivo.', stateError);
+        }
+      }
       toast.success(`Acción executada: ${action}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar comando';

@@ -291,6 +291,33 @@ const ProPresenterManager = () => {
     }
   };
 
+  const publishLiveProductionState = async (commandType: CommandType, payload: CommandPayload) => {
+    if (!['show_lyrics', 'show_chords', 'trigger_slide', 'sync_service'].includes(commandType)) return;
+    const content = payload.content;
+    if (!content || typeof content !== 'object' || !Array.isArray((content as Record<string, unknown>).slides)) return;
+    const contentRecord = content as Record<string, unknown>;
+    const slides = (contentRecord.slides as unknown[]).filter((slide): slide is Record<string, unknown> => Boolean(slide && typeof slide === 'object'));
+    const requestedIndex = typeof payload.slide_index === 'number' ? payload.slide_index : 0;
+    const slide = slides[Math.max(0, Math.min(requestedIndex, Math.max(0, slides.length - 1)))];
+    const { data: liveSession, error: sessionError } = await supabase.from('live_service_sessions').select('id').eq('status', 'live').order('started_at', { ascending: false }).limit(1).maybeSingle();
+    if (sessionError) {
+      console.error('No se pudo localizar el Culto en Vivo para ProPresenter.', sessionError);
+      return;
+    }
+    if (!liveSession) return;
+    const { error } = await supabase.from('live_service_production_state').upsert({
+      session_id: liveSession.id,
+      source: 'propresenter',
+      is_visible: true,
+      current_title: typeof contentRecord.title === 'string' ? contentRecord.title : 'ProPresenter · Letra en vivo',
+      current_text: typeof slide?.text === 'string' ? slide.text : null,
+      current_slide_index: Math.max(0, requestedIndex),
+      total_slides: slides.length,
+      last_synced_at: new Date().toISOString(),
+    }, { onConflict: 'session_id' });
+    if (error) console.error('ProPresenter ejecutó la orden, pero no publicó el estado del Culto en Vivo.', error);
+  };
+
   const sendCommand = async (commandType: CommandType, payload: CommandPayload = {}) => {
     if (schemaState !== 'ready') {
       toast.info('Aplica primero la migración de ProPresenter en Supabase.');
@@ -311,6 +338,7 @@ const ProPresenterManager = () => {
     if (error) toast.error(`No se pudo enviar la orden: ${error.message}`);
     else {
       if (data) setCommands((current) => [data as CommandRecord, ...current].slice(0, 20));
+      await publishLiveProductionState(commandType, payload);
       toast.success('Orden enviada a la cola local.');
     }
   };

@@ -121,6 +121,25 @@ const writeJson = (response, status, value) => {
 const currentSlide = () => overlayState.content?.slides?.[overlayState.currentSlideIndex] ?? null;
 const touchOverlay = () => { overlayState.updatedAt = new Date().toISOString(); };
 
+const publishProductionState = async (device) => {
+  const slide = currentSlide();
+  try {
+    await callDevice({
+      action: 'state',
+      state: {
+        is_visible: overlayState.visible,
+        current_title: overlayState.content?.title || 'ProPresenter · Producción en vivo',
+        current_text: slide?.text || null,
+        current_slide_index: overlayState.currentSlideIndex,
+        total_slides: overlayState.content?.slides?.length || 0,
+      },
+    }, device.deviceToken);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.warn(`No se pudo sincronizar el estado público del culto: ${message}`);
+  }
+};
+
 const startOverlayServer = () => {
   const server = createServer((request, response) => {
     const url = new URL(request.url || '/', `http://127.0.0.1:${overlayPort}`);
@@ -230,29 +249,29 @@ const showStageChords = async () => {
     : { method: 'DELETE' });
 };
 
-const loadOverlayContent = async (content, slideIndex = 0) => {
+const loadOverlayContent = async (content, slideIndex = 0, device) => {
   overlayState.content = content;
   overlayState.currentSlideIndex = Math.max(0, Math.min(Number(slideIndex) || 0, Math.max(0, content.slides.length - 1)));
   overlayState.visible = content.slides.length > 0;
   touchOverlay();
-  await Promise.all([showMessageSlide(), showStageChords()]);
+  await Promise.all([showMessageSlide(), showStageChords(), publishProductionState(device)]);
 };
 
-const moveOverlay = async (offset) => {
+const moveOverlay = async (offset, device) => {
   if (!overlayState.content?.slides?.length) return false;
   overlayState.currentSlideIndex = Math.max(0, Math.min(overlayState.currentSlideIndex + offset, overlayState.content.slides.length - 1));
   overlayState.visible = true;
   touchOverlay();
-  await Promise.all([showMessageSlide(), showStageChords()]);
+  await Promise.all([showMessageSlide(), showStageChords(), publishProductionState(device)]);
   return true;
 };
 
-const advancePresentation = async (offset) => {
+const advancePresentation = async (offset, device) => {
   const path = offset > 0
     ? '/v1/presentation/active/next/trigger'
     : '/v1/presentation/active/previous/trigger';
   const [overlayResult, presentationResult] = await Promise.allSettled([
-    moveOverlay(offset),
+    moveOverlay(offset, device),
     callProPresenter(path),
   ]);
   const overlayAdvanced = overlayResult.status === 'fulfilled' && overlayResult.value;
@@ -279,7 +298,12 @@ const clearOutput = async () => {
   }
 };
 
-const executeCommand = async (command) => {
+const clearAndPublishState = async (device) => {
+  await clearOutput();
+  await publishProductionState(device);
+};
+
+const executeCommand = async (command, device) => {
   switch (command.command_type) {
     case 'test_connection':
       await callProPresenter('/version');
@@ -287,19 +311,19 @@ const executeCommand = async (command) => {
     case 'show_lyrics':
     case 'show_chords':
     case 'sync_service':
-      await loadOverlayContent(readContent(command), command.payload?.slide_index);
+      await loadOverlayContent(readContent(command), command.payload?.slide_index, device);
       return;
     case 'trigger_slide':
       await loadOverlayContent(readContent(command), command.payload?.slide_index);
       return;
     case 'next_slide':
-      await advancePresentation(1);
+      await advancePresentation(1, device);
       return;
     case 'previous_slide':
-      await advancePresentation(-1);
+      await advancePresentation(-1, device);
       return;
     case 'clear_output':
-      await clearOutput();
+      await clearAndPublishState(device);
       return;
     default:
       throw new Error(`Orden no compatible: ${command.command_type}`);
@@ -326,7 +350,7 @@ const run = async () => {
       if (commands.length > 0) activeUntil = Date.now() + 15_000;
       for (const command of commands) {
         try {
-          await executeCommand(command);
+          await executeCommand(command, device);
           await callDevice({ action: 'ack', command_id: command.id, status: 'acknowledged' }, device.deviceToken);
           console.log(`OK ${command.command_type} ${command.id}`);
         } catch (error) {

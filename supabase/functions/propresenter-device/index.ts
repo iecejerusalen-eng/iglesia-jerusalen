@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-type DeviceAction = 'pair' | 'heartbeat' | 'poll' | 'ack';
+type DeviceAction = 'pair' | 'heartbeat' | 'poll' | 'ack' | 'state';
 
 interface DeviceRequest {
   action: DeviceAction;
@@ -18,6 +18,13 @@ interface DeviceRequest {
   command_id?: string;
   status?: 'acknowledged' | 'failed';
   error_message?: string | null;
+  state?: {
+    is_visible?: boolean;
+    current_title?: string | null;
+    current_text?: string | null;
+    current_slide_index?: number;
+    total_slides?: number;
+  };
 }
 
 const response = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
@@ -113,6 +120,32 @@ Deno.serve(async (request) => {
       if (error) throw error;
       if (!acknowledged) return response({ error: 'Command is no longer claimable by this device' }, 409);
       return response({ ok: true });
+    }
+
+    if (body.action === 'state') {
+      const state = body.state;
+      if (!state) return response({ error: 'state is required' }, 400);
+      const { data: liveSession, error: sessionError } = await admin
+        .from('live_service_sessions')
+        .select('id')
+        .eq('status', 'live')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (sessionError) throw sessionError;
+      if (!liveSession) return response({ ok: true, synchronized: false, reason: 'no_live_session' });
+      const { error: stateError } = await admin.from('live_service_production_state').upsert({
+        session_id: liveSession.id,
+        source: 'propresenter',
+        is_visible: state.is_visible ?? true,
+        current_title: state.current_title?.slice(0, 180) ?? null,
+        current_text: state.current_text?.slice(0, 5000) ?? null,
+        current_slide_index: Math.max(0, Math.floor(state.current_slide_index ?? 0)),
+        total_slides: Math.max(0, Math.floor(state.total_slides ?? 0)),
+        last_synced_at: new Date().toISOString(),
+      }, { onConflict: 'session_id' });
+      if (stateError) throw stateError;
+      return response({ ok: true, synchronized: true, session_id: liveSession.id });
     }
 
     return response({ error: 'Unsupported action' }, 400);
