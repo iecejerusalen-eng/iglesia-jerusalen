@@ -7,7 +7,7 @@ interface I18nContextType {
   t: (key: string, fallback?: string) => string;
 }
 
-const I18nContext = createContext<I18nContextType | undefined>(undefined);
+export const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
@@ -29,17 +29,4 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </I18nContext.Provider>
   );
-};
-
-export const useTranslation = () => {
-  const context = useContext(I18nContext);
-  if (!context) {
-    // Graceful fallback if invoked outside provider
-    return {
-      language: 'es' as Language,
-      setLanguage: () => {},
-      t: (key: string, fallback?: string) => translations.es[key] || fallback || key,
-    };
-  }
-  return context;
 };

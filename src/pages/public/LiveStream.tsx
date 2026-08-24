@@ -2,12 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import {
-  Tv, MessageSquare, Heart, Send, Sparkles, BookOpen, ShieldCheck,
-  UserCheck, Volume2, Share2, Copy, Check, HandHeart, Flame, ArrowRight
+  Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../../config/supabase';
-import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 interface LiveChatMessage {
   id: string;
@@ -18,9 +15,21 @@ interface LiveChatMessage {
   is_host?: boolean;
 }
 
+const INITIAL_MESSAGES: LiveChatMessage[] = [
+  { id: 'm-1', sender_name: 'Pr. Juan Pérez', message: '¡Bienvenidos todos a nuestro Servicio Dominical! Que la paz de Dios llene sus hogares.', timestamp: '10:00 AM', is_host: true },
+  { id: 'm-2', sender_name: 'Familia Ramírez', message: '¡Sintonizando desde Milagro! Saludos a toda la iglesia.', timestamp: '10:02 AM' },
+  { id: 'm-3', sender_name: 'Beatriz Morales', message: 'Dios bendiga a nuestro equipo de alabanza 🙌🔥', timestamp: '10:05 AM' },
+];
+
+const createReaction = (emoji: string) => ({
+  id: `react-${Date.now()}-${Math.random()}`,
+  emoji,
+  left: Math.floor(Math.random() * 80) + 10,
+});
+
 export default function LiveStream() {
   const [activeTab, setActiveTab] = useState<'chat' | 'notes' | 'prayer'>('chat');
-  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
+  const [messages, setMessages] = useState<LiveChatMessage[]>(INITIAL_MESSAGES);
   const [inputMsg, setInputMsg] = useState('');
   const [senderName, setSenderName] = useState('');
 
@@ -43,15 +52,6 @@ export default function LiveStream() {
 
   // Auto-scroll chat
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Initial mock chat messages
-    setMessages([
-      { id: 'm-1', sender_name: 'Pr. Juan Pérez', message: '¡Bienvenidos todos a nuestro Servicio Dominical! Que la paz de Dios llene sus hogares.', timestamp: '10:00 AM', is_host: true },
-      { id: 'm-2', sender_name: 'Familia Ramírez', message: '¡Sintonizando desde Milagro! Saludos a toda la iglesia.', timestamp: '10:02 AM' },
-      { id: 'm-3', sender_name: 'Beatriz Morales', message: 'Dios bendiga a nuestro equipo de alabanza 🙌🔥', timestamp: '10:05 AM' },
-    ]);
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('jerusalen_live_notes', notes);
@@ -77,11 +77,7 @@ export default function LiveStream() {
   };
 
   const handleTriggerReaction = (emoji: string) => {
-    const newReaction = {
-      id: `react-${Date.now()}-${Math.random()}`,
-      emoji,
-      left: Math.floor(Math.random() * 80) + 10,
-    };
+    const newReaction = createReaction(emoji);
     setReactions(prev => [...prev, newReaction]);
 
     setTimeout(() => {

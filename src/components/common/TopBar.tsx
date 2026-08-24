@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
-import { useTranslation } from '../../i18n/i18nContext';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());

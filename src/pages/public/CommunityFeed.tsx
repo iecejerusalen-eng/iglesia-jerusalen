@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { competitiveService } from '../../features/competitive/services/competitiveService';
 import type { CommunityPost } from '../../features/competitive/types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { useTranslation } from '../../i18n/i18nContext';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const CommunityFeed = () => {
   const { t } = useTranslation();
