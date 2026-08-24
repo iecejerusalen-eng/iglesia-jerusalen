@@ -15,11 +15,9 @@ import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/com
 import { toast } from 'sonner';
 
 // Magic UI
-import { BentoGrid, BentoCard } from '../../components/ui/magicui/bento-grid';
 import { NumberTicker } from '../../components/ui/magicui/number-ticker';
 import { Marquee } from '../../components/ui/magicui/marquee';
 import { ShinyButton } from '../../components/ui/magicui/shiny-button';
-import { BorderBeam } from '../../components/ui/magicui/border-beam';
 
 interface CustomTooltipItem {
   color?: string;
@@ -178,103 +176,98 @@ const FinanceDashboard = () => {
     const { data, error } = await supabase
       .from('orders')
       .select(`
-        *,
+        id,
+        status,
+        total,
+        payment_method,
+        created_at,
+        customer_name,
+        customer_email,
         order_items (
-          *,
-          products (*),
-          product_variants (*)
+          id,
+          product_id,
+          quantity,
+          price,
+          products (
+            name,
+            image_url
+          )
         )
       `)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    setAllOrders(data || []);
-    return data || [];
+    setAllOrders((data as unknown as Order[]) || []);
+    return (data as unknown as Order[]) || [];
   }, []);
 
-  const computeStatsAndChart = useCallback((
-    donationsList: Donation[],
-    ordersList: Order[],
+  const processMetricsAndFilters = useCallback((
+    donations: Donation[], 
+    orders: Order[], 
     filter: '30days' | '90days' | 'year' | 'all'
   ) => {
-    const today = new Date();
-    let limitDate = new Date(0); // Epoch beginning (all time)
+    const now = new Date();
+    let startDate: Date | null = null;
 
     if (filter === '30days') {
-      limitDate = new Date();
-      limitDate.setDate(today.getDate() - 30);
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     } else if (filter === '90days') {
-      limitDate = new Date();
-      limitDate.setDate(today.getDate() - 90);
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     } else if (filter === 'year') {
-      limitDate = new Date(today.getFullYear(), 0, 1);
+      startDate = new Date(now.getFullYear(), 0, 1);
     }
 
-    const filteredDonations = donationsList.filter(d => new Date(d.created_at) >= limitDate);
-    const filteredOrders = ordersList.filter(o => new Date(o.created_at) >= limitDate);
-
-    // 1. Core Totals
-    let donationsTotal = 0;
-    let diezmosSum = 0;
-    let ofrendasSum = 0;
-
-    filteredDonations.forEach(d => {
-      const amount = Number(d.amount);
-      donationsTotal += amount;
-      
-      const isDiezmo = d.category_name_backup?.toLowerCase().includes('diezmo') ?? false;
-      if (isDiezmo) {
-        diezmosSum += amount;
-      } else {
-        ofrendasSum += amount;
-      }
+    const filteredDons = donations.filter(d => {
+      if (!startDate) return true;
+      return new Date(d.created_at) >= startDate;
     });
 
-    let storeTotal = 0;
-    let storeCount = 0;
-
-    filteredOrders.forEach(o => {
-      const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(o.status);
-      if (!isPaid) return;
-      
-      storeTotal += Number(o.total);
-      storeCount++;
+    const filteredOrds = orders.filter(o => {
+      if (!startDate) return true;
+      return new Date(o.created_at) >= startDate;
     });
 
-    const totalIncome = donationsTotal + storeTotal;
-    const donationsCount = filteredDonations.length;
+    const completedDons = filteredDons.filter(d => d.status === 'completed');
+    const completedOrds = filteredOrds.filter(o => o.status === 'completed' || o.status === 'delivered' || o.status === 'paid');
+
+    const donationsTotal = completedDons.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const donationsCount = completedDons.length;
     const donationsAvg = donationsCount > 0 ? donationsTotal / donationsCount : 0;
+
+    const storeTotal = completedOrds.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+    const storeCount = completedOrds.length;
     const storeAvg = storeCount > 0 ? storeTotal / storeCount : 0;
 
-    // 2. Dominant Payment Method
+    const totalIncome = donationsTotal + storeTotal;
+
     const paymentCounts: Record<string, number> = {};
-    filteredDonations.forEach(d => {
-      const pm = d.payment_method || 'Otros';
-      paymentCounts[pm] = (paymentCounts[pm] || 0) + 1;
-    });
-    filteredOrders.forEach(o => {
-      const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(o.status);
-      if (!isPaid) return;
-      const pm = o.payment_method || 'Otros';
-      paymentCounts[pm] = (paymentCounts[pm] || 0) + 1;
+    
+    completedDons.forEach(d => {
+      const method = (d.payment_method || 'transfer').toLowerCase();
+      paymentCounts[method] = (paymentCounts[method] || 0) + 1;
     });
 
-    let paymentMethodDominant = 'N/A';
-    let paymentMethodDominantCount = 0;
-    Object.entries(paymentCounts).forEach(([pm, count]) => {
-      if (count > paymentMethodDominantCount) {
-        paymentMethodDominantCount = count;
-        paymentMethodDominant = pm;
+    completedOrds.forEach(o => {
+      const method = (o.payment_method || 'card').toLowerCase();
+      paymentCounts[method] = (paymentCounts[method] || 0) + 1;
+    });
+
+    let dominantMethod = 'N/A';
+    let maxCount = 0;
+    Object.entries(paymentCounts).forEach(([method, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantMethod = method;
       }
     });
 
-    const pmMap: Record<string, string> = {
-      'card': 'Tarjeta',
-      'transfer': 'Transferencia',
-      'cash': 'Efectivo',
-      'Otros': 'Otros'
+    const methodLabels: Record<string, string> = {
+      card: 'Tarjeta Crédito/Débito',
+      transfer: 'Transferencia Bancaria',
+      cash: 'Efectivo / Caja',
+      paypal: 'PayPal',
+      stripe: 'Stripe'
     };
-    const paymentMethodDominantFriendly = pmMap[paymentMethodDominant] || paymentMethodDominant;
 
     setStats({
       totalIncome,
@@ -284,264 +277,239 @@ const FinanceDashboard = () => {
       storeTotal,
       storeCount,
       storeAvg,
-      paymentMethodDominant: paymentMethodDominantFriendly,
-      paymentMethodDominantCount
+      paymentMethodDominant: methodLabels[dominantMethod] || dominantMethod.toUpperCase(),
+      paymentMethodDominantCount: maxCount
     });
 
-    // 3. Combined Monthly Chart Timeline
-    const monthKeys: Record<string, { label: string; diezmos: number; ofrendas: number; tienda: number; total: number }> = {};
-    
-    const getMonthKeyAndLabel = (dateStr: string) => {
-      const date = new Date(dateStr);
-      const yyyymm = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      const label = `${months[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`;
-      return { yyyymm, label };
+    const methodColors: Record<string, string> = {
+      transfer: '#1E3A8A',
+      card: '#10B981',
+      cash: '#D97706',
+      paypal: '#3B82F6',
+      stripe: '#8B5CF6'
     };
 
-    filteredDonations.forEach(d => {
-      const { yyyymm, label } = getMonthKeyAndLabel(d.created_at);
-      if (!monthKeys[yyyymm]) {
-        monthKeys[yyyymm] = { label, diezmos: 0, ofrendas: 0, tienda: 0, total: 0 };
-      }
-      const amount = Number(d.amount);
-      const isDiezmo = d.category_name_backup?.toLowerCase().includes('diezmo') ?? false;
-      if (isDiezmo) {
-        monthKeys[yyyymm].diezmos += amount;
+    const sharePoints: PaymentSharePoint[] = Object.entries(paymentCounts).map(([key, value]) => ({
+      name: methodLabels[key] || key.toUpperCase(),
+      value,
+      color: methodColors[key] || '#6B7280'
+    }));
+    setPaymentMethodsShare(sharePoints);
+
+    let diezmosTotal = 0;
+    let ofrendasTotal = 0;
+    completedDons.forEach(d => {
+      const catName = (d.donation_categories?.name || d.category || '').toLowerCase();
+      if (catName.includes('diezmo')) {
+        diezmosTotal += (Number(d.amount) || 0);
       } else {
-        monthKeys[yyyymm].ofrendas += amount;
+        ofrendasTotal += (Number(d.amount) || 0);
       }
-      monthKeys[yyyymm].total += amount;
     });
 
-    filteredOrders.forEach(o => {
-      const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(o.status);
-      if (!isPaid) return;
-      const { yyyymm, label } = getMonthKeyAndLabel(o.created_at);
-      if (!monthKeys[yyyymm]) {
-        monthKeys[yyyymm] = { label, diezmos: 0, ofrendas: 0, tienda: 0, total: 0 };
-      }
-      const amount = Number(o.total);
-      monthKeys[yyyymm].tienda += amount;
-      monthKeys[yyyymm].total += amount;
-    });
+    const partData: ParticipationPoint[] = [
+      { name: 'Diezmos', value: diezmosTotal, color: '#1e3a8a' },
+      { name: 'Ofrendas Especiales', value: ofrendasTotal, color: '#d97706' },
+      { name: 'Ventas Tienda', value: storeTotal, color: '#10b981' }
+    ].filter(p => p.value > 0);
+    setParticipationData(partData);
 
-    if (Object.keys(monthKeys).length === 0) {
-      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-        const yyyymm = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const label = `${months[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
-        monthKeys[yyyymm] = { label, diezmos: 0, ofrendas: 0, tienda: 0, total: 0 };
-      }
-    }
+    const productMap: Record<string, TopProduct> = {};
+    completedOrds.forEach(order => {
+      if (order.order_items && Array.isArray(order.order_items)) {
+        order.order_items.forEach(item => {
+          const pName = item.products?.name || 'Producto Desconocido';
+          const qty = Number(item.quantity) || 1;
+          const price = Number(item.price) || 0;
+          const rev = qty * price;
+          const img = item.products?.image_url || null;
 
-    const sortedChartData = Object.keys(monthKeys)
-      .sort()
-      .map(key => monthKeys[key]);
-
-    setChartData(sortedChartData);
-
-    // 4. Income Share Donut Chart
-    const shareData = [
-      { name: 'Diezmos', value: diezmosSum, color: '#1E3A8A' },
-      { name: 'Ofrendas', value: ofrendasSum, color: '#D97706' },
-      { name: 'Ventas Tienda', value: storeTotal, color: '#10B981' }
-    ].filter(item => item.value > 0);
-    setParticipationData(shareData);
-
-    // 5. Payment Methods share data
-    const sharePaymentData = Object.entries(paymentCounts).map(([name, count], index) => {
-      const colors = ['#1E3A8A', '#D97706', '#10B981', '#8B5CF6', '#EF4444'];
-      const friendlyName = pmMap[name] || name;
-      return {
-        name: friendlyName,
-        value: count,
-        color: colors[index % colors.length]
-      };
-    });
-    setPaymentMethodsShare(sharePaymentData);
-
-    // 6. Top Selling Products
-    const productSalesMap: Record<string, { name: string; quantity: number; revenue: number; imageUrl: string | null }> = {};
-    filteredOrders.forEach(o => {
-      const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(o.status);
-      if (!isPaid) return;
-
-      if (o.order_items) {
-        o.order_items.forEach((item) => {
-          if (!item.products) return;
-          const pId = item.product_id;
-          const qty = Number(item.quantity || 0);
-          const price = Number(item.price || 0);
-          const pName = item.products.name;
-          const img = item.products.image_url;
-
-          if (!productSalesMap[pId]) {
-            productSalesMap[pId] = { name: pName, quantity: 0, revenue: 0, imageUrl: img };
+          if (!productMap[pName]) {
+            productMap[pName] = { name: pName, quantity: 0, revenue: 0, imageUrl: img };
           }
-          productSalesMap[pId].quantity += qty;
-          productSalesMap[pId].revenue += qty * price;
+          productMap[pName].quantity += qty;
+          productMap[pName].revenue += rev;
         });
       }
     });
 
-    const sortedProducts = Object.values(productSalesMap)
-      .sort((a, b) => b.quantity - a.quantity);
+    const sortedProducts = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
     setTopProducts(sortedProducts);
 
-    // 7. Unified Transactions History
-    const combinedTx: FilteredTransaction[] = [
-      ...filteredDonations.map(d => ({
-        id: d.id,
+    const mergedList: FilteredTransaction[] = [
+      ...filteredDons.map(d => ({
+        id: `don-${d.id}`,
         type: 'donation' as const,
-        name: d.donor_name || 'Anónimo',
+        name: d.donor_name || 'Donante Anónimo',
         email: d.donor_email,
-        amount: Number(d.amount),
-        category: d.category_name_backup || 'General',
-        paymentMethod: d.payment_method,
-        status: d.status === 'completed' ? ('completed' as const) : d.status === 'pending' ? ('pending' as const) : ('failed' as const),
+        amount: Number(d.amount) || 0,
+        category: d.donation_categories?.name || d.category || 'General',
+        paymentMethod: d.payment_method || 'transfer',
+        status: (d.status === 'completed' ? 'completed' : d.status === 'pending' ? 'pending' : 'failed') as 'completed' | 'pending' | 'failed',
         date: d.created_at
       })),
-      ...filteredOrders.map(o => {
-        const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(o.status);
-        return {
-          id: o.id,
-          type: 'order' as const,
-          name: o.customer_name || 'Cliente',
-          email: o.customer_email,
-          amount: Number(o.total),
-          category: 'Tienda',
-          paymentMethod: o.payment_method || 'card',
-          status: isPaid ? ('completed' as const) : o.status === 'cancelled' ? ('failed' as const) : ('pending' as const),
-          date: o.created_at
-        };
-      })
+      ...filteredOrds.map(o => ({
+        id: `ord-${o.id}`,
+        type: 'order' as const,
+        name: o.customer_name || 'Cliente Tienda',
+        email: o.customer_email,
+        amount: Number(o.total) || 0,
+        category: 'Tienda Jerusalén',
+        paymentMethod: o.payment_method || 'card',
+        status: (o.status === 'completed' || o.status === 'delivered' || o.status === 'paid' ? 'completed' : o.status === 'pending' ? 'pending' : 'failed') as 'completed' | 'pending' | 'failed',
+        date: o.created_at
+      }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    setFilteredTransactions(combinedTx);
+    setFilteredTransactions(mergedList);
+
+    const monthlyMap: Record<string, { diezmos: number; ofrendas: number; tienda: number; total: number }> = {};
+    
+    mergedList.filter(t => t.status === 'completed').forEach(t => {
+      const dateObj = new Date(t.date);
+      const monthKey = `${dateObj.toLocaleString('es-ES', { month: 'short' })} ${dateObj.getFullYear().toString().slice(-2)}`;
+      
+      if (!monthlyMap[monthKey]) {
+        monthlyMap[monthKey] = { diezmos: 0, ofrendas: 0, tienda: 0, total: 0 };
+      }
+
+      if (t.type === 'order') {
+        monthlyMap[monthKey].tienda += t.amount;
+      } else {
+        const cat = t.category.toLowerCase();
+        if (cat.includes('diezmo')) {
+          monthlyMap[monthKey].diezmos += t.amount;
+        } else {
+          monthlyMap[monthKey].ofrendas += t.amount;
+        }
+      }
+      monthlyMap[monthKey].total += t.amount;
+    });
+
+    const points: ChartDataPoint[] = Object.entries(monthlyMap).map(([label, val]) => ({
+      label,
+      ...val
+    })).reverse().slice(-12);
+
+    setChartData(points);
   }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [donationsRes, , ordersRes] = await Promise.all([
-        fetchDonations(),
+      const [cats, dons, ords] = await Promise.all([
         fetchCategories(),
+        fetchDonations(),
         fetchOrders()
       ]);
-      computeStatsAndChart(donationsRes, ordersRes, dateFilter);
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Error loading finance data:', err);
-      toast.error('Error al cargar datos financieros: ' + errorMsg);
+
+      processMetricsAndFilters(dons, ords, dateFilter);
+    } catch (err) {
+      console.error('Error al cargar datos financieros:', err);
+      toast.error('Error al cargar la información financiera.');
     } finally {
       setLoading(false);
     }
-  }, [fetchDonations, fetchCategories, fetchOrders, computeStatsAndChart, dateFilter]);
+  }, [fetchCategories, fetchDonations, fetchOrders, processMetricsAndFilters, dateFilter]);
 
   useEffect(() => {
-    const init = async () => {
-      await loadData();
-    };
-    init();
+    loadData();
   }, [loadData]);
 
-  const handleDateFilterChange = (val: '30days' | '90days' | 'year' | 'all') => {
-    setDateFilter(val);
-    setVisibleCount(50); // Reset visible count on filter change
-    computeStatsAndChart(allDonations, allOrders, val);
+  const handleDateFilterChange = (newFilter: '30days' | '90days' | 'year' | 'all') => {
+    setDateFilter(newFilter);
+    processMetricsAndFilters(allDonations, allOrders, newFilter);
   };
 
-  // Category CRUD
+  const handleToggleCategoryActive = async (category: DonationCategory) => {
+    try {
+      const newStatus = !category.is_active;
+      const { error } = await supabase
+        .from('donation_categories')
+        .update({ is_active: newStatus })
+        .eq('id', category.id);
+
+      if (error) throw error;
+      
+      setCategories(prev => prev.map(c => c.id === category.id ? { ...c, is_active: newStatus } : c));
+      toast.success(`Categoría "${category.name}" ${newStatus ? 'activada' : 'desactivada'}.`);
+    } catch (err) {
+      console.error(err);
+      toast.error('No se pudo actualizar el estado de la categoría.');
+    }
+  };
+
   const handleOpenCategoryCreate = () => {
     setEditingCategory(null);
-    setCategoryFormData({
-      name: '',
-      description: '',
-      is_active: true
-    });
+    setCategoryFormData({ name: '', description: '', is_active: true });
     setShowCategoryForm(true);
   };
 
-  const handleOpenCategoryEdit = (cat: DonationCategory) => {
-    setEditingCategory(cat);
+  const handleOpenCategoryEdit = (category: DonationCategory) => {
+    setEditingCategory(category);
     setCategoryFormData({
-      name: cat.name,
-      description: cat.description || '',
-      is_active: cat.is_active
+      name: category.name,
+      description: category.description || '',
+      is_active: category.is_active
     });
     setShowCategoryForm(true);
   };
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setActionLoading(true);
+    if (!categoryFormData.name.trim()) {
+      toast.error('Ingresa un nombre para la categoría.');
+      return;
+    }
 
+    setActionLoading(true);
     try {
       if (editingCategory) {
         const { error } = await supabase
           .from('donation_categories')
           .update({
-            name: categoryFormData.name,
-            description: categoryFormData.description,
+            name: categoryFormData.name.trim(),
+            description: categoryFormData.description.trim() || null,
             is_active: categoryFormData.is_active
           })
           .eq('id', editingCategory.id);
-        
+
         if (error) throw error;
         toast.success('Categoría actualizada con éxito.');
       } else {
         const { error } = await supabase
           .from('donation_categories')
-          .insert({
-            name: categoryFormData.name,
-            description: categoryFormData.description,
+          .insert([{
+            name: categoryFormData.name.trim(),
+            description: categoryFormData.description.trim() || null,
             is_active: categoryFormData.is_active
-          });
-        
+          }]);
+
         if (error) throw error;
-        toast.success('Categoría creada con éxito.');
+        toast.success('Categoría creada correctamente.');
       }
 
       setShowCategoryForm(false);
-      await fetchCategories();
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Error saving category:', err);
-      toast.error('Error al guardar la categoría: ' + errorMsg);
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar la categoría.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleToggleCategoryActive = async (cat: DonationCategory) => {
-    try {
-      const { error } = await supabase
-        .from('donation_categories')
-        .update({ is_active: !cat.is_active })
-        .eq('id', cat.id);
-
-      if (error) throw error;
-      toast.success(`Categoría ${!cat.is_active ? 'activada' : 'desactivada'} correctamente.`);
-      await fetchCategories();
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Error toggling active status:', err);
-      toast.error('Error al cambiar estado: ' + errorMsg);
-    }
-  };
-
   const prepareExportData = () => {
     return filteredTransactions.map(t => ({
-      'Tipo': t.type === 'donation' ? 'Donación' : 'Venta Tienda',
-      'Cliente/Donante': t.name,
-      'Correo': t.email || '',
-      'Monto': t.amount.toFixed(2),
-      'Categoría': t.category,
-      'Método': t.paymentMethod === 'card' ? 'Tarjeta' : t.paymentMethod === 'transfer' ? 'Transferencia' : t.paymentMethod === 'cash' ? 'Efectivo' : t.paymentMethod,
-      'Estado': t.status === 'completed' ? 'Completado' : t.status === 'pending' ? 'Pendiente' : 'Fallido',
-      'Fecha': new Date(t.date).toLocaleDateString('es-ES')
+      ID: t.id,
+      Tipo: t.type === 'donation' ? 'Donación / Diezmo' : 'Venta Tienda',
+      Nombre: t.name,
+      Email: t.email || 'N/A',
+      Monto: t.amount,
+      Categoría: t.category,
+      Método_Pago: t.paymentMethod,
+      Estado: t.status,
+      Fecha: new Date(t.date).toLocaleDateString('es-EC')
     }));
   };
 
@@ -591,7 +559,260 @@ const FinanceDashboard = () => {
           >
             <Settings2 size={14} /> Página de donaciones
           </Link>
-            <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-sm flex flex-col justify-between">
+          {/* Time range filter */}
+          {activeTab === 'metrics' && (
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => handleDateFilterChange(e.target.value as '30days' | '90days' | 'year' | 'all')}
+                className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/10 rounded-2xl px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+              >
+                <option value="30days">Últimos 30 días</option>
+                <option value="90days">Últimos 90 días</option>
+                <option value="year">Este año ({new Date().getFullYear()})</option>
+                <option value="all">Todo el tiempo</option>
+              </select>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="flex bg-slate-200/60 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/80 dark:border-white/10 backdrop-blur-xl">
+            <button
+              onClick={() => setActiveTab('metrics')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'metrics'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Métricas e Ingresos
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'categories'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Categorías de Donación
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="space-y-6 animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+          <ChartSkeleton />
+          <TableSkeleton rows={4} cols={5} />
+        </div>
+      ) : activeTab === 'metrics' ? (
+        /* METRICS AND REVENUE TAB */
+        <div className="space-y-6 animate-fadeIn">
+          
+          {/* Real-time Ticker Marquee */}
+          {filteredTransactions.length > 0 && (
+            <div className="relative flex w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/70 bg-white/75 dark:border-white/10 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm">
+              <Marquee pauseOnHover className="[--duration:40s] py-3">
+                {filteredTransactions.slice(0, 10).map((tx, idx) => (
+                  <div key={idx} className="flex items-center gap-3 px-6 border-r border-slate-200/50 dark:border-white/10 last:border-0">
+                    <div className={`w-2 h-2 rounded-full ${tx.type === 'donation' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {tx.name}
+                    </span>
+                    <span className={`font-mono text-sm font-bold ${tx.type === 'donation' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      +${tx.amount.toLocaleString('es-EC', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </Marquee>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-white dark:from-slate-950"></div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-white dark:from-slate-950"></div>
+            </div>
+          )}
+
+          {/* High-Aesthetic Glassmorphic KPI Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* Card 1: Ingreso Total */}
+            <article className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/75 p-5 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 to-teal-400/5 opacity-60 pointer-events-none" aria-hidden="true" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ingreso Total</p>
+                  <p className="mt-2 truncate text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white flex items-center">
+                    $<NumberTicker value={stats.totalIncome} decimalPlaces={2} />
+                  </p>
+                  <div className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span className="text-blue-600 dark:text-blue-300">Donaciones: {stats.totalIncome > 0 ? ((stats.donationsTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
+                    <span>•</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">Tienda: {stats.totalIncome > 0 ? ((stats.storeTotal / stats.totalIncome) * 100).toFixed(0) : 0}%</span>
+                  </div>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400">
+                  <DollarSign size={20} />
+                </span>
+              </div>
+            </article>
+
+            {/* Card 2: Donaciones Recibidas */}
+            <article className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/75 p-5 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/15 to-indigo-400/5 opacity-60 pointer-events-none" aria-hidden="true" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Donaciones Recibidas</p>
+                  <p className="mt-2 truncate text-3xl font-extrabold tracking-tight text-blue-700 dark:text-blue-400 flex items-center">
+                    $<NumberTicker value={stats.donationsTotal} decimalPlaces={2} />
+                  </p>
+                  <p className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Recibos: {stats.donationsCount} | Prom: ${stats.donationsAvg.toFixed(0)}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-blue-500/15 dark:text-blue-400">
+                  <Heart size={20} />
+                </span>
+              </div>
+            </article>
+
+            {/* Card 3: Ventas e-Commerce */}
+            <article className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/75 p-5 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 to-teal-400/5 opacity-60 pointer-events-none" aria-hidden="true" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ventas e-Commerce</p>
+                  <p className="mt-2 truncate text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 flex items-center">
+                    $<NumberTicker value={stats.storeTotal} decimalPlaces={2} />
+                  </p>
+                  <p className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Pedidos: {stats.storeCount} | Ticket: ${stats.storeAvg.toFixed(0)}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400">
+                  <ShoppingBag size={20} />
+                </span>
+              </div>
+            </article>
+
+            {/* Card 4: Canal Dominante */}
+            <article className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/75 p-5 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/15 to-orange-400/5 opacity-60 pointer-events-none" aria-hidden="true" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Canal Dominante</p>
+                  <p className="mt-2 truncate text-2xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400">
+                    {stats.paymentMethodDominant}
+                  </p>
+                  <p className="mt-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Volumen: {stats.paymentMethodDominantCount} transacciones
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/15 dark:text-amber-400">
+                  <Tag size={20} />
+                </span>
+              </div>
+            </article>
+          </div>
+
+          {/* Chart Row: Progress & Share */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Combined Progression (Left 2 cols) */}
+            <div className="lg:col-span-2 rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 flex flex-col justify-between">
+              <h3 className="font-serif font-bold text-slate-900 dark:text-white text-base mb-6 flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                  <TrendingUp size={18} />
+                </span>
+                Evolución Temporal de Ingresos
+              </h3>
+              <div className="h-80 w-full text-[10px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="diezmosGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.85}/>
+                        <stop offset="100%" stopColor="#1e3a8a" stopOpacity={0.25}/>
+                      </linearGradient>
+                      <linearGradient id="ofrendasGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#d97706" stopOpacity={0.85}/>
+                        <stop offset="100%" stopColor="#d97706" stopOpacity={0.25}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontWeight: 'bold' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontWeight: 'bold' }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '15px' }} />
+                    <Bar dataKey="diezmos" fill="url(#diezmosGrad)" name="Diezmos" radius={[4, 4, 0, 0]} barSize={14} />
+                    <Bar dataKey="ofrendas" fill="url(#ofrendasGrad)" name="Ofrendas" radius={[4, 4, 0, 0]} barSize={14} />
+                    <Line type="monotone" dataKey="tienda" stroke="#10b981" strokeWidth={2.5} name="Tienda" dot={{ r: 4, fill: '#10b981', strokeWidth: 1.5, stroke: '#fff' }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Income breakdown share donut (Right 1 col) */}
+            <div className="rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 flex flex-col justify-between">
+              <h3 className="font-serif font-bold text-slate-900 dark:text-white text-base mb-4 flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                  <PieChartIcon size={18} />
+                </span>
+                Distribución por Origen
+              </h3>
+              <div className="h-60 flex items-center justify-center relative">
+                {participationData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                      <PieChart>
+                        <Pie
+                          data={participationData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={75}
+                          paddingAngle={3}
+                          dataKey="value"
+                          nameKey="name"
+                        >
+                          {participationData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: unknown) => `$${Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total</span>
+                      <span className="text-lg font-extrabold text-slate-800 dark:text-white font-mono">${stats.totalIncome.toLocaleString('es-EC', { maximumFractionDigits: 0 })}</span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-400 italic font-semibold">Sin ingresos acumulados</span>
+                )}
+              </div>
+
+              {/* Legends details */}
+              <div className="border-t border-gray-100 dark:border-white/10 pt-4 space-y-2">
+                {participationData.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                      <span className="text-gray-500 dark:text-gray-400 font-semibold">{item.name}</span>
+                    </div>
+                    <span className="font-mono font-bold text-gray-700 dark:text-gray-300">${item.value.toLocaleString('es-EC', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* E-Commerce Section: Top products & payment types */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Top selling items */}
+            <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-3xl border border-white/70 dark:border-white/10 p-6 shadow-sm flex flex-col justify-between">
               <h3 className="font-serif font-bold text-slate-800 dark:text-white text-base mb-6 flex items-center gap-1.5">
                 <ShoppingBag size={18} className="text-gold" />
                 Productos más Vendidos (Tienda)
@@ -642,7 +863,7 @@ const FinanceDashboard = () => {
             </div>
 
             {/* Payment methods stats */}
-            <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-800/50 rounded-3xl border border-white/70 dark:border-white/10 p-6 shadow-sm flex flex-col justify-between">
               <h3 className="font-serif font-bold text-slate-800 dark:text-white text-base mb-4 flex items-center gap-1.5">
                 <Tag size={18} className="text-gold" />
                 Uso de Canales de Pago
@@ -690,7 +911,7 @@ const FinanceDashboard = () => {
           </div>
 
           {/* Unified Transactions History */}
-          <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-800/50 rounded-3xl border border-white/70 dark:border-white/10 shadow-sm overflow-hidden">
             <div className="py-4 px-6 border-b border-gray-150 dark:border-white/10 bg-gray-50 dark:bg-slate-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="text-left">
                 <h3 className="font-serif font-bold text-gray-800 dark:text-white text-base flex items-center gap-1.5">
