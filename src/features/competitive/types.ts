@@ -87,13 +87,32 @@ export interface ChildCheckInSession {
   status: 'checked_in' | 'checked_out' | 'alert_called';
 }
 
+export type DynamicFormFieldType = 'text' | 'textarea' | 'number' | 'email' | 'phone' | 'url' | 'select' | 'checkbox' | 'radio' | 'date' | 'heading' | 'paragraph';
+
 export interface DynamicFormField {
   id: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'radio' | 'date';
+  type: DynamicFormFieldType;
   placeholder?: string;
+  helpText?: string;
   required?: boolean;
   options?: string[]; // for select/radio
+  defaultValue?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  maxLength?: number;
+  accept?: string;
+  multiple?: boolean;
+}
+
+export interface DynamicFormSettings {
+  collectSubmitterInfo?: boolean;
+  submitterEmailRequired?: boolean;
+  successTitle?: string;
+  successMessage?: string;
+  submitLabel?: string;
+  showProgress?: boolean;
 }
 
 export interface DynamicForm {
@@ -105,6 +124,7 @@ export interface DynamicForm {
   is_published: boolean;
   requires_auth?: boolean;
   cover_image_url?: string;
+  settings?: DynamicFormSettings;
   created_at?: string;
 }
 

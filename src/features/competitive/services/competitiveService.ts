@@ -127,25 +127,28 @@ export const competitiveService = {
 
   // --- 5. DYNAMIC FORMS ---
   async getDynamicForms(): Promise<DynamicForm[]> {
-    try {
-      const { data, error } = await supabase.from('dynamic_forms').select('*').order('created_at', { ascending: false });
-      if (error || !data || data.length === 0) {
-        return MOCK_DYNAMIC_FORMS;
-      }
-      return data as DynamicForm[];
-    } catch {
-      return MOCK_DYNAMIC_FORMS;
-    }
+    const { data, error } = await supabase.from('dynamic_forms').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as DynamicForm[];
   },
 
   async createDynamicForm(form: Partial<DynamicForm>): Promise<DynamicForm> {
-    try {
-      const { data, error } = await supabase.from('dynamic_forms').insert([form]).select().single();
-      if (error || !data) throw error;
-      return data as DynamicForm;
-    } catch {
-      return { id: `form-${Date.now()}`, is_published: true, fields: form.fields || [], ...form } as DynamicForm;
-    }
+    const { data, error } = await supabase.from('dynamic_forms').insert([form]).select().single();
+    if (error) throw error;
+    if (!data) throw new Error('No se recibió el formulario creado.');
+    return data as DynamicForm;
+  },
+
+  async updateDynamicForm(id: string, form: Partial<DynamicForm>): Promise<DynamicForm> {
+    const { data, error } = await supabase.from('dynamic_forms').update({ ...form, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+    if (error) throw error;
+    if (!data) throw new Error('No se recibió el formulario actualizado.');
+    return data as DynamicForm;
+  },
+
+  async deleteDynamicForm(id: string): Promise<void> {
+    const { error } = await supabase.from('dynamic_forms').delete().eq('id', id);
+    if (error) throw error;
   },
 
   async submitForm(formId: string, submitterName: string, submitterEmail: string, responses: Record<string, unknown>): Promise<DynamicFormSubmission> {
