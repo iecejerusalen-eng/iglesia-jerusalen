@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { WorkflowBuilder } from '../../features/workflows/components/WorkflowBuilder';
 import type { Workflow } from '../../features/workflows/types';
 import { supabase } from '../../config/supabase';
@@ -10,7 +10,7 @@ export default function WorkflowsManager() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  const loadWorkflows = async () => {
+  const loadWorkflows = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -25,11 +25,11 @@ export default function WorkflowsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadWorkflows();
-  }, []);
+  }, [loadWorkflows]);
 
   const handleSaveWorkflow = async (workflowData: Partial<Workflow>) => {
     try {

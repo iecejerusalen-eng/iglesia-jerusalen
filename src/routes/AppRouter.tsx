@@ -70,7 +70,7 @@ const CrmPipelineManager = lazyWithRetry(() => import('../pages/admin/CrmPipelin
 const WorkflowsManager = lazyWithRetry(() => import('../pages/admin/WorkflowsManager'));
 const CampaignsManager = lazyWithRetry(() => import('../pages/admin/CampaignsManager'));
 const GroupsManager = lazyWithRetry(() => import('../pages/admin/GroupsManager'));
-const QRCheckInKiosk = lazyWithRetry(() => import('../features/checkin/components/QRCheckInKiosk').then(m => ({ default: m.QRCheckInKiosk })));
+const QRCheckInKiosk = lazyWithRetry(() => import('../features/checkin/components/QRCheckInKiosk'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));

@@ -1,18 +1,9 @@
 import React, { useState } from 'react';
 import { EmailTemplateBuilder } from '../../features/campaigns/components/EmailTemplateBuilder';
-import { Megaphone, Mail, Send, Sparkles, CheckCircle2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Megaphone, Mail, Send } from 'lucide-react';
 
 export default function CampaignsManager() {
   const [activeTab, setActiveTab] = useState<'builder' | 'history'>('builder');
-
-  const handleSendCampaign = async (templateData: any) => {
-    try {
-      toast.success('Campaña masiva programada correctamente');
-    } catch {
-      toast.error('Error al enviar la campaña');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -56,7 +47,7 @@ export default function CampaignsManager() {
       </div>
 
       {activeTab === 'builder' ? (
-        <EmailTemplateBuilder onSave={handleSendCampaign} />
+        <EmailTemplateBuilder />
       ) : (
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { KanbanBoard } from '../../features/crm-pipeline/components/KanbanBoard';
 import { crmService } from '../../features/crm-pipeline/services/crmService';
 import type { CrmPipeline, CrmContact, CrmStage } from '../../features/crm-pipeline/types';
-import { Users, Plus, Filter, Search, Sparkles, X, Phone, Mail, User } from 'lucide-react';
+import { Users, Plus, Sparkles, X, Phone, Mail, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CrmPipelineManager() {
@@ -31,7 +31,7 @@ export default function CrmPipelineManager() {
     { id: 'servant', name: 'Servidor', color: '#EC4899' },
   ];
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const pipeList = await crmService.getPipelines();
@@ -42,7 +42,6 @@ export default function CrmPipelineManager() {
         const contactList = await crmService.getContacts(defaultPipe.id);
         setContacts(contactList);
       } else {
-        // Fallback default pipeline
         const defaultPipe: CrmPipeline = {
           id: 'default-pipeline',
           name: 'Pipeline Principal de Asimilación',
@@ -50,7 +49,6 @@ export default function CrmPipelineManager() {
           stages: defaultStages,
           is_default: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         };
         setPipelines([defaultPipe]);
         setActivePipeline(defaultPipe);
@@ -63,11 +61,11 @@ export default function CrmPipelineManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleStageChange = async (contactId: string, newStageId: string) => {
     try {
@@ -131,13 +129,32 @@ export default function CrmPipelineManager() {
           </div>
         </div>
 
-        <button
-          onClick={() => setIsNewContactModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
-        >
-          <Plus className="w-5 h-5" />
-          Agregar Contacto
-        </button>
+        <div className="flex items-center gap-3">
+          {pipelines.length > 1 && (
+            <select
+              value={activePipeline?.id}
+              onChange={(e) => {
+                const found = pipelines.find((p) => p.id === e.target.value);
+                if (found) setActivePipeline(found);
+              }}
+              className="px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl text-xs dark:text-white font-medium"
+            >
+              {pipelines.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={() => setIsNewContactModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+            Agregar Contacto
+          </button>
+        </div>
       </div>
 
       {/* Main Kanban Board Container */}

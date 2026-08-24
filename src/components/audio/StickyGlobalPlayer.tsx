@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useAudioPlayerStore } from '../../store/useAudioPlayerStore';
-import { Play, Pause, X, RotateCcw, RotateCw, Music, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Pause, X, RotateCcw, RotateCw, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const StickyGlobalPlayer: React.FC = () => {
@@ -10,16 +10,12 @@ export const StickyGlobalPlayer: React.FC = () => {
     currentTime,
     duration,
     speed,
-    isMinimized,
     togglePlay,
-    pause,
-    play,
     seek,
     setSpeed,
     setCurrentTime,
     setDuration,
     setIsPlaying,
-    toggleMinimize,
     close,
   } = useAudioPlayerStore();
 

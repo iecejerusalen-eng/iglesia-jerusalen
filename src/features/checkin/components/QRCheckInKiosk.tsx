@@ -163,3 +163,5 @@ export const QRCheckInKiosk: React.FC = () => {
     </div>
   );
 };
+
+export default QRCheckInKiosk;

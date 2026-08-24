@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Calendar, User, ArrowLeft, RefreshCw, FileText,
-  AlertTriangle, Edit2, Sparkles, X, Share2, Copy, Check
+  AlertTriangle, Edit2, Sparkles, X, Share2
 } from 'lucide-react';
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';

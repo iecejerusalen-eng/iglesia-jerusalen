@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mic, Play, Pause, Search, Sparkles, Clock, Calendar,
   Radio, Headphones, Music

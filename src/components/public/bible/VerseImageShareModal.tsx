@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Share2, Sparkles, Copy, Check } from 'lucide-react';
+import { X, Share2, Sparkles, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import soloLogoColorido from '../../../assets/Jerusalén/solo logo colorido.svg';
 
 interface VerseImageShareModalProps {
   isOpen: boolean;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { GroupsCatalog } from '../../features/groups/components/GroupsCatalog';
 import type { SmallGroup } from '../../features/groups/types';
 import { supabase } from '../../config/supabase';
@@ -19,9 +19,10 @@ export default function GroupsManager() {
     meeting_time: '19:30',
     location: '',
     max_capacity: 15,
+    is_active: true,
   });
 
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -36,13 +37,13 @@ export default function GroupsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadGroups();
-  }, []);
+  }, [loadGroups]);
 
-  const handleJoinGroup = async (groupId: string) => {
+  const handleJoinGroup = async (_groupId: string) => {
     try {
       toast.success('Inscripción al grupo enviada');
     } catch {
@@ -57,7 +58,10 @@ export default function GroupsManager() {
     }
 
     try {
-      const { error } = await supabase.from('small_groups').insert([formData]);
+      const { error } = await supabase.from('small_groups').insert([{
+        ...formData,
+        is_active: true
+      }]);
       if (error) throw error;
       toast.success('Grupo pequeño creado');
       setIsModalOpen(false);
@@ -144,7 +148,7 @@ export default function GroupsManager() {
                   <input
                     type="text"
                     required
-                    value={formData.leader_name}
+                    value={formData.leader_name || ''}
                     onChange={(e) => setFormData({ ...formData, leader_name: e.target.value })}
                     placeholder="Ej. Carlos Mendoza"
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm"
@@ -156,7 +160,7 @@ export default function GroupsManager() {
                   </label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm"
                   >
                     <option value="jovenes">Jóvenes</option>
@@ -200,9 +204,9 @@ export default function GroupsManager() {
                   </label>
                   <input
                     type="number"
-                    value={formData.max_capacity}
+                    value={formData.max_capacity || 15}
                     onChange={(e) =>
-                      setFormData({ ...formData, max_capacity: parseInt(e.target.value) })
+                      setFormData({ ...formData, max_capacity: parseInt(e.target.value) || 15 })
                     }
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl text-sm"
                   />

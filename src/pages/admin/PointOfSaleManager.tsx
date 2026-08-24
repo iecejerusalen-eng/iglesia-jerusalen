@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  ShoppingBag, Search, Plus, Minus, Trash2, CreditCard, DollarSign,
-  Send, User, Printer, CheckCircle2, AlertCircle, RefreshCw, X, FileText, Lock, Sparkles
+  ShoppingBag, Search, Plus, Minus, CreditCard, DollarSign,
+  Send, Printer, CheckCircle2, RefreshCw, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { supabase } from '../../config/supabase';
 import type { Product } from '../../types';
 import { posService, type PosSession, type PosCartItem } from '../../features/store/services/posService';
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(val);
 

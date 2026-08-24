@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX,
-  FastForward, List, Sparkles, Clock, Music, ChevronDown, ChevronUp
+  List, Sparkles, Clock, Music, ChevronDown, ChevronUp
 } from 'lucide-react';
 import type { AudioChapter } from '../../features/podcast/types';
 
@@ -30,7 +30,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showChapters, setShowChapters] = useState(false);

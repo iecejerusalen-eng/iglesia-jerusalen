@@ -63,7 +63,8 @@ export const posService = {
 
       if (error || !data) return null;
       return data as PosSession;
-    } catch {
+    } catch (error) {
+      console.error('Failed to load active POS session:', error);
       return null;
     }
   },

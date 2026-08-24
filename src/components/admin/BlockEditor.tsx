@@ -8,7 +8,7 @@ import {
   CheckSquare, CheckCircle2, ArrowUp, ArrowDown, Trash2, Plus, X,
   ListChecks, Dices, BookOpen, Sliders, StickyNote, Timer, Grid3x3, Sparkles,
   Copy, ChevronDown, ChevronRight, Search, FileText, Gamepad2, MessageSquare, Heart,
-  GripVertical, AlertTriangle, LayoutGrid, Headphones, Mic2, Play, Radio, Clock
+  GripVertical, AlertTriangle, LayoutGrid, Headphones, Mic2, Clock
 } from 'lucide-react';
 
 export type BlockType = 
@@ -1193,7 +1193,12 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
                                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Origen del Audio</label>
                                     <select
                                       value={block.audio_source_type || 'url'}
-                                      onChange={(e) => updateBlockValue(block.id, { audio_source_type: e.target.value as any })}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === 'upload' || value === 'url' || value === 'embed') {
+                                          updateBlockValue(block.id, { audio_source_type: value });
+                                        }
+                                      }}
                                       className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-medium text-gray-800 dark:text-gray-100 outline-none"
                                     >
                                       <option value="url">URL Directa MP3 / Podcast (Link)</option>
