@@ -46,8 +46,9 @@ const Navigation = () => {
 
   const topLevelItems = useMemo(() => {
     const calculated = menuSource.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
-    return calculated.length > 0 ? calculated : DEFAULT_MENU_ITEMS;
-  }, [menuSource]);
+    if (calculated.length > 0) return calculated;
+    return items.length === 0 ? DEFAULT_MENU_ITEMS.filter(i => !i.parent_id && i.is_visible) : [];
+  }, [menuSource, items]);
 
   const getChildren = (parentId: string) => {
     return menuSource.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
@@ -156,10 +157,10 @@ const Navigation = () => {
                       transition={{ duration: 0.15 }}
                       role="menu"
                       aria-label={`Opciones de ${item.label}`}
-                      className={`absolute left-0 mt-2 w-56 rounded-xl py-3 z-50 transition-all duration-300 ${
+                      className={`absolute left-0 mt-2 w-60 rounded-2xl py-3 z-50 transition-all duration-300 shadow-2xl ${
                         isTransparent 
-                          ? 'bg-slate-950/80 backdrop-blur-md border border-white/10 text-white/90 transform-gpu' 
-                          : 'glass-card text-gray-700 dark:text-gray-300'
+                          ? 'bg-slate-950/95 backdrop-blur-2xl border border-white/15 text-white/90 transform-gpu' 
+                          : 'bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border border-slate-200/80 dark:border-white/15 text-slate-800 dark:text-slate-200 shadow-slate-900/10'
                       }`}
                     >
                       {children.map(child => (
@@ -171,10 +172,10 @@ const Navigation = () => {
                             setHoveredItemId(null);
                             setOpenMenuId(null);
                           }}
-                          className={`block px-4 py-2 text-xs font-semibold transition-colors ${
+                          className={`block px-4 py-2.5 text-xs font-bold transition-colors ${
                             isTransparent 
-                              ? 'hover:bg-white/10 hover:text-gold text-white/80' 
-                              : 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-accent-red dark:hover:text-gold'
+                              ? 'hover:bg-white/10 hover:text-gold text-white/90' 
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:text-accent-red dark:hover:text-gold'
                           }`}
                         >
                           {child.label}

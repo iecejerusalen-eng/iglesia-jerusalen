@@ -43,15 +43,76 @@ export const menuService = {
         .select('*')
         .order('order_index', { ascending: true });
 
-      if (error || !data || data.length === 0) {
-        console.warn('Tabla public_menu_items no encontrada o vacía. Usando menú por defecto:', error?.message);
+      if (error) {
+        console.warn('Error querying public_menu_items, using default fallback:', error?.message);
         return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
+      }
+
+      if (!data || data.length === 0) {
+        // Table is empty, auto-seed default menu items into Supabase DB
+        return await menuService.seedDefaultMenuItems();
       }
       
       return menuService.deduplicateItems(data);
     } catch (err) {
       console.warn('Error al obtener elementos del menú, usando fallback:', err);
       return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
+    }
+  },
+
+  async seedDefaultMenuItems(): Promise<MenuItem[]> {
+    try {
+      const topLevelDefaults = DEFAULT_MENU_ITEMS.filter(i => !i.parent_id);
+      const insertedTopLevel: MenuItem[] = [];
+      const idMap = new Map<string, string>();
+
+      for (const item of topLevelDefaults) {
+        const { data, error } = await supabase
+          .from('public_menu_items')
+          .insert({
+            label: item.label,
+            url: item.url,
+            icon: item.icon,
+            order_index: item.order_index,
+            is_visible: item.is_visible
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          insertedTopLevel.push(data);
+          idMap.set(item.id, data.id);
+        }
+      }
+
+      const childDefaults = DEFAULT_MENU_ITEMS.filter(i => i.parent_id);
+      const insertedChildren: MenuItem[] = [];
+
+      for (const item of childDefaults) {
+        const realParentId = item.parent_id ? idMap.get(item.parent_id) : null;
+        const { data, error } = await supabase
+          .from('public_menu_items')
+          .insert({
+            label: item.label,
+            url: item.url,
+            icon: item.icon,
+            order_index: item.order_index,
+            parent_id: realParentId,
+            is_visible: item.is_visible
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          insertedChildren.push(data);
+        }
+      }
+
+      const allInserted = [...insertedTopLevel, ...insertedChildren].sort((a, b) => a.order_index - b.order_index);
+      return allInserted.length > 0 ? allInserted : DEFAULT_MENU_ITEMS;
+    } catch (err) {
+      console.warn('No se pudo poblar la tabla menú por defecto:', err);
+      return DEFAULT_MENU_ITEMS;
     }
   },
 
@@ -86,6 +147,17 @@ export const menuService = {
   },
 
   async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
+    if (id.startsWith('default-')) {
+      const seeded = await menuService.seedDefaultMenuItems();
+      const defaultItem = DEFAULT_MENU_ITEMS.find(i => i.id === id);
+      if (defaultItem) {
+        const match = seeded.find(i => i.label === defaultItem.label && i.url === defaultItem.url);
+        if (match) {
+          id = match.id;
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('public_menu_items')
       .update(updates)
@@ -103,6 +175,17 @@ export const menuService = {
   },
 
   async deleteMenuItem(id: string): Promise<void> {
+    if (id.startsWith('default-')) {
+      const seeded = await menuService.seedDefaultMenuItems();
+      const defaultItem = DEFAULT_MENU_ITEMS.find(i => i.id === id);
+      if (defaultItem) {
+        const match = seeded.find(i => i.label === defaultItem.label && i.url === defaultItem.url);
+        if (match) {
+          id = match.id;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('public_menu_items')
       .delete()
@@ -117,10 +200,18 @@ export const menuService = {
   },
 
   async updateMenuOrder(items: { id: string; order_index: number; parent_id: string | null }[]): Promise<void> {
-    // If working with default items (not in DB yet), skip bulk update silently or throw
     const hasDefaultItems = items.some(i => i.id.startsWith('default-'));
     if (hasDefaultItems) {
-      throw new Error('La tabla "public_menu_items" no está creada en Supabase aún. Aplica la migración SQL en Supabase para guardar el nuevo orden.');
+      await menuService.seedDefaultMenuItems();
+      const currentDb = await menuService.getMenuItems();
+      items = items.map(item => {
+        if (item.id.startsWith('default-')) {
+          const def = DEFAULT_MENU_ITEMS.find(d => d.id === item.id);
+          const match = def ? currentDb.find(db => db.label === def.label && db.url === def.url) : null;
+          return match ? { ...item, id: match.id } : item;
+        }
+        return item;
+      });
     }
 
     const results = await Promise.all(

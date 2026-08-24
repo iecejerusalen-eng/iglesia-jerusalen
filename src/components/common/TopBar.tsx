@@ -104,26 +104,6 @@ const TopBar = () => {
       </div>
       
       <div className="flex items-center gap-3 sm:gap-5">
-        {/* Language Selector */}
-        <div className="flex items-center gap-1 text-xs">
-          <button
-            onClick={() => setLanguage('es')}
-            className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
-              language === 'es' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            ES
-          </button>
-          <span className="text-slate-600">|</span>
-          <button
-            onClick={() => setLanguage('en')}
-            className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
-              language === 'en' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            EN
-          </button>
-        </div>
 
         {/* Botón de Culto En Vivo */}
         <Link 
@@ -137,7 +117,7 @@ const TopBar = () => {
         {/* Único Botón de Donaciones / Diezmos destacado */}
         <Link 
           to="/donations" 
-          className={`font-bold transition-all duration-500 flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs shadow-2xs cursor-pointer ${
+          className={`hidden sm:flex font-bold transition-all duration-500 items-center gap-1.5 px-3.5 py-1 rounded-full text-xs shadow-2xs cursor-pointer ${
             isTransparent 
               ? 'text-gold bg-gold/10 hover:bg-gold/20 border border-gold/40' 
               : 'text-gold bg-gold/5 hover:bg-gold/10 border border-gold/25'
