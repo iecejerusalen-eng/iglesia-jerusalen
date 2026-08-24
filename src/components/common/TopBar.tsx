@@ -91,8 +91,8 @@ const TopBar = () => {
   return (
     <div className={`transition-all duration-500 ease-in-out ${
       isHomeAtTop
-        ? `absolute top-0 left-0 right-0 w-full z-[60] ${isTransparent ? 'bg-transparent border-transparent text-white/95' : 'bg-white/90 dark:bg-slate-950/90 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 backdrop-blur-md'}`
-        : 'bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 relative z-[60]'
+        ? `absolute top-0 left-0 right-0 w-full z-[100] ${isTransparent ? 'bg-transparent border-transparent text-white/95' : 'bg-white/90 dark:bg-slate-950/90 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 backdrop-blur-md'}`
+        : 'bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 relative z-[100]'
     } text-sm py-2.5 px-4 md:px-8 flex justify-between items-center`}>
       <div className="flex items-center gap-3">
         <span className={`hidden sm:inline font-medium text-xs transition-colors duration-500 ${
@@ -122,7 +122,7 @@ const TopBar = () => {
         <div className="flex items-center gap-1 text-xs">
           <button
             onClick={() => setLanguage('es')}
-            className={`px-1.5 py-0.5 rounded font-bold transition ${
+            className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
               language === 'es' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -131,7 +131,7 @@ const TopBar = () => {
           <span className="text-slate-600">|</span>
           <button
             onClick={() => setLanguage('en')}
-            className={`px-1.5 py-0.5 rounded font-bold transition ${
+            className={`px-1.5 py-0.5 rounded font-bold transition cursor-pointer ${
               language === 'en' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -162,6 +162,24 @@ const TopBar = () => {
         </Link>
         
         <div className="flex items-center gap-4">
+          <NotificationTray />
+
+          {/* Cart Icon Link */}
+          <Link 
+            to="/tienda" 
+            className={`relative p-1.5 rounded-full transition-colors cursor-pointer ${
+              isTransparent ? 'text-white hover:text-gold' : 'text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-gold'
+            }`}
+            title="Ver carrito de compras"
+          >
+            <ShoppingCart size={18} />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 bg-gold text-slate-950 font-extrabold text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+
           {user ? (
             <div className="relative">
               {/* Botón de Perfil / Hola, [Nombre] */}
@@ -192,7 +210,7 @@ const TopBar = () => {
 
               {/* Backdrop para cerrar clickeando fuera */}
               {userMenuOpen && (
-                <div className="fixed inset-0 z-30" onClick={() => setUserMenuOpen(false)} />
+                <div className="fixed inset-0 z-[105]" onClick={() => setUserMenuOpen(false)} />
               )}
 
               {/* Dropdown Menu */}
@@ -203,7 +221,7 @@ const TopBar = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.15 }}
-                    className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl py-2 z-40 overflow-hidden border ${
+                    className={`absolute right-0 mt-2 w-48 rounded-xl shadow-2xl py-2 z-[110] overflow-hidden border ${
                       isTransparent 
                         ? 'bg-slate-950/95 backdrop-blur-md border-white/15 text-white/90' 
                         : 'bg-white dark:bg-slate-900 border-gray-150 dark:border-white/10 text-gray-700 dark:text-gray-200'
@@ -352,24 +370,6 @@ const TopBar = () => {
               <span>Ingresar</span>
             </Link>
           )}
-
-          {/* Bandeja de Mensajes/Notificaciones */}
-          <NotificationTray />
-
-          {/* Icono de Carrito */}
-          <Link 
-            to="/cart" 
-            className={`transition-colors duration-500 flex items-center gap-1 relative py-1 ${
-              isTransparent ? 'text-white hover:text-gold' : 'text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-gold'
-            }`}
-          >
-            <ShoppingCart size={16} />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent-red text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-                {totalItems}
-              </span>
-            )}
-          </Link>
         </div>
       </div>
     </div>
