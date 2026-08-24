@@ -8,7 +8,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
-import { useTranslation } from '../../i18n/useTranslation';
 import { uploadMediaFile } from '../../lib/mediaService';
 
 const TopBar = () => {
@@ -67,8 +66,6 @@ const TopBar = () => {
   const isTransparent = isHomeAtTop && document.documentElement.classList.contains('dark');
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
-
-  const { language, setLanguage } = useTranslation();
 
   const handleOpenCommandPalette = () => {
     window.dispatchEvent(new CustomEvent('open-command-palette'));
