@@ -5,6 +5,7 @@ import { useDashboardStats } from '../../features/dashboard/hooks/useDashboardSt
 import { DashboardHero } from '../../features/dashboard/components/DashboardHero';
 import { DashboardStats } from '../../features/dashboard/components/DashboardStats';
 import { DashboardCharts } from '../../features/dashboard/components/DashboardCharts';
+import { TalentsSkillsHub } from '../../features/dashboard/components/TalentsSkillsHub';
 import { WeeklyAlerts } from '../../features/dashboard/components/WeeklyAlerts';
 import { QuickLinks } from '../../features/dashboard/components/QuickLinks';
 import { ModuleGrid } from '../../features/dashboard/components/ModuleGrid';
@@ -18,6 +19,7 @@ const DashboardHome = () => {
     finances: hasPermission('finances', 'view'),
     petitions: hasPermission('petitions', 'view'),
     inventory: hasPermission('inventory', 'view'),
+    volunteering: hasPermission('volunteering', 'view'),
   };
   const { data, isLoading, isError } = useDashboardStats(access);
 
@@ -62,6 +64,10 @@ const DashboardHome = () => {
         loading={isLoading}
         access={access}
       />}
+
+      {!isError && access.members && (
+        <TalentsSkillsHub directory={talentDirectory} loading={isLoading} canViewNeeds={access.volunteering} />
+      )}
 
       {!isError && access.members && (
         <DashboardCharts

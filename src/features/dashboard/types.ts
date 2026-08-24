@@ -35,6 +35,19 @@ export interface TalentDirectoryEntry {
   category: string;
 }
 
+export interface DashboardServiceNeed {
+  id: string;
+  title: string;
+  category: string;
+  location: string | null;
+  startTime: string;
+  requiredVolunteers: number;
+  confirmedVolunteers: number;
+  skillsNeeded: string[];
+  matchedPeople: number;
+  matchedSkills: string[];
+}
+
 export interface BaptismDataPoint {
   year: string;
   cantidad: number;
@@ -90,4 +103,5 @@ export interface DashboardAccess {
   finances: boolean;
   petitions: boolean;
   inventory: boolean;
+  volunteering: boolean;
 }

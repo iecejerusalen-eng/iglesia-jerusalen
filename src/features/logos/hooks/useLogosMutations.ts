@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import type { LogoData } from '../types';
 import { toast } from 'sonner';
-import { uploadFileToCloudinary } from '../../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../../lib/mediaService';
 
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
@@ -27,7 +27,7 @@ export const useUploadLogo = () => {
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
 
       // Subir a Cloudinary (resourceType 'image' o 'auto')
-      const fileUrl = await uploadFileToCloudinary(file, 'logos', 'auto');
+      const fileUrl = await uploadMediaFile(file, 'logos', 'auto');
 
       const { error: dbError } = await supabase
         .from('logos')

@@ -13,21 +13,21 @@ describe('toolRegistry', () => {
     }
   });
 
-  it('mantiene disponibles las herramientas generales en la ruta de prédicas', () => {
+  it('deja disponibles para un miembro únicamente Biblia y Notas', () => {
     const publicTools = TOOLBOX_TOOLS
       .filter((tool) => tool.isAvailable('member', '/predicas/sermon-de-prueba'))
       .map((tool) => tool.id);
 
-    expect(publicTools).toEqual(expect.arrayContaining(['metronome', 'tuner', 'timer', 'bible', 'notes']));
+    expect(publicTools).toEqual(['bible', 'notes']);
     expect(publicTools).not.toContain('clicker');
   });
 
-  it('habilita el aforo para roles logísticos y administración', () => {
+  it('habilita el aforo para ujieres, administración y editor general', () => {
     const clicker = getToolDefinition('clicker');
 
-    expect(clicker?.isAvailable('apoyo', '/')).toBe(true);
-    expect(clicker?.isAvailable('leader', '/')).toBe(true);
-    expect(clicker?.isAvailable('member', '/admin/eventos')).toBe(true);
+    expect(clicker?.isAvailable('ujieres', '/')).toBe(true);
+    expect(clicker?.isAvailable('admin', '/')).toBe(true);
+    expect(clicker?.isAvailable('editor general', '/')).toBe(true);
     expect(clicker?.isAvailable('member', '/')).toBe(false);
   });
 

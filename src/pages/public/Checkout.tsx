@@ -10,7 +10,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StorePaymentMethod, StoreShippingMethod } from '../../types';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 const checkoutSchema = z.object({
   paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
@@ -115,7 +115,7 @@ export default function Checkout() {
           setIsSubmitting(false);
           return;
         }
-        receiptUrl = await uploadFileToCloudinary(receiptFile, 'ecommerce_receipts', 'image');
+        receiptUrl = await uploadMediaFile(receiptFile, 'ecommerce_receipts', 'image');
       } else if (data.paymentMethod === 'payphone') {
         await mockProcessPayPhone();
       } else if (data.paymentMethod === 'de_una') {

@@ -4,7 +4,8 @@ import { Palette, X, Loader2, Download, Save, RefreshCw, Plus } from 'lucide-rea
 import { toast } from 'sonner';
 import { supabase } from '../../../config/supabase';
 import type { LogoData } from '../types';
-import { uploadFileToCloudinary, getStorageUrl } from '../../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../../lib/mediaService';
+import { getStorageUrl } from '../../../lib/cloudinaryService';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface SvgEditorModalProps {
@@ -334,7 +335,7 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
         }
         
         // Subir a Cloudinary (resourceType 'image')
-        const fileUrl = await uploadFileToCloudinary(file, 'logos', 'image');
+        const fileUrl = await uploadMediaFile(file, 'logos', 'image');
         
         const { error: dbError } = await supabase
           .from('logos')
@@ -352,7 +353,7 @@ export default function SvgEditorModal({ editingLogo, onClose }: SvgEditorModalP
         
         toast.success('Variante guardada con éxito en la base de datos.');
       } else {
-        const fileUrl = await uploadFileToCloudinary(file, 'logos', 'image');
+        const fileUrl = await uploadMediaFile(file, 'logos', 'image');
         
         const { error: dbError } = await supabase
           .from('logos')

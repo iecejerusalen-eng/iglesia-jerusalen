@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { Plus, Edit2, Trash2, Presentation, AlertCircle, Save, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 interface PresentationSlide {
   id: string;
@@ -113,7 +113,7 @@ export const PresentationEditor = () => {
       
       const file = e.target.files[0];
       setUploadingImage(true);
-      const publicUrl = await uploadFileToCloudinary(file, 'presentation_slides', 'image');
+      const publicUrl = await uploadMediaFile(file, 'presentation_slides', 'image');
       setFormData({ ...formData, image_url: publicUrl });
     } catch (error) {
       console.error('Error uploading image:', error);

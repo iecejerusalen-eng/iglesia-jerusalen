@@ -2,7 +2,7 @@
 // Re-exports the generic upload function from the lib folder and provides a
 // convenience `uploadImage` helper that defaults the resource type to "image".
 
-import { uploadFileToCloudinary } from '../lib/cloudinaryService';
+import { uploadMediaFile } from '../lib/mediaService';
 
 /**
  * Upload an image file to Cloudinary.
@@ -12,9 +12,9 @@ import { uploadFileToCloudinary } from '../lib/cloudinaryService';
  */
 export const uploadImage = async (file: File, folder: string): Promise<{ secure_url: string }> => {
   // Force the resource type to "image" for clarity.
-  const secure_url = await uploadFileToCloudinary(file, folder, 'image');
+  const secure_url = await uploadMediaFile(file, folder, 'image');
   return { secure_url };
 };
 
 // Re-export the generic function for cases where callers need explicit control.
-export { uploadFileToCloudinary };
+export { uploadMediaFile as uploadFileToCloudinary };

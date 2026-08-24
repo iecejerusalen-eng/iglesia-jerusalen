@@ -9,6 +9,7 @@ import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
 import { useTranslation } from '../../i18n/useTranslation';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
@@ -25,23 +26,8 @@ const TopBar = () => {
     if (!user) return;
 
     setUpdatingProfilePhoto(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'iglesia_jerusalen_web');
-
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'degrlmvsq';
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al subir la imagen a Cloudinary');
-      }
-
-      const uploadData = await response.json();
-      const newPhotoUrl = uploadData.secure_url;
+      const newPhotoUrl = await uploadMediaFile(file, 'profiles', 'image');
 
       // Update in Supabase profiles table
       const { error: updateError } = await supabase

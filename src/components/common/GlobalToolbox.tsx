@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { getToolDefinition, TOOLBOX_TOOLS, type ToolAccent } from './toolbox/toolRegistry';
+import { getToolboxRoles } from './toolbox/toolPermissions';
 
 const TOOL_COMPONENTS: Record<Exclude<ToolboxPanel, 'hub'>, LazyExoticComponent<ComponentType>> = {
   metronome: lazy(() => import('./toolbox/MetronomeTool').then((module) => ({ default: module.MetronomeTool }))),
@@ -96,7 +97,7 @@ export default function GlobalToolbox() {
     setPlaying: state.setPlaying,
     setTimerIsRunning: state.setTimerIsRunning,
   })));
-  const role = useAuthStore((state) => state.role);
+  const { role, roles } = useAuthStore(useShallow((state) => ({ role: state.role, roles: state.roles })));
   const location = useLocation();
   const panelRef = useRef<HTMLElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
@@ -104,13 +105,19 @@ export default function GlobalToolbox() {
   const dragRef = useRef<{ offsetX: number; offsetY: number; baseX: number; baseY: number; x: number; y: number } | null>(null);
   const dragFrameRef = useRef<number | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 
   const availableTools = useMemo(
-    () => TOOLBOX_TOOLS.filter((tool) => tool.isAvailable(role, location.pathname)),
-    [location.pathname, role],
+    () => TOOLBOX_TOOLS.filter((tool) => tool.isAvailable(role, location.pathname, toolboxRoles)),
+    [location.pathname, role, toolboxRoles],
   );
+  const availableToolIds = useMemo(() => new Set(availableTools.map((tool) => tool.id)), [availableTools]);
   const activeDefinition = getToolDefinition(store.activePanel);
   const hasBackgroundActivity = store.isPlaying || store.timerIsRunning;
+
+  useEffect(() => {
+    if (store.activePanel !== 'hub' && !availableToolIds.has(store.activePanel)) store.setActivePanel('hub');
+  }, [availableToolIds, store]);
 
   const clampPosition = useCallback((x: number, y: number) => {
     const panel = panelRef.current;
@@ -350,7 +357,7 @@ export default function GlobalToolbox() {
         )}
 
         <div className={store.isMinimized || store.activePanel === 'hub' ? 'hidden' : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-3'}>
-          {TOOLBOX_TOOLS.map((tool) => {
+          {availableTools.map((tool) => {
             const ToolComponent = TOOL_COMPONENTS[tool.id];
             return (
               <div key={tool.id} hidden={tool.id !== store.activePanel}>

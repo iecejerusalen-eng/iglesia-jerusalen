@@ -3,7 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { Upload, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import type { LMSAssignmentSubmission, LMSActivity } from '../../../types';
 import { toast } from 'sonner';
-import { uploadFileToCloudinary } from '../../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../../lib/mediaService';
 
 interface Props {
   activity: LMSActivity;
@@ -63,7 +63,7 @@ const LMSAssignment = ({ activity, studentId, onComplete }: Props) => {
 
       if (file) {
         // Subir a Cloudinary (resourceType 'raw' para que acepte docx, pdf, zip, etc.)
-        fileUrl = await uploadFileToCloudinary(file, 'assignments', 'raw');
+        fileUrl = await uploadMediaFile(file, 'assignments', 'raw');
       }
 
       if (submission) {

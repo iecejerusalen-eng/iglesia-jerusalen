@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import { Gamepad2, Edit2, Eye, EyeOff, AlertCircle, Plus, Music, X, Upload, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 import { toast } from 'sonner';
 
 interface Game {
@@ -63,7 +63,7 @@ export const GamesManager = () => {
 
     setUploadingImage(true);
     try {
-      const url = await uploadFileToCloudinary(file, 'games');
+      const url = await uploadMediaFile(file, 'games');
       setFormData(prev => ({ ...prev, image_url: url }));
       toast.success('Imagen subida a Cloudinary exitosamente');
     } catch (err: unknown) {

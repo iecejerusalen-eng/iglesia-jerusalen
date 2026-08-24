@@ -19,7 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 import { getLineTax, getUnitPrice } from '../../features/store/pricing';
 import type { StoreShippingMethod } from '../../types';
 
@@ -95,7 +95,7 @@ const Cart = () => {
       setError(null);
       try {
         // Subir a Cloudinary
-        const publicUrl = await uploadFileToCloudinary(file, 'ecommerce_vouchers', 'image');
+        const publicUrl = await uploadMediaFile(file, 'ecommerce_vouchers', 'image');
         setVoucherUrl(publicUrl);
       } catch (err) {
         console.error('Error uploading receipt:', err);

@@ -10,6 +10,7 @@ import { useCareers } from '../hooks/useCareers';
 import { COUNTRY_CODES } from '../../../utils/whatsapp';
 import { MapPickerModal } from './MapPickerModal';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
+import { uploadMediaFile } from '../../../lib/mediaService';
 
 interface MemberFormProps {
   editingMember: MemberWithRelations | null;
@@ -109,23 +110,9 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
     if (!file) return;
 
     setUploadingPhoto(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'iglesia_jerusalen_web');
-
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'degrlmvsq';
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al subir la imagen a Cloudinary');
-      }
-
-      const data = await response.json();
-      setValue('photo_url', data.secure_url, { shouldValidate: true });
+      const photoUrl = await uploadMediaFile(file, 'members', 'image');
+      setValue('photo_url', photoUrl, { shouldValidate: true });
       toast.success('Foto de perfil cargada y vinculada con éxito.');
     } catch (err) {
       console.error(err);

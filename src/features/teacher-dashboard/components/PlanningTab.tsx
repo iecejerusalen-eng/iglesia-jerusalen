@@ -4,6 +4,7 @@ import { BookOpen, CheckSquare, ChevronDown, ChevronRight, File, FileText, Loade
 import { toast } from 'sonner';
 import BlockEditor from '../../../components/admin/BlockEditor';
 import { supabase } from '../../../config/supabase';
+import { uploadMediaFile } from '../../../lib/mediaService';
 import { useAuthStore } from '../../../store/useAuthStore';
 
 interface PlanningModule { id: string; title: string; description: string | null; order_index: number; }
@@ -102,16 +103,12 @@ export function PlanningTab({ modules = [], materials, activities, resources = [
     event.target.value = '';
     setIsUploading(true);
     try {
-      const extension = file.name.split('.').pop() || 'bin';
-      const filePath = `${courseId}/${uploadingModuleId}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage.from('lms_resources').upload(filePath, file);
-      if (uploadError) throw uploadError;
-      const { data: publicUrlData } = supabase.storage.from('lms_resources').getPublicUrl(filePath);
+      const fileUrl = await uploadMediaFile(file, `lms/${courseId}/${uploadingModuleId}`, 'raw');
       const { error: databaseError } = await supabase.from('lms_course_resources').insert({
         course_id: courseId,
         module_id: uploadingModuleId,
         title: file.name,
-        file_url: publicUrlData.publicUrl,
+        file_url: fileUrl,
         file_type: file.type || 'application/octet-stream',
         file_size: file.size,
         created_by: user.id,

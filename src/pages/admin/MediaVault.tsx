@@ -8,7 +8,8 @@ import {
   FolderLock, Upload, Download, Trash2, FileText, Image as ImageIcon,
   RefreshCw, Lock, FileArchive, Cloud
 } from 'lucide-react';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { getAvailableMediaProviders, uploadMediaFile, type MediaProvider } from '../../lib/mediaService';
+import { getPreferredMediaProvider, setPreferredMediaProvider } from '../../lib/mediaProviderPreference';
 
 interface VaultFile {
   name: string;
@@ -19,6 +20,7 @@ interface VaultFile {
     lastModified: string;
   };
   previewUrl?: string;
+  provider?: string;
   isCloudinary?: boolean;
 }
 
@@ -28,6 +30,7 @@ const MediaVault = () => {
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [provider, setProvider] = useState<MediaProvider>(() => getPreferredMediaProvider());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = ['admin', 'multimedia'].includes(role || '');
@@ -79,7 +82,8 @@ const MediaVault = () => {
           lastModified: f.created_at
         },
         previewUrl: f.url,
-        isCloudinary: true
+        provider: f.provider || 'legacy',
+        isCloudinary: (f.provider || 'legacy') === 'cloudinary'
       }));
 
       // Generate signed URLs for previews and downloads
@@ -130,28 +134,8 @@ const MediaVault = () => {
     setUploading(true);
 
     try {
-      // Subir a Cloudinary
-      const fileUrl = await uploadFileToCloudinary(file, 'media_vault', 'auto');
-
-      // Registrar en la base de datos
-      const { error } = await supabase
-        .from('media_vault_files')
-        .insert({
-          name: file.name,
-          url: fileUrl,
-          mimetype: file.type,
-          size: file.size
-        });
-
-      if (error) {
-        if (error.code === '42P01') {
-          toast.error('La tabla media_vault_files no existe. Ejecuta el script SQL de migración.');
-        } else {
-          throw error;
-        }
-      }
-
-      toast.success('Archivo subido correctamente a la bóveda privada');
+      await uploadMediaFile(file, 'media_vault', 'auto');
+      toast.success(`Archivo subido mediante ${getAvailableMediaProviders().find((item) => item.id === provider)?.label || provider}.`);
       fetchFiles();
     } catch (err: unknown) {
       console.error('Error uploading file:', err);
@@ -164,7 +148,7 @@ const MediaVault = () => {
 
   const handleDownload = async (file: VaultFile) => {
     try {
-      if (file.isCloudinary && file.previewUrl) {
+      if (file.previewUrl && (file.isCloudinary || file.provider === 'supabase' || file.provider === 'r2' || file.provider === 'external')) {
         // Para Cloudinary abrimos la URL en nueva pestaña, con flag de fl_attachment
         const downloadUrl = file.previewUrl.replace('/upload/', '/upload/fl_attachment/');
         const link = document.createElement('a');
@@ -260,6 +244,7 @@ const MediaVault = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {canEdit && <select value={provider} onChange={(event) => { const nextProvider = event.target.value as MediaProvider; setProvider(nextProvider); setPreferredMediaProvider(nextProvider); }} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-white" aria-label="Proveedor de almacenamiento"><option value="cloudinary">Cloudinary</option><option value="supabase">Supabase Storage</option>{getAvailableMediaProviders().some((item) => item.id === 'r2') && <option value="r2">Cloudflare R2</option>}</select>}
           <button
             onClick={fetchFiles}
             className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400 transition-colors cursor-pointer"

@@ -7,7 +7,7 @@ import { useToolboxStore } from '../../../../store/useToolboxStore';
 
 describe('GlobalToolbox', () => {
   beforeEach(() => {
-    useAuthStore.setState({ role: 'member' });
+    useAuthStore.setState({ role: 'member', roles: null });
     useToolboxStore.setState({
       isOpen: false,
       isMinimized: false,
@@ -21,7 +21,7 @@ describe('GlobalToolbox', () => {
     useToolboxStore.getState().close();
   });
 
-  it('abre el hub desde el lanzador y expone las herramientas generales', async () => {
+  it('abre el hub y solo muestra Biblia y Notas a un miembro', async () => {
     render(
       <MemoryRouter initialEntries={['/predicas/mensaje']}>
         <GlobalToolbox />
@@ -31,13 +31,15 @@ describe('GlobalToolbox', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Abrir centro de herramientas' }));
 
     expect(await screen.findByRole('complementary', { name: 'Centro de herramientas global' })).toBeVisible();
-    expect(screen.getByRole('button', { name: /Metrónomo\. Tempo y compás precisos/ })).toBeVisible();
-    expect(screen.getByRole('button', { name: /Temporizador\. Tiempo de púlpito y avisos/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /Biblia\. Consulta pasajes al instante/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Notas rápidas\. Ideas guardadas localmente/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Metrónomo\. Tempo y compás precisos/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Temporizador\. Tiempo de púlpito y avisos/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Aforo\. Conteo y capacidad/ })).not.toBeInTheDocument();
   }, 10000);
 
   it('navega a una herramienta, minimiza y restaura sin desmontar el panel', async () => {
+    useAuthStore.setState({ role: 'admin', roles: null });
     useToolboxStore.setState({ isOpen: true });
     render(
       <MemoryRouter initialEntries={['/']}>

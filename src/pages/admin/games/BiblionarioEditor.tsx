@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
 import { Plus, Edit2, Trash2, Save, X, Image as ImageIcon, Smile, Search, AlertCircle } from 'lucide-react';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-import { uploadFileToCloudinary } from '../../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../../lib/mediaService';
 
 interface Question {
   id: string;
@@ -79,7 +79,7 @@ export const BiblionarioEditor = () => {
       
       const file = e.target.files[0];
       setUploadingImage(true);
-      const publicUrl = await uploadFileToCloudinary(file, 'biblionario_assets', 'image');
+      const publicUrl = await uploadMediaFile(file, 'biblionario_assets', 'image');
       setFormData({ ...formData, image_url: publicUrl });
     } catch (error) {
       console.error('Error uploading image:', error);

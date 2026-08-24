@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import { uploadFileToCloudinary } from './cloudinaryService';
+import { getPreferredMediaProvider } from './mediaProviderPreference';
 
 export type MediaProvider = 'cloudinary' | 'supabase' | 'r2';
 export type MediaResourceType = 'image' | 'video' | 'raw';
@@ -88,4 +89,12 @@ export const uploadMediaAsset = async (file: File, provider: MediaProvider, fold
       : await uploadToR2(file, folder, resourceType);
   await registerAsset(asset, file, folder);
   return asset;
+};
+
+export const uploadMediaFile = async (file: File, folder: string, resourceType: MediaResourceType | 'auto' = 'auto'): Promise<string> => {
+  const normalizedType: MediaResourceType = resourceType === 'auto'
+    ? file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : 'raw'
+    : resourceType;
+  const asset = await uploadMediaAsset(file, getPreferredMediaProvider(), folder, normalizedType);
+  return asset.url;
 };

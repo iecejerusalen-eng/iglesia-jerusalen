@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import type { InventoryCategory, InventoryItem } from '../../types';
 import MediaSearchModal from '../../components/admin/MediaSearchModal';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -199,7 +199,7 @@ const InventoryManager = () => {
   const uploadPhoto = async (file: File): Promise<string | null> => {
     setUploading(true);
     try {
-      const publicUrl = await uploadFileToCloudinary(file, 'inventory_photos', 'image');
+      const publicUrl = await uploadMediaFile(file, 'inventory_photos', 'image');
       return publicUrl;
     } catch (err: unknown) {
       console.error('Error uploading item photo:', err);

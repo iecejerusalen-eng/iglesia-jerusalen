@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { uploadMediaFile } from '../../lib/mediaService';
 
 const YoutubeIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
   <svg
@@ -496,14 +496,8 @@ export default function MediaSearchModal({
     try {
       const extension = file.type.split('/')[1] || 'png';
       const pastedFile = new File([file], `imagen-portapapeles-${Date.now()}.${extension}`, { type: file.type });
-      const url = await uploadFileToCloudinary(pastedFile, 'biblioteca', 'image');
-      const { error } = await supabase.from('media_vault_files').insert({ name: pastedFile.name, url, mimetype: pastedFile.type, size: pastedFile.size });
-      if (error) {
-        console.error('La imagen se subió, pero no se pudo registrar en la biblioteca:', error);
-        toast.warning('Imagen subida; no pudo registrarse en la biblioteca central.');
-      } else {
-        toast.success('Imagen pegada y guardada en la biblioteca.');
-      }
+      const url = await uploadMediaFile(pastedFile, 'biblioteca', 'image');
+      toast.success('Imagen pegada y guardada en la biblioteca.');
       setPastedUrl(url);
     } catch (error) {
       console.error('Error al subir imagen pegada:', error);

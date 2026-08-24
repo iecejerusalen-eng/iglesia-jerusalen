@@ -7,8 +7,8 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import type { UserRole } from '../../../types';
 import type { ToolboxPanel } from '../../../store/useToolboxStore';
+import { canAccessTool, type ToolboxRole } from './toolPermissions';
 
 export type ToolAccent = 'amber' | 'sky' | 'emerald' | 'rose' | 'violet';
 
@@ -18,12 +18,11 @@ export interface ToolboxToolDefinition {
   shortDescription: string;
   icon: LucideIcon;
   accent: ToolAccent;
-  isAvailable: (role: UserRole | null, pathname: string) => boolean;
+  isAvailable: (role: ToolboxRole, pathname: string, roles?: readonly ToolboxRole[]) => boolean;
 }
 
-const availableToEveryone = () => true;
-
-const logisticsRoles = new Set<UserRole>(['admin', 'leader', 'apoyo']);
+const accessByRole = (tool: Exclude<ToolboxPanel, 'hub'>) => (role: ToolboxRole, _pathname: string, roles: readonly ToolboxRole[] = []) =>
+  canAccessTool(tool, [role, ...roles]);
 
 export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
   {
@@ -32,7 +31,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Tempo y compás precisos',
     icon: Gauge,
     accent: 'amber',
-    isAvailable: availableToEveryone,
+    isAvailable: accessByRole('metronome'),
   },
   {
     id: 'tuner',
@@ -40,7 +39,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Afinación cromática',
     icon: Mic,
     accent: 'sky',
-    isAvailable: availableToEveryone,
+    isAvailable: accessByRole('tuner'),
   },
   {
     id: 'clicker',
@@ -48,8 +47,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Conteo y capacidad',
     icon: Users,
     accent: 'emerald',
-    isAvailable: (role, pathname) =>
-      role !== null && (logisticsRoles.has(role) || pathname.includes('/admin/')),
+    isAvailable: accessByRole('clicker'),
   },
   {
     id: 'timer',
@@ -57,7 +55,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Tiempo de púlpito y avisos',
     icon: Timer,
     accent: 'rose',
-    isAvailable: availableToEveryone,
+    isAvailable: accessByRole('timer'),
   },
   {
     id: 'bible',
@@ -65,7 +63,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Consulta pasajes al instante',
     icon: BookOpen,
     accent: 'sky',
-    isAvailable: availableToEveryone,
+    isAvailable: accessByRole('bible'),
   },
   {
     id: 'notes',
@@ -73,7 +71,7 @@ export const TOOLBOX_TOOLS: readonly ToolboxToolDefinition[] = [
     shortDescription: 'Ideas guardadas localmente',
     icon: PenTool,
     accent: 'violet',
-    isAvailable: availableToEveryone,
+    isAvailable: accessByRole('notes'),
   },
 ] as const;
 
