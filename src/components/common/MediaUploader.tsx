@@ -1,8 +1,7 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { Upload, Cloud } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../../config/supabase';
-import { uploadFileToCloudinary } from '../../lib/cloudinaryService';
+import { catalogUploadedMediaAsset, getAvailableMediaProviders, uploadMediaAsset, type MediaProvider } from '../../lib/mediaService';
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface MediaUploaderProps {
@@ -23,6 +22,8 @@ interface MediaUploaderProps {
   className?: string;
   /** Allow multiple files to be uploaded in one session */
   multiple?: boolean;
+  /** Proveedor inicial; el usuario puede cambiarlo antes de subir. */
+  provider?: MediaProvider;
 }
 
 interface CloudinaryUploadInfo {
@@ -88,8 +89,12 @@ export default function MediaUploader({
   label = 'Subir Archivo',
   className = '',
   multiple = false,
+  provider: initialProvider = 'cloudinary',
 }: MediaUploaderProps) {
   const widgetRef = useRef<CloudinaryUploadWidget | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<MediaProvider>(initialProvider);
+  const [uploading, setUploading] = useState(false);
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -159,12 +164,13 @@ export default function MediaUploader({
           }
           if (result.event === 'success' && result.info) {
             const info = result.info;
-            onUploadSuccess(
-              info.secure_url,
-              info.public_id,
-              info.resource_type as 'image' | 'video' | 'raw',
-              info.format
-            );
+            const resourceType = info.resource_type as 'image' | 'video' | 'raw';
+            const asset = { url: info.secure_url, provider: 'cloudinary' as const, storagePath: null, publicId: info.public_id, format: info.format, resourceType };
+            void catalogUploadedMediaAsset(asset, `${info.public_id}.${info.format}`, `${resourceType}/${info.format}`, 0, folder).catch((catalogError: unknown) => {
+              console.error('Cloudinary cargó el recurso, pero falló el catálogo:', catalogError);
+              toast.warning('Recurso subido; no pudo registrarse en la biblioteca central.');
+            });
+            onUploadSuccess(info.secure_url, info.public_id, resourceType, info.format);
           }
         }
       );
@@ -172,6 +178,25 @@ export default function MediaUploader({
 
     widgetRef.current.open();
   }, [cloudName, uploadPreset, folder, multiple, allowedFormats, onUploadSuccess]);
+
+  const uploadSelectedFile = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      const resourceType: 'image' | 'video' | 'raw' = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : 'raw';
+      const asset = await uploadMediaAsset(file, selectedProvider, folder, resourceType);
+      onUploadSuccess(asset.url, asset.publicId || '', asset.resourceType, asset.format);
+      toast.success(`Recurso guardado en ${getAvailableMediaProviders().find((item) => item.id === selectedProvider)?.label || selectedProvider}.`);
+    } catch (error) {
+      console.error('Error al subir recurso multimedia:', error);
+      toast.error(error instanceof Error ? error.message : 'No se pudo subir el recurso multimedia.');
+    } finally { setUploading(false); }
+  }, [folder, onUploadSuccess, selectedProvider]);
+
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) void uploadSelectedFile(file);
+    event.target.value = '';
+  }, [uploadSelectedFile]);
 
   const handleClipboardPaste = useCallback(async (event: React.ClipboardEvent<HTMLButtonElement>) => {
     const imageItem = Array.from(event.clipboardData.items).find((item) => item.type.startsWith('image/'));
@@ -182,25 +207,12 @@ export default function MediaUploader({
     try {
       const extension = file.type.split('/')[1] || 'png';
       const pastedFile = new File([file], `imagen-portapapeles-${Date.now()}.${extension}`, { type: file.type });
-      const url = await uploadFileToCloudinary(pastedFile, folder, 'image');
-      const { error: catalogError } = await supabase.from('media_vault_files').insert({
-        name: pastedFile.name,
-        url,
-        mimetype: pastedFile.type,
-        size: pastedFile.size,
-      });
-      if (catalogError) {
-        console.error('La imagen se subió, pero no se pudo registrar en la biblioteca:', catalogError);
-        toast.warning('Imagen subida; no pudo registrarse en la biblioteca central.');
-      } else {
-        toast.success('Imagen pegada y guardada en la biblioteca.');
-      }
-      onUploadSuccess(url, '', 'image', extension);
+      await uploadSelectedFile(pastedFile);
     } catch (error) {
       console.error('Error al subir imagen desde el portapapeles:', error);
       toast.error(error instanceof Error ? error.message : 'No se pudo subir la imagen pegada.');
     }
-  }, [folder, onUploadSuccess]);
+  }, [uploadSelectedFile]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -215,9 +227,10 @@ export default function MediaUploader({
   return (
     <button
       type="button"
-      onClick={openWidget}
+      onClick={() => { if (selectedProvider === 'cloudinary') void openWidget(); else fileInputRef.current?.click(); }}
       onPaste={(event) => { void handleClipboardPaste(event); }}
       title="También puedes enfocar este botón y presionar Ctrl+V para pegar una imagen"
+      disabled={uploading}
       className={`
         inline-flex items-center gap-2 px-4 py-2.5
         bg-gradient-to-br from-emerald-600 to-emerald-700
@@ -229,6 +242,10 @@ export default function MediaUploader({
         ${className}
       `}
     >
+      <select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value as MediaProvider)} onClick={(event) => event.stopPropagation()} className="rounded-md bg-white/15 px-1 py-0.5 text-[10px] font-bold text-white outline-none" aria-label="Proveedor de almacenamiento">
+        {getAvailableMediaProviders().map((item) => <option key={item.id} value={item.id} className="text-slate-900">{item.label}</option>)}
+      </select>
+      <input ref={fileInputRef} type="file" accept={allowedFormats?.map((format) => `.${format}`).join(',') || undefined} multiple={multiple} onChange={handleFileChange} className="hidden" />
       <Cloud size={14} className="opacity-80" />
       <Upload size={14} />
       <span>{label}</span>
