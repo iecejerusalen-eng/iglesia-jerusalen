@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import {
-  Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame
+  MessageSquare, Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame
 } from 'lucide-react';
 import { toast } from 'sonner';
 

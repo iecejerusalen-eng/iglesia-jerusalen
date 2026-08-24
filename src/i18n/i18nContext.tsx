@@ -1,13 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { translations, type Language } from './translations';
-
-interface I18nContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string, fallback?: string) => string;
-}
-
-export const I18nContext = createContext<I18nContextType | undefined>(undefined);
+import { I18nContext } from './i18nContextValue';
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {

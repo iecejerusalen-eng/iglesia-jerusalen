@@ -71,5 +71,5 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
         { cause: error },
       );
     }
-  });
+  }) as unknown as LazyExoticComponent<T>;
 }

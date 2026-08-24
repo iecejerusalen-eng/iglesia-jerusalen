@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { QrCode, CheckCircle2, ShieldAlert, User, Phone, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-export const QRCheckInKiosk: React.FC = () => {
+export const QRCheckInKiosk: React.FC<unknown> = () => {
   const [eventType, setEventType] = useState<'sunday_service' | 'kids_ministry'>('sunday_service');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

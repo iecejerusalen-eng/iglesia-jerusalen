@@ -40,15 +40,15 @@ export default function GroupsManager() {
   }, []);
 
   useEffect(() => {
-    loadGroups();
+    const load = async () => {
+      await loadGroups();
+    };
+    void load();
   }, [loadGroups]);
 
-  const handleJoinGroup = async (_groupId: string) => {
-    try {
-      toast.success('Inscripción al grupo enviada');
-    } catch {
-      toast.error('Error al unirse al grupo');
-    }
+  const handleJoinGroup = async (groupId: string) => {
+    void groupId;
+    toast.success('Inscripción al grupo enviada');
   };
 
   const handleCreateGroup = async (e: React.FormEvent) => {

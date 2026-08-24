@@ -5,6 +5,14 @@ import type { CrmPipeline, CrmContact, CrmStage } from '../../features/crm-pipel
 import { Users, Plus, Sparkles, X, Phone, Mail, User } from 'lucide-react';
 import { toast } from 'sonner';
 
+const DEFAULT_STAGES: CrmStage[] = [
+  { id: 'new_guest', name: 'Visitante Nuevo', color: '#3B82F6' },
+  { id: 'contacted', name: 'Contactado', color: '#8B5CF6' },
+  { id: 'connected', name: 'En Conexión', color: '#10B981' },
+  { id: 'member', name: 'Miembro', color: '#F59E0B' },
+  { id: 'servant', name: 'Servidor', color: '#EC4899' },
+];
+
 export default function CrmPipelineManager() {
   const [pipelines, setPipelines] = useState<CrmPipeline[]>([]);
   const [activePipeline, setActivePipeline] = useState<CrmPipeline | null>(null);
@@ -23,14 +31,6 @@ export default function CrmPipelineManager() {
     notes: '',
   });
 
-  const defaultStages: CrmStage[] = [
-    { id: 'new_guest', name: 'Visitante Nuevo', color: '#3B82F6' },
-    { id: 'contacted', name: 'Contactado', color: '#8B5CF6' },
-    { id: 'connected', name: 'En Conexión', color: '#10B981' },
-    { id: 'member', name: 'Miembro', color: '#F59E0B' },
-    { id: 'servant', name: 'Servidor', color: '#EC4899' },
-  ];
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -46,7 +46,7 @@ export default function CrmPipelineManager() {
           id: 'default-pipeline',
           name: 'Pipeline Principal de Asimilación',
           description: 'Ruta de seguimiento de visitantes hasta membresía',
-          stages: defaultStages,
+          stages: DEFAULT_STAGES,
           is_default: true,
           created_at: new Date().toISOString(),
         };
@@ -64,7 +64,10 @@ export default function CrmPipelineManager() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    const load = async () => {
+      await loadData();
+    };
+    void load();
   }, [loadData]);
 
   const handleStageChange = async (contactId: string, newStageId: string) => {
@@ -109,7 +112,7 @@ export default function CrmPipelineManager() {
     }
   };
 
-  const currentStages = activePipeline?.stages || defaultStages;
+  const currentStages = activePipeline?.stages || DEFAULT_STAGES;
 
   return (
     <div className="space-y-6">

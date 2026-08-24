@@ -28,7 +28,10 @@ export default function WorkflowsManager() {
   }, []);
 
   useEffect(() => {
-    loadWorkflows();
+    const load = async () => {
+      await loadWorkflows();
+    };
+    void load();
   }, [loadWorkflows]);
 
   const handleSaveWorkflow = async (workflowData: Partial<Workflow>) => {

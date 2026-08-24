@@ -114,9 +114,10 @@ export default function VolunteersManager() {
       toast.success('Turno creado con éxito');
       setIsModalOpen(false);
       loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err?.message ? `Error al crear turno: ${err.message}` : 'Error al crear turno');
+      const message = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error(`Error al crear turno: ${message}`);
     }
   };
 
