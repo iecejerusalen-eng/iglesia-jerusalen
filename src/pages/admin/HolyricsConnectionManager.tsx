@@ -106,10 +106,12 @@ export default function HolyricsConnectionManager() {
   const [searching, setSearching] = useState(false);
 
   // WebMIDI State
-  const [midiSupported, setMidiSupported] = useState<boolean | null>(null);
+  const [midiSupported, setMidiSupported] = useState<boolean | null>(() =>
+    typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator
+  );
   const [midiDevices, setMidiDevices] = useState<string[]>([]);
   const [midiLogs, setMidiLogs] = useState<MidiLogItem[]>([]);
-  const [midiBindings, setMidiBindings] = useState<MidiBinding[]>([
+  const [midiBindings] = useState<MidiBinding[]>([
     { id: 'b-1', noteOrCc: 60, action: 'NextSlide', description: 'Pedal 1 -> Siguiente Diapositiva' },
     { id: 'b-2', noteOrCc: 61, action: 'PreviousSlide', description: 'Pedal 2 -> Diapositiva Anterior' },
     { id: 'b-3', noteOrCc: 62, action: 'ClearScreen', description: 'Pedal 3 -> Limpiar Pantalla' },
@@ -145,10 +147,41 @@ export default function HolyricsConnectionManager() {
     return () => window.clearTimeout(timer);
   }, [canView, loadConnections]);
 
+  const sendHolyricsAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
+    const activeConn = connections.find((c) => c.is_enabled) || connections[0];
+    if (!activeConn) {
+      toast.error('Registra primero una conexión Holyrics activa.');
+      return;
+    }
+
+    try {
+      if (activeConn.mode === 'internet') {
+        const { data, error } = await supabase.functions.invoke('holyrics-api', {
+          body: { action, payload, transport: 'request' },
+        });
+        if (error) throw error;
+        const res = data as { ok?: boolean; error?: string; message?: string };
+        if (!res.ok) throw new Error(res.message || res.error || 'Error en Holyrics');
+      } else {
+        const baseUrl = activeConn.base_url || 'http://127.0.0.1:4892/holyrics';
+        const res = await fetch(baseUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, payload }),
+        });
+        const body = await res.json() as { ok?: boolean; error?: string; message?: string };
+        if (!res.ok || !body.ok) throw new Error(body.message || body.error || `HTTP ${res.status}`);
+      }
+      toast.success(`Acción executada: ${action}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al enviar comando';
+      toast.error(`Error en Holyrics (${action}): ${msg}`);
+    }
+  }, [connections]);
+
   // Check WebMIDI API
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator) {
-      setMidiSupported(true);
       navigator.requestMIDIAccess().then(
         (midiAccess) => {
           const inputs: string[] = [];
@@ -188,10 +221,8 @@ export default function HolyricsConnectionManager() {
           setMidiSupported(false);
         }
       );
-    } else {
-      setMidiSupported(false);
     }
-  }, [midiBindings]);
+  }, [midiBindings, sendHolyricsAction]);
 
   const recordTestStatus = async (mode: ConnectionMode, errorMessage: string | null) => {
     const target = connections.find((connection) => connection.mode === mode);
@@ -209,38 +240,6 @@ export default function HolyricsConnectionManager() {
         connection.id === target.id ? { ...connection, ...patch } : connection
       )
     );
-  };
-
-  const sendHolyricsAction = async (action: string, payload: Record<string, unknown> = {}) => {
-    const activeConn = connections.find((c) => c.is_enabled) || connections[0];
-    if (!activeConn) {
-      toast.error('Registra primero una conexión Holyrics activa.');
-      return;
-    }
-
-    try {
-      if (activeConn.mode === 'internet') {
-        const { data, error } = await supabase.functions.invoke('holyrics-api', {
-          body: { action, payload, transport: 'request' },
-        });
-        if (error) throw error;
-        const res = data as { ok?: boolean; error?: string; message?: string };
-        if (!res.ok) throw new Error(res.message || res.error || 'Error en Holyrics');
-      } else {
-        const baseUrl = activeConn.base_url || 'http://127.0.0.1:4892/holyrics';
-        const res = await fetch(baseUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, payload }),
-        });
-        const body = await res.json() as { ok?: boolean; error?: string; message?: string };
-        if (!res.ok || !body.ok) throw new Error(body.message || body.error || `HTTP ${res.status}`);
-      }
-      toast.success(`Acción executada: ${action}`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al enviar comando';
-      toast.error(`Error en Holyrics (${action}): ${msg}`);
-    }
   };
 
   const testInternet = async () => {
