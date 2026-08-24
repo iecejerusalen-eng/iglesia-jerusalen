@@ -4,7 +4,6 @@ import { GlobalErrorBoundary } from './components/common/ErrorBoundary';
 import { BrowserRouter } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { Toaster as SonnerToaster } from 'sonner';
-import { Toaster as HotToaster } from 'react-hot-toast';
 import ScrollToTop from './components/common/ScrollToTop';
 import ConfirmDialog from './components/common/ConfirmDialog';
 import AppRouter from './routes/AppRouter';
@@ -20,6 +19,8 @@ import { usePluginStore } from './store/usePluginStore';
 import GlobalContextMenu from './components/common/GlobalContextMenu';
 import GlobalToolbox from './components/common/GlobalToolbox';
 import MobileRefreshButton from './components/common/MobileRefreshButton';
+import { I18nProvider } from './i18n/i18nContext';
+import CommandPalette from './components/common/CommandPalette';
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -75,51 +76,34 @@ export default function App() {
   }, []);
 
   return (
-    <HelmetProvider>
-      <GlobalErrorBoundary>
-        <SonnerToaster
-          position="bottom-center"
-          offset={48}
-          theme="dark"
-          toastOptions={{
-            duration: 4000,
-          }}
-        />
-        <HotToaster
-          position="bottom-center"
-          containerStyle={{
-            bottom: 48,
-          }}
-          toastOptions={{
-            style: {
-              background: 'rgba(15, 23, 42, 0.95)',
-              color: '#ffffff',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(16px)',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              padding: '0.75rem 1.25rem',
-              maxWidth: '90vw',
-            },
-          }}
-        />
-        <ConfirmDialog />
-        <BrowserRouter>
-          <GlobalContextMenu>
-            <ScrollToTop />
-            {/* Modales cargados bajo demanda */}
-            <Suspense fallback={null}>
-              <CRMRegistrationPrompt />
-              <BirthdayCelebrationModal />
-            </Suspense>
-            <AppRouter />
-            <GlobalToolbox />
-            <MobileRefreshButton />
-          </GlobalContextMenu>
-        </BrowserRouter>
-      </GlobalErrorBoundary>
-    </HelmetProvider>
+    <I18nProvider>
+      <HelmetProvider>
+        <GlobalErrorBoundary>
+          <SonnerToaster
+            position="bottom-center"
+            offset={48}
+            theme="dark"
+            toastOptions={{
+              duration: 4000,
+            }}
+          />
+          <ConfirmDialog />
+          <BrowserRouter>
+            <GlobalContextMenu>
+              <ScrollToTop />
+              <CommandPalette />
+              {/* Modales cargados bajo demanda */}
+              <Suspense fallback={null}>
+                <CRMRegistrationPrompt />
+                <BirthdayCelebrationModal />
+              </Suspense>
+              <AppRouter />
+              <GlobalToolbox />
+              <MobileRefreshButton />
+            </GlobalContextMenu>
+          </BrowserRouter>
+        </GlobalErrorBoundary>
+      </HelmetProvider>
+    </I18nProvider>
   );
 }

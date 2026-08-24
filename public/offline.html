@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sin Conexión | Iglesia Jerusalén</title>
+    <style>
+      :root {
+        --color-primary: #1E3A8A;
+        --color-gold: #C79D3F;
+        --bg-color: #0F172A;
+        --text-color: #F8FAFC;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      .card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        padding: 2.5rem 2rem;
+        border-radius: 1.5rem;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .icon-circle {
+        width: 64px;
+        height: 64px;
+        background: rgba(199, 157, 63, 0.15);
+        color: var(--color-gold);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        color: #ffffff;
+      }
+      p {
+        font-size: 0.95rem;
+        color: #94A3B8;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #FFD679 0%, #C79D3F 100%);
+        color: #0F172A;
+        font-weight: 700;
+        padding: 0.85rem 2rem;
+        border-radius: 9999px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: transform 0.2s, opacity 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.9;
+        transform: scale(1.03);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon-circle">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <line x1="12" y1="20" x2="12.01" y2="20"></line>
+        </svg>
+      </div>
+      <h1>Sin Conexión a Internet</h1>
+      <p>Parece que perdiste tu conexión a la red. No te preocupes, las secciones guardadas siguen disponibles offline. Intenta recargar cuando tengas señal.</p>
+      <button class="btn" onclick="window.location.reload()">
+        Reintentar Conexión
+      </button>
+    </div>
+  </body>
+</html>

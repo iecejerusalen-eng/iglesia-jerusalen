@@ -16,7 +16,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { Button } from '../../components/ui/button';

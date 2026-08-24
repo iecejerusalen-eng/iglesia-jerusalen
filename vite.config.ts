@@ -19,7 +19,6 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**', 'scratch/**'],
   },
   plugins: [
-
     react(),
     tailwindcss(),
     VitePWA({ 
@@ -28,9 +27,6 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectManifest: {
-        // No precargamos chunks de mapas, editores y herramientas de más de
-        // 900 KB durante la instalación de la PWA. Se solicitan únicamente
-        // cuando la ruta los necesita y se cachean mediante el navegador.
         maximumFileSizeToCacheInBytes: 900000,
         globIgnores: [
           '**/SongViewer-*.js',
@@ -57,12 +53,11 @@ export default defineConfig({
         categories: ['religion', 'education', 'social'],
         icons: [
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          // NOTE: Add these icons to public/ for full PWA support:
-          // { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          // { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          // { src: '/apple-touch-icon-180x180.png', sizes: '180x180', type: 'image/png' }
+          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
         ],
         shortcuts: [
+          { name: 'Planifica tu Visita', short_name: 'Visita', url: '/visita', description: 'Información para primeros visitantes' },
           { name: 'Eventos', short_name: 'Eventos', url: '/eventos', description: 'Ver próximos eventos' },
           { name: 'Sermones', short_name: 'Sermones', url: '/predicas', description: 'Escuchar sermones' },
           { name: 'Himnario', short_name: 'Himnario', url: '/recursos/alabanzas', description: 'Cancionero de la iglesia' }
@@ -115,9 +110,6 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-core';
             }
-            // No agrupamos dependencias desconocidas en un commons global.
-            // Ese patrón generaba un chunk de varios megabytes que se descargaba
-            // incluso en rutas móviles que no utilizaban esos módulos.
             return undefined;
           }
         }

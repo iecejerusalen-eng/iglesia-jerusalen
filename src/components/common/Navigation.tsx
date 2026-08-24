@@ -208,6 +208,12 @@ const Navigation = () => {
               <span>Ctrl K</span>
             </kbd>
           </button>
+          <Link
+            to="/visita"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md shadow-amber-500/20 transition hover:scale-105 hover:from-amber-400 hover:to-amber-500"
+          >
+            Planifica tu Visita
+          </Link>
           <ThemeToggle />
         </div>
       </div>

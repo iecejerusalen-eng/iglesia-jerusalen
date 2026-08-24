@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowLeft, LockKeyhole, ShieldCheck, Clock, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import BlockLessonRenderer from "../../components/public/BlockLessonRenderer";
 import {
@@ -20,6 +20,18 @@ export default function EditorialDocumentPage() {
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState("");
   const [unlocking, setUnlocking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      toast.success("Enlace copiado al portapapeles.");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("No se pudo copiar el enlace.");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,11 +128,17 @@ export default function EditorialDocumentPage() {
             />
           )}
           <div className="p-7 sm:p-10">
-            <span className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">
-              {result.document.document_type === "page"
-                ? "Página"
-                : "Publicación"}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-black uppercase tracking-[.18em] text-blue-700 dark:text-amber-300">
+                {result.document.document_type === "page"
+                  ? "Página"
+                  : "Publicación"}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400">
+                <Clock size={13} />
+                {Math.max(1, Math.ceil(JSON.stringify(result.document.content_blocks || []).length / 1200))} min de lectura
+              </span>
+            </div>
             <h1 className="mt-3 font-serif text-4xl font-bold leading-tight sm:text-5xl">
               {result.document.title}
             </h1>
@@ -180,6 +198,31 @@ export default function EditorialDocumentPage() {
                 lessonId={`editorial-${result.document.id}`}
               />
             </section>
+            
+            {/* Share Footer Bar */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-xs dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <Share2 size={16} className="text-amber-500" />
+                <span>¿Te sirvió esta lectura? Compártela con otros</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-800 dark:hover:bg-slate-700"
+                >
+                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  {copied ? "¡Copiado!" : "Copiar enlace"}
+                </button>
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${result.document.title}\n${window.location.href}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 shadow-sm"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
             {result.document.allow_comments && (
               <EditorialComments documentId={result.document.id} />
             )}

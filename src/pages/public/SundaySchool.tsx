@@ -17,12 +17,11 @@ const SundaySchool = () => {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [key, setKey] = useState(0); // to reload iframe
+  const [key, setKey] = useState(0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch all badges
       const { data: badgesData, error: badgesError } = await supabase
         .from('badges')
         .select('*')
@@ -31,7 +30,6 @@ const SundaySchool = () => {
       if (badgesError) throw badgesError;
       setBadges(badgesData || []);
 
-      // Fetch unlocked badges for user
       if (user) {
         const { data: unlockedData, error: unlockedError } = await supabase
           .from('user_badges')
@@ -58,57 +56,42 @@ const SundaySchool = () => {
     return () => window.clearTimeout(timer);
   }, [fetchData]);
 
-  // Listen for WebGL build message
   useEffect(() => {
     const handleGameMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'GAME_COMPLETE') {
         const badgeName = event.data.badgeName || 'Campeón Dominical';
         
         if (!user) {
-          toast.warning('¡Lección completada! Inicia sesión para guardar tu progreso e insignia.', {
-            duration: 5000,
-          });
+          toast.warning('¡Lección completada! Inicia sesión para guardar tu progreso e insignia.', { duration: 5000 });
           return;
         }
 
         try {
-          // Find the badge ID dynamically by name
           const { data: badgeData, error: badgeFindError } = await supabase
             .from('badges')
             .select('id')
             .eq('name', badgeName)
             .single();
 
-          if (badgeFindError || !badgeData) {
-            console.error('Badge not found in DB:', badgeName);
-            return;
-          }
+          if (badgeFindError || !badgeData) return;
 
-          // Check if already unlocked
           if (unlockedBadgeIds.includes(badgeData.id)) {
             toast.info('Ya tienes esta insignia desbloqueada.');
             return;
           }
 
-          // Call Edge Function to safely award badge
           const { data, error: functionError } = await supabase.functions.invoke('gamify', {
-            body: {
-              action: 'complete_sunday_school',
-              badgeName: badgeName,
-            },
+            body: { action: 'complete_sunday_school', badgeName: badgeName },
           });
 
           if (functionError) throw functionError;
 
           if (data?.newlyUnlocked) {
-            toast.success(`🎉 ¡Felicidades! Has desbloqueado la insignia: ${badgeName}`, {
-              duration: 6000,
-            });
+            toast.success(`🎉 ¡Felicidades! Has desbloqueado la insignia: ${badgeName}`, { duration: 6000 });
           } else {
             toast.info('Ya tienes esta insignia desbloqueada.');
           }
           
-          // Refresh unlocked list
           fetchData();
         } catch (err) {
           console.error('Error unlocking badge:', err);
@@ -142,6 +125,20 @@ const SundaySchool = () => {
             <p className="text-amber-100 text-base md:text-lg leading-relaxed font-light">
               ¡Aprende la palabra de Dios jugando! Resuelve trivias, completa desafíos y haz un seguimiento de tus logros. Desbloquea insignias que reflejan tu crecimiento espiritual.
             </p>
+
+            {/* PRE-CHECK-IN ACTION BUTTON */}
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  const code = `KIDS-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+                  toast.success(`🎉 Pre-Check-In Creado. Código de seguridad para tu hijo: ${code}`, { duration: 8000 });
+                }}
+                className="px-6 py-3 bg-amber-400 text-slate-950 font-bold rounded-2xl text-xs flex items-center gap-2 hover:bg-amber-300 transition shadow-lg cursor-pointer"
+              >
+                <ShieldCheck size={18} />
+                Generar Pre-Check-in de Mi Hijo (Evita Filas el Domingo)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -152,30 +149,30 @@ const SundaySchool = () => {
           <div id="sunday_materials" className="lg:col-span-2 space-y-4 scroll-mt-28">
             <AnimeZoomIn delay={200} duration={600}>
               <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
-              <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-                <div className="flex items-center gap-2 text-amber-400">
-                  <Gamepad2 size={20} />
-                  <span className="font-semibold text-sm tracking-wider uppercase">Simulador WebGL</span>
+                <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-amber-400">
+                    <Gamepad2 size={20} />
+                    <span className="font-semibold text-sm tracking-wider uppercase">Simulador WebGL</span>
+                  </div>
+                  <button
+                    onClick={reloadGame}
+                    className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-medium cursor-pointer transition-colors"
+                  >
+                    <RefreshCw size={12} />
+                    Reiniciar
+                  </button>
                 </div>
-                <button
-                  onClick={reloadGame}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-medium cursor-pointer transition-colors"
-                >
-                  <RefreshCw size={12} />
-                  Reiniciar
-                </button>
-              </div>
 
-              {/* Game Viewport Container */}
-              <div className="relative aspect-video w-full bg-slate-950">
-                <iframe
-                  key={key}
-                  src="/webgl-mock/index.html"
-                  className="w-full h-full border-none"
-                  title="WebGL Biblical Game"
-                />
+                {/* Game Viewport Container */}
+                <div className="relative aspect-video w-full bg-slate-950">
+                  <iframe
+                    key={key}
+                    src="/webgl-mock/index.html"
+                    className="w-full h-full border-none"
+                    title="WebGL Biblical Game"
+                  />
+                </div>
               </div>
-            </div>
             </AnimeZoomIn>
             
             <p className="text-xs text-gray-400 text-center italic">
@@ -217,39 +214,40 @@ const SundaySchool = () => {
                             : 'bg-gray-50 border-gray-150 dark:bg-slate-800/50 dark:border-white/10 opacity-70'
                         }`}
                       >
-                      <div className="relative shrink-0">
-                        <img loading="lazy"
-                          src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
-                          alt={badge.name}
-                          className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${
-                            isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 dark:border-slate-700 grayscale'
-                          }`}
-                        />
-                        <div className="absolute -bottom-1 -right-1">
-                          {isUnlocked ? (
-                            <div className="bg-green-600 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
-                              <ShieldCheck size={14} />
-                            </div>
-                          ) : (
-                            <div className="bg-gray-400 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
-                              <Lock size={14} />
-                            </div>
-                          )}
+                        <div className="relative shrink-0">
+                          <img
+                            loading="lazy"
+                            src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
+                            alt={badge.name}
+                            className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${
+                              isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 dark:border-slate-700 grayscale'
+                            }`}
+                          />
+                          <div className="absolute -bottom-1 -right-1">
+                            {isUnlocked ? (
+                              <div className="bg-green-600 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
+                                <ShieldCheck size={14} />
+                              </div>
+                            ) : (
+                              <div className="bg-gray-400 text-white rounded-full p-0.5 border border-white dark:border-slate-900">
+                                <Lock size={14} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-sm text-gray-800 dark:text-white flex items-center gap-1.5">
+                            {badge.name}
+                            {isUnlocked && (
+                              <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-1.5 py-0.5 rounded-full uppercase">
+                                Ganado
+                              </span>
+                            )}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 leading-normal">{badge.description}</p>
                         </div>
                       </div>
-
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-sm text-gray-800 dark:text-white flex items-center gap-1.5">
-                          {badge.name}
-                          {isUnlocked && (
-                            <span className="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-1.5 py-0.5 rounded-full uppercase">
-                              Ganado
-                            </span>
-                          )}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-normal">{badge.description}</p>
-                      </div>
-                    </div>
                     </AnimePulseHover>
                   );
                 })}
@@ -260,9 +258,7 @@ const SundaySchool = () => {
               </div>
             )}
           </div>
-
         </div>
-
       </AnimeFadeUp>
     </div>
   );

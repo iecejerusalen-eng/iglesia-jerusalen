@@ -164,7 +164,7 @@ export default function StickyNav() {
       </aside>
 
       {/* MOBILE COMPACT FLOATING DOCK */}
-      <div className="fixed right-3 bottom-24 z-40 md:hidden flex flex-col items-end gap-2">
+      <div className="fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 md:hidden flex flex-col items-end gap-2">
         {/* Desplegable de Secciones Móvil */}
         {isMobileMenuOpen && (
           <div className="flex flex-col gap-2 p-2 rounded-2xl backdrop-blur-2xl bg-slate-900/90 dark:bg-slate-950/95 text-white border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 max-h-[60vh] overflow-y-auto custom-scrollbar">

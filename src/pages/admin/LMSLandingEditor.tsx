@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Save, Loader2, Plus, Trash2, Layout, LayoutTemplate } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 

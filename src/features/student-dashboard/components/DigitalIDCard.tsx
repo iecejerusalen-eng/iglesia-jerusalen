@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, ShieldCheck, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import soloLogoNegro from '../../../assets/Jerusalén/solo logo negro.svg';
 
 interface DigitalIDCardProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
             {/* Header */}
             <div className="bg-gold text-slate-950 p-6 text-center relative z-10 overflow-hidden">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-              <img src="/logo.png" alt="Iglesia Jerusalén" className="h-12 mx-auto mb-2 relative z-10 drop-shadow-md" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <img src={soloLogoNegro} alt="Iglesia Jerusalén" className="h-12 mx-auto mb-2 relative z-10 drop-shadow-md" />
               <h2 className="font-black font-serif text-xl tracking-tight relative z-10">IGLESIA JERUSALÉN</h2>
               <p className="text-xs font-bold uppercase tracking-widest opacity-80 relative z-10">Credencial Estudiantil</p>
             </div>

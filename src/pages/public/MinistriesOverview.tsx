@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { Users, Award, LayoutGrid, List as ListIcon, Calendar, User as UserIcon } from 'lucide-react';
+import { Users, Award, LayoutGrid, List as ListIcon, Calendar, User as UserIcon, Search } from 'lucide-react';
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import { motion, AnimatePresence } from 'framer-motion';
 import MagneticButton from '../../components/animations/MagneticButton';
@@ -17,6 +17,7 @@ const stripHtmlAndTruncate = (html: string | null | undefined, maxLength: number
 const MinistriesOverview = () => {
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterQuery, setFilterQuery] = useState('');
 
   // Persist view mode preference
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -47,6 +48,11 @@ const MinistriesOverview = () => {
     };
     fetchMinistries();
   }, []);
+
+  const filteredMinistries = ministries.filter(m =>
+    m.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
+    (m.description && m.description.toLowerCase().includes(filterQuery.toLowerCase()))
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 transition-colors duration-500 overflow-hidden relative">
@@ -82,24 +88,36 @@ const MinistriesOverview = () => {
 
         {/* CONTROLES / TOOLBAR */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/60 dark:border-white/10 shadow-sm">
-          <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Mostrando <span className="text-indigo-600 dark:text-indigo-400">{ministries.length}</span> ministerios
-          </p>
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg flex items-center justify-center transition-all duration-300 ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              aria-label="Vista de cuadrícula"
-            >
-              <LayoutGrid size={20} />
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg flex items-center justify-center transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              aria-label="Vista de lista"
-            >
-              <ListIcon size={20} />
-            </button>
+          <div className="relative w-full sm:w-72">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Buscar ministerio..."
+              className="w-full h-10 pl-9 pr-4 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            />
+          </div>
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+              Mostrando <span className="text-indigo-600 dark:text-indigo-400">{filteredMinistries.length}</span> ministerios
+            </p>
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg flex items-center justify-center transition-all duration-300 ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                aria-label="Vista de cuadrícula"
+              >
+                <LayoutGrid size={20} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg flex items-center justify-center transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                aria-label="Vista de lista"
+              >
+                <ListIcon size={20} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -109,11 +127,11 @@ const MinistriesOverview = () => {
             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm font-medium">Cargando ministerios...</p>
           </div>
-        ) : ministries.length === 0 ? (
+        ) : filteredMinistries.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/10 p-8">
             <Users size={48} className="mx-auto text-slate-300 dark:text-slate-600" />
             <h3 className="font-serif font-bold text-xl text-slate-800 dark:text-white mt-4">No se encontraron ministerios</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Pronto agregaremos más información sobre nuestras actividades.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Intenta modificar el término de búsqueda o explora nuestras actividades.</p>
           </div>
         ) : (
           <motion.div 
@@ -125,7 +143,7 @@ const MinistriesOverview = () => {
             }
           >
             <AnimatePresence>
-              {ministries.map((min, i) => (
+              {filteredMinistries.map((min, i) => (
                 <motion.div
                   layout
                   initial={{ opacity: 0, y: 20 }}

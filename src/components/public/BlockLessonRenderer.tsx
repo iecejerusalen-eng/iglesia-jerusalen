@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   HelpCircle, CheckCircle2, XCircle, Save, Check, ShieldAlert, BookOpen,
   ListChecks, Sliders, StickyNote,
-  HeartHandshake
+  HeartHandshake, Mic2, Sparkles
 } from 'lucide-react';
 import type { LessonBlock } from '../admin/BlockEditor';
 import RichTextRenderer from '../common/RichTextRenderer';
@@ -13,6 +13,7 @@ import FillBlank from '../activities/FillBlank';
 import Dice3D from '../activities/Dice3D';
 import WordSearchGrid from '../activities/WordSearchGrid';
 import RetroTimer from '../activities/RetroTimer';
+import WaveformPlayer from '../audio/WaveformPlayer';
 
 interface Props {
   content: string;
@@ -566,6 +567,92 @@ const BlockItem = ({ block, lessonId }: { block: LessonBlock; lessonId: string }
       {/* 15. TIMER CHALLENGE */}
       {block.type === 'timer_challenge' && block.question_text && (
         <RetroTimer block={block} storageKey={storageKey} />
+      )}
+
+      {/* 16. AUDIO PLAYER WITH WAVEFORM */}
+      {block.type === 'audio_player' && (block.audio_url || block.audio_title) && (
+        <div className="my-6">
+          <WaveformPlayer
+            audioUrl={block.audio_url || ''}
+            title={block.audio_title || 'Audio de Prédica'}
+            subtitle="Mensaje y Enseñanza Pastoral"
+            coverUrl={block.audio_cover}
+            chapters={(block.audio_chapters || []).map((ch, idx) => ({ id: `ch-${idx}`, title: ch.title, seconds: ch.seconds }))}
+          />
+        </div>
+      )}
+
+      {/* 17. PODCAST EPISODE BLOCK */}
+      {block.type === 'podcast_episode' && (
+        <div className="my-6 p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-slate-900 border border-purple-500/30 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center gap-5">
+          <div className="w-20 h-20 rounded-xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center shrink-0">
+            <Mic2 className="w-10 h-10 text-purple-300" />
+          </div>
+          <div className="flex-1 space-y-2 text-left">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Episodio de Podcast
+            </span>
+            <h4 className="text-lg font-bold text-white tracking-tight">{block.audio_title || 'Episodio Especial'}</h4>
+            {block.text && <p className="text-xs text-slate-300 line-clamp-2">{block.text}</p>}
+          </div>
+          {block.audio_url && (
+            <div className="w-full md:w-auto">
+              <WaveformPlayer
+                audioUrl={block.audio_url}
+                title={block.audio_title || 'Episodio'}
+                className="!p-3 border-none bg-black/40"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 18. SERMON SUMMARY (AI INTELIGENTE) */}
+      {block.type === 'sermon_summary' && block.ai_summary && (
+        <div className="my-6 p-6 md:p-8 rounded-3xl bg-gradient-to-br from-amber-500/10 via-slate-900 to-indigo-950/40 border border-amber-500/30 shadow-2xl backdrop-blur-xl space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-white tracking-tight">Resumen Inteligente de la Prédica</h4>
+                <p className="text-xs text-amber-300/80">Síntesis pastoral y puntos clave</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Executive Summary */}
+          {block.ai_summary.executive_summary && (
+            <p className="text-sm text-slate-200 leading-relaxed font-sans border-l-2 border-amber-400/60 pl-4 py-0.5">
+              {block.ai_summary.executive_summary}
+            </p>
+          )}
+
+          {/* Central Verse Callout */}
+          {block.ai_summary.central_verse && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-400/20 text-center font-serif text-amber-200 text-sm italic">
+              "{block.ai_summary.central_verse}"
+            </div>
+          )}
+
+          {/* Key Points */}
+          {block.ai_summary.key_points && block.ai_summary.key_points.length > 0 && (
+            <div className="space-y-2">
+              <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Puntos Principales</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {block.ai_summary.key_points.map((point, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-200">
+                    <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[11px] flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="leading-snug">{point}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

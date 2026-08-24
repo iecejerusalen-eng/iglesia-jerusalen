@@ -10,7 +10,7 @@ const games = [
     description: '¿Quién quiere ser Biblionario? Pon a prueba tu conocimiento bíblico en este clásico juego de 15 niveles.',
     icon: <Trophy className="w-12 h-12 text-amber-300" />,
     color: 'from-amber-600 to-yellow-600',
-    path: '/recursos/juegos/biblionario'
+    path: '/recursos/juegos/quien-quiere-ser-biblionario'
   },
   {
     id: 'guess_character',
@@ -18,7 +18,7 @@ const games = [
     description: 'Descubre qué personaje bíblico se oculta tras las pistas de sabiduría reveladas progresivamente.',
     icon: <UserCheck className="w-12 h-12 text-indigo-300" />,
     color: 'from-indigo-600 to-purple-600',
-    path: '/recursos/juegos/adivina-personaje'
+    path: '/recursos/juegos/descubre-el-personaje'
   },
   {
     id: 'hangman',
@@ -26,7 +26,7 @@ const games = [
     description: 'Adivina personajes, lugares y libros de la Biblia antes de que se acaben tus intentos.',
     icon: <Gamepad2 className="w-12 h-12 text-rose-300" />,
     color: 'from-rose-600 to-pink-600',
-    path: '/recursos/juegos/ahorcado'
+    path: '/recursos/juegos/ahorcado-biblico'
   },
   {
     id: 'memory',
@@ -34,7 +34,7 @@ const games = [
     description: 'Encuentra las parejas correctas de conceptos y versículos para ejercitar tu memoria.',
     icon: <BrainCircuit className="w-12 h-12 text-emerald-300" />,
     color: 'from-emerald-600 to-teal-600',
-    path: '/recursos/juegos/memorama'
+    path: '/recursos/juegos/memorama-biblico'
   }
 ];
 

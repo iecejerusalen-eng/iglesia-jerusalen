@@ -8,26 +8,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Precarga de fuentes para Web Vitals -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet"></noscript>
 
     <!-- SEO -->
-    <meta name="description" content="Plataforma oficial de la Iglesia del Evangelio Cuadrangular Jerusalén. Eventos, sermones, ministerios, himnario y comunidad de fe.">
+    <meta name="description" content="Plataforma oficial de la Iglesia del Evangelio Cuadrangular Jerusalén en Milagro, Guayas, Ecuador. Servicios dominicales, sermones en vivo, escuela dominical, aula virtual y comunidad de fe.">
+    <meta name="keywords" content="Iglesia Jerusalén, Iglesia Cuadrangular, Milagro, Ecuador, iglesia cristiana, sermones, cultos en vivo, aula virtual, fe, comunidad">
     <link rel="canonical" href="https://iglesia-jerusalen.vercel.app/">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Iglesia del Evangelio Cuadrangular Jerusalén">
-    <meta property="og:description" content="Plataforma oficial de la Iglesia del Evangelio Cuadrangular Jerusalén. Eventos, sermones, ministerios, himnario y comunidad de fe.">
+    <meta property="og:description" content="Plataforma oficial de la Iglesia del Evangelio Cuadrangular Jerusalén. Servicios dominicales, sermones, ministerios y comunidad de fe.">
     <meta property="og:url" content="https://iglesia-jerusalen.vercel.app/">
     <meta property="og:site_name" content="Iglesia Jerusalén">
     <meta property="og:locale" content="es_EC">
+    <meta property="og:image" content="https://iglesia-jerusalen.vercel.app/images/church-og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Iglesia del Evangelio Cuadrangular Jerusalén">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Iglesia del Evangelio Cuadrangular Jerusalén">
-    <meta name="twitter:description" content="Plataforma oficial de la Iglesia del Evangelio Cuadrangular Jerusalén.">
+    <meta name="twitter:description" content="Comunidad de fe, adoración, sermones en vivo y aula virtual en Milagro, Ecuador.">
+    <meta name="twitter:image" content="https://iglesia-jerusalen.vercel.app/images/church-og.jpg">
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -36,7 +42,34 @@
       "@type": "Church",
       "name": "Iglesia del Evangelio Cuadrangular Jerusalén",
       "url": "https://iglesia-jerusalen.vercel.app/",
-      "description": "Iglesia del Evangelio Cuadrangular Jerusalén - Comunidad de fe, adoración y servicio."
+      "logo": "https://iglesia-jerusalen.vercel.app/favicon.svg",
+      "image": "https://iglesia-jerusalen.vercel.app/images/church-og.jpg",
+      "description": "Iglesia del Evangelio Cuadrangular Jerusalén - Comunidad de fe, adoración, formación espiritual y servicio en Milagro, Ecuador.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Milagro",
+        "addressRegion": "Guayas",
+        "addressCountry": "EC"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "-2.1333",
+        "longitude": "-79.5833"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Sunday"],
+          "opens": "09:00",
+          "closes": "12:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Wednesday", "Friday"],
+          "opens": "19:00",
+          "closes": "21:00"
+        }
+      ]
     }
     </script>
   </head>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronRight, ChevronLeft, Heart, User, MapPin, Activity, Sparkles } from 'lucide-react';
 import { supabase } from '../../config/supabase';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const STEPS = [

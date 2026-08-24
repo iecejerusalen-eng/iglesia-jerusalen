@@ -77,11 +77,13 @@ export function getDb() {
   return dbPromise;
 }
 
+import { logger } from '../utils/logger';
+
 export async function initLocalDatabase(): Promise<void> {
   try {
     await getDb();
-    console.log('Local IndexedDB database initialized successfully.');
+    logger.log('Local IndexedDB database initialized successfully.');
   } catch (error) {
-    console.error('Failed to initialize local IndexedDB database:', error);
+    logger.error('Failed to initialize local IndexedDB database:', error);
   }
 }

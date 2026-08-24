@@ -302,6 +302,15 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'contenido'
   },
   {
+    id: 'podcast',
+    label: 'Podcast & Audio Devocionales',
+    name: 'Podcast & Audio',
+    path: '/admin/podcast',
+    icon: Radio,
+    group: 'contenido',
+    keywords: ['podcast', 'audio', 'episodios', 'radio', 'devocionales']
+  },
+  {
     id: 'speakers',
     label: 'Liderazgo y Oradores',
     name: 'Liderazgo de la iglesia',
@@ -355,6 +364,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     icon: Clock3,
     group: 'operaciones',
     permission: 'events',
+    showInPermissions: false,
     keywords: ['culto', 'planificador', 'alabanza', 'ujieres', 'holyrics']
   },
   {
@@ -445,6 +455,86 @@ export const ADMIN_MODULES: AdminModule[] = [
 
   // --- 5. COMUNIDAD, CRM & CHAT ---
   {
+    id: 'crm_pipeline',
+    label: 'Pipeline CRM de Visitantes',
+    name: 'Pipeline CRM',
+    path: '/admin/crm-pipeline',
+    icon: Users,
+    group: 'personas'
+  },
+  {
+    id: 'workflows_automations',
+    label: 'Automatizaciones & Workflows',
+    name: 'Workflows & Reglas',
+    path: '/admin/automatizaciones',
+    icon: Sparkles,
+    group: 'personas'
+  },
+  {
+    id: 'mass_campaigns',
+    label: 'Campañas de Email & SMS',
+    name: 'Campañas Email/SMS',
+    path: '/admin/campanas',
+    icon: Megaphone,
+    group: 'contenido'
+  },
+  {
+    id: 'small_groups_admin',
+    label: 'Grupos Pequeños y Células',
+    name: 'Grupos Pequeños',
+    path: '/admin/grupos',
+    icon: Users,
+    group: 'personas'
+  },
+  {
+    id: 'checkin_kiosk_admin',
+    label: 'Kiosko de Check-In & Asistencia',
+    name: 'Check-In Kiosko',
+    path: '/admin/checkin-kiosk',
+    icon: Clock3,
+    group: 'operaciones'
+  },
+  {
+    id: 'families',
+    label: 'Unidades Familiares',
+    name: 'Gestión de Familias',
+    path: '/admin/familias',
+    icon: Users,
+    group: 'personas'
+  },
+  {
+    id: 'child_checkin',
+    label: 'Check-In Seguro Infantil',
+    name: 'Check-In Infantil',
+    path: '/admin/checkin-infantil',
+    icon: Clock3,
+    group: 'operaciones'
+  },
+  {
+    id: 'form_builder',
+    label: 'Constructor de Formularios',
+    name: 'Formularios Dinámicos',
+    path: '/admin/formularios',
+    icon: FileText,
+    group: 'contenido'
+  },
+  {
+    id: 'pastoral_health',
+    label: 'Salud Pastoral & Analíticas',
+    name: 'Salud Pastoral (IA)',
+    path: '/admin/salud-pastoral',
+    icon: Activity,
+    group: 'inicio'
+  },
+  {
+    id: 'campuses',
+    label: 'Gestión de Sedes (Multi-Site)',
+    name: 'Sedes & Campuses',
+    path: '/admin/sedes',
+    icon: Globe2,
+    group: 'sistema'
+  },
+  {
     id: 'members',
     label: 'Miembros (CRM)',
     name: 'Directorio Miembros (CRM)',
@@ -513,6 +603,15 @@ export const ADMIN_MODULES: AdminModule[] = [
 
   // --- 6. TIENDA Y LIBRERÍA ---
   {
+    id: 'pos',
+    label: 'Punto de Venta (POS)',
+    name: 'Caja POS Presencial',
+    path: '/admin/pos',
+    icon: DollarSign,
+    group: 'finanzas_tienda',
+    keywords: ['pos', 'caja', 'punto de venta', 'libreria', 'templo', 'recibos']
+  },
+  {
     id: 'products',
     label: 'Productos de Tienda',
     name: 'Productos Tienda',
@@ -552,7 +651,9 @@ export const ADMIN_MODULES: AdminModule[] = [
     name: 'Panel ProPresenter',
     path: '/admin/propresenter',
     icon: MonitorPlay,
-    group: 'operaciones'
+    group: 'operaciones',
+    permission: 'production',
+    showInPermissions: false,
   },
   {
     id: 'holyrics_connection',
@@ -562,6 +663,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     icon: Radio,
     group: 'operaciones',
     permission: 'production',
+    showInPermissions: false,
     keywords: ['holyrics', 'letras', 'stage', 'conexión', 'api']
   },
   {

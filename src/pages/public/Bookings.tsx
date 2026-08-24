@@ -5,7 +5,7 @@ import { useAuth } from '../../features/auth/hooks/useAuth';
 import type { Space, SpaceBooking } from '../../types';
 import { Users, Calendar, Clock, ArrowRight, Home } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../components/animations/AnimeWrappers';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
 export default function Bookings() {

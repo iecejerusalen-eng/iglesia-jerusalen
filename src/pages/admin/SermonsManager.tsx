@@ -22,6 +22,8 @@ const sermonSchema = z.object({
   pastor_name: z.string().optional().nullable(),
   date: z.string().min(1, 'La fecha de la prédica es obligatoria'),
   youtube_url: z.string().url('Ingresa una URL de YouTube válida').or(z.literal('')),
+  audio_url: z.string().url('Ingresa una URL de audio válida').or(z.literal('')).optional().nullable(),
+  audio_source_type: z.enum(['upload', 'url', 'embed']).optional().nullable(),
   cover_image_url: z.string().url('Ingresa una URL de imagen válida').or(z.literal('')).optional().nullable(),
   cover_video_url: z.string().url('Ingresa una URL de video válida').or(z.literal('')).optional().nullable(),
   content: z.string().min(1, 'El contenido del mensaje es obligatorio'),

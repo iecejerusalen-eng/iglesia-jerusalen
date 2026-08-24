@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, User, LogOut, ChevronDown, ShoppingBag, Heart, LayoutDashboard, Upload } from 'lucide-react';
+import { ShoppingCart, User, LogOut, ChevronDown, ShoppingBag, Heart, LayoutDashboard, Upload, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
+import { useTranslation } from '../../i18n/i18nContext';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
@@ -81,21 +82,72 @@ const TopBar = () => {
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
 
+  const { language, setLanguage } = useTranslation();
+
+  const handleOpenCommandPalette = () => {
+    window.dispatchEvent(new CustomEvent('open-command-palette'));
+  };
+
   return (
     <div className={`transition-all duration-500 ease-in-out ${
       isHomeAtTop
         ? `absolute top-0 left-0 right-0 w-full z-[60] ${isTransparent ? 'bg-transparent border-transparent text-white/95' : 'bg-white/90 dark:bg-slate-950/90 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 backdrop-blur-md'}`
         : 'bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 relative z-[60]'
     } text-sm py-2.5 px-4 md:px-8 flex justify-between items-center`}>
-      <div className="flex gap-4">
+      <div className="flex items-center gap-3">
         <span className={`hidden sm:inline font-medium text-xs transition-colors duration-500 ${
           isTransparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
         }`}>
           Iglesia del Evangelio Cuadrangular Jerusalén
         </span>
+
+        {/* Cmd + K Button Trigger */}
+        <button
+          onClick={handleOpenCommandPalette}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+            isTransparent
+              ? 'bg-white/10 border-white/20 text-white/90 hover:bg-white/20'
+              : 'bg-slate-900/10 dark:bg-slate-900/60 border-gray-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-gold/40'
+          }`}
+          title="Buscar comandos o módulos (Cmd + K)"
+        >
+          <Search size={12} className="text-gold" />
+          <span className="hidden md:inline">Buscar...</span>
+          <kbd className="px-1 py-0.2 rounded bg-slate-950/50 font-mono text-[10px] text-gold font-bold">⌘K</kbd>
+        </button>
       </div>
       
-      <div className="flex items-center gap-4 sm:gap-6">
+      <div className="flex items-center gap-3 sm:gap-5">
+        {/* Language Selector */}
+        <div className="flex items-center gap-1 text-xs">
+          <button
+            onClick={() => setLanguage('es')}
+            className={`px-1.5 py-0.5 rounded font-bold transition ${
+              language === 'es' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            ES
+          </button>
+          <span className="text-slate-600">|</span>
+          <button
+            onClick={() => setLanguage('en')}
+            className={`px-1.5 py-0.5 rounded font-bold transition ${
+              language === 'en' ? 'bg-gold text-slate-950' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            EN
+          </button>
+        </div>
+
+        {/* Botón de Culto En Vivo */}
+        <Link 
+          to="/en-vivo" 
+          className="font-bold transition-all duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 cursor-pointer shadow-xs"
+        >
+          <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+          🔴 En Vivo
+        </Link>
+
         {/* Único Botón de Donaciones / Diezmos destacado */}
         <Link 
           to="/donations" 

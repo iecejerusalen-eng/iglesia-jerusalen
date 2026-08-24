@@ -8,7 +8,7 @@ import {
   CheckSquare, CheckCircle2, ArrowUp, ArrowDown, Trash2, Plus, X,
   ListChecks, Dices, BookOpen, Sliders, StickyNote, Timer, Grid3x3, Sparkles,
   Copy, ChevronDown, ChevronRight, Search, FileText, Gamepad2, MessageSquare, Heart,
-  GripVertical, AlertTriangle, LayoutGrid
+  GripVertical, AlertTriangle, LayoutGrid, Headphones, Mic2, Play, Radio, Clock
 } from 'lucide-react';
 
 export type BlockType = 
@@ -26,7 +26,10 @@ export type BlockType =
   | 'word_search'
   | 'reflection_slider'
   | 'reflection_note'
-  | 'timer_challenge';
+  | 'timer_challenge'
+  | 'audio_player'
+  | 'podcast_episode'
+  | 'sermon_summary';
 
 export interface LessonBlock {
   id: string;
@@ -46,6 +49,20 @@ export interface LessonBlock {
   word_search_words?: string[];
   slider_labels?: { min: string; max: string };
   timer_seconds?: number;
+  // Audio & Podcast extension fields
+  audio_url?: string;
+  audio_title?: string;
+  audio_cover?: string;
+  audio_duration?: number;
+  audio_source_type?: 'upload' | 'url' | 'embed';
+  audio_chapters?: { title: string; seconds: number }[];
+  ai_summary?: {
+    executive_summary?: string;
+    key_points?: string[];
+    central_verse?: string;
+    practical_application?: string;
+  };
+  podcast_embed_url?: string;
 }
 
 interface Props {
@@ -72,6 +89,16 @@ const BLOCK_CATEGORIES: BlockCategory[] = [
       { type: 'image', label: 'Imagen', icon: ImageIcon, color: 'text-emerald-500' },
       { type: 'html', label: 'Código HTML', icon: Code, color: 'text-violet-500' },
       { type: 'section', label: 'Sección', icon: Heading, color: 'text-amber-500' },
+    ],
+  },
+  {
+    id: 'audio',
+    label: 'Audio & Podcast',
+    icon: Headphones,
+    types: [
+      { type: 'audio_player', label: 'Audio con Waveform', icon: Headphones, color: 'text-amber-500' },
+      { type: 'podcast_episode', label: 'Episodio Podcast', icon: Mic2, color: 'text-purple-500' },
+      { type: 'sermon_summary', label: 'Resumen IA', icon: Sparkles, color: 'text-rose-500' },
     ],
   },
   {
@@ -114,6 +141,9 @@ const BLOCK_META: Record<BlockType, { label: string; icon: React.ElementType; co
   image: { label: 'Imagen', icon: ImageIcon, color: 'text-emerald-500', bgLight: 'bg-emerald-50', bgDark: 'dark:bg-emerald-950/20' },
   html: { label: 'Código HTML', icon: Code, color: 'text-violet-500', bgLight: 'bg-violet-50', bgDark: 'dark:bg-violet-950/20' },
   section: { label: 'Título de Sección', icon: Heading, color: 'text-amber-500', bgLight: 'bg-amber-50', bgDark: 'dark:bg-amber-950/20' },
+  audio_player: { label: 'Reproductor de Audio Inteligente', icon: Headphones, color: 'text-amber-500', bgLight: 'bg-amber-50', bgDark: 'dark:bg-amber-950/20' },
+  podcast_episode: { label: 'Episodio de Podcast', icon: Mic2, color: 'text-purple-500', bgLight: 'bg-purple-50', bgDark: 'dark:bg-purple-950/20' },
+  sermon_summary: { label: 'Resumen IA del Sermón', icon: Sparkles, color: 'text-rose-500', bgLight: 'bg-rose-50', bgDark: 'dark:bg-rose-950/20' },
   question: { label: 'Pregunta Abierta', icon: HelpCircle, color: 'text-indigo-500', bgLight: 'bg-indigo-50', bgDark: 'dark:bg-indigo-950/20' },
   multiple_choice: { label: 'Opción Múltiple', icon: CheckSquare, color: 'text-purple-500', bgLight: 'bg-purple-50', bgDark: 'dark:bg-purple-950/20' },
   true_false: { label: 'Verdadero / Falso', icon: CheckCircle2, color: 'text-red-500', bgLight: 'bg-red-50', bgDark: 'dark:bg-red-950/20' },
@@ -1139,6 +1169,220 @@ const BlockEditor = ({ content, onChange, disabled = false }: Props) => {
                                     value={block.timer_seconds || 60}
                                     onChange={(e) => updateBlockValue(block.id, { timer_seconds: parseInt(e.target.value) || 60 })}
                                     className="w-24 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 text-gray-800 dark:text-gray-100 rounded-lg px-3 py-1.5 text-xs outline-none font-bold"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 16. AUDIO PLAYER */}
+                            {block.type === 'audio_player' && (
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Título del Audio / Prédica</label>
+                                  <input
+                                    type="text"
+                                    value={block.audio_title || ''}
+                                    onChange={(e) => updateBlockValue(block.id, { audio_title: e.target.value })}
+                                    placeholder="Ej: El Poder de la Fe — Audio Completo"
+                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs focus:border-amber-400 outline-none text-gray-800 dark:text-gray-100 font-medium"
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Origen del Audio</label>
+                                    <select
+                                      value={block.audio_source_type || 'url'}
+                                      onChange={(e) => updateBlockValue(block.id, { audio_source_type: e.target.value as any })}
+                                      className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-medium text-gray-800 dark:text-gray-100 outline-none"
+                                    >
+                                      <option value="url">URL Directa MP3 / Podcast (Link)</option>
+                                      <option value="upload">Subir Archivo de Audio (MP3/OGG)</option>
+                                      <option value="embed">Embed de Spotify / Apple Podcasts</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Imagen de Portada (Opcional)</label>
+                                    <input
+                                      type="text"
+                                      value={block.audio_cover || ''}
+                                      onChange={(e) => updateBlockValue(block.id, { audio_cover: e.target.value })}
+                                      placeholder="https://ejemplo.com/portada.jpg"
+                                      className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs outline-none text-gray-800 dark:text-gray-100"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                                    {block.audio_source_type === 'embed' ? 'URL o Código Embed' : 'URL del Archivo de Audio MP3'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={block.audio_url || ''}
+                                    onChange={(e) => updateBlockValue(block.id, { audio_url: e.target.value })}
+                                    placeholder={block.audio_source_type === 'embed' ? 'https://open.spotify.com/embed/episode/...' : 'https://servidor.com/audio/predica.mp3'}
+                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs focus:border-amber-400 outline-none font-mono text-gray-800 dark:text-gray-100"
+                                  />
+                                </div>
+
+                                {/* Chapter Manager */}
+                                <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                      <Clock size={12} /> Capítulos / Marcadores de Tiempo
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const existing = block.audio_chapters || [];
+                                        updateBlockValue(block.id, {
+                                          audio_chapters: [...existing, { title: 'Nuevo Capítulo', seconds: 0 }]
+                                        });
+                                      }}
+                                      className="text-xs text-amber-600 font-bold hover:underline flex items-center gap-1"
+                                    >
+                                      <Plus size={12} /> Añadir Capítulo
+                                    </button>
+                                  </div>
+                                  {(block.audio_chapters || []).map((ch, idx) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        value={ch.title}
+                                        onChange={(e) => {
+                                          const updated = [...(block.audio_chapters || [])];
+                                          updated[idx].title = e.target.value;
+                                          updateBlockValue(block.id, { audio_chapters: updated });
+                                        }}
+                                        placeholder="Título del capítulo"
+                                        className="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs outline-none"
+                                      />
+                                      <input
+                                        type="number"
+                                        value={ch.seconds}
+                                        onChange={(e) => {
+                                          const updated = [...(block.audio_chapters || [])];
+                                          updated[idx].seconds = parseInt(e.target.value) || 0;
+                                          updateBlockValue(block.id, { audio_chapters: updated });
+                                        }}
+                                        placeholder="Segundos (Ej: 120)"
+                                        className="w-24 bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs font-mono outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = (block.audio_chapters || []).filter((_, i) => i !== idx);
+                                          updateBlockValue(block.id, { audio_chapters: updated });
+                                        }}
+                                        className="p-1 text-gray-400 hover:text-red-500"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 17. PODCAST EPISODE */}
+                            {block.type === 'podcast_episode' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.audio_title || ''}
+                                  onChange={(e) => updateBlockValue(block.id, { audio_title: e.target.value })}
+                                  placeholder="Título del episodio del podcast..."
+                                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs focus:border-purple-400 outline-none font-bold"
+                                />
+                                <input
+                                  type="text"
+                                  value={block.audio_url || ''}
+                                  onChange={(e) => updateBlockValue(block.id, { audio_url: e.target.value })}
+                                  placeholder="URL del audio MP3 o enlace de Spotify / Apple..."
+                                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono outline-none"
+                                />
+                                <textarea
+                                  rows={2}
+                                  value={block.text || ''}
+                                  onChange={(e) => updateBlockValue(block.id, { text: e.target.value })}
+                                  placeholder="Breve descripción del episodio..."
+                                  className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs outline-none"
+                                />
+                              </div>
+                            )}
+
+                            {/* 18. SERMON SUMMARY (AI) */}
+                            {block.type === 'sermon_summary' && (
+                              <div className="space-y-3 p-4 bg-rose-50/30 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                                    <Sparkles size={14} className="text-amber-500" /> Resumen Estructurado Inteligente
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateBlockValue(block.id, {
+                                        ai_summary: {
+                                          executive_summary: 'En esta enseñanza descubrimos cómo la fe perseverante transforma nuestra perspectiva ante los momentos de incertidumbre.',
+                                          central_verse: 'Hebreos 11:1 — Es, pues, la fe la certeza de lo que se espera, la convicción de lo que no se ve.',
+                                          key_points: [
+                                            'La fe activa desplaza el temor y abre camino al propósito divino.',
+                                            'La constancia en la oración fortalece el espíritu en medio de pruebas.',
+                                            'Nuestra esperanza está anclada en las promesas inmutables de Dios.',
+                                            'El testimonio personal inspira y edifica a la comunidad.',
+                                            'Caminar en fe requiere pasos concretos de obediencia diaria.'
+                                          ],
+                                          practical_application: 'Dedica 10 minutos cada mañana a declarar las promesas de Dios sobre tus desafíos actuales.'
+                                        }
+                                      });
+                                    }}
+                                    className="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[11px] font-bold shadow-xs transition"
+                                  >
+                                    Generar Ejemplo IA
+                                  </button>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-gray-400 mb-1">Resumen Ejecutivo</label>
+                                  <textarea
+                                    rows={2}
+                                    value={block.ai_summary?.executive_summary || ''}
+                                    onChange={(e) => updateBlockValue(block.id, {
+                                      ai_summary: { ...(block.ai_summary || {}), executive_summary: e.target.value }
+                                    })}
+                                    placeholder="Síntesis principal de la enseñanza..."
+                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs outline-none"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-gray-400 mb-1">Versículo Clave</label>
+                                  <input
+                                    type="text"
+                                    value={block.ai_summary?.central_verse || ''}
+                                    onChange={(e) => updateBlockValue(block.id, {
+                                      ai_summary: { ...(block.ai_summary || {}), central_verse: e.target.value }
+                                    })}
+                                    placeholder="Ej: Hebreos 6:19 — Tenemos como segura y firme ancla del alma..."
+                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-serif outline-none"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-gray-400 mb-1">Puntos Clave (Separados por salto de línea)</label>
+                                  <textarea
+                                    rows={3}
+                                    value={(block.ai_summary?.key_points || []).join('\n')}
+                                    onChange={(e) => updateBlockValue(block.id, {
+                                      ai_summary: {
+                                        ...(block.ai_summary || {}),
+                                        key_points: e.target.value.split('\n').filter(Boolean)
+                                      }
+                                    })}
+                                    placeholder="Punto 1&#10;Punto 2&#10;Punto 3..."
+                                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs outline-none"
                                   />
                                 </div>
                               </div>

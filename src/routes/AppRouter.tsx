@@ -13,6 +13,7 @@ const AdminLayout = lazyWithRetry(() => import('../layouts/AdminLayout'));
 
 // --- PUBLIC PAGES ---
 const Home = lazyWithRetry(() => import('../pages/public/Home'));
+const PlanYourVisit = lazyWithRetry(() => import('../pages/public/PlanYourVisit'));
 const Login = lazyWithRetry(() => import('../pages/auth/Login'));
 const Store = lazyWithRetry(() => import('../pages/public/Store'));
 const Cart = lazyWithRetry(() => import('../pages/public/Cart'));
@@ -55,6 +56,16 @@ const MissionExplorer = lazyWithRetry(() => import('../pages/public/MissionExplo
 const Terms = lazyWithRetry(() => import('../pages/public/Terms').then(m => ({ default: m.Terms })));
 const Privacy = lazyWithRetry(() => import('../pages/public/Privacy').then(m => ({ default: m.Privacy })));
 const CrmOnboarding = lazyWithRetry(() => import('../pages/public/CrmOnboarding'));
+const Podcast = lazyWithRetry(() => import('../pages/public/Podcast'));
+const PodcastManager = lazyWithRetry(() => import('../pages/admin/PodcastManager'));
+const CommunityFeed = lazyWithRetry(() => import('../pages/public/CommunityFeed'));
+const DynamicFormRenderer = lazyWithRetry(() => import('../pages/public/DynamicFormRenderer'));
+const LiveStream = lazyWithRetry(() => import('../pages/public/LiveStream'));
+const FamiliesManager = lazyWithRetry(() => import('../pages/admin/FamiliesManager'));
+const ChildCheckInKiosk = lazyWithRetry(() => import('../pages/admin/ChildCheckInKiosk'));
+const FormBuilderManager = lazyWithRetry(() => import('../pages/admin/FormBuilderManager'));
+const PredictiveEngagementDashboard = lazyWithRetry(() => import('../pages/admin/PredictiveEngagementDashboard'));
+const CampusManager = lazyWithRetry(() => import('../pages/admin/CampusManager'));
 
 // --- LMS PAGES ---
 const Checkout = lazyWithRetry(() => import('../pages/public/Checkout'));
@@ -72,6 +83,7 @@ const SpeakersManager = lazyWithRetry(() => import('../pages/admin/SpeakersManag
 const FinanceDashboard = lazyWithRetry(() => import('../pages/admin/FinanceDashboard'));
 const DonationPageManager = lazyWithRetry(() => import('../pages/admin/DonationPageManager'));
 const StoreManager = lazyWithRetry(() => import('../pages/admin/StoreManager'));
+const PointOfSaleManager = lazyWithRetry(() => import('../pages/admin/PointOfSaleManager'));
 const StoreSettings = lazyWithRetry(() => import('../pages/admin/StoreSettings'));
 const OrdersManager = lazyWithRetry(() => import('../pages/admin/OrdersManager'));
 const MinistryManager = lazyWithRetry(() => import('../pages/admin/MinistryManager'));
@@ -142,6 +154,7 @@ export default function AppRouter() {
         <Route path="/presentacion" element={<Presentation />} />
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/visita" element={<PlanYourVisit />} />
           <Route path="/login" element={<Login />} />
           <Route path="/tienda" element={<Store />} />
           <Route path="/cart" element={<Cart />} />
@@ -151,6 +164,7 @@ export default function AppRouter() {
           <Route path="/ministerios/:slug" element={<MinistryDetail />} />
           <Route path="/ministerios/:slug/*" element={<MinistryPageDetail />} />
           <Route path="/predicas" element={<Sermons />} />
+          <Route path="/podcast" element={<Podcast />} />
           <Route path="/expositores" element={<Expositores />} />
           <Route path="/misiones" element={<Missions />} />
           <Route path="/misiones/:section" element={<MissionExplorer />} />
@@ -182,6 +196,9 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/reservas" element={<Bookings />} />
+          <Route path="/comunidad" element={<CommunityFeed />} />
+          <Route path="/en-vivo" element={<LiveStream />} />
+          <Route path="/formularios/:formId" element={<DynamicFormRenderer />} />
           <Route path="/cert-verify/:hash" element={<CertificateVerification />} />
         </Route>
         
@@ -246,6 +263,12 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="podcast" />}><Route element={<AdminLayout />}><Route path="/admin/podcast" element={<PodcastManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="families" />}><Route element={<AdminLayout />}><Route path="/admin/familias" element={<FamiliesManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="child_checkin" />}><Route element={<AdminLayout />}><Route path="/admin/checkin-infantil" element={<ChildCheckInKiosk />} /></Route></Route>
+        <Route element={<ProtectedRoute module="form_builder" />}><Route element={<AdminLayout />}><Route path="/admin/formularios" element={<FormBuilderManager />} /></Route></Route>
+        <Route element={<ProtectedRoute module="pastoral_health" />}><Route element={<AdminLayout />}><Route path="/admin/salud-pastoral" element={<PredictiveEngagementDashboard />} /></Route></Route>
+        <Route element={<ProtectedRoute module="campuses" />}><Route element={<AdminLayout />}><Route path="/admin/sedes" element={<CampusManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="speakers" />}><Route element={<AdminLayout />}>
           <Route path="/admin/pastores" element={<SpeakersManager />} />
           <Route path="/admin/liderazgo" element={<Navigate to="/admin/pastores" replace />} />
@@ -296,6 +319,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="products" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/productos" element={<StoreManager />} />
+            <Route path="/admin/pos" element={<PointOfSaleManager />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute module="orders" />}><Route element={<AdminLayout />}><Route path="/admin/ordenes" element={<OrdersManager />} /></Route></Route>

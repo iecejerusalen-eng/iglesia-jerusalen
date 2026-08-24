@@ -4,7 +4,8 @@ import { FooterBreadcrumb } from './FooterBreadcrumb';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import { 
   Mail, Phone, MapPin, Heart, ShieldCheck, Scale,
-  Users, GraduationCap, Gamepad2, ShoppingBag, Globe, Video
+  Users, GraduationCap, Gamepad2, ShoppingBag, Globe, Video,
+  Sparkles, Music, Radio, HeartHandshake
 } from 'lucide-react';
 
 const Footer = () => {
@@ -49,15 +50,19 @@ const Footer = () => {
     {
       title: 'La Iglesia',
       links: [
+        { name: 'Planifica tu Visita', path: '/visita', icon: Sparkles },
         { name: 'Quiénes Somos', path: '/nosotros', icon: Users },
         { name: 'Ministerios', path: '/ministerios', icon: Heart },
         { name: 'Misiones', path: '/misiones', icon: Globe },
+        { name: 'Generosidad & Ofrendas', path: '/donations', icon: HeartHandshake },
       ]
     },
     {
       title: 'Recursos',
       links: [
         { name: 'Sermones', path: '/predicas', icon: Video },
+        { name: 'Podcast', path: '/podcast', icon: Radio },
+        { name: 'Himnario & Alabanzas', path: '/recursos/alabanzas', icon: Music },
         { name: 'Aula Virtual', path: '/aula-virtual', icon: GraduationCap },
         { name: 'Juegos', path: '/recursos/juegos', icon: Gamepad2 },
         { name: 'Tienda', path: '/tienda', icon: ShoppingBag },
@@ -117,6 +122,7 @@ const Footer = () => {
                   whileTap={{ scale: 0.95 }}
                   className={`w-10 h-10 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-all duration-300 shadow-sm ${social.color}`}
                   title={social.name}
+                  aria-label={`Seguir a Iglesia Jerusalén en ${social.name}`}
                 >
                   {social.iconRenderer()}
                 </motion.a>

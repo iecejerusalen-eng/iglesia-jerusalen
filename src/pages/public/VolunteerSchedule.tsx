@@ -18,7 +18,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import type { VolunteerAssignment, VolunteerShift } from '../../types';

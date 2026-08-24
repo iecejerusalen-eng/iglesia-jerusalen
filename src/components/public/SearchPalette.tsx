@@ -1,23 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
-import DOMPurify from 'dompurify';
+import React, { useState, useEffect, useRef } from 'react';
 import { Command } from 'cmdk';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Search, BookOpen, Music, Calendar, Heart, 
+  ShoppingBag, ArrowRight, Loader2, Send, Globe,
+  MapPin, Megaphone
+} from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import { useSearchStore } from '../../store/useSearchStore';
-import { 
-  Search, BookOpen, Music, Calendar, MapPin, Megaphone,
-  Globe, Heart, ShoppingBag, Send, ArrowRight, Loader2
-} from 'lucide-react';
-import { AnimeScaleIn, AnimeFadeUp } from '../animations/AnimeWrappers';
-import { parseBibleReferences, type ParsedVerse } from '../../utils/bibleParser';
+import { AnimeFadeUp, AnimeScaleIn } from '../animations/AnimeWrappers';
 import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
 
+// Types for search results
 interface SearchSong {
   id: string;
   title: string;
-  slug: string | null;
   artist: string | null;
   lyrics: string;
+  slug?: string;
 }
 
 interface SearchEvent {
@@ -27,13 +28,14 @@ interface SearchEvent {
   start_date: string;
   start_time: string | null;
   emoji: string | null;
+  ministries?: { name: string } | null;
 }
 
 interface SearchMinistry {
   id: string;
   name: string;
-  slug: string;
   description: string | null;
+  slug: string;
 }
 
 interface SearchProduct {
@@ -41,23 +43,29 @@ interface SearchProduct {
   name: string;
   description: string | null;
   price: number;
-  category: string | null;
+  category: string;
 }
 
 interface SearchSchedule {
   id: string;
   title: string;
   day: string;
-  description: string | null;
   time_range: string;
+  description: string | null;
 }
 
 interface SearchAnnouncement {
   id: string;
   title: string;
-  summary: string;
+  summary: string | null;
   body: string;
-  event_id: string | null;
+}
+
+interface ParsedVerse {
+  bookName: string;
+  bookId: string;
+  chapter: number;
+  verses: string;
 }
 
 interface SearchResults {
@@ -92,93 +100,90 @@ const cmdkStyles = `
     padding: 8px;
     font-family: inherit;
     overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    color: #0f172a;
     transition: all 300ms ease;
   }
-  .dark [cmdk-root] {
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-  }
-  .light [cmdk-root] {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  .dark [cmdk-root],
+  html.dark [cmdk-root] {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
   }
   [cmdk-input] {
     font-family: inherit;
     width: 100%;
-    font-size: 15px;
-    padding: 14px;
+    font-size: 16px;
+    padding: 16px 12px;
     outline: none;
     border: none;
     background: transparent;
+    color: #0f172a;
+    font-weight: 500;
   }
-  .dark [cmdk-input] {
+  .dark [cmdk-input],
+  html.dark [cmdk-input] {
     color: #f8fafc;
   }
-  .light [cmdk-input] {
-    color: #0f172a;
-  }
-  .dark [cmdk-input]::placeholder {
+  [cmdk-input]::placeholder {
     color: #64748b;
   }
-  .light [cmdk-input]::placeholder {
+  .dark [cmdk-input]::placeholder,
+  html.dark [cmdk-input]::placeholder {
     color: #94a3b8;
   }
   [cmdk-item] {
     cursor: pointer;
-    height: 52px;
-    border-radius: 12px;
+    min-height: 54px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 16px;
+    padding: 10px 16px;
     user-select: none;
     transition: all 150ms ease;
+    color: #334155;
   }
-  .dark [cmdk-item] {
-    color: #94a3b8;
+  .dark [cmdk-item],
+  html.dark [cmdk-item] {
+    color: #cbd5e1;
   }
-  .light [cmdk-item] {
-    color: #475569;
-  }
-  .dark [cmdk-item][data-selected='true'] {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-  }
-  .light [cmdk-item][data-selected='true'] {
-    background: rgba(0, 0, 0, 0.05);
+  [cmdk-item][data-selected='true'] {
+    background: #f1f5f9;
     color: #0f172a;
   }
-  .dark [cmdk-group-heading] {
-    user-select: none;
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    padding: 10px 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .dark [cmdk-item][data-selected='true'],
+  html.dark [cmdk-item][data-selected='true'] {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
   }
-  .light [cmdk-group-heading] {
+  [cmdk-group-heading] {
     user-select: none;
     font-size: 11px;
-    font-weight: 700;
-    color: #94a3b8;
-    padding: 10px 16px;
+    font-weight: 800;
+    color: #475569;
+    padding: 12px 16px 6px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+  }
+  .dark [cmdk-group-heading],
+  html.dark [cmdk-group-heading] {
+    color: #94a3b8;
   }
   [cmdk-empty] {
     font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 72px;
-  }
-  .dark [cmdk-empty] {
+    height: 96px;
     color: #64748b;
+    font-weight: 500;
   }
-  .light [cmdk-empty] {
+  .dark [cmdk-empty],
+  html.dark [cmdk-empty] {
     color: #94a3b8;
   }
 `;
@@ -248,13 +253,11 @@ export default function SearchPalette() {
           supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
           supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
           supabase.from('ministries').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('products').select('id, name, description, price, image_url, category, type, stock, created_at').is('deleted_at', null).or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,day.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('church_announcements').select('id, title, summary, body, event_id').eq('status', 'published').lte('publish_at', new Date().toISOString()).or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(4),
+          supabase.from('products').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(3),
+          supabase.from('church_announcements').select('*').eq('is_published', true).or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(3)
         ]);
 
-        const failed = [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes, announcementsRes].find((response) => response.error);
-        if (failed?.error) throw failed.error;
         if (requestId !== requestIdRef.current) return;
 
         setResults({
@@ -293,12 +296,13 @@ export default function SearchPalette() {
   const showDonation = /dona|ofren|diez|pagar|dinero|dar|apoyar/i.test(normalizedSearch) || search.length === 0;
   const showStore = /tienda|produ|comprar|venta|libro|biblia|camisa|agenda|precio/i.test(normalizedSearch);
   const showAnnouncements = /anun|aviso|comunic|actividad|importante/i.test(normalizedSearch);
+
   return (
     <>
       <style>{cmdkStyles}</style>
       
       <div 
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 dark:bg-black/85 backdrop-blur-md p-4 md:pt-[10vh] animate-fadeIn"
+        className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/70 dark:bg-black/85 backdrop-blur-md p-4 pt-16 md:pt-[10vh] animate-fadeIn"
         onClick={close}
       >
         <AnimeScaleIn className="w-full max-w-2xl">
@@ -309,25 +313,26 @@ export default function SearchPalette() {
           >
             <Command label="Buscador inteligente de la iglesia">
               {/* Input Header */}
-            <div className="flex items-center border-b border-gray-100 dark:border-slate-800 px-4">
-              {loading ? (
-                <Loader2 size={20} className="text-primary dark:text-gold animate-spin shrink-0" />
-              ) : (
-                <Search size={20} className="text-gray-400 dark:text-slate-500 shrink-0" />
-              )}
-              <Command.Input 
-                value={search}
-                onValueChange={setSearch}
-                placeholder="¿Qué deseas buscar? (Ej. Culto Familiar, Letra de canto, Ubicación...)" 
-                autoFocus
-              />
-              <button
-                onClick={close}
-                className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 p-1.5 rounded-lg text-[10px] font-bold font-mono border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 cursor-pointer"
-              >
-                ESC
-              </button>
-            </div>
+              <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/70 dark:bg-slate-900/50">
+                {loading ? (
+                  <Loader2 size={20} className="text-primary dark:text-gold animate-spin shrink-0" />
+                ) : (
+                  <Search size={20} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                )}
+                <Command.Input 
+                  value={search}
+                  onValueChange={setSearch}
+                  placeholder="¿Qué deseas buscar? (Ej. Culto Familiar, Letra de canto, Ubicación...)" 
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={close}
+                  className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1.5 rounded-lg text-[10px] font-bold font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm cursor-pointer"
+                >
+                  ESC
+                </button>
+              </div>
 
             <Command.List className="max-h-[60vh] overflow-y-auto p-3 custom-scrollbar space-y-4">
               <Command.Empty>No se encontraron resultados específicos.</Command.Empty>
@@ -343,10 +348,10 @@ export default function SearchPalette() {
                     >
                       <BookOpen size={18} className="text-indigo-500 shrink-0" />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Abrir {results.bibleRef.bookName} {results.bibleRef.chapter}:{results.bibleRef.verses}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Ir directamente al lector bíblico</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Abrir {results.bibleRef.bookName} {results.bibleRef.chapter}:{results.bibleRef.verses}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ir directamente al lector bíblico</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   </Command.Group>
                 </AnimeFadeUp>
@@ -361,28 +366,28 @@ export default function SearchPalette() {
                       value="ubicación dirección dónde queda mapa milagro cómo llegar" 
                       onSelect={() => handleSelect('/contacto')}
                     >
-                      <MapPin className="text-blue-500" size={18} />
+                      <MapPin className="text-blue-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Ubicación de la Iglesia</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Ver mapa y dirección física en Milagro, Ecuador</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Ubicación de la Iglesia</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver mapa y dirección física en Milagro, Ecuador</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                   {showSocials && (
                     <Command.Item 
                       value="redes sociales facebook youtube instagram canal video transmisión en vivo" 
                       onSelect={() => {
-                        window.open('https://youtube.com', '_blank'); // Replace with actual church link if needed
+                        window.open('https://youtube.com', '_blank');
                         close();
                       }}
                     >
-                      <Globe className="text-indigo-500" size={18} />
+                      <Globe className="text-indigo-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Canal de YouTube y Redes</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Mira nuestras transmisiones de cultos en vivo</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Canal de YouTube y Redes</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Mira nuestras transmisiones de cultos en vivo</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                   {showPetition && (
@@ -390,12 +395,12 @@ export default function SearchPalette() {
                       value="petición orar oración pedido ayuda rezar" 
                       onSelect={() => handleSelect('/peticiones')}
                     >
-                      <Send className="text-pink-500" size={18} />
+                      <Send className="text-pink-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Enviar Petición de Oración</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Comparte tu necesidad para interceder por ti</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Enviar Petición de Oración</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Comparte tu necesidad para interceder por ti</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                   {showDonation && (
@@ -403,12 +408,12 @@ export default function SearchPalette() {
                       value="donación ofrenda diezmo dar apoyar diezmos donaciones" 
                       onSelect={() => handleSelect('/donaciones')}
                     >
-                      <Heart className="text-red-500" size={18} />
+                      <Heart className="text-rose-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Diezmos y Ofrendas</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Apoya el ministerio local y la obra misionera</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Diezmos y Ofrendas</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Apoya el ministerio local y la obra misionera</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                   {showStore && (
@@ -416,12 +421,12 @@ export default function SearchPalette() {
                       value="tienda comprar productos libros biblias camisetas" 
                       onSelect={() => handleSelect('/tienda')}
                     >
-                      <ShoppingBag className="text-amber-500" size={18} />
+                      <ShoppingBag className="text-amber-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Ir a la Tienda</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Ver biblias, agendas y recursos disponibles</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Ir a la Tienda</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver biblias, agendas y recursos disponibles</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                   {showAnnouncements && (
@@ -429,12 +434,12 @@ export default function SearchPalette() {
                       value="anuncios avisos comunicados actividades iglesia general"
                       onSelect={() => handleSelect('/anuncios')}
                     >
-                      <Megaphone className="text-amber-500" size={18} />
+                      <Megaphone className="text-amber-500 shrink-0" size={18} />
                       <div className="flex-1 text-left">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">Anuncios importantes</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400">Actividades y comunicados de la Iglesia general</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">Anuncios importantes</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Actividades y comunicados de la Iglesia general</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
                   )}
                 </Command.Group>
@@ -453,12 +458,12 @@ export default function SearchPalette() {
                     >
                       <Music size={18} className="text-emerald-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">{song.title}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 truncate block">
+                        <span className="font-bold text-slate-900 dark:text-white block">{song.title}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate block">
                           {song.artist ? `Por ${song.artist} — ` : ''} {song.lyrics.replace(/\[.*?\]/g, '').slice(0, 70)}...
                         </span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -477,16 +482,16 @@ export default function SearchPalette() {
                     >
                       <Calendar size={18} className="text-violet-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">
+                        <span className="font-bold text-slate-900 dark:text-white block">
                           {event.emoji && <span className="mr-1.5">{event.emoji}</span>}
                           {event.title}
                         </span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
                           {new Date(event.start_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                           {event.start_time && ` - ${event.start_time.slice(0, 5)}`}
                         </span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -505,10 +510,10 @@ export default function SearchPalette() {
                     >
                       <Megaphone size={18} className="text-amber-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">{announcement.title}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">{announcement.summary || announcement.body.replace(/<[^>]*>/g, '').slice(0, 90)}</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">{announcement.title}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{announcement.summary || announcement.body.replace(/<[^>]*>/g, '').slice(0, 90)}</span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                   </Command.Group>
@@ -527,14 +532,14 @@ export default function SearchPalette() {
                     >
                       <Calendar size={18} className="text-amber-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">
+                        <span className="font-bold text-slate-900 dark:text-white block">
                           {sch.title}
                         </span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
                           {sch.day} — {sch.time_range}
                         </span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -553,10 +558,10 @@ export default function SearchPalette() {
                     >
                       <BookOpen size={18} className="text-sky-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">{min.name}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(min.description?.replace(/<[^>]*>/g, '') || '') }} />
+                        <span className="font-bold text-slate-900 dark:text-white block">{min.name}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(min.description?.replace(/<[^>]*>/g, '') || '') }} />
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -575,12 +580,12 @@ export default function SearchPalette() {
                     >
                       <ShoppingBag size={18} className="text-amber-500 shrink-0" />
                       <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-gray-800 dark:text-slate-100 block">{prod.name}</span>
-                        <span className="text-xs text-gray-400 dark:text-slate-400 block truncate">
+                        <span className="font-bold text-slate-900 dark:text-white block">{prod.name}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
                           ${prod.price.toFixed(2)} — {prod.category}
                         </span>
                       </div>
-                      <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 shrink-0" />
+                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -592,36 +597,36 @@ export default function SearchPalette() {
                 <AnimeFadeUp delay={0.4}>
                   <Command.Group heading="Secciones del Sitio">
                   <Command.Item value="inicio home principal" onSelect={() => handleSelect('/')}>
-                    <BookOpen size={18} className="text-slate-400" />
-                    <span>Inicio</span>
+                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Inicio</span>
                   </Command.Item>
                   <Command.Item value="nosotros historia doctrina pastores" onSelect={() => handleSelect('/nosotros')}>
-                    <BookOpen size={18} className="text-slate-400" />
-                    <span>Nosotros (Doctrina e Historia)</span>
+                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Nosotros (Doctrina e Historia)</span>
                   </Command.Item>
                   <Command.Item value="reuniones horarios cultos" onSelect={() => handleSelect('/#schedules')}>
-                    <Calendar size={18} className="text-slate-400" />
-                    <span>Horarios de Cultos</span>
+                    <Calendar size={18} className="text-primary dark:text-gold shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Horarios de Cultos</span>
                   </Command.Item>
                   <Command.Item value="contacto correo telefono oficina" onSelect={() => handleSelect('/contacto')}>
-                    <Globe size={18} className="text-slate-400" />
-                    <span>Contacto y Oficinas</span>
+                    <Globe size={18} className="text-primary dark:text-gold shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Contacto y Oficinas</span>
                   </Command.Item>
                   <Command.Item value="anuncios avisos comunicados actividades" onSelect={() => handleSelect('/anuncios')}>
-                    <Megaphone size={18} className="text-amber-500" />
-                    <span>Anuncios importantes</span>
+                    <Megaphone size={18} className="text-amber-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Anuncios importantes</span>
                   </Command.Item>
                   <Command.Item value="publicaciones artículos devocionales" onSelect={() => handleSelect('/publicaciones')}>
-                    <BookOpen size={18} className="text-indigo-500" />
-                    <span>Publicaciones</span>
+                    <BookOpen size={18} className="text-indigo-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Publicaciones</span>
                   </Command.Item>
                   <Command.Item value="ministerios departamentos equipos" onSelect={() => handleSelect('/ministerios')}>
-                    <Heart size={18} className="text-rose-500" />
-                    <span>Ministerios y departamentos</span>
+                    <Heart size={18} className="text-rose-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Ministerios y departamentos</span>
                   </Command.Item>
                   <Command.Item value="alabanzas canciones himnos acordes" onSelect={() => handleSelect('/recursos/alabanzas')}>
-                    <Music size={18} className="text-emerald-500" />
-                    <span>Biblioteca de alabanzas</span>
+                    <Music size={18} className="text-emerald-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Biblioteca de alabanzas</span>
                   </Command.Item>
                 </Command.Group>
                 </AnimeFadeUp>
@@ -633,4 +638,50 @@ export default function SearchPalette() {
       </div>
     </>
   );
+}
+
+function parseBibleReferences(term: string): ParsedVerse[] {
+  const booksMap: Record<string, string> = {
+    'gen': 'GEN', 'genesis': 'GEN', 'génesis': 'GEN',
+    'exo': 'EXO', 'exodo': 'EXO', 'éxodo': 'EXO',
+    'sal': 'PSA', 'salmo': 'PSA', 'salmos': 'PSA',
+    'pro': 'PRO', 'proverbios': 'PRO',
+    'mat': 'MAT', 'mateo': 'MAT',
+    'mar': 'MRK', 'marcos': 'MRK',
+    'luc': 'LUK', 'lucas': 'LUK',
+    'juan': 'JHN', 'jn': 'JHN',
+    'hch': 'ACT', 'hechos': 'ACT',
+    'rom': 'ROM', 'romanos': 'ROM',
+    '1cor': '1CO', '1 cor': '1CO', '1 corintios': '1CO',
+    '2cor': '2CO', '2 cor': '2CO', '2 corintios': '2CO',
+    'fil': 'PHP', 'filipenses': 'PHP',
+    'apoc': 'REV', 'apocalipsis': 'REV'
+  };
+
+  const match = term.match(/^(\d?\s*[a-záéíóúñ]+)\s+(\d+)(?::(\d+(?:-\d+)?))?/i);
+  if (!match) return [];
+
+  const rawBook = match[1].toLowerCase().replace(/\s+/g, '');
+  const chapter = parseInt(match[2], 10);
+  const verses = match[3] || '1';
+
+  let foundBookId = '';
+  let foundBookName = match[1].trim();
+
+  for (const [alias, id] of Object.entries(booksMap)) {
+    if (rawBook.startsWith(alias) || alias.startsWith(rawBook)) {
+      foundBookId = id;
+      foundBookName = alias.charAt(0).toUpperCase() + alias.slice(1);
+      break;
+    }
+  }
+
+  if (!foundBookId) return [];
+
+  return [{
+    bookId: foundBookId,
+    bookName: foundBookName,
+    chapter: isNaN(chapter) ? 1 : chapter,
+    verses
+  }];
 }

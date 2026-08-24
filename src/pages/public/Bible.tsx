@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Search, BookOpen, ChevronLeft, ChevronRight, Copy, X, 
   RefreshCw, ZoomIn, ZoomOut, CornerDownRight, 
-  Info, HelpCircle, Play, Square, Settings, Maximize, Minimize, PenTool, Palette, Trash2
+  Info, HelpCircle, Play, Square, Settings, Maximize, Minimize, PenTool, Palette, Trash2, Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
@@ -13,6 +13,7 @@ import { parseVerseRange, parseBibleReferences } from '../../utils/bibleParser';
 import BibleIndexes from '../../components/public/bible/BibleIndexes';
 import { useBibleStudy } from '../../hooks/useBibleStudy';
 import PremiumBibleHero from './components/PremiumBibleHero';
+import VerseImageShareModal from '../../components/public/bible/VerseImageShareModal';
 
 interface Verse {
   verse: string;
@@ -127,6 +128,7 @@ export default function Bible() {
   // Verses Selection Mode
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [activeSearchInput, setActiveSearchInput] = useState(searchQuery);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Modal selector State
   const [isIndexOpen, setIsIndexOpen] = useState(false);
@@ -940,7 +942,11 @@ export default function Bible() {
               </div>
             ) : chapterData ? (
               <div 
-                className="bg-white/80 dark:bg-[#070b14]/80 backdrop-blur-md border border-gray-100 dark:border-white/5 rounded-3xl p-6 md:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.2)] space-y-8 relative"
+                className={`backdrop-blur-md border rounded-3xl p-6 md:p-12 shadow-[0_8px_40px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.2)] space-y-8 relative transition-colors duration-300 ${
+                  theme === 'sepia'
+                    ? 'bg-[#FBF0D9] text-[#2C221E] border-amber-900/10'
+                    : 'bg-white/80 dark:bg-[#070b14]/80 border-gray-100 dark:border-white/5'
+                }`}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -1158,6 +1164,13 @@ export default function Bible() {
               <span className="hidden sm:inline">Con cita</span>
             </button>
             <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 rounded-xl text-[9px] font-bold uppercase transition cursor-pointer shadow-sm hover:scale-102"
+            >
+              <Share2 size={11} />
+              <span>Tarjeta Imagen</span>
+            </button>
+            <button
               onClick={() => setSelectedVerses([])}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-xl text-gray-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
               title="Cancelar selección"
@@ -1308,6 +1321,16 @@ export default function Bible() {
           onNavigateToBible={(bookId, chapter) => {
             updateRoute({ libro: bookId, capitulo: chapter, q: null, page: null });
           }} 
+        />
+      )}
+      {/* Verse Image Share Modal */}
+      {isShareModalOpen && (
+        <VerseImageShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          verseText={selectedVerses.map(vNum => chapterData?.vers.find(v => v.number === vNum)?.verse).filter(Boolean).join(' ')}
+          citation={`${currentBook.name} ${chapterNum}:${selectedVerses.join(',')}`}
+          translationName={BIBLE_VERSIONS.find(v => v.id === version)?.name || 'RVR1960'}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShieldCheck, XCircle, Loader2, ArrowLeft, User, ShieldAlert } from 'lucide-react';
+import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
@@ -65,7 +66,7 @@ export default function VerifyStudent() {
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-gray-100 dark:border-white/10 shadow-2xl relative overflow-hidden">
           {/* Header */}
           <div className="text-center mb-8 relative z-10">
-            <img src="/logo.png" alt="Logo" className="h-16 mx-auto mb-4" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+            <img src={soloLogoColorido} alt="Logo" className="h-16 mx-auto mb-4" />
             <h1 className="text-2xl font-black font-serif text-slate-900 dark:text-white">Verificación Oficial</h1>
             <p className="text-sm text-gray-500 mt-1">Sistema de Autenticidad de Credenciales</p>
           </div>

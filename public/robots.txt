@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /lms/
+Disallow: /checkout
+Disallow: /cart
+
+Sitemap: https://iglesia-jerusalen.vercel.app/sitemap.xml

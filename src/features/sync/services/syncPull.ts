@@ -1,9 +1,10 @@
 import { supabase } from '../../../config/supabase';
 import { getDb } from '../../../config/localDb';
+import { logger } from '../../../utils/logger';
 
 export const pullFromServer = async () => {
   try {
-    console.log('Pulling database state from Supabase to sync local cache...');
+    logger.log('Pulling database state from Supabase to sync local cache...');
     const db = await getDb();
 
     // 1. Pull members
@@ -83,8 +84,8 @@ export const pullFromServer = async () => {
       await tx.done;
     }
 
-    console.log('Local DB cache fully updated with remote data.');
+    logger.log('Local DB cache fully updated with remote data.');
   } catch (err) {
-    console.error('Error pulling server database data to local cache:', err);
+    logger.error('Error pulling server database data to local cache:', err);
   }
 };

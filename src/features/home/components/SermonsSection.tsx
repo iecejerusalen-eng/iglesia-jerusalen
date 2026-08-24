@@ -45,7 +45,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
           </div>
           <AnimeFadeUp delay={0.2}>
             <Link
-              to="/recursos"
+              to="/predicas"
               className="text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
             >
               Ver Todos los Mensajes

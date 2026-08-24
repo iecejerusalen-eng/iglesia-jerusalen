@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import type { Space, SpaceBooking } from '../../types';
 import { Home, Plus, Trash2, Calendar, Clock, Edit2, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { uploadImage } from '../../utils/cloudinary';
 
 export default function BookingManager() {

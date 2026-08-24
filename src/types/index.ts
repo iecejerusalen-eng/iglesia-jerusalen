@@ -316,6 +316,11 @@ export interface Sermon {
   title: string;
   content: string;
   youtube_url: string | null;
+  audio_url?: string | null;
+  audio_source_type?: 'upload' | 'url' | 'embed' | null;
+  audio_duration_seconds?: number | null;
+  chapters?: { id: string; title: string; seconds: number }[] | null;
+  ai_summary?: Record<string, unknown> | null;
   pastor_name: string;
   speaker_id?: string | null;
   description?: string | null;

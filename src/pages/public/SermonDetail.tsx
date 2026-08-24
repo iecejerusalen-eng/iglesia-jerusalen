@@ -11,12 +11,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Calendar, User, ArrowLeft, RefreshCw, FileText,
-  AlertTriangle, Edit2, Sparkles, X
+  AlertTriangle, Edit2, Sparkles, X, Share2, Copy, Check
 } from 'lucide-react';
 import type { Sermon } from '../../types';
 import BlockLessonRenderer from '../../components/public/BlockLessonRenderer';
 import { AnimeFadeUp, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import VideoPlayer from '../../components/ui/video-player';
+import WaveformPlayer from '../../components/audio/WaveformPlayer';
 import SermonNotesPad from '../../components/sermons/SermonNotesPad';
 import ChristianPomodoro from '../../components/sermons/ChristianPomodoro';
 
@@ -304,7 +305,50 @@ const SermonDetail = () => {
                   </span>
                 )}
               </div>
+
+              {/* Share Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: sermon.title,
+                          text: `Te invito a escuchar esta prédica de la Iglesia Jerusalén: ${sermon.title}`,
+                          url: window.location.href,
+                        });
+                      } catch {
+                        // User cancelled
+                      }
+                    } else {
+                      try {
+                        await navigator.clipboard.writeText(window.location.href);
+                        toast.success('Enlace de la prédica copiado al portapapeles.');
+                      } catch {
+                        toast.error('No se pudo copiar el enlace.');
+                      }
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer shadow-xs border border-gray-200 dark:border-white/10"
+                >
+                  <Share2 size={15} className="text-amber-500" />
+                  <span>Compartir Prédica</span>
+                </button>
+              </div>
             </div>
+
+            {/* Waveform Audio Player for Sermon */}
+            {sermon.audio_url && (
+              <div className="my-4">
+                <WaveformPlayer
+                  audioUrl={sermon.audio_url}
+                  title={sermon.title}
+                  subtitle={sermon.speakers ? `${sermon.speakers.first_name} ${sermon.speakers.last_name}` : sermon.pastor_name || undefined}
+                  chapters={sermon.chapters || []}
+                />
+              </div>
+            )}
 
             <div className="border-t border-gray-100 dark:border-white/10 pt-6">
               <BlockLessonRenderer content={sermon.content} lessonId={sermon.id} />

@@ -28,6 +28,30 @@
   }
 }
 
+/* Glassmorphism 2.0 & Luxury Design Tokens */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel-gold {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(199, 157, 63, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(199, 157, 63, 0.15);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, #FFD679 0%, #C79D3F 50%, #9D660E 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @layer base {

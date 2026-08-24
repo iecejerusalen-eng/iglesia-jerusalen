@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import type { VolunteerShift, VolunteerAssignment, Ministry } from '../../types';
 import { Shield, Plus, Calendar, Users, Trash2, CheckCircle2, Clock, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SERVICE_TEMPLATES: Array<Pick<VolunteerShift, 'title' | 'description' | 'category' | 'effort_level' | 'skills_needed' | 'required_volunteers'>> = [

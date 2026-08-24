@@ -188,16 +188,23 @@ export const PremiumHeroVisual = ({ subtitle, contentBlocks, coverImage }: Premi
             )}
           </div>
 
-          <div className="hero-reveal hero-reveal-delay-3 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="hero-reveal hero-reveal-delay-3 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             <MagneticButton>
               <Link
-                to="/nosotros"
-                className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-800 px-6 text-sm font-black text-white shadow-[0_20px_40px_-18px_rgba(30,64,175,.9)] transition duration-300 hover:-translate-y-1 hover:bg-blue-700 hover:shadow-[0_26px_50px_-20px_rgba(30,64,175,.95)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300 sm:w-auto"
+                to="/visita"
+                className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 text-sm font-black text-slate-950 shadow-[0_20px_40px_-18px_rgba(245,158,11,.9)] transition duration-300 hover:-translate-y-1 hover:from-amber-400 hover:to-amber-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/30 sm:w-auto"
               >
-                Conócenos
-                <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+                <Sparkles size={17} className="text-slate-950" />
+                Planifica tu Visita
               </Link>
             </MagneticButton>
+            <Link
+              to="/nosotros"
+              className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-800 px-6 text-sm font-black text-white shadow-[0_20px_40px_-18px_rgba(30,64,175,.9)] transition duration-300 hover:-translate-y-1 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300 sm:w-auto"
+            >
+              Conócenos
+              <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
             <a
               href="#home_schedules"
               className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300/80 bg-white/70 px-6 text-sm font-black text-slate-800 shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-blue-700/30 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:border-white/15 dark:bg-white/[0.06] dark:text-white dark:hover:border-blue-300/40 dark:hover:bg-white/10 sm:w-auto"
