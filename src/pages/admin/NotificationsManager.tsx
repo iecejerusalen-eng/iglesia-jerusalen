@@ -94,6 +94,7 @@ const MOCK_CELEBRANTS: Member[] = [
     conversion_date: null,
     baptism_date: null,
     is_leader: true,
+    tithes_sum: 0,
     created_at: new Date().toISOString(),
   },
   {
@@ -113,6 +114,7 @@ const MOCK_CELEBRANTS: Member[] = [
     conversion_date: null,
     baptism_date: null,
     is_leader: false,
+    tithes_sum: 0,
     created_at: new Date().toISOString(),
   },
 ];

@@ -434,7 +434,7 @@ export interface Member {
   is_studying?: boolean | null;
   studying_career_id?: string | null;
   deleted_at?: string | null;
-  tithes_sum: number;
+  tithes_sum?: number;
   phone_country_code?: string | null;
   dedicated_verse?: string | null;
   created_at: string;
