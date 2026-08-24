@@ -96,18 +96,27 @@ export default function VolunteersManager() {
     }
 
     try {
+      const startTimeIso = new Date(formData.start_time).toISOString();
+      const endTimeIso = new Date(formData.end_time).toISOString();
+
       const { error } = await supabase.from('volunteer_shifts').insert([{
         ...formData,
+        start_time: startTimeIso,
+        end_time: endTimeIso,
         ministry_id: formData.ministry_id || null
       }]);
       
-      if (error) throw error;
-      toast.success('Turno creado');
+      if (error) {
+        console.error('Error al insertar turno de voluntariado:', error);
+        throw error;
+      }
+
+      toast.success('Turno creado con éxito');
       setIsModalOpen(false);
       loadData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Error al crear turno');
+      toast.error(err?.message ? `Error al crear turno: ${err.message}` : 'Error al crear turno');
     }
   };
 

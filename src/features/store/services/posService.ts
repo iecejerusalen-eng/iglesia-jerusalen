@@ -45,12 +45,18 @@ export interface PosTransactionPayload {
 
 export const posService = {
   // --- 1. SESSIONS ---
-  async getActiveSession(cashierName: string): Promise<PosSession | null> {
+  async getActiveSession(cashierName?: string): Promise<PosSession | null> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('pos_sessions')
         .select('*')
-        .eq('status', 'open')
+        .eq('status', 'open');
+
+      if (cashierName) {
+        query = query.eq('cashier_name', cashierName);
+      }
+
+      const { data, error } = await query
         .order('opened_at', { ascending: false })
         .limit(1)
         .maybeSingle();
