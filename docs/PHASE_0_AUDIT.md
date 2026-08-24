@@ -138,6 +138,10 @@ Los módulos necesitan una interfaz común que permita seleccionar un recurso ex
 7. Migrar primero anuncios, publicaciones y reservas.
 8. Verificar con TypeScript, ESLint y pruebas manuales.
 
+### Progreso actual
+
+El selector común ya está integrado en Anuncios, Publicaciones y Reservas. En Reservas se eliminó la carga directa antigua de la foto principal y ahora el recurso se registra mediante el catálogo multimedia.
+
 ## Criterio para continuar
 
 La Fase 0 se considera cerrada porque ya existe un inventario verificable y una decisión de arquitectura. La Fase 1 no debe crear otra tabla paralela ni otra subida aislada: debe fortalecer `media_vault_files`, `mediaService` y los componentes comunes actuales.

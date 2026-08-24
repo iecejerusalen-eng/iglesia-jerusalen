@@ -495,5 +495,5 @@ Comenzar por **Fase 0, inventario técnico**, y después implementar el **MediaP
 ## 11. Estado de ejecución
 
 - **Fase 0:** completada en alcance inicial. El diagnóstico detallado está en [`PHASE_0_AUDIT.md`](./PHASE_0_AUDIT.md).
-- **Fase 1:** iniciada. Se creó [`MediaAssetPicker.tsx`](../src/components/admin/MediaAssetPicker.tsx) y se integró como piloto en Anuncios.
-- **Siguiente integración:** Publicaciones y Reservas, verificando primero permisos, referencias y compatibilidad con los datos existentes.
+- **Fase 1:** en ejecución. Se creó [`MediaAssetPicker.tsx`](../src/components/admin/MediaAssetPicker.tsx) y se integró en Anuncios, Publicaciones y Reservas.
+- **Siguiente integración:** Sermones y Podcast, verificando audio, miniaturas, duración y límites de almacenamiento antes de migrar sus cargas.

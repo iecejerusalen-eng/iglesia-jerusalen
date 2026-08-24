@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import BlockEditor from "../../components/admin/BlockEditor";
-import MediaUploader from "../../components/common/MediaUploader";
+import MediaAssetPicker from "../../components/admin/MediaAssetPicker";
 import { supabase } from "../../config/supabase";
 import BlockLessonRenderer from "../../components/public/BlockLessonRenderer";
 import type {
@@ -820,13 +820,12 @@ export default function EditorialWorkspace() {
                       className="mb-4 aspect-video w-full rounded-xl object-cover"
                     />
                   )}
-                  <MediaUploader
-                    onUploadSuccess={(url) =>
-                      setSpace({ ...space, cover_image_url: url })
-                    }
+                  <MediaAssetPicker
+                    value={space.cover_image_url}
+                    onSelect={(asset) => setSpace({ ...space, cover_image_url: asset.url })}
                     folder="editorial"
-                    allowedFormats={["jpg", "jpeg", "png", "webp"]}
-                    label="Cambiar portada"
+                    allowedTypes={["image"]}
+                    label="Subir, pegar o elegir portada"
                   />
                 </div>
               </aside>
@@ -1067,13 +1066,12 @@ export default function EditorialWorkspace() {
                       className="mb-3 aspect-video rounded-xl object-cover"
                     />
                   )}
-                  <MediaUploader
-                    onUploadSuccess={(url) =>
-                      setDraft({ ...draft, cover_image_url: url })
-                    }
+                  <MediaAssetPicker
+                    value={draft.cover_image_url}
+                    onSelect={(asset) => setDraft({ ...draft, cover_image_url: asset.url })}
                     folder="editorial"
-                    allowedFormats={["jpg", "jpeg", "png", "webp"]}
-                    label="Portada"
+                    allowedTypes={["image"]}
+                    label="Subir, pegar o elegir portada"
                   />
                   <div className="mt-4 space-y-3">
                     <span className="block text-xs font-black uppercase tracking-wider text-slate-500">Usar como portada</span>
