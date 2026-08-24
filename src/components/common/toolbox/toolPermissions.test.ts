@@ -15,6 +15,8 @@ describe('toolbox role access', () => {
     expect(canAccessTool('timer', ['diáconos'])).toBe(true);
     expect(canAccessTool('clicker', ['musico'])).toBe(false);
     expect(canAccessTool('metronome', ['member'])).toBe(false);
+    expect(canAccessTool('clicker', ['diacono'])).toBe(true);
+    expect(canAccessTool('clicker', ['ujier'])).toBe(true);
   });
 
   it('gives the full toolbox to admins and general editors', () => {

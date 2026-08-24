@@ -7,6 +7,8 @@ export const SYSTEM_ROLES: RoleOption[] = [
   { id: 'member', label: 'Miembro', shortLabel: 'Miembro', description: 'Acceso básico para miembros registrados.' },
   { id: 'leader', label: 'Líder de ministerio', shortLabel: 'Líder', description: 'Gestiona los ministerios autorizados.' },
   { id: 'apoyo', label: 'Cuerpo de apoyo', shortLabel: 'Apoyo', description: 'Apoya tareas administrativas y operativas.' },
+  { id: 'diacono', label: 'Diácono', shortLabel: 'Diácono', description: 'Apoya la logística, el orden y la atención durante los servicios.' },
+  { id: 'ujier', label: 'Ujier', shortLabel: 'Ujier', description: 'Gestiona aforo, orientación y atención práctica a la congregación.' },
   { id: 'multimedia', label: 'Equipo multimedia', shortLabel: 'Multimedia', description: 'Gestiona contenidos y recursos audiovisuales.' },
   { id: 'editor', label: 'Editor general', shortLabel: 'Editor', description: 'Edita contenido público y recursos.' },
   { id: 'secretary', label: 'Secretaría', shortLabel: 'Secretaría', description: 'Gestiona información administrativa y del CRM.' },

@@ -258,35 +258,6 @@ const MOCK_CHILD_CHECKINS: ChildCheckInSession[] = [
   { id: 'chk-2', child_name: 'Sofia Gómez', safety_security_code: 'B-3910', classroom_name: 'Campeones de Fe (6-9 años)', checked_in_by: 'María Gómez (Madre)', checked_in_at: new Date().toISOString(), status: 'checked_in' },
 ];
 
-const MOCK_DYNAMIC_FORMS: DynamicForm[] = [
-  {
-    id: 'f-1',
-    title: 'Registro de Bautismos 2026',
-    description: 'Inscripción pública para los candidatos al próximo servicio de bautismos en agua.',
-    slug: 'registro-bautismos-2026',
-    is_published: true,
-    fields: [
-      { id: 'field-1', label: 'Nombre Completo', type: 'text', required: true },
-      { id: 'field-2', label: 'Correo Electrónico', type: 'text', required: true },
-      { id: 'field-3', label: 'Teléfono de Contacto', type: 'text', required: true },
-      { id: 'field-4', label: '¿Ha realizado el curso de Discipulado Inicial?', type: 'select', options: ['Sí, completado', 'En curso', 'No aún'], required: true },
-      { id: 'field-5', label: 'Testimonio Breve de Conversión', type: 'textarea', required: false },
-    ],
-  },
-  {
-    id: 'f-2',
-    title: 'Solicitud de Voluntariado en Servidores',
-    description: 'Únete al equipo de bienvenida, ujieres y apoyo logístico.',
-    slug: 'voluntariado-servidores',
-    is_published: true,
-    fields: [
-      { id: 'field-1', label: 'Nombre Completo', type: 'text', required: true },
-      { id: 'field-2', label: 'Área de Interés', type: 'select', options: ['Bienvenida', 'Ujieres', 'Producción', 'Kiosko Check-In', 'Infantil'], required: true },
-      { id: 'field-3', label: 'Disponibilidad de Servicio', type: 'select', options: ['Domingo Mañana', 'Domingo Tarde', 'Cultos Entre Semana'], required: true },
-    ],
-  },
-];
-
 const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
   {
     id: 'post-1',

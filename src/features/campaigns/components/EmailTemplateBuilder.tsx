@@ -43,7 +43,29 @@ export const EmailTemplateBuilder: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'editor' | 'list'>('editor');
   const [saving, setSaving] = useState(false);
 
-  // Load templates on mount
+  useEffect(() => {
+    let isMounted = true;
+    const initTemplates = async () => {
+      try {
+        const data = await fetchTemplates();
+        if (isMounted) {
+          setTemplates(data);
+        }
+      } catch (err) {
+        console.error('Error cargando plantillas:', err);
+        toast.error('No se pudieron cargar las plantillas de email.');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    void initTemplates();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const loadTemplates = async () => {
     setLoading(true);
     try {
@@ -56,10 +78,6 @@ export const EmailTemplateBuilder: React.FC = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    void loadTemplates();
-  }, []);
 
   const handleSave = async () => {
     if (!name.trim() || !subject.trim()) {

@@ -1,230 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import {
-  FileText, Plus, Trash2, ExternalLink, Copy, X
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowDown, ArrowUp, Check, Copy, ExternalLink, FileText, GripVertical, LayoutTemplate, MonitorPlay, MoreHorizontal, Pencil, Plus, Save, Settings2, Sparkles, Trash2, Type } from 'lucide-react';
+import { toast } from 'sonner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { competitiveService } from '../../features/competitive/services/competitiveService';
-import type { DynamicForm, DynamicFormField } from '../../features/competitive/types';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import type { DynamicForm, DynamicFormField, DynamicFormFieldType, DynamicFormSettings } from '../../features/competitive/types';
+
+type BuilderTab = 'build' | 'settings' | 'preview';
+interface PaletteItem { type: DynamicFormFieldType; label: string; description: string; icon: typeof Type }
+
+const PALETTE: PaletteItem[] = [
+  { type: 'text', label: 'Texto corto', description: 'Nombre, ciudad o respuesta breve', icon: Type },
+  { type: 'textarea', label: 'Texto largo', description: 'Testimonio, comentario o historia', icon: FileText },
+  { type: 'email', label: 'Correo electrónico', description: 'Validación automática de email', icon: Type },
+  { type: 'phone', label: 'Teléfono', description: 'Número de contacto', icon: Type },
+  { type: 'number', label: 'Número', description: 'Cantidad, edad o puntaje', icon: Type },
+  { type: 'date', label: 'Fecha', description: 'Fecha de bautismo, evento, etc.', icon: Type },
+  { type: 'select', label: 'Desplegable', description: 'Una opción de una lista', icon: LayoutTemplate },
+  { type: 'radio', label: 'Opción única', description: 'Opciones visibles en tarjetas', icon: LayoutTemplate },
+  { type: 'checkbox', label: 'Casilla', description: 'Confirmación o aceptación', icon: Check },
+  { type: 'heading', label: 'Título de sección', description: 'Divide el formulario en bloques', icon: Type },
+  { type: 'paragraph', label: 'Texto informativo', description: 'Instrucciones sin respuesta', icon: FileText },
+];
+
+const QUESTION_TYPES: Array<{ value: DynamicFormFieldType; label: string }> = [
+  { value: 'text', label: 'Texto corto' }, { value: 'textarea', label: 'Texto largo' }, { value: 'email', label: 'Correo electrónico' }, { value: 'phone', label: 'Teléfono' }, { value: 'number', label: 'Número' }, { value: 'date', label: 'Fecha' }, { value: 'select', label: 'Desplegable' }, { value: 'radio', label: 'Opción única' }, { value: 'checkbox', label: 'Casilla' }, { value: 'heading', label: 'Título de sección' }, { value: 'paragraph', label: 'Texto informativo' },
+];
+
+const createId = () => `field-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const slugify = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+const cloneForm = (form: DynamicForm): DynamicForm => ({ ...form, fields: form.fields.map((field) => ({ ...field, options: field.options ? [...field.options] : undefined })), settings: { ...form.settings } });
+const newForm = (): DynamicForm => ({ id: '', title: 'Nuevo formulario', description: 'Completa la información solicitada.', slug: 'nuevo-formulario', fields: [{ id: createId(), label: 'Nombre completo', type: 'text', required: true, placeholder: 'Escribe tu nombre completo' }], is_published: false, requires_auth: false, settings: { collectSubmitterInfo: true, submitterEmailRequired: true, successTitle: '¡Gracias por responder!', successMessage: 'Recibimos tu información y pronto nos pondremos en contacto.', submitLabel: 'Enviar respuestas', showProgress: false } });
+const fieldTypeLabel = (type: DynamicFormFieldType) => QUESTION_TYPES.find((item) => item.value === type)?.label ?? type;
+
+function FieldPreview({ field }: { field: DynamicFormField }) {
+  if (field.type === 'heading') return <div className="border-b border-slate-200 pb-2 pt-2 dark:border-white/10"><h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">{field.label || 'Título de sección'}</h3></div>;
+  if (field.type === 'paragraph') return <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">{field.helpText || field.label || 'Texto informativo para las personas.'}</p>;
+  return <div className="space-y-2"><label className="block text-sm font-bold text-slate-800 dark:text-slate-100">{field.label || 'Pregunta sin título'} {field.required && <span className="text-rose-500">*</span>}</label>{field.helpText && <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{field.helpText}</p>}{field.type === 'textarea' ? <textarea rows={3} disabled placeholder={field.placeholder || 'La respuesta aparecerá aquí…'} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5" /> : field.type === 'select' ? <select disabled className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5"><option>{field.placeholder || 'Selecciona una opción'}</option></select> : field.type === 'radio' ? <div className="grid gap-2 sm:grid-cols-2">{(field.options?.length ? field.options : ['Opción 1', 'Opción 2']).map((option) => <span key={option} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5">◯ {option}</span>)}</div> : field.type === 'checkbox' ? <span className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">□ {field.placeholder || 'Acepto esta información'}</span> : <input disabled type={field.type === 'phone' ? 'tel' : field.type} placeholder={field.placeholder || 'Respuesta del participante'} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5" />}</div>;
+}
+
+function FieldCard({ field, index, selected, onSelect, onMove, onDuplicate, onDelete, onDragStart, onDrop }: { field: DynamicFormField; index: number; selected: boolean; onSelect: () => void; onMove: (direction: -1 | 1) => void; onDuplicate: () => void; onDelete: () => void; onDragStart: () => void; onDrop: () => void }) {
+  return <article draggable onDragStart={onDragStart} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} className={`group relative rounded-2xl border bg-white p-4 text-left shadow-sm transition dark:bg-slate-900 ${selected ? 'border-blue-400 ring-4 ring-blue-500/10 dark:border-blue-400' : 'border-slate-200 hover:border-blue-300 dark:border-white/10'}`}><button type="button" onClick={onSelect} className="absolute inset-0 z-0 rounded-2xl" aria-label={`Editar ${field.label}`} /><div className="relative z-10 flex items-start gap-3"><span className="mt-0.5 cursor-grab text-slate-300 active:cursor-grabbing dark:text-slate-600" title="Arrastra para reordenar"><GripVertical size={18} /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-300">{String(index + 1).padStart(2, '0')}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 dark:bg-white/10 dark:text-slate-400">{fieldTypeLabel(field.type)}</span></div><h3 className="mt-2 text-base font-bold text-slate-900 dark:text-white">{field.label || 'Pregunta sin título'} {field.required && <span className="text-rose-500">*</span>}</h3>{field.helpText && <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{field.helpText}</p>}<div className="pointer-events-none mt-4"><FieldPreview field={{ ...field, label: '' }} /></div></div><div className="relative z-20 flex shrink-0 flex-col gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"><button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-700 disabled:opacity-30 dark:hover:bg-white/10" aria-label="Mover arriba"><ArrowUp size={14} /></button><button type="button" onClick={() => onMove(1)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-700" aria-label="Mover abajo"><ArrowDown size={14} /></button><button type="button" onClick={onDuplicate} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-white/10" aria-label="Duplicar campo"><Copy size={14} /></button><button type="button" onClick={onDelete} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-400/10" aria-label="Eliminar campo"><Trash2 size={14} /></button></div></div></article>;
+}
 
 export const FormBuilderManager = () => {
-  const navigate = useNavigate();
   const [forms, setForms] = useState<DynamicForm[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [fields, setFields] = useState<DynamicFormField[]>([
-    { id: 'f-1', label: 'Nombre Completo', type: 'text', required: true }
-  ]);
-  const [newFieldLabel, setNewFieldLabel] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select'>('text');
+  const [editingForm, setEditingForm] = useState<DynamicForm | null>(null);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [tab, setTab] = useState<BuilderTab>('build');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchForms = async () => {
-      const data = await competitiveService.getDynamicForms();
-      if (isMounted) setForms(data);
-    };
-    void fetchForms();
-    return () => { isMounted = false; };
-  }, []);
+  const loadForms = async () => { setLoading(true); setError(null); try { setForms(await competitiveService.getDynamicForms()); } catch (err) { setError(err instanceof Error ? err.message : 'No se pudieron cargar los formularios.'); } finally { setLoading(false); } };
+  useEffect(() => { Promise.resolve().then(() => loadForms()); }, []);
+  const selectedField = useMemo(() => editingForm?.fields.find((field) => field.id === selectedFieldId) ?? null, [editingForm, selectedFieldId]);
+  const openNew = () => { const draft = newForm(); setEditingForm(draft); setSelectedFieldId(draft.fields[0].id); setTab('build'); };
+  const openEdit = (form: DynamicForm) => { const draft = cloneForm(form); setEditingForm(draft); setSelectedFieldId(draft.fields[0]?.id ?? null); setTab('build'); };
+  const updateForm = (changes: Partial<DynamicForm>) => setEditingForm((current) => current ? { ...current, ...changes } : current);
+  const updateSettings = (changes: Partial<DynamicFormSettings>) => setEditingForm((current) => current ? { ...current, settings: { ...current.settings, ...changes } } : current);
+  const updateField = (changes: Partial<DynamicFormField>) => setEditingForm((current) => current ? { ...current, fields: current.fields.map((field) => field.id === selectedFieldId ? { ...field, ...changes } : field) } : current);
+  const addField = (type: DynamicFormFieldType) => { const item = PALETTE.find((candidate) => candidate.type === type); const field: DynamicFormField = { id: createId(), label: item?.label || 'Nueva pregunta', type, required: !['heading', 'paragraph'].includes(type), placeholder: type === 'select' ? 'Selecciona una opción' : undefined, helpText: type === 'paragraph' ? 'Añade aquí una instrucción para las personas.' : undefined, options: ['select', 'radio'].includes(type) ? ['Opción 1', 'Opción 2'] : undefined }; setEditingForm((current) => current ? { ...current, fields: [...current.fields, field] } : current); setSelectedFieldId(field.id); setTab('build'); };
+  const moveField = (id: string, direction: -1 | 1) => setEditingForm((current) => { if (!current) return current; const from = current.fields.findIndex((field) => field.id === id); const to = from + direction; if (from < 0 || to < 0 || to >= current.fields.length) return current; const fields = [...current.fields]; [fields[from], fields[to]] = [fields[to], fields[from]]; return { ...current, fields }; });
+  const duplicateField = (id: string) => setEditingForm((current) => { if (!current) return current; const source = current.fields.find((field) => field.id === id); if (!source) return current; const copy = { ...source, id: createId(), label: `${source.label} (copia)`, options: source.options ? [...source.options] : undefined }; const index = current.fields.findIndex((field) => field.id === id); const fields = [...current.fields]; fields.splice(index + 1, 0, copy); setSelectedFieldId(copy.id); return { ...current, fields }; });
+  const deleteField = (id: string) => setEditingForm((current) => { if (!current) return current; const fields = current.fields.filter((field) => field.id !== id); setSelectedFieldId(fields[0]?.id ?? null); return { ...current, fields }; });
+  const dropField = (targetId: string) => { if (!draggedId || draggedId === targetId) return; setEditingForm((current) => { if (!current) return current; const from = current.fields.findIndex((field) => field.id === draggedId); const to = current.fields.findIndex((field) => field.id === targetId); if (from < 0 || to < 0) return current; const fields = [...current.fields]; const [moved] = fields.splice(from, 1); fields.splice(to, 0, moved); return { ...current, fields }; }); setDraggedId(null); };
+  const save = async (publish: boolean) => { if (!editingForm) return; if (!editingForm.title.trim()) return toast.error('Escribe un título para el formulario.'); if (!editingForm.slug.trim()) return toast.error('Define una URL para el formulario.'); if (!editingForm.fields.length) return toast.error('Agrega al menos un bloque al formulario.'); setSaving(true); try { const payload = { title: editingForm.title.trim(), description: editingForm.description?.trim() || undefined, slug: slugify(editingForm.slug), fields: editingForm.fields, is_published: publish, requires_auth: editingForm.requires_auth ?? false, cover_image_url: editingForm.cover_image_url || undefined, settings: editingForm.settings ?? {} }; const saved = editingForm.id ? await competitiveService.updateDynamicForm(editingForm.id, payload) : await competitiveService.createDynamicForm(payload); setForms((current) => editingForm.id ? current.map((form) => form.id === saved.id ? saved : form) : [saved, ...current]); setEditingForm(cloneForm(saved)); toast.success(publish ? 'Formulario publicado.' : 'Borrador guardado.'); } catch (err) { toast.error(err instanceof Error ? err.message : 'No se pudo guardar el formulario.'); } finally { setSaving(false); } };
+  const duplicateForm = (form: DynamicForm) => { const copy = cloneForm(form); copy.id = ''; copy.title = `${form.title} (copia)`; copy.slug = `${form.slug}-copia`; copy.is_published = false; setEditingForm(copy); setSelectedFieldId(copy.fields[0]?.id ?? null); setTab('build'); };
+  const deleteForm = async (form: DynamicForm) => { if (!window.confirm(`¿Eliminar “${form.title}”? Esta acción no se puede deshacer.`)) return; try { await competitiveService.deleteDynamicForm(form.id); setForms((current) => current.filter((item) => item.id !== form.id)); toast.success('Formulario eliminado.'); } catch (err) { toast.error(err instanceof Error ? err.message : 'No se pudo eliminar.'); } };
+  const copyLink = async (slug: string) => { await navigator.clipboard.writeText(`${window.location.origin}/formularios/${slug}`); toast.success('Enlace copiado.'); };
 
-  const handleAddField = () => {
-    if (!newFieldLabel.trim()) return;
-    const newField: DynamicFormField = {
-      id: `field-${Date.now()}`,
-      label: newFieldLabel,
-      type: newFieldType,
-      required: true,
-      options: newFieldType === 'select' ? ['Opción 1', 'Opción 2'] : undefined,
-    };
-    setFields([...fields, newField]);
-    setNewFieldLabel('');
-  };
+  if (editingForm) return <div className="min-h-[calc(100vh-2rem)] space-y-4 pb-8"><div className="sticky top-0 z-30 -mx-4 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90 md:-mx-8 md:px-8"><div className="flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={() => setEditingForm(null)} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white"><ArrowLeft size={17} /> Formularios</button><div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${editingForm.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'}`}>{editingForm.is_published ? 'Publicado' : 'Borrador'}</span><button type="button" onClick={() => void save(false)} disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"><Save size={15} /> Guardar borrador</button><button type="button" onClick={() => void save(true)} disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-400/20 disabled:opacity-50"><Sparkles size={15} /> {saving ? 'Guardando…' : 'Publicar'}</button></div></div></div><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600 dark:text-blue-300">Constructor visual</p><h1 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">{editingForm.title || 'Formulario sin título'}</h1></div><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-white/5">{([['build', 'Construir', Pencil], ['settings', 'Configuración', Settings2], ['preview', 'Vista previa', MonitorPlay]] as const).map(([value, label, Icon]) => <button key={value} type="button" onClick={() => setTab(value)} className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-black transition ${tab === value ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}><Icon size={14} />{label}</button>)}</div></div>{tab === 'preview' ? <div className="mx-auto max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900 sm:p-9"><div className="border-b border-slate-200 pb-6 dark:border-white/10"><span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:bg-blue-400/10 dark:text-blue-300"><FileText size={13} /> Vista previa pública</span><h2 className="mt-4 font-serif text-3xl font-bold text-slate-900 dark:text-white">{editingForm.title}</h2><p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{editingForm.description}</p></div><div className="mt-6 space-y-6">{editingForm.settings?.collectSubmitterInfo !== false && <div className="grid gap-4 sm:grid-cols-2"><FieldPreview field={{ id: 'preview-name', label: 'Nombre completo', type: 'text', required: true }} /><FieldPreview field={{ id: 'preview-email', label: 'Correo electrónico', type: 'email', required: editingForm.settings?.submitterEmailRequired !== false }} /></div>}{editingForm.fields.map((field) => <FieldPreview key={field.id} field={field} />)}<button type="button" disabled className="w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-black text-white">{editingForm.settings?.submitLabel || 'Enviar respuestas'}</button></div></div> : tab === 'settings' ? <div className="mx-auto grid max-w-4xl gap-5 lg:grid-cols-2"><section className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center gap-3"><Settings2 className="text-blue-600" size={19} /><div><h2 className="font-bold text-slate-900 dark:text-white">Información y acceso</h2><p className="text-xs text-slate-500">Cómo se presenta y quién puede responder.</p></div></div><label className="mt-5 block text-xs font-bold text-slate-600 dark:text-slate-300">Título<input value={editingForm.title} onChange={(event) => updateForm({ title: event.target.value, slug: editingForm.id ? editingForm.slug : slugify(event.target.value) })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">Descripción<textarea value={editingForm.description || ''} onChange={(event) => updateForm({ description: event.target.value })} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">URL pública<input value={editingForm.slug} onChange={(event) => updateForm({ slug: slugify(event.target.value) })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-white/5"><input type="checkbox" checked={editingForm.requires_auth ?? false} onChange={(event) => updateForm({ requires_auth: event.target.checked })} className="mt-0.5" /><span><strong className="block text-slate-800 dark:text-white">Requiere iniciar sesión</strong><span className="text-slate-500">Útil para registros internos de miembros.</span></span></label></section><section className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center gap-3"><Sparkles className="text-amber-500" size={19} /><div><h2 className="font-bold text-slate-900 dark:text-white">Experiencia de respuesta</h2><p className="text-xs text-slate-500">Configura la pantalla de envío.</p></div></div><label className="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-white/5"><input type="checkbox" checked={editingForm.settings?.collectSubmitterInfo !== false} onChange={(event) => updateSettings({ collectSubmitterInfo: event.target.checked })} className="mt-0.5" /><span><strong className="block text-slate-800 dark:text-white">Solicitar datos de contacto</strong><span className="text-slate-500">Nombre y correo antes de las preguntas.</span></span></label><label className="mt-3 flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-white/5"><input type="checkbox" checked={editingForm.settings?.submitterEmailRequired !== false} onChange={(event) => updateSettings({ submitterEmailRequired: event.target.checked })} className="mt-0.5" /><span><strong className="block text-slate-800 dark:text-white">Correo obligatorio</strong><span className="text-slate-500">Requiere un correo cuando se solicitan datos de contacto.</span></span></label><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">Texto del botón<input value={editingForm.settings?.submitLabel || ''} onChange={(event) => updateSettings({ submitLabel: event.target.value })} placeholder="Enviar respuestas" className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">Título después de enviar<input value={editingForm.settings?.successTitle || ''} onChange={(event) => updateSettings({ successTitle: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300">Mensaje después de enviar<textarea value={editingForm.settings?.successMessage || ''} onChange={(event) => updateSettings({ successMessage: event.target.value })} rows={3} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white" /></label></section></div> : <div className="grid gap-5 xl:grid-cols-[230px_minmax(0,1fr)_300px]"><aside className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="mb-4"><h2 className="text-sm font-black text-slate-900 dark:text-white">Bloques</h2><p className="mt-1 text-xs leading-5 text-slate-500">Pulsa para añadir un bloque.</p></div><div className="space-y-2">{PALETTE.map((item) => <button key={item.type} type="button" onClick={() => addField(item.type)} className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-blue-400/30"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-300"><item.icon size={15} /></span><span><strong className="block text-xs text-slate-800 dark:text-white">{item.label}</strong><span className="mt-0.5 block text-[10px] leading-4 text-slate-400">{item.description}</span></span></button>)}</div></aside><main className="min-w-0 rounded-[1.6rem] border border-slate-200 bg-slate-50/70 p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/40 sm:p-6"><div className="mx-auto max-w-2xl"><div className="mb-5 rounded-2xl border border-blue-100 bg-white p-5 dark:border-blue-400/15 dark:bg-slate-900"><p className="text-[10px] font-black uppercase tracking-[.16em] text-blue-600 dark:text-blue-300">Formulario público</p><h2 className="mt-2 font-serif text-2xl font-bold text-slate-900 dark:text-white">{editingForm.title}</h2><p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{editingForm.description || 'Añade una descripción para orientar a las personas.'}</p></div><div className="space-y-3">{editingForm.fields.map((field, index) => <FieldCard key={field.id} field={field} index={index} selected={field.id === selectedFieldId} onSelect={() => setSelectedFieldId(field.id)} onMove={(direction) => moveField(field.id, direction)} onDuplicate={() => duplicateField(field.id)} onDelete={() => deleteField(field.id)} onDragStart={() => setDraggedId(field.id)} onDrop={() => dropField(field.id)} />)}</div><button type="button" onClick={() => addField('text')} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 py-4 text-xs font-black text-slate-500 transition hover:border-blue-400 hover:text-blue-700 dark:border-white/15 dark:text-slate-400 dark:hover:border-blue-400 dark:hover:text-blue-300"><Plus size={16} /> Añadir bloque</button></div></main><aside className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900"><div className="flex items-center justify-between"><div><h2 className="text-sm font-black text-slate-900 dark:text-white">Propiedades</h2><p className="mt-1 text-xs text-slate-500">Edita el bloque seleccionado.</p></div><MoreHorizontal size={17} className="text-slate-400" /></div>{selectedField ? <div className="mt-5 space-y-4"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Tipo<select value={selectedField.type} onChange={(event) => updateField({ type: event.target.value as DynamicFormFieldType })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white">{QUESTION_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">{selectedField.type === 'paragraph' ? 'Texto' : 'Etiqueta'}<input value={selectedField.label} onChange={(event) => updateField({ label: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Ayuda<input value={selectedField.helpText || ''} onChange={(event) => updateField({ helpText: event.target.value })} placeholder="Texto opcional debajo de la pregunta" className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>{!['heading', 'paragraph'].includes(selectedField.type) && <><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Placeholder<input value={selectedField.placeholder || ''} onChange={(event) => updateField({ placeholder: event.target.value })} className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label><label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200"><input type="checkbox" checked={selectedField.required ?? false} onChange={(event) => updateField({ required: event.target.checked })} /> Respuesta obligatoria</label>{['select', 'radio'].includes(selectedField.type) && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Opciones<span className="mt-1 block text-[10px] font-normal text-slate-400">Una opción por línea</span><textarea value={(selectedField.options || []).join('\n')} onChange={(event) => updateField({ options: event.target.value.split('\n').map((value) => value.trim()).filter(Boolean) })} rows={5} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white" /></label>}</>}</div> : <div className="mt-8 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-xs font-semibold text-slate-400 dark:border-white/10">Selecciona un bloque para editar sus propiedades.</div>}</aside></div>}</div>;
 
-  const handleRemoveField = (id: string) => {
-    setFields(fields.filter(f => f.id !== id));
-  };
-
-  const handleSaveForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const created = await competitiveService.createDynamicForm({
-      title,
-      description,
-      slug,
-      fields,
-      is_published: true,
-    });
-
-    setForms([created, ...forms]);
-    setTitle('');
-    setDescription('');
-    setShowModal(false);
-    toast.success('Formulario Dinámico publicado correctamente');
-  };
-
-  const handleCopyLink = (slug: string) => {
-    const url = `${window.location.origin}/formularios/${slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success('Enlace copiado al portapapeles');
-  };
-
-  return (
-    <div className="space-y-6">
-      <AdminHeader
-        title="Constructor de Formularios Dinámicos (Form Builder)"
-        description="Diseña formularios personalizados para retiros, solicitudes de bautismo, encuestas y voluntarios"
-      />
-
-      {/* ACTION BAR */}
-      <div className="flex items-center justify-between bg-slate-900/60 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
-        <p className="text-xs text-slate-400">
-          Formularios activos en producción: <strong className="text-amber-300">{forms.length}</strong>
-        </p>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:scale-105 transition shadow-lg shadow-amber-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          Crear Nuevo Formulario
-        </button>
-      </div>
-
-      {/* FORMS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {forms.map(form => (
-          <div
-            key={form.id}
-            className="bg-slate-900/80 rounded-2xl border border-white/10 p-6 space-y-4 shadow-xl backdrop-blur-md hover:border-amber-500/30 transition"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">{form.title}</h3>
-                  <span className="text-[11px] text-slate-400 font-mono">/formularios/{form.slug}</span>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
-                ● Publicado
-              </span>
-            </div>
-
-            {form.description && (
-              <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{form.description}</p>
-            )}
-
-            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-              <span className="text-slate-400">{form.fields.length} campos configurados</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleCopyLink(form.slug)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1.5 transition"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copiar Enlace
-                </button>
-                <button
-                  onClick={() => navigate(`/formularios/${form.slug}`)}
-                  className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs flex items-center gap-1.5 transition"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> Ver Formulario
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* CREATE MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-amber-400" /> Crear Formulario Dinámico
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
-            </div>
-
-            <form onSubmit={handleSaveForm} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Título del Formulario *</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Ej. Registro de Campamento de Jóvenes 2026"
-                  className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Descripción o Instrucciones</label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Instrucciones para los hermanos que completan el formulario..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400 resize-none"
-                />
-              </div>
-
-              {/* FIELD BUILDER */}
-              <div className="space-y-3 pt-2 border-t border-white/10">
-                <h4 className="text-xs font-bold text-amber-300">Campos del Formulario ({fields.length})</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {fields.map((f, i) => (
-                    <div key={f.id} className="flex items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-white/5 text-xs text-slate-300">
-                      <span>{i + 1}. <strong>{f.label}</strong> ({f.type})</span>
-                      <button type="button" onClick={() => handleRemoveField(f.id)} className="text-rose-400 hover:text-rose-300"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={newFieldLabel}
-                    onChange={e => setNewFieldLabel(e.target.value)}
-                    placeholder="Nombre del nuevo campo..."
-                    className="flex-1 px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
-                  />
-                  <select
-                    value={newFieldType}
-                    onChange={e => setNewFieldType(e.target.value as 'text' | 'textarea' | 'select')}
-                    className="px-2 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
-                  >
-                    <option value="text">Texto Corto</option>
-                    <option value="textarea">Texto Largo</option>
-                    <option value="select">Desplegable</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAddField}
-                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold rounded-xl text-xs"
-                  >
-                    + Agregar
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-white/10">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">Cancelar</button>
-                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold rounded-xl text-xs">Publicar Formulario</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="space-y-6"><AdminHeader title="Formularios dinámicos" description="Diseña registros, encuestas, solicitudes y experiencias personalizadas para la congregación." /><div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.6rem] border border-blue-100 bg-gradient-to-r from-blue-950 to-slate-900 p-5 text-white shadow-xl dark:border-white/10"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-blue-200">Form builder</p><h2 className="mt-1 font-serif text-2xl font-bold">Convierte una idea en un formulario listo para compartir.</h2><p className="mt-1 text-sm text-blue-100/70">Bloques, propiedades, vista previa y publicación desde un solo espacio.</p></div><button type="button" onClick={openNew} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-black text-slate-950 shadow-lg shadow-amber-400/20"><Plus size={17} /> Crear formulario</button></div>{error && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{error} <button type="button" onClick={() => void loadForms()} className="ml-2 underline">Reintentar</button></div>}<div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-slate-900 dark:text-white">Tus formularios</h2><p className="mt-1 text-sm text-slate-500">{loading ? 'Cargando…' : `${forms.length} formulario${forms.length === 1 ? '' : 's'} guardado${forms.length === 1 ? '' : 's'}`}</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500 dark:bg-white/10 dark:text-slate-300">{forms.filter((form) => form.is_published).length} publicados</span></div>{!loading && !forms.length ? <div className="rounded-[1.6rem] border border-dashed border-slate-300 px-6 py-16 text-center dark:border-white/10"><Sparkles className="mx-auto text-amber-500" size={28} /><h3 className="mt-3 font-bold text-slate-800 dark:text-white">Todavía no tienes formularios</h3><p className="mt-1 text-sm text-slate-500">Crea el primero con bloques y vista previa.</p><button type="button" onClick={openNew} className="mt-5 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-black text-white">Crear el primer formulario</button></div> : <div className="grid gap-5 lg:grid-cols-2">{forms.map((form) => <article key={form.id} className="group rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"><div className="flex items-start gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300"><FileText size={20} /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-base font-bold text-slate-900 dark:text-white">{form.title}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${form.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'}`}>{form.is_published ? 'Publicado' : 'Borrador'}</span></div><p className="mt-1 truncate font-mono text-[11px] text-slate-400">/formularios/{form.slug}</p></div></div>{form.description && <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{form.description}</p>}<div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10"><span className="text-xs font-bold text-slate-500">{form.fields.length} bloques</span><div className="flex flex-wrap gap-2"><button type="button" onClick={() => openEdit(form)} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 dark:bg-blue-400/10 dark:text-blue-300"><Pencil size={13} /> Editar</button><button type="button" onClick={() => duplicateForm(form)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-white/10" aria-label="Duplicar formulario"><Copy size={14} /></button><button type="button" onClick={() => void copyLink(form.slug)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-white/10" aria-label="Copiar enlace"><ExternalLink size={14} /></button><button type="button" onClick={() => void deleteForm(form)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-400/10" aria-label="Eliminar formulario"><Trash2 size={14} /></button></div></div></article>)}</div>}</div>;
 };
+
 export default FormBuilderManager;

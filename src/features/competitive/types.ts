@@ -89,6 +89,12 @@ export interface ChildCheckInSession {
 
 export type DynamicFormFieldType = 'text' | 'textarea' | 'number' | 'email' | 'phone' | 'url' | 'select' | 'checkbox' | 'radio' | 'date' | 'heading' | 'paragraph';
 
+export interface DynamicFormCondition {
+  fieldId: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'is_true';
+  value?: string;
+}
+
 export interface DynamicFormField {
   id: string;
   label: string;
@@ -104,6 +110,7 @@ export interface DynamicFormField {
   maxLength?: number;
   accept?: string;
   multiple?: boolean;
+  conditions?: DynamicFormCondition[];
 }
 
 export interface DynamicFormSettings {

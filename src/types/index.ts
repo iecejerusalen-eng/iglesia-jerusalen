@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'pastor' | 'editor' | 'secretary' | 'secretaria' | 'leader' | 'member' | 'guest' | 'apoyo' | 'multimedia' | 'maestro' | 'docente' | 'estudiante' | 'student' | 'musico';
+export type UserRole = 'admin' | 'pastor' | 'editor' | 'secretary' | 'secretaria' | 'leader' | 'member' | 'guest' | 'apoyo' | 'diacono' | 'ujier' | 'multimedia' | 'maestro' | 'docente' | 'estudiante' | 'student' | 'musico';
 
 export interface Profile {
   id: string;
