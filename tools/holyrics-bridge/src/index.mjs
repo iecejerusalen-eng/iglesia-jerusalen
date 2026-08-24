@@ -24,6 +24,22 @@ const allowedActions = new Set([
   'ShowText',
   'ShowVerse',
   'SetCurrentSchedule',
+  'NextSlide',
+  'PreviousSlide',
+  'ClearScreen',
+  'ClearLyrics',
+  'HideLyrics',
+  'BlackScreen',
+  'LogoScreen',
+  'ShowAlert',
+  'HideAlert',
+  'SetBackground',
+  'TriggerAction',
+  'SendMIDI',
+  'GetStageView',
+  'GetChords',
+  'ShowQuickMessage',
+  'ShowAnnouncement',
 ]);
 
 const corsHeaders = {
