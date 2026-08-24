@@ -299,7 +299,7 @@ const FinanceDashboard = () => {
     let diezmosTotal = 0;
     let ofrendasTotal = 0;
     completedDons.forEach(d => {
-      const catName = (d.donation_categories?.name || d.category || '').toLowerCase();
+      const catName = (d.donation_categories?.name || '').toLowerCase();
       if (catName.includes('diezmo')) {
         diezmosTotal += (Number(d.amount) || 0);
       } else {
@@ -343,7 +343,7 @@ const FinanceDashboard = () => {
         name: d.donor_name || 'Donante Anónimo',
         email: d.donor_email,
         amount: Number(d.amount) || 0,
-        category: d.donation_categories?.name || d.category || 'General',
+        category: d.donation_categories?.name || 'General',
         paymentMethod: d.payment_method || 'transfer',
         status: (d.status === 'completed' ? 'completed' : d.status === 'pending' ? 'pending' : 'failed') as 'completed' | 'pending' | 'failed',
         date: d.created_at
@@ -394,27 +394,32 @@ const FinanceDashboard = () => {
     setChartData(points);
   }, []);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [cats, dons, ords] = await Promise.all([
-        fetchCategories(),
-        fetchDonations(),
-        fetchOrders()
-      ]);
-
-      processMetricsAndFilters(dons, ords, dateFilter);
-    } catch (err) {
-      console.error('Error al cargar datos financieros:', err);
-      toast.error('Error al cargar la información financiera.');
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchCategories, fetchDonations, fetchOrders, processMetricsAndFilters, dateFilter]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isMounted = true;
+    const executeLoad = async () => {
+      try {
+        const [, dons, ords] = await Promise.all([
+          fetchCategories(),
+          fetchDonations(),
+          fetchOrders()
+        ]);
+        if (isMounted) {
+          processMetricsAndFilters(dons, ords, dateFilter);
+        }
+      } catch (err) {
+        console.error('Error al cargar datos financieros:', err);
+        toast.error('Error al cargar la información financiera.');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    executeLoad();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchCategories, fetchDonations, fetchOrders, processMetricsAndFilters, dateFilter]);
 
   const handleDateFilterChange = (newFilter: '30days' | '90days' | 'year' | 'all') => {
     setDateFilter(newFilter);

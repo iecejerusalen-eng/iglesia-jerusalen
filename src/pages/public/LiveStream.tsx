@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import {
-  MessageSquare, Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame, Radio
+  MessageSquare, Send, Sparkles, BookOpen, ShieldCheck, UserCheck, Copy, HandHeart, Flame, Radio, MonitorPlay, Video, Megaphone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
@@ -59,6 +59,35 @@ interface LiveSong {
   lyrics: string | null;
   has_chords: boolean;
 }
+
+interface LiveProductionState {
+  id: string;
+  session_id: string;
+  source: 'manual' | 'holyrics' | 'propresenter';
+  is_visible: boolean;
+  current_title: string | null;
+  current_text: string | null;
+  current_slide_index: number;
+  total_slides: number;
+  announcement: string | null;
+  announcement_visible: boolean;
+  stage_url: string | null;
+  screen_url: string | null;
+  camera_feeds: unknown;
+}
+
+interface LiveCameraFeed { label: string; url: string; }
+
+const getCameraFeeds = (value: unknown): LiveCameraFeed[] => {
+  if (!Array.isArray(value)) return [];
+  return value.map((item): LiveCameraFeed | null => {
+    if (!item || typeof item !== 'object') return null;
+    const record = item as Record<string, unknown>;
+    return typeof record.label === 'string' && typeof record.url === 'string' && record.url.startsWith('https://')
+      ? { label: record.label, url: record.url }
+      : null;
+  }).filter((item): item is LiveCameraFeed => item !== null);
+};
 
 function getStreamLinks(value: unknown, legacyUrl: string | null): StreamLink[] {
   const source = Array.isArray(value) ? value : [];
@@ -175,6 +204,7 @@ export default function LiveStream() {
   const [activeStreamIndex, setActiveStreamIndex] = useState(0);
   const [attendanceCount, setAttendanceCount] = useState<number | null>(null);
   const [activeSong, setActiveSong] = useState<LiveSong | null>(null);
+  const [productionState, setProductionState] = useState<LiveProductionState | null>(null);
 
   // Auto-scroll chat
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -208,11 +238,12 @@ export default function LiveStream() {
         return;
       }
 
-      const [agendaResult, pollsResult, questionsResult, attendanceResult] = await Promise.all([
+      const [agendaResult, pollsResult, questionsResult, attendanceResult, productionResult] = await Promise.all([
         supabase.from('worship_service_items').select('id,position,item_type,title,duration_minutes,song_id').eq('service_id', session.service_id).order('position'),
         supabase.from('live_polls').select('id,session_id,question,options').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
         supabase.from('live_questions').select('id,question,answer').eq('session_id', session.id).in('status', ['approved', 'answered']).order('created_at', { ascending: false }).limit(20),
         supabase.from('live_service_attendance').select('attendance_count').eq('session_id', session.id).maybeSingle(),
+        supabase.from('live_service_production_state').select('id,session_id,source,is_visible,current_title,current_text,current_slide_index,total_slides,announcement,announcement_visible,stage_url,screen_url,camera_feeds').eq('session_id', session.id).maybeSingle(),
       ]);
 
       if (!mounted) return;
@@ -225,6 +256,11 @@ export default function LiveStream() {
         setPolls((pollsResult.data ?? []) as LivePoll[]);
         setApprovedQuestions((questionsResult.data ?? []) as LiveQuestion[]);
         setAttendanceCount(attendanceResult.data?.attendance_count ?? 0);
+        if (productionResult.error) {
+          console.error('No se pudo cargar la producción sincronizada del culto.', productionResult.error);
+        } else {
+          setProductionState((productionResult.data ?? null) as LiveProductionState | null);
+        }
       }
       setLiveDataReady(true);
 
@@ -257,6 +293,13 @@ export default function LiveStream() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_questions', filter: `session_id=eq.${liveSessionId}` }, () => {
         setLiveDataError(null);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_service_production_state', filter: `session_id=eq.${liveSessionId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setProductionState(null);
+          return;
+        }
+        setProductionState(payload.new as LiveProductionState);
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -477,6 +520,14 @@ export default function LiveStream() {
             </div>
 
             {activeSong && <section className="overflow-hidden rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/[.12] to-slate-900/90 p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Alabanza actual</p><h2 className="mt-1 font-serif text-2xl font-bold text-white">{activeSong.title}</h2>{activeSong.artist && <p className="mt-1 text-xs text-slate-400">{activeSong.artist}</p>}</div><Link to="/recursos/alabanzas" className="rounded-xl border border-emerald-300/20 px-3 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-300/10">Abrir biblioteca</Link></div><div className="mt-4 max-h-56 overflow-y-auto rounded-2xl bg-slate-950/60 p-4 text-sm leading-7 text-slate-200" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeSong.lyrics || 'El equipo aún no ha publicado la letra de esta alabanza.') }} /></section>}
+
+            {productionState?.is_visible && <section className="space-y-4 rounded-3xl border border-sky-400/20 bg-gradient-to-br from-sky-400/[.10] to-slate-900/90 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-sky-300">Producción sincronizada</p><h2 className="mt-1 font-serif text-2xl font-bold text-white">Pantallas y cámaras del culto</h2></div><span className="rounded-full bg-sky-400/10 px-3 py-1.5 text-[10px] font-black uppercase text-sky-200">{productionState.source}</span></div>
+              {(productionState.current_title || productionState.current_text) && <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-5"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-sky-300"><MonitorPlay size={14} /> En pantalla ahora</div>{productionState.current_title && <h3 className="mt-3 font-serif text-xl font-bold text-white">{productionState.current_title}</h3>}{productionState.current_text && <p className="mt-2 whitespace-pre-line text-base leading-7 text-slate-200">{productionState.current_text}</p>} {productionState.total_slides > 0 && <p className="mt-3 text-[11px] text-slate-500">Diapositiva {productionState.current_slide_index + 1} de {productionState.total_slides}</p>}</div>}
+              {productionState.announcement_visible && productionState.announcement && <div className="flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-amber-100"><Megaphone size={18} className="mt-0.5 shrink-0 text-amber-300" /><p className="text-sm leading-6">{productionState.announcement}</p></div>}
+              {(productionState.screen_url || productionState.stage_url) && <div className="grid gap-3 md:grid-cols-2">{productionState.screen_url && <a href={productionState.screen_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-xs font-bold text-slate-200 hover:border-sky-300/50"><MonitorPlay size={18} className="text-sky-300" /> Ver pantalla pública <span className="ml-auto">↗</span></a>}{productionState.stage_url && <a href={productionState.stage_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-xs font-bold text-slate-200 hover:border-sky-300/50"><Radio size={18} className="text-emerald-300" /> Vista de escenario <span className="ml-auto">↗</span></a>}</div>}
+              {getCameraFeeds(productionState.camera_feeds).length > 0 && <div><div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[.16em] text-slate-400"><Video size={14} /> Cámaras disponibles</div><div className="grid gap-3 md:grid-cols-2">{getCameraFeeds(productionState.camera_feeds).map((camera) => <a key={camera.url} href={camera.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm font-bold text-white hover:border-sky-300/50">{camera.label}<span className="mt-1 block text-[11px] font-normal text-slate-500">Abrir cámara ↗</span></a>)}</div></div>}
+            </section>}
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-5">

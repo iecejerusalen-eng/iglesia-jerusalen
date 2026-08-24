@@ -9,6 +9,7 @@ import BlockEditor from '../../components/admin/BlockEditor';
 interface ServiceOption { id: string; title: string; service_date: string; start_time: string; }
 interface AgendaOption { id: string; title: string; position: number; }
 interface LiveSessionRow { id: string; service_id: string; status: 'scheduled' | 'live' | 'ended' | 'archived'; title: string; stream_url: string | null; current_item_id: string | null; live_summary: string | null; content_blocks: unknown[]; }
+interface ProductionStateRow { id: string; session_id: string; source: 'manual' | 'holyrics' | 'propresenter'; is_visible: boolean; current_title: string | null; current_text: string | null; current_slide_index: number; total_slides: number; announcement: string | null; announcement_visible: boolean; stage_url: string | null; screen_url: string | null; camera_feeds: unknown; }
 interface PollRow { id: string; question: string; options: string[]; status: 'draft' | 'published' | 'closed'; }
 interface QuestionRow { id: string; question: string; display_name: string | null; status: 'pending' | 'approved' | 'answered' | 'rejected'; answer: string | null; }
 interface PrayerRequestRow { id: string; request: string; is_private: boolean; status: 'pending' | 'in_prayer' | 'answered' | 'rejected'; }
@@ -30,6 +31,7 @@ const LiveServiceControl = () => {
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [agenda, setAgenda] = useState<AgendaOption[]>([]);
   const [session, setSession] = useState<LiveSessionRow | null>(null);
+  const [productionState, setProductionState] = useState<ProductionStateRow | null>(null);
   const [serviceId, setServiceId] = useState('');
   const [title, setTitle] = useState('Culto en Vivo · Iglesia Jerusalén');
   const [streamUrl, setStreamUrl] = useState('');
@@ -49,6 +51,17 @@ const LiveServiceControl = () => {
   const [status, setStatus] = useState<LiveSessionRow['status']>('scheduled');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [productionSource, setProductionSource] = useState<ProductionStateRow['source']>('manual');
+  const [productionVisible, setProductionVisible] = useState(true);
+  const [currentTitle, setCurrentTitle] = useState('');
+  const [currentText, setCurrentText] = useState('');
+  const [slideIndex, setSlideIndex] = useState('0');
+  const [totalSlides, setTotalSlides] = useState('0');
+  const [announcement, setAnnouncement] = useState('');
+  const [announcementVisible, setAnnouncementVisible] = useState(false);
+  const [stageUrl, setStageUrl] = useState('');
+  const [screenUrl, setScreenUrl] = useState('');
+  const [cameraFeedsText, setCameraFeedsText] = useState('');
 
   useEffect(() => {
     if (!canView) return undefined;
@@ -76,17 +89,19 @@ const LiveServiceControl = () => {
       if (loadedSession) {
         setTitle(loadedSession.title);
         setStreamUrl(loadedSession.stream_url ?? '');
-        const storedLinks = Array.isArray((loadedSession as LiveSessionRow & { stream_links?: unknown }).stream_links) ? (loadedSession as LiveSessionRow & { stream_links?: unknown }).stream_links : [];
+        const rawStreamLinks = (loadedSession as LiveSessionRow & { stream_links?: unknown }).stream_links;
+        const storedLinks: unknown[] = Array.isArray(rawStreamLinks) ? rawStreamLinks : [];
         setStreamLinksText(storedLinks.map((item) => typeof item === 'object' && item !== null && 'url' in item && typeof item.url === 'string' ? item.url : '').filter(Boolean).join('\n'));
         setSummary(loadedSession.live_summary ?? '');
         setContentBlocks(JSON.stringify(loadedSession.content_blocks ?? []));
         setCurrentItemId(loadedSession.current_item_id ?? '');
         setStatus(loadedSession.status);
-        const [pollsResult, questionsResult, attendanceResult, prayerResult] = await Promise.all([
+        const [pollsResult, questionsResult, attendanceResult, prayerResult, productionResult] = await Promise.all([
           supabase.from('live_polls').select('id,question,options,status').eq('session_id', loadedSession.id).order('created_at'),
           supabase.from('live_questions').select('id,question,display_name,status,answer').eq('session_id', loadedSession.id).order('created_at', { ascending: false }).limit(100),
           supabase.from('live_service_attendance').select('attendance_count').eq('session_id', loadedSession.id).maybeSingle(),
           supabase.from('live_prayer_requests').select('id,request,is_private,status').eq('session_id', loadedSession.id).order('created_at', { ascending: false }).limit(100),
+          supabase.from('live_service_production_state').select('id,session_id,source,is_visible,current_title,current_text,current_slide_index,total_slides,announcement,announcement_visible,stage_url,screen_url,camera_feeds').eq('session_id', loadedSession.id).maybeSingle(),
         ]);
         if (pollsResult.error || questionsResult.error || attendanceResult.error || prayerResult.error) {
           const error = pollsResult.error ?? questionsResult.error ?? attendanceResult.error ?? prayerResult.error;
@@ -99,6 +114,28 @@ const LiveServiceControl = () => {
           setAttendanceCount(count);
           setAttendanceInput(String(count));
           setPrayerRequests((prayerResult.data ?? []) as PrayerRequestRow[]);
+        }
+        if (productionResult.error) {
+          console.error('No se pudo cargar el estado de producción del culto.', productionResult.error);
+        } else if (productionResult.data) {
+          const loadedProduction = productionResult.data as ProductionStateRow;
+          setProductionState(loadedProduction);
+          setProductionSource(loadedProduction.source);
+          setProductionVisible(loadedProduction.is_visible);
+          setCurrentTitle(loadedProduction.current_title ?? '');
+          setCurrentText(loadedProduction.current_text ?? '');
+          setSlideIndex(String(loadedProduction.current_slide_index));
+          setTotalSlides(String(loadedProduction.total_slides));
+          setAnnouncement(loadedProduction.announcement ?? '');
+          setAnnouncementVisible(loadedProduction.announcement_visible);
+          setStageUrl(loadedProduction.stage_url ?? '');
+          setScreenUrl(loadedProduction.screen_url ?? '');
+          const feeds = Array.isArray(loadedProduction.camera_feeds) ? loadedProduction.camera_feeds : [];
+          setCameraFeedsText(feeds.map((feed) => {
+            if (!feed || typeof feed !== 'object') return '';
+            const record = feed as Record<string, unknown>;
+            return typeof record.label === 'string' && typeof record.url === 'string' ? `${record.label} | ${record.url}` : '';
+          }).filter(Boolean).join('\n'));
         }
       }
       setLoading(false);
@@ -227,6 +264,37 @@ const LiveServiceControl = () => {
     setPrayerRequests((current) => current.map((item) => item.id === request.id ? data as PrayerRequestRow : item));
   };
 
+  const saveProductionState = async () => {
+    if (!session || readOnly) return;
+    const cameraFeeds = cameraFeedsText.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+      const [label, url] = line.split('|').map((value) => value.trim());
+      return label && url?.startsWith('https://') ? { label, url } : null;
+    }).filter((feed): feed is { label: string; url: string } => feed !== null);
+    const payload = {
+      session_id: session.id,
+      source: productionSource,
+      is_visible: productionVisible,
+      current_title: currentTitle.trim() || null,
+      current_text: currentText.trim() || null,
+      current_slide_index: Math.max(0, Number(slideIndex) || 0),
+      total_slides: Math.max(0, Number(totalSlides) || 0),
+      announcement: announcement.trim() || null,
+      announcement_visible: announcementVisible,
+      stage_url: stageUrl.startsWith('https://') ? stageUrl.trim() : null,
+      screen_url: screenUrl.startsWith('https://') ? screenUrl.trim() : null,
+      camera_feeds: cameraFeeds,
+      last_synced_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('live_service_production_state').upsert(payload, { onConflict: 'session_id' }).select('id,session_id,source,is_visible,current_title,current_text,current_slide_index,total_slides,announcement,announcement_visible,stage_url,screen_url,camera_feeds').single();
+    if (error) {
+      console.error('No se pudo publicar el estado de producción.', error);
+      toast.error(`No se pudo publicar producción: ${error.message}`);
+      return;
+    }
+    setProductionState(data as ProductionStateRow);
+    toast.success('Estado de producción publicado en Culto en Vivo.');
+  };
+
   if (!canView) return <div className="p-8 text-sm text-slate-500">No tienes permisos para administrar el Culto en Vivo.</div>;
 
   return <div className="min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950 sm:px-8">
@@ -248,6 +316,23 @@ const LiveServiceControl = () => {
         <section className="mt-7 border-t border-slate-100 pt-6 dark:border-white/10">
           <div className="mb-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-indigo-500">Editor manual</p><h2 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">Contenido del culto</h2><p className="mt-1 text-xs text-slate-500">Escribe y ordena el contenido que aparecerá después de la transmisión. El bloque de resumen automático está desactivado.</p></div>
           <BlockEditor content={contentBlocks} onChange={setContentBlocks} disabled={readOnly} excludeTypes={['sermon_summary']} />
+        </section>
+        <section className="mt-7 border-t border-slate-100 pt-6 dark:border-white/10">
+          <div className="mb-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-sky-500">Puente de producción</p><h2 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">Lo que está pasando en las pantallas</h2><p className="mt-1 text-xs text-slate-500">Este estado es el contrato común para Holyrics, ProPresenter y la página pública. Los conectores podrán actualizarlo automáticamente.</p></div>
+          <div className="grid gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/[.04] md:grid-cols-2">
+            <label className="block text-xs font-bold text-slate-500">Fuente<select value={productionSource} onChange={(event) => setProductionSource(event.target.value as ProductionStateRow['source'])} className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white"><option value="manual">Manual</option><option value="holyrics">Holyrics</option><option value="propresenter">ProPresenter</option></select></label>
+            <label className="flex items-center gap-2 self-end rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold dark:border-white/10 dark:bg-slate-950"><input type="checkbox" checked={productionVisible} onChange={(event) => setProductionVisible(event.target.checked)} /> Mostrar producción al público</label>
+            <label className="block text-xs font-bold text-slate-500">Título actual<input value={currentTitle} onChange={(event) => setCurrentTitle(event.target.value)} placeholder="Ej. Coro 2 · Grande es tu fidelidad" className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="block text-xs font-bold text-slate-500">Diapositiva<input value={slideIndex} onChange={(event) => setSlideIndex(event.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="0" className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="block text-xs font-bold text-slate-500 md:col-span-2">Letra o texto actual<textarea value={currentText} onChange={(event) => setCurrentText(event.target.value)} rows={3} placeholder="Texto de la diapositiva que se mostrará al público..." className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="block text-xs font-bold text-slate-500">Anuncios en vivo<textarea value={announcement} onChange={(event) => setAnnouncement(event.target.value)} rows={2} placeholder="Aviso breve para la transmisión" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="flex items-center gap-2 self-end rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold dark:border-white/10 dark:bg-slate-950"><input type="checkbox" checked={announcementVisible} onChange={(event) => setAnnouncementVisible(event.target.checked)} /> Mostrar anuncio ahora</label>
+            <label className="block text-xs font-bold text-slate-500">URL de pantalla pública<input type="url" value={screenUrl} onChange={(event) => setScreenUrl(event.target.value)} placeholder="https://..." className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="block text-xs font-bold text-slate-500">URL de vista de escenario<input type="url" value={stageUrl} onChange={(event) => setStageUrl(event.target.value)} placeholder="https://..." className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /></label>
+            <label className="block text-xs font-bold text-slate-500 md:col-span-2">Cámaras visibles<textarea value={cameraFeedsText} onChange={(event) => setCameraFeedsText(event.target.value)} rows={3} placeholder="Cámara principal | https://...\nPlano alabanza | https://..." className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-950 dark:text-white" /><span className="mt-1 block text-[10px] font-normal text-slate-400">Una cámara por línea: etiqueta | URL HTTPS. No se aceptan puertos locales.</span></label>
+          </div>
+          <button type="button" disabled={readOnly || !session} onClick={() => void saveProductionState()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-xs font-black text-white"><Radio size={15} /> Publicar estado de producción</button>
+          {productionState && <span className="ml-3 text-xs text-emerald-600">Última publicación disponible para Culto en Vivo.</span>}
         </section>
         <section className="mt-7 grid gap-6 border-t border-slate-100 pt-6 dark:border-white/10 lg:grid-cols-2">
           <div>
