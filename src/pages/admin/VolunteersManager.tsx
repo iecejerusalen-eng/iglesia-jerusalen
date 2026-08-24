@@ -89,22 +89,48 @@ export default function VolunteersManager() {
     setIsModalOpen(true);
   };
 
+  const getErrorMessage = (err: unknown): string => {
+    if (!err) return 'Error desconocido';
+    if (err instanceof Error) return err.message;
+    if (typeof err === 'object' && err !== null) {
+      const pErr = err as { message?: string; details?: string; hint?: string; code?: string };
+      return pErr.message || pErr.details || pErr.hint || JSON.stringify(err);
+    }
+    return String(err);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.start_time || !formData.end_time) {
-      return toast.error('Completa los campos requeridos');
+      return toast.error('Completa los campos requeridos (Título, Inicio y Fin)');
     }
 
     try {
       const startTimeIso = new Date(formData.start_time).toISOString();
       const endTimeIso = new Date(formData.end_time).toISOString();
 
-      const { error } = await supabase.from('volunteer_shifts').insert([{
-        ...formData,
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validMinistryId = (formData.ministry_id && uuidRegex.test(formData.ministry_id)) ? formData.ministry_id : null;
+
+      const validEffortLevel = ['ligero', 'moderado', 'fisico'].includes(formData.effort_level ?? '')
+        ? formData.effort_level
+        : 'moderado';
+
+      const payload = {
+        title: formData.title.trim(),
+        description: formData.description?.trim() || null,
         start_time: startTimeIso,
         end_time: endTimeIso,
-        ministry_id: formData.ministry_id || null
-      }]);
+        required_volunteers: Number(formData.required_volunteers) || 1,
+        category: formData.category || 'general',
+        effort_level: validEffortLevel,
+        skills_needed: Array.isArray(formData.skills_needed) ? formData.skills_needed : [],
+        location: formData.location?.trim() || null,
+        ministry_id: validMinistryId,
+        is_published: formData.is_published ?? true,
+      };
+
+      const { error } = await supabase.from('volunteer_shifts').insert([payload]);
       
       if (error) {
         console.error('Error al insertar turno de voluntariado:', error);
@@ -116,7 +142,7 @@ export default function VolunteersManager() {
       loadData();
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : 'Error desconocido';
+      const message = getErrorMessage(err);
       toast.error(`Error al crear turno: ${message}`);
     }
   };
@@ -200,7 +226,6 @@ export default function VolunteersManager() {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
             {loading ? (
-              // SKELETON LOADER
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="border border-gray-200 dark:border-white/10 rounded-xl p-4 animate-pulse">
                   <div className="flex justify-between items-start mb-2">
@@ -289,7 +314,6 @@ export default function VolunteersManager() {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
              {loading ? (
-                // SKELETON LOADER
                 Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="border border-gray-200 dark:border-white/10 rounded-xl p-4 animate-pulse">
                     <div className="h-5 bg-gray-200 dark:bg-slate-800 rounded w-1/3 mb-2"></div>
