@@ -1,402 +1,238 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { 
-  MapPin, 
-  Clock, 
-  Sparkles, 
-  HeartHandshake, 
-  Car, 
-  Baby, 
-  Shirt, 
-  CheckCircle2, 
-  ArrowRight,
-  Send,
-  Calendar,
-  Phone,
-  Mail,
-  UserCheck
+import {
+  Accessibility, ArrowRight, Baby, Car, Check,
+  ChevronDown, Clock3, ExternalLink, HeartHandshake, MapPin,
+  MessageCircle, Send, Shirt, Sparkles, UsersRound,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { supabase } from '../../config/supabase';
+import { CHURCH_LOCATION } from '../../components/map/churchLocation';
+import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import type { Event as DbEvent, Schedule } from '../../types';
+import { FALLBACK_SCHEDULES } from '../../features/home/constants';
+import { formatEventDateRange, formatEventTime } from '../../features/events/utils/eventPresentation';
 import { toast } from 'sonner';
 
-export default function PlanYourVisit() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    visitDate: '',
-    hasChildren: false,
-    childrenCount: '0',
-    notes: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+type VisitForm = {
+  fullName: string;
+  phone: string;
+  email: string;
+  visitDate: string;
+  needs: string[];
+  notes: string;
+};
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.fullName || !formData.phone) {
-      toast.error('Por favor completa tu nombre y teléfono para confirmar tu visita.');
+const INITIAL_FORM: VisitForm = {
+  fullName: '', phone: '', email: '', visitDate: '', needs: [], notes: '',
+};
+
+const NEEDS = [
+  { id: 'children', label: 'Voy con niños', icon: Baby },
+  { id: 'accessibility', label: 'Necesito accesibilidad', icon: Accessibility },
+  { id: 'parking', label: 'Necesito parqueo', icon: Car },
+  { id: 'questions', label: 'Tengo preguntas', icon: MessageCircle },
+] as const;
+
+const FAQS = [
+  ['¿Qué debo llevar?', 'Solo ven como eres. Si vienes con niños, nuestro equipo te orientará al llegar.'],
+  ['¿Cómo debo vestirme?', 'No tenemos un código de vestimenta. Encontrarás personas vestidas de distintas maneras.'],
+  ['¿Puedo ir sin registrarme?', 'Claro. El registro es opcional y nos ayuda a prepararnos para recibirte mejor.'],
+  ['¿Dónde está la iglesia?', CHURCH_LOCATION.address],
+] as const;
+
+const VISIT_STEPS: ReadonlyArray<{ number: string; title: string; description: string; icon: LucideIcon }> = [
+  { number: '01', title: 'Consulta', description: 'Mira horarios y encuentra el momento que mejor te funcione.', icon: Clock3 },
+  { number: '02', title: 'Prepárate', description: 'Cuéntanos si vienes con niños o necesitas alguna ayuda.', icon: Baby },
+  { number: '03', title: 'Conecta', description: 'Al llegar, nuestro equipo te ayudará a ubicarte sin presión.', icon: HeartHandshake },
+];
+
+function useVisitData() {
+  const schedules = useQuery({
+    queryKey: ['publicVisitSchedules'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('schedules').select('*').order('order_index', { ascending: true });
+      if (error) throw error;
+      return data && data.length > 0 ? data as Schedule[] : FALLBACK_SCHEDULES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const events = useQuery({
+    queryKey: ['publicVisitEvents'],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from('events')
+        .select('*, ministries(name)')
+        .eq('is_public', true)
+        .gte('start_date', today)
+        .order('start_date', { ascending: true })
+        .limit(3);
+      if (error) throw error;
+      return (data ?? []) as DbEvent[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return { schedules, events };
+}
+
+export default function PlanYourVisit() {
+  const { schedules, events } = useVisitData();
+  const [form, setForm] = useState<VisitForm>(INITIAL_FORM);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const groupedSchedules = useMemo(() => {
+    const groups = new Map<string, Schedule[]>();
+    (schedules.data ?? []).forEach((schedule) => {
+      const current = groups.get(schedule.day) ?? [];
+      current.push(schedule);
+      groups.set(schedule.day, current);
+    });
+    return [...groups.entries()];
+  }, [schedules.data]);
+
+  const toggleNeed = (id: string) => {
+    setForm((current) => ({
+      ...current,
+      needs: current.needs.includes(id) ? current.needs.filter((need) => need !== id) : [...current.needs, id],
+    }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!form.fullName.trim() || !form.phone.trim()) {
+      toast.error('Completa tu nombre y teléfono para continuar.');
+      setFormStep(1);
       return;
     }
-
     setSubmitting(true);
     try {
-      // Guardar en peticiones/solicitudes de contacto o CRM
-      const { error } = await supabase.from('contact_messages').insert([
-        {
-          full_name: formData.fullName,
-          email: formData.email || null,
-          phone: formData.phone,
-          subject: 'Planifica tu Visita',
-          message: `Fecha de visita: ${formData.visitDate || 'Próximo domingo'}. ¿Niños?: ${formData.hasChildren ? `Sí (${formData.childrenCount})` : 'No'}. Notas: ${formData.notes || 'N/A'}`,
-          status: 'unread'
-        }
-      ]);
-
-      if (error) {
-        // Fallback gracioso si no existe la tabla
-        console.warn('Registro en contact_messages tuvo advertencia:', error);
-      }
-
+      const needsLabel = form.needs.length > 0 ? form.needs.join(', ') : 'Sin necesidad específica';
+      const { error } = await supabase.from('contact_messages').insert([{
+        full_name: form.fullName.trim(), email: form.email.trim() || null, phone: form.phone.trim(),
+        subject: 'Planifica tu visita',
+        message: `Fecha prevista: ${form.visitDate || 'Por confirmar'}\nNecesidades: ${needsLabel}\nNotas: ${form.notes.trim() || 'Ninguna'}`,
+        status: 'unread',
+      }]);
+      if (error) throw error;
       setSubmitted(true);
-      toast.success('¡Nos alegra mucho tu visita! Nuestro equipo de recepción estará atento a tu llegada.');
-    } catch (err) {
-      console.error(err);
-      toast.success('¡Tu mensaje ha sido registrado! Te esperamos con los brazos abiertos.');
-      setSubmitted(true);
+      toast.success('Tu visita quedó registrada. ¡Te esperamos!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pudimos registrar tu visita. Intenta nuevamente.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const steps = [
-    {
-      num: '01',
-      title: 'Te Recibimos con Sonrisas',
-      desc: 'Al llegar a nuestras instalaciones en Milagro, el equipo de Bienvenida te saludará y te guiará al auditorio.',
-      icon: HeartHandshake,
-    },
-    {
-      num: '02',
-      title: 'Ambiente Seguro para Tus Hijos',
-      desc: 'Si vienes con niños, los registraremos en la Escuela Dominical con maestras calificadas y actividades divertidas.',
-      icon: Baby,
-    },
-    {
-      num: '03',
-      title: 'Alabanza y Palabra Inspiradora',
-      desc: 'Disfruta de 90 minutos de música en vivo, oración y un mensaje bíblico práctico aplicable a tu vida cotidiana.',
-      icon: Sparkles,
-    },
-    {
-      num: '04',
-      title: 'Punto de Conexión & Regalo',
-      desc: 'Al finalizar, acércate a la mesa VIP de visitantes por un café recién elaborado y un obsequio de bienvenida.',
-      icon: UserCheck,
-    },
-  ];
-
-  const faqs = [
-    {
-      q: '¿Cómo debo vestir para asistir?',
-      a: 'Ven tal como eres. No hay un código de vestimenta formal; verás a personas en ropa casual, jeans o vestidos. Lo importante es tu presencia.',
-      icon: Shirt,
-    },
-    {
-      q: '¿Dónde puedo estacionar?',
-      a: 'Contamos con espacio de estacionamiento guiado al frente y en los alrededores de la iglesia con seguridad de nuestro equipo.',
-      icon: Car,
-    },
-    {
-      q: '¿Tienen actividades para mis hijos?',
-      a: '¡Sí! Durante el servicio dominical tenemos clases divididas por edades donde aprenden valores cristianos de forma dinámica y segura.',
-      icon: Baby,
-    },
-    {
-      q: '¿Cuánto tiempo dura el servicio?',
-      a: 'Nuestras reuniones dominicales duran aproximadamente 1 hora con 30 minutos.',
-      icon: Clock,
-    },
-  ];
-
   return (
     <>
       <Helmet>
-        <title>Planifica tu Visita | Iglesia Jerusalén</title>
-        <meta name="description" content="¿Es tu primera vez en la Iglesia Jerusalén? Planifica tu visita, conoce nuestros horarios, parqueo, escuela infantil y recibe una bienvenida especial." />
-        <meta property="og:title" content="Planifica tu Visita - Iglesia Jerusalén" />
-        <meta property="og:description" content="Queremos recibirte como en casa. Descubre qué esperar en tu primera visita a la Iglesia Jerusalén en Milagro." />
+        <title>Planifica tu visita | Iglesia Jerusalén</title>
+        <meta name="description" content="Descubre qué esperar, consulta horarios y planifica tu primera visita a Iglesia Jerusalén en Milagro." />
+        <meta property="og:title" content="Planifica tu visita | Iglesia Jerusalén" />
+        <meta property="og:description" content="Todo lo que necesitas para sentirte en casa desde el primer día." />
       </Helmet>
 
-      <div className="relative isolate min-h-screen bg-surface dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
-        
-        {/* HERO BANNER */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-blue-950 via-slate-900 to-slate-950 py-24 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent" />
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.span 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-amber-300 backdrop-blur-md"
-            >
-              <Sparkles size={14} className="text-amber-400" />
-              Primeros Visitantes
-            </motion.span>
-            
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mt-6 font-serif text-4xl font-black tracking-tight sm:text-6xl text-white"
-            >
-              Nos Encantaría <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500">Conocerte</span>
-            </motion.h1>
-
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg"
-            >
-              Sabemos que visitar una iglesia por primera vez puede generar preguntas. Queremos asegurarnos de que tu primera experiencia sea cálida, acogedora e inolvidable.
-            </motion.p>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-10 flex flex-wrap justify-center gap-4"
-            >
-              <a 
-                href="#avisar-visita" 
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:scale-105 hover:from-amber-400 hover:to-amber-500"
-              >
-                Planificar mi Visita <ArrowRight size={16} />
-              </a>
-              <a 
-                href="#horarios-ubicacion" 
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition hover:bg-white/20"
-              >
-                <Clock size={16} /> Horarios y Dirección
-              </a>
+      <main className="bg-[#f7f7f3] text-slate-950 dark:bg-slate-950 dark:text-white">
+        <section className="relative isolate overflow-hidden bg-[#071633] text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(201,157,63,.24),transparent_34%),linear-gradient(115deg,#071633_10%,#112d55_62%,#183e66)]" />
+          <div className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-16">
+            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45 }}>
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3.5 py-2 text-[10px] font-black uppercase tracking-[.2em] text-amber-200">
+                <Sparkles size={14} /> Tu primera visita
+              </span>
+              <h1 className="mt-6 max-w-2xl font-serif text-5xl font-black leading-[.98] tracking-tight sm:text-7xl">
+                Ven como eres.<br /><span className="text-amber-300">Siéntete en casa.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-base leading-7 text-blue-100/80 sm:text-lg">
+                Queremos que sepas qué esperar antes de cruzar la puerta. Encuentra horarios, ubicación y una forma sencilla de avisarnos que vienes.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a href="#planifica" className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-5 py-3.5 text-sm font-black text-slate-950 shadow-xl shadow-amber-950/20 transition hover:-translate-y-0.5 hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200">
+                  Quiero visitar <ArrowRight size={17} />
+                </a>
+                <a href={CHURCH_LOCATION.googleMapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200">
+                  <MapPin size={17} /> Cómo llegar <ExternalLink size={13} />
+                </a>
+              </div>
+              <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-blue-100/70">
+                <span className="inline-flex items-center gap-2"><HeartHandshake size={16} className="text-amber-300" /> Ambiente familiar</span>
+                <span className="inline-flex items-center gap-2"><UsersRound size={16} className="text-amber-300" /> Para todas las edades</span>
+              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .6, delay: .08 }} className="relative">
+              <div className="absolute -inset-4 rounded-[2.5rem] bg-amber-300/10 blur-2xl" />
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-sm">
+                <img src={churchFacadePhoto} alt="Fachada de Iglesia Jerusalén" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover" />
+                <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#071633]/85 p-4 backdrop-blur-xl">
+                  <p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-300">Estamos en Milagro</p>
+                  <p className="mt-1 text-sm font-semibold text-white">{CHURCH_LOCATION.address}</p>
+                </div>
+              </div>
             </motion.div>
           </div>
         </section>
 
-        {/* HORARIOS Y UBICACIÓN */}
-        <section id="horarios-ubicacion" className="py-16 px-4 mx-auto max-w-6xl">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80">
-              <div className="inline-flex items-center justify-center rounded-2xl bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400 mb-6">
-                <Clock size={28} />
-              </div>
-              <h3 className="font-serif text-2xl font-bold text-slate-900 dark:text-white">Horarios de Servicio</h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Acompáñanos presencialmente o en nuestras transmisiones en vivo.</p>
-              
-              <ul className="mt-6 space-y-4 text-sm font-medium">
-                <li className="flex justify-between items-center border-b border-slate-100 pb-3 dark:border-slate-800">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">Servicio Principal Dominical</span>
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">Domingos 09:30 AM</span>
-                </li>
-                <li className="flex justify-between items-center border-b border-slate-100 pb-3 dark:border-slate-800">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">Reunión de Oración y Discipulado</span>
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 dark:bg-blue-500/20 dark:text-blue-300">Miércoles 07:00 PM</span>
-                </li>
-                <li className="flex justify-between items-center">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">Jóvenes & Comunidad</span>
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 dark:bg-purple-500/20 dark:text-purple-300">Sábados 06:30 PM</span>
-                </li>
-              </ul>
+        <section className="mx-auto grid max-w-7xl gap-5 px-5 py-10 sm:px-8 sm:py-14 md:grid-cols-3">
+          {VISIT_STEPS.map(({ number, title, description, icon: Icon }) => (
+            <div key={number} className="flex gap-4 border-b border-slate-200 pb-6 dark:border-white/10 md:border-b-0 md:border-r md:pb-0 md:pr-6 last:border-0">
+              <span className="font-serif text-3xl font-black text-amber-500/60">{number}</span>
+              <div><h2 className="font-serif text-xl font-bold">{title}</h2><p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p></div>
+              <Icon className="ml-auto hidden text-amber-500/70 sm:block" size={22} />
             </div>
+          ))}
+        </section>
 
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80">
-              <div className="inline-flex items-center justify-center rounded-2xl bg-blue-500/10 p-3 text-blue-600 dark:text-blue-400 mb-6">
-                <MapPin size={28} />
-              </div>
-              <h3 className="font-serif text-2xl font-bold text-slate-900 dark:text-white">Ubicación de Nuestra Casa</h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Milagro, Guayas, Ecuador.</p>
-              
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/50 space-y-3">
-                <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <MapPin size={18} className="text-amber-500 shrink-0" />
-                  <span>Sede Central Iglesia Jerusalén, Milagro - Ecuador</span>
+        <section className="border-y border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-900/40">
+          <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[.8fr_1.2fr] lg:py-20">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">Plan simple, llegada tranquila</p>
+              <h2 className="mt-3 max-w-md font-serif text-4xl font-black leading-tight sm:text-5xl">Elige el momento para encontrarnos.</h2>
+              <p className="mt-4 max-w-md text-sm leading-7 text-slate-600 dark:text-slate-400">Estos horarios se actualizan desde la agenda pública de la iglesia.</p>
+              <a href="/eventos" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-800 underline decoration-amber-400 decoration-2 underline-offset-4 dark:text-blue-200">Ver agenda completa <ArrowRight size={15} /></a>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {schedules.isLoading && <p className="text-sm text-slate-500">Cargando horarios…</p>}
+              {!schedules.isLoading && groupedSchedules.length === 0 && <p className="text-sm text-slate-500">Aún no hay horarios publicados. Consulta la agenda para ver próximas actividades.</p>}
+              {groupedSchedules.map(([day, daySchedules]) => (
+                <div key={day} className="rounded-2xl border border-slate-200 bg-[#f7f7f3] p-5 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-600 dark:text-amber-400">{day}</p>
+                  <div className="mt-3 space-y-3">{daySchedules.map((schedule) => <div key={schedule.id}><p className="text-sm font-bold">{schedule.title}</p><p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400"><Clock3 size={13} /> {schedule.time_range}</p></div>)}</div>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <Phone size={18} className="text-amber-500 shrink-0" />
-                  <span>Atención Pastoral: +593 (09) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <Mail size={18} className="text-amber-500 shrink-0" />
-                  <span>contacto@iglesiajerusalen.org</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* PASOS DE LA EXPERIENCIA */}
-        <section className="py-16 bg-slate-100/70 dark:bg-slate-900/40">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="text-center mb-12">
-              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">¿Qué Pasará en Tu Primera Visita?</h2>
-              <p className="mt-3 text-slate-600 dark:text-slate-400 max-w-xl mx-auto">Queremos que te sientas libre de presiones y disfrutes cada momento.</p>
-            </div>
+        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">También puede interesarte</p><h2 className="mt-2 font-serif text-3xl font-black sm:text-4xl">Lo que está pasando</h2></div><a href="/eventos" className="inline-flex items-center gap-2 text-sm font-black text-blue-800 dark:text-blue-200">Ver todos <ArrowRight size={15} /></a></div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {events.isLoading && <p className="text-sm text-slate-500">Cargando actividades…</p>}
+            {!events.isLoading && (events.data ?? []).length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-white/15">No hay actividades próximas publicadas todavía. Revisa la agenda más adelante.</div>}
+            {(events.data ?? []).map((event) => <a key={event.id} href={`/eventos?event=${event.id}`} className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:border-amber-300 hover:shadow-lg dark:border-white/10 dark:bg-slate-900"><span className="text-2xl" aria-hidden="true">{event.emoji || '📅'}</span><h3 className="mt-4 font-serif text-xl font-bold group-hover:text-blue-800 dark:group-hover:text-amber-300">{event.title}</h3><p className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{formatEventDateRange(event.start_date, event.end_date)} · {formatEventTime(event.start_time, event.end_time)}</p></a>)}
+          </div>
+        </section>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <div key={s.num} className="relative rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-                    <span className="text-3xl font-black text-amber-500/30 dark:text-amber-400/20">{s.num}</span>
-                    <div className="mt-2 inline-flex items-center justify-center rounded-xl bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400">
-                      <Icon size={22} />
-                    </div>
-                    <h4 className="mt-4 font-serif text-lg font-bold text-slate-900 dark:text-white">{s.title}</h4>
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{s.desc}</p>
-                  </div>
-                );
-              })}
+        <section id="planifica" className="bg-[#071633] px-5 py-14 text-white sm:px-8 sm:py-20">
+          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
+            <div><p className="text-xs font-black uppercase tracking-[.2em] text-amber-300">Un paso opcional</p><h2 className="mt-3 max-w-lg font-serif text-4xl font-black leading-tight sm:text-5xl">Avísanos que vienes y te recibiremos mejor.</h2><p className="mt-5 max-w-md text-sm leading-7 text-blue-100/75">Solo pedimos lo necesario para que tu llegada sea más cómoda. Nunca necesitas registrarte para entrar.</p><div className="mt-8 space-y-3 text-sm text-blue-100/80"><p className="flex items-center gap-3"><MapPin size={17} className="text-amber-300" /> {CHURCH_LOCATION.address}</p><p className="flex items-center gap-3"><Shirt size={17} className="text-amber-300" /> Ven como eres, sin código de vestimenta</p></div></div>
+            <div className="rounded-[2rem] bg-white p-5 text-slate-950 shadow-2xl sm:p-8 dark:bg-slate-900 dark:text-white">
+              {submitted ? <div className="py-10 text-center"><div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Check size={32} /></div><h3 className="mt-5 font-serif text-3xl font-black">¡Te esperamos!</h3><p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">Recibimos tu aviso. Si necesitas cambiar algo, puedes escribirnos nuevamente.</p><button type="button" onClick={() => { setSubmitted(false); setForm(INITIAL_FORM); setFormStep(1); }} className="mt-6 text-sm font-bold text-blue-800 underline underline-offset-4 dark:text-blue-200">Registrar otra visita</button></div> : <form onSubmit={handleSubmit} className="space-y-5" aria-label="Planificar visita">
+                <div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-600 dark:text-amber-400">Paso {formStep} de 2</p><h3 className="mt-1 font-serif text-2xl font-black">{formStep === 1 ? 'Cuéntanos de ti' : 'Hagamos tu llegada fácil'}</h3></div><span className="text-xs font-bold text-slate-400">{formStep === 1 ? 'Lo esencial' : 'Opcional'}</span></div>
+                {formStep === 1 ? <><div><label htmlFor="visit-name" className="mb-1.5 block text-xs font-bold">Nombre completo *</label><input id="visit-name" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} autoComplete="name" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="¿Cómo te llamamos?" /></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-phone" className="mb-1.5 block text-xs font-bold">Teléfono / WhatsApp *</label><input id="visit-phone" required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="Tu número" /></div><div><label htmlFor="visit-email" className="mb-1.5 block text-xs font-bold">Correo (opcional)</label><input id="visit-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="tu@correo.com" /></div></div><button type="button" onClick={() => setFormStep(2)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-800 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300">Continuar <ArrowRight size={16} /></button></> : <><div><label className="mb-2 block text-xs font-bold">¿Cómo podemos prepararnos?</label><div className="grid grid-cols-2 gap-2">{NEEDS.map(({ id, label, icon: Icon }) => { const selected = form.needs.includes(id); return <button type="button" key={id} onClick={() => toggleNeed(id)} aria-pressed={selected} className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-amber-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><Icon size={16} /> {label}</button>; })}</div></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-date" className="mb-1.5 block text-xs font-bold">Fecha prevista</label><input id="visit-date" type="date" value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" /></div><div><label htmlFor="visit-notes" className="mb-1.5 block text-xs font-bold">Nota breve</label><input id="visit-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" placeholder="¿Alguna pregunta?" /></div></div><div className="flex gap-3"><button type="button" onClick={() => setFormStep(1)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10">Atrás</button><button type="submit" disabled={submitting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60">{submitting ? 'Enviando…' : 'Avisar que voy'} <Send size={16} /></button></div></>}
+                <p className="text-center text-[11px] leading-5 text-slate-500">Al enviar, tu información llega al equipo de bienvenida de la iglesia.</p>
+              </form>}
             </div>
           </div>
         </section>
 
-        {/* PREGUNTAS FRECUENTES */}
-        <section className="py-16 px-4 mx-auto max-w-5xl">
-          <div className="text-center mb-12">
-            <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Preguntas Frecuentes</h2>
-            <p className="mt-3 text-slate-600 dark:text-slate-400">Todo lo que necesitas saber antes de venir.</p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            {faqs.map((faq) => {
-              const Icon = faq.icon;
-              return (
-                <div key={faq.q} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
-                      <Icon size={20} />
-                    </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white text-base">{faq.q}</h4>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{faq.a}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* FORMULARIO DE AVISO DE VISITA */}
-        <section id="avisar-visita" className="py-16 px-4 mx-auto max-w-3xl">
-          <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-white via-amber-500/5 to-slate-900/5 p-8 shadow-xl dark:border-amber-400/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
-            <div className="text-center mb-8">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                <Calendar size={14} /> Planifica con Anticipación
-              </span>
-              <h3 className="mt-3 font-serif text-3xl font-bold text-slate-900 dark:text-white">Avísanos que Vienes</h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Te reservaremos un lugar especial y tendremos a alguien listo para darte la bienvenida.</p>
-            </div>
-
-            {submitted ? (
-              <div className="text-center py-8">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                  <CheckCircle2 size={36} />
-                </div>
-                <h4 className="mt-4 font-serif text-2xl font-bold text-slate-900 dark:text-white">¡Gracias por Registrar tu Visita!</h4>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Hemos recibido tu mensaje. Nos alegra profundamente esperarte este domingo.</p>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-6 rounded-full border border-slate-300 px-6 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
-                >
-                  Enviar otro aviso
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Nombre Completo *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Ej. Juan Pérez"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                  />
-                </div>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Teléfono / WhatsApp *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="Ej. 0912345678"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Correo Electrónico (Opcional)</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="juan@ejemplo.com"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Fecha Prevista de Visita</label>
-                    <input
-                      type="date"
-                      value={formData.visitDate}
-                      onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">¿Vienes con niños?</label>
-                    <select
-                      value={formData.hasChildren ? 'yes' : 'no'}
-                      onChange={(e) => setFormData({ ...formData, hasChildren: e.target.value === 'yes' })}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                    >
-                      <option value="no">No, vendré solo / con adultos</option>
-                      <option value="yes">Sí, vendré con niños</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">¿Alguna pregunta o necesidad especial?</label>
-                  <textarea
-                    rows={3}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Cuéntanos si tienes alguna duda o requieres alguna asistencia especial..."
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4 font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition hover:from-amber-400 hover:to-amber-500 disabled:opacity-50"
-                >
-                  {submitting ? 'Registrando...' : 'Confirmar Mi Visita'} <Send size={16} />
-                </button>
-              </form>
-            )}
-          </div>
-        </section>
-
-      </div>
+        <section className="mx-auto max-w-4xl px-5 py-14 sm:px-8 sm:py-20"><div className="text-center"><p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">Preguntas rápidas</p><h2 className="mt-2 font-serif text-3xl font-black sm:text-4xl">Antes de venir</h2></div><div className="mt-8 divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10">{FAQS.map(([question, answer], index) => <div key={question}><button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index} className="flex w-full items-center justify-between gap-4 py-5 text-left font-bold"><span>{question}</span><ChevronDown size={18} className={`shrink-0 text-amber-600 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} /></button>{openFaq === index && <p className="-mt-2 max-w-2xl pb-5 text-sm leading-7 text-slate-600 dark:text-slate-400">{answer}</p>}</div>)}</div></section>
+      </main>
     </>
   );
 }
