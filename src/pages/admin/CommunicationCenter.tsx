@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bell, Inbox, MessageSquare, Megaphone, Mail } from 'lucide-react';
 import ContactInbox from './ContactInbox';
@@ -8,22 +7,15 @@ import CampaignsManager from './CampaignsManager';
 import ChurchAnnouncementsManager from './ChurchAnnouncementsManager';
 
 type CommunicationView = 'inbox' | 'notifications' | 'chat' | 'campaigns' | 'announcements';
+const VALID_VIEWS: CommunicationView[] = ['inbox', 'notifications', 'chat', 'campaigns', 'announcements'];
 
 /** Punto único para atender entradas, chat en vivo, avisos y campañas masivas. */
 const CommunicationCenter = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as CommunicationView) || 'inbox';
-  const [view, setView] = useState<CommunicationView>(initialTab);
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as CommunicationView;
-    if (tabParam && ['inbox', 'notifications', 'chat', 'campaigns', 'announcements'].includes(tabParam)) {
-      setView((prev) => (prev !== tabParam ? tabParam : prev));
-    }
-  }, [searchParams]);
+  const rawTab = searchParams.get('tab') as CommunicationView;
+  const view: CommunicationView = VALID_VIEWS.includes(rawTab) ? rawTab : 'inbox';
 
   const handleTabChange = (newView: CommunicationView) => {
-    setView(newView);
     setSearchParams({ tab: newView });
   };
 
