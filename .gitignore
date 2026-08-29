@@ -32,3 +32,5 @@ scratch/
 scripts/ticktick/token.json
 playwright-report/
 test-results/
+supabase/.temp/
+
