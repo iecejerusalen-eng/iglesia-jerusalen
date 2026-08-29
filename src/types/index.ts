@@ -657,6 +657,7 @@ export interface Song {
   type_id: string | null;
   style_id: string | null;
   lyrics: string;
+  chords?: string | null;
   has_chords: boolean;
   drum_style?: string | null;
   resource_links?: SongResourceLink[] | null;

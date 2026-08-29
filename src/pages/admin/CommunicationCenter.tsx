@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bell, Inbox, MessageSquare, Megaphone, Send, Sparkles, Mail, Radio } from 'lucide-react';
+import { Bell, Inbox, MessageSquare, Megaphone, Mail } from 'lucide-react';
 import ContactInbox from './ContactInbox';
 import NotificationsManager from './NotificationsManager';
 import ChatManager from './ChatManager';
@@ -18,7 +18,7 @@ const CommunicationCenter = () => {
   useEffect(() => {
     const tabParam = searchParams.get('tab') as CommunicationView;
     if (tabParam && ['inbox', 'notifications', 'chat', 'campaigns', 'announcements'].includes(tabParam)) {
-      setView(tabParam);
+      setView((prev) => (prev !== tabParam ? tabParam : prev));
     }
   }, [searchParams]);
 
