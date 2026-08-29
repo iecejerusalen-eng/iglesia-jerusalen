@@ -29,20 +29,23 @@ export const ChildCheckInKiosk = () => {
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!childName.trim()) return;
+    try {
+      const created = await competitiveService.checkInChild({
+        child_name: childName,
+        classroom_name: classroomName,
+        allergies_medical_notes: allergies || undefined,
+        checked_in_by: checkedInBy || 'Tutor Autorizado',
+      });
 
-    const created = await competitiveService.checkInChild({
-      child_name: childName,
-      classroom_name: classroomName,
-      allergies_medical_notes: allergies || undefined,
-      checked_in_by: checkedInBy || 'Tutor Autorizado',
-    });
-
-    setSessions([created, ...sessions]);
-    setChildName('');
-    setAllergies('');
-    setCheckedInBy('');
-    setShowModal(false);
-    toast.success(`Check-In exitoso. Código de Seguridad: ${created.safety_security_code}`);
+      setSessions(current => [created, ...current]);
+      setChildName('');
+      setAllergies('');
+      setCheckedInBy('');
+      setShowModal(false);
+      toast.success(`Check-In exitoso. Código de Seguridad: ${created.safety_security_code}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo registrar el check-in.');
+    }
   };
 
   const handlePrintBadge = (session: ChildCheckInSession) => {

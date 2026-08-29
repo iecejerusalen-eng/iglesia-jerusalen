@@ -47,7 +47,17 @@ export default function GroupsManager() {
   }, [loadGroups]);
 
   const handleJoinGroup = async (groupId: string) => {
-    void groupId;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Debes iniciar sesión para solicitar ingreso a un grupo.');
+    }
+    const { error } = await supabase.from('group_memberships').upsert({
+      group_id: groupId,
+      user_id: user.id,
+      status: 'pending',
+      role: 'member',
+    }, { onConflict: 'group_id,user_id' });
+    if (error) throw error;
     toast.success('Inscripción al grupo enviada');
   };
 
@@ -59,8 +69,17 @@ export default function GroupsManager() {
 
     try {
       const { error } = await supabase.from('small_groups').insert([{
-        ...formData,
-        is_active: true
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        leader_name: formData.leader_name,
+        meeting_day: formData.meeting_day,
+        meeting_time: formData.meeting_time,
+        location: formData.location,
+        location_name: formData.location,
+        max_capacity: formData.max_capacity,
+        max_members: formData.max_capacity,
+        is_active: true,
       }]);
       if (error) throw error;
       toast.success('Grupo pequeño creado');

@@ -8,6 +8,7 @@ import { competitiveService } from '../../features/competitive/services/competit
 import type { CommunityPost } from '../../features/competitive/types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useTranslation } from '../../i18n/useTranslation';
+import { toast } from 'sonner';
 
 export const CommunityFeed = () => {
   const { t } = useTranslation();
@@ -23,8 +24,12 @@ export const CommunityFeed = () => {
   useEffect(() => {
     let isMounted = true;
     const fetchPosts = async () => {
-      const data = await competitiveService.getCommunityPosts();
-      if (isMounted) setPosts(data);
+      try {
+        const data = await competitiveService.getCommunityPosts();
+        if (isMounted) setPosts(data);
+      } catch (error) {
+        if (isMounted) toast.error(error instanceof Error ? error.message : 'No se pudo cargar la comunidad.');
+      }
     };
     void fetchPosts();
     return () => { isMounted = false; };
@@ -34,18 +39,23 @@ export const CommunityFeed = () => {
     e.preventDefault();
     if (!newPostContent.trim()) return;
 
-    const created = await competitiveService.createCommunityPost({
-      title: newPostTitle || undefined,
-      content: newPostContent,
-      category: newPostCategory,
-      author_name: authorName.trim() || 'Miembro de la Iglesia',
-      author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
-    });
+    try {
+      const created = await competitiveService.createCommunityPost({
+        title: newPostTitle || undefined,
+        content: newPostContent,
+        category: newPostCategory,
+        author_name: authorName.trim() || 'Miembro de la Iglesia',
+        author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+      });
 
-    setPosts([created, ...posts]);
-    setNewPostContent('');
-    setNewPostTitle('');
-    setShowPostModal(false);
+      setPosts(current => [created, ...current]);
+      setNewPostContent('');
+      setNewPostTitle('');
+      setShowPostModal(false);
+      toast.success('Publicación enviada.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo publicar el mensaje.');
+    }
   };
 
   const handleToggleLike = (postId: string) => {
