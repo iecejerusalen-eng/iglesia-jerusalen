@@ -7,6 +7,7 @@ import Preloader from '../components/public/Preloader';
 import StickyNav from '../components/public/StickyNav';
 import MobileBottomNav from '../components/common/MobileBottomNav';
 import StickyGlobalPlayer from '../components/audio/StickyGlobalPlayer';
+import TodayActivityPeek from '../components/public/TodayActivityPeek';
 const SearchPalette = lazy(() => import('../components/public/SearchPalette'));
 
 const PublicLayout = () => {
@@ -28,6 +29,7 @@ const PublicLayout = () => {
       <Footer />
       <MobileBottomNav />
       <StickyGlobalPlayer />
+      <TodayActivityPeek />
       <Suspense fallback={null}><SearchPalette /></Suspense>
     </div>
   );

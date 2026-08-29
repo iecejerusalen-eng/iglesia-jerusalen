@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { supabase } from '../../config/supabase';
+import { useSearchParams } from 'react-router-dom';
 import type { Event as DbEvent } from '../../types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import CalendarPdfDialog from '../../components/common/CalendarPdfDialog';
@@ -58,6 +59,7 @@ const Events = () => {
   const [selectedMinistry, setSelectedMinistry] = useState('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -86,6 +88,21 @@ const Events = () => {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [fetchEvents]);
+
+  useEffect(() => {
+    const eventId = searchParams.get('event');
+    if (!eventId || loading || selectedEvent) return;
+
+    const eventFromLink = events.find((event) => event.id === eventId);
+    if (!eventFromLink) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSelectedEvent(eventFromLink);
+      setSearchParams({}, { replace: true });
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [events, loading, searchParams, selectedEvent, setSearchParams]);
 
   const ministries = useMemo(() => {
     const ministryMap = new Map<string, string>();
