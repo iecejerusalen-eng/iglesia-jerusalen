@@ -10,6 +10,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { fetchChurchAnnouncements } from '../../features/announcements/service';
 import type { AnnouncementDraft, ChurchAnnouncement } from '../../features/announcements/types';
 import type { Event } from '../../types';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 type EventOption = Pick<Event, 'id' | 'title' | 'start_date' | 'end_date' | 'start_time' | 'location_name'>;
 
@@ -31,6 +32,7 @@ const emptyDraft = (): AnnouncementDraft => ({
 
 export default function ChurchAnnouncementsManager() {
   const { hasPermission } = usePermissions();
+  const confirm = useConfirmStore((state) => state.confirm);
   const canEdit = hasPermission('editorial', 'edit');
   const [announcements, setAnnouncements] = useState<ChurchAnnouncement[]>([]);
   const [events, setEvents] = useState<EventOption[]>([]);
@@ -145,7 +147,9 @@ export default function ChurchAnnouncementsManager() {
   };
 
   const deleteAnnouncement = async (announcement: ChurchAnnouncement) => {
-    if (!canEdit || !window.confirm(`¿Eliminar "${announcement.title}"?`)) return;
+    if (!canEdit) return;
+    const accepted = await confirm({ title: 'Eliminar anuncio', message: `¿Eliminar “${announcement.title}”? Esta acción no se puede deshacer.`, confirmText: 'Eliminar anuncio', variant: 'danger' });
+    if (!accepted) return;
     try {
       const { error: deleteError } = await supabase.from('church_announcements').delete().eq('id', announcement.id);
       if (deleteError) throw deleteError;

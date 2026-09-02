@@ -11,10 +11,12 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import LMSQuizBuilder from '../../components/admin/LMSQuizBuilder';
 import { toast } from 'sonner';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 const CourseBuilder = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirmStore((state) => state.confirm);
   
   const [course, setCourse] = useState<LMSCourse | null>(null);
   const [subjects, setSubjects] = useState<LMSSubject[]>([]);
@@ -156,7 +158,8 @@ const CourseBuilder = () => {
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
-    if (!window.confirm('¿Eliminar esta materia? Se eliminarán todos sus módulos y lecciones.')) return;
+    const accepted = await confirm({ title: 'Eliminar materia', message: 'Se eliminarán también sus módulos y lecciones. Esta acción no se puede deshacer.', confirmText: 'Eliminar materia', variant: 'danger' });
+    if (!accepted) return;
     try {
       const { error } = await supabase.from('lms_subjects').delete().eq('id', subjectId);
       if (error) throw error;
@@ -241,7 +244,8 @@ const CourseBuilder = () => {
   };
 
   const handleDeleteModule = async (moduleId: string) => {
-    if (!window.confirm('¿Eliminar este módulo? Se eliminarán todas sus lecciones.')) return;
+    const accepted = await confirm({ title: 'Eliminar módulo', message: 'Se eliminarán también todas sus lecciones. Esta acción no se puede deshacer.', confirmText: 'Eliminar módulo', variant: 'danger' });
+    if (!accepted) return;
     try {
       const { error } = await supabase.from('lms_modules').delete().eq('id', moduleId);
       if (error) throw error;
@@ -292,15 +296,13 @@ const CourseBuilder = () => {
     setIsLessonModalOpen(true);
   };
 
-  const handleLessonTypeChange = (newType: LMSLesson['type']) => {
+  const handleLessonTypeChange = async (newType: LMSLesson['type']) => {
     if (!editingLesson) return;
     const currentType = editingLesson.type || 'document';
     if (currentType === newType) return;
 
     if (editingLesson.content && editingLesson.content.trim() !== '') {
-      const confirmed = window.confirm(
-        '¿Estás seguro de cambiar el tipo de lección? Se borrará el borrador actual.'
-      );
+      const confirmed = await confirm({ title: 'Cambiar tipo de lección', message: 'Se borrará el borrador actual de esta lección.', confirmText: 'Cambiar tipo', variant: 'warning' });
       if (!confirmed) return;
     }
     setEditingLesson({ ...editingLesson, type: newType, content: '' });
@@ -360,7 +362,8 @@ const CourseBuilder = () => {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!window.confirm('¿Eliminar esta lección?')) return;
+    const accepted = await confirm({ title: 'Eliminar lección', message: 'Esta acción no se puede deshacer.', confirmText: 'Eliminar lección', variant: 'danger' });
+    if (!accepted) return;
     try {
       const { error } = await supabase.from('lms_lessons').delete().eq('id', lessonId);
       if (error) throw error;

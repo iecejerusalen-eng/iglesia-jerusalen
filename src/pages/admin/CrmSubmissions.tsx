@@ -24,6 +24,7 @@ import { Button } from '../../components/ui/button';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 
@@ -81,6 +82,7 @@ export default function CrmSubmissions() {
   const [status, setStatus] = useState<'all' | SubmissionStatus>('all');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { hasPermission } = usePermissions();
+  const confirm = useConfirmStore((state) => state.confirm);
   const userId = useAuthStore((state) => state.user?.id ?? null);
   const canEdit = hasPermission('members', 'edit');
 
@@ -132,7 +134,10 @@ export default function CrmSubmissions() {
   const processSubmission = async (submission: CrmSubmission, nextStatus: 'approved' | 'rejected') => {
     if (!canEdit) { toast.error('Tu rol solo permite revisar solicitudes.'); return; }
     if (submission.status !== 'pending') { toast.error('Esta solicitud ya fue procesada.'); return; }
-    if (nextStatus === 'rejected' && !window.confirm('¿Confirmas rechazar esta solicitud?')) return;
+    if (nextStatus === 'rejected') {
+      const accepted = await confirm({ title: 'Rechazar solicitud', message: 'La solicitud no se aprobará como registro de miembro.', confirmText: 'Rechazar', variant: 'danger' });
+      if (!accepted) return;
+    }
     setProcessingId(submission.id);
     let createdMemberId: string | null = null;
     try {

@@ -9,9 +9,11 @@ import type { OpenResource, Study } from '../../types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import MediaUploader from '../../components/common/MediaUploader';
 import { toast } from 'sonner';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 const OpenResourcesManager = () => {
   const navigate = useNavigate();
+  const confirm = useConfirmStore((state) => state.confirm);
   const [activeTab, setActiveTab] = useState<'open_courses' | 'studies'>('open_courses');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,7 +123,8 @@ const OpenResourcesManager = () => {
   };
 
   const handleDeleteResource = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este curso abierto? Se eliminarán todas sus secciones y actividades.')) return;
+    const accepted = await confirm({ title: 'Eliminar curso abierto', message: 'Se eliminarán todas sus secciones y actividades. Esta acción no se puede deshacer.', confirmText: 'Eliminar curso', variant: 'danger' });
+    if (!accepted) return;
     
     try {
       const { error } = await supabase
@@ -208,7 +211,8 @@ const OpenResourcesManager = () => {
   };
 
   const handleDeleteStudy = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este estudio bíblico?')) return;
+    const accepted = await confirm({ title: 'Eliminar estudio bíblico', message: 'Esta acción no se puede deshacer.', confirmText: 'Eliminar estudio', variant: 'danger' });
+    if (!accepted) return;
 
     try {
       const { error } = await supabase

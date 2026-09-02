@@ -17,7 +17,7 @@ interface NavigationItem {
 
 const PUBLIC_NAV_ITEMS: NavigationItem[] = [
   { id: 'pub-1', title: 'Inicio / Portal Principal', category: 'public', path: '/', icon: Globe },
-  { id: 'pub-2', title: 'Predicas & Sermones en Video', category: 'public', path: '/sermones', icon: BookOpen },
+  { id: 'pub-2', title: 'Prédicas & Sermones en Video', category: 'public', path: '/predicas', icon: BookOpen },
   { id: 'pub-3', title: 'Podcast & Audio Mensajes', category: 'public', path: '/podcast', icon: Sparkles },
   { id: 'pub-4', title: 'Donaciones, Diezmos y Ofrendas', category: 'public', path: '/donations', icon: Gift },
   { id: 'pub-5', title: 'Muro de la Comunidad', category: 'public', path: '/comunidad', icon: Heart },

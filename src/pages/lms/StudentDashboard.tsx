@@ -531,11 +531,7 @@ function StudentSchoolDashboardContent({ school, onChangeSchool }: StudentSchool
                   >
                     {/* Image side */}
                     <div className="relative h-44 w-full shrink-0 overflow-hidden border-b border-slate-100 dark:border-white/5 sm:h-auto sm:w-48 sm:border-b-0 sm:border-r lg:w-52">
-                      <img loading="lazy" 
-                        src={enr.lms_courses?.cover_image_url || 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop'} 
-                        alt={enr.lms_courses?.title || 'Curso'}
-                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                      />
+                      {enr.lms_courses?.cover_image_url ? <img loading="lazy" src={enr.lms_courses.cover_image_url} alt={enr.lms_courses?.title || 'Curso'} className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div aria-hidden="true" className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-indigo-300"><BookOpen size={44} /></div>}
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
                     

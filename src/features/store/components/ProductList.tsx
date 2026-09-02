@@ -38,12 +38,7 @@ const ProductList = ({ products, onOpenCreate, onEdit, onDelete }: ProductListPr
                 className="col-span-1 shadow-xs border border-gray-150 dark:border-white/10 overflow-hidden relative cursor-pointer"
                 background={
                   <div className="absolute inset-0 z-0">
-                    <img 
-                      loading="lazy"
-                      src={prod.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'}
-                      alt={prod.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-10 dark:opacity-20 group-hover:opacity-30 transition-opacity duration-300"
-                    />
+                    {prod.image_url ? <img loading="lazy" src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover opacity-10 dark:opacity-20 group-hover:opacity-30 transition-opacity duration-300" /> : <div aria-hidden="true" className="flex h-full w-full items-center justify-center text-primary/30"><ShoppingBag size={64} /></div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent dark:from-slate-900/90 dark:via-slate-900/50 dark:to-transparent" />
                   </div>
                 }

@@ -8,6 +8,7 @@ import type {
   DynamicForm,
   DynamicFormSubmission,
   CommunityPost,
+  CommunityComment,
   MemberEngagementScore,
 } from '../types';
 
@@ -150,6 +151,44 @@ export const competitiveService = {
     if (error) throw error;
     if (!data) throw new Error('No se recibió la publicación creada.');
     return data as CommunityPost;
+  },
+
+  async getLikedCommunityPostIds(postIds: string[], userId: string): Promise<string[]> {
+    if (postIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from('community_likes')
+      .select('post_id')
+      .in('post_id', postIds)
+      .eq('user_id', userId);
+    if (error) throw error;
+    return (data ?? []).map((row) => row.post_id as string);
+  },
+
+  async toggleCommunityLike(postId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('toggle_community_like', { p_post_id: postId });
+    if (error) throw error;
+    return Boolean(data);
+  },
+
+  async getCommunityComments(postId: string): Promise<CommunityComment[]> {
+    const { data, error } = await supabase
+      .from('community_comments')
+      .select('id, post_id, author_id, author_name, author_avatar, content, created_at')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as CommunityComment[];
+  },
+
+  async createCommunityComment(postId: string, authorName: string, content: string): Promise<CommunityComment> {
+    const { data, error } = await supabase.rpc('create_community_comment', {
+      p_post_id: postId,
+      p_author_name: authorName,
+      p_content: content,
+    });
+    if (error) throw error;
+    if (!data) throw new Error('No se recibió el comentario creado.');
+    return data as CommunityComment;
   },
 
   // --- 7. PASTORAL HEALTH / PREDICTIVE ENGAGEMENT ---

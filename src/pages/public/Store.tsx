@@ -30,87 +30,18 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-EC', {
   currency: 'USD',
 }).format(value);
 
-const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: 'prod-1',
-    name: 'Camiseta Jerusalén · Fe que permanece',
-    description: 'Camiseta de algodón peinado con el sello de Jerusalén. Una prenda cómoda para llevar la identidad de la iglesia todos los días.',
-    price: 22.00,
-    discount_price: 19.90,
-    promo_tag: 'Novedad',
-    sku: 'JER-TEE-001',
-    tax_rate: 15,
-    sold_count: 12,
-    is_active: true,
-    thumbnail_url: '/products/camiseta-jerusalen.jpg',
-    image_url: '/products/camiseta-jerusalen.jpg',
-    cover_image_url: '/products/camiseta-jerusalen.jpg',
-    stock: 46,
-    category: 'Ropa',
-    type: 'physical',
-    features: ['Algodón peinado 100%', 'Corte unisex contemporáneo', 'Estampado serigráfico de alta duración'],
-    created_at: new Date().toISOString(),
-    metadata: {
-      tags: ['camiseta', 'ropa', 'jerusalen'],
-      media: [{ id: '1', url: '/products/camiseta-jerusalen.jpg', alt: 'Camiseta oficial Jerusalén', sort_order: 0 }]
-    }
-  },
-  {
-    id: 'prod-2',
-    name: 'Biblia de estudio Jerusalén',
-    description: 'Edición de estudio para acompañar la lectura diaria, el discipulado y la preparación de mensajes con espacio para notas.',
-    price: 38.00,
-    discount_price: 34.90,
-    promo_tag: 'Más elegido',
-    sku: 'JER-BIB-001',
-    tax_rate: 0,
-    sold_count: 24,
-    is_active: true,
-    thumbnail_url: '/products/biblia-estudio.jpg',
-    image_url: '/products/biblia-estudio.jpg',
-    cover_image_url: '/products/biblia-estudio.jpg',
-    stock: 18,
-    category: 'Libros',
-    type: 'physical',
-    features: ['Concordancia temática', 'Mapas y cronologías bíblicas', 'Introducciones por libro'],
-    created_at: new Date().toISOString(),
-    metadata: {
-      tags: ['biblia', 'estudio', 'discipulado'],
-      media: [{ id: '2', url: '/products/biblia-estudio.jpg', alt: 'Biblia de estudio Jerusalén', sort_order: 0 }]
-    }
-  },
-  {
-    id: 'prod-3',
-    name: 'Taza “Jesucristo es el mismo”',
-    description: 'Taza cerámica para empezar cada mañana con una palabra de esperanza. Diseño minimalista inspirado en la identidad Jerusalén.',
-    price: 14.00,
-    discount_price: null,
-    promo_tag: 'Regalo con propósito',
-    sku: 'JER-MUG-001',
-    tax_rate: 15,
-    sold_count: 35,
-    is_active: true,
-    thumbnail_url: '/products/taza-jerusalen.jpg',
-    image_url: '/products/taza-jerusalen.jpg',
-    cover_image_url: '/products/taza-jerusalen.jpg',
-    stock: 30,
-    category: 'Recursos',
-    type: 'physical',
-    features: ['Cerámica esmaltada', 'Apta para microondas', 'Apta para lavavajillas'],
-    created_at: new Date().toISOString(),
-    metadata: {
-      tags: ['taza', 'regalo', 'hogar'],
-      media: [{ id: '3', url: '/products/taza-jerusalen.jpg', alt: 'Taza cerámica', sort_order: 0 }]
-    }
-  }
-];
-
 const mapProductImage = (product: Product): Product => {
   let img = product.image_url || product.cover_image_url || product.thumbnail_url || '';
+  const localOptimisedImages: Record<string, string> = {
+    '/products/camiseta-jerusalen.jpg': '/products/camiseta-jerusalen.webp',
+    '/products/biblia-estudio.jpg': '/products/biblia-estudio.webp',
+    '/products/taza-jerusalen.jpg': '/products/taza-jerusalen.webp',
+  };
+  img = localOptimisedImages[img] ?? img;
   if (img.includes('unsplash') || !img) {
-    if (product.name.toLowerCase().includes('camiseta')) img = '/products/camiseta-jerusalen.jpg';
-    else if (product.name.toLowerCase().includes('biblia')) img = '/products/biblia-estudio.jpg';
-    else if (product.name.toLowerCase().includes('taza')) img = '/products/taza-jerusalen.jpg';
+    if (product.name.toLowerCase().includes('camiseta')) img = '/products/camiseta-jerusalen.webp';
+    else if (product.name.toLowerCase().includes('biblia')) img = '/products/biblia-estudio.webp';
+    else if (product.name.toLowerCase().includes('taza')) img = '/products/taza-jerusalen.webp';
   }
   return {
     ...product,
@@ -148,12 +79,15 @@ const Store = () => {
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
-        if (error) console.warn('No se pudo cargar Supabase, usando catálogo local:', error);
-        setProducts(FALLBACK_PRODUCTS);
+        setProducts([]);
+        setLoadError(error
+          ? 'No se pudo conectar con el catálogo. Intenta nuevamente en unos instantes.'
+          : 'Todavía no hay productos publicados en la tienda.');
       } else {
         const realProducts = (data || []) as Product[];
         const activeProducts = realProducts.filter((product) => product.is_active !== false).map(mapProductImage);
-        setProducts(activeProducts.length > 0 ? activeProducts : FALLBACK_PRODUCTS);
+        setProducts(activeProducts);
+        if (activeProducts.length === 0) setLoadError('Todavía no hay productos publicados en la tienda.');
       }
       setLoading(false);
     };
@@ -266,7 +200,7 @@ const Store = () => {
                 <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               </label>
 
-              <Link to="/cart" className="relative inline-flex h-13 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-extrabold text-white transition hover:bg-amber-500 hover:text-slate-950 dark:bg-white dark:text-slate-950">
+              <Link to="/cart" aria-label={`Mi carrito${totalCartItems > 0 ? `, ${totalCartItems} productos` : ', vacío'}`} className="relative inline-flex h-13 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-extrabold text-white transition hover:bg-amber-500 hover:text-slate-950 dark:bg-white dark:text-slate-950">
                 <ShoppingBag size={18} /> Mi carrito
                 {totalCartItems > 0 && <span className="grid min-w-5 place-items-center rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] text-slate-950">{totalCartItems}</span>}
               </Link>

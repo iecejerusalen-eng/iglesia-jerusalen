@@ -29,10 +29,6 @@ export default function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   
-  // De Una Modal State
-  const [showDeUnaModal, setShowDeUnaModal] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState<CheckoutForm | null>(null);
-
   // Settings & Fees
   const [paymentMethods, setPaymentMethods] = useState<StorePaymentMethod[]>([]);
   const [shippingMethods, setShippingMethods] = useState<StoreShippingMethod[]>([]);
@@ -60,7 +56,8 @@ export default function Checkout() {
         setShippingMethods(sMethods);
         setBankInfo({ name: data.bank_name || '', account: data.bank_account || '', ruc: data.ruc || '' });
         
-        if (pMethods.length > 0) setValue('paymentMethod', pMethods[0].id);
+        const firstAvailablePayment = pMethods.find((method) => method.id === 'transfer');
+        if (firstAvailablePayment) setValue('paymentMethod', firstAvailablePayment.id);
         if (sMethods.length > 0) setValue('shippingMethod', sMethods[0].id);
       }
     };
@@ -81,10 +78,6 @@ export default function Checkout() {
   const paymentFee = selectedPayment ? subtotal * (selectedPayment.fee_percent / 100) : 0;
 
   const finalTotal = subtotal + paymentFee + shippingCost;
-
-  const mockProcessPayPhone = async () => {
-    return new Promise((resolve) => setTimeout(resolve, 2000));
-  };
 
   const processOrder = async (data: CheckoutForm) => {
     if (!user) {
@@ -116,10 +109,8 @@ export default function Checkout() {
           return;
         }
         receiptUrl = await uploadMediaFile(receiptFile, 'ecommerce_receipts', 'image');
-      } else if (data.paymentMethod === 'payphone') {
-        await mockProcessPayPhone();
-      } else if (data.paymentMethod === 'de_una') {
-        // Ya fue procesado a través del modal
+      } else {
+        throw new Error('Este método de pago todavía no está conectado a una pasarela real. Selecciona transferencia bancaria.');
       }
 
       const { data: orderData, error: orderError } = await supabase
@@ -169,14 +160,17 @@ export default function Checkout() {
       toast.error(error instanceof Error ? error.message : 'Error al procesar la orden');
     } finally {
       setIsSubmitting(false);
-      setShowDeUnaModal(false);
     }
   };
 
   const onSubmit = async (data: CheckoutForm) => {
     if (data.paymentMethod === 'de_una') {
-      setPendingFormData(data);
-      setShowDeUnaModal(true);
+      toast.error('De Una todavía no está disponible. Selecciona transferencia bancaria.');
+      return;
+    }
+
+    if (data.paymentMethod === 'payphone') {
+      toast.error('PayPhone todavía no está disponible. Selecciona transferencia bancaria.');
       return;
     }
     
@@ -215,13 +209,17 @@ export default function Checkout() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">1. Método de Pago</h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {paymentMethods.map((method) => (
-                  <label key={method.id} className={`cursor-pointer border rounded-lg p-4 flex flex-col items-center gap-2 transition-colors ${paymentMethodId === method.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}>
-                    <input type="radio" value={method.id} {...register('paymentMethod')} className="sr-only" />
+                {paymentMethods.map((method) => {
+                  const isAvailable = method.id === 'transfer';
+                  return (
+                  <label key={method.id} className={`border rounded-lg p-4 flex flex-col items-center gap-2 transition-colors ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${paymentMethodId === method.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}`}>
+                    <input type="radio" value={method.id} disabled={!isAvailable} {...register('paymentMethod')} className="sr-only" />
                     <span className="font-medium text-gray-900 dark:text-white text-center">{method.name}</span>
+                    {!isAvailable && <span className="text-xs text-gray-500 dark:text-gray-400">Próximamente</span>}
                     {method.fee_percent > 0 && <span className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded">+{method.fee_percent}% comisión</span>}
                   </label>
-                ))}
+                  );
+                })}
               </div>
 
               <AnimatePresence mode="wait">
@@ -269,7 +267,7 @@ export default function Checkout() {
                   >
                     <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg flex items-center gap-3">
                       <CreditCard className="w-6 h-6 text-orange-500" />
-                      <p className="text-sm text-orange-700 dark:text-orange-300">Serás redirigido a la pasarela segura de PayPhone. (Modo Simulado Activo)</p>
+                      <p className="text-sm text-orange-700 dark:text-orange-300">PayPhone estará disponible cuando se configure la integración segura del servidor. Por ahora usa transferencia bancaria.</p>
                     </div>
                   </motion.div>
                 )}
@@ -283,7 +281,7 @@ export default function Checkout() {
                   >
                     <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg flex items-center gap-3">
                       <QrCode className="w-6 h-6 text-green-500" />
-                      <p className="text-sm text-green-700 dark:text-green-300">Generaremos un código QR dinámico para tu pago con De Una. (Modo Simulado Activo)</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">De Una estará disponible cuando se configure la integración segura del servidor. Por ahora usa transferencia bancaria.</p>
                     </div>
                   </motion.div>
                 )}
@@ -399,7 +397,7 @@ export default function Checkout() {
             <button
               type="submit"
               form="checkout-form"
-              disabled={isSubmitting}
+              disabled={isSubmitting || paymentMethodId !== 'transfer'}
               className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
@@ -410,7 +408,7 @@ export default function Checkout() {
               ) : (
                 <>
                   <CheckCircle2 className="w-5 h-5 mr-2" />
-                  {paymentMethodId === 'de_una' ? 'Generar QR de Pago' : 'Confirmar y Pagar'}
+                  {paymentMethodId === 'transfer' ? 'Enviar comprobante' : 'Método no disponible'}
                 </>
               )}
             </button>
@@ -418,50 +416,6 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/* MODAL MOCK DE UNA */}
-      <AnimatePresence>
-        {showDeUnaModal && pendingFormData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full overflow-hidden"
-            >
-              <div className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-                  <QrCode className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Pago con De Una</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Escanea este código QR desde tu app De Una para pagar ${finalTotal.toFixed(2)}</p>
-                
-                {/* Mock QR Placeholder */}
-                <div className="mx-auto w-48 h-48 bg-white rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
-                  <QrCode className="w-24 h-24 text-gray-400" />
-                  <span className="text-xs text-gray-500 mt-2 font-mono font-semibold text-center px-2">Escanea para pagar</span>
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 flex flex-col gap-3 sm:flex-row justify-end">
-                <button
-                  onClick={() => setShowDeUnaModal(false)}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => processOrder(pendingFormData)}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center font-medium"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                  Simular Escaneo y Pagar
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

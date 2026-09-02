@@ -280,7 +280,7 @@ const MobileBottomNav: React.FC = () => {
 
         const [eventsRes, annRes] = await Promise.all([
           supabase.from('events').select('id', { count: 'exact', head: true }).gte('start_date', todayStr).limit(1),
-          supabase.from('church_announcements').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('published_at', twoDaysAgo).limit(1)
+          supabase.from('church_announcements').select('id', { count: 'exact', head: true }).eq('status', 'published').gte('publish_at', twoDaysAgo).limit(1)
         ]);
 
         if (isMounted) {

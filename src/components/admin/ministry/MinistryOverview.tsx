@@ -61,7 +61,7 @@ export default function MinistryOverview({ ministry, canEdit, onUpdated }: Minis
       const today = new Date().toISOString().slice(0, 10);
       const [membersResult, eventsResult, notesResult] = await Promise.all([
         supabase.from('ministry_members').select('member_id').eq('ministry_id', ministry.id),
-        supabase.from('events').select('*').eq('ministry_id', ministry.id).gte('start_date', today).order('start_date').limit(5),
+        supabase.from('events').select('id, title, description, start_date, end_date, start_time, end_time, location_name, emoji, cover_image_url, is_public, is_recurring, leaders_in_charge, ministry_id, created_at').eq('ministry_id', ministry.id).gte('start_date', today).order('start_date').limit(5),
         supabase.from('ministry_meeting_notes').select('*').eq('ministry_id', ministry.id).order('date', { ascending: false }).limit(5),
       ]);
 

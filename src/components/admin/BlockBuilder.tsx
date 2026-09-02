@@ -9,6 +9,7 @@ import {
 import MediaUploader from '../common/MediaUploader';
 import MediaSearchModal from './MediaSearchModal';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { toast } from 'sonner';
 
 export interface ContentBlock {
   id: string;
@@ -220,7 +221,7 @@ const BlockBuilder: React.FC<BlockBuilderProps> = ({ blocks, onChange, disabled 
 
     const options = [...(question.options || [])];
     if (options.includes(text)) {
-      alert('Esta opción ya existe.');
+      toast.info('Esta opción ya existe.');
       return;
     }
 

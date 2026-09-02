@@ -28,9 +28,11 @@ const allowedOrigins = new Set([
   'https://iglesia-jerusalen.vercel.app',
 ]);
 
+const isLocalOrigin = (origin: string) => /^http:\/\/(localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)[:\d]+$/.test(origin);
+
 const getCorsHeaders = (request: Request) => {
   const origin = request.headers.get('Origin') || '';
-  const allowedOrigin = allowedOrigins.has(origin) || origin.endsWith('.vercel.app')
+  const allowedOrigin = allowedOrigins.has(origin) || origin.endsWith('.vercel.app') || isLocalOrigin(origin)
     ? origin
     : 'https://iglesia-jerusalen.vercel.app';
   return {

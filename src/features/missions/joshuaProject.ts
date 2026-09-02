@@ -10,6 +10,11 @@ interface JoshuaRequest {
   country?: string;
 }
 
+const isLocalHost = (hostname: string) => hostname === 'localhost'
+  || hostname === '127.0.0.1'
+  || hostname === '::1'
+  || /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
+
 const isJoshuaResponse = (value: unknown): value is JoshuaResponse => {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
@@ -19,6 +24,11 @@ const isJoshuaResponse = (value: unknown): value is JoshuaResponse => {
 };
 
 export const fetchJoshuaProject = async (request: JoshuaRequest): Promise<JoshuaResponse> => {
+  const runningLocally = typeof window !== 'undefined' && isLocalHost(window.location.hostname);
+  if (runningLocally && import.meta.env.VITE_JOSHUA_PROJECT_DEV !== 'true') {
+    throw new Error('La fuente internacional se habilita en desarrollo con VITE_JOSHUA_PROJECT_DEV=true.');
+  }
+
   const { data, error } = await supabase.functions.invoke('joshua-project', { body: request });
 
   if (error) {

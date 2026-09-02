@@ -20,8 +20,6 @@ import {
 import { toast } from 'sonner';
 import { usePublicSchoolCatalog, type PublicSchoolCourse } from '../hooks/usePublicSchoolCatalog';
 
-const FALLBACK_COURSE_IMAGE = 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=82&w=1200';
-
 function schoolModelLabel(type: 'age_based' | 'rank_based' | 'custom') {
   if (type === 'age_based') return 'Formación por edades';
   if (type === 'rank_based') return 'Formación por rangos';
@@ -209,7 +207,7 @@ export function PublicSchoolCatalog() {
                           return (
                             <article key={course.id} className="group grid overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white shadow-sm transition hover:border-indigo-200 hover:shadow-lg dark:border-white/10 dark:bg-slate-950/70 sm:grid-cols-[9rem_1fr]">
                               <div className="relative min-h-40 overflow-hidden bg-slate-100 dark:bg-slate-800 sm:min-h-full">
-                                <img src={course.coverImageUrl || FALLBACK_COURSE_IMAGE} alt={`Portada de ${course.title}`} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                                {course.coverImageUrl ? <img src={course.coverImageUrl} alt={`Portada de ${course.title}`} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <div aria-hidden="true" className="flex h-full w-full items-center justify-center text-indigo-400"><GraduationCap size={44} /></div>}
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
                                 {course.access === 'enrolled' ? <span className="absolute left-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white">Inscrito</span> : null}
                               </div>

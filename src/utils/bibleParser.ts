@@ -68,7 +68,7 @@ export const BIBLE_BOOK_MAP: Record<string, string> = {
   'efesios': 'efesios', 'ef': 'efesios',
   'filipenses': 'filipenses', 'fil': 'filipenses', 'flp': 'filipenses',
   'colosenses': 'colosenses', 'col': 'colosenses',
-  '1 tesalonicenses': '1-tesalonicenses', '1tesalonicenses': '1-tesalonicenses', '1 ts': '1-tesalonicenses', '1ts': '1-tesalonicenses', '1 tes': '1-tesalonicenses', '1tes': '1-tesalonicenses', '1ra de tesalonicenses': '1-tesalonicenses', 'primera de tesalonicenses': '1-tesalonicenses', '1ra tesalonicenses': '1-tesalonicenses',
+  '1 tesalonicenses': '1-tesalonicenses', '1tesalonicenses': '1-tesalonicenses', '1 ts': '1-tesalonicenses', '1ts': '1-tesalonicenses', '1 tes.': '1-tesalonicenses', '1 tes': '1-tesalonicenses', '1tes': '1-tesalonicenses', '1ra de tesalonicenses': '1-tesalonicenses', 'primera de tesalonicenses': '1-tesalonicenses', '1ra tesalonicenses': '1-tesalonicenses',
   '2 tesalonicenses': '2-tesalonicenses', '2tesalonicenses': '2-tesalonicenses', '2 ts': '2-tesalonicenses', '2ts': '2-tesalonicenses', '2 tes': '2-tesalonicenses', '2tes': '2-tesalonicenses', '2da de tesalonicenses': '2-tesalonicenses', 'segunda de tesalonicenses': '2-tesalonicenses', '2da tesalonicenses': '2-tesalonicenses',
   '1 timoteo': '1-timoteo', '1timoteo': '1-timoteo', '1 ti': '1-timoteo', '1ti': '1-timoteo', '1 tim': '1-timoteo', '1tim': '1-timoteo', '1ra de timoteo': '1-timoteo', 'primera de timoteo': '1-timoteo', '1ra timoteo': '1-timoteo',
   '2 timoteo': '2-timoteo', '2timoteo': '2-timoteo', '2 ti': '2-timoteo', '2ti': '2-timoteo', '2 tim': '2-timoteo', '2tim': '2-timoteo', '2da de timoteo': '2-timoteo', 'segunda de timoteo': '2-timoteo', '2da timoteo': '2-timoteo',

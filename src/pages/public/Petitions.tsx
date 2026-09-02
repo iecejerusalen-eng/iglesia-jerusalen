@@ -49,7 +49,7 @@ const Petitions = () => {
     try {
       const { data, error } = await supabase
         .from('petition_categories')
-        .select('*')
+        .select('id, name, created_at')
         .order('name');
       if (error) throw error;
       setCategories(data || []);
@@ -68,15 +68,15 @@ const Petitions = () => {
     try {
       const { data, error } = await supabase
         .from('petitions')
-        .select(`
-          *,
-          petition_categories(name)
-        `)
+        .select('id, user_id, category_id, content, status, is_public, prayer_count, created_at, petition_categories(name)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMyPetitions(data || []);
+      setMyPetitions((data || []).map((petition) => ({
+        ...petition,
+        petition_categories: Array.isArray(petition.petition_categories) ? petition.petition_categories[0] ?? null : petition.petition_categories,
+      })) as Petition[]);
     } catch (err) {
       console.error('Error fetching my petitions:', err);
       toast.error('Error al cargar tus peticiones');
@@ -91,16 +91,16 @@ const Petitions = () => {
     try {
       const { data, error } = await supabase
         .from('petitions')
-        .select(`
-          *,
-          petition_categories(name)
-        `)
+        .select('id, user_id, category_id, content, status, is_public, prayer_count, created_at, petition_categories(name)')
         .eq('is_public', true)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      setPublicPetitions(data || []);
+      setPublicPetitions((data || []).map((petition) => ({
+        ...petition,
+        petition_categories: Array.isArray(petition.petition_categories) ? petition.petition_categories[0] ?? null : petition.petition_categories,
+      })) as Petition[]);
       
       const { data: myPrayers } = await supabase
         .from('petition_prayers')

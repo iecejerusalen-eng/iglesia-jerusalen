@@ -16,11 +16,11 @@ import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
 import { usePluginStore } from './store/usePluginStore';
 
-import GlobalContextMenu from './components/common/GlobalContextMenu';
-import GlobalToolbox from './components/common/GlobalToolbox';
-import MobileRefreshButton from './components/common/MobileRefreshButton';
+const GlobalContextMenu = lazy(() => import('./components/common/GlobalContextMenu'));
+const GlobalToolbox = lazy(() => import('./components/common/GlobalToolbox'));
+const MobileRefreshButton = lazy(() => import('./components/common/MobileRefreshButton'));
 import { I18nProvider } from './i18n/i18nContext';
-import CommandPalette from './components/common/CommandPalette';
+const CommandPalette = lazy(() => import('./components/common/CommandPalette'));
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -89,18 +89,18 @@ export default function App() {
           />
           <ConfirmDialog />
           <BrowserRouter>
-            <GlobalContextMenu>
-              <ScrollToTop />
-              <CommandPalette />
-              {/* Modales cargados bajo demanda */}
-              <Suspense fallback={null}>
+            <Suspense fallback={null}>
+              <GlobalContextMenu>
+                <ScrollToTop />
+                <CommandPalette />
+                {/* Modales cargados bajo demanda */}
                 <CRMRegistrationPrompt />
                 <BirthdayCelebrationModal />
-              </Suspense>
-              <AppRouter />
-              <GlobalToolbox />
-              <MobileRefreshButton />
-            </GlobalContextMenu>
+                <AppRouter />
+                <GlobalToolbox />
+                <MobileRefreshButton />
+              </GlobalContextMenu>
+            </Suspense>
           </BrowserRouter>
         </GlobalErrorBoundary>
       </HelmetProvider>

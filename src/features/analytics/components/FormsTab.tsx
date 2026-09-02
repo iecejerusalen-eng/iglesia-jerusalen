@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Award, Eye, ClipboardList, User, X, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { exportToCsv, exportToPDF } from '../../../utils/exportUtils';
 import type { FormResponseData } from '../types';
 import { getCleanBlockName } from '../utils';
 
@@ -24,7 +24,7 @@ export function FormsTab({ responses }: FormsTabProps) {
       Calificacion: r.score !== null ? `${r.score}/${r.max_score}` : 'Form Libre',
       Fecha: new Date(r.created_at).toLocaleDateString('es-ES')
     }));
-    exportToExcel(data, `respuestas_formularios_${new Date().toISOString().split('T')[0]}`);
+    exportToCsv(data, `respuestas_formularios_${new Date().toISOString().split('T')[0]}`);
   };
 
   const exportPDF = () => {
@@ -55,7 +55,7 @@ export function FormsTab({ responses }: FormsTabProps) {
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Download size={14} />
-            Excel
+            CSV / Excel
           </button>
           <button
             onClick={exportPDF}

@@ -12,6 +12,7 @@ import { uploadMediaFile } from '../../lib/mediaService';
 export const PodcastManager = () => {
   const [activeTab, setActiveTab] = useState<'episodes' | 'series' | 'settings'>('episodes');
   const [episodes, setEpisodes] = useState<PodcastEpisode[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   
   // Modal states
@@ -46,13 +47,18 @@ export const PodcastManager = () => {
           .order('created_at', { ascending: false });
 
         if (!isMounted) return;
-        if (error || !data || data.length === 0) {
-          setEpisodes(MOCK_INITIAL_EPISODES);
+        if (error) {
+          setLoadError('No se pudieron cargar los episodios. Verifica la conexión o los permisos.');
+          setEpisodes([]);
         } else {
-          setEpisodes(data as PodcastEpisode[]);
+          setLoadError(null);
+          setEpisodes((data || []) as PodcastEpisode[]);
         }
       } catch {
-        if (isMounted) setEpisodes(MOCK_INITIAL_EPISODES);
+        if (isMounted) {
+          setLoadError('No se pudieron cargar los episodios. Verifica la conexión o los permisos.');
+          setEpisodes([]);
+        }
       }
 
       try {
@@ -74,7 +80,7 @@ export const PodcastManager = () => {
       description: '',
       audio_url: '',
       audio_source_type: 'file',
-      cover_image_url: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80',
+      cover_image_url: '',
       season_number: 1,
       episode_number: episodes.length + 1,
       status: 'published',
@@ -275,16 +281,27 @@ export const PodcastManager = () => {
             />
           </div>
 
+          {loadError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+              {loadError}
+            </div>
+          )}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
             <div className="divide-y divide-slate-100 dark:divide-white/5">
-              {filteredEpisodes.map((ep) => (
+              {filteredEpisodes.length === 0 ? (
+                <div className="p-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {search.trim() ? 'No hay episodios que coincidan con la búsqueda.' : 'Aún no hay episodios registrados.'}
+                </div>
+              ) : filteredEpisodes.map((ep) => (
                 <div key={ep.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                   <div className="flex items-start gap-4 min-w-0 flex-1">
-                    <img
-                      src={ep.cover_image_url || 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80'}
-                      alt={ep.title}
-                      className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0"
-                    />
+                    {ep.cover_image_url ? (
+                      <img src={ep.cover_image_url} alt={ep.title} className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0" />
+                    ) : (
+                      <div aria-hidden="true" className="w-16 h-16 rounded-xl border border-slate-200 bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 dark:border-white/10 dark:bg-amber-500/10 dark:text-amber-300">
+                        <Mic className="w-6 h-6" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
@@ -604,38 +621,5 @@ export const PodcastManager = () => {
     </div>
   );
 };
-
-const MOCK_INITIAL_EPISODES: PodcastEpisode[] = [
-  {
-    id: 'ep-1',
-    title: 'Ep. 01: El Arte de Esperar en Dios',
-    description: 'En este primer episodio conversamos sobre cómo cultivar paciencia y paz durante los valles de incertidumbre en el recorrido espiritual.',
-    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    audio_source_type: 'url',
-    audio_duration_seconds: 1420,
-    cover_image_url: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80',
-    season_number: 1,
-    episode_number: 1,
-    status: 'published',
-    published_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    chapters: [
-      { id: 'c1', title: 'Bienvenida e Introducción', seconds: 0 },
-      { id: 'c2', title: 'La definición bíblica de la paciencia', seconds: 320 }
-    ]
-  },
-  {
-    id: 'ep-2',
-    title: 'Ep. 02: Renovando la Mente con la Palabra',
-    description: 'Una mirada práctica a Romanos 12 para sustituir pensamientos de ansiedad por la verdad de las Escrituras.',
-    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    audio_source_type: 'url',
-    audio_duration_seconds: 1850,
-    cover_image_url: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&q=80',
-    season_number: 1,
-    episode_number: 2,
-    status: 'published',
-    published_at: new Date(Date.now() - 86400000 * 7).toISOString()
-  }
-];
 
 export default PodcastManager;

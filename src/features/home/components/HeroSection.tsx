@@ -5,19 +5,58 @@ import { Tv, Music, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../../config/supabase';
 import { getYoutubeId } from '../utils';
 import type { Song } from '../../../types';
-import { useLiveModeStore } from '../../../store/useLiveModeStore';
 import type { PageSection } from '../types';
 import { PremiumHeroVisual } from './PremiumHeroVisual';
+
+interface LiveSessionSnapshot {
+  status: 'scheduled' | 'live' | 'ended' | 'archived';
+  stream_url: string | null;
+  live_summary: string | null;
+}
 
 interface HeroSectionProps {
   sectionData: PageSection;
 }
 
 export const HeroSection = ({ sectionData }: HeroSectionProps) => {
-  const { isLiveModeActive, liveYoutubeUrl, liveAnnouncement, activeSongId } = useLiveModeStore();
+  const [liveSession, setLiveSession] = useState<LiveSessionSnapshot | null>(null);
   const [activeSong, setActiveSong] = useState<Song | null>(null);
   const [liveSongFont, setLiveSongFont] = useState<'mono' | 'serif' | 'sans'>('mono');
   const [showLiveChords, setShowLiveChords] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadLiveSession = async () => {
+      const { data, error } = await supabase
+        .from('live_service_sessions')
+        .select('status,stream_url,live_summary')
+        .eq('status', 'live')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!mounted) return;
+      if (error) {
+        console.warn('No se pudo consultar el estado del culto en vivo:', error.message);
+        setLiveSession(null);
+        return;
+      }
+      setLiveSession(data as LiveSessionSnapshot | null);
+    };
+    void loadLiveSession();
+    const channel = supabase
+      .channel('public-live-service-session')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_service_sessions' }, () => { void loadLiveSession(); })
+      .subscribe();
+    return () => {
+      mounted = false;
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const isLiveModeActive = liveSession?.status === 'live';
+  const liveYoutubeUrl = liveSession?.stream_url ?? '';
+  const liveAnnouncement = liveSession?.live_summary ?? '';
+  const activeSongId: string | null = null;
 
   const { title, subtitle, content_blocks, cover_image_url } = sectionData;
 

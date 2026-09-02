@@ -21,8 +21,8 @@ import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 import InternationalHistory from '../../components/public/about/InternationalHistory';
 import NationalHistory from '../../components/public/about/NationalHistory';
 import PremiumAboutHero from './components/PremiumAboutHero';
-import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.png';
-import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.png';
+import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.webp';
+import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.webp';
 import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 
 type HistoryKey = 'local' | 'national' | 'international';
@@ -92,8 +92,8 @@ const history: Record<HistoryKey, { label: string; icon: typeof MapPin; eyebrow:
 
 
 const fallbackLeaders: Speaker[] = [
-  { id: 'pastor-david', member_id: null, first_name: 'David', last_name: 'Nicola', role: 'Pastor Principal', leadership_roles: ['Predicación', 'Discipulado'], is_public: true, display_order: 0, photo_url: '/assets/Jerusalén/Pastor David.png', bio: 'Guiando a la congregación con pasión por la Palabra y cuidado espiritual.', created_at: '', updated_at: '' },
-  { id: 'pastora-corina', member_id: null, first_name: 'Corina', last_name: 'Miranda', role: 'Pastora Co-Principal', leadership_roles: ['Consejería', 'Familias'], is_public: true, display_order: 1, photo_url: '/assets/Jerusalén/Pastora Corina.png', bio: 'Acompañando familias y fortaleciendo los ministerios de la iglesia.', created_at: '', updated_at: '' },
+  { id: 'pastor-david', member_id: null, first_name: 'David', last_name: 'Nicola', role: 'Pastor Principal', leadership_roles: ['Predicación', 'Discipulado'], is_public: true, display_order: 0, photo_url: '/assets/Jerusalén/Pastor David.webp', bio: 'Guiando a la congregación con pasión por la Palabra y cuidado espiritual.', created_at: '', updated_at: '' },
+  { id: 'pastora-corina', member_id: null, first_name: 'Corina', last_name: 'Miranda', role: 'Pastora Co-Principal', leadership_roles: ['Consejería', 'Familias'], is_public: true, display_order: 1, photo_url: '/assets/Jerusalén/Pastora Corina.webp', bio: 'Acompañando familias y fortaleciendo los ministerios de la iglesia.', created_at: '', updated_at: '' },
 ];
 
 const fallbackLeadersWithPhotos = fallbackLeaders.map((leader, index) => ({

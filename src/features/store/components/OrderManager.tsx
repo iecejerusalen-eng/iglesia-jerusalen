@@ -1,4 +1,4 @@
-import { Eye, Clock, CheckCircle2, Truck, AlertCircle, ClipboardList, X, Download } from 'lucide-react';
+import { Eye, Clock, CheckCircle2, Truck, AlertCircle, ClipboardList, X, Download, ShoppingBag } from 'lucide-react';
 import type { Order, OrderStatus, OrderItem } from '../../../types';
 import { BorderBeam } from '../../../components/ui/magicui/border-beam';
 
@@ -240,11 +240,7 @@ const OrderManager = ({
                     {selectedOrder.order_items?.map((item: OrderItem) => (
                       <div key={item.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <img loading="lazy" 
-                            src={item.products?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'} 
-                            alt={item.products?.name} 
-                            className="w-10 h-10 rounded object-cover"
-                          />
+                          {item.products?.image_url ? <img loading="lazy" src={item.products.image_url} alt={item.products?.name} className="w-10 h-10 rounded object-cover" /> : <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"><ShoppingBag size={16} /></div>}
                           <div>
                             <span className="font-bold text-gray-800 dark:text-white block">{item.products?.name}</span>
                             {item.product_variants && (

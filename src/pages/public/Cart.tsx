@@ -319,11 +319,11 @@ const Cart = () => {
                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-5 first:pt-0 last:pb-0"
                       >
                         <div className="flex items-center gap-4">
-                          <img loading="lazy"
-                            src={item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600'}
-                            alt={item.product.name}
-                            className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-white/10 shadow-2xs"
-                          />
+                          {(item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url) ? (
+                            <img loading="lazy" src={item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url || undefined} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-white/10 shadow-2xs" />
+                          ) : (
+                            <div aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-xl border border-gray-100 bg-slate-100 text-slate-400 shadow-2xs dark:border-white/10 dark:bg-slate-800 dark:text-slate-500"><ShoppingBag size={22} /></div>
+                          )}
                           <div>
                             <h3 className="font-serif font-bold text-gray-800 dark:text-white text-sm md:text-base">
                               {item.product.name}

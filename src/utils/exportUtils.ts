@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
@@ -7,46 +6,35 @@ type ExportCell = string | number | boolean | null | undefined;
 type ExportRow = Record<string, ExportCell>;
 
 /**
- * Export data to an Excel (.xlsx) file
+ * Export tabular data as UTF-8 CSV. Excel opens this format natively and it
+ * avoids shipping a vulnerable spreadsheet parser to the admin bundle.
  * @param data Array of objects to export
  * @param filename Name of the file (without extension)
  * @param sheetName Name of the sheet (optional)
  */
-export const exportToExcel = (data: ExportRow[], filename: string, sheetName: string = 'Datos') => {
+export const exportToCsv = (data: ExportRow[], filename: string) => {
   try {
     if (!data || data.length === 0) {
       toast.error('No hay datos para exportar');
       return;
     }
 
-    // Create a new workbook and worksheet
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    
-    // Auto-adjust column widths based on content
-    const colWidths = [];
     const keys = Object.keys(data[0]);
-    for (let i = 0; i < keys.length; i++) {
-      let maxWidth = keys[i].length;
-      for (let j = 0; j < data.length; j++) {
-        const val = data[j][keys[i]];
-        if (val) {
-          const valStr = val.toString();
-          if (valStr.length > maxWidth) maxWidth = valStr.length;
-        }
-      }
-      colWidths.push({ wch: Math.min(maxWidth + 2, 50) }); // Cap at 50 chars
-    }
-    worksheet['!cols'] = colWidths;
-
-    // Generate file and trigger download
-    XLSX.writeFile(workbook, `${filename}.xlsx`);
-    toast.success('Archivo Excel exportado exitosamente');
+    const escapeCell = (value: ExportCell) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const csv = [keys, ...data.map((row) => keys.map((key) => row[key]))]
+      .map((row) => row.map(escapeCell).join(','))
+      .join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Archivo CSV exportado exitosamente (compatible con Excel)');
   } catch (error) {
-    console.error('Error al exportar Excel:', error);
-    toast.error('Ocurrió un error al exportar el archivo');
+    console.error('Error al exportar CSV:', error);
+    toast.error('Ocurrió un error al exportar los datos');
   }
 };
 

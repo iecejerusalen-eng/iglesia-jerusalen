@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimeRubberBandHover } from '../animations/AnimeWrappers';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 interface Props {
   editor: Editor | null;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 const SermonNotesPad = ({ editor, savingNote, onSave, isAuthenticated, sermonTitle }: Props) => {
+  const confirm = useConfirmStore((state) => state.confirm);
   const editorText = editor?.getText() || '';
   const textStats = useMemo(() => {
     const cleanText = editorText.trim();
@@ -57,9 +59,10 @@ const SermonNotesPad = ({ editor, savingNote, onSave, isAuthenticated, sermonTit
     editor.chain().focus().insertContent('<blockquote><p>📖 <strong>Pasaje Bíblico:</strong> cita aquí...</p></blockquote><p></p>').run();
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (!editor) return;
-    if (window.confirm('¿Deseas borrar tus apuntes de esta prédica?')) {
+    const accepted = await confirm({ title: 'Borrar apuntes', message: 'Se eliminarán los apuntes de esta prédica en este dispositivo.', confirmText: 'Borrar apuntes', variant: 'danger' });
+    if (accepted) {
       editor.commands.clearContent();
       toast.info('Apuntes borrados.');
     }

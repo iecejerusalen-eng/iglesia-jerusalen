@@ -17,11 +17,11 @@ export default function StickyNav() {
 
   useEffect(() => {
     if (sections.length === 0) {
-      window.setTimeout(() => setActiveSection(''), 0);
       return;
     }
 
     let isTicking = false;
+    let frameId: number | null = null;
 
     const getElementForSectionId = (id: string): HTMLElement | null => {
       return (
@@ -35,7 +35,7 @@ export default function StickyNav() {
       if (isTicking) return;
       isTicking = true;
 
-      requestAnimationFrame(() => {
+      frameId = requestAnimationFrame(() => {
         let currentActive = sections[0].id;
         let maxVisibleHeight = 0;
         let minDistanceToCenter = Infinity;
@@ -66,9 +66,10 @@ export default function StickyNav() {
         });
 
         if (currentActive) {
-          setActiveSection(currentActive);
+          setActiveSection((previous) => previous === currentActive ? previous : currentActive);
         }
         isTicking = false;
+        frameId = null;
       });
     };
 
@@ -80,6 +81,7 @@ export default function StickyNav() {
     const timeoutId = setTimeout(handleScroll, 200);
 
     return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
       clearTimeout(timeoutId);

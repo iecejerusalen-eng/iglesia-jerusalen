@@ -6,6 +6,7 @@ import { Save, Plus, ArrowLeft, Trash2, X, Video, FileText, FileQuestion, Edit, 
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import LMSQuizBuilder from '../../components/admin/LMSQuizBuilder';
+import { toast } from 'sonner';
 
 const OpenResourceBuilder = () => {
   const { id } = useParams<{ id: string }>();
@@ -64,7 +65,7 @@ const OpenResourceBuilder = () => {
       
     } catch (err) {
       console.error('Error fetching resource data:', err);
-      alert('Error al cargar la información del recurso.');
+      toast.error('Error al cargar la información del recurso.');
       navigate('/admin/recursos-abiertos');
     } finally {
       setLoading(false);
@@ -117,7 +118,7 @@ const OpenResourceBuilder = () => {
       setEditingSection(null);
     } catch (err) {
       console.error('Error saving section:', err);
-      alert('Error al guardar la sección');
+      toast.error('Error al guardar la sección.');
     } finally {
       setSavingSection(false);
     }
@@ -131,7 +132,7 @@ const OpenResourceBuilder = () => {
       setSections(sections.filter(s => s.id !== sectionId));
     } catch (err) {
       console.error('Error deleting section:', err);
-      alert('Error al eliminar sección');
+      toast.error('Error al eliminar la sección.');
     }
   };
 
@@ -201,7 +202,7 @@ const OpenResourceBuilder = () => {
       setEditingActivity(null);
     } catch (err) {
       console.error('Error saving activity:', err);
-      alert('Error al guardar la actividad');
+      toast.error('Error al guardar la actividad.');
     } finally {
       setSavingActivity(false);
     }
@@ -215,7 +216,7 @@ const OpenResourceBuilder = () => {
       setActivities(activities.filter(a => a.id !== activityId));
     } catch (err) {
       console.error('Error deleting activity:', err);
-      alert('Error al eliminar actividad');
+      toast.error('Error al eliminar la actividad.');
     }
   };
 

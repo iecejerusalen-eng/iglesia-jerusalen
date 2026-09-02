@@ -10,7 +10,7 @@ import {
 import { 
   Download, Edit2, TrendingUp, DollarSign, Heart, ShoppingBag, Tag, PieChart as PieChartIcon, FileText, XCircle, FolderPlus, Settings2
 } from 'lucide-react';
-import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
+import { exportToCsv, exportToPDF } from '../../utils/exportUtils';
 import { CardSkeleton, TableSkeleton, ChartSkeleton } from '../../components/common/Skeletons';
 import { toast } from 'sonner';
 
@@ -524,7 +524,7 @@ const FinanceDashboard = () => {
       return;
     }
     const data = prepareExportData();
-    exportToExcel(data, `finanzas_iglesia_${dateFilter}_${new Date().toISOString().split('T')[0]}`);
+    exportToCsv(data, `finanzas_iglesia_${dateFilter}_${new Date().toISOString().split('T')[0]}`);
   };
 
   const exportPDF = () => {
@@ -931,7 +931,7 @@ const FinanceDashboard = () => {
                   shinyColor="#10B981"
                   className="bg-emerald-600 dark:bg-emerald-700 shadow-emerald-500/30 hover:shadow-emerald-500/50 text-[10px] px-4 py-2 flex items-center justify-center gap-1.5 w-full sm:w-auto"
                 >
-                  <Download size={14} /> Excel
+                  <Download size={14} /> CSV / Excel
                 </ShinyButton>
                 <ShinyButton
                   onClick={exportPDF}

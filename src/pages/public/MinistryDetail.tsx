@@ -53,7 +53,7 @@ const MinistryDetail = () => {
       try {
         const { data, error: apiError } = await supabase
           .from('ministries')
-          .select('*')
+          .select('id, name, slug, category, description, leader_name, schedule, image_url, theme_color, anniversary_date, created_at, content_blocks')
           .eq('slug', slug)
           .single();
 
@@ -66,7 +66,7 @@ const MinistryDetail = () => {
 
           const { data: pagesData, error: pagesError } = await supabase
             .from('ministry_pages')
-            .select('*')
+            .select('id, ministry_id, parent_id, title, slug, excerpt, cover_image_url, icon, depth, sort_order, status, is_password_protected, seo_title, seo_description, published_at, created_at, updated_at')
             .eq('ministry_id', data.id)
             .eq('status', 'published')
             .is('parent_id', null)
@@ -80,7 +80,7 @@ const MinistryDetail = () => {
           // Fetch logos for this ministry
           const { data: logosData, error: logosError } = await supabase
             .from('logos')
-            .select('*')
+            .select('id, ministry_id, variant, color_mode, format, storage_path, created_at')
             .eq('ministry_id', data.id);
           
           if (!logosError && logosData) {

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { FileCheck, Upload, Type, Users } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { TemplateList } from '../../features/certificates/components/TemplateList';
-import { FontManager } from '../../features/certificates/components/FontManager';
-import { SingleGeneratorForm } from '../../features/certificates/components/SingleGeneratorForm';
-import { BatchGenerator } from '../../features/certificates/components/BatchGenerator';
+
+const TemplateList = lazy(() => import('../../features/certificates/components/TemplateList').then((module) => ({ default: module.TemplateList })));
+const FontManager = lazy(() => import('../../features/certificates/components/FontManager').then((module) => ({ default: module.FontManager })));
+const SingleGeneratorForm = lazy(() => import('../../features/certificates/components/SingleGeneratorForm').then((module) => ({ default: module.SingleGeneratorForm })));
+const BatchGenerator = lazy(() => import('../../features/certificates/components/BatchGenerator').then((module) => ({ default: module.BatchGenerator })));
 
 type Tab = 'templates' | 'fonts' | 'single' | 'batch';
 
@@ -43,12 +44,14 @@ const CertificatesManager = () => {
         ))}
       </div>
 
-      <div className="mt-6">
-        {activeTab === 'templates' && <TemplateList />}
-        {activeTab === 'fonts' && <FontManager />}
-        {activeTab === 'single' && <SingleGeneratorForm />}
-        {activeTab === 'batch' && <BatchGenerator />}
-      </div>
+      <Suspense fallback={<div className="rounded-2xl border border-dashed border-slate-200 p-8 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400">Cargando herramienta…</div>}>
+        <div className="mt-6">
+          {activeTab === 'templates' && <TemplateList />}
+          {activeTab === 'fonts' && <FontManager />}
+          {activeTab === 'single' && <SingleGeneratorForm />}
+          {activeTab === 'batch' && <BatchGenerator />}
+        </div>
+      </Suspense>
     </AnimeFadeUp>
   );
 };

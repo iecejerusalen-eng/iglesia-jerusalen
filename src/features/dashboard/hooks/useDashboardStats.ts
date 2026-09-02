@@ -5,6 +5,18 @@ import { MONTHS, BIBLE_VERSES } from '../constants';
 
 const parseCalendarDate = (value: string) => new Date(`${value.slice(0, 10)}T12:00:00`);
 
+const dashboardSummaryRpcEnabled = import.meta.env.VITE_DASHBOARD_SUMMARY_RPC === 'true';
+
+type DashboardSummaryMetrics = {
+  total_donations_amount: number | string;
+  members_count: number;
+  leaders_count: number;
+  inventory_count: number;
+  inventory_value: number | string;
+  petitions_count: number;
+  pending_petitions: number;
+};
+
 const getWeeklyAlerts = (membersList: DashboardMember[]): WeeklyAlert[] => {
   const today = new Date();
   const list: WeeklyAlert[] = [];
@@ -152,30 +164,53 @@ export const buildTalentDirectory = (members: DashboardMember[]): TalentDirector
   });
 }).sort((a, b) => a.talentName.localeCompare(b.talentName, 'es'));
 
-export const useDashboardStats = (access: DashboardAccess) => {
+export const useDashboardStats = (access: DashboardAccess, includeDetails = false) => {
   return useQuery<DashboardData>({
-    queryKey: ['dashboard-stats', access],
+    queryKey: ['dashboard-stats', access, includeDetails],
     queryFn: async () => {
-      const [donationsRes, membersRes, inventoryRes, petitionsRes] = await Promise.all([
-        access.finances ? supabase.from('donations').select('amount') : Promise.resolve(null),
-        access.members
+      const canUseSummaryRpc = dashboardSummaryRpcEnabled
+        && !includeDetails
+        && access.finances
+        && access.members
+        && access.inventory
+        && access.petitions;
+
+      let summaryRpcData: DashboardSummaryMetrics | null = null;
+
+      if (canUseSummaryRpc) {
+        const rpcResult = await supabase.rpc('get_dashboard_summary_metrics' as never);
+        if (!rpcResult.error && rpcResult.data) {
+          const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+          summaryRpcData = row as DashboardSummaryMetrics;
+        }
+      }
+
+      const [donationsRes, membersSummaryRes, membersDetailsRes, inventoryRes, petitionsRes] = await Promise.all([
+        access.finances && !summaryRpcData ? supabase.from('donations').select('amount') : Promise.resolve(null),
+        access.members && !includeDetails && !summaryRpcData
+          ? supabase.from('members').select('id, is_leader')
+          : Promise.resolve(null),
+        access.members && includeDetails
           ? supabase.from('members').select(`
               id, first_name, last_name, photo_url, birth_date, conversion_date, baptism_date, is_leader,
               member_service_areas(catalog_roles(name)),
               member_talents(catalog_roles(name))
             `)
           : Promise.resolve(null),
-        access.inventory ? supabase.from('inventory_items').select('price, quantity') : Promise.resolve(null),
-        access.petitions ? supabase.from('petitions').select('status') : Promise.resolve(null),
+        access.inventory && !summaryRpcData ? supabase.from('inventory_items').select('price, quantity') : Promise.resolve(null),
+        access.petitions && !summaryRpcData ? supabase.from('petitions').select('status') : Promise.resolve(null),
       ]);
 
-      for (const result of [donationsRes, membersRes, inventoryRes, petitionsRes]) {
+      for (const result of [donationsRes, membersSummaryRes, membersDetailsRes, inventoryRes, petitionsRes]) {
         if (result?.error) throw result.error;
       }
 
       const donations = donationsRes?.data || [];
-      const totalAmount = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
-      const members: DashboardMember[] = (membersRes?.data || []).map((member) => ({
+      const totalAmount = summaryRpcData
+        ? Number(summaryRpcData.total_donations_amount || 0)
+        : donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const memberSummary = membersSummaryRes?.data || membersDetailsRes?.data || [];
+      const members: DashboardMember[] = (membersDetailsRes?.data || []).map((member) => ({
         id: member.id,
         first_name: member.first_name,
         last_name: member.last_name,
@@ -191,22 +226,30 @@ export const useDashboardStats = (access: DashboardAccess) => {
           catalog_roles: Array.isArray(entry.catalog_roles) ? entry.catalog_roles[0] ?? null : entry.catalog_roles,
         })),
       }));
-      const leadersCount = members.filter(m => m.is_leader).length;
-      const talentDirectory = buildTalentDirectory(members);
+      const leadersCount = summaryRpcData
+        ? Number(summaryRpcData.leaders_count || 0)
+        : memberSummary.filter(member => member.is_leader).length;
+      const talentDirectory = includeDetails ? buildTalentDirectory(members) : [];
 
       const inventory = inventoryRes?.data || [];
-      const inventoryCount = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      const inventoryValue = inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+      const inventoryCount = summaryRpcData
+        ? Number(summaryRpcData.inventory_count || 0)
+        : inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const inventoryValue = summaryRpcData
+        ? Number(summaryRpcData.inventory_value || 0)
+        : inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
 
       const petitions = petitionsRes?.data || [];
-      const petitionsCount = petitions.length;
-      const pendingPetitions = petitions.filter(p => p.status === 'pendiente').length;
+      const petitionsCount = summaryRpcData ? Number(summaryRpcData.petitions_count || 0) : petitions.length;
+      const pendingPetitions = summaryRpcData
+        ? Number(summaryRpcData.pending_petitions || 0)
+        : petitions.filter(p => p.status === 'pendiente').length;
 
       const stats = {
         usersCount: 0,
         sermonsCount: 0,
         totalDonationsAmount: totalAmount,
-        membersCount: members.length,
+        membersCount: summaryRpcData ? Number(summaryRpcData.members_count || 0) : memberSummary.length,
         leadersCount,
         inventoryCount,
         inventoryValue,
@@ -215,8 +258,10 @@ export const useDashboardStats = (access: DashboardAccess) => {
         ministriesCount: 0,
       };
 
-      const alerts = getWeeklyAlerts(members);
-      const charts = processChartData(members);
+      const alerts = includeDetails ? getWeeklyAlerts(members) : [];
+      const charts = includeDetails
+        ? processChartData(members)
+        : { ageData: [], areasData: [], talentsData: [], talentCategoriesData: [], baptismsData: [] };
 
       return {
         stats,

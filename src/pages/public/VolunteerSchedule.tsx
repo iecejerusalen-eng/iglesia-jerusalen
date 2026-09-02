@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import type { VolunteerAssignment, VolunteerShift } from '../../types';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 const CATEGORY_META: Record<string, { label: string; emoji: string; tone: string }> = {
   cocina: { label: 'Cocina y hospitalidad', emoji: '🍲', tone: 'from-orange-500/15 to-amber-500/5' },
@@ -52,6 +53,7 @@ const formatTime = (value: string) => new Date(value).toLocaleTimeString('es-EC'
 
 export default function VolunteerSchedule() {
   const { user, member } = useAuth();
+  const confirm = useConfirmStore((state) => state.confirm);
   const [shifts, setShifts] = useState<VolunteerShift[]>([]);
   const [myAssignments, setMyAssignments] = useState<VolunteerAssignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,8 @@ export default function VolunteerSchedule() {
   };
 
   const cancel = async (assignmentId: string) => {
-    if (!window.confirm('¿Deseas retirar tu solicitud de esta oportunidad?')) return;
+    const accepted = await confirm({ title: 'Retirar solicitud', message: 'Dejarás de estar apuntado a esta oportunidad.', confirmText: 'Retirar', variant: 'warning' });
+    if (!accepted) return;
     try {
       const { error } = await supabase.from('volunteer_assignments').delete().eq('id', assignmentId);
       if (error) throw error;

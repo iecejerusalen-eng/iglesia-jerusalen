@@ -21,28 +21,10 @@ import ContentCover from '../../components/public/ContentCover';
 import { getCoverMediaType } from '../../components/public/coverMedia';
 import PremiumSermonsHero from './components/PremiumSermonsHero';
 
-const MOCK_SERMONS: Sermon[] = [
-  {
-    id: 's-1',
-    title: 'El Ancla de Nuestra Alma',
-    content: '<p>Una reflexión profunda en <strong>Hebreos 6</strong> sobre cómo la esperanza en Cristo nos mantiene firmes en medio de las tormentas de la vida diaria.</p><p>El autor de Hebreos nos recuerda que la esperanza es un ancla del alma, segura y firme, que penetra hasta detrás del velo. Cuando las circunstancias externas se agiten, recuerda fijar tus ojos en el Salvador, quien ya venció al mundo y nos garantiza una herencia incorruptible.</p>',
-    youtube_url: null,
-    pastor_name: 'Pastor Roberto Gómez',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString()
-  },
-  {
-    id: 's-2',
-    title: 'Caminando en Amor y Unidad',
-    content: '<p>Serie de enseñanzas sobre <strong>Efesios</strong> y cómo la unidad y el amor fraternal fortalecen a la iglesia local como cuerpo de Cristo.</p><p>Pablo nos exhorta a andar como es digno de la vocación con que fuimos llamados, con toda humildad y mansedumbre, soportándonos con paciencia los unos a los unos en amor, solícitos en guardar la unidad del Espíritu en el vínculo de la paz.</p>',
-    youtube_url: null,
-    pastor_name: 'Pastora Elizabeth de Gómez',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString()
-  }
-];
-
 const Sermons = () => {
   const [sermons, setSermons] = useState<Sermon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Categorias y Pastores para los filtros
@@ -73,29 +55,31 @@ const Sermons = () => {
       return prev;
     });
     try {
+      setLoadError(null);
       const { data, error } = await supabase
         .from('sermons')
-        .select('*, sermon_categories(*), speakers(*)')
+        .select('id, title, content, youtube_url, audio_url, audio_source_type, audio_duration_seconds, chapters, ai_summary, pastor_name, speaker_id, description, date, category_id, created_at, metadata, editors, sermon_categories(id, name, color), speakers(id, first_name, last_name, photo_url, role, is_public, display_order)')
         .order('date', { ascending: false });
 
       // Cargar también categorías y oradores para los filtros
       const [catsRes, speakersRes] = await Promise.all([
-        supabase.from('sermon_categories').select('*').order('name'),
-        supabase.from('speakers').select('*').order('first_name')
+        supabase.from('sermon_categories').select('id, name, description, color, created_at').order('name'),
+        supabase.from('speakers').select('id, member_id, first_name, last_name, role, leadership_roles, is_public, display_order, photo_url, bio, created_at, updated_at').eq('is_public', true).order('first_name')
       ]);
       if (catsRes.data) setCategories(catsRes.data);
       if (speakersRes.data) setSpeakers(speakersRes.data);
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setSermons(data);
-      } else {
-        setSermons(MOCK_SERMONS);
-      }
+      setSermons((data ?? []).map((sermon) => ({
+        ...sermon,
+        sermon_categories: Array.isArray(sermon.sermon_categories) ? sermon.sermon_categories[0] ?? null : sermon.sermon_categories,
+        speakers: Array.isArray(sermon.speakers) ? sermon.speakers[0] ?? null : sermon.speakers,
+      })) as Sermon[]);
     } catch (err) {
-      console.error('Error fetching sermons from Supabase, using mock fallback:', err);
-      setSermons(prev => prev.length > 0 ? prev : MOCK_SERMONS);
+      console.error('Error fetching sermons from Supabase:', err);
+      setLoadError('No pudimos cargar las prédicas en este momento. Intenta nuevamente más tarde.');
+      setSermons([]);
     } finally {
       setLoading(false);
     }
@@ -500,8 +484,8 @@ const Sermons = () => {
       ) : (
         <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
           <Video className="mx-auto text-slate-400 mb-4" size={48} />
-          <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white">No se encontraron prédicas</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Prueba con otras palabras clave.</p>
+          <h3 className="text-lg font-serif font-bold text-slate-800 dark:text-white">{loadError ? 'No pudimos cargar las prédicas' : 'No se encontraron prédicas'}</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{loadError || 'Prueba con otras palabras clave.'}</p>
         </div>
       )}
       </AnimeFadeUp>

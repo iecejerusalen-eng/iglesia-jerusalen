@@ -6,65 +6,15 @@ import {
 import { motion } from 'framer-motion';
 import { useAudioPlayerStore } from '../../store/useAudioPlayerStore';
 import { supabase } from '../../config/supabase';
-import type { PodcastEpisode } from '../../features/podcast/types';
+import type { PodcastEpisode, PodcastShow } from '../../features/podcast/types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-
-const MOCK_EPISODES: PodcastEpisode[] = [
-  {
-    id: 'ep-1',
-    title: 'Ep. 01: El Arte de Esperar en Dios',
-    description: 'En este primer episodio conversamos sobre cómo cultivar paciencia y paz durante los valles de incertidumbre en el recorrido espiritual.',
-    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    audio_source_type: 'url',
-    audio_duration_seconds: 1420,
-    cover_image_url: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80',
-    season_number: 1,
-    episode_number: 1,
-    status: 'published',
-    published_at: new Date('2026-01-01').toISOString(),
-    chapters: [
-      { id: 'c1', title: 'Bienvenida e Introducción', seconds: 0 },
-      { id: 'c2', title: 'La definición bíblica de la paciencia', seconds: 320 },
-      { id: 'c3', title: 'Testimonio pastoral y aplicación', seconds: 890 }
-    ]
-  },
-  {
-    id: 'ep-2',
-    title: 'Ep. 02: Renovando la Mente con la Palabra',
-    description: 'Una mirada práctica a Romanos 12 para sustituir pensamientos de ansiedad por la verdad de las Escrituras.',
-    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    audio_source_type: 'url',
-    audio_duration_seconds: 1850,
-    cover_image_url: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&q=80',
-    season_number: 1,
-    episode_number: 2,
-    status: 'published',
-    published_at: new Date('2026-01-02').toISOString(),
-    chapters: [
-      { id: 'c1', title: 'La batalla de los pensamientos', seconds: 0 },
-      { id: 'c2', title: '3 Claves para memorizar la verdad', seconds: 450 }
-    ]
-  },
-  {
-    id: 'ep-3',
-    title: 'Ep. 03: Oración y Gratitud en Familia',
-    description: 'Especial devocional con la participación del equipo pastoral reflexionando sobre el altar familiar.',
-    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    audio_source_type: 'url',
-    audio_duration_seconds: 1100,
-    cover_image_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80',
-    season_number: 1,
-    episode_number: 3,
-    status: 'published',
-    published_at: new Date('2026-01-03').toISOString()
-  }
-];
 
 export const Podcast = () => {
   const [episodes, setEpisodes] = useState<PodcastEpisode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('todos');
+  const [showSettings, setShowSettings] = useState<Partial<PodcastShow> | null>(null);
 
   const { currentTrack, isPlaying, playTrack, togglePlay } = useAudioPlayerStore();
 
@@ -75,20 +25,33 @@ export const Podcast = () => {
       try {
         const { data, error } = await supabase
           .from('podcast_episodes')
-          .select('*')
+          .select('id, show_id, series_id, title, description, show_notes, audio_url, audio_source_type, audio_duration_seconds, cover_image_url, transcript, ai_summary, chapters, season_number, episode_number, status, published_at, view_count, created_at, updated_at')
           .eq('status', 'published')
           .order('published_at', { ascending: false });
 
         if (!isMounted) return;
-        if (error || !data || data.length === 0) {
-          setEpisodes(MOCK_EPISODES);
-        } else {
-          setEpisodes(data as PodcastEpisode[]);
-        }
+        if (error) throw error;
+        setLoadError(null);
+        setEpisodes((data ?? []) as PodcastEpisode[]);
       } catch {
-        if (isMounted) setEpisodes(MOCK_EPISODES);
+        if (isMounted) {
+          setLoadError('No pudimos cargar los episodios en este momento.');
+          setEpisodes([]);
+        }
       } finally {
         if (isMounted) setLoading(false);
+      }
+
+      try {
+        const { data } = await supabase
+          .from('podcast_show')
+          .select('name, description, cover_image_url, spotify_url, apple_podcasts_url, is_active')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        if (isMounted && data) setShowSettings(data as Partial<PodcastShow>);
+      } catch {
+        // El catálogo de episodios sigue siendo utilizable aunque no exista configuración editorial.
       }
     };
 
@@ -123,12 +86,11 @@ export const Podcast = () => {
         <AnimeFadeUp delay={100}>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-purple-950/60 to-slate-900 border border-purple-500/20 p-6 md:p-10 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-center gap-8">
             {/* Cover Art */}
-            <div className="relative group shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80"
-                alt="Jerusalén Podcast"
-                className="w-44 h-44 md:w-56 md:h-56 rounded-2xl object-cover shadow-2xl border border-white/10 group-hover:scale-105 transition-transform duration-500"
-              />
+            <div className="relative group shrink-0 w-44 h-44 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+              <div className="w-full h-full bg-gradient-to-br from-purple-800 via-slate-900 to-slate-950 flex flex-col items-center justify-center gap-3 text-purple-200">
+                <Mic className="w-12 h-12" aria-hidden="true" />
+                <span className="text-xs font-bold uppercase tracking-[0.2em]">Podcast</span>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent rounded-2xl flex items-end p-4">
                 <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-400 text-slate-950 text-xs font-bold rounded-full shadow-lg">
                   <Radio className="w-3.5 h-3.5 animate-pulse" /> Podcast Oficial
@@ -152,20 +114,16 @@ export const Podcast = () => {
 
               {/* Directory Links */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                <a
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); alert("Proximamente disponible en Spotify"); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition"
-                >
-                  <Music className="w-4 h-4 text-emerald-400" /> Escuchar en Spotify
-                </a>
-                <a
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); alert("Proximamente disponible en Apple Podcasts"); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold transition"
-                >
-                  <Headphones className="w-4 h-4 text-purple-400" /> Apple Podcasts
-                </a>
+                {showSettings?.spotify_url ? (
+                  <a href={showSettings.spotify_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition">
+                    <Music className="w-4 h-4 text-emerald-400" /> Escuchar en Spotify
+                  </a>
+                ) : null}
+                {showSettings?.apple_podcasts_url ? (
+                  <a href={showSettings.apple_podcasts_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold transition">
+                    <Headphones className="w-4 h-4 text-purple-400" /> Apple Podcasts
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>
@@ -184,21 +142,7 @@ export const Podcast = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1">
-            {['todos', 'devocionales', 'predicas', 'entrevistas'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition ${
-                  selectedCategory === cat
-                    ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20'
-                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-white/5'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          <p className="text-xs text-slate-500">Busca por título o descripción</p>
         </div>
 
         {/* EPISODES GRID */}
@@ -210,8 +154,8 @@ export const Podcast = () => {
         ) : filteredEpisodes.length === 0 ? (
           <div className="py-20 text-center bg-slate-900/50 rounded-2xl border border-white/5">
             <Headphones className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-            <h3 className="text-base font-bold text-white">No se encontraron episodios</h3>
-            <p className="text-xs text-slate-400 mt-1">Intenta buscar con otros términos.</p>
+            <h3 className="text-base font-bold text-white">{loadError ? 'No pudimos cargar los episodios' : 'No se encontraron episodios'}</h3>
+            <p className="text-xs text-slate-400 mt-1">{loadError || 'Intenta buscar con otros términos.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -226,11 +170,17 @@ export const Podcast = () => {
                 >
                   <div className="space-y-3">
                     <div className="relative overflow-hidden rounded-xl">
-                      <img
-                        src={episode.cover_image_url || 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80'}
-                        alt={episode.title}
-                        className="w-full h-44 object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
-                      />
+                      {episode.cover_image_url ? (
+                        <img
+                          src={episode.cover_image_url}
+                          alt={episode.title}
+                          className="w-full h-44 object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-44 rounded-xl bg-gradient-to-br from-purple-900 via-slate-900 to-slate-950 flex items-center justify-center text-purple-300" aria-label="Este episodio no tiene portada">
+                          <Music className="w-12 h-12" aria-hidden="true" />
+                        </div>
+                      )}
                       <div className="absolute top-3 left-3 flex gap-2">
                         <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-mono font-bold rounded-md border border-amber-400/30">
                           T{episode.season_number || 1} • Ep.{episode.episode_number || 1}

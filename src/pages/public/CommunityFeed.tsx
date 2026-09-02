@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   MessageSquare, Heart, Sparkles, Send, ShieldCheck, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { competitiveService } from '../../features/competitive/services/competitiveService';
-import type { CommunityPost } from '../../features/competitive/types';
+import type { CommunityComment, CommunityPost } from '../../features/competitive/types';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { useTranslation } from '../../i18n/useTranslation';
 import { toast } from 'sonner';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export const CommunityFeed = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -20,23 +25,55 @@ export const CommunityFeed = () => {
   const [authorName, setAuthorName] = useState('');
   const [showPostModal, setShowPostModal] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, CommunityComment[]>>({});
+  const [commentsLoading, setCommentsLoading] = useState<Record<string, boolean>>({});
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [commentSubmitting, setCommentSubmitting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let isMounted = true;
     const fetchPosts = async () => {
       try {
         const data = await competitiveService.getCommunityPosts();
-        if (isMounted) setPosts(data);
+        if (isMounted) {
+          setPosts(data);
+          setLoadError(null);
+        }
       } catch (error) {
-        if (isMounted) toast.error(error instanceof Error ? error.message : 'No se pudo cargar la comunidad.');
+        if (isMounted) {
+          setLoadError(error instanceof Error ? error.message : 'No se pudo cargar la comunidad.');
+          toast.error('No se pudo cargar la comunidad.');
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
     void fetchPosts();
     return () => { isMounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (!user || posts.length === 0) {
+      return;
+    }
+    let isMounted = true;
+    void competitiveService.getLikedCommunityPostIds(posts.map((post) => post.id), user.id).then((ids) => {
+      if (isMounted) setLikedPosts(Object.fromEntries(ids.map((id) => [id, true])));
+    }).catch(() => {
+      if (isMounted) toast.error('No se pudieron cargar tus reacciones.');
+    });
+    return () => { isMounted = false; };
+  }, [posts, user]);
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setShowPostModal(false);
+      toast.error('Inicia sesión para publicar en la comunidad.');
+      navigate('/login');
+      return;
+    }
     if (!newPostContent.trim()) return;
 
     try {
@@ -45,7 +82,7 @@ export const CommunityFeed = () => {
         content: newPostContent,
         category: newPostCategory,
         author_name: authorName.trim() || 'Miembro de la Iglesia',
-        author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+        author_avatar: undefined,
       });
 
       setPosts(current => [created, ...current]);
@@ -58,17 +95,59 @@ export const CommunityFeed = () => {
     }
   };
 
-  const handleToggleLike = (postId: string) => {
-    setLikedPosts(prev => {
-      const isLiked = !prev[postId];
-      setPosts(current => current.map(p => {
-        if (p.id === postId) {
-          return { ...p, likes_count: p.likes_count + (isLiked ? 1 : -1) };
-        }
-        return p;
-      }));
-      return { ...prev, [postId]: isLiked };
-    });
+  const handleToggleLike = async (postId: string) => {
+    if (!user) {
+      toast.error('Inicia sesión para reaccionar a una publicación.');
+      navigate('/login');
+      return;
+    }
+    try {
+      const isLiked = await competitiveService.toggleCommunityLike(postId);
+      setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
+      setPosts(current => current.map(post => post.id === postId
+        ? { ...post, likes_count: Math.max(0, post.likes_count + (isLiked ? 1 : -1)) }
+        : post));
+    } catch {
+      toast.error('No se pudo registrar tu reacción.');
+    }
+  };
+
+  const handleToggleComments = async (postId: string) => {
+    const nextExpanded = !expandedComments[postId];
+    setExpandedComments((current) => ({ ...current, [postId]: nextExpanded }));
+    if (!nextExpanded || commentsByPost[postId]) return;
+    setCommentsLoading((current) => ({ ...current, [postId]: true }));
+    try {
+      const comments = await competitiveService.getCommunityComments(postId);
+      setCommentsByPost((current) => ({ ...current, [postId]: comments }));
+    } catch {
+      toast.error('No se pudieron cargar los comentarios.');
+    } finally {
+      setCommentsLoading((current) => ({ ...current, [postId]: false }));
+    }
+  };
+
+  const handleSubmitComment = async (event: React.FormEvent, postId: string) => {
+    event.preventDefault();
+    if (!user) {
+      toast.error('Inicia sesión para comentar.');
+      navigate('/login');
+      return;
+    }
+    const content = (commentDrafts[postId] ?? '').trim();
+    if (!content) return;
+    const authorName = String(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Miembro de la Iglesia');
+    setCommentSubmitting((current) => ({ ...current, [postId]: true }));
+    try {
+      const comment = await competitiveService.createCommunityComment(postId, authorName, content);
+      setCommentsByPost((current) => ({ ...current, [postId]: [...(current[postId] ?? []), comment] }));
+      setCommentDrafts((current) => ({ ...current, [postId]: '' }));
+      setPosts((current) => current.map((post) => post.id === postId ? { ...post, comments_count: post.comments_count + 1 } : post));
+    } catch {
+      toast.error('No se pudo publicar el comentario.');
+    } finally {
+      setCommentSubmitting((current) => ({ ...current, [postId]: false }));
+    }
   };
 
   const filteredPosts = posts.filter(post => {
@@ -126,17 +205,25 @@ export const CommunityFeed = () => {
           </div>
 
           <button
-            onClick={() => setShowPostModal(true)}
+            onClick={() => { if (user) setShowPostModal(true); else navigate('/login'); }}
             className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 hover:scale-105 transition shadow-lg shadow-amber-500/20"
           >
             <Plus className="w-4 h-4" />
-            {t('community.post_btn', 'Publicar en la Comunidad')}
+            {user ? t('community.post_btn', 'Publicar en la Comunidad') : 'Inicia sesión para publicar'}
           </button>
         </div>
 
         {/* POSTS LIST */}
         <div className="space-y-6">
-          {filteredPosts.map(post => (
+          {isLoading ? (
+            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-10 text-center text-sm text-slate-400">Cargando publicaciones…</div>
+          ) : loadError ? (
+            <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-10 text-center text-sm text-rose-200">{loadError}</div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900/50 p-10 text-center text-sm text-slate-400">
+              {selectedCategory === 'all' ? 'Todavía no hay publicaciones en la comunidad.' : 'No hay publicaciones en esta categoría.'}
+            </div>
+          ) : filteredPosts.map(post => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 15 }}
@@ -146,11 +233,13 @@ export const CommunityFeed = () => {
               {/* AUTHOR HEADER */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={post.author_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80'}
-                    alt={post.author_name}
-                    className="w-10 h-10 rounded-full object-cover border border-amber-500/30"
-                  />
+                  {post.author_avatar ? (
+                    <img src={post.author_avatar} alt={post.author_name} className="w-10 h-10 rounded-full object-cover border border-amber-500/30" />
+                  ) : (
+                    <div aria-hidden="true" className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-300 font-bold flex items-center justify-center border border-amber-500/30">
+                      {post.author_name.trim().charAt(0).toUpperCase() || '?'}
+                    </div>
+                  )}
                   <div>
                     <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
                       {post.author_name}
@@ -188,21 +277,34 @@ export const CommunityFeed = () => {
               <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
                 <button
                   onClick={() => handleToggleLike(post.id)}
+                  aria-pressed={Boolean(user && likedPosts[post.id])}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                    likedPosts[post.id]
+                    user && likedPosts[post.id]
                       ? 'bg-rose-500/20 text-rose-400 font-semibold'
                       : 'hover:bg-slate-800 text-slate-400'
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${likedPosts[post.id] ? 'fill-rose-500 text-rose-500' : ''}`} />
+                  <Heart className={`w-4 h-4 ${user && likedPosts[post.id] ? 'fill-rose-500 text-rose-500' : ''}`} />
                   <span>{post.likes_count} Me gusta</span>
                 </button>
 
-                <div className="flex items-center gap-1.5 text-slate-400">
+                <button type="button" onClick={() => void handleToggleComments(post.id)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white" aria-expanded={Boolean(expandedComments[post.id])}>
                   <MessageSquare className="w-4 h-4 text-slate-500" />
                   <span>{post.comments_count} Comentarios</span>
-                </div>
+                </button>
               </div>
+
+              {expandedComments[post.id] && (
+                <div className="space-y-3 border-t border-white/5 pt-4">
+                  {commentsLoading[post.id] ? <p className="text-xs text-slate-400">Cargando comentarios…</p> : (commentsByPost[post.id] ?? []).length === 0 ? <p className="text-xs text-slate-400">Todavía no hay comentarios. Sé el primero en participar.</p> : (commentsByPost[post.id] ?? []).map((comment) => (
+                    <article key={comment.id} className="rounded-xl bg-slate-950/60 p-3">
+                      <div className="flex items-center justify-between gap-3"><strong className="text-xs text-slate-200">{comment.author_name}</strong><time className="text-[10px] text-slate-500" dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</time></div>
+                      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{comment.content}</p>
+                    </article>
+                  ))}
+                  {user ? <form onSubmit={(event) => void handleSubmitComment(event, post.id)} className="flex flex-col gap-2 sm:flex-row"><textarea required maxLength={2000} rows={2} value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Escribe un comentario…" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none focus:border-amber-400" /><button type="submit" disabled={commentSubmitting[post.id]} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 disabled:opacity-50"><Send className="h-3.5 w-3.5" />{commentSubmitting[post.id] ? 'Publicando…' : 'Comentar'}</button></form> : <p className="rounded-xl bg-white/5 p-3 text-center text-xs text-slate-400">Inicia sesión para participar en los comentarios.</p>}
+                </div>
+              )}
             </motion.div>
           ))}
         </div>

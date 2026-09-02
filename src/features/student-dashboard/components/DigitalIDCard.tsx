@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, ShieldCheck, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 import soloLogoNegro from '../../../assets/Jerusalén/solo logo negro.svg';
 
 interface DigitalIDCardProps {
@@ -25,7 +26,7 @@ export function DigitalIDCard({ isOpen, onClose, student }: DigitalIDCardProps) 
 
   const handleDownload = () => {
     // Basic download functionality for the future, perhaps using html2canvas
-    alert('Funcionalidad de descarga en desarrollo. Por ahora puedes tomar una captura de pantalla.');
+    toast.info('La descarga estará disponible próximamente. Por ahora puedes tomar una captura de pantalla.');
   };
 
   return (

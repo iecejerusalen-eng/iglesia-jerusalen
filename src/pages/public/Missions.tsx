@@ -74,7 +74,7 @@ export default function Missions() {
     const load = async () => {
       setLoading(true);
       const [missionsResult, dailyResult] = await Promise.allSettled([
-        supabase.from('missions').select('*').eq('is_published', true).order('created_at', { ascending: false }),
+        supabase.from('missions').select('id, title, description, location, goal_amount, current_amount, image_url, status, scope, country_code, region, city, is_published, metadata, start_date, end_date, created_at, updated_at').eq('is_published', true).order('created_at', { ascending: false }),
         fetchJoshuaProject({ resource: 'daily', limit: 1 }),
       ]);
 

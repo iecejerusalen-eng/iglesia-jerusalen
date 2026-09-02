@@ -13,6 +13,7 @@ interface ProductionStateRow { id: string; session_id: string; source: 'manual' 
 interface PollRow { id: string; question: string; options: string[]; status: 'draft' | 'published' | 'closed'; }
 interface QuestionRow { id: string; question: string; display_name: string | null; status: 'pending' | 'approved' | 'answered' | 'rejected'; answer: string | null; }
 interface PrayerRequestRow { id: string; request: string; is_private: boolean; status: 'pending' | 'in_prayer' | 'answered' | 'rejected'; }
+interface SalvationDecisionRow { id: string; name: string; phone: string | null; status: 'pending' | 'contacted' | 'closed'; created_at: string; }
 interface StreamLink { platform: 'youtube' | 'facebook' | 'vimeo' | 'twitch' | 'other'; url: string; label: string; }
 
 const detectStreamPlatform = (url: string): StreamLink['platform'] => {
@@ -41,6 +42,7 @@ const LiveServiceControl = () => {
   const [polls, setPolls] = useState<PollRow[]>([]);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [prayerRequests, setPrayerRequests] = useState<PrayerRequestRow[]>([]);
+  const [salvationDecisions, setSalvationDecisions] = useState<SalvationDecisionRow[]>([]);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState('');
   const [pollStatus, setPollStatus] = useState<PollRow['status']>('draft');
@@ -96,15 +98,16 @@ const LiveServiceControl = () => {
         setContentBlocks(JSON.stringify(loadedSession.content_blocks ?? []));
         setCurrentItemId(loadedSession.current_item_id ?? '');
         setStatus(loadedSession.status);
-        const [pollsResult, questionsResult, attendanceResult, prayerResult, productionResult] = await Promise.all([
+        const [pollsResult, questionsResult, attendanceResult, prayerResult, productionResult, salvationResult] = await Promise.all([
           supabase.from('live_polls').select('id,question,options,status').eq('session_id', loadedSession.id).order('created_at'),
           supabase.from('live_questions').select('id,question,display_name,status,answer').eq('session_id', loadedSession.id).order('created_at', { ascending: false }).limit(100),
           supabase.from('live_service_attendance').select('attendance_count').eq('session_id', loadedSession.id).maybeSingle(),
           supabase.from('live_prayer_requests').select('id,request,is_private,status').eq('session_id', loadedSession.id).order('created_at', { ascending: false }).limit(100),
           supabase.from('live_service_production_state').select('id,session_id,source,is_visible,current_title,current_text,current_slide_index,total_slides,announcement,announcement_visible,stage_url,screen_url,camera_feeds').eq('session_id', loadedSession.id).maybeSingle(),
+          supabase.from('live_salvation_decisions').select('id,name,phone,status,created_at').eq('session_id', loadedSession.id).order('created_at', { ascending: false }).limit(100),
         ]);
-        if (pollsResult.error || questionsResult.error || attendanceResult.error || prayerResult.error) {
-          const error = pollsResult.error ?? questionsResult.error ?? attendanceResult.error ?? prayerResult.error;
+        if (pollsResult.error || questionsResult.error || attendanceResult.error || prayerResult.error || salvationResult.error) {
+          const error = pollsResult.error ?? questionsResult.error ?? attendanceResult.error ?? prayerResult.error ?? salvationResult.error;
           console.error('No se pudo cargar la interacción del culto.', error);
           toast.error(`No se pudo cargar la interacción: ${error?.message ?? 'error desconocido'}`);
         } else {
@@ -114,6 +117,7 @@ const LiveServiceControl = () => {
           setAttendanceCount(count);
           setAttendanceInput(String(count));
           setPrayerRequests((prayerResult.data ?? []) as PrayerRequestRow[]);
+          setSalvationDecisions((salvationResult.data ?? []) as SalvationDecisionRow[]);
         }
         if (productionResult.error) {
           console.error('No se pudo cargar el estado de producción del culto.', productionResult.error);
@@ -264,6 +268,18 @@ const LiveServiceControl = () => {
     setPrayerRequests((current) => current.map((item) => item.id === request.id ? data as PrayerRequestRow : item));
   };
 
+  const updateSalvationDecision = async (decision: SalvationDecisionRow, nextStatus: SalvationDecisionRow['status']) => {
+    if (readOnly) return;
+    const { data, error } = await supabase.from('live_salvation_decisions').update({ status: nextStatus }).eq('id', decision.id).select('id,name,phone,status,created_at').single();
+    if (error) {
+      console.error('No se pudo actualizar el seguimiento pastoral.', error);
+      toast.error(`No se pudo actualizar el seguimiento: ${error.message}`);
+      return;
+    }
+    setSalvationDecisions((current) => current.map((item) => item.id === decision.id ? data as SalvationDecisionRow : item));
+    toast.success('Seguimiento pastoral actualizado.');
+  };
+
   const saveProductionState = async () => {
     if (!session || readOnly) return;
     const cameraFeeds = cameraFeedsText.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
@@ -346,6 +362,7 @@ const LiveServiceControl = () => {
           </div>
         </section>
         <section className="mt-7 border-t border-slate-100 pt-6 dark:border-white/10"><div className="mb-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-rose-500">Intercesión</p><h2 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">Peticiones de oración</h2><p className="mt-1 text-xs text-slate-500">Se reciben sin nombres. Las privadas solo las ve el equipo autorizado.</p></div><div className="grid gap-3 md:grid-cols-2">{prayerRequests.length ? prayerRequests.map((request) => <article key={request.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10"><div className="flex items-start justify-between gap-3"><p className="text-sm leading-6 text-slate-800 dark:text-slate-200">{request.request}</p><span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-500 dark:bg-white/10 dark:text-slate-300">{request.status}</span></div><p className="mt-2 text-[10px] text-slate-400">{request.is_private ? 'Petición privada' : 'Petición compartible'}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={readOnly} onClick={() => void updatePrayerRequest(request, 'in_prayer')} className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] font-bold text-amber-700">En oración</button><button type="button" disabled={readOnly} onClick={() => void updatePrayerRequest(request, 'answered')} className="rounded-lg bg-emerald-100 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700">Respondida</button><button type="button" disabled={readOnly} onClick={() => void updatePrayerRequest(request, 'rejected')} className="rounded-lg bg-rose-100 px-2.5 py-1.5 text-[11px] font-bold text-rose-700">Descartar</button></div></article>) : <p className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-500 dark:bg-white/[.04]">Todavía no hay peticiones de oración en esta sesión.</p>}</div></section>
+        <section className="mt-7 border-t border-slate-100 pt-6 dark:border-white/10"><div className="mb-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-600">Seguimiento pastoral</p><h2 className="mt-1 font-serif text-2xl font-bold text-slate-900 dark:text-white">Decisiones de fe</h2><p className="mt-1 text-xs text-slate-500">Datos enviados voluntariamente durante la transmisión. Solo el equipo autorizado puede verlos.</p></div><div className="grid gap-3 md:grid-cols-2">{salvationDecisions.length ? salvationDecisions.map((decision) => <article key={decision.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-bold text-slate-800 dark:text-slate-200">{decision.name}</p>{decision.phone && <p className="mt-1 text-xs text-slate-500">{decision.phone}</p>}</div><span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-500 dark:bg-white/10 dark:text-slate-300">{decision.status}</span></div><p className="mt-2 text-[10px] text-slate-400">{new Date(decision.created_at).toLocaleString('es-CO')}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={readOnly} onClick={() => void updateSalvationDecision(decision, 'contacted')} className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[11px] font-bold text-amber-700">Marcar contactado</button><button type="button" disabled={readOnly} onClick={() => void updateSalvationDecision(decision, 'closed')} className="rounded-lg bg-emerald-100 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700">Cerrar seguimiento</button></div></article>) : <p className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-500 dark:bg-white/[.04]">Todavía no hay decisiones de fe registradas en esta sesión.</p>}</div></section>
         <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5 dark:border-white/10"><button type="button" disabled={busy || readOnly} onClick={() => void saveSession('scheduled')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 dark:border-white/10 dark:text-slate-300"><Save size={15} /> Guardar programación</button><button type="button" disabled={busy || readOnly} onClick={() => void saveSession('live')} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-xs font-bold text-white"><PlayCircle size={15} /> Publicar en vivo</button><button type="button" disabled={busy || readOnly || !session} onClick={() => void saveSession('ended')} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white dark:bg-white dark:text-slate-950"><Square size={14} /> Finalizar culto</button></div>
         {session?.status === 'ended' && <p className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"><CheckCircle2 size={15} /> El cierre ya fue procesado y la prédica quedó vinculada.</p>}
       </section>}

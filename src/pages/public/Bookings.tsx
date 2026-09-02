@@ -12,6 +12,7 @@ export default function Bookings() {
   const { user } = useAuth();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
 
@@ -29,12 +30,13 @@ export default function Bookings() {
     try {
       const { data: spacesData, error: spacesError } = await supabase
         .from('spaces')
-        .select('*')
+        .select('id, name, description, image_url, capacity, features, is_active, created_at')
         .eq('is_active', true)
         .order('name');
 
       if (spacesError) throw spacesError;
       setSpaces(spacesData || []);
+      setLoadError(null);
 
       if (user) {
         const { data: bookingsData, error: bookingsError } = await supabase
@@ -48,7 +50,8 @@ export default function Bookings() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error al cargar espacios');
+      setLoadError('No pudimos cargar los espacios disponibles. Verifica tu conexión e inténtalo nuevamente.');
+      toast.error('No pudimos cargar los espacios disponibles.');
     } finally {
       setLoading(false);
     }
@@ -173,12 +176,16 @@ export default function Bookings() {
 
           {loading ? (
              <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-emerald-500" /></div>
+          ) : loadError ? (
+            <div className="rounded-3xl border border-rose-200 bg-rose-50 p-10 text-center text-sm text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{loadError}</div>
+          ) : spaces.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">No hay espacios disponibles para reservar en este momento.</div>
           ) : (
             <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {spaces.map(space => (
                 <AnimeHoverCard key={space.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all flex flex-col group">
                   <div className="h-48 overflow-hidden relative">
-                    <img src={space.image_url || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80'} alt={space.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    {space.image_url ? <img src={space.image_url} alt={space.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" /> : <div aria-hidden="true" className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 text-emerald-300"><Home className="h-12 w-12" /></div>}
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
                       <Users className="w-3.5 h-3.5" /> Cap. {space.capacity || 'N/A'}
                     </div>

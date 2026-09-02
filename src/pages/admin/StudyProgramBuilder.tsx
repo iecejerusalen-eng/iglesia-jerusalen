@@ -7,6 +7,7 @@ import BlockEditor from '../../components/admin/BlockEditor';
 import MediaUploader from '../../components/common/MediaUploader';
 import type { StudyCohort, StudyMembership, StudyProgram, StudyProgramLesson, StudyProgramSection } from '../../features/study-programs/types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 type BuilderTab = 'content' | 'groups' | 'settings';
 interface LessonDraft { id?: string; section_id: string; title: string; summary: string; lesson_type: StudyProgramLesson['lesson_type']; content: string; facilitatorContent: string; estimated_minutes: number | null; }
@@ -20,6 +21,7 @@ export default function StudyProgramBuilder() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isReadOnly } = usePermissions();
+  const confirm = useConfirmStore((state) => state.confirm);
   const readOnly = isReadOnly('study_programs');
   const [program, setProgram] = useState<StudyProgram | null>(null);
   const [sections, setSections] = useState<StudyProgramSection[]>([]);
@@ -98,7 +100,8 @@ export default function StudyProgramBuilder() {
 
   const removeSection = async (section: StudyProgramSection) => {
     if (!requireEditAccess()) return;
-    if (!window.confirm(`Eliminar "${section.title}" y todas sus lecciones?`)) return;
+    const accepted = await confirm({ title: 'Eliminar etapa', message: `Se eliminarán “${section.title}” y todas sus lecciones.`, confirmText: 'Eliminar etapa', variant: 'danger' });
+    if (!accepted) return;
     const { error } = await supabase.from('study_program_sections').delete().eq('id', section.id);
     if (error) { console.error('No se pudo eliminar la etapa.', error); toast.error('No se pudo eliminar.'); return; }
     await load();
@@ -146,7 +149,8 @@ export default function StudyProgramBuilder() {
 
   const deleteLesson = async (lesson: StudyProgramLesson) => {
     if (!requireEditAccess()) return;
-    if (!window.confirm(`Eliminar la lección "${lesson.title}"?`)) return;
+    const accepted = await confirm({ title: 'Eliminar lección', message: `¿Eliminar “${lesson.title}”? Esta acción no se puede deshacer.`, confirmText: 'Eliminar lección', variant: 'danger' });
+    if (!accepted) return;
     const { error } = await supabase.from('study_program_lessons').delete().eq('id', lesson.id);
     if (error) { console.error('No se pudo eliminar la lección.', error); toast.error('No se pudo eliminar.'); return; }
     await load();

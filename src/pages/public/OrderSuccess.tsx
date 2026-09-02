@@ -71,25 +71,6 @@ export default function OrderSuccess() {
     };
   }, [orderId, navigate]);
 
-  const handleSimulateWebhook = async () => {
-    if (!order) return;
-    
-    // Simulate webhook from PayPhone or Stripe approving the transaction
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        ecommerce_payment_status: 'paid',
-        status: 'paid'
-      })
-      .eq('id', order.id);
-      
-    if (error) {
-      toast.error('Error al simular webhook');
-    } else {
-      toast.success('Webhook simulado: Pago aprobado');
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen pt-24 flex justify-center items-start">
@@ -204,18 +185,6 @@ export default function OrderSuccess() {
             </button>
           </div>
 
-          {/* MOCK WEBHOOK BUTTON - Remove in production */}
-          {!isPaid && (
-            <div className="mt-12 p-4 border border-dashed border-red-300 bg-red-50 dark:bg-red-900/10 rounded-lg">
-              <p className="text-xs text-red-600 mb-2 font-bold uppercase">Herramienta de Desarrollo (Mock)</p>
-              <button
-                onClick={handleSimulateWebhook}
-                className="text-sm px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-              >
-                Simular Webhook de Pago Aprobado
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

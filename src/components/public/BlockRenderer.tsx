@@ -8,6 +8,7 @@ import type { ContentBlock } from '../admin/BlockBuilder';
 import type { LessonBlock } from '../admin/BlockEditor';
 import BlockLessonRenderer from './BlockLessonRenderer';
 import RichTextRenderer from '../common/RichTextRenderer';
+import { toast } from 'sonner';
 import { 
   Check, Award, Send, RefreshCw, ClipboardList, HelpCircle
 } from 'lucide-react';
@@ -83,7 +84,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
     }).length;
 
     if (answeredCount === 0) {
-      alert('Por favor, responde al menos una pregunta antes de enviar.');
+      toast.info('Por favor, responde al menos una pregunta antes de enviar.');
       return;
     }
 
@@ -158,7 +159,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
 
     } catch (err: unknown) {
       console.error('Error submitting questionnaire answers:', err);
-      alert('Error al enviar las respuestas: ' + getErrorMessage(err));
+      toast.error('Error al enviar las respuestas: ' + getErrorMessage(err));
     } finally {
       setSubmitting(prev => ({ ...prev, [blockId]: false }));
     }

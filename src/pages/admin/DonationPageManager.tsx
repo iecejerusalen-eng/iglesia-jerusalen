@@ -34,7 +34,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import type { Donation, DonationCategory, DonationAuditLog } from '../../types';
 import { DEFAULT_DONATION_PAGE_CONFIG, parseDonationPageConfig, type DonationPageConfig } from '../../features/donations/types';
-import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
+import { exportToCsv, exportToPDF } from '../../utils/exportUtils';
 
 type ManagerTab = 'donations' | 'categories' | 'public_config' | 'audit_logs';
 type DonationStatusFilter = 'all' | 'pending' | 'completed' | 'failed';
@@ -567,7 +567,7 @@ export default function DonationPageManager() {
       Estado: d.status === 'completed' ? 'Verificado' : d.status === 'failed' ? 'No recibido' : 'Pendiente',
       'Observaciones': d.admin_notes || '',
     }));
-    exportToExcel(exportData, `Conciliacion_Aportes_${new Date().toISOString().slice(0, 10)}`, 'Aportes');
+    exportToCsv(exportData, `Conciliacion_Aportes_${new Date().toISOString().slice(0, 10)}`);
   };
 
   const handleExportCSV = () => {
@@ -815,9 +815,9 @@ export default function DonationPageManager() {
                 type="button"
                 onClick={handleExportExcel}
                 className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-                title="Exportar a Excel (.xlsx)"
+                title="Exportar CSV compatible con Excel"
               >
-                <FileSpreadsheet size={14} /> Excel
+                <FileSpreadsheet size={14} /> CSV / Excel
               </button>
               <button
                 type="button"

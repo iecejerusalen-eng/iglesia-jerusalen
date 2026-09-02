@@ -250,19 +250,22 @@ export default function SearchPalette() {
         }
 
         const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes, announcementsRes] = await Promise.all([
-          supabase.from('songs').select('*').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
-          supabase.from('events').select('*, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('ministries').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('products').select('*').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('schedules').select('*').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(3),
-          supabase.from('church_announcements').select('*').eq('is_published', true).or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(3)
+          supabase.from('songs').select('id, title, artist, lyrics, slug').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
+          supabase.from('events').select('id, title, description, start_date, start_time, emoji, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('ministries').select('id, name, description, slug').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('products').select('id, name, description, price, category').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+          supabase.from('schedules').select('id, title, day, time_range, description').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(3),
+          supabase.from('church_announcements').select('id, title, summary, body').eq('status', 'published').or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(3)
         ]);
 
         if (requestId !== requestIdRef.current) return;
 
         setResults({
           songs: (songsRes.data ?? []) as SearchSong[],
-          events: (eventsRes.data ?? []) as SearchEvent[],
+          events: (eventsRes.data ?? []).map((event) => ({
+            ...event,
+            ministries: Array.isArray(event.ministries) ? event.ministries[0] ?? null : event.ministries,
+          })) as SearchEvent[],
           ministries: (ministriesRes.data ?? []) as SearchMinistry[],
           products: (productsRes.data ?? []) as SearchProduct[],
           schedules: (schedulesRes.data ?? []) as SearchSchedule[],

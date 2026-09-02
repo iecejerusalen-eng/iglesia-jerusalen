@@ -4,7 +4,7 @@ import { supabase } from '../../../config/supabase';
 import { getDb } from '../../../config/localDb';
 import type { Member, Schedule, Sermon, Event as DbEvent } from '../../../types';
 import type { BirthdayMember, PageSection } from '../types';
-import { DEFAULT_SECTIONS, FALLBACK_SCHEDULES, MOCK_SERMONS } from '../constants';
+import { DEFAULT_SECTIONS } from '../constants';
 import { fetchPublicBirthdays, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
 import { fetchPublicChurchAnnouncements } from '../../announcements/service';
 import type { ChurchAnnouncement } from '../../announcements/types';
@@ -45,11 +45,11 @@ export const useHomeData = () => {
       });
 
       return {
-        members: allMembers.length || 350,
-        baptized: baptizedCount || 180,
-        cells: cellsCount || 18,
-        kids: kidsCount || 120,
-        youth: youthCount || 80
+        members: allMembers.length,
+        baptized: baptizedCount,
+        cells: cellsCount ?? 0,
+        kids: kidsCount,
+        youth: youthCount
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -60,7 +60,7 @@ export const useHomeData = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('page_contents')
-        .select('*')
+        .select('id, page, section, name, order_index, section_type, title, subtitle, content_blocks, cover_image_url')
         .eq('page', 'home')
         .order('order_index', { ascending: true });
 
@@ -92,14 +92,14 @@ export const useHomeData = () => {
 
       const { data, error } = await supabase
         .from('schedules')
-        .select('*')
+        .select('id, day, title, time_range, description, order_index, created_at')
         .order('order_index', { ascending: true });
 
       if (error) throw error;
       if (data && data.length > 0) {
         return data as Schedule[];
       }
-      return FALLBACK_SCHEDULES;
+      return [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -109,7 +109,7 @@ export const useHomeData = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sermons')
-        .select('*')
+        .select('id, title, pastor_name, youtube_url, audio_url, content, created_at')
         .order('created_at', { ascending: false })
         .limit(4);
 
@@ -117,7 +117,7 @@ export const useHomeData = () => {
       if (data && data.length > 0) {
         return data as Sermon[];
       }
-      return MOCK_SERMONS;
+      return [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -128,14 +128,22 @@ export const useHomeData = () => {
       const todayStr = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('events')
-        .select('*, ministries(name)')
+        .select(`
+          id, title, description, start_date, end_date, start_time, end_time,
+          is_recurring, recurrence_type, recurrence_days, cover_image_url, emoji,
+          ministry_id, leaders_in_charge, is_public, space_id,
+          created_at, ministries(name, slug, theme_color)
+        `)
         .eq('is_public', true)
         .gte('start_date', todayStr)
         .order('start_date', { ascending: true })
         .limit(3);
 
       if (error) throw error;
-      return (data || []) as DbEvent[];
+      return (data || []).map((event) => ({
+        ...event,
+        ministries: Array.isArray(event.ministries) ? event.ministries[0] ?? null : event.ministries,
+      })) as DbEvent[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -168,7 +176,7 @@ export const useHomeData = () => {
   }, [birthdaysQuery.data]);
 
   return {
-    stats: statsQuery.data || { members: 350, baptized: 180, cells: 18, kids: 120, youth: 80 },
+    stats: statsQuery.data || { members: 0, baptized: 0, cells: 0, kids: 0, youth: 0 },
     isStatsLoading: statsQuery.isLoading,
     
     sections: sectionsQuery.data || DEFAULT_SECTIONS,

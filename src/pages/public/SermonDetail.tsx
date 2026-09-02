@@ -21,25 +21,6 @@ import WaveformPlayer from '../../components/audio/WaveformPlayer';
 import SermonNotesPad from '../../components/sermons/SermonNotesPad';
 import ChristianPomodoro from '../../components/sermons/ChristianPomodoro';
 
-const MOCK_SERMONS: Sermon[] = [
-  {
-    id: 's-1',
-    title: 'El Ancla de Nuestra Alma',
-    content: '<p>Una reflexión profunda en <strong>Hebreos 6</strong> sobre cómo la esperanza en Cristo nos mantiene firmes en medio de las tormentas de la vida diaria.</p><p>El autor de Hebreos nos recuerda que la esperanza es un ancla del alma, segura y firme, que penetra hasta detrás del velo. Cuando las circunstancias externas se agiten, recuerda fijar tus ojos en el Salvador, quien ya venció al mundo y nos garantiza una herencia incorruptible.</p>',
-    youtube_url: null,
-    pastor_name: 'Pastor Roberto Gómez',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString()
-  },
-  {
-    id: 's-2',
-    title: 'Caminando en Amor y Unidad',
-    content: '<p>Serie de enseñanzas sobre <strong>Efesios</strong> y cómo la unidad y el amor fraternal fortalecen a la iglesia local como cuerpo de Cristo.</p><p>Pablo nos exhorta a andar como es digno de la vocación con que fuimos llamados, con toda humildad y mansedumbre, soportándonos con paciencia los unos a los unos en amor, solícitos en guardar la unidad del Espíritu en el vínculo de la paz.</p>',
-    youtube_url: null,
-    pastor_name: 'Pastora Elizabeth de Gómez',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString()
-  }
-];
-
 const SermonDetail = () => {
   const { id } = useParams();
   const { user } = useAuthStore();
@@ -85,11 +66,6 @@ const SermonDetail = () => {
 
         if (error) throw error;
         activeSermon = data;
-      }
-
-      if (!activeSermon) {
-        // Fallback to mock sermons
-        activeSermon = MOCK_SERMONS.find(s => s.id === id) || null;
       }
 
       setSermon(activeSermon);

@@ -1,13 +1,14 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { lazy, Suspense, useDeferredValue, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, Loader2, RefreshCw, X } from 'lucide-react';
 import { useSongDetails, useSongs } from '../../features/songs/hooks/useSongs';
 import { SongsHero } from '../../features/songs/components/SongsHero';
 import { SongsFilters, type ChordsFilter, type SongSort, type SongViewMode } from '../../features/songs/components/SongsFilters';
 import { SongsList } from '../../features/songs/components/SongsList';
-import { SongViewer } from '../../features/songs/components/SongViewer';
 import type { Song } from '../../types';
 import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
+
+const SongViewer = lazy(() => import('../../features/songs/components/SongViewer').then((module) => ({ default: module.SongViewer })));
 
 const INITIAL_VISIBLE_SONGS = 18;
 const SONGS_INCREMENT = 18;
@@ -132,7 +133,9 @@ const SongsLibrary = () => {
         </div>
       )}
       {selectedSong && (
-        <SongViewer key={selectedSong.id} selectedSong={selectedSong} setSelectedSong={setSelectedSongState} onClose={closeViewer} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Suspense fallback={<div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/65 p-4" role="dialog" aria-modal="true" aria-label={`Cargando ${selectedSong.title}`}><div className="rounded-2xl bg-white px-6 py-5 text-sm font-semibold text-slate-700 shadow-xl dark:bg-slate-900 dark:text-slate-200">Cargando alabanza…</div></div>}>
+          <SongViewer key={selectedSong.id} selectedSong={selectedSong} setSelectedSong={setSelectedSongState} onClose={closeViewer} showChords={showChords} setShowChords={setShowChords} fontFamily={fontFamily} setFontFamily={setFontFamily} activeTab={activeTab} setActiveTab={setActiveTab} />
+        </Suspense>
       )}
     </div>
   );

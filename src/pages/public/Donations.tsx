@@ -18,7 +18,6 @@ import {
   Loader2,
   MessageCircle,
   Printer,
-  QrCode,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -248,65 +247,14 @@ export default function Donations() {
               )}
             </div>
 
-            {/* Visual QR Code & Authenticity Seal */}
-            <div className="mt-6 flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-slate-200 bg-white p-5 sm:flex-row dark:border-white/10 dark:bg-slate-900/50">
-              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-inner dark:border-white/10">
-                <svg viewBox="0 0 100 100" className="h-full w-full fill-slate-900 dark:fill-white">
-                  {/* QR Position detection patterns */}
-                  <rect x="5" y="5" width="26" height="26" rx="4" fill="currentColor" />
-                  <rect x="9" y="9" width="18" height="18" fill="white" />
-                  <rect x="13" y="13" width="10" height="10" fill="currentColor" />
-
-                  <rect x="69" y="5" width="26" height="26" rx="4" fill="currentColor" />
-                  <rect x="73" y="9" width="18" height="18" fill="white" />
-                  <rect x="77" y="13" width="10" height="10" fill="currentColor" />
-
-                  <rect x="5" y="69" width="26" height="26" rx="4" fill="currentColor" />
-                  <rect x="9" y="73" width="18" height="18" fill="white" />
-                  <rect x="13" y="77" width="10" height="10" fill="currentColor" />
-
-                  {/* Simulated Data Pattern */}
-                  <rect x="38" y="8" width="6" height="6" fill="currentColor" />
-                  <rect x="50" y="8" width="6" height="6" fill="currentColor" />
-                  <rect x="38" y="20" width="12" height="6" fill="currentColor" />
-                  <rect x="56" y="20" width="6" height="6" fill="currentColor" />
-                  <rect x="8" y="38" width="6" height="12" fill="currentColor" />
-                  <rect x="20" y="38" width="12" height="6" fill="currentColor" />
-                  <rect x="38" y="38" width="8" height="8" fill="currentColor" />
-                  <rect x="52" y="38" width="12" height="6" fill="currentColor" />
-                  <rect x="70" y="38" width="10" height="6" fill="currentColor" />
-                  <rect x="86" y="38" width="6" height="12" fill="currentColor" />
-
-                  <rect x="38" y="52" width="6" height="12" fill="currentColor" />
-                  <rect x="50" y="56" width="12" height="6" fill="currentColor" />
-                  <rect x="68" y="52" width="6" height="12" fill="currentColor" />
-                  <rect x="80" y="56" width="12" height="6" fill="currentColor" />
-
-                  <rect x="38" y="70" width="10" height="6" fill="currentColor" />
-                  <rect x="54" y="70" width="6" height="10" fill="currentColor" />
-                  <rect x="68" y="70" width="12" height="6" fill="currentColor" />
-                  <rect x="86" y="70" width="6" height="12" fill="currentColor" />
-                  <rect x="38" y="84" width="18" height="6" fill="currentColor" />
-                  <rect x="62" y="84" width="12" height="6" fill="currentColor" />
-                  <rect x="80" y="84" width="12" height="6" fill="currentColor" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="rounded bg-white/95 p-1 shadow-xs dark:bg-slate-900/95">
-                    <QrCode size={18} className="text-primary dark:text-church-gold-light" />
-                  </span>
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900/50">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-300" size={20} />
+                <div>
+                  <h2 className="font-serif text-sm font-bold text-slate-800 dark:text-white">Referencia de registro</h2>
+                  <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">Conserva el recibo y su número de referencia. La secretaría confirmará el aporte cuando revise la transferencia y el comprobante adjunto.</p>
+                  <p className="mt-2 font-mono text-xs font-bold text-primary dark:text-blue-300">{receipt.receiptNumber}</p>
                 </div>
-              </div>
-
-              <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                  <ShieldCheck size={13} /> Sello de Autenticidad Digital
-                </div>
-                <h2 className="mt-1 font-serif text-sm font-bold text-slate-800 dark:text-white">
-                  Verificación de Donación
-                </h2>
-                <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
-                  Este certificado digital acredita el registro del aporte ante la secretaría de la Iglesia Jerusalén.
-                </p>
               </div>
             </div>
 
@@ -478,4 +426,3 @@ export default function Donations() {
     </div>
   );
 }
-

@@ -148,18 +148,13 @@ function asLiveSession(value: unknown): LiveSession | null {
 
 interface LiveChatMessage {
   id: string;
+  created_at?: string;
   sender_name: string;
   sender_avatar?: string;
   message: string;
   timestamp: string;
   is_host?: boolean;
 }
-
-const INITIAL_MESSAGES: LiveChatMessage[] = [
-  { id: 'm-1', sender_name: 'Pr. Juan Pérez', message: '¡Bienvenidos todos a nuestro Servicio Dominical! Que la paz de Dios llene sus hogares.', timestamp: '10:00 AM', is_host: true },
-  { id: 'm-2', sender_name: 'Familia Ramírez', message: '¡Sintonizando desde Milagro! Saludos a toda la iglesia.', timestamp: '10:02 AM' },
-  { id: 'm-3', sender_name: 'Beatriz Morales', message: 'Dios bendiga a nuestro equipo de alabanza 🙌🔥', timestamp: '10:05 AM' },
-];
 
 const createReaction = (emoji: string) => ({
   id: `react-${Date.now()}-${Math.random()}`,
@@ -169,7 +164,7 @@ const createReaction = (emoji: string) => ({
 
 export default function LiveStream() {
   const [activeTab, setActiveTab] = useState<'chat' | 'notes' | 'prayer'>('chat');
-  const [messages, setMessages] = useState<LiveChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [inputMsg, setInputMsg] = useState('');
   const [senderName, setSenderName] = useState('');
 
@@ -190,8 +185,7 @@ export default function LiveStream() {
   // Notes state
   const [notes, setNotes] = useState(() => localStorage.getItem('jerusalen_live_notes') || '');
 
-  // Persistent live service data. The existing local chat remains available while the
-  // moderated database-backed layer is being rolled out.
+  // Persistent live service data.
   const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
   const [agenda, setAgenda] = useState<LiveAgendaItem[]>([]);
   const [polls, setPolls] = useState<LivePoll[]>([]);
@@ -281,12 +275,50 @@ export default function LiveStream() {
   const liveSessionId = liveSession?.id;
 
   useEffect(() => {
+    if (!liveSessionId) {
+      return undefined;
+    }
+
+    let mounted = true;
+    const loadChat = async () => {
+      const { data, error } = await supabase
+        .from('live_chat_messages')
+        .select('id,sender_name,message,created_at,is_host')
+        .eq('session_id', liveSessionId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: true })
+        .limit(100);
+      if (!mounted) return;
+      if (error) {
+        console.error('No se pudo cargar el chat del culto.', error);
+        setLiveDataError(error.message);
+        return;
+      }
+      setMessages((data ?? []).map((item) => ({
+        ...(item as LiveChatMessage),
+        timestamp: item.created_at ? new Date(item.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) : '',
+      })));
+    };
+    void loadChat();
+
+    return () => { mounted = false; };
+  }, [liveSessionId]);
+
+  useEffect(() => {
     if (!liveSessionId) return undefined;
     const channel = supabase
       .channel(`live-service-${liveSessionId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_service_sessions', filter: `id=eq.${liveSessionId}` }, (payload) => {
         const next = asLiveSession(payload.new);
         if (next) setLiveSession(next);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_chat_messages', filter: `session_id=eq.${liveSessionId}` }, (payload) => {
+        const item = payload.new as LiveChatMessage & { status?: string; created_at?: string };
+        if (item.status !== 'approved') return;
+        setMessages((current) => current.some((message) => message.id === item.id) ? current : [...current, {
+          ...item,
+          timestamp: item.created_at ? new Date(item.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) : '',
+        }]);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_polls', filter: `session_id=eq.${liveSessionId}` }, () => {
         setLiveDataError(null);
@@ -315,18 +347,25 @@ export default function LiveStream() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMsg.trim()) return;
+    if (!liveSession || !inputMsg.trim()) return;
 
-    const newMsg: LiveChatMessage = {
-      id: `msg-${Date.now()}`,
+    const { data, error } = await supabase.from('live_chat_messages').insert({
+      session_id: liveSession.id,
       sender_name: senderName.trim() || 'Hermanos en Fe',
       message: inputMsg.trim(),
-      timestamp: new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, newMsg]);
+      status: 'approved',
+    }).select('id,sender_name,message,created_at,is_host').single();
+    if (error) {
+      console.error('No se pudo enviar el mensaje del culto.', error);
+      toast.error(`No se pudo enviar el mensaje: ${error.message}`);
+      return;
+    }
+    if (data) setMessages((current) => current.some((message) => message.id === data.id) ? current : [...current, {
+      ...(data as LiveChatMessage),
+      timestamp: data.created_at ? new Date(data.created_at).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) : '',
+    }]);
     setInputMsg('');
   };
 
@@ -339,12 +378,26 @@ export default function LiveStream() {
     }, 2500);
   };
 
-  const handleSalvationSubmit = (e: React.FormEvent) => {
+  const handleSalvationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!salvationName.trim()) return;
+    if (!liveSession || !salvationName.trim()) {
+      toast.error('No hay un culto activo para registrar esta decisión.');
+      return;
+    }
 
+    const { error } = await supabase.from('live_salvation_decisions').insert({
+      session_id: liveSession.id,
+      name: salvationName.trim(),
+      phone: salvationPhone.trim() || null,
+      status: 'pending',
+    });
+    if (error) {
+      console.error('No se pudo registrar la decisión de fe.', error);
+      toast.error(`No se pudo enviar el formulario: ${error.message}`);
+      return;
+    }
     setSalvationSubmitted(true);
-    toast.success('¡Glorioso! Hemos registrado tu decisión por Cristo. Un pastor te contactará pronto.');
+    toast.success('Hemos recibido tu decisión. Un pastor te contactará pronto.');
   };
 
   const handlePrayerSubmit = async (e: React.FormEvent) => {
@@ -614,6 +667,11 @@ export default function LiveStream() {
             {activeTab === 'chat' && (
               <div className="flex-1 flex flex-col justify-between min-h-0 space-y-3">
                 <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                  {messages.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-center text-slate-500">
+                      {liveSession ? 'Todavía no hay mensajes en este culto.' : 'El chat estará disponible cuando haya un culto activo.'}
+                    </div>
+                  )}
                   {messages.map(m => (
                     <div
                       key={m.id}
@@ -640,6 +698,8 @@ export default function LiveStream() {
                     type="text"
                     value={senderName}
                     onChange={e => setSenderName(e.target.value)}
+                    maxLength={120}
+                    disabled={!liveSession}
                     placeholder="Tu nombre (opcional)"
                     className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
                   />
@@ -648,11 +708,14 @@ export default function LiveStream() {
                       type="text"
                       value={inputMsg}
                       onChange={e => setInputMsg(e.target.value)}
+                      maxLength={1000}
+                      disabled={!liveSession}
                       placeholder="Escribe un mensaje de bendición..."
                       className="flex-1 h-10 px-3 rounded-xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
                     />
                     <button
                       type="submit"
+                      disabled={!liveSession || !inputMsg.trim()}
                       className="h-10 px-4 rounded-xl bg-amber-500 text-slate-950 font-bold flex items-center justify-center hover:bg-amber-400 transition"
                     >
                       <Send size={15} />

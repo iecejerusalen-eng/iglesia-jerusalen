@@ -76,49 +76,6 @@ const MESSAGE_TEMPLATES = [
   },
 ];
 
-const MOCK_CELEBRANTS: Member[] = [
-  {
-    id: 'mock-1',
-    first_name: 'Hermano Carlos',
-    last_name: 'Mendoza',
-    photo_url: null,
-    dni: null,
-    address: null,
-    maps_link: null,
-    leadership_role: 'Líder de Servidores',
-    ministry_id: null,
-    role_id: null,
-    phone: '+593991234567',
-    phone_country_code: '+593',
-    birth_date: new Date().toISOString(),
-    conversion_date: null,
-    baptism_date: null,
-    is_leader: true,
-    tithes_sum: 0,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'mock-2',
-    first_name: 'Hna. Beatriz',
-    last_name: 'Morales',
-    photo_url: null,
-    dni: null,
-    address: null,
-    maps_link: null,
-    leadership_role: null,
-    ministry_id: null,
-    role_id: null,
-    phone: '+593987654321',
-    phone_country_code: '+593',
-    birth_date: new Date().toISOString(),
-    conversion_date: null,
-    baptism_date: null,
-    is_leader: false,
-    tithes_sum: 0,
-    created_at: new Date().toISOString(),
-  },
-];
-
 const glassPanel =
   'rounded-[1.75rem] border border-white/70 bg-white/80 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/60';
 const softButton =
@@ -186,7 +143,7 @@ export default function NotificationsManager() {
       return aDate.getDate() === currentDay && aDate.getMonth() + 1 === currentMonth;
     });
 
-    setBirthdaysToday(bdays.length > 0 ? bdays : MOCK_CELEBRANTS);
+    setBirthdaysToday(bdays);
     setAnniversariesToday(annivs);
   }, []);
 
@@ -479,7 +436,7 @@ export default function NotificationsManager() {
   const getFilteredRecipients = () => {
     let list: Member[] = [];
     if (recipientGroup === 'todos') {
-      list = members.length > 0 ? members : MOCK_CELEBRANTS;
+      list = members;
     } else if (recipientGroup === 'lideres') {
       list = members.filter((m) => m.is_leader);
     } else if (recipientGroup === 'ministry') {

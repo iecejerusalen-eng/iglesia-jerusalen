@@ -14,6 +14,7 @@ import MediaSearchModal from '../../components/admin/MediaSearchModal';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { DynamicDataView } from '../../components/ui/DynamicDataView';
 import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
 
 export interface Ministry {
   id: string;
@@ -256,7 +257,7 @@ const MinistryManager = () => {
       fetchMinistries();
     } catch (err: unknown) {
       console.error('Error saving ministry:', err);
-      alert((err as Error).message || 'Error al guardar el ministerio.');
+      toast.error((err as Error).message || 'Error al guardar el ministerio.');
     } finally {
       setActionLoading(false);
     }
@@ -285,7 +286,7 @@ const MinistryManager = () => {
       fetchMinistries();
     } catch (err) {
       console.error('Error deleting ministry:', err);
-      alert('Hubo un error al eliminar el ministerio.');
+      toast.error('Hubo un error al eliminar el ministerio.');
     } finally {
       setActionLoading(false);
     }

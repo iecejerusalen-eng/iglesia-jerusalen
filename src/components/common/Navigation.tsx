@@ -80,7 +80,7 @@ const Navigation = () => {
           to="/" 
           className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg p-1"
         >
-          <img loading="lazy" 
+          <img loading="eager" fetchPriority="high"
             src={isTransparent ? soloLogoBlanco : soloLogoColorido} 
             alt="Logo Iglesia Jerusalén" 
             className="h-9 w-auto transition-transform duration-300 group-hover:scale-105"

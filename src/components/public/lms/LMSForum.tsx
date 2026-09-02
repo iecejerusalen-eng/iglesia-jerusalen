@@ -5,6 +5,7 @@ import type { LMSForumPost, LMSActivity } from '../../../types';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { usePluginStore } from '../../../store/usePluginStore';
 import { toast } from 'sonner';
+import { useConfirmStore } from '../../../store/useConfirmStore';
 
 interface Props {
   activity: LMSActivity;
@@ -14,6 +15,7 @@ interface Props {
 const LMSForum = ({ activity }: Props) => {
   const { user, photoUrl } = useAuthStore();
   const cleanContent = usePluginStore((state) => state.cleanContent);
+  const confirm = useConfirmStore((state) => state.confirm);
   const [posts, setPosts] = useState<LMSForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
@@ -121,7 +123,8 @@ const LMSForum = ({ activity }: Props) => {
   };
 
   const handleDelete = async (postId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta publicación?')) return;
+    const accepted = await confirm({ title: 'Eliminar publicación', message: 'Esta acción no se puede deshacer.', confirmText: 'Eliminar', variant: 'danger' });
+    if (!accepted) return;
     
     try {
       const { error } = await supabase

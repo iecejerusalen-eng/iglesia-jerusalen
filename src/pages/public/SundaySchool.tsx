@@ -215,14 +215,7 @@ const SundaySchool = () => {
                         }`}
                       >
                         <div className="relative shrink-0">
-                          <img
-                            loading="lazy"
-                            src={badge.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c'}
-                            alt={badge.name}
-                            className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${
-                              isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 dark:border-slate-700 grayscale'
-                            }`}
-                          />
+                          {badge.image_url ? <img loading="lazy" src={badge.image_url} alt={badge.name} onError={(event) => { event.currentTarget.style.display = 'none'; }} className={`w-14 h-14 rounded-xl object-cover border-2 shadow-xs ${isUnlocked ? 'border-amber-400 grayscale-0' : 'border-gray-300 dark:border-slate-700 grayscale'}`} /> : <div aria-hidden="true" className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 bg-amber-50 text-amber-500 shadow-xs dark:bg-amber-950/30 ${isUnlocked ? 'border-amber-400' : 'border-gray-300 dark:border-slate-700 grayscale'}`}><ShieldCheck size={22} /></div>}
                           <div className="absolute -bottom-1 -right-1">
                             {isUnlocked ? (
                               <div className="bg-green-600 text-white rounded-full p-0.5 border border-white dark:border-slate-900">

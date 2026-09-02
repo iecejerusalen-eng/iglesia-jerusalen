@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { BarChart3, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
@@ -13,6 +15,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 
 const DashboardHome = () => {
   const { user, firstName } = useAuthStore();
+  const [detailsRequested, setDetailsRequested] = useState(false);
   const { hasPermission } = usePermissions();
   const access = {
     members: hasPermission('members', 'view'),
@@ -21,7 +24,7 @@ const DashboardHome = () => {
     inventory: hasPermission('inventory', 'view'),
     volunteering: hasPermission('volunteering', 'view'),
   };
-  const { data, isLoading, isError } = useDashboardStats(access);
+  const { data, isLoading, isError } = useDashboardStats(access, detailsRequested);
 
   const displayName = firstName ? `${firstName}` : user?.email?.split('@')[0] || 'Usuario';
 
@@ -65,11 +68,33 @@ const DashboardHome = () => {
         access={access}
       />}
 
-      {!isError && access.members && (
+      {!isError && access.members && !detailsRequested && (
+        <section className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/70 p-5 shadow-sm dark:border-blue-400/20 dark:bg-blue-950/20" aria-labelledby="dashboard-details-title">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-600 text-white shadow-sm"><BarChart3 size={19} /></span>
+              <div>
+                <h2 id="dashboard-details-title" className="text-sm font-black text-slate-900 dark:text-white">Análisis detallado bajo demanda</h2>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-600 dark:text-slate-300">Carga gráficos, alertas y talentos solo cuando los necesites. El resumen principal ya está disponible sin descargar todo el CRM.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDetailsRequested(true)}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-black text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:bg-blue-500 dark:text-slate-950 dark:hover:bg-blue-400"
+            >
+              {detailsRequested && isLoading ? <Loader2 size={15} className="animate-spin" /> : <BarChart3 size={15} />}
+              Cargar análisis
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!isError && access.members && detailsRequested && (
         <TalentsSkillsHub directory={talentDirectory} loading={isLoading} canViewNeeds={access.volunteering} />
       )}
 
-      {!isError && access.members && (
+      {!isError && access.members && detailsRequested && (
         <DashboardCharts
           loading={isLoading}
           ageData={ageData}

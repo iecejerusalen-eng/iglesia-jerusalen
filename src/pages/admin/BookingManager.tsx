@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../config/supabase';
 import type { Space, SpaceBooking } from '../../types';
 import MediaAssetPicker from '../../components/admin/MediaAssetPicker';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 type ReservationTab = 'calendar' | 'requests' | 'spaces';
 type SpaceForm = {
@@ -17,6 +18,7 @@ const formatDateTime = (value: string) => new Date(value).toLocaleString('es-EC'
 const isOverlapping = (start: string, end: string, booking: SpaceBooking) => new Date(start).getTime() < new Date(booking.end_time).getTime() && new Date(end).getTime() > new Date(booking.start_time).getTime();
 
 export default function BookingManager() {
+  const confirm = useConfirmStore((state) => state.confirm);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [bookings, setBookings] = useState<SpaceBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,8 @@ export default function BookingManager() {
     if (error) { toast.error(error.message || 'No se pudo actualizar la solicitud.'); return; } toast.success(status === 'approved' ? 'Reserva aprobada.' : 'Solicitud rechazada.'); await loadData();
   };
   const deleteSpace = async (space: Space) => {
-    if (!window.confirm(`¿Eliminar “${space.name}”? Las reservas vinculadas también se eliminarán.`)) return;
+    const accepted = await confirm({ title: 'Eliminar espacio', message: `Las reservas vinculadas a “${space.name}” también se eliminarán.`, confirmText: 'Eliminar espacio', variant: 'danger' });
+    if (!accepted) return;
     const { error } = await supabase.from('spaces').delete().eq('id', space.id); if (error) { toast.error(error.message || 'No se pudo eliminar el espacio.'); return; }
     if (selectedSpace?.id === space.id) setSelectedSpace(null); toast.success('Espacio eliminado.'); await loadData();
   };

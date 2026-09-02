@@ -82,6 +82,12 @@ const AdminLayout = () => {
       className="min-h-[100dvh] overflow-x-hidden bg-[#f6f7f9] font-sans text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
       style={accentStyle}
     >
+      <a
+        href="#admin-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-amber-400 focus:px-4 focus:py-2 focus:font-bold focus:text-slate-950 focus:shadow-xl"
+      >
+        Saltar al contenido principal
+      </a>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -180,7 +186,7 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        <main className={`mx-auto w-full max-w-[1600px] flex-1 px-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-5 md:px-6 md:pb-8 md:pt-6 xl:px-8 ${isFloating ? 'md:pt-8' : ''}`}>
+        <main id="admin-main-content" tabIndex={-1} className={`mx-auto w-full max-w-[1600px] flex-1 px-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pt-5 md:px-6 md:pb-8 md:pt-6 xl:px-8 ${isFloating ? 'md:pt-8' : ''}`}>
           <GlobalErrorBoundary key={location.pathname}>
             <Outlet />
           </GlobalErrorBoundary>

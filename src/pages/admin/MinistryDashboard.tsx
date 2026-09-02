@@ -33,7 +33,7 @@ export default function MinistryDashboard() {
     setLoadError(null);
     try {
       const [ministryResult, schoolResult] = await Promise.all([
-        supabase.from('ministries').select('*').eq('id', id).maybeSingle(),
+        supabase.from('ministries').select('id, name, slug, category, description, leader_name, schedule, image_url, theme_color, anniversary_date, created_at').eq('id', id).maybeSingle(),
         supabase.from('lms_schools').select('*').eq('ministry_id', id).maybeSingle(),
       ]);
       if (ministryResult.error) throw ministryResult.error;

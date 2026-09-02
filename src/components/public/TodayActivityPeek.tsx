@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, ChevronRight, Clock3, MapPin, X } from 'lucide-react';
+import { CalendarDays, ChevronRight, Clock3, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import type { Event as DbEvent } from '../../types';
 import { formatEventTime, getLocalDateKey } from '../../features/events/utils/eventPresentation';
 
-type TodayEvent = Pick<DbEvent, 'id' | 'title' | 'emoji' | 'start_date' | 'end_date' | 'start_time' | 'end_time' | 'location_name'>;
+type TodayEvent = Pick<DbEvent, 'id' | 'title' | 'emoji' | 'start_date' | 'end_date' | 'start_time' | 'end_time'>;
 
 async function getTodayEvents(): Promise<TodayEvent[]> {
   const today = getLocalDateKey(new Date());
 
   const { data, error } = await supabase
     .from('events')
-    .select('id, title, emoji, start_date, end_date, start_time, end_time, location_name')
+    .select('id, title, emoji, start_date, end_date, start_time, end_time')
     .eq('is_public', true)
     .lte('start_date', today)
     .gte('end_date', today)
@@ -101,7 +101,6 @@ export default function TodayActivityPeek() {
                       </span>
                       <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                         <span className="inline-flex items-center gap-1"><Clock3 size={12} /> {formatEventTime(event.start_time, event.end_time)}</span>
-                        {event.location_name && <span className="inline-flex min-w-0 items-center gap-1"><MapPin size={12} /> <span className="max-w-[9rem] truncate">{event.location_name}</span></span>}
                       </span>
                     </span>
                   </div>

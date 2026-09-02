@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { Plus, Edit2, Trash2, Save, X, Image as ImageIcon, Smile, Search, AlertCircle } from 'lucide-react';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
 import { uploadMediaFile } from '../../../lib/mediaService';
+import { toast } from 'sonner';
 
 interface Question {
   id: string;
@@ -83,7 +84,7 @@ export const BiblionarioEditor = () => {
       setFormData({ ...formData, image_url: publicUrl });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Error subiendo imagen.');
+      toast.error('Error al subir la imagen.');
     } finally {
       setUploadingImage(false);
     }
@@ -116,10 +117,11 @@ export const BiblionarioEditor = () => {
       setIsAdding(false);
       setEditingId(null);
       setFormData({});
-      fetchQuestions();
+      await fetchQuestions();
+      toast.success(isAdding ? 'Pregunta creada.' : 'Pregunta actualizada.');
     } catch (err) {
       console.error('Error saving question:', err);
-      alert('Error al guardar la pregunta.');
+      toast.error('Error al guardar la pregunta.');
     }
   };
 
@@ -131,9 +133,11 @@ export const BiblionarioEditor = () => {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      fetchQuestions();
+      await fetchQuestions();
+      toast.success('Pregunta eliminada.');
     } catch (err) {
       console.error('Error deleting question:', err);
+      toast.error('No se pudo eliminar la pregunta.');
     }
   };
 
@@ -147,10 +151,10 @@ export const BiblionarioEditor = () => {
         .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
         
       if (error) throw error;
-      alert('La clasificación ha sido reseteada correctamente.');
+      toast.success('La clasificación ha sido reseteada correctamente.');
     } catch (err) {
       console.error('Error resetting leaderboard:', err);
-      alert('Error al resetear la clasificación.');
+      toast.error('Error al resetear la clasificación.');
     }
   };
 

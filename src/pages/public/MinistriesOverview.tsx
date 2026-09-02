@@ -35,7 +35,7 @@ const MinistriesOverview = () => {
       try {
         const { data, error } = await supabase
           .from('ministries')
-          .select('*')
+          .select('id, name, slug, category, description, leader_name, schedule, image_url, theme_color, anniversary_date, created_at')
           .order('name');
         if (data && !error) {
           setMinistries(data);

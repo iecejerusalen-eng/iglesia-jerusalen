@@ -6,9 +6,12 @@ import {
   ArrowUp, ArrowDown, Save, X, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { useConfirmStore } from '../../store/useConfirmStore';
 
 export default function MenuManager() {
   const { items, isLoading, error, fetchMenu, updateOrder, addMenu, editMenu, deleteMenu } = useMenuStore();
+  const confirm = useConfirmStore((state) => state.confirm);
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   
@@ -61,8 +64,10 @@ export default function MenuManager() {
         });
       }
       resetForm();
+      toast.success(editingItem ? 'Enlace actualizado.' : 'Enlace añadido.');
     } catch (err) {
-      console.error(err);
+      console.error('No se pudo guardar el elemento del menú.', err);
+      toast.error(err instanceof Error ? err.message : 'No se pudo guardar el elemento del menú.');
     }
   };
 
@@ -79,8 +84,14 @@ export default function MenuManager() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleVisibility = (item: MenuItem) => {
-    editMenu(item.id, { is_visible: !item.is_visible });
+  const toggleVisibility = async (item: MenuItem) => {
+    try {
+      await editMenu(item.id, { is_visible: !item.is_visible });
+      toast.success(item.is_visible ? 'Enlace ocultado.' : 'Enlace visible.');
+    } catch (err) {
+      console.error('No se pudo cambiar la visibilidad del menú.', err);
+      toast.error(err instanceof Error ? err.message : 'No se pudo cambiar la visibilidad.');
+    }
   };
 
   const moveItem = (item: MenuItem, direction: 'up' | 'down') => {
@@ -153,8 +164,21 @@ export default function MenuManager() {
             <Edit2 size={18} />
           </button>
           <button
-            onClick={() => {
-              if(window.confirm('¿Eliminar este elemento del menú?')) deleteMenu(item.id);
+            onClick={async () => {
+              const accepted = await confirm({
+                title: 'Eliminar elemento del menú',
+                message: `¿Eliminar “${item.label}”? Esta acción no se puede deshacer.`,
+                confirmText: 'Eliminar',
+                variant: 'danger',
+              });
+              if (!accepted) return;
+              try {
+                await deleteMenu(item.id);
+                toast.success('Elemento eliminado.');
+              } catch (err) {
+                console.error('No se pudo eliminar el elemento del menú.', err);
+                toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el elemento.');
+              }
             }}
             className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           >

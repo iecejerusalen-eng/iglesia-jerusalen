@@ -49,8 +49,9 @@ export const menuService = {
       }
 
       if (!data || data.length === 0) {
-        // Table is empty, auto-seed default menu items into Supabase DB
-        return await menuService.seedDefaultMenuItems();
+        // A public read must remain side-effect free. Seeding from the browser
+        // creates duplicate writes when the table is empty or RLS blocks them.
+        return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
       }
       
       return menuService.deduplicateItems(data);

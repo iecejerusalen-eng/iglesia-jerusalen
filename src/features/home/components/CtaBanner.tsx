@@ -23,7 +23,7 @@ export const CtaBanner = () => {
           <div className="pt-4">
             <MagneticButton>
               <Link
-                to="/contacto"
+                to="/visita"
                 className="px-10 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 Planifica tu visita

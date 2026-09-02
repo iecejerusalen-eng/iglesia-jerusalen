@@ -82,6 +82,10 @@ interface OptimizedMediaProps {
   width?: number;
   /** Optional desired display height */
   height?: number;
+  /** Responsive image candidates for the browser's resource selection */
+  sizes?: string;
+  /** Resource priority; reserve high for above-the-fold media */
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -92,6 +96,8 @@ export default function OptimizedMedia({
   className = '',
   width,
   height,
+  sizes,
+  fetchPriority = 'auto',
 }: OptimizedMediaProps) {
   if (!src) return null;
 
@@ -107,7 +113,9 @@ export default function OptimizedMedia({
         alt={alt}
         loading="lazy"
         decoding="async"
+        fetchPriority={fetchPriority}
         className={className}
+        {...(sizes ? { sizes } : {})}
         {...(width ? { width } : {})}
         {...(height ? { height } : {})}
       />

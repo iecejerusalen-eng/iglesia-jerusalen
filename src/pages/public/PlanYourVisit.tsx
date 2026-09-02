@@ -12,7 +12,6 @@ import { supabase } from '../../config/supabase';
 import { CHURCH_LOCATION } from '../../components/map/churchLocation';
 import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
 import type { Event as DbEvent, Schedule } from '../../types';
-import { FALLBACK_SCHEDULES } from '../../features/home/constants';
 import { formatEventDateRange, formatEventTime } from '../../features/events/utils/eventPresentation';
 import { toast } from 'sonner';
 
@@ -53,9 +52,9 @@ function useVisitData() {
   const schedules = useQuery({
     queryKey: ['publicVisitSchedules'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('schedules').select('*').order('order_index', { ascending: true });
+      const { data, error } = await supabase.from('schedules').select('id, day, title, time_range, description, order_index, created_at').order('order_index', { ascending: true });
       if (error) throw error;
-      return data && data.length > 0 ? data as Schedule[] : FALLBACK_SCHEDULES;
+      return data ? data as Schedule[] : [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -65,13 +64,16 @@ function useVisitData() {
       const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from('events')
-        .select('*, ministries(name)')
+        .select('id, title, description, start_date, end_date, start_time, end_time, is_recurring, recurrence_type, recurrence_days, cover_image_url, emoji, ministry_id, leaders_in_charge, is_public, space_id, created_at, ministries(name, slug, theme_color)')
         .eq('is_public', true)
         .gte('start_date', today)
         .order('start_date', { ascending: true })
         .limit(3);
       if (error) throw error;
-      return (data ?? []) as DbEvent[];
+      return (data ?? []).map((event) => ({
+        ...event,
+        ministries: Array.isArray(event.ministries) ? event.ministries[0] ?? null : event.ministries,
+      })) as DbEvent[];
     },
     staleTime: 5 * 60 * 1000,
   });

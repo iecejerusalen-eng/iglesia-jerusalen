@@ -8,7 +8,7 @@ import { logger } from '../../../utils/logger';
 import { mergePermissions, normalizePermissions } from '../../access-control/accessControl';
 import type { CustomAccessRole, PermissionMap } from '../../access-control/types';
 
-import type { AdminPreferences } from '../../../store/useThemeStore';
+import { useThemeStore, type AdminPreferences } from '../../../store/useThemeStore';
 
 export interface UserProfile {
   role?: string | null;
@@ -224,9 +224,7 @@ export function applyProfile(
     // Apply admin preferences if available
     const adminPrefs = profile.admin_preferences;
     if (adminPrefs) {
-      import('../../../store/useThemeStore').then(({ useThemeStore }) => {
-        useThemeStore.getState().setAdminPreferences(adminPrefs);
-      });
+      useThemeStore.getState().setAdminPreferences(adminPrefs);
     }
   } else {
     set({

@@ -57,9 +57,9 @@ export const getProductImages = (product: Product, variant?: ProductVariant | nu
   const mappedCandidates = rawCandidates.map((img) => {
     if (img.includes('unsplash') || !img) {
       const name = (product.name || '').toLowerCase();
-      if (name.includes('camiseta')) return '/products/camiseta-jerusalen.jpg';
-      if (name.includes('biblia')) return '/products/biblia-estudio.jpg';
-      if (name.includes('taza')) return '/products/taza-jerusalen.jpg';
+      if (name.includes('camiseta')) return '/products/camiseta-jerusalen.webp';
+      if (name.includes('biblia')) return '/products/biblia-estudio.webp';
+      if (name.includes('taza')) return '/products/taza-jerusalen.webp';
     }
     return img;
   });

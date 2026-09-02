@@ -30,3 +30,11 @@ test('parseBibleReferences parses correctly', () => {
     expect(String(ref.verses)).toBe(expectedVerses);
   }
 });
+
+test('parseBibleReferences accepts numbered book abbreviations with punctuation', () => {
+  const [reference] = parseBibleReferences('1 Tes. 4:16');
+
+  expect(reference.bookId).toBe('1-tesalonicenses');
+  expect(reference.chapter).toBe('4');
+  expect(reference.verses).toBe('16');
+});

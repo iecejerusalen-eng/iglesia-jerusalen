@@ -37,9 +37,7 @@ const VideoThumbnailPlayer = React.forwardRef<HTMLDivElement, VideoThumbnailPlay
 
     // Auto-generate thumbnail if missing and video is YouTube
     const ytId = extractYouTubeId(videoUrl);
-    const finalThumbnail =
-      thumbnailUrl ||
-      (ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : "https://images.unsplash.com/photo-1593642532454-e138e28a63f4?q=80&w=2069&auto=format&fit=crop");
+    const finalThumbnail = thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : undefined);
 
     // Handle 'Escape' key press for closing modal
     React.useEffect(() => {
@@ -96,16 +94,7 @@ const VideoThumbnailPlayer = React.forwardRef<HTMLDivElement, VideoThumbnailPlay
           {...props}
         >
           {/* Thumbnail Image */}
-          <img
-            src={finalThumbnail}
-            alt={`Thumbnail for ${title}`}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => {
-              if (ytId && e.currentTarget.src.includes('maxresdefault')) {
-                e.currentTarget.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-              }
-            }}
-          />
+          {finalThumbnail ? <img src={finalThumbnail} alt={`Thumbnail for ${title}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => { if (ytId && e.currentTarget.src.includes('maxresdefault')) e.currentTarget.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`; else e.currentTarget.style.display = 'none'; }} /> : <div aria-hidden="true" className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-white/70"><Play className="h-14 w-14" /></div>}
           {/* Overlay Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent transition-opacity duration-300 group-hover:from-slate-950/90" />
 

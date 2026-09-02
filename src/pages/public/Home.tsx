@@ -27,6 +27,7 @@ const Home = () => {
     sermons,
     events,
     stats,
+    isStatsLoading,
     birthdayMembers,
     loadingSchedules,
     loadingSermons,
@@ -146,7 +147,7 @@ const Home = () => {
       })}
 
       <div id="stats_section">
-        <StatsSection stats={stats} />
+        <StatsSection stats={stats} isLoading={isStatsLoading} />
       </div>
       
       <div id="testimonials_section">
