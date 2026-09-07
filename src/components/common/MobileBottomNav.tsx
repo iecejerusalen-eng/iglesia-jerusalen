@@ -11,6 +11,8 @@ import {
   Users,
   Video,
   Music,
+  Radio,
+  Newspaper,
   GraduationCap,
   Gamepad2,
   Sparkles,
@@ -26,6 +28,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { PUBLIC_NAVIGATION_LINKS } from '../../config/publicNavigation';
 
 interface SubMenuItem {
   id: string;
@@ -89,6 +92,13 @@ const RECURSOS_ITEMS: SubMenuItem[] = [
     icon: Video,
   },
   {
+    id: 'rec-podcast',
+    label: PUBLIC_NAVIGATION_LINKS.podcast.label,
+    description: PUBLIC_NAVIGATION_LINKS.podcast.description,
+    url: PUBLIC_NAVIGATION_LINKS.podcast.url,
+    icon: Radio,
+  },
+  {
     id: 'rec-alabanzas',
     label: 'Alabanzas e Himnos',
     description: 'Letras, acordes y pistas de adoración',
@@ -139,6 +149,20 @@ const COMUNIDAD_ITEMS: SubMenuItem[] = [
     description: 'Noticias y boletines de la congregación',
     url: '/anuncios',
     icon: Megaphone,
+  },
+  {
+    id: 'com-novedades',
+    label: PUBLIC_NAVIGATION_LINKS.novedades.label,
+    description: PUBLIC_NAVIGATION_LINKS.novedades.description,
+    url: PUBLIC_NAVIGATION_LINKS.novedades.url,
+    icon: Sparkles,
+  },
+  {
+    id: 'com-boletin',
+    label: PUBLIC_NAVIGATION_LINKS.boletin.label,
+    description: PUBLIC_NAVIGATION_LINKS.boletin.description,
+    url: PUBLIC_NAVIGATION_LINKS.boletin.url,
+    icon: Newspaper,
   },
   {
     id: 'com-peticiones',

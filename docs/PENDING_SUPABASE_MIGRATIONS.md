@@ -14,6 +14,8 @@ Estos cambios existen en el workspace local, pero no hay evidencia en este repos
 | 4 | APLICADO | `supabase/migrations/20260905020000_weekly_bulletins.sql` | Versculos semanales y boletines dominicales | Lee `sermons`, `events`, `church_announcements`, `members` y `schedules`. Tambin activa Realtime para `boletines`. |
 | 5 | APLICADO | `supabase/migrations/20260906000000_ministry_budgets.sql` | Presupuestos, gastos y comprobantes por ministerio | Depende de `ministries`, `profiles` y Storage. Incluye funciones, triggers, RLS y bucket privado `budget-receipts`. |
 | 6 | APLICADO | `supabase/migrations/20260906010000_private_pastoral_agenda.sql` | Agenda personal privada y vista pblica limitada | Depende de `members`. La agenda privada se filtra por `usuario_id`; lo pblico solo aparece mediante `es_publico = true` y `agenda_publica`. |
+| 7 | APLICADO | `supabase/migrations/20260906023000_public_bulletin_views.sql` | Vista pǧblica limitada del boletn | Debe aplicarse despuǸs de `20260905020000_weekly_bulletins.sql`; solo permite `aprobado`/`enviado` y excluye datos internos. |
+| 8 | APLICADO | `supabase/migrations/20260906030000_sync_public_navigation.sql` | Sincroniza Podcast, Novedades y Boletn en `public_menu_items` | Debe aplicarse despuǸs de `20260726000000_dynamic_menu.sql`; es idempotente y no reemplaza las decisiones de visibilidad del administrador. |
 
 ## Despliegues relacionados pendientes
 
@@ -54,6 +56,8 @@ Los siguientes archivos consumen las entidades anteriores y no deben desplegarse
 - `src/pages/admin/BulletinManager.tsx`
 - `src/pages/admin/MinistryBudgets.tsx`
 - `src/pages/admin/ChangelogManager.tsx`
+- `src/pages/public/Bulletin.tsx`
+- `src/pages/public/PublicAgenda.tsx`
 - `api/changelog/dar-de-baja.ts`
 - `api/changelog/reaccionar.ts`
 - `api/changelog/suscribir.ts`

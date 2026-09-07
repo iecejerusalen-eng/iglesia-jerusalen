@@ -28,6 +28,8 @@ const Expositores = lazyWithRetry(() => import('../pages/public/Expositores'));
 const Contact = lazyWithRetry(() => import('../pages/public/Contact'));
 const Events = lazyWithRetry(() => import('../pages/public/Events'));
 const ChurchAnnouncementsPage = lazyWithRetry(() => import('../pages/public/ChurchAnnouncementsPage'));
+const Bulletin = lazyWithRetry(() => import('../pages/public/Bulletin'));
+const PublicAgenda = lazyWithRetry(() => import('../pages/public/PublicAgenda'));
 const Changelog = lazyWithRetry(() => import('../pages/public/Changelog'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
@@ -192,6 +194,8 @@ export default function AppRouter() {
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eventos" element={<Events />} />
           <Route path="/anuncios" element={<ChurchAnnouncementsPage />} />
+          <Route path="/boletin" element={<Bulletin />} />
+          <Route path="/agenda" element={<PublicAgenda />} />
           <Route path="/novedades" element={<Changelog />} />
           <Route path="/novedades/:version" element={<Changelog />} />
           <Route path="/changelog" element={<Navigate to="/novedades" replace />} />

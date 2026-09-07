@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { REQUIRED_PUBLIC_MENU_ITEMS } from '../config/publicNavigation';
 
 export interface MenuItem {
   id: string;
@@ -27,6 +28,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { id: 'default-4', label: 'Recursos', url: '#', order_index: 40, is_visible: true, icon: 'BookOpen' },
   { id: 'default-4-1', label: 'La Santa Biblia', url: '/recursos/biblia', order_index: 10, parent_id: 'default-4', is_visible: true, icon: 'Book' },
   { id: 'default-4-2', label: 'Prédicas', url: '/predicas', order_index: 20, parent_id: 'default-4', is_visible: true, icon: 'Video' },
+  { id: 'default-4-2-podcast', label: 'Podcast', url: '/podcast', order_index: 25, parent_id: 'default-4', is_visible: true, icon: 'Radio' },
   { id: 'default-4-3', label: 'Alabanzas e Himnos', url: '/recursos/alabanzas', order_index: 30, parent_id: 'default-4', is_visible: true, icon: 'Music' },
   { id: 'default-4-4', label: 'Programas / Estudios', url: '/programas', order_index: 40, parent_id: 'default-4', is_visible: true, icon: 'GraduationCap' },
   { id: 'default-4-5', label: 'Juegos Bíblicos 🎮', url: '/recursos/juegos', order_index: 50, parent_id: 'default-4', is_visible: true, icon: 'Gamepad2' },
@@ -45,19 +47,19 @@ export const menuService = {
 
       if (error) {
         console.warn('Error querying public_menu_items, using default fallback:', error?.message);
-        return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
+        return menuService.ensureRequiredPublicItems(DEFAULT_MENU_ITEMS);
       }
 
       if (!data || data.length === 0) {
         // A public read must remain side-effect free. Seeding from the browser
         // creates duplicate writes when the table is empty or RLS blocks them.
-        return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
+        return menuService.ensureRequiredPublicItems(DEFAULT_MENU_ITEMS);
       }
       
-      return menuService.deduplicateItems(data);
+      return menuService.ensureRequiredPublicItems(data);
     } catch (err) {
       console.warn('Error al obtener elementos del menú, usando fallback:', err);
-      return menuService.deduplicateItems(DEFAULT_MENU_ITEMS);
+      return menuService.ensureRequiredPublicItems(DEFAULT_MENU_ITEMS);
     }
   },
 
@@ -128,6 +130,30 @@ export const menuService = {
         result.push(item);
       }
     }
+    return result;
+  },
+
+  ensureRequiredPublicItems(items: MenuItem[]): MenuItem[] {
+    const result = menuService.deduplicateItems(items);
+
+    for (const required of REQUIRED_PUBLIC_MENU_ITEMS) {
+      if (result.some((item) => item.url === required.url)) continue;
+
+      const parent = result.find(
+        (item) => !item.parent_id && item.label.trim().toLowerCase() === required.parentLabel.toLowerCase()
+      );
+
+      result.push({
+        id: `fallback-${required.url.replace(/[^a-z0-9]+/gi, '-')}`,
+        label: required.label,
+        url: required.url,
+        order_index: required.order_index,
+        parent_id: parent?.id,
+        is_visible: true,
+        icon: required.icon,
+      });
+    }
+
     return result;
   },
 
