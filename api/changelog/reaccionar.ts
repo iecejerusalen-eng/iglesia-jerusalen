@@ -1,0 +1,7 @@
+import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+
+const input = z.object({ version_id: z.string().uuid(), sesion_id: z.string().min(16).max(128), emoji: z.enum(['🙌', '🔥', '❤️', '🤔', '👏']), quitar: z.boolean().optional() });
+type HandlerRequest = { method?: string; body?: unknown };
+type HandlerResponse = { status: (code: number) => HandlerResponse; json: (value: unknown) => void };
+export default async function handler(req: HandlerRequest, res: HandlerResponse) { if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' }); const parsed = input.safeParse(req.body); if (!parsed.success) return res.status(400).json({ error: 'Datos de reacción inválidos.' }); const client = createClient(process.env.VITE_SUPABASE_URL ?? '', process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''); const value = parsed.data; const result = value.quitar ? await client.from('changelog_reacciones').delete().match({ version_id: value.version_id, sesion_id: value.sesion_id, emoji: value.emoji }) : await client.from('changelog_reacciones').upsert({ version_id: value.version_id, sesion_id: value.sesion_id, emoji: value.emoji }, { onConflict: 'version_id,sesion_id,emoji', ignoreDuplicates: true }); if (result.error) { console.error('Error de Supabase al guardar reacción.', result.error); return res.status(500).json({ error: 'No se pudo guardar la reacción.' }); } return res.status(200).json({ ok: true }); }

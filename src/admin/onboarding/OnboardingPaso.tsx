@@ -1,0 +1,6 @@
+import { Check, ChevronRight } from 'lucide-react';
+import type { OnboardingPasoData } from './useOnboarding';
+
+export function OnboardingPaso({ paso, onAction }: { paso: OnboardingPasoData; onAction: (paso: OnboardingPasoData) => void }) {
+  return <li className="flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-white/5"><span className={`grid size-8 shrink-0 place-items-center rounded-full text-sm ${paso.completado ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>{paso.completado ? <Check size={16} /> : paso.icono}</span><div className="min-w-0 flex-1"><p className={`text-sm font-bold ${paso.completado ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>{paso.titulo}</p><p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">{paso.descripcion}</p></div>{!paso.completado && <button type="button" onClick={() => onAction(paso)} className="inline-flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-black text-primary hover:bg-primary/10 dark:text-church-gold-bright" aria-label={`${paso.accion_label}: ${paso.titulo}`}>{paso.accion_label}<ChevronRight size={14} /></button>}</li>;
+}

@@ -54,7 +54,7 @@ const Footer = () => {
         { name: 'Quiénes Somos', path: '/nosotros', icon: Users },
         { name: 'Ministerios', path: '/ministerios', icon: Heart },
         { name: 'Misiones', path: '/misiones', icon: Globe },
-        { name: 'Generosidad & Ofrendas', path: '/donations', icon: HeartHandshake },
+        { name: 'Generosidad & Ofrendas', path: '/donaciones', icon: HeartHandshake },
       ]
     },
     {

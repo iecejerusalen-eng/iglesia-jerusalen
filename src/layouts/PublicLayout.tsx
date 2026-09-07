@@ -17,7 +17,7 @@ const ROUTE_METADATA: Array<{ match: string; title: string; description: string 
   { match: '/podcast', title: 'Podcast | Iglesia Jerusalén', description: 'Escucha conversaciones, enseñanzas y contenidos de audio de la Iglesia Jerusalén.' },
   { match: '/eventos', title: 'Eventos | Iglesia Jerusalén', description: 'Consulta los próximos eventos y actividades de la Iglesia Jerusalén.' },
   { match: '/ministerios', title: 'Ministerios | Iglesia Jerusalén', description: 'Conoce los ministerios y espacios de servicio de la Iglesia Jerusalén.' },
-  { match: '/donations', title: 'Donaciones | Iglesia Jerusalén', description: 'Apoya la misión de la Iglesia Jerusalén con una donación segura.' },
+  { match: '/donaciones', title: 'Donaciones | Iglesia Jerusalén', description: 'Apoya la misión de la Iglesia Jerusalén con una donación segura.' },
   { match: '/contacto', title: 'Contacto | Iglesia Jerusalén', description: 'Comunícate con la Iglesia Jerusalén y encuentra nuestros canales oficiales.' },
   { match: '/peticiones', title: 'Peticiones de oración | Iglesia Jerusalén', description: 'Comparte tu petición de oración con la comunidad de la Iglesia Jerusalén.' },
   { match: '/recursos', title: 'Recursos | Iglesia Jerusalén', description: 'Explora recursos bíblicos, alabanzas, juegos y contenidos para crecer en la fe.' },

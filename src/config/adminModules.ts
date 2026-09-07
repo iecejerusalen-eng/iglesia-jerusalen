@@ -37,6 +37,9 @@ import {
   LibraryBig,
   ClipboardCheck,
   Target,
+  Lightbulb,
+  Newspaper,
+  WalletCards,
 } from 'lucide-react';
 
 export type ModuleGroup =
@@ -191,6 +194,37 @@ export const ADMIN_MODULES: AdminModule[] = [
     keywords: ['objetivos', 'indicadores', 'metas', 'iniciativas', 'plan estratégico']
   },
   {
+    id: 'ideas',
+    label: 'Muro colaborativo de ideas',
+    name: 'Muro de Ideas',
+    path: '/admin/ideas',
+    icon: Lightbulb,
+    group: 'inicio',
+    keywords: ['ideas', 'propuestas', 'necesidades', 'lluvia de ideas']
+  },
+  {
+    id: 'bulletin',
+    label: 'Boletín dominical automático',
+    name: 'Boletín dominical',
+    path: '/admin/boletin',
+    icon: Newspaper,
+    group: 'contenido',
+    permission: 'editorial',
+    showInPermissions: false,
+    keywords: ['boletín', 'domingo', 'pdf', 'whatsapp', 'comunicaciones']
+  },
+  {
+    id: 'ministry_budgets',
+    label: 'Presupuestos por ministerio',
+    name: 'Presupuestos ministerios',
+    path: '/admin/finanzas/ministerios',
+    icon: WalletCards,
+    group: 'finanzas_tienda',
+    permission: 'finances',
+    showInPermissions: false,
+    keywords: ['presupuesto', 'gastos', 'ministerios', 'aprobaciones']
+  },
+  {
     id: 'appearance',
     label: 'Configuración del Panel',
     name: 'Personalizar Panel',
@@ -342,6 +376,17 @@ export const ADMIN_MODULES: AdminModule[] = [
     path: '/admin/eventos',
     icon: Calendar,
     group: 'contenido'
+  },
+  {
+    id: 'agenda',
+    label: 'Agenda pastoral personal',
+    name: 'Mi Agenda',
+    path: '/admin/agenda',
+    icon: Calendar,
+    group: 'personas',
+    permission: 'events',
+    showInPermissions: false,
+    keywords: ['agenda', 'visitas', 'seguimientos', 'pastoral']
   },
   {
     id: 'announcements',

@@ -36,9 +36,14 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://iglesia-jerusalen.vercel.app/peticiones</loc>
+    <loc>https://iglesia-jerusalen.vercel.app/novedades</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://iglesia-jerusalen.vercel.app/peticiones</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://iglesia-jerusalen.vercel.app/ministerios</loc>
@@ -46,7 +51,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iglesia-jerusalen.vercel.app/donations</loc>
+    <loc>https://iglesia-jerusalen.vercel.app/donaciones</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/donations",
+      "destination": "/donaciones",
+      "permanent": true
+    },
+    {
+      "source": "/changelog",
+      "destination": "/novedades",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

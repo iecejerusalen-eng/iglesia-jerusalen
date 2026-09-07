@@ -154,7 +154,7 @@ La carpeta `src/assets/Jerusalén/` contiene los logos oficiales de la congregac
 | `/tienda` | **Tienda** | Catálogo e-commerce con variantes de color/talla de productos, stock controlado y carrito. |
 | `/cart` | **Carrito** | Resumen del pedido con pasarela de carga de comprobantes de pago por transferencia. |
 | `/mis-compras` | **Mis Compras** | Historial de pedidos y estados de entrega del usuario autenticado. |
-| `/donations` | **Diezmos y Ofrendas** | Formulario seguro para registrar donaciones financieras y diezmos con subida de comprobante bancario. |
+| `/donaciones` | **Diezmos y Ofrendas** | Formulario seguro para registrar donaciones financieras y diezmos con subida de comprobante bancario. |
 | `/contacto` | **Contacto** | Formulario público de contacto protegido por el middleware de rate-limiting. |
 | `/peticiones` | **Peticiones de Oración** | Buzón virtual de oración (anónimo o con perfil) protegido por rate-limiting. |
 | `/recursos/alabanzas` | **Biblioteca de Alabanzas** | Letras y acordes dinámicos interactivos de canciones con transpositor de tonos. |

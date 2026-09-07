@@ -92,7 +92,7 @@ export default function PremiumMissionsHero({
               <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </Link>
             <Link
-              to="/donations"
+              to="/donaciones"
               className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-300/80 bg-white/60 px-5 text-sm font-extrabold text-slate-800 shadow-sm backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:border-amber-400 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/20 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
             >
               <HandHeart size={17} className="text-amber-500" aria-hidden="true" />

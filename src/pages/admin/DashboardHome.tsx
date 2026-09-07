@@ -12,11 +12,18 @@ import { WeeklyAlerts } from '../../features/dashboard/components/WeeklyAlerts';
 import { QuickLinks } from '../../features/dashboard/components/QuickLinks';
 import { ModuleGrid } from '../../features/dashboard/components/ModuleGrid';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useOnboarding } from '../../admin/onboarding/useOnboarding';
+import { OnboardingPaso } from '../../admin/onboarding/OnboardingPaso';
+import { OnboardingProgreso } from '../../admin/onboarding/OnboardingProgreso';
+import type { OnboardingPasoData } from '../../admin/onboarding/useOnboarding';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardHome = () => {
   const { user, firstName } = useAuthStore();
   const [detailsRequested, setDetailsRequested] = useState(false);
   const { hasPermission } = usePermissions();
+  const onboarding = useOnboarding();
+  const navigate = useNavigate();
   const access = {
     members: hasPermission('members', 'view'),
     finances: hasPermission('finances', 'view'),
@@ -60,6 +67,16 @@ const DashboardHome = () => {
         <div role="alert" className="rounded-2xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm backdrop-blur-xl dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
           No se pudieron cargar algunas métricas en este momento. Tus accesos y herramientas siguen disponibles abajo.
         </div>
+      )}
+
+      {!onboarding.isLoading && !onboarding.error && onboarding.pasos.length > 0 && onboarding.porcentaje < 80 && (
+        <section className="rounded-3xl border border-amber-200/80 bg-white/85 p-4 shadow-sm backdrop-blur-xl dark:border-amber-400/20 dark:bg-slate-900/70 sm:p-5" aria-labelledby="onboarding-dashboard-title">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div><p className="text-xs font-black uppercase tracking-[0.15em] text-gold">🚀 Activa tu cuenta</p><h2 id="onboarding-dashboard-title" className="mt-1 text-lg font-black text-slate-900 dark:text-white">{onboarding.completados} de {onboarding.pasos.length} pasos completados</h2></div><span className="text-sm font-black text-primary dark:text-church-gold-bright">{onboarding.porcentaje}%</span>
+          </div>
+          <div className="mt-3"><OnboardingProgreso porcentaje={onboarding.porcentaje} /></div>
+          <ul className="mt-3 divide-y divide-slate-100 dark:divide-white/10">{onboarding.pasos.map((paso: OnboardingPasoData) => <OnboardingPaso key={paso.id} paso={paso} onAction={(item) => navigate(item.accion_ruta)} />)}</ul>
+        </section>
       )}
 
       {!isError && <DashboardStats

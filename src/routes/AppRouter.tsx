@@ -15,6 +15,7 @@ const AdminLayout = lazyWithRetry(() => import('../layouts/AdminLayout'));
 const Home = lazyWithRetry(() => import('../pages/public/Home'));
 const PlanYourVisit = lazyWithRetry(() => import('../pages/public/PlanYourVisit'));
 const Login = lazyWithRetry(() => import('../pages/auth/Login'));
+const Agenda = lazyWithRetry(() => import('../pages/admin/Agenda'));
 const Store = lazyWithRetry(() => import('../pages/public/Store'));
 const Cart = lazyWithRetry(() => import('../pages/public/Cart'));
 const Donations = lazyWithRetry(() => import('../pages/public/Donations'));
@@ -27,6 +28,7 @@ const Expositores = lazyWithRetry(() => import('../pages/public/Expositores'));
 const Contact = lazyWithRetry(() => import('../pages/public/Contact'));
 const Events = lazyWithRetry(() => import('../pages/public/Events'));
 const ChurchAnnouncementsPage = lazyWithRetry(() => import('../pages/public/ChurchAnnouncementsPage'));
+const Changelog = lazyWithRetry(() => import('../pages/public/Changelog'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
 const ProgramsOverview = lazyWithRetry(() => import('../pages/public/ProgramsOverview'));
@@ -50,6 +52,7 @@ const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
 const GuessCharacter = lazyWithRetry(() => import('../pages/public/games/GuessCharacter').then(m => ({ default: m.GuessCharacter })));
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
+const MyChurch = lazyWithRetry(() => import('../pages/public/MyChurch'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
 const Missions = lazyWithRetry(() => import('../pages/public/Missions'));
 const MissionExplorer = lazyWithRetry(() => import('../pages/public/MissionExplorer'));
@@ -154,6 +157,13 @@ const SchedulesManager = lazyWithRetry(() => import('../pages/admin/SchedulesMan
 const WorshipPlanner = lazyWithRetry(() => import('../pages/admin/WorshipPlanner'));
 const DiscipleshipManager = lazyWithRetry(() => import('../pages/admin/DiscipleshipManager'));
 const AdminNotFound = lazyWithRetry(() => import('../pages/admin/AdminNotFound'));
+const IdeasBoard = lazyWithRetry(() => import('../pages/admin/IdeasBoard'));
+const NewIdeaPage = lazyWithRetry(() => import('../pages/admin/IdeasBoard').then((module) => ({ default: module.NewIdeaPage })));
+const IdeaDetailPage = lazyWithRetry(() => import('../pages/admin/IdeasBoard').then((module) => ({ default: module.IdeaDetailPage })));
+const ChangelogManager = lazyWithRetry(() => import('../pages/admin/ChangelogManager'));
+const BulletinManager = lazyWithRetry(() => import('../pages/admin/BulletinManager'));
+const MyMinistryBudget = lazyWithRetry(() => import('../pages/admin/MinistryBudgets').then((module) => ({ default: module.MyMinistryBudget })));
+const MinistryBudgetsAdmin = lazyWithRetry(() => import('../pages/admin/MinistryBudgets').then((module) => ({ default: module.MinistryBudgetsAdmin })));
 
 export default function AppRouter() {
   return (
@@ -167,7 +177,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/tienda" element={<Store />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/donations" element={<Donations />} />
+          <Route path="/donaciones" element={<Donations />} />
           <Route path="/nosotros" element={<About />} />
           <Route path="/ministerios" element={<MinistriesOverview />} />
           <Route path="/ministerios/:slug" element={<MinistryDetail />} />
@@ -182,6 +192,9 @@ export default function AppRouter() {
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eventos" element={<Events />} />
           <Route path="/anuncios" element={<ChurchAnnouncementsPage />} />
+          <Route path="/novedades" element={<Changelog />} />
+          <Route path="/novedades/:version" element={<Changelog />} />
+          <Route path="/changelog" element={<Navigate to="/novedades" replace />} />
           <Route path="/peticiones" element={<Petitions />} />
           <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
           <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
@@ -204,6 +217,7 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
+          <Route path="/mi-iglesia" element={<MyChurch />} />
           <Route path="/reservas" element={<Bookings />} />
           <Route path="/comunidad" element={<CommunityFeed />} />
           <Route path="/comunidad/culto-en-vivo" element={<LiveStream />} />
@@ -261,7 +275,7 @@ export default function AppRouter() {
           <Route path="/admin/ministerios/:id" element={<MinistryDashboard />} />
         </Route></Route>
         <Route element={<ProtectedRoute module="logos" />}><Route element={<AdminLayout />}><Route path="/admin/logos" element={<LogosManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /><Route path="/admin/horarios" element={<SchedulesManager />} /><Route path="/admin/tiempo-de-culto" element={<WorshipPlanner />} /></Route></Route>
+        <Route element={<ProtectedRoute module="events" />}><Route element={<AdminLayout />}><Route path="/admin/eventos" element={<EventsManager />} /><Route path="/admin/horarios" element={<SchedulesManager />} /><Route path="/admin/tiempo-de-culto" element={<WorshipPlanner />} /><Route path="/admin/agenda" element={<Agenda />} /></Route></Route>
         <Route element={<ProtectedRoute module="missions" />}><Route element={<AdminLayout />}><Route path="/admin/misiones" element={<MissionsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="volunteering" />}><Route element={<AdminLayout />}><Route path="/admin/voluntariado" element={<VolunteersManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="bookings" />}><Route element={<AdminLayout />}><Route path="/admin/reservas" element={<BookingManager />} /></Route></Route>
@@ -317,6 +331,9 @@ export default function AppRouter() {
         </Route>
         <Route element={<ProtectedRoute module="editorial" />}>
           <Route element={<AdminLayout />}>
+            <Route path="/admin/changelog" element={<ChangelogManager />} />
+            <Route path="/admin/changelog/nueva" element={<ChangelogManager />} />
+            <Route path="/admin/changelog/:id" element={<ChangelogManager />} />
             <Route path="/admin/publicaciones" element={<EditorialManager />} />
             <Route path="/admin/publicaciones/:id" element={<EditorialWorkspace />} />
             <Route path="/admin/anuncios" element={<ChurchAnnouncementsManager />} />
@@ -358,6 +375,10 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="button_studio" />}><Route element={<AdminLayout />}><Route path="/admin/estilos" element={<Navigate to="/admin/apariencia/botones" replace />} /><Route path="/admin/apariencia/botones" element={<ComponentStylesManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="users" />}><Route element={<AdminLayout />}><Route path="/admin/usuarios" element={<UsersManager />} /><Route path="/admin/actividad" element={<AuditLogViewer />} /></Route></Route>
         <Route element={<ProtectedRoute module="petitions" />}><Route element={<AdminLayout />}><Route path="/admin/peticiones" element={<PetitionsManager />} /></Route></Route>
+        <Route element={<ProtectedRoute allowedRoles={['admin', 'pastor', 'leader']} />}><Route element={<AdminLayout />}><Route path="/admin/ideas" element={<IdeasBoard />} /><Route path="/admin/ideas/nueva" element={<NewIdeaPage />} /><Route path="/admin/ideas/:id" element={<IdeaDetailPage />} /></Route></Route>
+        <Route element={<ProtectedRoute allowedRoles={['admin', 'pastor', 'secretary', 'secretaria']} />}><Route element={<AdminLayout />}><Route path="/admin/boletin" element={<BulletinManager />} /></Route></Route>
+        <Route element={<ProtectedRoute allowedRoles={['leader', 'admin', 'pastor']} />}><Route element={<AdminLayout />}><Route path="/admin/mi-presupuesto" element={<MyMinistryBudget />} /></Route></Route>
+        <Route element={<ProtectedRoute allowedRoles={['admin', 'pastor']} />}><Route element={<AdminLayout />}><Route path="/admin/finanzas/ministerios" element={<MinistryBudgetsAdmin />} /></Route></Route>
         <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/chat" element={<ChatManager />} /><Route path="/admin/buzon" element={<ContactInbox />} /></Route></Route>
         <Route element={<ProtectedRoute module="inventory" />}><Route element={<AdminLayout />}><Route path="/admin/inventario" element={<InventoryManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="budgets_repairs" />}><Route element={<AdminLayout />}><Route path="/admin/presupuestos-arreglos" element={<BudgetsRepairsManager />} /></Route></Route>

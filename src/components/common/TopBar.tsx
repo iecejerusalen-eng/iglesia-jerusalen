@@ -113,7 +113,7 @@ const TopBar = () => {
 
         {/* Único Botón de Donaciones / Diezmos destacado */}
         <Link 
-          to="/donations" 
+          to="/donaciones" 
           className={`hidden sm:flex font-bold transition-all duration-500 items-center gap-1.5 px-3.5 py-1 rounded-full text-xs shadow-2xs cursor-pointer ${
             isTransparent 
               ? 'text-gold bg-gold/10 hover:bg-gold/20 border border-gold/40' 

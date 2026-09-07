@@ -43,7 +43,7 @@ export const DonationsSection = ({ sectionData }: DonationsSectionProps) => {
               <div className="pt-4">
                 <MagneticButton>
                   <Link
-                    to="/donations"
+                    to="/donaciones"
                     className="px-10 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/35 transition-all text-sm inline-flex items-center gap-2.5 cursor-pointer"
                   >
                     Diezmos y Ofrendas en Línea

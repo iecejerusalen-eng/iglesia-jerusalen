@@ -225,7 +225,7 @@ Entregables:
 - Matriz módulo → ruta → permiso → tabla → responsable.
 - Detección de rutas alias y módulos sin ruta real.
 - Identificación de mocks, datos demo y consultas directas.
-- Aplicación controlada de migraciones pendientes.
+- Aplicación controlada de [migraciones pendientes](./PENDING_SUPABASE_MIGRATIONS.md).
 - Revisión de RLS por dominio.
 - Tipos de Supabase actualizados.
 
