@@ -8,12 +8,12 @@ Estos cambios existen en el workspace local, pero no hay evidencia en este repos
 
 | Orden | Estado | Archivo | Alcance | Dependencias / notas |
 |---:|---|---|---|---|
-| 1 | PENDIENTE | `supabase/migrations/20260906020000_changelog.sql` | Changelog público, reacciones y suscriptores | Las APIs `api/changelog/*.ts` dependen de estas tablas. |
-| 2 | PENDIENTE | `supabase/migrations/20260905000000_ideas_wall.sql` | Ideas, votos, comentarios, historial, notificaciones y bucket privado | Depende de `profiles`, `role_permissions`, `access_roles` y del sistema RBAC existente. Incluye políticas RLS y publicación Realtime. |
-| 3 | PENDIENTE | `supabase/migrations/20260905010000_admin_onboarding.sql` | Pasos y progreso de onboarding por usuario | Depende de `auth.users`; la UI usa `onboarding_pasos`, `onboarding_progreso` y `onboarding_configuracion`. |
-| 4 | PENDIENTE | `supabase/migrations/20260905020000_weekly_bulletins.sql` | Versículos semanales y boletines dominicales | Lee `sermons`, `events`, `church_announcements`, `members` y `schedules`. También activa Realtime para `boletines`. |
-| 5 | PENDIENTE | `supabase/migrations/20260906000000_ministry_budgets.sql` | Presupuestos, gastos y comprobantes por ministerio | Depende de `ministries`, `profiles` y Storage. Incluye funciones, triggers, RLS y bucket privado `budget-receipts`. |
-| 6 | PENDIENTE | `supabase/migrations/20260906010000_private_pastoral_agenda.sql` | Agenda personal privada y vista pública limitada | Depende de `members`. La agenda privada se filtra por `usuario_id`; lo público solo aparece mediante `es_publico = true` y `agenda_publica`. |
+| 1 | APLICADO | `supabase/migrations/20260906020000_changelog.sql` | Changelog pblico, reacciones y suscriptores | Las APIs `api/changelog/*.ts` dependen de estas tablas. |
+| 2 | APLICADO | `supabase/migrations/20260905000000_ideas_wall.sql` | Ideas, votos, comentarios, historial, notificaciones y bucket privado | Depende de `profiles`, `role_permissions`, `access_roles` y del sistema RBAC existente. Incluye polticas RLS y publicacin Realtime. |
+| 3 | APLICADO | `supabase/migrations/20260905010000_admin_onboarding.sql` | Pasos y progreso de onboarding por usuario | Depende de `auth.users`; la UI usa `onboarding_pasos`, `onboarding_progreso` y `onboarding_configuracion`. |
+| 4 | APLICADO | `supabase/migrations/20260905020000_weekly_bulletins.sql` | Versculos semanales y boletines dominicales | Lee `sermons`, `events`, `church_announcements`, `members` y `schedules`. Tambin activa Realtime para `boletines`. |
+| 5 | APLICADO | `supabase/migrations/20260906000000_ministry_budgets.sql` | Presupuestos, gastos y comprobantes por ministerio | Depende de `ministries`, `profiles` y Storage. Incluye funciones, triggers, RLS y bucket privado `budget-receipts`. |
+| 6 | APLICADO | `supabase/migrations/20260906010000_private_pastoral_agenda.sql` | Agenda personal privada y vista pblica limitada | Depende de `members`. La agenda privada se filtra por `usuario_id`; lo pblico solo aparece mediante `es_publico = true` y `agenda_publica`. |
 
 ## Despliegues relacionados pendientes
 
