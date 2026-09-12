@@ -21,6 +21,7 @@ export const PodcastManager = () => {
   const [audioInputMode, setAudioInputMode] = useState<'file' | 'url'>('file');
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterSeconds, setChapterSeconds] = useState(0);
 
@@ -64,7 +65,9 @@ export const PodcastManager = () => {
       try {
         const { data } = await supabase.from('podcast_show').select('*').single();
         if (isMounted && data) setShowSettings(data);
-      } catch { /* ignore fallback */ }
+      } catch (error) {
+        console.error('No se pudo cargar la configuración del podcast:', error);
+      }
     };
 
     void loadData();
@@ -223,6 +226,35 @@ export const PodcastManager = () => {
     ep.title.toLowerCase().includes(search.toLowerCase()) ||
     (ep.description && ep.description.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const payload = {
+        name: showSettings.name?.trim() || 'Voces de Jerusalén',
+        description: showSettings.description?.trim() || null,
+        author: showSettings.author?.trim() || 'Iglesia Jerusalén',
+        language: showSettings.language || 'es',
+        itunes_category: showSettings.itunes_category?.trim() || 'Religion & Spirituality',
+        itunes_subcategory: showSettings.itunes_subcategory?.trim() || 'Christianity',
+        spotify_url: showSettings.spotify_url?.trim() || null,
+        apple_podcasts_url: showSettings.apple_podcasts_url?.trim() || null,
+        is_active: showSettings.is_active !== false,
+        updated_at: new Date().toISOString(),
+      };
+      const result = showSettings.id
+        ? await supabase.from('podcast_show').update(payload).eq('id', showSettings.id).select('*').single()
+        : await supabase.from('podcast_show').insert(payload).select('*').single();
+      if (result.error) throw result.error;
+      setShowSettings(result.data as PodcastShow);
+      toast.success('Configuración del podcast guardada correctamente.');
+    } catch (error) {
+      console.error('No se pudo guardar la configuración del podcast:', error);
+      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la configuración del podcast.');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -397,10 +429,11 @@ export const PodcastManager = () => {
             </div>
 
             <button
-              onClick={() => toast.success('Configuración guardada correctamente.')}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-md transition cursor-pointer"
+              onClick={() => { void handleSaveSettings(); }}
+              disabled={savingSettings}
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-md transition cursor-pointer disabled:cursor-wait disabled:opacity-60"
             >
-              Guardar Cambios del Show
+              {savingSettings ? 'Guardando…' : 'Guardar Cambios del Show'}
             </button>
           </div>
         </div>

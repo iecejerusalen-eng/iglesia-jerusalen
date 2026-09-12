@@ -17,7 +17,10 @@ export default function Bulletin() {
   useEffect(() => {
     const load = async () => {
       const { data, error: queryError } = await supabase.from('boletines_publicos').select('*').order('fecha_culto', { ascending: false }).limit(1).maybeSingle();
-      if (queryError) setError('No pudimos cargar el boletín de esta semana.');
+      if (queryError) {
+        console.error('No se pudo cargar el boletín público:', queryError);
+        setError('No pudimos cargar el boletín publicado. Intenta nuevamente en unos minutos.');
+      }
       else if (data) setBulletin(data as PublicBulletin);
       setLoading(false);
     };

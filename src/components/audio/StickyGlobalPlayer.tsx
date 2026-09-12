@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useAudioPlayerStore } from '../../store/useAudioPlayerStore';
 import { Play, Pause, X, RotateCcw, RotateCw, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ export const StickyGlobalPlayer: React.FC = () => {
   } = useAudioPlayerStore();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioError, setAudioError] = useState<{ trackId: string; message: string } | null>(null);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -29,11 +30,15 @@ export const StickyGlobalPlayer: React.FC = () => {
   useEffect(() => {
     if (!audioRef.current || !currentTrack) return;
     if (isPlaying) {
-      audioRef.current.play().catch((err) => console.error('Play error:', err));
+      audioRef.current.play().catch((err) => {
+        console.error('No se pudo reproducir el audio:', err);
+        setAudioError({ trackId: currentTrack.id, message: 'No se pudo reproducir este audio. Comprueba que la URL siga disponible.' });
+        setIsPlaying(false);
+      });
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, setIsPlaying]);
 
   if (!currentTrack) return null;
 
@@ -68,8 +73,23 @@ export const StickyGlobalPlayer: React.FC = () => {
         <audio
           ref={audioRef}
           src={currentTrack.audio_url}
+          preload="metadata"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onCanPlay={() => {
+            if (isPlaying && audioRef.current?.paused) {
+              audioRef.current.play().catch((error) => {
+                console.error('El navegador no pudo iniciar el audio:', error);
+                setAudioError({ trackId: currentTrack.id, message: 'No se pudo iniciar este audio.' });
+                setIsPlaying(false);
+              });
+            }
+          }}
+          onError={(event) => {
+            console.error('Error del recurso de audio:', event.currentTarget.error);
+            setAudioError({ trackId: currentTrack.id, message: 'Este episodio no está disponible para reproducción.' });
+            setIsPlaying(false);
+          }}
           onEnded={() => setIsPlaying(false)}
         />
 
@@ -111,6 +131,7 @@ export const StickyGlobalPlayer: React.FC = () => {
                 {currentTrack.subtitle && (
                   <p className="text-xs text-slate-300 truncate">{currentTrack.subtitle}</p>
                 )}
+                {audioError?.trackId === currentTrack.id && <p role="alert" className="text-[10px] font-bold text-rose-300 truncate">{audioError.message}</p>}
               </div>
             </div>
 

@@ -62,6 +62,10 @@ interface MinistryOption {
   category: string;
 }
 
+type ProfileQueryRow = Omit<Profile, 'member'> & {
+  member: Profile['member'] | Profile['member'][];
+};
+
 interface CustomRoleDraft {
   id: string | null;
   name: string;
@@ -263,17 +267,21 @@ export default function UsersManager() {
     setDatabaseNotice(null);
     try {
       const [profilesResult, membersResult, ministriesResult, customRolesResult] = await Promise.all([
-        supabase.from('profiles').select('*, member:member_id(id, first_name, last_name)').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('id, first_name, last_name, role, roles, custom_role_ids, ministry_id, allowed_ministries, email, permissions_override, photo_url, member_id, banned, created_at, updated_at, member:member_id(id, first_name, last_name)').order('created_at', { ascending: false }),
         supabase.from('members').select('id, first_name, last_name, dni').is('deleted_at', null).order('last_name'),
         supabase.from('ministries').select('id, name, category').order('name'),
-        supabase.from('access_roles').select('*').order('name'),
+        supabase.from('access_roles').select('id, name, slug, description, color, permissions, is_active, created_by, created_at, updated_at').order('name'),
       ]);
 
       if (profilesResult.error) throw profilesResult.error;
       if (membersResult.error) throw membersResult.error;
       if (ministriesResult.error) throw ministriesResult.error;
 
-      setProfiles((profilesResult.data ?? []) as Profile[]);
+      const profileRows = (profilesResult.data ?? []) as ProfileQueryRow[];
+      setProfiles(profileRows.map(({ member, ...profile }) => ({
+        ...profile,
+        member: Array.isArray(member) ? member[0] ?? null : member ?? null,
+      })));
       setMembers((membersResult.data ?? []) as CrmMemberOption[]);
       setMinistries((ministriesResult.data ?? []) as MinistryOption[]);
 

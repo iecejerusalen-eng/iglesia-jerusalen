@@ -33,8 +33,9 @@ export const Podcast = () => {
         if (error) throw error;
         setLoadError(null);
         setEpisodes((data ?? []) as PodcastEpisode[]);
-      } catch {
+      } catch (error) {
         if (isMounted) {
+          console.error('No se pudieron cargar los episodios del podcast:', error);
           setLoadError('No pudimos cargar los episodios en este momento.');
           setEpisodes([]);
         }
@@ -50,7 +51,8 @@ export const Podcast = () => {
           .limit(1)
           .maybeSingle();
         if (isMounted && data) setShowSettings(data as Partial<PodcastShow>);
-      } catch {
+      } catch (error) {
+        console.error('No se pudo cargar la configuración del podcast:', error);
         // El catálogo de episodios sigue siendo utilizable aunque no exista configuración editorial.
       }
     };
