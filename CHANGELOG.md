@@ -3,7 +3,7 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [1.4.2] - 2026-09-25
+## [1.4.3] - 2026-09-25
 
 ### Corregido (Fixed)
 - **Corrección de Recorte Tipográfico y Elementos Ocultos en Secciones Hero**:
