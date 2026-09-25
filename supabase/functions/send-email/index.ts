@@ -179,7 +179,7 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Aula Virtual Jerusalén <aula@jerusalen.edu.ec>", // Debe cambiarse al dominio verificado real
+        from: Deno.env.get("RESEND_FROM_EMAIL") || "Iglesia Jerusalén <onboarding@resend.dev>",
         to,
         subject,
         html: htmlContent,

@@ -3,6 +3,16 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-09-25
+
+### Añadido (Added)
+- **Integración Oficial de la API de Resend para Despacho de Correos y Servidor MCP**:
+  - **Endpoint Serverless Seguro (`api/send-email.ts`)**: Servicio backend con validación de esquemas Zod (`to`, `subject`, `html`, `text`, `from`, `replyTo`) para envío transaccional confiable y seguro sin exponer la clave en el frontend.
+  - **Credenciales y Entorno Seguro**: Registro de `RESEND_API_KEY` y `RESEND_FROM_EMAIL` en variables de entorno locales y documentación en `.env.example`.
+  - **Suscripción de Novedades Institucional (`api/changelog/suscribir.ts`)**: Despacho automático de correo de bienvenida con diseño premium y enlace directo a la plataforma.
+  - **Servidor MCP Resend**: Configuración de `https://mcp.resend.com/mcp` en `.agents/mcp_config.json` y el entorno de herramientas de IA.
+  - **Fallback Seguro de Remitente**: Uso por defecto de `onboarding@resend.dev` para evitar bloqueos 403 antes de la validación DNS de dominios personalizados.
+
 ---
 
 ## [1.3.10] - 2026-09-25
