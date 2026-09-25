@@ -5,6 +5,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.10] - 2026-09-25
+
+### Mejorado (Changed)
+- **UX y Control del Checklist Flotante de Onboarding (`OnboardingChecklist.tsx` & `AdminLayout.tsx`)**:
+  - **Botón de Cierre Directo (`X`)**: Incorporado botón de cierre rápido e independiente en la cabecera flotante para descartarlo en cualquier momento sin activar el colapso/expansión.
+  - **Ocultación Inteligente al Completar (100%)**: Cuando el usuario finaliza todos los pasos (5/5 pasos completados), el checklist se oculta por defecto en visitas posteriores y ofrece un botón de acción principal para descartarse permanentemente.
+  - **Persistencia en LocalStorage**: Si el usuario cierra o descarta el checklist, la preferencia se memoriza de forma permanente para no interrumpir el flujo de trabajo ni tapar botones o barras de navegación.
+  - **Acceso Bajo Demanda desde el Header**: El badge de puntos de activación (`⚡ pts`) en la barra superior del panel ahora es interactivo y permite reabrir el progreso de onboarding cuando el administrador lo desee.
+
+---
+
 ## [1.3.9] - 2026-09-25
 
 ### Añadido (Added)
