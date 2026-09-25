@@ -5,6 +5,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.3] - 2026-09-25
+
+### Añadido (Added)
+- **Búsqueda Global y Acceso a Novedades (Changelog)**: Integración completa del historial de versiones y notas de lanzamiento en el buscador inteligente del sitio público (`SearchPalette.tsx`) y en la paleta de comandos global (`CommandPalette.tsx`).
+- **Consulta en Tiempo Real de Versiones Publicadas**: El buscador público ahora consulta dinámicamente la tabla `changelog_versiones` en Supabase y muestra enlaces directos a las versiones con sus resúmenes y fechas de lanzamiento.
+- **Módulo de Changelog en Administración**: Registrado el módulo `/admin/changelog` en el catálogo central de módulos administrativos (`adminModules.ts`), permitiendo encontrarlo y abrirlo directamente desde la paleta de comandos (Ctrl+K).
+
+### Mejorado (Changed)
+- **Navegación Fluida en el Buscador del Sitio**: Se eliminó la restricción que ocultaba las secciones estáticas del sitio (`Secciones del Sitio`) al ingresar texto de búsqueda, permitiendo al motor de `cmdk` encontrar instantáneamente páginas clave como Novedades, Nosotros, Contacto, Alabanzas, Podcast y Donaciones.
+
+---
+
 ## [1.3.2] - 2026-09-25
 
 ### Corregido (Fixed)

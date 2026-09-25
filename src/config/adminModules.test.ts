@@ -30,5 +30,6 @@ describe('admin module catalog', () => {
     expect(permissionById.schedules).toBe('events');
     expect(permissionById.discipleship).toBe('study_programs');
     expect(permissionById.audit_activity).toBe('users');
+    expect(permissionById.changelog).toBe('settings');
   });
 });

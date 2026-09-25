@@ -177,6 +177,17 @@ export const ADMIN_MODULES: AdminModule[] = [
     group: 'sistema'
   },
   {
+    id: 'changelog',
+    label: 'Historial de Versiones (Changelog)',
+    name: 'Novedades & Changelog',
+    path: '/admin/changelog',
+    icon: Sparkles,
+    group: 'sistema',
+    permission: 'settings',
+    showInPermissions: false,
+    keywords: ['changelog', 'novedades', 'versiones', 'actualizaciones', 'cambios', 'releases', 'notas de versión']
+  },
+  {
     id: 'map',
     label: 'Mapa Territorial y Cobertura Pastoral',
     name: 'Mapa Territorial',

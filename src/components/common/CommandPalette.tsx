@@ -25,6 +25,7 @@ const PUBLIC_NAV_ITEMS: NavigationItem[] = [
   { id: 'pub-7', title: 'Biblioteca de Alabanzas & Letras', category: 'public', path: '/recursos/alabanzas', icon: Layers },
   { id: 'pub-8', title: 'Plan de Lectura Bíblica', category: 'public', path: '/plan-lectura', icon: BookOpen },
   { id: 'pub-9', title: 'Eventos & Calendario', category: 'public', path: '/eventos', icon: Calendar },
+  { id: 'pub-10', title: 'Novedades & Actualizaciones (Changelog)', category: 'public', path: '/novedades', icon: Sparkles, keywords: ['changelog', 'novedades', 'versiones', 'actualizaciones', 'cambios', 'release notes', 'historial'] },
 ];
 
 export default function CommandPalette() {
