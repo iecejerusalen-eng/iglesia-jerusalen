@@ -1,18 +1,28 @@
-export const DRUM_STYLES = [
-  'Balada Worship',
-  'Pop Worship 4/4',
-  'Rock 1/4 (Marcado en Negras)',
-  'Rock 1/2 (Marcado en Corcheas)',
-  'Worship 6/8',
-  'Worship 4/4 (Balada Rítmica)',
-  'Pop/Rock 4/4',
-  'Funk / Gospel',
-  'Disco / Folk (Corito Rápido)',
-  'Cumbia Cristiana',
-  'Vals 3/4',
-  'Marcha',
-  'Acústico / Sin Batería'
-];
+import {
+  DEFAULT_DRUM_STYLES,
+  mergeDrumStyles,
+  useDrumStyles,
+  persistNewDrumStyle,
+  deleteCustomDrumStyleRemote,
+} from '../services/drumStylesService';
+import {
+  chordToNashville as convertChordToNashville,
+  detectKeyCandidate,
+  isChord,
+  transposeBracketText,
+  transposeChord as transposeParsedChord,
+  transposeNote as transposeParsedNote,
+} from './musicEngine';
+import type { AccidentalPreference } from '../../../types';
+
+export const DRUM_STYLES = DEFAULT_DRUM_STYLES;
+export {
+  DEFAULT_DRUM_STYLES,
+  mergeDrumStyles,
+  useDrumStyles,
+  persistNewDrumStyle,
+  deleteCustomDrumStyleRemote,
+};
 
 export function isValidChord(chord: string): boolean {
   return isChord(chord);
@@ -120,12 +130,3 @@ export function bracketTextToHtml(
   
   return processedLines;
 }
-import {
-  chordToNashville as convertChordToNashville,
-  detectKeyCandidate,
-  isChord,
-  transposeBracketText,
-  transposeChord as transposeParsedChord,
-  transposeNote as transposeParsedNote,
-} from './musicEngine';
-import type { AccidentalPreference } from '../../../types';

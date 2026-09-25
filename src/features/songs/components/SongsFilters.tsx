@@ -20,6 +20,7 @@ interface SongsFiltersProps {
   setFilterStyle: (value: string) => void;
   filterDrumStyle: string;
   setFilterDrumStyle: (value: string) => void;
+  drumStyles?: string[];
   filterChords: ChordsFilter;
   setFilterChords: (value: ChordsFilter) => void;
   sortBy: SongSort;
@@ -36,9 +37,11 @@ const selectClassName = 'w-full rounded-xl border border-slate-200 bg-white px-3
 export const SongsFilters = ({
   search, setSearch, viewMode, setViewMode, showFilters, setShowFilters,
   filterType, setFilterType, filterStyle, setFilterStyle,
-  filterDrumStyle, setFilterDrumStyle, filterChords, setFilterChords,
+  filterDrumStyle, setFilterDrumStyle, drumStyles, filterChords, setFilterChords,
   sortBy, setSortBy, songTypes, songStyles, resultCount, activeFilterCount, clearFilters,
-}: SongsFiltersProps) => (
+}: SongsFiltersProps) => {
+  const availableDrumStyles = drumStyles && drumStyles.length > 0 ? drumStyles : DRUM_STYLES;
+  return (
   <section aria-label="Buscar y filtrar alabanzas" className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900 md:p-4">
     <div className="flex flex-col gap-3 lg:flex-row">
       <label className="relative flex-1">
@@ -98,7 +101,7 @@ export const SongsFilters = ({
           <label className="space-y-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Ritmo
             <select value={filterDrumStyle} onChange={(event) => setFilterDrumStyle(event.target.value)} className={selectClassName}>
               <option value="">Todos</option>
-              {DRUM_STYLES.map((style) => <option key={style} value={style}>{style}</option>)}
+              {availableDrumStyles.map((style) => <option key={style} value={style}>{style}</option>)}
             </select>
           </label>
           <label className="space-y-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">Contenido
@@ -131,4 +134,5 @@ export const SongsFilters = ({
       )}
     </div>
   </section>
-);
+  );
+};

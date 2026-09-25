@@ -7,6 +7,7 @@ import { SongsFilters, type ChordsFilter, type SongSort, type SongViewMode } fro
 import { SongsList } from '../../features/songs/components/SongsList';
 import type { Song } from '../../types';
 import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
+import { useDrumStyles } from '../../features/songs/services/drumStylesService';
 
 const SongViewer = lazy(() => import('../../features/songs/components/SongViewer').then((module) => ({ default: module.SongViewer })));
 
@@ -31,6 +32,7 @@ const SongsLibrary = () => {
   const [activeTab, setActiveTab] = useState<'lyrics' | 'resources'>('lyrics');
   const deferredSearch = useDeferredValue(search);
   const { songs, songTypes, songStyles, isLoading, isError, refetch } = useSongs(deferredSearch);
+  const { allDrumStyles } = useDrumStyles(songs);
 
   const sortedSongs = useMemo(() => {
     const filtered = songs.filter((song) => {
@@ -95,6 +97,7 @@ const SongsLibrary = () => {
             filterType={filterType} setFilterType={(value) => { setFilterType(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
             filterStyle={filterStyle} setFilterStyle={(value) => { setFilterStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
             filterDrumStyle={filterDrumStyle} setFilterDrumStyle={(value) => { setFilterDrumStyle(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
+            drumStyles={allDrumStyles}
             filterChords={filterChords} setFilterChords={(value) => { setFilterChords(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
             sortBy={sortBy} setSortBy={(value) => { setSortBy(value); setVisibleCount(INITIAL_VISIBLE_SONGS); }}
             songTypes={songTypes} songStyles={songStyles}

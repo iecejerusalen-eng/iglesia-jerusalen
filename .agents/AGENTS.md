@@ -18,3 +18,6 @@
 - **Contenedores de Cristal (*Glass Panels*)**: `rounded-3xl border border-white/70 bg-white/70 backdrop-blur-xl shadow-xl dark:border-white/10 dark:bg-slate-950/60`.
 - **Tipografía y Alto Contraste**: Usar encabezados contrastados con subtítulos en mayúsculas `tracking-[0.18em] text-[11px] font-bold text-slate-500 dark:text-slate-400`.
 - **Micro-interacciones y Badges**: Los estados, KPIs e indicadores deben contar con badges de baja opacidad (`bg-blue-500/10 text-blue-500 border-blue-500/20`) e iconos en contenedores de 44x44px.
+
+## 5. Changelog y Publicación Continua
+- **Actualización obligatoria en cada commit**: Cada vez que se prepare o realice un commit en la plataforma, debe registrarse la actualización en `CHANGELOG.md` y sincronizarse en las tablas de Supabase (`changelog_versiones` y `changelog_cambios`) para que el historial del repositorio, el sitio público (`/novedades`) y el panel de administración (`/admin/changelog`) reflejen siempre las novedades en tiempo real.

@@ -16,10 +16,10 @@ import {
   Link as LinkIcon, PlusCircle, Sparkles, FileText, Download,
   BookOpenText, Guitar, RotateCcw, Eye, Layers3, Copy, Star,
   Loader2, AlertCircle, RefreshCw, MonitorPlay,
-  ArrowUp, ArrowDown, ExternalLink, Film,
+  ArrowUp, ArrowDown, ExternalLink, Film, Drum, Check,
 } from 'lucide-react';
 import type { AccidentalPreference, Song, SongArrangement, SongStatus, SongType, SongStyle, SongResourceLink, SongStructureBlock } from '../../types';
-import { isValidChord } from '../../features/songs/utils/songUtils';
+import { isValidChord, useDrumStyles } from '../../features/songs/utils/songUtils';
 import { detectKeyCandidate, slugifySongTitle } from '../../features/songs/utils/musicEngine';
 import { parseCifraClubText } from '../../features/songs/utils/cifraClubParser';
 import { validateAbcNotation } from '../../features/songs/utils/abcValidation';
@@ -93,22 +93,6 @@ function editorDraftKey(songId: string | null, arrangementId: string | null): st
 }
 
 
-
-const DRUM_STYLES = [
-  'Balada Worship',
-  'Pop Worship 4/4',
-  'Rock 1/4 (Marcado en Negras)',
-  'Rock 1/2 (Marcado en Corcheas)',
-  'Worship 6/8',
-  'Worship 4/4 (Balada Rítmica)',
-  'Pop/Rock 4/4',
-  'Funk / Gospel',
-  'Disco / Folk (Corito Rápido)',
-  'Cumbia Cristiana',
-  'Vals 3/4',
-  'Marcha',
-  'Acústico / Sin Batería'
-];
 
 const INSTRUMENTS = [
   { value: 'General', label: 'General / Todos' },
@@ -381,6 +365,7 @@ const SongsManager = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStyle, setFilterStyle] = useState('');
+  const [filterDrumStyle, setFilterDrumStyle] = useState('');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -407,8 +392,19 @@ const SongsManager = () => {
   const [showCatalogs, setShowCatalogs] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [newStyleName, setNewStyleName] = useState('');
+  const [newDrumStyleName, setNewDrumStyleName] = useState('');
+  const [isAddingInlineDrumStyle, setIsAddingInlineDrumStyle] = useState(false);
+  const [inlineDrumStyleInput, setInlineDrumStyleInput] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
+
+  const {
+    allDrumStyles,
+    customDrumStyles,
+    defaultDrumStyles,
+    addDrumStyle,
+    deleteDrumStyle,
+  } = useDrumStyles(songs);
   const artistOptions = Array.from(new Set(songs.map((song) => song.artist?.trim()).filter((artist): artist is string => Boolean(artist)))).sort((a, b) => a.localeCompare(b, 'es'));
 
   const handleImportCifraClub = () => {
@@ -473,7 +469,7 @@ const SongsManager = () => {
       setPage(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, filterType, filterStyle]);
+  }, [search, filterType, filterStyle, filterDrumStyle]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -503,6 +499,9 @@ const SongsManager = () => {
       }
       if (filterStyle) {
         query = query.eq('style_id', filterStyle);
+      }
+      if (filterDrumStyle) {
+        query = query.eq('drum_style', filterDrumStyle);
       }
 
       const from = (page - 1) * ITEMS_PER_PAGE;
@@ -538,7 +537,7 @@ const SongsManager = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, filterStyle, filterType, page]);
+  }, [debouncedSearch, filterDrumStyle, filterStyle, filterType, page]);
 
   useEffect(() => {
     void Promise.resolve().then(fetchAll);
@@ -566,6 +565,8 @@ const SongsManager = () => {
     });
     setLyrics('');
     setDrumStyle('');
+    setIsAddingInlineDrumStyle(false);
+    setInlineDrumStyleInput('');
     setResourceLinks([]);
     setStructureBlocks([]);
     setEditorMode('free');
@@ -615,6 +616,8 @@ const SongsManager = () => {
     });
     setLyrics(song.lyrics || '');
     setDrumStyle(song.drum_style || '');
+    setIsAddingInlineDrumStyle(false);
+    setInlineDrumStyleInput('');
     setResourceLinks(song.resource_links || []);
     setStructureBlocks(song.structure_blocks || []);
     setEditorMode(song.structure_blocks && song.structure_blocks.length > 0 ? 'structured' : 'free');
@@ -1037,15 +1040,49 @@ const SongsManager = () => {
     fetchAll();
   };
 
+  const addCatalogDrumStyle = async () => {
+    if (!newDrumStyleName.trim()) return;
+    try {
+      const saved = await addDrumStyle(newDrumStyleName);
+      setNewDrumStyleName('');
+      toast.success(`Toque "${saved}" añadido al catálogo`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al añadir toque');
+    }
+  };
+
+  const removeCatalogDrumStyle = async (name: string) => {
+    try {
+      await deleteDrumStyle(name);
+      toast.success(`Toque "${name}" eliminado`);
+    } catch (err) {
+      toast.error('Error al eliminar toque');
+    }
+  };
+
+  const handleSaveInlineDrumStyle = async () => {
+    if (!inlineDrumStyleInput.trim()) return;
+    try {
+      const saved = await addDrumStyle(inlineDrumStyleInput);
+      setDrumStyle(saved);
+      setInlineDrumStyleInput('');
+      setIsAddingInlineDrumStyle(false);
+      toast.success(`Toque "${saved}" añadido y seleccionado`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al añadir toque');
+    }
+  };
+
   // Filtered songs computation is removed since we do it server-side
   const filtered = songs;
-  const hasActiveFilters = Boolean(search || filterType || filterStyle);
+  const hasActiveFilters = Boolean(search || filterType || filterStyle || filterDrumStyle);
 
   const clearCatalogFilters = () => {
     setSearch('');
     setDebouncedSearch('');
     setFilterType('');
     setFilterStyle('');
+    setFilterDrumStyle('');
     setPage(1);
   };
 
@@ -1098,7 +1135,7 @@ const SongsManager = () => {
 
       {/* Catalogs Panel */}
       {showCatalogs && !readOnly && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-55 dark:bg-slate-955 rounded-xl border border-gray-200 dark:border-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-55 dark:bg-slate-955 rounded-xl border border-gray-200 dark:border-white/10">
           {/* Types */}
           <div>
             <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1"><ListMusic size={14} /> Tipos de Canción</h3>
@@ -1135,6 +1172,61 @@ const SongsManager = () => {
               ))}
             </div>
           </div>
+          {/* Drum Styles / Toques de Batería */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                <Drum size={15} className="text-amber-500" /> Toques de Batería
+              </h3>
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                {customDrumStyles.length} pers. · {defaultDrumStyles.length} estándar
+              </span>
+            </div>
+            <div className="flex gap-2 mb-2">
+              <input
+                value={newDrumStyleName}
+                onChange={(e) => setNewDrumStyleName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCatalogDrumStyle()}
+                placeholder="Nuevo toque (ej. Shuffle, Trap)..."
+                className="flex-1 text-sm bg-white dark:bg-slate-900 border border-gray-300 dark:border-white/10 text-gray-800 dark:text-gray-100 rounded-lg px-3 py-1.5 focus:border-amber-400 outline-none"
+              />
+              <button
+                onClick={addCatalogDrumStyle}
+                className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 cursor-pointer shrink-0"
+              >
+                Añadir
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+              {customDrumStyles.map((style) => (
+                <span
+                  key={style}
+                  className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/30 px-2 py-1 rounded-full text-xs font-medium text-amber-800 dark:text-amber-300"
+                  title="Toque personalizado"
+                >
+                  <Drum size={11} className="text-amber-600 dark:text-amber-400" />
+                  {style}
+                  <button
+                    type="button"
+                    onClick={() => removeCatalogDrumStyle(style)}
+                    className="text-amber-500 hover:text-red-600 cursor-pointer ml-0.5"
+                    title={`Eliminar toque ${style}`}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              {defaultDrumStyles.map((style) => (
+                <span
+                  key={style}
+                  className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 px-2 py-1 rounded-full text-[11px] font-medium text-gray-600 dark:text-gray-400 opacity-80"
+                  title="Toque estándar predeterminado"
+                >
+                  {style}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1157,6 +1249,12 @@ const SongsManager = () => {
           className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-church-gold-medium dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
           <option value="">Todos los estilos</option>
           {songStyles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+        <select value={filterDrumStyle} onChange={(e) => setFilterDrumStyle(e.target.value)}
+          aria-label="Filtrar por toque de batería"
+          className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-church-gold-medium dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
+          <option value="">Todos los toques 🥁</option>
+          {allDrumStyles.map((style) => <option key={style} value={style}>{style}</option>)}
         </select>
         {hasActiveFilters && <button type="button" onClick={clearCatalogFilters} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-primary hover:bg-slate-50 dark:text-church-gold-light dark:hover:bg-white/5"><RotateCcw size={14} /> Limpiar</button>}
       </section>
@@ -1366,18 +1464,94 @@ const SongsManager = () => {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="song-drum-style" className="block text-xs font-bold text-gray-400 uppercase mb-1">Toque Batería 🥁</label>
-                  <select
-                    id="song-drum-style"
-                    value={drumStyle}
-                    onChange={(e) => setDrumStyle(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-750 dark:text-gray-100 focus:border-amber-400 outline-none"
-                  >
-                    <option value="">Seleccionar...</option>
-                    {DRUM_STYLES.map(style => (
-                      <option key={style} value={style}>{style}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="song-drum-style" className="block text-xs font-bold text-gray-400 uppercase">
+                      Toque Batería 🥁
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingInlineDrumStyle(!isAddingInlineDrumStyle);
+                        if (!isAddingInlineDrumStyle) setInlineDrumStyleInput('');
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 cursor-pointer transition-colors"
+                      title="Personalizar o crear un nuevo toque de batería"
+                    >
+                      <Plus size={12} />
+                      {isAddingInlineDrumStyle ? 'Ver lista' : 'Personalizar'}
+                    </button>
+                  </div>
+
+                  {isAddingInlineDrumStyle ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={inlineDrumStyleInput}
+                        onChange={(e) => setInlineDrumStyleInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void handleSaveInlineDrumStyle();
+                          } else if (e.key === 'Escape') {
+                            setIsAddingInlineDrumStyle(false);
+                          }
+                        }}
+                        placeholder="Ej. Shuffle 4/4..."
+                        className="min-w-0 flex-1 bg-white dark:bg-slate-800 border border-amber-400 rounded-lg px-2.5 py-2 text-xs text-gray-850 dark:text-gray-100 outline-none focus:ring-2 focus:ring-amber-400/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveInlineDrumStyle()}
+                        className="px-2.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 shadow-sm"
+                        title="Guardar y seleccionar toque"
+                      >
+                        <Check size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingInlineDrumStyle(false);
+                          setInlineDrumStyleInput('');
+                        }}
+                        className="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg cursor-pointer transition-colors shrink-0"
+                        title="Cancelar"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      id="song-drum-style"
+                      value={drumStyle}
+                      onChange={(e) => {
+                        if (e.target.value === '__CUSTOM_NEW__') {
+                          setIsAddingInlineDrumStyle(true);
+                        } else {
+                          setDrumStyle(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-gray-750 dark:text-gray-100 focus:border-amber-400 outline-none"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {drumStyle && !allDrumStyles.includes(drumStyle) && (
+                        <option value={drumStyle}>★ {drumStyle} (Actual)</option>
+                      )}
+                      {customDrumStyles.length > 0 && (
+                        <optgroup label="✨ Toques Personalizados">
+                          {customDrumStyles.map((style) => (
+                            <option key={style} value={style}>{style}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                      <optgroup label="🥁 Estándar / Predeterminados">
+                        {defaultDrumStyles.map((style) => (
+                          <option key={style} value={style}>{style}</option>
+                        ))}
+                      </optgroup>
+                      <option value="__CUSTOM_NEW__">➕ Personalizar / Agregar nuevo...</option>
+                    </select>
+                  )}
                 </div>
                 <div className="flex items-end col-span-2 md:col-span-1">
                   <label htmlFor="song-chords" className="flex items-center gap-2 cursor-pointer bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 w-full">
