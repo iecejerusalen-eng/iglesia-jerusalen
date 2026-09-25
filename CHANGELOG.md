@@ -5,6 +5,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.4] - 2026-09-25
+
+### Añadido (Added)
+- **Unificación Total del Buscador y Paleta de Comandos**: Fusión definitiva de los dos buscadores previos en una única experiencia integral y elegante (`SearchPalette.tsx`), accesible tanto por el botón de la barra superior como de navegación y mediante el atajo universal `Ctrl+K` / `⌘K`.
+- **Integración de Módulos de Administración con Control de Roles**: Para usuarios autenticados con rol administrativo (pastores, administradores, líderes), el buscador unificado indexa y despliega directamente los módulos administrativos (`ADMIN_MODULES`) con etiqueta `[ADMIN]`, permitiendo acceder con un clic a herramientas como Misiones, Canciones, CRM de Miembros, Changelog y Finanzas sin exponerlas al público general.
+- **Barra de Navegación por Teclado y Dominio Oficial**: Añadida barra inferior en la paleta con atajos rápidos de teclado (`↑ ↓` navegar, `↵` abrir, `ESC` cerrar) y enlace directo al nuevo dominio oficial `https://www.iecejerusalen.com`.
+- **Indexación Completa de Secciones y Recursos**: Incorporadas 23 páginas clave del portal (`/plan-lectura`, `/visita`, `/predicas`, `/misiones`, `/recursos/biblia`, `/comunidad`, `/en-vivo`, `/aula-virtual`, `/reservas`, etc.) con palabras clave semánticas enriquecidas.
+
+### Mejorado (Changed)
+- **Sincronización Canónica con el Nuevo Dominio**: Se actualizaron las etiquetas canónicas y de Open Graph en `PublicLayout.tsx` y el mapa de sitio `sitemap.xml` para consolidar `https://www.iecejerusalen.com` como el dominio canónico principal para indexación en motores de búsqueda.
+- **Eliminación de Conflictos de Atajos de Teclado**: Se suprimieron los múltiples oyentes de teclado concurrentes entre `CommandPalette` y `SearchPalette`, garantizando una respuesta limpia, rápida y sin modales duplicados.
+
+---
+
 ## [1.3.3] - 2026-09-25
 
 ### Añadido (Added)

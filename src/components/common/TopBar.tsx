@@ -9,6 +9,7 @@ import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
 import { uploadMediaFile } from '../../lib/mediaService';
+import { useSearchStore } from '../../store/useSearchStore';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
@@ -67,8 +68,8 @@ const TopBar = () => {
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
 
-  const handleOpenCommandPalette = () => {
-    window.dispatchEvent(new CustomEvent('open-command-palette'));
+  const handleOpenSearch = () => {
+    useSearchStore.getState().open();
   };
 
   return (
@@ -84,15 +85,16 @@ const TopBar = () => {
           Iglesia del Evangelio Cuadrangular Jerusalén
         </span>
 
-        {/* Cmd + K Button Trigger */}
+        {/* Botón Buscador Inteligente Unificado */}
         <button
-          onClick={handleOpenCommandPalette}
+          type="button"
+          onClick={handleOpenSearch}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
             isTransparent
               ? 'bg-white/10 border-white/20 text-white/90 hover:bg-white/20'
               : 'bg-slate-900/10 dark:bg-slate-900/60 border-gray-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-gold/40'
           }`}
-          title="Buscar comandos o módulos (Cmd + K)"
+          title="Buscar alabanzas, biblia, actividades y módulos (Ctrl + K)"
         >
           <Search size={12} className="text-gold" />
           <span className="hidden md:inline">Buscar...</span>

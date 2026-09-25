@@ -20,7 +20,7 @@ const GlobalContextMenu = lazy(() => import('./components/common/GlobalContextMe
 const GlobalToolbox = lazy(() => import('./components/common/GlobalToolbox'));
 const MobileRefreshButton = lazy(() => import('./components/common/MobileRefreshButton'));
 import { I18nProvider } from './i18n/i18nContext';
-const CommandPalette = lazy(() => import('./components/common/CommandPalette'));
+const SearchPalette = lazy(() => import('./components/public/SearchPalette'));
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -92,7 +92,7 @@ export default function App() {
             <Suspense fallback={null}>
               <GlobalContextMenu>
                 <ScrollToTop />
-                <CommandPalette />
+                <SearchPalette />
                 {/* Modales cargados bajo demanda */}
                 <CRMRegistrationPrompt />
                 <BirthdayCelebrationModal />

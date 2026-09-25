@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import TopBar from '../components/common/TopBar';
@@ -9,7 +8,6 @@ import StickyNav from '../components/public/StickyNav';
 import MobileBottomNav from '../components/common/MobileBottomNav';
 import StickyGlobalPlayer from '../components/audio/StickyGlobalPlayer';
 import TodayActivityPeek from '../components/public/TodayActivityPeek';
-const SearchPalette = lazy(() => import('../components/public/SearchPalette'));
 
 const ROUTE_METADATA: Array<{ match: string; title: string; description: string }> = [
   { match: '/visita', title: 'Planifica tu visita | Iglesia Jerusalén', description: 'Encuentra horarios, ubicación y todo lo necesario para visitar la Iglesia Jerusalén.' },
@@ -49,7 +47,7 @@ const PublicLayout = () => {
   const isHome = location.pathname === '/';
   const metadata = getRouteMetadata(location.pathname);
   const canonicalPath = location.pathname === '/' ? '/' : location.pathname.replace(/\/$/, '');
-  const canonicalUrl = `${window.location.origin}${canonicalPath}`;
+  const canonicalUrl = `https://www.iecejerusalen.com${canonicalPath}`;
 
   return (
     <div className="min-h-screen flex flex-col bg-surface dark:bg-slate-950 text-gray-800 dark:text-gray-100 font-sans relative transition-colors duration-500 overflow-x-hidden w-full">
@@ -75,7 +73,6 @@ const PublicLayout = () => {
       <MobileBottomNav />
       <StickyGlobalPlayer />
       <TodayActivityPeek />
-      <Suspense fallback={null}><SearchPalette /></Suspense>
     </div>
   );
 };

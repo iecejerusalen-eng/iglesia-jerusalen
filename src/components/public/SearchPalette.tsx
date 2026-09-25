@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Command } from 'cmdk';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, BookOpen, Music, Calendar, Heart, 
   ShoppingBag, ArrowRight, Loader2, Send, Globe,
-  MapPin, Megaphone, Sparkles
+  MapPin, Megaphone, Sparkles, ShieldCheck
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import { useSearchStore } from '../../store/useSearchStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { usePermissions } from '../../hooks/usePermissions';
+import { ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import { AnimeFadeUp, AnimeScaleIn } from '../animations/AnimeWrappers';
 import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
 
@@ -206,20 +209,55 @@ export default function SearchPalette() {
   const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const paletteRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
-  // Esc / Shortcut Listener
+  const { user, role } = useAuthStore();
+  const { hasPermission } = usePermissions();
+
+  const roleLower = role?.toLowerCase();
+  const isAdminOrLeader = !!user && (
+    roleLower === 'admin' ||
+    roleLower === 'superadmin' ||
+    roleLower === 'pastor' ||
+    roleLower === 'lider' ||
+    roleLower === 'leader' ||
+    hasPermission('dashboard', 'view')
+  );
+
+  const accessibleAdminModules = useMemo(() => {
+    if (!isAdminOrLeader) return [];
+    return ADMIN_MODULES.filter(m => 
+      m.available !== false && hasPermission(getAdminModulePermission(m), 'view')
+    );
+  }, [isAdminOrLeader, hasPermission]);
+
+  // Esc / Shortcut Listener & Custom Events
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      if (location.pathname.startsWith('/admin')) return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         if (isOpen) close(); else useSearchStore.getState().open();
       }
     };
+
+    const handleCustomOpen = () => {
+      useSearchStore.getState().open();
+    };
+
     document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
-  }, [isOpen, close]);
+    window.addEventListener('open-command-palette', handleCustomOpen);
+    window.addEventListener('search:open', handleCustomOpen);
+
+    return () => {
+      document.removeEventListener('keydown', down);
+      window.removeEventListener('open-command-palette', handleCustomOpen);
+      window.removeEventListener('search:open', handleCustomOpen);
+    };
+  }, [isOpen, close, location.pathname]);
 
   // Reset search when dialog opens/closes
   useEffect(() => {
@@ -369,6 +407,39 @@ export default function SearchPalette() {
                       </div>
                       <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
                     </Command.Item>
+                  </Command.Group>
+                </AnimeFadeUp>
+              )}
+
+              {/* ADMIN WORKSPACE MODULES (FOR AUTHORIZED LEADERS & PASTORS) */}
+              {accessibleAdminModules.length > 0 && (
+                <AnimeFadeUp delay={0.08}>
+                  <Command.Group heading="Módulos de Administración (Panel)">
+                    {accessibleAdminModules.map((mod) => (
+                      <Command.Item
+                        key={mod.id}
+                        value={`admin panel modulo gestion ${mod.name} ${mod.label} ${mod.group} ${mod.path} ${(mod.keywords || []).join(' ')}`}
+                        onSelect={() => handleSelect(mod.path)}
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                          <ShieldCheck size={16} />
+                        </div>
+                        <div className="flex-1 text-left truncate">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 dark:text-white truncate">{mod.name}</span>
+                            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                              ADMIN
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block truncate">
+                            {mod.path} {mod.label !== mod.name ? `— ${mod.label}` : ''}
+                          </span>
+                        </div>
+                        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 shrink-0">
+                          Abrir <ArrowRight size={13} />
+                        </span>
+                      </Command.Item>
+                    ))}
                   </Command.Group>
                 </AnimeFadeUp>
               )}
@@ -682,6 +753,26 @@ export default function SearchPalette() {
                     <BookOpen size={18} className="text-indigo-500 shrink-0" />
                     <span className="font-semibold text-slate-800 dark:text-slate-100">Publicaciones</span>
                   </Command.Item>
+                  <Command.Item value="visita planifica bienvenida primera vez llegar como llegar ubicacion" onSelect={() => handleSelect('/visita')}>
+                    <Globe size={18} className="text-amber-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Planifica tu Visita</span>
+                  </Command.Item>
+                  <Command.Item value="predicas sermones videos ensenanzas mensajes pastor bosquejos" onSelect={() => handleSelect('/predicas')}>
+                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Prédicas y Sermones en Video</span>
+                  </Command.Item>
+                  <Command.Item value="misiones campos evangelismo obras misioneras alcance misionero" onSelect={() => handleSelect('/misiones')}>
+                    <Globe size={18} className="text-emerald-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Misiones y Campos Misioneros</span>
+                  </Command.Item>
+                  <Command.Item value="biblia lectura capitulos versiculos concordancia lector biblico reina valera" onSelect={() => handleSelect('/recursos/biblia')}>
+                    <BookOpen size={18} className="text-indigo-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Lector Bíblico</span>
+                  </Command.Item>
+                  <Command.Item value="peticiones oracion orar necesidad intercesion rezar peticion" onSelect={() => handleSelect('/peticiones')}>
+                    <Send size={18} className="text-pink-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Peticiones de Oración</span>
+                  </Command.Item>
                   <Command.Item value="ministerios departamentos equipos liderazgo grupos directivas" onSelect={() => handleSelect('/ministerios')}>
                     <Heart size={18} className="text-rose-500 shrink-0" />
                     <span className="font-semibold text-slate-800 dark:text-slate-100">Ministerios y departamentos</span>
@@ -710,9 +801,42 @@ export default function SearchPalette() {
                     <ShoppingBag size={18} className="text-amber-500 shrink-0" />
                     <span className="font-semibold text-slate-800 dark:text-slate-100">Tienda de la Iglesia</span>
                   </Command.Item>
+                  <Command.Item value="comunidad muro testimonios fotos publicaciones hermanos" onSelect={() => handleSelect('/comunidad')}>
+                    <Heart size={18} className="text-rose-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Muro de la Comunidad</span>
+                  </Command.Item>
+                  <Command.Item value="en vivo transmision culto live streaming directo youtube" onSelect={() => handleSelect('/en-vivo')}>
+                    <Sparkles size={18} className="text-red-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Culto en Vivo y Streaming</span>
+                  </Command.Item>
+                  <Command.Item value="aula virtual discipulado cursos escuela formacion instituto" onSelect={() => handleSelect('/aula-virtual')}>
+                    <BookOpen size={18} className="text-sky-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Aula Virtual de Formación</span>
+                  </Command.Item>
+                  <Command.Item value="reservas espacios auditorio salon solicitud evento" onSelect={() => handleSelect('/reservas')}>
+                    <Calendar size={18} className="text-indigo-500 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">Reserva de Espacios</span>
+                  </Command.Item>
                 </Command.Group>
               </AnimeFadeUp>
             </Command.List>
+
+            {/* FOOTER SHORTCUTS BAR */}
+            <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium select-none">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↑</kbd><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↓</kbd> Navegar</span>
+                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↵</kbd> Abrir</span>
+                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">ESC</kbd> Cerrar</span>
+              </div>
+              <a 
+                href="https://www.iecejerusalen.com" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="font-semibold text-amber-600 dark:text-amber-400 hover:underline hidden sm:inline"
+              >
+                iecejerusalen.com
+              </a>
+            </div>
           </Command>
           </div>
         </AnimeScaleIn>
