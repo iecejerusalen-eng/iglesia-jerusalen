@@ -5,4 +5,4 @@ Disallow: /lms/
 Disallow: /checkout
 Disallow: /cart
 
-Sitemap: https://iglesia-jerusalen.vercel.app/sitemap.xml
+Sitemap: https://www.iecejerusalen.com/sitemap.xml

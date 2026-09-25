@@ -86,13 +86,13 @@ export const PRESET_TEMPLATES: Omit<EmailTemplate, 'created_at'>[] = [
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 35px 0 25px 0;">
-                <a href="https://iglesia-jerusalen.vercel.app/eventos" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; padding: 15px 32px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);">
+                <a href="https://www.iecejerusalen.com/eventos" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; padding: 15px 32px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);">
                   ✨ Confirmar Mi Asistencia
                 </a>
               </div>
 
               <p style="font-size: 13px; color: #64748b; text-align: center; margin-top: 15px;">
-                ¿Tienes alguna petición de oración? <a href="https://iglesia-jerusalen.vercel.app/contacto" style="color: #2563eb; font-weight: 600;">Escríbenos aquí</a>
+                ¿Tienes alguna petición de oración? <a href="https://www.iecejerusalen.com/contacto" style="color: #2563eb; font-weight: 600;">Escríbenos aquí</a>
               </p>
             </td>
           </tr>
@@ -164,7 +164,7 @@ export const PRESET_TEMPLATES: Omit<EmailTemplate, 'created_at'>[] = [
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="https://iglesia-jerusalen.vercel.app/nosotros" style="background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; display: inline-block;">
+                <a href="https://www.iecejerusalen.com/nosotros" style="background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; display: inline-block;">
                   Conocer Más Sobre Nosotros
                 </a>
               </div>
@@ -225,7 +225,7 @@ export const PRESET_TEMPLATES: Omit<EmailTemplate, 'created_at'>[] = [
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="https://iglesia-jerusalen.vercel.app/eventos" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);">
+                <a href="https://www.iecejerusalen.com/eventos" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);">
                   🎟️ Inscribirme Ahora Gratis
                 </a>
               </div>
@@ -281,7 +281,7 @@ export const PRESET_TEMPLATES: Omit<EmailTemplate, 'created_at'>[] = [
                 <strong style="color: #854d0e; display: block; margin-bottom: 8px;">🙏 ¿Necesitas oración esta semana?</strong>
                 <span style="color: #713f12;">Déjanos tus peticiones y nuestro equipo pastoral estará intercediendo por ti de manera confidencial.</span>
                 <div style="margin-top: 15px;">
-                  <a href="https://iglesia-jerusalen.vercel.app/oracion" style="color: #1e3a8a; font-weight: bold; text-decoration: underline;">Enviar Petición de Oración →</a>
+                  <a href="https://www.iecejerusalen.com/oracion" style="color: #1e3a8a; font-weight: bold; text-decoration: underline;">Enviar Petición de Oración →</a>
                 </div>
               </div>
 

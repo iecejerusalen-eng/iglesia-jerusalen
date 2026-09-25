@@ -25,6 +25,8 @@ const allowedOrigins = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:4173',
   'http://127.0.0.1:4174',
+  'https://www.iecejerusalen.com',
+  'https://iecejerusalen.com',
   'https://iglesia-jerusalen.vercel.app',
 ]);
 
@@ -34,7 +36,7 @@ const getCorsHeaders = (request: Request) => {
   const origin = request.headers.get('Origin') || '';
   const allowedOrigin = allowedOrigins.has(origin) || origin.endsWith('.vercel.app') || isLocalOrigin(origin)
     ? origin
-    : 'https://iglesia-jerusalen.vercel.app';
+    : 'https://www.iecejerusalen.com';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

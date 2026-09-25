@@ -5,6 +5,8 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://www.iecejerusalen.com",
+  "https://iecejerusalen.com",
   "https://iglesia-jerusalen.web.app",
   "https://iglesiajerusalen.org"
 ];
