@@ -35,7 +35,7 @@ export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionPr
   const sermonThumbnail = latestSermon ? getSermonThumbnail(latestSermon) : null;
 
   return (
-    <section aria-labelledby="home-highlights-title" className="relative z-10 -mt-12 px-4 md:px-8">
+    <section aria-labelledby="home-highlights-title" className="relative z-10 -mt-3 px-4 md:-mt-5 md:px-8">
       <div className="mx-auto max-w-7xl">
         <AnimeFadeUp>
           <div className="rounded-[2rem] border border-white/80 bg-white/78 p-2.5 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.42)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/78 md:p-3.5">

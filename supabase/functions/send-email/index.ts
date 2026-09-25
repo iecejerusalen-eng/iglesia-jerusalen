@@ -179,7 +179,7 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: Deno.env.get("RESEND_FROM_EMAIL") || "Iglesia Jerusalén <onboarding@resend.dev>",
+        from: Deno.env.get("RESEND_FROM_EMAIL") || "Iglesia Jerusalén <notificaciones@iecejerusalen.com>",
         to,
         subject,
         html: htmlContent,

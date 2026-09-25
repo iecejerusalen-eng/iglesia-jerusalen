@@ -99,16 +99,18 @@ export default function PremiumBibleHero({ bookName, chapter, versionName }: Pre
         <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/75 to-transparent dark:from-[#071330]/60" />
       </div>
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-16 sm:px-8 sm:py-20 lg:grid-cols-[.92fr_1.08fr] lg:gap-10 lg:px-10 lg:py-24 xl:px-12">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-16 sm:px-8 sm:py-20 lg:grid-cols-[.92fr_1.08fr] lg:gap-12 lg:px-10 lg:py-24 xl:gap-16 xl:px-12">
         <div className="relative z-10 max-w-2xl">
           <div className="bible-hero-reveal inline-flex items-center gap-3 rounded-full border border-amber-900/10 bg-white/70 px-3 py-2 pr-4 text-[10px] font-black uppercase tracking-[.2em] text-amber-900 shadow-[0_14px_35px_-22px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[.06] dark:text-amber-200">
             <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-900/20"><Sparkles size={14} strokeWidth={2.4} /></span>
             Biblioteca de fe
           </div>
 
-          <h1 id="bible-hero-title" className="bible-hero-reveal bible-hero-reveal-1 mt-8 max-w-3xl font-serif text-[clamp(3.25rem,7vw,6.8rem)] font-black leading-[.88] tracking-[-.06em] text-slate-950 dark:text-white">
-            Lee con
-            <span className="mt-2 block bg-gradient-to-r from-amber-700 via-orange-600 to-blue-700 bg-clip-text text-transparent dark:from-amber-200 dark:via-orange-300 dark:to-blue-300">propósito.</span>
+          <h1 id="bible-hero-title" className="bible-hero-reveal bible-hero-reveal-1 mt-8 max-w-3xl font-serif text-[clamp(3.1rem,6.8vw,6.5rem)] font-black leading-[0.96] tracking-[-.045em] text-slate-950 dark:text-white">
+            <span className="block">Lee con</span>
+            <span className="mt-2 inline-block bg-gradient-to-r from-amber-700 via-orange-600 to-blue-700 bg-clip-text pb-2.5 pt-1 pr-2 text-transparent dark:from-amber-200 dark:via-orange-300 dark:to-blue-300">
+              propósito.
+            </span>
           </h1>
 
           <p className="bible-hero-reveal bible-hero-reveal-2 mt-7 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-8">
@@ -136,7 +138,7 @@ export default function PremiumBibleHero({ bookName, chapter, versionName }: Pre
           <div aria-hidden="true" className="absolute inset-[3%] rounded-[3.5rem] border border-dashed border-amber-600/25 [transform:rotate(7deg)] dark:border-amber-300/20" />
 
           <article className="relative h-full w-full transform-gpu transition-transform duration-500 ease-out [transform:rotateX(var(--bible-rotate-x))_rotateY(var(--bible-rotate-y))]">
-            <div className="absolute -left-1 top-[9%] z-20 hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-[0_25px_60px_-25px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/80 sm:flex">
+            <div className="absolute -left-2 top-[26%] z-20 hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-[0_25px_60px_-25px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/80 sm:flex">
               <span className="flex size-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300"><Bookmark size={15} /></span>
               <span><span className="block text-[9px] font-black uppercase tracking-[.16em] text-slate-500 dark:text-slate-400">Pasaje actual</span><span className="mt-0.5 block text-sm font-black text-slate-900 dark:text-white">{bookName} {chapter}</span></span>
             </div>
@@ -151,9 +153,9 @@ export default function PremiumBibleHero({ bookName, chapter, versionName }: Pre
               </div>
             </div>
 
-            <div className="absolute -bottom-1 right-0 z-20 flex max-w-[15rem] items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_25px_60px_-25px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/85 sm:right-3">
+            <div className="absolute -bottom-2 right-0 z-20 flex max-w-[17.5rem] items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_25px_60px_-25px_rgba(15,23,42,.55)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/85 sm:right-3 sm:max-w-[19rem]">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-700/10 text-blue-800 dark:bg-blue-400/10 dark:text-blue-200"><LibraryBig size={17} /></span>
-              <span className="min-w-0"><span className="block text-[9px] font-black uppercase tracking-[.15em] text-blue-700 dark:text-blue-300">Listo para estudiar</span><span className="mt-0.5 block truncate text-xs font-bold text-slate-800 dark:text-white">Busca, guarda y vuelve a encontrar</span></span>
+              <span className="min-w-0"><span className="block text-[9px] font-black uppercase tracking-[.15em] text-blue-700 dark:text-blue-300">Listo para estudiar</span><span className="mt-0.5 block text-xs font-bold text-slate-800 dark:text-white leading-tight">Busca, guarda y vuelve a encontrar</span></span>
             </div>
           </article>
         </div>

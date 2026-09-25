@@ -26,7 +26,7 @@ export default async function handler(req: HandlerRequest, res: HandlerResponse)
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail = process.env.RESEND_FROM_EMAIL || 'Iglesia Jerusalén <onboarding@resend.dev>';
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'Iglesia Jerusalén <novedades@iecejerusalen.com>';
       const mail = await resend.emails.send({
         from: fromEmail,
         to: email,

@@ -164,7 +164,7 @@ export const PremiumHeroVisual = ({ subtitle, contentBlocks, coverImage }: Premi
         <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-white/75 to-transparent dark:from-blue-950/40" />
       </div>
 
-      <div className="relative mx-auto grid min-h-[min(860px,calc(100svh-4rem))] max-w-7xl items-center gap-10 px-5 pb-24 pt-32 sm:px-8 lg:grid-cols-[.93fr_1.07fr] lg:gap-6 lg:px-10 lg:py-32 xl:px-12">
+      <div className="relative mx-auto grid min-h-[min(860px,calc(100svh-4rem))] max-w-7xl items-center gap-10 px-5 pb-32 pt-32 sm:px-8 sm:pb-36 lg:grid-cols-[.93fr_1.07fr] lg:gap-6 lg:px-10 lg:pt-32 lg:pb-40 xl:px-12">
         <div className="hero-copy-shift relative z-10 max-w-2xl transition-transform duration-700 lg:pr-6">
           <div className="hero-reveal inline-flex items-center gap-3 rounded-full border border-blue-900/10 bg-white/75 px-3 py-2 pr-4 text-[10px] font-black uppercase tracking-[0.2em] text-blue-900 shadow-[0_18px_45px_-26px_rgba(15,23,42,.6)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.07] dark:text-blue-100">
             <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-700 to-indigo-500 text-white shadow-lg shadow-blue-900/20 dark:from-blue-400 dark:to-indigo-400 dark:text-slate-950">
@@ -173,9 +173,9 @@ export const PremiumHeroVisual = ({ subtitle, contentBlocks, coverImage }: Premi
             {subtitle || 'Una casa de restauración y bendición'}
           </div>
 
-          <h1 id="hero-title" aria-label={HERO_TITLE} className="hero-reveal hero-reveal-delay-1 mt-8 max-w-3xl font-serif text-[clamp(3.25rem,7.5vw,7rem)] font-black leading-[.86] tracking-[-.065em] text-slate-950 dark:text-white">
+          <h1 id="hero-title" aria-label={HERO_TITLE} className="hero-reveal hero-reveal-delay-1 mt-8 max-w-3xl font-serif text-[clamp(3.1rem,7.2vw,6.8rem)] font-black leading-[0.95] tracking-[-.05em] text-slate-950 dark:text-white">
             <span className="block">Jerusalén,</span>
-            <span className="mt-3 block bg-gradient-to-r from-blue-800 via-indigo-700 to-blue-500 bg-clip-text text-transparent dark:from-blue-200 dark:via-indigo-200 dark:to-blue-400">
+            <span className="mt-2.5 inline-block bg-gradient-to-r from-blue-800 via-indigo-700 to-blue-500 bg-clip-text pb-2.5 pt-1 pr-2 text-transparent dark:from-blue-200 dark:via-indigo-200 dark:to-blue-400">
               Posesión de Paz
             </span>
           </h1>
@@ -273,10 +273,14 @@ export const PremiumHeroVisual = ({ subtitle, contentBlocks, coverImage }: Premi
         </div>
       </div>
 
-      <a href="#home_schedules" aria-label="Bajar a los horarios de servicio" className="hero-reveal hero-reveal-delay-4 absolute bottom-6 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-3 text-[10px] font-black uppercase tracking-[.22em] text-slate-500 transition hover:text-blue-800 dark:text-slate-400 dark:hover:text-blue-200 md:flex">
-        <span className="h-8 w-px bg-gradient-to-b from-transparent via-current to-transparent" />
+      <a
+        href="#home_schedules"
+        aria-label="Bajar a los horarios de servicio"
+        className="hero-reveal hero-reveal-delay-4 absolute bottom-9 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/85 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-slate-600 shadow-sm backdrop-blur-xl transition duration-300 hover:border-blue-500/40 hover:bg-white hover:text-blue-700 hover:shadow-md dark:border-white/10 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:text-blue-300 md:flex"
+      >
+        <span className="size-1.5 rounded-full bg-blue-600 animate-pulse dark:bg-blue-400" />
         Descubre nuestra semana
-        <span className="h-8 w-px bg-gradient-to-b from-transparent via-current to-transparent" />
+        <ArrowDown size={12} className="text-slate-400" />
       </a>
     </section>
   );

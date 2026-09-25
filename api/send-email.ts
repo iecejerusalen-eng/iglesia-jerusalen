@@ -36,7 +36,7 @@ export default async function handler(req: HandlerRequest, res: HandlerResponse)
     const resend = new Resend(apiKey);
     const { to, subject, html, text, from, replyTo } = parsed.data;
 
-    const fromAddress = from || process.env.RESEND_FROM_EMAIL || 'Iglesia Jerusalén <onboarding@resend.dev>';
+    const fromAddress = from || process.env.RESEND_FROM_EMAIL || 'Iglesia Jerusalén <notificaciones@iecejerusalen.com>';
 
     const result = await resend.emails.send({
       from: fromAddress,

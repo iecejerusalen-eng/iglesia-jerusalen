@@ -3,6 +3,40 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.2] - 2026-09-25
+
+### Corregido (Fixed)
+- **Corrección de Recorte Tipográfico y Elementos Ocultos en Secciones Hero**:
+  - **Recorte de "propósito." (`PremiumBibleHero.tsx`)**: Se incrementó la altura de línea de `leading-[.88]` a `leading-[0.96]` y se añadió `inline-block` con margen y relleno de seguridad (`pb-2.5 pt-1 pr-2`) para evitar que el gradiente con `bg-clip-text` recorte la tilde de la "ó" y los trazos descendentes.
+  - **Superposición de "Palabra viva" (`PremiumBibleHero.tsx`)**: Se reubicó la insignia flotante "Pasaje actual" de `top-[9%]` a `top-[26%]`, eliminando la colisión que tapaba la etiqueta "Palabra viva" en la tarjeta de estudio bíblico.
+  - **Truncamiento de Texto en Tarjeta de Estudio**: Se amplió el ancho del badge inferior de `15rem` a `17.5rem` / `19rem` y se retiró el `truncate`, mostrando completo el mensaje *"Busca, guarda y vuelve a encontrar"*.
+  - **Elemento Oculto "Descubre nuestra semana" (`PremiumHeroVisual.tsx` & `BentoGridSection.tsx`)**:
+    - Se rediseñó el indicador ancla inferior como una cápsula de cristal flotante (*glass pill badge*) con microinteracción de pulso e icono direccional.
+    - Se ajustó el margen negativo de la sección bento grid de `-mt-12` a `-mt-5` y la separación inferior del hero, eliminando la superposición donde la tarjeta de sermón cubría y ocultaba el texto "Descubre nuestra semana".
+
+---
+
+## [1.4.2] - 2026-09-25
+
+### Mejorado (Changed)
+- **Rediseño Visual Premium del Cancionero y Altar de Adoración (`/recursos/alabanzas`)**:
+  - **Atmósfera Sagrada en Hero (`SongsHero.tsx`)**: Fondo azul santuario cósmico (`#020617` a `#071333`) con iluminación ambiental dorada (*Oro Jerusalén*), patrón sutil de pentagrama, badge del cancionero con destellos, versículo bíblico de llamamiento a la adoración (Salmo 96:1–2) y botón interactivo para abrir una alabanza de *«Inspiración del día»* aleatoria.
+  - **Tarjetas de Alabanza Tipo Partitura de Lujo (`SongsList.tsx`)**: Contenedores con acabado glassmorphism elevado (`rounded-3xl`, `backdrop-blur-xl`, sombra suave y halo dorado en hover), icono de partitura en relieve áureo, badge de tonalidad original destacada (ej. *Tono Sol / G*) para músicos y directores de alabanza, badge esmeralda de acordes interactivos, micro-ecualizador de audio animado de 3 barras que reacciona al cursor y botón con flecha circular dorada.
+  - **Buscador Flotante y Chips Temáticos Rápidos (`SongsFilters.tsx`)**: Tarjeta flotante de cristal con buscador inteligente, barra horizontal de pills temáticas con un solo clic (*Todo el catálogo*, *Con acordes 🎸*, *Adoración*, *Alabanza*, etc.), alternador de vistas de alta fidelidad (Cards / Tabla) y filtros avanzados colapsables con selectores redondeados.
+  - **Lienzo Celestial y Cinta del Ministerio de Alabanza (`SongsLibrary.tsx`)**: Suave degradado radial ambiental en el fondo de la página, soporte para exploración suave y activación de alabanza aleatoria, y cinta informativa inferior con las herramientas de transposición, digitaciones para guitarra, piano y bajo, metrónomo y exportación a PDF para el equipo ministerial.
+
+---
+
+## [1.4.1] - 2026-09-25
+
+### Mejorado (Changed)
+- **Activación y Configuración del Dominio Oficial `@iecejerusalen.com` en Resend**:
+  - **Autenticación DNS Completa**: Verificación en verde de registros DKIM, SPF (CNAMEs `rsend` y `send`) y política DMARC en Namecheap.
+  - **Remitente Institucional**: Configuración de `notificaciones@iecejerusalen.com` y `novedades@iecejerusalen.com` como remitentes oficiales de la iglesia para todas las notificaciones transaccionales y boletines.
+  - **Prueba en Vivo Exitosa**: Validación de entrega directa y sin filtros de spam hacia la bandeja de entrada de `iecejerusalen@gmail.com`.
+
+---
+
 ## [1.4.0] - 2026-09-25
 
 ### Añadido (Added)
