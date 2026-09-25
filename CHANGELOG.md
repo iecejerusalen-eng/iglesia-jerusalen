@@ -5,6 +5,32 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.8] - 2026-09-25
+
+### Mejorado (Changed)
+- **Apariencia General del Panel Administrativo (Visual Premium Upgrade)**:
+  - **`AdminLayout.tsx`**: Fondo de pantalla más profundo (`#eef0f6` / `#060d1f` oscuro), cabecera con glassmorphism reforzado (`backdrop-blur-2xl`, sombra direccional sutil), barra de búsqueda con cursor interactivo y estado hover diferenciado, avatar del usuario con gradiente y sombra de color, nav móvil con sombra premium y borde más opaco.
+  - **Gradiente Radial Ambiental Obligatorio**: Todos los módulos del panel ahora heredan el gradiente radial `rgba(37,99,235,0.08)` / `rgba(139,92,246,0.07)` desde el `<main>` del layout, alineado con el estándar visual de `AnalyticsDashboard`.
+  - **`DashboardHome.tsx`**: Añadido el gradiente radial ambiental propio de la página principal, mejoras de contraste en secciones de error y CTA de análisis detallado.
+  - **`DashboardHero.tsx`**: Degradado naval más profundo con capa de glow radial decorativa, anillo inset en la tarjeta de versículo, anillos decorativos más refinados, tracking de micro-labels mejorado a `[.18em]`.
+  - **`DashboardStats.tsx`**: Tarjetas con `rounded-[1.4rem]`, hover más pronunciado (`hover:-translate-y-1.5`, `hover:shadow-xl`, `hover:bg-white`), bordes más delicados en dark mode.
+  - **`QuickLinks.tsx`**: Sistema de colores por módulo (azul, violeta, ámbar, esmeralda, rosa, gris pizarra), contenedores de icono con borde y badge de color, escala de icono en hover, micro-label uppercase de `Abrir herramienta`.
+  - **`WeeklyAlerts.tsx`**: Ajustes menores de opacidad de borde y fondo para coherencia visual con el resto del dashboard.
+  - **`Sidebar.tsx`**: Degradado de fondo más profundo y azul-marino refinado, cabecera más compacta con badge de rol premium (`border border-gold/25 bg-gold/10`), logo con `drop-shadow-lg`.
+
+---
+
+## [1.3.7] - 2026-09-25
+
+### Mejorado (Changed)
+- **UX y Control del Checklist de Onboarding (`OnboardingChecklist.tsx`)**:
+  - **Botón de Cierre Directo (`X`)**: Incorporado botón de descarte rápido e independiente en la cabecera flotante con `stopPropagation` para no colapsar accidentalmente.
+  - **Ocultación Inteligente al Completar (100%)**: Cuando el usuario finaliza todos los pasos (5/5 pasos completados), el checklist ofrece un botón de acción principal para descartarse permanentemente y no permanecer flotando sobre la interfaz.
+  - **Persistencia en LocalStorage**: Si el usuario cierra o descarta el checklist, la preferencia se memoriza de forma permanente para no interrumpir el flujo de trabajo ni tapar botones o barras de navegación.
+  - **Acceso Bajo Demanda desde el Header**: El badge de puntos de activación (`⚡ pts`) en la barra superior del panel ahora es interactivo y permite reabrir el progreso de onboarding cuando el administrador lo desee.
+
+---
+
 ## [1.3.6] - 2026-09-25
 
 ### Añadido (Added)

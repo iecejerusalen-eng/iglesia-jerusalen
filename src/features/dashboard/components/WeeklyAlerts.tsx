@@ -7,10 +7,10 @@ interface WeeklyAlertsProps {
 
 export const WeeklyAlerts = ({ alerts }: WeeklyAlertsProps) => {
   return (
-    <section className="space-y-4 rounded-[1.6rem] border border-white/70 bg-white/70 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,.55)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/65">
-      <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 pb-3 dark:border-white/10">
+    <section className="space-y-4 rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_24px_70px_-44px_rgba(15,23,42,.5)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/60">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-200/60 pb-3 dark:border-white/[0.08]">
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="flex items-center gap-2 text-sm font-black tracking-tight text-slate-900 dark:text-white">
             <Gift size={17} className="text-amber-500" /> Próximos 7 días
           </h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Cumpleaños y aniversarios de fe para acompañar.</p>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Command } from 'cmdk';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, BookOpen, Music, Calendar, Heart, 
   ShoppingBag, ArrowRight, Loader2, Send, Globe,
@@ -11,6 +11,7 @@ import { useSearchStore } from '../../store/useSearchStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
+import { supabase } from '../../config/supabase';
 import { AnimeFadeUp, AnimeScaleIn } from '../animations/AnimeWrappers';
 import { 
   preloadSearchIndex, 
@@ -19,7 +20,16 @@ import {
   parseBibleReferences,
   invalidateSearchIndexCache
 } from '../../features/search/services/searchIndexService';
-import type { SearchIndexItem, ParsedBibleReference } from '../../features/search/types';
+import type { SearchIndexItem, ParsedBibleReference, SearchAggregatedResults } from '../../features/search/types';
+
+interface MemberSearchResult {
+  id: string;
+  first_name: string;
+  last_name: string;
+  photo_url: string | null;
+  phone: string | null;
+  phone_country_code: string | null;
+}
 
 const cmdkStyles = `
   [cmdk-root] {
@@ -125,25 +135,42 @@ export default function SearchPalette() {
   
   // Pre-loaded index items (instant 0ms response)
   const [preloadedItems, setPreloadedItems] = useState<SearchIndexItem[]>([]);
-  const [deepResults, setDeepResults] = useState<Record<string, SearchIndexItem[]>>({});
+  const [deepResults, setDeepResults] = useState<Partial<SearchAggregatedResults>>({});
+  const [crmMembers, setCrmMembers] = useState<MemberSearchResult[]>([]);
   
   const navigate = useNavigate();
-  const location = useLocation();
   const paletteRef = useRef<HTMLDivElement>(null);
   const deepRequestIdRef = useRef(0);
 
   const { user, role } = useAuthStore();
   const { hasPermission } = usePermissions();
 
-  const roleLower = role?.toLowerCase();
-  const isAdminOrLeader = !!user && (
-    roleLower === 'admin' ||
-    roleLower === 'superadmin' ||
-    roleLower === 'pastor' ||
-    roleLower === 'lider' ||
-    roleLower === 'leader' ||
-    hasPermission('dashboard', 'view')
+  const userRoleLower = (role || '').toLowerCase();
+  const isAuthenticated = !!user;
+  const isGuest = !isAuthenticated || userRoleLower === 'guest';
+  const isSuperAdminOrPastor = isAuthenticated && (
+    userRoleLower === 'admin' ||
+    userRoleLower === 'superadmin' ||
+    userRoleLower === 'pastor'
   );
+
+  // Control granular inteligente de permisos para módulos de administración:
+  // Si es invitado/anónimo -> NINGÚN módulo administrativo (cero exposición de finanzas, miembros, etc.)
+  // Si es pastor/admin -> acceso completo a todos los módulos
+  // Si es otro rol (líder, músico, docente, etc.) -> solo los módulos para los cuales tiene permiso explícito
+  const accessibleAdminModules = useMemo(() => {
+    if (isGuest) return [];
+
+    return ADMIN_MODULES.filter(m => {
+      if (m.available === false) return false;
+      if (isSuperAdminOrPastor) return true;
+      const permKey = getAdminModulePermission(m);
+      return hasPermission(permKey, 'view');
+    });
+  }, [isGuest, isSuperAdminOrPastor, hasPermission]);
+
+  // Permiso para buscar miembros en el CRM
+  const canSearchMembers = !isGuest && (isSuperAdminOrPastor || hasPermission('members', 'view'));
 
   // Pre-cargar índice al montar o abrir
   useEffect(() => {
@@ -154,19 +181,9 @@ export default function SearchPalette() {
     return () => { isMounted = false; };
   }, [isOpen]);
 
-  // Accesible Admin Modules
-  const accessibleAdminModules = useMemo(() => {
-    if (!isAdminOrLeader) return [];
-    return ADMIN_MODULES.filter(m => 
-      m.available !== false && hasPermission(getAdminModulePermission(m), 'view')
-    );
-  }, [isAdminOrLeader, hasPermission]);
-
-  // Esc / Shortcut Listener & Custom Events
+  // Atajo universal Ctrl+K / ⌘K y escuchas de eventos (funciona en público, admin y toda la app)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (location.pathname.startsWith('/admin')) return;
-
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         if (isOpen) close(); else useSearchStore.getState().open();
@@ -180,20 +197,23 @@ export default function SearchPalette() {
     document.addEventListener('keydown', down);
     window.addEventListener('open-command-palette', handleCustomOpen);
     window.addEventListener('search:open', handleCustomOpen);
+    window.addEventListener('admin-command-menu:open', handleCustomOpen);
 
     return () => {
       document.removeEventListener('keydown', down);
       window.removeEventListener('open-command-palette', handleCustomOpen);
       window.removeEventListener('search:open', handleCustomOpen);
+      window.removeEventListener('admin-command-menu:open', handleCustomOpen);
     };
-  }, [isOpen, close, location.pathname]);
+  }, [isOpen, close]);
 
-  // Reset search when dialog opens/closes
+  // Limpiar estado al cerrar
   useEffect(() => {
     if (!isOpen) {
       const resetTimer = window.setTimeout(() => {
         setSearch('');
         setDeepResults({});
+        setCrmMembers([]);
         setSearchError(null);
       }, 0);
       return () => window.clearTimeout(resetTimer);
@@ -201,23 +221,24 @@ export default function SearchPalette() {
     return undefined;
   }, [isOpen]);
 
-  // 1. Instant local filter (0 ms latency)
+  // 1. Filtrado local instantáneo a 0ms de latencia
   const localFilteredItems = useMemo(() => {
     return searchLocalIndex(search, preloadedItems);
   }, [search, preloadedItems]);
 
-  // 2. Parsed Bible Reference (instant)
+  // 2. Detección instantánea de citas bíblicas
   const parsedBibleRef = useMemo<ParsedBibleReference | null>(() => {
     if (!search.trim()) return null;
     const parsed = parseBibleReferences(search);
     return parsed.length > 0 && parsed[0].bookId ? parsed[0] : null;
   }, [search]);
 
-  // 3. Debounced Deep Remote Search (for deep song lyrics, events, products)
+  // 3. Búsqueda remota profunda y de miembros CRM (debounced a 200ms)
   useEffect(() => {
     const trimmed = search.trim();
     if (!trimmed || trimmed.length < 2) {
       setDeepResults({});
+      setCrmMembers([]);
       setDeepLoading(false);
       return;
     }
@@ -226,9 +247,18 @@ export default function SearchPalette() {
     const timer = setTimeout(async () => {
       setDeepLoading(true);
       try {
-        const remote = await searchDeepSupabase(trimmed);
+        const remotePromise = searchDeepSupabase(trimmed);
+        const membersPromise = canSearchMembers 
+          ? supabase.from('members').select('id, first_name, last_name, photo_url, phone, phone_country_code').is('deleted_at', null).or(`first_name.ilike.%${trimmed}%,last_name.ilike.%${trimmed}%,phone.ilike.%${trimmed}%`).limit(4)
+          : Promise.resolve({ data: [] as MemberSearchResult[] });
+
+        const [remote, membersRes] = await Promise.all([remotePromise, membersPromise]);
+
         if (reqId === deepRequestIdRef.current) {
-          setDeepResults(remote as Record<string, SearchIndexItem[]>);
+          setDeepResults(remote);
+          if (canSearchMembers && membersRes.data) {
+            setCrmMembers(membersRes.data as MemberSearchResult[]);
+          }
         }
       } catch (err) {
         console.error('Error en búsqueda profunda:', err);
@@ -243,7 +273,7 @@ export default function SearchPalette() {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, canSearchMembers]);
 
   if (!isOpen) return null;
 
@@ -264,7 +294,7 @@ export default function SearchPalette() {
     setDeepLoading(false);
   };
 
-  // Group items by category / source
+  // Agrupamiento de elementos
   const customLinks = localFilteredItems.filter(i => i.source === 'custom_link');
   const sermons = [
     ...localFilteredItems.filter(i => i.source === 'sermon'),
@@ -291,7 +321,7 @@ export default function SearchPalette() {
   const products = deepResults.products || [];
   const sitePages = localFilteredItems.filter(i => i.source === 'static_route');
 
-  // Filtered Admin Modules for Search
+  // Módulos administrativos filtrados estrictamente por permisos del usuario
   const filteredAdminModules = accessibleAdminModules.filter(mod => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -301,7 +331,7 @@ export default function SearchPalette() {
       (mod.keywords || []).some(k => k.toLowerCase().includes(q));
   });
 
-  // Intent classification
+  // Clasificación de accesos directos
   const normalizedSearch = search.toLowerCase();
   const showLocation = /ubica|direc|dónde|mapa|milagro|llegar/i.test(normalizedSearch) || search.length === 0;
   const showSocials = /redes|social|facebook|youtube|instagram|canal|video|vivo|transmi/i.test(normalizedSearch) || search.length === 0;
@@ -314,7 +344,7 @@ export default function SearchPalette() {
       <style>{cmdkStyles}</style>
       
       <div 
-        className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/70 dark:bg-black/85 backdrop-blur-md p-4 pt-16 md:pt-[8vh] animate-fadeIn"
+        className="fixed inset-0 z-[160] flex items-start justify-center bg-slate-950/70 dark:bg-black/85 backdrop-blur-md p-4 pt-16 md:pt-[8vh] animate-fadeIn"
         onClick={close}
       >
         <AnimeScaleIn className="w-full max-w-2xl">
@@ -323,7 +353,7 @@ export default function SearchPalette() {
             onClick={(e) => e.stopPropagation()} 
             className="w-full"
           >
-            <Command label="Buscador inteligente e indexador general de Iglesia Jerusalén">
+            <Command label="Buscador universal inteligente de Iglesia Jerusalén">
               {/* Input Header */}
               <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/70 dark:bg-slate-900/50">
                 {deepLoading ? (
@@ -334,7 +364,11 @@ export default function SearchPalette() {
                 <Command.Input 
                   value={search}
                   onValueChange={setSearch}
-                  placeholder="Busca páginas, prédicas, alabanzas, cursos, eventos..." 
+                  placeholder={
+                    isGuest 
+                      ? "¿Qué deseas buscar? (Prédicas, alabanzas, biblia, cultos...)"
+                      : "¿Qué deseas buscar? (Herramientas, finanzas, miembros, prédicas...)"
+                  } 
                   autoFocus
                 />
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -360,7 +394,11 @@ export default function SearchPalette() {
                 <Command.Empty>
                   <div className="text-center py-6">
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No encontramos resultados directos</p>
-                    <p className="text-xs text-slate-400 mt-1">Prueba con palabras como "prédica", "biblia", "horarios" o el nombre de una alabanza.</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {isGuest 
+                        ? 'Prueba con "prédica", "biblia", "horarios" o el título de un canto.' 
+                        : 'Prueba buscando el nombre de una herramienta, módulo o miembro del CRM.'}
+                    </p>
                   </div>
                 </Command.Empty>
 
@@ -393,10 +431,10 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 2. MÓDULOS DE ADMINISTRACIÓN (SOLO AUTORIZADOS) */}
+                {/* 2. MÓDULOS DE ADMINISTRACIÓN (SEGÚN ROLES Y PERMISOS DEL USUARIO) */}
                 {filteredAdminModules.length > 0 && (
                   <AnimeFadeUp delay={0.04}>
-                    <Command.Group heading="Módulos de Administración (Panel)">
+                    <Command.Group heading="Módulos de Gestión (Panel)">
                       {filteredAdminModules.map((mod) => (
                         <Command.Item
                           key={mod.id}
@@ -426,7 +464,46 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 3. ENLACES PERSONALIZADOS Y DESTACADOS DE ADMINISTRACIÓN */}
+                {/* 3. MIEMBROS DEL CRM (SOLO PARA ROLES CON PERMISOS DE MIEMBROS) */}
+                {canSearchMembers && crmMembers.length > 0 && (
+                  <AnimeFadeUp delay={0.05}>
+                    <Command.Group heading="Miembros del CRM">
+                      {crmMembers.map((member) => (
+                        <Command.Item
+                          key={member.id}
+                          value={`miembro crm persona ${member.first_name} ${member.last_name} ${member.phone || ''}`}
+                          onSelect={() => handleSelect('/admin/miembros')}
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0 overflow-hidden text-xs font-bold">
+                            {member.photo_url ? (
+                              <img src={member.photo_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              `${member.first_name?.[0] || ''}${member.last_name?.[0] || ''}`
+                            )}
+                          </div>
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">
+                                {member.first_name} {member.last_name}
+                              </span>
+                              <span className="rounded bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 border border-blue-500/30 shrink-0">
+                                CRM
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block truncate">
+                              {member.phone ? `Tel: ${member.phone}` : 'Sin teléfono registrado'}
+                            </span>
+                          </div>
+                          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 shrink-0">
+                            Ver ficha <ArrowRight size={13} />
+                          </span>
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 4. ENLACES PERSONALIZADOS Y DESTACADOS */}
                 {customLinks.length > 0 && (
                   <AnimeFadeUp delay={0.06}>
                     <Command.Group heading="Enlaces Destacados y Promocionados">
@@ -463,7 +540,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 4. PRÉDICAS Y SERMONES (AUTO-INDEXADOS) */}
+                {/* 5. PRÉDICAS Y SERMONES (AUTO-INDEXADOS) */}
                 {sermons.length > 0 && (
                   <AnimeFadeUp delay={0.08}>
                     <Command.Group heading="Prédicas y Sermones">
@@ -487,7 +564,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 5. CURSOS DEL AULA VIRTUAL (AUTO-INDEXADOS) */}
+                {/* 6. CURSOS DEL AULA VIRTUAL (AUTO-INDEXADOS) */}
                 {courses.length > 0 && (
                   <AnimeFadeUp delay={0.1}>
                     <Command.Group heading="Cursos del Aula Virtual (LMS)">
@@ -516,7 +593,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 6. ESPACIOS Y PUBLICACIONES EDITORIALES (AUTO-INDEXADOS) */}
+                {/* 7. ESPACIOS Y PUBLICACIONES EDITORIALES (AUTO-INDEXADOS) */}
                 {editorialSpaces.length > 0 && (
                   <AnimeFadeUp delay={0.12}>
                     <Command.Group heading="Espacios Editoriales y Artículos">
@@ -545,7 +622,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 7. FORMULARIOS DINÁMICOS (AUTO-INDEXADOS) */}
+                {/* 8. FORMULARIOS DINÁMICOS (AUTO-INDEXADOS) */}
                 {dynamicForms.length > 0 && (
                   <AnimeFadeUp delay={0.13}>
                     <Command.Group heading="Formularios de Registro y Participación">
@@ -574,7 +651,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 8. ALABANZAS E HIMNOS (BÚSQUEDA PROFUNDA DE LETRAS) */}
+                {/* 9. ALABANZAS E HIMNOS (BÚSQUEDA PROFUNDA DE LETRAS) */}
                 {songs.length > 0 && (
                   <AnimeFadeUp delay={0.14}>
                     <Command.Group heading="Alabanzas e Himnos">
@@ -598,7 +675,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 9. EVENTOS Y ACTIVIDADES */}
+                {/* 10. EVENTOS Y ACTIVIDADES */}
                 {events.length > 0 && (
                   <AnimeFadeUp delay={0.16}>
                     <Command.Group heading="Eventos y Actividades">
@@ -620,7 +697,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 10. MINISTERIOS Y DEPARTAMENTOS */}
+                {/* 11. MINISTERIOS Y DEPARTAMENTOS */}
                 {ministries.length > 0 && (
                   <AnimeFadeUp delay={0.18}>
                     <Command.Group heading="Ministerios y Departamentos">
@@ -642,7 +719,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 11. NOVEDADES Y VERSIONES (CHANGELOG) */}
+                {/* 12. NOVEDADES Y VERSIONES (CHANGELOG) */}
                 {changelog.length > 0 && (
                   <AnimeFadeUp delay={0.2}>
                     <Command.Group heading="Novedades y Versiones (Changelog)">
@@ -673,7 +750,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 12. ANUNCIOS IMPORTANTES */}
+                {/* 13. ANUNCIOS IMPORTANTES */}
                 {announcements.length > 0 && (
                   <AnimeFadeUp delay={0.22}>
                     <Command.Group heading="Anuncios Parroquiales">
@@ -695,7 +772,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 13. HORARIOS DE CULTOS */}
+                {/* 14. HORARIOS DE CULTOS */}
                 {schedules.length > 0 && (
                   <AnimeFadeUp delay={0.24}>
                     <Command.Group heading="Horarios de Cultos">
@@ -717,7 +794,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 14. PRODUCTOS DE LA TIENDA */}
+                {/* 15. PRODUCTOS DE LA TIENDA */}
                 {products.length > 0 && (
                   <AnimeFadeUp delay={0.26}>
                     <Command.Group heading="Productos de la Tienda">
@@ -739,7 +816,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 15. SECCIONES Y PÁGINAS DEL SITIO (AUTO-INDEXADAS, FILTRADO INSTANTÁNEO) */}
+                {/* 16. SECCIONES Y PÁGINAS DEL SITIO (AUTO-INDEXADAS, FILTRADO INSTANTÁNEO) */}
                 {sitePages.length > 0 && (
                   <AnimeFadeUp delay={0.28}>
                     <Command.Group heading="Secciones y Páginas del Sitio">
@@ -773,7 +850,7 @@ export default function SearchPalette() {
                   </AnimeFadeUp>
                 )}
 
-                {/* 16. ACCESOS DIRECTOS DE ACCIÓN / AYUDA */}
+                {/* 17. ACCESOS DIRECTOS DE ACCIÓN / AYUDA */}
                 {(showLocation || showSocials || showPetition || showDonation || showStore) && (
                   <AnimeFadeUp delay={0.3}>
                     <Command.Group heading="Accesos Directos y Ayuda Rápida">
@@ -821,7 +898,7 @@ export default function SearchPalette() {
                       )}
                       {showDonation && (
                         <Command.Item 
-                          value="donación ofrenda diezmo dar apoyar diezmos donaciones sembrar" 
+                          value="donación ofrenda diezmo dar apoyar diezmos donaciones sembrar finanzas" 
                           onSelect={() => handleSelect('/donaciones')}
                         >
                           <Heart className="text-rose-500 shrink-0" size={18} />
@@ -850,7 +927,7 @@ export default function SearchPalette() {
                 )}
               </Command.List>
 
-              {/* FOOTER BAR WITH NAVIGATION & AUTO-INDEX STATUS */}
+              {/* BARRA INFERIOR CON NAVEGACIÓN Y ESTADO DE PERMISOS */}
               <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium select-none">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
@@ -865,9 +942,15 @@ export default function SearchPalette() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!isGuest && (
+                    <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      <ShieldCheck size={11} />
+                      {isSuperAdminOrPastor ? 'Pastoral / Admin' : `Rol: ${userRoleLower}`}
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Índice auto-sincronizado
+                    Buscador Universal
                   </span>
                   <span className="text-slate-300 dark:text-slate-700">·</span>
                   <a 

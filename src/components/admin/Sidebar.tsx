@@ -204,12 +204,12 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   const sidebarContent = (
     <div className={`${responsiveWidthClass} bg-gradient-to-b from-[#10224c] via-[#0b1938] to-[#071126] dark:from-slate-900 dark:via-slate-950 dark:to-black border-r border-white/5 text-white ${isFloating ? 'h-[calc(100vh-2rem)] rounded-3xl m-4' : 'h-[100dvh]'} flex flex-col shadow-2xl transition-all duration-300`}>
       {/* Sidebar Header */}
-      <div className={`p-5 border-b border-white/10 flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center shrink-0 transition-all duration-500`}>
+      <div className={`relative p-4 border-b border-white/[0.07] flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center shrink-0 transition-all duration-500`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <img loading="lazy" src={soloLogoColorido} alt="Logo" className="h-10 w-auto flex-shrink-0" />
+          <img loading="lazy" src={soloLogoColorido} alt="Logo" className="h-9 w-auto flex-shrink-0 drop-shadow-lg" />
           {!isCollapsed && (
             <div className="min-w-0 animate-fade-in">
-            <h2 className="font-serif text-lg font-bold tracking-wide">Panel Admin</h2>
+            <h2 className="font-serif text-base font-bold tracking-wide text-white">Panel Admin</h2>
             <div className="mt-1 text-sm text-gray-300">
               <p 
                 className="truncate font-semibold text-xs text-white max-w-[130px]" 
@@ -217,7 +217,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
               >
                 {firstName && lastName ? `${firstName} ${lastName}` : user?.email}
               </p>
-              <p className="capitalize text-[9px] mt-0.5 bg-gold text-white font-bold inline-block px-1.5 py-0.5 rounded shadow-sm">
+              <p className="inline-flex items-center rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[9px] font-extrabold capitalize tracking-[0.12em] text-gold mt-1.5">
                 {userRole || 'Cargando...'}
               </p>
             </div>
@@ -230,7 +230,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
             className="p-2 rounded hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Cerrar menú"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
       </div>
