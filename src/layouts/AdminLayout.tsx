@@ -298,7 +298,20 @@ const AdminLayout = () => {
       </nav>
 
       <CommandMenu />
-      {!onboarding.isLoading && onboarding.pasos.length > 0 && <OnboardingChecklist pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} completados={onboarding.completados} puntos={onboarding.puntos} onReopen={reopenOnboarding} />}
+      {!onboarding.isLoading && onboarding.pasos.length > 0 && (
+        <OnboardingChecklist
+          pasos={onboarding.pasos}
+          porcentaje={onboarding.porcentaje}
+          completados={onboarding.completados}
+          puntos={onboarding.puntos}
+          onReopen={reopenOnboarding}
+          onDismiss={() => {
+            if (onboarding.porcentaje === 100) {
+              void onboarding.actualizarConfig({ onboarding_completado: true });
+            }
+          }}
+        />
+      )}
       {showOnboarding && onboarding.pasos.length > 0 && <OnboardingModal nombre={firstName || 'equipo'} pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} onStart={(paso) => { setShowOnboarding(false); navigate(paso.accion_ruta); }} onLater={postponeOnboarding} onClose={closeOnboarding} />}
     </div>
   );

@@ -5,6 +5,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.9] - 2026-09-25
+
+### Añadido (Added)
+- **Buscador Universal e Inteligente con Control de Roles (RBAC)**:
+  - **Acceso Universal en Toda la Plataforma**: El buscador general (`Ctrl + K`) ahora funciona de manera unificada en todo el ecosistema (sitio público, panel `/admin`, aula virtual y móvil), eliminando los modales duplicados y las restricciones de ruta.
+  - **Filtrado Estricto de Seguridad por Roles y Permisos**:
+    - **Invitados y Usuarios Públicos**: Solo visualizan contenido público, recursos, sermones, horarios y alabanzas; herramientas sensibles como Finanzas, CRM de Miembros o Configuración nunca aparecen indexadas ni sugeridas.
+    - **Pastores y Administradores**: Acceso inmediato desde cualquier página (incluso pública) a los módulos de gestión con insignia `[ADMIN]`.
+    - **Roles Especializados (Músicos, Maestros, Líderes)**: Filtrado granular en tiempo real según los permisos asignados a su cuenta (ej. un músico accede a `/admin/canciones` pero no a `/admin/finanzas`).
+  - **Búsqueda Directa de Miembros del CRM**: Para usuarios autorizados con permiso pastoral o administrativo, el buscador permite encontrar miembros del CRM por nombre o teléfono, consultar su información y abrir WhatsApp o su ficha con un clic.
+  - **Unificación de Componentes**: Centralización definitiva en `SearchPalette.tsx`, reemplazando el `CommandMenu` aislado del panel administrativo por el motor unificado de alta velocidad.
+
+---
+
 ## [1.3.8] - 2026-09-25
 
 ### Mejorado (Changed)
