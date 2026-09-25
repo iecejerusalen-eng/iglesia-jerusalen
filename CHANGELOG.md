@@ -5,6 +5,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.5] - 2026-09-25
+
+### Mejorado (Changed)
+- **Automatización y Resiliencia en Suscripción a Novedades**: Se optimizó el flujo de suscripción por correo electrónico en el portal público (`/novedades`) y su endpoint serverless (`/api/changelog/suscribir`), integrando una plantilla de bienvenida HTML prémium con diseño institucional y enlace directo al nuevo dominio oficial `https://www.iecejerusalen.com`.
+- **Mecanismo de Respaldo Directo en Base de Datos**: Añadida lógica de respaldo (*fallback*) directo a Supabase en el componente de suscripción (`Changelog.tsx`), asegurando que aun si el servicio de correo no está disponible o se encuentra en pruebas locales, el suscriptor quede guardado de forma permanente y segura en la tabla `changelog_suscriptores`.
+- **Compatibilidad Ampliada de Credenciales**: El controlador del backend ahora soporta tanto `SUPABASE_SERVICE_ROLE_KEY` como `VITE_SUPABASE_ANON_KEY`, evitando errores de inicialización si solo una de ellas está definida en las variables de entorno de producción.
+
+---
+
 ## [1.3.4] - 2026-09-25
 
 ### Añadido (Added)
