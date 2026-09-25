@@ -75,6 +75,7 @@ const AdminLayout = () => {
     setShowOnboarding(true); 
     void onboarding.actualizarConfig({ onboarding_omitido: false }); 
     localStorage.removeItem('admin_onboarding_snoozed_until');
+    localStorage.removeItem('admin_onboarding_checklist_dismissed');
   };
 
   const isCollapsed = sidebarViewMode === 'compact';
@@ -131,7 +132,7 @@ const AdminLayout = () => {
 
   return (
     <div
-      className="min-h-[100dvh] overflow-x-hidden bg-[#f6f7f9] font-sans text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100"
+      className="min-h-[100dvh] overflow-x-hidden bg-[#f0f2f7] font-sans text-slate-800 transition-colors duration-300 dark:bg-[#060d1f] dark:text-slate-100"
       style={accentStyle}
     >
       <a
@@ -148,7 +149,7 @@ const AdminLayout = () => {
       />
 
       <div className={`flex min-h-[100dvh] flex-col transition-[padding] duration-300 ${desktopPadding}`}>
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90 sm:px-5 md:px-6">
+        <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-white/85 px-3 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] shadow-[0_1px_24px_-4px_rgba(15,23,42,0.09)] backdrop-blur-2xl dark:border-white/[0.07] dark:bg-slate-950/85 sm:px-5 md:px-6">
           <div className="mx-auto flex min-h-11 max-w-[1600px] items-center gap-3">
             <button
               type="button"

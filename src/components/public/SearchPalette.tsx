@@ -4,110 +4,26 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, BookOpen, Music, Calendar, Heart, 
   ShoppingBag, ArrowRight, Loader2, Send, Globe,
-  MapPin, Megaphone, Sparkles, ShieldCheck
+  MapPin, Megaphone, Sparkles, ShieldCheck,
+  GraduationCap, Video, FileText, Layers, ExternalLink, RefreshCw
 } from 'lucide-react';
-import DOMPurify from 'dompurify';
-import { supabase } from '../../config/supabase';
 import { useSearchStore } from '../../store/useSearchStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import { AnimeFadeUp, AnimeScaleIn } from '../animations/AnimeWrappers';
-import { slugifySongTitle } from '../../features/songs/utils/musicEngine';
-
-// Types for search results
-interface SearchSong {
-  id: string;
-  title: string;
-  artist: string | null;
-  lyrics: string;
-  slug?: string;
-}
-
-interface SearchEvent {
-  id: string;
-  title: string;
-  description: string | null;
-  start_date: string;
-  start_time: string | null;
-  emoji: string | null;
-  ministries?: { name: string } | null;
-}
-
-interface SearchMinistry {
-  id: string;
-  name: string;
-  description: string | null;
-  slug: string;
-}
-
-interface SearchProduct {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: string;
-}
-
-interface SearchSchedule {
-  id: string;
-  title: string;
-  day: string;
-  time_range: string;
-  description: string | null;
-}
-
-interface SearchAnnouncement {
-  id: string;
-  title: string;
-  summary: string | null;
-  body: string;
-}
-
-interface SearchChangelog {
-  id: string;
-  version: string;
-  titulo: string;
-  resumen: string | null;
-  fecha_lanzamiento: string;
-}
-
-interface ParsedVerse {
-  bookName: string;
-  bookId: string;
-  chapter: number;
-  verses: string;
-}
-
-interface SearchResults {
-  songs: SearchSong[];
-  events: SearchEvent[];
-  ministries: SearchMinistry[];
-  products: SearchProduct[];
-  schedules: SearchSchedule[];
-  announcements: SearchAnnouncement[];
-  changelog: SearchChangelog[];
-  bibleRef: ParsedVerse | null;
-}
-
-const EMPTY_RESULTS: SearchResults = {
-  songs: [],
-  events: [],
-  ministries: [],
-  products: [],
-  schedules: [],
-  announcements: [],
-  changelog: [],
-  bibleRef: null,
-};
-
-function escapeIlikeTerm(value: string): string {
-  return value.trim().slice(0, 80).replace(/[(),]/g, ' ').replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-}
+import { 
+  preloadSearchIndex, 
+  searchLocalIndex, 
+  searchDeepSupabase, 
+  parseBibleReferences,
+  invalidateSearchIndexCache
+} from '../../features/search/services/searchIndexService';
+import type { SearchIndexItem, ParsedBibleReference } from '../../features/search/types';
 
 const cmdkStyles = `
   [cmdk-root] {
-    max-width: 640px;
+    max-width: 680px;
     width: 100%;
     border-radius: 24px;
     padding: 8px;
@@ -150,7 +66,7 @@ const cmdkStyles = `
   }
   [cmdk-item] {
     cursor: pointer;
-    min-height: 54px;
+    min-height: 52px;
     border-radius: 14px;
     display: flex;
     align-items: center;
@@ -204,14 +120,17 @@ const cmdkStyles = `
 export default function SearchPalette() {
   const { isOpen, close } = useSearchStore();
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [deepLoading, setDeepLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
-
+  
+  // Pre-loaded index items (instant 0ms response)
+  const [preloadedItems, setPreloadedItems] = useState<SearchIndexItem[]>([]);
+  const [deepResults, setDeepResults] = useState<Record<string, SearchIndexItem[]>>({});
+  
   const navigate = useNavigate();
   const location = useLocation();
   const paletteRef = useRef<HTMLDivElement>(null);
-  const requestIdRef = useRef(0);
+  const deepRequestIdRef = useRef(0);
 
   const { user, role } = useAuthStore();
   const { hasPermission } = usePermissions();
@@ -226,6 +145,16 @@ export default function SearchPalette() {
     hasPermission('dashboard', 'view')
   );
 
+  // Pre-cargar índice al montar o abrir
+  useEffect(() => {
+    let isMounted = true;
+    preloadSearchIndex().then((items) => {
+      if (isMounted) setPreloadedItems(items);
+    });
+    return () => { isMounted = false; };
+  }, [isOpen]);
+
+  // Accesible Admin Modules
   const accessibleAdminModules = useMemo(() => {
     if (!isAdminOrLeader) return [];
     return ADMIN_MODULES.filter(m => 
@@ -264,7 +193,7 @@ export default function SearchPalette() {
     if (!isOpen) {
       const resetTimer = window.setTimeout(() => {
         setSearch('');
-        setResults(EMPTY_RESULTS);
+        setDeepResults({});
         setSearchError(null);
       }, 0);
       return () => window.clearTimeout(resetTimer);
@@ -272,91 +201,120 @@ export default function SearchPalette() {
     return undefined;
   }, [isOpen]);
 
-  // Debounced search query
+  // 1. Instant local filter (0 ms latency)
+  const localFilteredItems = useMemo(() => {
+    return searchLocalIndex(search, preloadedItems);
+  }, [search, preloadedItems]);
+
+  // 2. Parsed Bible Reference (instant)
+  const parsedBibleRef = useMemo<ParsedBibleReference | null>(() => {
+    if (!search.trim()) return null;
+    const parsed = parseBibleReferences(search);
+    return parsed.length > 0 && parsed[0].bookId ? parsed[0] : null;
+  }, [search]);
+
+  // 3. Debounced Deep Remote Search (for deep song lyrics, events, products)
   useEffect(() => {
-    if (!search.trim()) {
-      const resetTimer = window.setTimeout(() => {
-        setResults(EMPTY_RESULTS);
-        setSearchError(null);
-        setLoading(false);
-      }, 0);
-      return () => window.clearTimeout(resetTimer);
+    const trimmed = search.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setDeepResults({});
+      setDeepLoading(false);
+      return;
     }
 
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
+    const reqId = ++deepRequestIdRef.current;
     const timer = setTimeout(async () => {
-      setLoading(true);
-      setSearchError(null);
+      setDeepLoading(true);
       try {
-        const q = escapeIlikeTerm(search);
-
-        const parsedBible = parseBibleReferences(q);
-        let bibleRefResult = null;
-        if (parsedBible.length > 0 && parsedBible[0].bookId) {
-          bibleRefResult = parsedBible[0];
+        const remote = await searchDeepSupabase(trimmed);
+        if (reqId === deepRequestIdRef.current) {
+          setDeepResults(remote as Record<string, SearchIndexItem[]>);
         }
-
-        const [songsRes, eventsRes, ministriesRes, productsRes, schedulesRes, announcementsRes, changelogRes] = await Promise.all([
-          supabase.from('songs').select('id, title, artist, lyrics, slug').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(4),
-          supabase.from('events').select('id, title, description, start_date, start_time, emoji, ministries(name)').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('ministries').select('id, name, description, slug').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('products').select('id, name, description, price, category').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-          supabase.from('schedules').select('id, title, day, time_range, description').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(3),
-          supabase.from('church_announcements').select('id, title, summary, body').eq('status', 'published').or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(3),
-          supabase.from('changelog_versiones').select('id, version, titulo, resumen, fecha_lanzamiento').eq('estado', 'publicado').or(`version.ilike.%${q}%,titulo.ilike.%${q}%,resumen.ilike.%${q}%`).order('fecha_lanzamiento', { ascending: false }).limit(3)
-        ]);
-
-        if (requestId !== requestIdRef.current) return;
-
-        setResults({
-          songs: (songsRes.data ?? []) as SearchSong[],
-          events: (eventsRes.data ?? []).map((event) => ({
-            ...event,
-            ministries: Array.isArray(event.ministries) ? event.ministries[0] ?? null : event.ministries,
-          })) as SearchEvent[],
-          ministries: (ministriesRes.data ?? []) as SearchMinistry[],
-          products: (productsRes.data ?? []) as SearchProduct[],
-          schedules: (schedulesRes.data ?? []) as SearchSchedule[],
-          announcements: (announcementsRes.data ?? []) as SearchAnnouncement[],
-          changelog: (changelogRes.data ?? []) as SearchChangelog[],
-          bibleRef: bibleRefResult
-        });
-      } catch (err: unknown) {
-        console.error('Error executing global search:', err);
-        if (requestId === requestIdRef.current) setSearchError('No pudimos completar la búsqueda. Intenta de nuevo en unos segundos.');
+      } catch (err) {
+        console.error('Error en búsqueda profunda:', err);
+        if (reqId === deepRequestIdRef.current) {
+          setSearchError('Hubo un problema consultando datos remotos.');
+        }
       } finally {
-        if (requestId === requestIdRef.current) setLoading(false);
+        if (reqId === deepRequestIdRef.current) {
+          setDeepLoading(false);
+        }
       }
-    }, 250);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [search]);
 
   if (!isOpen) return null;
 
-  const handleSelect = (path: string) => {
-    navigate(path);
+  const handleSelect = (path: string, isExternal?: boolean) => {
+    if (isExternal || path.startsWith('http')) {
+      window.open(path, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(path);
+    }
     close();
   };
 
+  const handleRefreshIndex = async () => {
+    invalidateSearchIndexCache();
+    setDeepLoading(true);
+    const refreshed = await preloadSearchIndex(true);
+    setPreloadedItems(refreshed);
+    setDeepLoading(false);
+  };
+
+  // Group items by category / source
+  const customLinks = localFilteredItems.filter(i => i.source === 'custom_link');
+  const sermons = [
+    ...localFilteredItems.filter(i => i.source === 'sermon'),
+    ...(deepResults.sermons || []).filter(s => !localFilteredItems.some(l => l.id === s.id))
+  ];
+  const courses = [
+    ...localFilteredItems.filter(i => i.source === 'course'),
+    ...(deepResults.courses || []).filter(c => !localFilteredItems.some(l => l.id === c.id))
+  ];
+  const editorialSpaces = [
+    ...localFilteredItems.filter(i => i.source === 'editorial_space'),
+    ...(deepResults.editorialSpaces || []).filter(e => !localFilteredItems.some(l => l.id === e.id))
+  ];
+  const dynamicForms = localFilteredItems.filter(i => i.source === 'dynamic_form');
+  const ministries = localFilteredItems.filter(i => i.source === 'ministry');
+  const changelog = [
+    ...localFilteredItems.filter(i => i.source === 'changelog'),
+    ...(deepResults.changelog || []).filter(c => !localFilteredItems.some(l => l.id === c.id))
+  ];
+  const songs = deepResults.songs || [];
+  const events = deepResults.events || [];
+  const announcements = deepResults.announcements || [];
+  const schedules = deepResults.schedules || [];
+  const products = deepResults.products || [];
+  const sitePages = localFilteredItems.filter(i => i.source === 'static_route');
+
+  // Filtered Admin Modules for Search
+  const filteredAdminModules = accessibleAdminModules.filter(mod => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return mod.name.toLowerCase().includes(q) ||
+      mod.label.toLowerCase().includes(q) ||
+      mod.path.toLowerCase().includes(q) ||
+      (mod.keywords || []).some(k => k.toLowerCase().includes(q));
+  });
+
   // Intent classification
   const normalizedSearch = search.toLowerCase();
-  
   const showLocation = /ubica|direc|dónde|mapa|milagro|llegar/i.test(normalizedSearch) || search.length === 0;
   const showSocials = /redes|social|facebook|youtube|instagram|canal|video|vivo|transmi/i.test(normalizedSearch) || search.length === 0;
   const showPetition = /peti|orar|orac|pedido|ayuda|rezar|necesi/i.test(normalizedSearch) || search.length === 0;
   const showDonation = /dona|ofren|diez|pagar|dinero|dar|apoyar/i.test(normalizedSearch) || search.length === 0;
   const showStore = /tienda|produ|comprar|venta|libro|biblia|camisa|agenda|precio/i.test(normalizedSearch);
-  const showAnnouncements = /anun|aviso|comunic|actividad|importante/i.test(normalizedSearch);
-  const showChangelog = /change|novedad|versio|actualiz|release|historial|mejora/i.test(normalizedSearch) || search.length === 0;
 
   return (
     <>
       <style>{cmdkStyles}</style>
       
       <div 
-        className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/70 dark:bg-black/85 backdrop-blur-md p-4 pt-16 md:pt-[10vh] animate-fadeIn"
+        className="fixed inset-0 z-[150] flex items-start justify-center bg-slate-950/70 dark:bg-black/85 backdrop-blur-md p-4 pt-16 md:pt-[8vh] animate-fadeIn"
         onClick={close}
       >
         <AnimeScaleIn className="w-full max-w-2xl">
@@ -365,528 +323,567 @@ export default function SearchPalette() {
             onClick={(e) => e.stopPropagation()} 
             className="w-full"
           >
-            <Command label="Buscador inteligente de la iglesia">
+            <Command label="Buscador inteligente e indexador general de Iglesia Jerusalén">
               {/* Input Header */}
               <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/70 dark:bg-slate-900/50">
-                {loading ? (
-                  <Loader2 size={20} className="text-primary dark:text-gold animate-spin shrink-0" />
+                {deepLoading ? (
+                  <Loader2 size={20} className="text-amber-500 animate-spin shrink-0" />
                 ) : (
                   <Search size={20} className="text-slate-500 dark:text-slate-400 shrink-0" />
                 )}
                 <Command.Input 
                   value={search}
                   onValueChange={setSearch}
-                  placeholder="¿Qué deseas buscar? (Ej. Culto Familiar, Letra de canto, Ubicación...)" 
+                  placeholder="Busca páginas, prédicas, alabanzas, cursos, eventos..." 
                   autoFocus
                 />
-                <button
-                  type="button"
-                  onClick={close}
-                  className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1.5 rounded-lg text-[10px] font-bold font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm cursor-pointer"
-                >
-                  ESC
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleRefreshIndex}
+                    title="Actualizar índice de búsqueda"
+                    className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm transition"
+                  >
+                    <RefreshCw size={13} className={deepLoading ? 'animate-spin' : ''} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm cursor-pointer"
+                  >
+                    ESC
+                  </button>
+                </div>
               </div>
 
-            <Command.List className="max-h-[60vh] overflow-y-auto p-3 custom-scrollbar space-y-4">
-              <Command.Empty>No se encontraron resultados específicos.</Command.Empty>
+              <Command.List className="max-h-[62vh] overflow-y-auto p-3 custom-scrollbar space-y-4">
+                <Command.Empty>
+                  <div className="text-center py-6">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No encontramos resultados directos</p>
+                    <p className="text-xs text-slate-400 mt-1">Prueba con palabras como "prédica", "biblia", "horarios" o el nombre de una alabanza.</p>
+                  </div>
+                </Command.Empty>
 
-              {searchError && <div role="alert" className="mx-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">{searchError}</div>}
+                {searchError && (
+                  <div role="alert" className="mx-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">
+                    {searchError}
+                  </div>
+                )}
 
-              {results.bibleRef && (
-                <AnimeFadeUp delay={0.05}>
-                  <Command.Group heading="Referencia bíblica detectada">
-                    <Command.Item
-                      value={`biblia ${results.bibleRef.bookName} ${results.bibleRef.chapter} ${results.bibleRef.verses}`}
-                      onSelect={() => handleSelect(`/recursos/biblia?libro=${encodeURIComponent(results.bibleRef?.bookId ?? '')}&capitulo=${encodeURIComponent(results.bibleRef?.chapter ?? '')}`)}
-                    >
-                      <BookOpen size={18} className="text-indigo-500 shrink-0" />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Abrir {results.bibleRef.bookName} {results.bibleRef.chapter}:{results.bibleRef.verses}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ir directamente al lector bíblico</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  </Command.Group>
-                </AnimeFadeUp>
-              )}
-
-              {/* ADMIN WORKSPACE MODULES (FOR AUTHORIZED LEADERS & PASTORS) */}
-              {accessibleAdminModules.length > 0 && (
-                <AnimeFadeUp delay={0.08}>
-                  <Command.Group heading="Módulos de Administración (Panel)">
-                    {accessibleAdminModules.map((mod) => (
+                {/* 1. REFERENCIA BÍBLICA DETECTADA */}
+                {parsedBibleRef && (
+                  <AnimeFadeUp delay={0.02}>
+                    <Command.Group heading="Referencia bíblica detectada">
                       <Command.Item
-                        key={mod.id}
-                        value={`admin panel modulo gestion ${mod.name} ${mod.label} ${mod.group} ${mod.path} ${(mod.keywords || []).join(' ')}`}
-                        onSelect={() => handleSelect(mod.path)}
+                        value={`biblia ${parsedBibleRef.bookName} ${parsedBibleRef.chapter} ${parsedBibleRef.verses}`}
+                        onSelect={() => handleSelect(`/recursos/biblia?libro=${encodeURIComponent(parsedBibleRef.bookId)}&capitulo=${encodeURIComponent(parsedBibleRef.chapter)}`)}
                       >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                          <ShieldCheck size={16} />
+                        <BookOpen size={18} className="text-indigo-500 shrink-0" />
+                        <div className="flex-1 text-left">
+                          <span className="font-bold text-slate-900 dark:text-white block">
+                            Abrir {parsedBibleRef.bookName} {parsedBibleRef.chapter}:{parsedBibleRef.verses}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            Ir directamente al lector bíblico
+                          </span>
                         </div>
-                        <div className="flex-1 text-left truncate">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 dark:text-white truncate">{mod.name}</span>
-                            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
-                              ADMIN
+                        <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                      </Command.Item>
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 2. MÓDULOS DE ADMINISTRACIÓN (SOLO AUTORIZADOS) */}
+                {filteredAdminModules.length > 0 && (
+                  <AnimeFadeUp delay={0.04}>
+                    <Command.Group heading="Módulos de Administración (Panel)">
+                      {filteredAdminModules.map((mod) => (
+                        <Command.Item
+                          key={mod.id}
+                          value={`admin panel gestion ${mod.name} ${mod.label} ${mod.group} ${mod.path} ${(mod.keywords || []).join(' ')}`}
+                          onSelect={() => handleSelect(mod.path)}
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                            <ShieldCheck size={16} />
+                          </div>
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{mod.name}</span>
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                                ADMIN
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block truncate">
+                              {mod.path} {mod.label !== mod.name ? `— ${mod.label}` : ''}
                             </span>
                           </div>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block truncate">
-                            {mod.path} {mod.label !== mod.name ? `— ${mod.label}` : ''}
+                          <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 shrink-0">
+                            Abrir <ArrowRight size={13} />
                           </span>
-                        </div>
-                        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 shrink-0">
-                          Abrir <ArrowRight size={13} />
-                        </span>
-                      </Command.Item>
-                    ))}
-                  </Command.Group>
-                </AnimeFadeUp>
-              )}
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* INTENTS / ACTION SHORTCUTS */}
-              {(showLocation || showSocials || showPetition || showDonation || showStore || showAnnouncements || showChangelog) && (
-                <AnimeFadeUp delay={0.1}>
-                  <Command.Group heading="Accesos Directos y Ayuda">
-                  {showChangelog && (
-                    <Command.Item 
-                      value="novedades changelog actualizaciones versiones cambios notas de lanzamiento mejoras" 
-                      onSelect={() => handleSelect('/novedades')}
-                    >
-                      <Sparkles className="text-amber-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Novedades y Actualizaciones (Changelog)</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver mejoras, notas de versiones y nuevas funciones del sistema</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showLocation && (
-                    <Command.Item 
-                      value="ubicación dirección dónde queda mapa milagro cómo llegar" 
-                      onSelect={() => handleSelect('/contacto')}
-                    >
-                      <MapPin className="text-blue-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Ubicación de la Iglesia</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver mapa y dirección física en Milagro, Ecuador</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showSocials && (
-                    <Command.Item 
-                      value="redes sociales facebook youtube instagram canal video transmisión en vivo" 
-                      onSelect={() => {
-                        window.open('https://youtube.com', '_blank');
-                        close();
-                      }}
-                    >
-                      <Globe className="text-indigo-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Canal de YouTube y Redes</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Mira nuestras transmisiones de cultos en vivo</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showPetition && (
-                    <Command.Item 
-                      value="petición orar oración pedido ayuda rezar" 
-                      onSelect={() => handleSelect('/peticiones')}
-                    >
-                      <Send className="text-pink-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Enviar Petición de Oración</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Comparte tu necesidad para interceder por ti</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showDonation && (
-                    <Command.Item 
-                      value="donación ofrenda diezmo dar apoyar diezmos donaciones" 
-                      onSelect={() => handleSelect('/donaciones')}
-                    >
-                      <Heart className="text-rose-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Diezmos y Ofrendas</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Apoya el ministerio local y la obra misionera</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showStore && (
-                    <Command.Item 
-                      value="tienda comprar productos libros biblias camisetas" 
-                      onSelect={() => handleSelect('/tienda')}
-                    >
-                      <ShoppingBag className="text-amber-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Ir a la Tienda</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver biblias, agendas y recursos disponibles</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                  {showAnnouncements && (
-                    <Command.Item
-                      value="anuncios avisos comunicados actividades iglesia general"
-                      onSelect={() => handleSelect('/anuncios')}
-                    >
-                      <Megaphone className="text-amber-500 shrink-0" size={18} />
-                      <div className="flex-1 text-left">
-                        <span className="font-bold text-slate-900 dark:text-white block">Anuncios importantes</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Actividades y comunicados de la Iglesia general</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
-                    </Command.Item>
-                  )}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 3. ENLACES PERSONALIZADOS Y DESTACADOS DE ADMINISTRACIÓN */}
+                {customLinks.length > 0 && (
+                  <AnimeFadeUp delay={0.06}>
+                    <Command.Group heading="Enlaces Destacados y Promocionados">
+                      {customLinks.map((link) => (
+                        <Command.Item
+                          key={link.id}
+                          value={`destacado ${link.title} ${link.subtitle || ''} ${(link.keywords || []).join(' ')}`}
+                          onSelect={() => handleSelect(link.path, link.isExternal)}
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                            <Sparkles size={16} />
+                          </div>
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{link.title}</span>
+                              {link.badge && (
+                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                                  {link.badge}
+                                </span>
+                              )}
+                            </div>
+                            {link.subtitle && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">{link.subtitle}</span>
+                            )}
+                          </div>
+                          {link.isExternal ? (
+                            <ExternalLink size={14} className="text-slate-400 shrink-0" />
+                          ) : (
+                            <ArrowRight size={14} className="text-slate-400 shrink-0" />
+                          )}
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* SONGS RESULTS */}
-              {results.songs.length > 0 && (
-                <AnimeFadeUp delay={0.15}>
-                  <Command.Group heading="Alabanzas e Himnos">
-                  {results.songs.map(song => (
-                    <Command.Item 
-                      key={song.id} 
-                      value={`letra cancion himno musica ${song.title} ${song.artist || ''} ${song.lyrics.slice(0, 50)}`}
-                      onSelect={() => handleSelect(`/recursos/alabanzas/${song.slug || slugifySongTitle(song.title)}`)}
-                    >
-                      <Music size={18} className="text-emerald-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">{song.title}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate block">
-                          {song.artist ? `Por ${song.artist} — ` : ''} {song.lyrics.replace(/\[.*?\]/g, '').slice(0, 70)}...
-                        </span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 4. PRÉDICAS Y SERMONES (AUTO-INDEXADOS) */}
+                {sermons.length > 0 && (
+                  <AnimeFadeUp delay={0.08}>
+                    <Command.Group heading="Prédicas y Sermones">
+                      {sermons.map((sermon) => (
+                        <Command.Item
+                          key={sermon.id}
+                          value={`predica sermon mensaje pastor ${sermon.title} ${sermon.subtitle || ''}`}
+                          onSelect={() => handleSelect(sermon.path)}
+                        >
+                          <Video size={18} className="text-blue-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{sermon.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {sermon.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* EVENTS RESULTS */}
-              {results.events.length > 0 && (
-                <AnimeFadeUp delay={0.2}>
-                  <Command.Group heading="Eventos y Actividades">
-                  {results.events.map(event => (
-                    <Command.Item 
-                      key={event.id} 
-                      value={`evento reunion fecha horario ${event.title} ${event.description || ''}`}
-                      onSelect={() => handleSelect(`/eventos#${event.id}`)}
-                    >
-                      <Calendar size={18} className="text-violet-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">
-                          {event.emoji && <span className="mr-1.5">{event.emoji}</span>}
-                          {event.title}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
-                          {new Date(event.start_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                          {event.start_time && ` - ${event.start_time.slice(0, 5)}`}
-                        </span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 5. CURSOS DEL AULA VIRTUAL (AUTO-INDEXADOS) */}
+                {courses.length > 0 && (
+                  <AnimeFadeUp delay={0.1}>
+                    <Command.Group heading="Cursos del Aula Virtual (LMS)">
+                      {courses.map((course) => (
+                        <Command.Item
+                          key={course.id}
+                          value={`curso aula virtual discipulado instituto ${course.title} ${course.subtitle || ''}`}
+                          onSelect={() => handleSelect(course.path)}
+                        >
+                          <GraduationCap size={18} className="text-emerald-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{course.title}</span>
+                              <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                CURSO
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {course.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* ANNOUNCEMENTS RESULTS */}
-              {results.announcements.length > 0 && (
-                <AnimeFadeUp delay={0.22}>
-                  <Command.Group heading="Anuncios importantes">
-                  {results.announcements.map((announcement) => (
-                    <Command.Item
-                      key={announcement.id}
-                      value={`anuncio aviso comunicado actividad ${announcement.title} ${announcement.summary} ${announcement.body.slice(0, 80)}`}
-                      onSelect={() => handleSelect(`/anuncios#${announcement.id}`)}
-                    >
-                      <Megaphone size={18} className="text-amber-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">{announcement.title}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{announcement.summary || announcement.body.replace(/<[^>]*>/g, '').slice(0, 90)}</span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                  </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 6. ESPACIOS Y PUBLICACIONES EDITORIALES (AUTO-INDEXADOS) */}
+                {editorialSpaces.length > 0 && (
+                  <AnimeFadeUp delay={0.12}>
+                    <Command.Group heading="Espacios Editoriales y Artículos">
+                      {editorialSpaces.map((space) => (
+                        <Command.Item
+                          key={space.id}
+                          value={`editorial blog espacio publicaciones articulo ${space.title} ${space.subtitle || ''}`}
+                          onSelect={() => handleSelect(space.path)}
+                        >
+                          <FileText size={18} className="text-violet-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{space.title}</span>
+                              <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                                BLOG
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {space.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* CHANGELOG RESULTS */}
-              {results.changelog.length > 0 && (
-                <AnimeFadeUp delay={0.24}>
-                  <Command.Group heading="Novedades y Versiones (Changelog)">
-                    {results.changelog.map((ver) => (
-                      <Command.Item
-                        key={ver.id}
-                        value={`changelog version novedades ${ver.version} ${ver.titulo} ${ver.resumen || ''}`}
-                        onSelect={() => handleSelect(`/novedades/${encodeURIComponent(ver.version)}`)}
-                      >
-                        <Sparkles size={18} className="text-amber-500 shrink-0" />
-                        <div className="flex-1 text-left truncate">
-                          <span className="font-bold text-slate-900 dark:text-white block">
-                            <span className="mr-1.5 rounded bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20">{ver.version}</span>
-                            {ver.titulo}
-                          </span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
-                            {ver.resumen || `Lanzamiento: ${new Date(ver.fecha_lanzamiento + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`}
-                          </span>
-                        </div>
-                        <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                      </Command.Item>
-                    ))}
-                  </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 7. FORMULARIOS DINÁMICOS (AUTO-INDEXADOS) */}
+                {dynamicForms.length > 0 && (
+                  <AnimeFadeUp delay={0.13}>
+                    <Command.Group heading="Formularios de Registro y Participación">
+                      {dynamicForms.map((form) => (
+                        <Command.Item
+                          key={form.id}
+                          value={`formulario inscripcion registro ${form.title} ${form.subtitle || ''}`}
+                          onSelect={() => handleSelect(form.path)}
+                        >
+                          <Layers size={18} className="text-amber-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{form.title}</span>
+                              <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                FORM
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {form.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* SCHEDULES RESULTS */}
-              {results.schedules.length > 0 && (
-                <AnimeFadeUp delay={0.25}>
-                  <Command.Group heading="Horarios de Cultos y Reuniones">
-                  {results.schedules.map(sch => (
-                    <Command.Item 
-                      key={sch.id} 
-                      value={`horario culto reunion servicio dia hora ${sch.title} ${sch.day} ${sch.description || ''}`}
-                      onSelect={() => handleSelect('/#schedules')}
-                    >
-                      <Calendar size={18} className="text-amber-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">
-                          {sch.title}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
-                          {sch.day} — {sch.time_range}
-                        </span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 8. ALABANZAS E HIMNOS (BÚSQUEDA PROFUNDA DE LETRAS) */}
+                {songs.length > 0 && (
+                  <AnimeFadeUp delay={0.14}>
+                    <Command.Group heading="Alabanzas e Himnos">
+                      {songs.map((song) => (
+                        <Command.Item
+                          key={song.id}
+                          value={`letra cancion alabanza himno ${song.title} ${song.subtitle || ''}`}
+                          onSelect={() => handleSelect(song.path)}
+                        >
+                          <Music size={18} className="text-emerald-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{song.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {song.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* MINISTRIES RESULTS */}
-              {results.ministries.length > 0 && (
-                <AnimeFadeUp delay={0.3}>
-                  <Command.Group heading="Ministerios y Departamentos">
-                  {results.ministries.map(min => (
-                    <Command.Item 
-                      key={min.id} 
-                      value={`ministerio departamento directiva ${min.name} ${min.description || ''}`}
-                      onSelect={() => handleSelect(`/ministerios/${min.slug}`)}
-                    >
-                      <BookOpen size={18} className="text-sky-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">{min.name}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(min.description?.replace(/<[^>]*>/g, '') || '') }} />
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 9. EVENTOS Y ACTIVIDADES */}
+                {events.length > 0 && (
+                  <AnimeFadeUp delay={0.16}>
+                    <Command.Group heading="Eventos y Actividades">
+                      {events.map((ev) => (
+                        <Command.Item
+                          key={ev.id}
+                          value={`evento reunion fecha horario ${ev.title} ${ev.subtitle || ''}`}
+                          onSelect={() => handleSelect(ev.path)}
+                        >
+                          <Calendar size={18} className="text-violet-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{ev.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{ev.subtitle}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* PRODUCTS RESULTS */}
-              {results.products.length > 0 && (
-                <AnimeFadeUp delay={0.35}>
-                  <Command.Group heading="Productos de la Tienda">
-                  {results.products.map(prod => (
-                    <Command.Item 
-                      key={prod.id} 
-                      value={`tienda comprar precio ${prod.name} ${prod.description || ''} ${prod.category || ''}`}
-                      onSelect={() => handleSelect('/tienda')}
-                    >
-                      <ShoppingBag size={18} className="text-amber-500 shrink-0" />
-                      <div className="flex-1 text-left truncate">
-                        <span className="font-bold text-slate-900 dark:text-white block">{prod.name}</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
-                          ${prod.price.toFixed(2)} — {prod.category}
-                        </span>
-                      </div>
-                      <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
-                    </Command.Item>
-                  ))}
-                </Command.Group>
-                </AnimeFadeUp>
-              )}
+                {/* 10. MINISTERIOS Y DEPARTAMENTOS */}
+                {ministries.length > 0 && (
+                  <AnimeFadeUp delay={0.18}>
+                    <Command.Group heading="Ministerios y Departamentos">
+                      {ministries.map((min) => (
+                        <Command.Item
+                          key={min.id}
+                          value={`ministerio departamento grupo ${min.title} ${min.subtitle || ''}`}
+                          onSelect={() => handleSelect(min.path)}
+                        >
+                          <Heart size={18} className="text-rose-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{min.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{min.subtitle}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-              {/* GENERAL PUBLIC PAGES */}
-              <AnimeFadeUp delay={0.4}>
-                <Command.Group heading="Secciones del Sitio">
-                  <Command.Item value="inicio home principal portal iglesia jerusalen" onSelect={() => handleSelect('/')}>
-                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Inicio</span>
-                  </Command.Item>
-                  <Command.Item value="novedades changelog actualizaciones versiones mejoras notas de version cambios lanzamientos" onSelect={() => handleSelect('/novedades')}>
-                    <Sparkles size={18} className="text-amber-500 shrink-0" />
-                    <div className="flex-1 text-left">
-                      <span className="font-semibold text-slate-800 dark:text-slate-100 block">Novedades y Actualizaciones (Changelog)</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Historial de versiones y nuevas funciones de la iglesia</span>
-                    </div>
-                  </Command.Item>
-                  <Command.Item value="nosotros historia doctrina pastores iglesia jerusalen mision vision" onSelect={() => handleSelect('/nosotros')}>
-                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Nosotros (Doctrina e Historia)</span>
-                  </Command.Item>
-                  <Command.Item value="reuniones horarios cultos servicios domingos servicios milagro" onSelect={() => handleSelect('/#schedules')}>
-                    <Calendar size={18} className="text-primary dark:text-gold shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Horarios de Cultos</span>
-                  </Command.Item>
-                  <Command.Item value="contacto correo telefono oficina milagro direccion ubicacion whatsapp" onSelect={() => handleSelect('/contacto')}>
-                    <Globe size={18} className="text-primary dark:text-gold shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Contacto y Oficinas</span>
-                  </Command.Item>
-                  <Command.Item value="anuncios avisos comunicados actividades importantes boletin parroquial" onSelect={() => handleSelect('/anuncios')}>
-                    <Megaphone size={18} className="text-amber-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Anuncios importantes</span>
-                  </Command.Item>
-                  <Command.Item value="publicaciones articulos devocionales blog noticias reflexiones" onSelect={() => handleSelect('/publicaciones')}>
-                    <BookOpen size={18} className="text-indigo-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Publicaciones</span>
-                  </Command.Item>
-                  <Command.Item value="visita planifica bienvenida primera vez llegar como llegar ubicacion" onSelect={() => handleSelect('/visita')}>
-                    <Globe size={18} className="text-amber-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Planifica tu Visita</span>
-                  </Command.Item>
-                  <Command.Item value="predicas sermones videos ensenanzas mensajes pastor bosquejos" onSelect={() => handleSelect('/predicas')}>
-                    <BookOpen size={18} className="text-primary dark:text-gold shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Prédicas y Sermones en Video</span>
-                  </Command.Item>
-                  <Command.Item value="misiones campos evangelismo obras misioneras alcance misionero" onSelect={() => handleSelect('/misiones')}>
-                    <Globe size={18} className="text-emerald-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Misiones y Campos Misioneros</span>
-                  </Command.Item>
-                  <Command.Item value="biblia lectura capitulos versiculos concordancia lector biblico reina valera" onSelect={() => handleSelect('/recursos/biblia')}>
-                    <BookOpen size={18} className="text-indigo-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Lector Bíblico</span>
-                  </Command.Item>
-                  <Command.Item value="peticiones oracion orar necesidad intercesion rezar peticion" onSelect={() => handleSelect('/peticiones')}>
-                    <Send size={18} className="text-pink-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Peticiones de Oración</span>
-                  </Command.Item>
-                  <Command.Item value="ministerios departamentos equipos liderazgo grupos directivas" onSelect={() => handleSelect('/ministerios')}>
-                    <Heart size={18} className="text-rose-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Ministerios y departamentos</span>
-                  </Command.Item>
-                  <Command.Item value="alabanzas canciones himnos acordes biblioteca letras musica coro" onSelect={() => handleSelect('/recursos/alabanzas')}>
-                    <Music size={18} className="text-emerald-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Biblioteca de alabanzas</span>
-                  </Command.Item>
-                  <Command.Item value="podcast audio predicas mensajes sermones reflexiones pastor" onSelect={() => handleSelect('/podcast')}>
-                    <Sparkles size={18} className="text-violet-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Podcast y Mensajes</span>
-                  </Command.Item>
-                  <Command.Item value="juegos biblicos educativos biblionario trivias crucigramas" onSelect={() => handleSelect('/recursos/juegos')}>
-                    <Sparkles size={18} className="text-cyan-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Juegos Bíblicos Educativos</span>
-                  </Command.Item>
-                  <Command.Item value="plan de lectura biblica biblia año lectura devocional" onSelect={() => handleSelect('/plan-lectura')}>
-                    <BookOpen size={18} className="text-teal-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Plan de Lectura Bíblica</span>
-                  </Command.Item>
-                  <Command.Item value="donaciones diezmos ofrendas sembrar dar aportes finanzas" onSelect={() => handleSelect('/donaciones')}>
-                    <Heart size={18} className="text-pink-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Donaciones y Diezmos</span>
-                  </Command.Item>
-                  <Command.Item value="tienda biblia libros agendas productos recuerdos venta comprar" onSelect={() => handleSelect('/tienda')}>
-                    <ShoppingBag size={18} className="text-amber-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Tienda de la Iglesia</span>
-                  </Command.Item>
-                  <Command.Item value="comunidad muro testimonios fotos publicaciones hermanos" onSelect={() => handleSelect('/comunidad')}>
-                    <Heart size={18} className="text-rose-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Muro de la Comunidad</span>
-                  </Command.Item>
-                  <Command.Item value="en vivo transmision culto live streaming directo youtube" onSelect={() => handleSelect('/en-vivo')}>
-                    <Sparkles size={18} className="text-red-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Culto en Vivo y Streaming</span>
-                  </Command.Item>
-                  <Command.Item value="aula virtual discipulado cursos escuela formacion instituto" onSelect={() => handleSelect('/aula-virtual')}>
-                    <BookOpen size={18} className="text-sky-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Aula Virtual de Formación</span>
-                  </Command.Item>
-                  <Command.Item value="reservas espacios auditorio salon solicitud evento" onSelect={() => handleSelect('/reservas')}>
-                    <Calendar size={18} className="text-indigo-500 shrink-0" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-100">Reserva de Espacios</span>
-                  </Command.Item>
-                </Command.Group>
-              </AnimeFadeUp>
-            </Command.List>
+                {/* 11. NOVEDADES Y VERSIONES (CHANGELOG) */}
+                {changelog.length > 0 && (
+                  <AnimeFadeUp delay={0.2}>
+                    <Command.Group heading="Novedades y Versiones (Changelog)">
+                      {changelog.map((ver) => (
+                        <Command.Item
+                          key={ver.id}
+                          value={`novedades changelog version actualizacion ${ver.title} ${ver.subtitle || ''}`}
+                          onSelect={() => handleSelect(ver.path)}
+                        >
+                          <Sparkles size={18} className="text-amber-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white truncate">{ver.title}</span>
+                              {ver.badge && (
+                                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                                  {ver.badge}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">
+                              {ver.subtitle}
+                            </span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
 
-            {/* FOOTER SHORTCUTS BAR */}
-            <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium select-none">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↑</kbd><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↓</kbd> Navegar</span>
-                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↵</kbd> Abrir</span>
-                <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">ESC</kbd> Cerrar</span>
+                {/* 12. ANUNCIOS IMPORTANTES */}
+                {announcements.length > 0 && (
+                  <AnimeFadeUp delay={0.22}>
+                    <Command.Group heading="Anuncios Parroquiales">
+                      {announcements.map((an) => (
+                        <Command.Item
+                          key={an.id}
+                          value={`anuncio aviso comunicado ${an.title} ${an.subtitle || ''}`}
+                          onSelect={() => handleSelect(an.path)}
+                        >
+                          <Megaphone size={18} className="text-amber-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{an.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{an.subtitle}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 13. HORARIOS DE CULTOS */}
+                {schedules.length > 0 && (
+                  <AnimeFadeUp delay={0.24}>
+                    <Command.Group heading="Horarios de Cultos">
+                      {schedules.map((sch) => (
+                        <Command.Item
+                          key={sch.id}
+                          value={`horario culto reunion ${sch.title} ${sch.subtitle || ''}`}
+                          onSelect={() => handleSelect(sch.path)}
+                        >
+                          <Calendar size={18} className="text-amber-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{sch.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{sch.subtitle}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 14. PRODUCTOS DE LA TIENDA */}
+                {products.length > 0 && (
+                  <AnimeFadeUp delay={0.26}>
+                    <Command.Group heading="Productos de la Tienda">
+                      {products.map((prod) => (
+                        <Command.Item
+                          key={prod.id}
+                          value={`tienda comprar producto libro ${prod.title} ${prod.subtitle || ''}`}
+                          onSelect={() => handleSelect(prod.path)}
+                        >
+                          <ShoppingBag size={18} className="text-amber-500 shrink-0" />
+                          <div className="flex-1 text-left truncate">
+                            <span className="font-bold text-slate-900 dark:text-white block truncate">{prod.title}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{prod.subtitle}</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                        </Command.Item>
+                      ))}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 15. SECCIONES Y PÁGINAS DEL SITIO (AUTO-INDEXADAS, FILTRADO INSTANTÁNEO) */}
+                {sitePages.length > 0 && (
+                  <AnimeFadeUp delay={0.28}>
+                    <Command.Group heading="Secciones y Páginas del Sitio">
+                      {sitePages.map((page) => {
+                        const Icon = (page.icon as React.ElementType) || BookOpen;
+                        return (
+                          <Command.Item
+                            key={page.id}
+                            value={`seccion pagina enlace ${page.title} ${page.subtitle || ''} ${(page.keywords || []).join(' ')}`}
+                            onSelect={() => handleSelect(page.path, page.isExternal)}
+                          >
+                            <Icon size={18} className="text-primary dark:text-gold shrink-0" />
+                            <div className="flex-1 text-left truncate">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{page.title}</span>
+                                {page.badge && (
+                                  <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                                    {page.badge}
+                                  </span>
+                                )}
+                              </div>
+                              {page.subtitle && (
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block truncate">{page.subtitle}</span>
+                              )}
+                            </div>
+                            <ArrowRight size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                          </Command.Item>
+                        );
+                      })}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+
+                {/* 16. ACCESOS DIRECTOS DE ACCIÓN / AYUDA */}
+                {(showLocation || showSocials || showPetition || showDonation || showStore) && (
+                  <AnimeFadeUp delay={0.3}>
+                    <Command.Group heading="Accesos Directos y Ayuda Rápida">
+                      {showLocation && (
+                        <Command.Item 
+                          value="ubicación dirección dónde queda mapa milagro cómo llegar" 
+                          onSelect={() => handleSelect('/contacto')}
+                        >
+                          <MapPin className="text-blue-500 shrink-0" size={18} />
+                          <div className="flex-1 text-left">
+                            <span className="font-bold text-slate-900 dark:text-white block">Ubicación de la Iglesia</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver mapa y dirección física en Milagro, Ecuador</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                        </Command.Item>
+                      )}
+                      {showSocials && (
+                        <Command.Item 
+                          value="redes sociales facebook youtube instagram canal video transmisión en vivo" 
+                          onSelect={() => {
+                            window.open('https://youtube.com', '_blank');
+                            close();
+                          }}
+                        >
+                          <Globe className="text-indigo-500 shrink-0" size={18} />
+                          <div className="flex-1 text-left">
+                            <span className="font-bold text-slate-900 dark:text-white block">Canal de YouTube y Redes</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Mira nuestras transmisiones de cultos en vivo</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                        </Command.Item>
+                      )}
+                      {showPetition && (
+                        <Command.Item 
+                          value="petición orar oración pedido ayuda rezar" 
+                          onSelect={() => handleSelect('/peticiones')}
+                        >
+                          <Send className="text-pink-500 shrink-0" size={18} />
+                          <div className="flex-1 text-left">
+                            <span className="font-bold text-slate-900 dark:text-white block">Enviar Petición de Oración</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Comparte tu motivo para orar e interceder por ti</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                        </Command.Item>
+                      )}
+                      {showDonation && (
+                        <Command.Item 
+                          value="donación ofrenda diezmo dar apoyar diezmos donaciones sembrar" 
+                          onSelect={() => handleSelect('/donaciones')}
+                        >
+                          <Heart className="text-rose-500 shrink-0" size={18} />
+                          <div className="flex-1 text-left">
+                            <span className="font-bold text-slate-900 dark:text-white block">Diezmos y Ofrendas</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Apoya el ministerio local y la obra misionera</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                        </Command.Item>
+                      )}
+                      {showStore && (
+                        <Command.Item 
+                          value="tienda comprar productos libros biblias camisetas recuerdos" 
+                          onSelect={() => handleSelect('/tienda')}
+                        >
+                          <ShoppingBag className="text-amber-500 shrink-0" size={18} />
+                          <div className="flex-1 text-left">
+                            <span className="font-bold text-slate-900 dark:text-white block">Ir a la Tienda de la Iglesia</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Ver biblias, agendas y recursos disponibles</span>
+                          </div>
+                          <ArrowRight size={14} className="text-slate-400 dark:text-slate-500" />
+                        </Command.Item>
+                      )}
+                    </Command.Group>
+                  </AnimeFadeUp>
+                )}
+              </Command.List>
+
+              {/* FOOTER BAR WITH NAVIGATION & AUTO-INDEX STATUS */}
+              <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium select-none">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↑</kbd>
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↓</kbd> Navegar
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">↵</kbd> Abrir
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">ESC</kbd> Cerrar
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Índice auto-sincronizado
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-700">·</span>
+                  <a 
+                    href="https://www.iecejerusalen.com" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="font-semibold text-amber-600 dark:text-amber-400 hover:underline hidden sm:inline"
+                  >
+                    iecejerusalen.com
+                  </a>
+                </div>
               </div>
-              <a 
-                href="https://www.iecejerusalen.com" 
-                target="_blank" 
-                rel="noreferrer" 
-                className="font-semibold text-amber-600 dark:text-amber-400 hover:underline hidden sm:inline"
-              >
-                iecejerusalen.com
-              </a>
-            </div>
-          </Command>
+            </Command>
           </div>
         </AnimeScaleIn>
       </div>
     </>
   );
-}
-
-function parseBibleReferences(term: string): ParsedVerse[] {
-  const booksMap: Record<string, string> = {
-    'gen': 'GEN', 'genesis': 'GEN', 'génesis': 'GEN',
-    'exo': 'EXO', 'exodo': 'EXO', 'éxodo': 'EXO',
-    'sal': 'PSA', 'salmo': 'PSA', 'salmos': 'PSA',
-    'pro': 'PRO', 'proverbios': 'PRO',
-    'mat': 'MAT', 'mateo': 'MAT',
-    'mar': 'MRK', 'marcos': 'MRK',
-    'luc': 'LUK', 'lucas': 'LUK',
-    'juan': 'JHN', 'jn': 'JHN',
-    'hch': 'ACT', 'hechos': 'ACT',
-    'rom': 'ROM', 'romanos': 'ROM',
-    '1cor': '1CO', '1 cor': '1CO', '1 corintios': '1CO',
-    '2cor': '2CO', '2 cor': '2CO', '2 corintios': '2CO',
-    'fil': 'PHP', 'filipenses': 'PHP',
-    'apoc': 'REV', 'apocalipsis': 'REV'
-  };
-
-  const match = term.match(/^(\d?\s*[a-záéíóúñ]+)\s+(\d+)(?::(\d+(?:-\d+)?))?/i);
-  if (!match) return [];
-
-  const rawBook = match[1].toLowerCase().replace(/\s+/g, '');
-  const chapter = parseInt(match[2], 10);
-  const verses = match[3] || '1';
-
-  let foundBookId = '';
-  let foundBookName = match[1].trim();
-
-  for (const [alias, id] of Object.entries(booksMap)) {
-    if (rawBook.startsWith(alias) || alias.startsWith(rawBook)) {
-      foundBookId = id;
-      foundBookName = alias.charAt(0).toUpperCase() + alias.slice(1);
-      break;
-    }
-  }
-
-  if (!foundBookId) return [];
-
-  return [{
-    bookId: foundBookId,
-    bookName: foundBookName,
-    chapter: isNaN(chapter) ? 1 : chapter,
-    verses
-  }];
 }

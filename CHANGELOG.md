@@ -5,6 +5,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.3.6] - 2026-09-25
+
+### Añadido (Added)
+- **Motor de Auto-Indexación Rápida (`searchIndexService.ts`)**: Sistema de indexación continua que pre-carga y actualiza en tiempo real los enlaces de la aplicación con un tiempo de respuesta de 0 milisegundos al escribir en la paleta de búsqueda (`Ctrl + K`).
+- **Indexación Automática de Contenidos Dinámicos de Supabase**: Ahora el buscador indexa y enlaza de forma 100% automática cada nuevo registro creado en la plataforma:
+  - **Prédicas y Sermones** (`sermons`): Título, pastor, fecha y enlaces directos a `/predicas/:id`.
+  - **Cursos del Aula Virtual** (`lms_courses`): Cursos de formación bíblica y discipulado enlazados a `/aula-virtual`.
+  - **Espacios Editoriales y Artículos** (`editorial_spaces`): Blogs y lecturas de ministerios en `/publicaciones/:slug`.
+  - **Formularios Dinámicos** (`dynamic_forms`): Inscripciones a actividades y eventos en `/formularios/:formId`.
+  - **Novedades y Actualizaciones** (`changelog_versiones`): Historial de versiones y mejoras.
+- **Soporte de Enlaces Personalizados Dinámicos (`custom_search_links`)**: Permite a pastores y administradores agregar enlaces destacados directamente en la configuración de la iglesia (`church_settings.appearance_config.custom_search_links`) sin necesidad de tocar código, integrándose automáticamente en el buscador.
+- **Catálogo Maestro de Navegación del Sitio (`siteNavigationIndex.ts`)**: Más de 35 secciones y herramientas públicas centralizadas con palabras clave semánticas e iconos oficiales.
+
+### Mejorado (Changed)
+- **Búsqueda Instantánea con Caché en Memoria**: Eliminada la latencia de 250ms para navegación y secciones frecuentes. El buscador filtra instantáneamente en memoria mientras ejecuta consultas profundas en segundo plano para letras de alabanzas y eventos.
+- **Botón de Actualización Inmediata del Índice**: Añadido botón interactivo en la cabecera del buscador para invalidar caché y re-indexar la base de datos al instante.
+
+---
+
 ## [1.3.5] - 2026-09-25
 
 ### Mejorado (Changed)
