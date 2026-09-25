@@ -8,6 +8,7 @@ import { AnimeFadeUp } from '../animations/AnimeWrappers';
 const CRMRegistrationPrompt = () => {
   const { user, memberId, firstName, lastName, setMemberId, isLoading } = useAuthStore();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   
   // Form State
@@ -24,6 +25,13 @@ const CRMRegistrationPrompt = () => {
     if (isLoading || !user || memberId) return undefined;
 
     const timer = window.setTimeout(() => {
+      const snoozedUntil = localStorage.getItem(`crm_prompt_snoozed_until_${user.id}`);
+      if (snoozedUntil && Date.now() < Number(snoozedUntil)) {
+        setIsDismissed(true);
+        setShowModal(false);
+        return;
+      }
+
       const dismissed = localStorage.getItem(`crm_prompt_dismissed_${user.id}`);
       if (dismissed === 'true') {
         setIsDismissed(true);
@@ -38,7 +46,7 @@ const CRMRegistrationPrompt = () => {
         lastName: lastName || user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
         phone: '',
       });
-    }, 0);
+    }, 2800);
 
     return () => window.clearTimeout(timer);
   }, [user, memberId, isLoading, firstName, lastName]);
@@ -46,6 +54,7 @@ const CRMRegistrationPrompt = () => {
   const handleDismiss = () => {
     if (user) {
       localStorage.setItem(`crm_prompt_dismissed_${user.id}`, 'true');
+      localStorage.setItem(`crm_prompt_snoozed_until_${user.id}`, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
     }
     setIsDismissed(true);
     setShowModal(false);
@@ -166,7 +175,7 @@ const CRMRegistrationPrompt = () => {
         // Ignore duplicates in member_emails
         const { error: emailsError } = await supabase
           .from('member_emails')
-          .upsert(emailsToInsert, { onConflict: 'member_id, email' });
+          .upsert(emailsToInsert, { onConflict: 'email' });
 
         if (emailsError) {
           console.error('Error inserting emails:', emailsError);
@@ -174,13 +183,29 @@ const CRMRegistrationPrompt = () => {
       }
 
       // Success
-      toast.success('¡Te has registrado con éxito!');
+      toast.success('¡Te has registrado con éxito en la comunidad!');
       setMemberId(finalMemberId);
       setShowModal(false);
 
     } catch (err: unknown) {
       console.error('Registration error:', err);
-      toast.error('Ocurrió un error al intentar registrarte: ' + (err instanceof Error ? err.message : String(err)));
+      let errorMessage = 'No se pudo completar el registro.';
+      if (err && typeof err === 'object') {
+        if ('message' in err && typeof (err as { message: unknown }).message === 'string') {
+          errorMessage = (err as { message: string }).message;
+        } else if ('error_description' in err && typeof (err as { error_description: unknown }).error_description === 'string') {
+          errorMessage = (err as { error_description: string }).error_description;
+        } else {
+          try {
+            errorMessage = JSON.stringify(err);
+          } catch {
+            errorMessage = String(err);
+          }
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      toast.error(`Ocurrió un error al intentar registrarte: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -191,26 +216,35 @@ const CRMRegistrationPrompt = () => {
 
   return (
     <>
-      {/* Persistent Banner if Dismissed */}
-      {isDismissed && !showModal && (
-        <div className="fixed bottom-4 right-4 z-40">
-          <button
-            onClick={handleOpenModal}
-            className="bg-accent-red hover:bg-red-700 text-white shadow-lg rounded-2xl px-4 py-3 flex items-center gap-3 transition-transform hover:scale-105"
-          >
-            <AlertCircle size={20} />
-            <div className="text-left">
-              <p className="text-sm font-bold leading-tight">Completa tu Registro</p>
-              <p className="text-xs text-red-100">Faltan datos de CRM</p>
-            </div>
-            <ChevronRight size={18} className="opacity-70 ml-1" />
-          </button>
+      {/* Discreet floating pill if dismissed */}
+      {isDismissed && !showModal && !isBannerDismissed && (
+        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-40 sm:bottom-6">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/95 p-2 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 transition-all">
+            <button
+              type="button"
+              onClick={handleOpenModal}
+              className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
+            >
+              <User size={15} className="text-primary dark:text-blue-400" />
+              <span>Completa tu ficha de miembro</span>
+              <ChevronRight size={14} className="opacity-60" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBannerDismissed(true)}
+              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              aria-label="Ocultar recordatorio"
+              title="Ocultar recordatorio"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleDismiss}></div>
           <AnimeFadeUp className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-slate-800">
             {/* Header */}

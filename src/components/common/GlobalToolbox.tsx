@@ -109,6 +109,31 @@ export default function GlobalToolbox() {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [isLauncherVisible, setIsLauncherVisible] = useState(false);
   const [isPanelPeeked, setIsPanelPeeked] = useState(false);
+  const [isPermanentlyHidden, setIsPermanentlyHidden] = useState(() => {
+    try {
+      return localStorage.getItem('toolbox_launcher_hidden') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissLauncher = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPermanentlyHidden(true);
+    try {
+      localStorage.setItem('toolbox_launcher_hidden', 'true');
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (store.isOpen && isPermanentlyHidden) {
+      setIsPermanentlyHidden(false);
+      try {
+        localStorage.removeItem('toolbox_launcher_hidden');
+      } catch {}
+    }
+  }, [store.isOpen, isPermanentlyHidden]);
+
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 
   const availableTools = useMemo(
@@ -313,35 +338,51 @@ export default function GlobalToolbox() {
   };
 
   if (!store.isOpen) {
+    if (isPermanentlyHidden && !hasBackgroundActivity) {
+      return null;
+    }
+
     return (
-      <div className="pointer-events-none fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-0 z-[85] flex items-center sm:bottom-6">
+      <div className="pointer-events-none fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-0 z-30 sm:z-40 flex items-center sm:bottom-6">
         <button
           type="button"
           onClick={revealLauncher}
           onMouseEnter={revealLauncher}
           onFocus={revealLauncher}
-          className="pointer-events-auto flex h-14 w-7 items-center justify-center rounded-l-xl border border-r-0 border-white/15 bg-slate-950/90 text-white/80 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:w-9 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300"
+          className="pointer-events-auto flex h-10 w-5 items-center justify-center rounded-l-lg border border-r-0 border-white/20 bg-slate-900/75 text-white/70 shadow-lg backdrop-blur-xl transition-all opacity-40 hover:opacity-100 hover:w-7 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300 sm:h-12 sm:w-6"
           aria-label="Mostrar botón de herramientas"
           title="Mostrar herramientas"
         >
-          <ChevronLeft size={17} aria-hidden="true" />
+          <ChevronLeft size={15} aria-hidden="true" />
         </button>
-        <button
-          ref={launcherRef}
-          type="button"
-          onClick={() => { clearLauncherHideTimer(); setIsLauncherVisible(false); store.open('hub'); }}
-          onMouseEnter={revealLauncher}
-          onMouseLeave={scheduleLauncherHide}
-          onFocus={revealLauncher}
-          className={`pointer-events-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/90 text-white shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-[transform,opacity,margin] duration-300 hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 motion-reduce:transition-none sm:mr-1 ${isLauncherVisible ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-16 opacity-0'}`}
-          aria-label="Abrir centro de herramientas"
-          tabIndex={isLauncherVisible ? 0 : -1}
-        >
-          <BriefcaseBusiness size={23} aria-hidden="true" />
-          {hasBackgroundActivity && (
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-950 bg-amber-300" aria-label="Hay herramientas activas" />
-          )}
-        </button>
+        <div className={`pointer-events-auto relative flex items-center transition-[transform,opacity] duration-300 ${isLauncherVisible ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-20 opacity-0'}`}>
+          <button
+            ref={launcherRef}
+            type="button"
+            onClick={() => { clearLauncherHideTimer(); setIsLauncherVisible(false); store.open('hub'); }}
+            onMouseEnter={revealLauncher}
+            onMouseLeave={scheduleLauncherHide}
+            onFocus={revealLauncher}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-slate-950/90 text-white shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 sm:mr-1"
+            aria-label="Abrir centro de herramientas"
+            tabIndex={isLauncherVisible ? 0 : -1}
+          >
+            <BriefcaseBusiness size={20} aria-hidden="true" />
+            {hasBackgroundActivity && (
+              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-950 bg-amber-300" aria-label="Hay herramientas activas" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleDismissLauncher}
+            className="absolute -top-2 -left-2 grid h-5 w-5 place-items-center rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-white/20 shadow text-xs transition cursor-pointer"
+            aria-label="Ocultar acceso flotante"
+            title="Ocultar acceso flotante"
+            tabIndex={isLauncherVisible ? 0 : -1}
+          >
+            <X size={11} />
+          </button>
+        </div>
       </div>
     );
   }
@@ -359,7 +400,7 @@ export default function GlobalToolbox() {
         onMouseEnter={revealPanel}
         onMouseLeave={schedulePanelHide}
         onFocusCapture={revealPanel}
-        className={`fixed z-[90] flex max-h-[calc(100dvh-16px)] flex-col overflow-hidden border border-white/10 bg-slate-950/88 text-white shadow-[0_28px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-[width,height,transform,box-shadow] duration-300 focus:outline-none motion-reduce:transition-none max-sm:!inset-x-2 max-sm:!bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:!top-auto max-sm:!w-auto max-sm:max-h-[calc(100dvh-5.5rem)] max-sm:rounded-[1.5rem] ${store.position ? '' : 'bottom-6 right-6'} ${store.isMinimized ? 'w-[280px] rounded-2xl' : 'w-[min(400px,calc(100vw-16px))] rounded-[1.75rem]'} ${isPanelPeeked && !store.position ? 'translate-x-[calc(100%-2rem)]' : 'translate-x-0'}`}
+        className={`fixed z-40 flex max-h-[calc(100dvh-16px)] flex-col overflow-hidden border border-white/10 bg-slate-950/88 text-white shadow-[0_28px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-[width,height,transform,box-shadow] duration-300 focus:outline-none motion-reduce:transition-none max-sm:!inset-x-2 max-sm:!bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:!top-auto max-sm:!w-auto max-sm:max-h-[calc(100dvh-5.5rem)] max-sm:rounded-[1.5rem] ${store.position ? '' : 'bottom-6 right-6'} ${store.isMinimized ? 'w-[280px] rounded-2xl' : 'w-[min(400px,calc(100vw-16px))] rounded-[1.75rem]'} ${isPanelPeeked && !store.position ? 'translate-x-[calc(100%-2rem)]' : 'translate-x-0'}`}
         aria-label="Centro de herramientas global"
       >
         {isPanelPeeked && !store.position && (

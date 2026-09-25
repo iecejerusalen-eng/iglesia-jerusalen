@@ -27,32 +27,55 @@ const AdminLayout = () => {
   const { logout, firstName, photoUrl, userRole } = useAuthStore();
   const onboarding = useOnboarding();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const celebratedOnboarding = useRef(false);
+  const previousPorcentajeRef = useRef<number | null>(null);
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (!onboarding.isLoading && onboarding.pasos.length > 0 && !onboarding.config.onboarding_completado && !onboarding.config.onboarding_omitido) {
-      const timer = window.setTimeout(() => setShowOnboarding(true), 0);
+      const snoozedUntil = localStorage.getItem('admin_onboarding_snoozed_until');
+      if (snoozedUntil && Date.now() < Number(snoozedUntil)) return undefined;
+      const timer = window.setTimeout(() => setShowOnboarding(true), 1200);
       return () => window.clearTimeout(timer);
     }
   }, [onboarding.config.onboarding_completado, onboarding.config.onboarding_omitido, onboarding.isLoading, onboarding.pasos.length]);
 
   useEffect(() => {
-    if (onboarding.error) toast.error('No se pudo cargar el onboarding. Revisa la migración de Supabase.');
+    if (onboarding.error) console.warn('Onboarding check:', onboarding.error);
   }, [onboarding.error]);
 
   useEffect(() => {
-    if (onboarding.porcentaje === 100 && !celebratedOnboarding.current) {
-      celebratedOnboarding.current = true;
-      void confetti({ particleCount: 120, spread: 75, origin: { y: 0.72 } });
+    // Only celebrate if user actually progressed from < 100% to 100% in this session,
+    // and has never celebrated it before in localStorage. Never fire repeatedly on page mount.
+    const alreadyCelebrated = localStorage.getItem('admin_onboarding_celebrated') === 'true';
+    if (
+      previousPorcentajeRef.current !== null &&
+      previousPorcentajeRef.current < 100 &&
+      onboarding.porcentaje === 100 &&
+      !alreadyCelebrated
+    ) {
+      localStorage.setItem('admin_onboarding_celebrated', 'true');
+      void confetti({ particleCount: 90, spread: 65, origin: { y: 0.72 } });
     }
+    previousPorcentajeRef.current = onboarding.porcentaje;
   }, [onboarding.porcentaje]);
 
-  const closeOnboarding = () => { setShowOnboarding(false); void onboarding.actualizarConfig({ onboarding_omitido: true }); };
-  const postponeOnboarding = () => { setShowOnboarding(false); void onboarding.actualizarConfig({ onboarding_omitido: true }); };
-  const reopenOnboarding = () => { setShowOnboarding(true); void onboarding.actualizarConfig({ onboarding_omitido: false }); };
+  const closeOnboarding = () => { 
+    setShowOnboarding(false); 
+    void onboarding.actualizarConfig({ onboarding_omitido: true }); 
+    localStorage.setItem('admin_onboarding_snoozed_until', String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  };
+  const postponeOnboarding = () => { 
+    setShowOnboarding(false); 
+    void onboarding.actualizarConfig({ onboarding_omitido: true }); 
+    localStorage.setItem('admin_onboarding_snoozed_until', String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  };
+  const reopenOnboarding = () => { 
+    setShowOnboarding(true); 
+    void onboarding.actualizarConfig({ onboarding_omitido: false }); 
+    localStorage.removeItem('admin_onboarding_snoozed_until');
+  };
 
   const isCollapsed = sidebarViewMode === 'compact';
   const isFloating = sidebarViewMode === 'floating';
