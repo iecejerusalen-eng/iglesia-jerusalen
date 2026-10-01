@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { motion, useInView, useReducedMotion, type Variants } from 'framer-motion';
 import { FooterBreadcrumb } from './FooterBreadcrumb';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import {
@@ -252,18 +252,19 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   const shouldReduceMotion = useReducedMotion();
 
-  const stagger = {
-    container: {
-      hidden: {},
-      show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
-    },
-    item: {
-      hidden: shouldReduceMotion ? {} : { opacity: 0, y: 14 },
-      show: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
-      },
+  const EASE_OUT_EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+  const containerVariants: Variants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : 14 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.55, ease: EASE_OUT_EXPO },
     },
   };
 
@@ -377,13 +378,13 @@ const Footer = () => {
         {/* ── Main grid ── */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 lg:gap-12 mb-14"
-          variants={stagger.container}
+          variants={containerVariants}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-50px' }}
         >
           {/* Brand & Identity (4 cols) */}
-          <motion.div variants={stagger.item} className="md:col-span-4 flex flex-col space-y-6">
+          <motion.div variants={itemVariants} className="md:col-span-4 flex flex-col space-y-6">
             <Link to="/" className="inline-block group focus-visible:outline-none rounded-lg max-w-max">
               <div className="flex items-center gap-4">
                 <img
@@ -431,7 +432,7 @@ const Footer = () => {
           </motion.div>
 
           {/* Explore (5 cols) */}
-          <motion.div variants={stagger.item} className="md:col-span-5">
+          <motion.div variants={itemVariants} className="md:col-span-5">
             <h4 className="font-serif font-bold text-white mb-6 text-lg">Explorar</h4>
             <div className="grid grid-cols-2 gap-6">
               {exploreCategories.map((category) => (
@@ -463,7 +464,7 @@ const Footer = () => {
           </motion.div>
 
           {/* Contact & Legal (3 cols) */}
-          <motion.div variants={stagger.item} className="md:col-span-3 flex flex-col space-y-8">
+          <motion.div variants={itemVariants} className="md:col-span-3 flex flex-col space-y-8">
             <div>
               <h4 className="font-serif font-bold text-white mb-6 text-lg">Contacto</h4>
               <div className="space-y-4 text-sm text-slate-400">
