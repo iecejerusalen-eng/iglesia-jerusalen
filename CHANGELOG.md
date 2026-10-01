@@ -28,6 +28,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## [1.4.4] - 2026-10-01
+
+### Añadido (Added)
+- **Footer Animado "Dark Celestial" con Constelación de Partículas Interactivas (`Footer.tsx`)**:
+  - **Constelación en Canvas 2D**: Sistema de partículas procedural de alta fidelidad que genera una galaxia de estrellas doradas (`#C79D3F`) y azules en movimiento continuo con líneas de conexión entre partículas vecinas. Las partículas huyen del cursor del mouse con física de repulsión y amortiguación, creando una experiencia visual etérea y espiritual.
+  - **Marca Tipográfica "JERUSALÉN" animada**: El wordmark se revela mediante un efecto SVG `stroke-dashoffset` con gradiente dorado (de `#C79D3F` a `#FFD679`) cuando el usuario llega al footer al hacer scroll, como texto grabado con luz.
+  - **Paleta "Dark Celestial"**: Fondo `#060c1a`, glows radiales ambientales con azul institicional y dorado, separador de hilo de oro, micro-labels en mayúsculas con tracking extendido.
+  - **Animaciones de Entrada Escalonadas**: Todas las columnas del footer aparecen con `staggerChildren` de 70ms mediante Framer Motion al entrar en el viewport.
+  - **Accesibilidad Total (`prefers-reduced-motion`)**: El canvas de partículas y todos los efectos de animación se desactivan silenciosamente para usuarios con trastornos vestibulares o preferencias de movimiento reducido.
+  - **Email Oficial Actualizado**: Dirección de contacto actualizada a `notificaciones@iecejerusalen.com` (dominio verificado con Resend).
+
+---
+
 ## [1.4.3] - 2026-09-25
 
 ### Corregido (Fixed)
