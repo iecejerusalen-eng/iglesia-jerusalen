@@ -65,7 +65,7 @@ const PublicLayout = () => {
       <Preloader />
       <StickyNav />
       <TopBar />
-      <Navigation key={location.pathname} />
+      <Navigation />
       <main id="main-content" className={`flex-grow pb-20 pb-safe md:pb-0 ${isHome ? '' : 'pt-[78px]'}`}>
         <Outlet />
       </main>

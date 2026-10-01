@@ -6,7 +6,9 @@ interface MenuState {
   items: MenuItem[];
   isLoading: boolean;
   error: string | null;
-  fetchMenu: () => Promise<void>;
+  lastFetched: number | null;
+  fetchMenu: (force?: boolean) => Promise<void>;
+  invalidateCache: () => void;
   updateOrder: (newItems: MenuItem[]) => Promise<void>;
   addMenu: (item: Omit<MenuItem, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   editMenu: (id: string, updates: Partial<MenuItem>) => Promise<void>;
@@ -17,16 +19,40 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   items: DEFAULT_MENU_ITEMS,
   isLoading: false,
   error: null,
+  lastFetched: null,
 
-  fetchMenu: async () => {
+  invalidateCache: () => {
+    menuService.invalidateCache();
+    set({ lastFetched: null });
+  },
+
+  fetchMenu: async (force = false) => {
+    const { items, lastFetched, isLoading } = get();
+    const now = Date.now();
+    const isFresh = !!lastFetched && (now - lastFetched < 10 * 60 * 1000);
+
+    // Evitar sobre-consultas si los datos ya fueron cargados y están frescos
+    if (!force && isFresh && items.length > 0 && !isLoading) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
-      const data = await menuService.getMenuItems();
-      set({ items: data.length > 0 ? data : DEFAULT_MENU_ITEMS, isLoading: false });
+      const data = await menuService.getMenuItems(force);
+      set({
+        items: data.length > 0 ? data : DEFAULT_MENU_ITEMS,
+        isLoading: false,
+        lastFetched: now,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al cargar';
       // Keep default menu items on error so navigation never breaks
-      set({ items: get().items.length > 0 ? get().items : DEFAULT_MENU_ITEMS, error: msg, isLoading: false });
+      set({
+        items: get().items.length > 0 ? get().items : DEFAULT_MENU_ITEMS,
+        error: msg,
+        isLoading: false,
+        lastFetched: now,
+      });
     }
   },
 
@@ -42,7 +68,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       }));
       await menuService.updateMenuOrder(updates);
       // Re-fetch to ensure sync with DB
-      await get().fetchMenu();
+      await get().fetchMenu(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al actualizar';
       // Revert on error

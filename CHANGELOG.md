@@ -3,6 +3,22 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.4] - 2026-09-28
+
+### Mejorado (Changed) & Optimizado (Performance)
+- **Eliminación de Carrera y Duplicación en Autenticación (`authService.ts`)**:
+  - **Deduplicación en Vuelo (*In-Flight Deduplication*)**: Implementado mapa de promesas concurrentes en `fetchOrCreateProfile` para evitar que `getSession()` y el listener `onAuthStateChange('INITIAL_SESSION')` disparen consultas paralelas idénticas a Supabase en el arranque de la app.
+  - **Tolerancia a Fallos en Permisos**: Si la consulta a `role_permissions` o `access_roles` experimenta micro-cortes, el sistema aplica `defaultFallbackPermissions` de forma segura en lugar de forzar un cierre de sesión abrupto.
+- **Optimización de Navegación Pública y Reducción de Consultas (`PublicLayout.tsx`, `Navigation.tsx`, `useMenuStore.ts`, `menuService.ts`)**:
+  - **Eliminación de Desmontaje Forzado**: Retirada la propiedad destructiva `key={location.pathname}` en `<Navigation />` dentro de `PublicLayout.tsx` y en `<motion.nav>` de `Navigation.tsx`. La barra de navegación se mantiene viva entre rutas sin reinicios visuales bruscos ni descarte de listeners.
+  - **Caché Inteligente con TTL**: Incorporado control de frescura de 10 minutos en `useMenuStore` y `menuService`, eliminando el 100% de consultas repetitivas a `public_menu_items` cada vez que el usuario navega entre páginas públicas.
+  - **Invalidación Proactiva**: El catálogo se refresca automáticamente cuando los administradores agregan, editan, reordenan o eliminan enlaces del menú.
+- **Sincronización Offline First No Destructiva (`syncPull.ts`)**:
+  - **Preservación de Mutaciones Locales**: El proceso de pull ahora consulta previamente la cola `sync_queue` para proteger y no sobreescribir modificaciones de miembros, horarios o notas pendientes de sincronización.
+  - **Reemplazo de `.clear()` por Merge Seguro**: Se sustituyó el vaciado destructivo de las tablas IndexedDB por un guardado incremental no bloqueante, protegiendo los datos locales ante fallos de red durante el ciclo de sincronización.
+
+---
+
 ## [1.4.3] - 2026-09-25
 
 ### Corregido (Fixed)

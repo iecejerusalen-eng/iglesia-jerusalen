@@ -37,8 +37,22 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { id: 'default-7', label: 'Contacto', url: '/contacto', order_index: 70, is_visible: true, icon: 'Mail' }
 ];
 
+let memoryMenuCache: MenuItem[] | null = null;
+let lastMenuFetchTime = 0;
+const MENU_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 export const menuService = {
-  async getMenuItems(): Promise<MenuItem[]> {
+  invalidateCache(): void {
+    memoryMenuCache = null;
+    lastMenuFetchTime = 0;
+  },
+
+  async getMenuItems(forceRefresh = false): Promise<MenuItem[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryMenuCache && (now - lastMenuFetchTime) < MENU_CACHE_TTL) {
+      return memoryMenuCache;
+    }
+
     try {
       const { data, error } = await supabase
         .from('public_menu_items')
@@ -56,7 +70,10 @@ export const menuService = {
         return menuService.ensureRequiredPublicItems(DEFAULT_MENU_ITEMS);
       }
       
-      return menuService.ensureRequiredPublicItems(data);
+      const resolved = menuService.ensureRequiredPublicItems(data);
+      memoryMenuCache = resolved;
+      lastMenuFetchTime = now;
+      return resolved;
     } catch (err) {
       console.warn('Error al obtener elementos del menú, usando fallback:', err);
       return menuService.ensureRequiredPublicItems(DEFAULT_MENU_ITEMS);
@@ -170,6 +187,7 @@ export const menuService = {
       }
       throw error;
     }
+    menuService.invalidateCache();
     return data;
   },
 
@@ -198,6 +216,7 @@ export const menuService = {
       }
       throw error;
     }
+    menuService.invalidateCache();
     return data;
   },
 
@@ -224,6 +243,7 @@ export const menuService = {
       }
       throw error;
     }
+    menuService.invalidateCache();
   },
 
   async updateMenuOrder(items: { id: string; order_index: number; parent_id: string | null }[]): Promise<void> {
@@ -257,5 +277,6 @@ export const menuService = {
       }
       throw firstError;
     }
+    menuService.invalidateCache();
   }
 };

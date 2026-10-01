@@ -62,7 +62,6 @@ const Navigation = () => {
 
   return (
     <motion.nav 
-      key={location.pathname}
       variants={{
         visible: { y: 0 },
         hidden: { y: "-100%" }

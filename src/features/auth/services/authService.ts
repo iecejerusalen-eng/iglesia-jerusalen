@@ -33,10 +33,33 @@ export const defaultFallbackPermissions: Record<string, { view: boolean; edit: b
 }, {} as Record<string, { view: boolean; edit: boolean }>);
 
 /**
+ * In-flight promise map to deduplicate parallel profile queries for the same user.
+ */
+const inFlightProfileFetches = new Map<string, Promise<UserProfile>>();
+
+/**
  * Fetches the profile for a given user.
+ * Deduplicates concurrent calls and ensures safe, resilient resolution.
+ */
+export async function fetchOrCreateProfile(user: User): Promise<UserProfile> {
+  const existing = inFlightProfileFetches.get(user.id);
+  if (existing) {
+    return existing;
+  }
+
+  const fetchPromise = internalFetchOrCreateProfile(user).finally(() => {
+    inFlightProfileFetches.delete(user.id);
+  });
+
+  inFlightProfileFetches.set(user.id, fetchPromise);
+  return fetchPromise;
+}
+
+/**
+ * Internal profile fetching logic.
  * Safe and resilient against database schema variations.
  */
-export async function fetchOrCreateProfile(user: User) {
+async function internalFetchOrCreateProfile(user: User): Promise<UserProfile> {
   const userId = user.id;
   const userMetadata = user.user_metadata;
   const userEmail = user.email;
@@ -144,10 +167,8 @@ export async function fetchOrCreateProfile(user: User) {
           .in('role', rolesToLoad);
         
         if (roleError) {
-          logger.error('Error loading system role permissions:', roleError);
-          throw roleError;
-        }
-        if (rolePermData) {
+          logger.warn('Error loading system role permissions, using defaults:', roleError);
+        } else if (rolePermData) {
           for (const row of rolePermData) {
             const rolePerms = row.permissions || {};
             for (const modId of Object.keys(rolePerms)) {
@@ -160,8 +181,7 @@ export async function fetchOrCreateProfile(user: User) {
           }
         }
       } catch (err) {
-        logger.error('Role permissions lookup failed:', err);
-        throw err;
+        logger.warn('Role permissions lookup failed, falling back to default permissions:', err);
       }
 
       const customRoleIds = resolvedProfile.custom_role_ids ?? [];
@@ -174,18 +194,15 @@ export async function fetchOrCreateProfile(user: User) {
             .eq('is_active', true);
 
           if (customRoleError) {
-            logger.error('Error loading custom role permissions:', customRoleError);
-            throw customRoleError;
-          }
-          if (customRoleData) {
+            logger.warn('Error loading custom role permissions, skipping:', customRoleError);
+          } else if (customRoleData) {
             permissions = mergePermissions(
               permissions,
               ...(customRoleData ?? []).map((role) => role.permissions as CustomAccessRole['permissions']),
             );
           }
         } catch (err) {
-          logger.error('Custom access role lookup failed:', err);
-          throw err;
+          logger.warn('Custom access role lookup failed, keeping current permissions:', err);
         }
       }
     }
@@ -262,6 +279,25 @@ export const checkSessionLogic = async (set: (state: Partial<AuthState>) => void
     }
   } catch (error) {
     logger.error('Error checking session:', error);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        set({
+          user: session.user,
+          role: 'guest',
+          userRole: 'guest',
+          roles: ['guest'],
+          firstName: session.user.user_metadata?.first_name || null,
+          lastName: session.user.user_metadata?.last_name || null,
+          permissions: defaultFallbackPermissions,
+          isLoading: false,
+        });
+        toast.warning('Conexión inestable: se cargó una sesión básica de respaldo.');
+        return;
+      }
+    } catch {
+      // Ignore fallback check error
+    }
     toast.error('No se pudo validar tu perfil y permisos. Vuelve a iniciar sesión.');
     set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, ministryId: null, memberId: null, permissions: null, isLoading: false });
   }
@@ -308,7 +344,6 @@ export const initializeAuthLogic = (
           return;
         }
 
-        set({ user: session.user, isLoading: true });
         try {
           const profile = await fetchOrCreateProfile(session.user);
           if (profile.banned) {
@@ -320,8 +355,22 @@ export const initializeAuthLogic = (
           applyProfile(set, profile, session.user);
         } catch (err) {
           logger.error('Error in onAuthStateChange profile fetch:', err);
-          set({ user: null, role: null, userRole: null, roles: null, firstName: null, lastName: null, photoUrl: null, ministryId: null, allowedMinistries: null, memberId: null, permissions: null, isLoading: false });
-          toast.error('No se pudo actualizar tu perfil y permisos.');
+          if (!get().user) {
+            set({
+              user: session.user,
+              role: 'guest',
+              userRole: 'guest',
+              roles: ['guest'],
+              firstName: session.user.user_metadata?.first_name || null,
+              lastName: session.user.user_metadata?.last_name || null,
+              photoUrl: session.user.user_metadata?.avatar_url || null,
+              permissions: defaultFallbackPermissions,
+              isLoading: false,
+            });
+          } else {
+            set({ isLoading: false });
+          }
+          toast.error('No se pudo sincronizar el perfil con el servidor.');
         }
       } else {
         set({
