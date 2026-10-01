@@ -454,75 +454,143 @@ export function invalidateSearchIndexCache(): void {
 }
 
 /**
- * Parser de referencias bíblicas en lenguaje natural
+ * Mapa canónico de alias → código de libro (66 libros completos).
+ * Cada alias normalizado (sin tildes, sin espacios, minúsculas) apunta al código estándar.
  */
-export function parseBibleReferences(term: string): ParsedBibleReference[] {
-  const booksMap: Record<string, string> = {
-    'gen': 'GEN', 'genesis': 'GEN', 'génesis': 'GEN',
-    'exo': 'EXO', 'exodo': 'EXO', 'éxodo': 'EXO',
-    'lev': 'LEV', 'levitico': 'LEV', 'levítico': 'LEV',
-    'num': 'NUM', 'numeros': 'NUM', 'números': 'NUM',
-    'deu': 'DEU', 'deuteronomio': 'DEU',
-    'jos': 'JOS', 'josue': 'JOS', 'josué': 'JOS',
-    'jue': 'JDG', 'jueces': 'JDG',
-    'rut': 'RUT', 'ruth': 'RUT',
-    '1sam': '1SA', '1 samuel': '1SA',
-    '2sam': '2SA', '2 samuel': '2SA',
-    '1rey': '1KI', '1 reyes': '1KI',
-    '2rey': '2KI', '2 reyes': '2KI',
-    'sal': 'PSA', 'salmo': 'PSA', 'salmos': 'PSA',
-    'pro': 'PRO', 'proverbios': 'PRO',
-    'ecl': 'ECC', 'eclesiastes': 'ECC', 'eclesiastés': 'ECC',
-    'isa': 'ISA', 'isaias': 'ISA', 'isaías': 'ISA',
-    'jer': 'JER', 'jeremias': 'JER', 'jeremías': 'JER',
-    'mat': 'MAT', 'mateo': 'MAT',
-    'mar': 'MRK', 'marcos': 'MRK',
-    'luc': 'LUK', 'lucas': 'LUK',
-    'juan': 'JHN', 'jn': 'JHN',
-    'hch': 'ACT', 'hechos': 'ACT',
-    'rom': 'ROM', 'romanos': 'ROM',
-    '1cor': '1CO', '1 cor': '1CO', '1 corintios': '1CO',
-    '2cor': '2CO', '2 cor': '2CO', '2 corintios': '2CO',
-    'gal': 'GAL', 'galatas': 'GAL', 'gálatas': 'GAL',
-    'efe': 'EPH', 'efesios': 'EPH',
-    'fil': 'PHP', 'filipenses': 'PHP',
-    'col': 'COL', 'colosenses': 'COL',
-    '1tes': '1TH', '1 tesalonicenses': '1TH',
-    '2tes': '2TH', '2 tesalonicenses': '2TH',
-    '1tim': '1TI', '1 timoteo': '1TI',
-    '2tim': '2TI', '2 timoteo': '2TI',
-    'heb': 'HEB', 'hebreos': 'HEB',
-    'stg': 'JAS', 'santiago': 'JAS',
-    '1ped': '1PE', '1 pedro': '1PE',
-    '2ped': '2PE', '2 pedro': '2PE',
-    '1jn': '1JN', '1 juan': '1JN',
-    'apoc': 'REV', 'apocalipsis': 'REV'
-  };
+const BIBLE_BOOKS_MAP: Record<string, string> = {
+  // Pentateuco
+  'gen': 'GEN', 'genesis': 'GEN', 'geneis': 'GEN',
+  'exo': 'EXO', 'exodo': 'EXO',
+  'lev': 'LEV', 'levitico': 'LEV',
+  'num': 'NUM', 'numeros': 'NUM',
+  'deu': 'DEU', 'deuteronomio': 'DEU',
+  // Históricos
+  'jos': 'JOS', 'josue': 'JOS',
+  'jue': 'JDG', 'jueces': 'JDG',
+  'rut': 'RUT', 'ruth': 'RUT',
+  '1sa': '1SA', '1sam': '1SA', '1samuel': '1SA',
+  '2sa': '2SA', '2sam': '2SA', '2samuel': '2SA',
+  '1re': '1KI', '1rey': '1KI', '1reyes': '1KI',
+  '2re': '2KI', '2rey': '2KI', '2reyes': '2KI',
+  '1cr': '1CH', '1cro': '1CH', '1cronicas': '1CH',
+  '2cr': '2CH', '2cro': '2CH', '2cronicas': '2CH',
+  'esd': 'EZR', 'esdras': 'EZR',
+  'neh': 'NEH', 'nehemias': 'NEH',
+  'est': 'EST', 'ester': 'EST',
+  // Poéticos
+  'job': 'JOB',
+  'sal': 'PSA', 'salmo': 'PSA', 'salmos': 'PSA', 'ps': 'PSA',
+  'pro': 'PRO', 'proverbios': 'PRO', 'prov': 'PRO',
+  'ecl': 'ECC', 'eclesiastes': 'ECC',
+  'cnt': 'SNG', 'cantares': 'SNG', 'cantardeloscantares': 'SNG',
+  // Profetas mayores
+  'isa': 'ISA', 'isaias': 'ISA',
+  'jer': 'JER', 'jeremias': 'JER',
+  'lam': 'LAM', 'lamentaciones': 'LAM',
+  'eze': 'EZK', 'ezequiel': 'EZK',
+  'dan': 'DAN', 'daniel': 'DAN',
+  // Profetas menores
+  'ose': 'HOS', 'oseas': 'HOS',
+  'joe': 'JOL', 'joel': 'JOL',
+  'amo': 'AMO', 'amos': 'AMO',
+  'abd': 'OBA', 'abdias': 'OBA',
+  'jon': 'JON', 'jonas': 'JON',
+  'miq': 'MIC', 'miqueas': 'MIC',
+  'nah': 'NAM', 'nahum': 'NAM',
+  'hab': 'HAB', 'habacuc': 'HAB',
+  'sof': 'ZEP', 'sofonias': 'ZEP',
+  'hag': 'HAG', 'hageo': 'HAG',
+  'zac': 'ZEC', 'zacarias': 'ZEC',
+  'mal': 'MAL', 'malaquias': 'MAL',
+  // Nuevo Testamento
+  'mat': 'MAT', 'mateo': 'MAT',
+  'mar': 'MRK', 'marcos': 'MRK',
+  'luc': 'LUK', 'lucas': 'LUK',
+  'jua': 'JHN', 'juan': 'JHN', 'jn': 'JHN',
+  'hch': 'ACT', 'hechos': 'ACT', 'act': 'ACT',
+  'rom': 'ROM', 'romanos': 'ROM',
+  '1co': '1CO', '1cor': '1CO', '1corintios': '1CO',
+  '2co': '2CO', '2cor': '2CO', '2corintios': '2CO',
+  'gal': 'GAL', 'galatas': 'GAL',
+  'efe': 'EPH', 'efesios': 'EPH',
+  'fil': 'PHP', 'filipenses': 'PHP',
+  'col': 'COL', 'colosenses': 'COL',
+  '1ts': '1TH', '1tes': '1TH', '1tesalonicenses': '1TH',
+  '2ts': '2TH', '2tes': '2TH', '2tesalonicenses': '2TH',
+  '1ti': '1TI', '1tim': '1TI', '1timoteo': '1TI',
+  '2ti': '2TI', '2tim': '2TI', '2timoteo': '2TI',
+  'tit': 'TIT', 'tito': 'TIT',
+  'flm': 'PHM', 'filemon': 'PHM',
+  'heb': 'HEB', 'hebreos': 'HEB',
+  'stg': 'JAS', 'santiago': 'JAS',
+  '1pe': '1PE', '1ped': '1PE', '1pedro': '1PE',
+  '2pe': '2PE', '2ped': '2PE', '2pedro': '2PE',
+  '1jn': '1JN', '1juan': '1JN',
+  '2jn': '2JN', '2juan': '2JN',
+  '3jn': '3JN', '3juan': '3JN',
+  'jud': 'JUD', 'judas': 'JUD',
+  'apo': 'REV', 'apoc': 'REV', 'apocalipsis': 'REV', 'rev': 'REV',
+};
 
-  const match = term.match(/^(\d?\s*[a-záéíóúñ]+)\s+(\d+)(?::(\d+(?:-\d+)?))?/i);
+/** Nombres legibles para mostrar al usuario */
+const BIBLE_BOOK_DISPLAY_NAMES: Record<string, string> = {
+  'GEN': 'Génesis', 'EXO': 'Éxodo', 'LEV': 'Levítico', 'NUM': 'Números', 'DEU': 'Deuteronomio',
+  'JOS': 'Josué', 'JDG': 'Jueces', 'RUT': 'Rut', '1SA': '1 Samuel', '2SA': '2 Samuel',
+  '1KI': '1 Reyes', '2KI': '2 Reyes', '1CH': '1 Crónicas', '2CH': '2 Crónicas',
+  'EZR': 'Esdras', 'NEH': 'Nehemías', 'EST': 'Ester', 'JOB': 'Job',
+  'PSA': 'Salmos', 'PRO': 'Proverbios', 'ECC': 'Eclesiastés', 'SNG': 'Cantares',
+  'ISA': 'Isaías', 'JER': 'Jeremías', 'LAM': 'Lamentaciones', 'EZK': 'Ezequiel', 'DAN': 'Daniel',
+  'HOS': 'Oseas', 'JOL': 'Joel', 'AMO': 'Amós', 'OBA': 'Abdías', 'JON': 'Jonás',
+  'MIC': 'Miqueas', 'NAM': 'Nahúm', 'HAB': 'Habacuc', 'ZEP': 'Sofonías',
+  'HAG': 'Hageo', 'ZEC': 'Zacarías', 'MAL': 'Malaquías',
+  'MAT': 'Mateo', 'MRK': 'Marcos', 'LUK': 'Lucas', 'JHN': 'Juan',
+  'ACT': 'Hechos', 'ROM': 'Romanos', '1CO': '1 Corintios', '2CO': '2 Corintios',
+  'GAL': 'Gálatas', 'EPH': 'Efesios', 'PHP': 'Filipenses', 'COL': 'Colosenses',
+  '1TH': '1 Tesalonicenses', '2TH': '2 Tesalonicenses', '1TI': '1 Timoteo', '2TI': '2 Timoteo',
+  'TIT': 'Tito', 'PHM': 'Filemón', 'HEB': 'Hebreos', 'JAS': 'Santiago',
+  '1PE': '1 Pedro', '2PE': '2 Pedro', '1JN': '1 Juan', '2JN': '2 Juan', '3JN': '3 Juan',
+  'JUD': 'Judas', 'REV': 'Apocalipsis',
+};
+
+export function parseBibleReferences(term: string): ParsedBibleReference[] {
+  const match = term.match(/^(\d?\s*[a-záéíóúüñ]+(?:\s+[a-záéíóúüñ]+)?)\s+(\d+)(?::(\d+(?:-\d+)?))?/i);
   if (!match) return [];
 
-  const rawBook = match[1].toLowerCase().replace(/\s+/g, '');
   const chapter = parseInt(match[2], 10);
   const verses = match[3] || '1';
 
-  let foundBookId = '';
-  let foundBookName = match[1].trim();
+  // Normalizar el alias: minúsculas, sin tildes, sin espacios
+  const rawAlias = match[1]
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '');
 
-  for (const [alias, id] of Object.entries(booksMap)) {
-    if (rawBook.startsWith(alias) || alias.startsWith(rawBook)) {
-      foundBookId = id;
-      foundBookName = alias.charAt(0).toUpperCase() + alias.slice(1);
-      break;
+  // Búsqueda exacta primero
+  const exactCode = BIBLE_BOOKS_MAP[rawAlias];
+  if (exactCode) {
+    return [{
+      bookId: exactCode,
+      bookName: BIBLE_BOOK_DISPLAY_NAMES[exactCode] ?? match[1].trim(),
+      chapter: isNaN(chapter) ? 1 : chapter,
+      verses,
+    }];
+  }
+
+  // Fallback: prefijo exacto (mínimo 3 caracteres para evitar colisiones)
+  if (rawAlias.length >= 3) {
+    for (const [alias, code] of Object.entries(BIBLE_BOOKS_MAP)) {
+      if (alias.startsWith(rawAlias) && alias !== rawAlias) {
+        return [{
+          bookId: code,
+          bookName: BIBLE_BOOK_DISPLAY_NAMES[code] ?? match[1].trim(),
+          chapter: isNaN(chapter) ? 1 : chapter,
+          verses,
+        }];
+      }
     }
   }
 
-  if (!foundBookId) return [];
-
-  return [{
-    bookId: foundBookId,
-    bookName: foundBookName,
-    chapter: isNaN(chapter) ? 1 : chapter,
-    verses
-  }];
+  return [];
 }
+

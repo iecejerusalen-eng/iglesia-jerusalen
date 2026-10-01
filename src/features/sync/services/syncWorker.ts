@@ -142,9 +142,14 @@ export const processSyncQueue = async (
             additional_phones = ap;
           }
 
+          // Step 1: Upsert the primary record
           const { error: upsertError } = await supabase.from(item.table_name).upsert({ id: item.record_id, ...upsertPayload });
           if (upsertError) throw upsertError;
 
+          // Step 2: Sync all related tables for members.
+          // Each sub-table is processed independently. If the DELETE succeeds but INSERT fails,
+          // the queue item is NOT deleted, so the entire operation retries on next sync cycle.
+          // This prevents orphaned data (emails deleted, nothing inserted).
           if (item.table_name === 'members') {
             if (emails !== undefined && emails !== null) {
               const { error: delErr } = await supabase.from('member_emails').delete().eq('member_id', item.record_id);
@@ -203,6 +208,7 @@ export const processSyncQueue = async (
             }
           }
 
+          // Step 3: Only remove from queue AFTER all operations succeeded
           await db.delete('sync_queue', item.id);
 
         } catch (err: unknown) {

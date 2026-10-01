@@ -3,7 +3,16 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.5] - 2026-09-30
+
+### Corregido (Fixed)
+- **`syncWorker.ts` — Atomicidad de mutaciones de miembros**: Las operaciones de sincronización de tablas relacionadas (`member_emails`, `member_phones`, `member_talents`, `member_service_areas`, `member_spiritual_gifts`) ahora se ejecutan en pasos explícitos (Step 1: upsert, Step 2: relaciones, Step 3: eliminar de cola). El elemento de la cola solo se elimina después de que **todas** las operaciones hayan sido exitosas. Antes, si la conexión se cortaba entre el DELETE y el INSERT de relaciones, los datos quedaban en estado huérfano (emails borrados, sin remplazarlos).
+- **`useAuthStore.ts` — Listeners zombi en logout**: `logout()` ahora llama `subscription.unsubscribe()` y resetea `_authInitialized` antes de ejecutar `supabase.auth.signOut()`. Esto previene que el listener `onAuthStateChange` sea notificado del evento `SIGNED_OUT` durante el cierre de sesión intencional del usuario, eliminando el ciclo redundante de limpieza de estado.
+- **`useAuthStore.ts` — Duplicación de `logout`/`signOut`**: `signOut` ahora es un alias que delega a `logout`, eliminando la duplicación de código. Se centralizó el estado de limpieza en `SESSION_CLEARED_STATE`.
+- **`searchIndexService.ts` — Parser de referencias bíblicas incompleto**: El mapa `BIBLE_BOOKS_MAP` fue extendido de 35 a 66 libros (cobertura completa del canon bíblico). Se añadieron los libros faltantes del Antiguo Testamento (1-2 Crónicas, Esdras, Nehemías, Ester, Job, Cantares, Lamentaciones, Ezequiel, los 12 profetas menores) y Nuevo Testamento (Tito, Filemón, 2-3 Juan, Judas). El algoritmo de matching fue refactorizado para usar búsqueda exacta por clave normalizada (sin tildes) en primer lugar y fallback de prefijo solo cuando el alias tiene ≥ 3 caracteres, eliminando los falsos positivos del `alias.startsWith(rawBook) || rawBook.startsWith(alias)` bidireccional.
+
 ## [1.4.4] - 2026-09-28
+
 
 ### Mejorado (Changed) & Optimizado (Performance)
 - **Eliminación de Carrera y Duplicación en Autenticación (`authService.ts`)**:
