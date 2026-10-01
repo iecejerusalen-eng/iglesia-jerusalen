@@ -5,34 +5,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ## [1.4.6] - 2026-10-01
 
-### Añadido (Added)
-- **Footer Animado "Dark Celestial" con Constelación de Partículas Interactivas (`Footer.tsx`)**:
-  - **Constelación en Canvas 2D**: Sistema de partículas procedural de alta fidelidad que genera una galaxia de estrellas doradas (`#C79D3F`) y azules en movimiento continuo con líneas de conexión entre partículas vecinas. Las partículas reaccionan dinámicamente al cursor del mouse con física de repulsión y amortiguación (`vx *= 0.97`), creando una experiencia visual etérea y espiritual.
-  - **Marca Tipográfica "JERUSALÉN" animada**: El wordmark se revela mediante un efecto SVG `stroke-dashoffset` con gradiente dorado (de `#C79D3F` a `#FFD679`) cuando el usuario llega al footer al hacer scroll, como texto grabado con luz.
-  - **Paleta "Dark Celestial"**: Fondo `#060c1a`, glows radiales ambientales con azul institucional y dorado, separador de hilo de oro, micro-labels en mayúsculas con tracking extendido.
-  - **Animaciones de Entrada Escalonadas**: Todas las columnas del footer aparecen con `staggerChildren` de 70ms mediante Framer Motion al entrar en el viewport con tipado estricto `Variants` y tupla Bézier `EASE_OUT_EXPO`.
-  - **Accesibilidad Total (`prefers-reduced-motion`)**: El canvas de partículas y todos los efectos de animación se desactivan silenciosamente para usuarios con trastornos vestibulares o preferencias de movimiento reducido.
-  - **Email Oficial Actualizado**: Dirección de contacto actualizada a `notificaciones@iecejerusalen.com` (dominio verificado con Resend).
-
 ### Corregido (Fixed)
 - **Compilación de Serverless Functions en Vercel (`api/tsconfig.json`, `tsconfig.json`)**:
-  - Creado `api/tsconfig.json` con soporte explícito para `@types/node`, resolviendo el error `TS2591: Cannot find name 'process'` que impedía la compilación de funciones serverless (`send-email.ts`, `suscribir.ts`, `reaccionar.ts`, `dar-de-baja.ts`).
-  - Vinculada la referencia a `./api/tsconfig.json` en el `tsconfig.json` raíz del proyecto para compatibilidad completa con el pipeline de build monorepo.
-
----
-
-## [1.4.6] - 2026-10-01
+  - Incorporado `api/tsconfig.json` con soporte explícito para `@types/node` (`types: ["node"]`), resolviendo los errores `TS2591: Cannot find name 'process'` que impedían la compilación de funciones serverless (`send-email.ts`, `suscribir.ts`, `reaccionar.ts`, `dar-de-baja.ts`).
+  - Vinculada la referencia `./api/tsconfig.json` en el `tsconfig.json` raíz del proyecto para integración limpia en monorepo/composite mode.
 
 ### Mejorado (Changed) & UI/UX
-- **Restablecimiento del Footer Minimalista, Elegante y Glassmorphic (`Footer.tsx`)**:
-  - **Estética Refinada**: Retorno al contenedor con cristal translúcido de alto contraste (`bg-white/5 dark:bg-slate-950/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5`), perfectamente armónico tanto en tema claro como oscuro, con glows sutiles de fondo (índigo y esmeralda).
-  - **Micro-Animaciones Interactivas Preservadas**:
+- **Footer Glassmorphic Elegante con Micro-Animaciones (`Footer.tsx`)**:
+  - **Estética Refinada**: Contenedor de cristal translúcido de alto contraste (`bg-white/5 dark:bg-slate-950/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5`), armónico en tema claro y oscuro, con resplandores sutiles de fondo (índigo y esmeralda).
+  - **Micro-Animaciones Interactivas**:
     - **Redes Sociales**: Animaciones táctiles y de cursor con física elástica Framer Motion (`whileHover={{ scale: 1.1, y: -2 }}`, `whileTap={{ scale: 0.95 }}`) y colores de marca reactivos.
     - **Enlaces de Exploración**: Iconos con hover dinámico (`group-hover:scale-110`), fondos reactivos y ligero desplazamiento del texto (`group-hover:translate-x-1`).
     - **Branding & Identidad**: Hover suave en el imagotipo de Jerusalén (`whileHover={{ scale: 1.02 }}`) manteniendo el versículo bíblico de Hebreos 13:8 con acento lateral.
     - **Créditos del Desarrollador**: Insignia inferior interactiva con `whileHover={{ scale: 1.05 }}` y corazón palpitante (`animate-pulse`).
     - **Entrada Suave en Viewport**: Animación de revelado gradual (`initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}`) optimizada para alto rendimiento.
-  - **Rendimiento y Ligereza**: Eliminación del lienzo Canvas de partículas y del wordmark gigante SVG para maximizar fluidez, autonomía de batería y pureza visual minimalista.
+
+---
 
 ## [1.4.5] - 2026-09-30
 
