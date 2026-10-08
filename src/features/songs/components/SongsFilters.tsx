@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, Guitar, LayoutGrid, List, Music, RotateCcw, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { ChevronDown, Filter, Guitar, LayoutGrid, List, Music, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import { DRUM_STYLES } from '../utils/songUtils';
 import type { SongStyle, SongType } from '../../../types';

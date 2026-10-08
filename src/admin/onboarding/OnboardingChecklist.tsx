@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, Sparkles, Trophy, X, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingPaso } from './OnboardingPaso';
 import { OnboardingProgreso } from './OnboardingProgreso';
@@ -39,13 +39,6 @@ export function OnboardingChecklist({
 
   const navigate = useNavigate();
   const isCompleted = porcentaje === 100;
-
-  useEffect(() => {
-    // Si ya fue descartado, mantenerse oculto
-    if (localStorage.getItem(STORAGE_KEY_DISMISSED) === 'true') {
-      setIsDismissed(true);
-    }
-  }, []);
 
   const handleDismiss = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();

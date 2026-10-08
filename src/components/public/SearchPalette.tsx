@@ -237,13 +237,11 @@ export default function SearchPalette() {
   useEffect(() => {
     const trimmed = search.trim();
     if (!trimmed || trimmed.length < 2) {
-      setDeepResults({});
-      setCrmMembers([]);
-      setDeepLoading(false);
       return;
     }
 
     const reqId = ++deepRequestIdRef.current;
+    let cancelled = false;
     const timer = setTimeout(async () => {
       setDeepLoading(true);
       try {
@@ -254,7 +252,7 @@ export default function SearchPalette() {
 
         const [remote, membersRes] = await Promise.all([remotePromise, membersPromise]);
 
-        if (reqId === deepRequestIdRef.current) {
+        if (!cancelled && reqId === deepRequestIdRef.current) {
           setDeepResults(remote);
           if (canSearchMembers && membersRes.data) {
             setCrmMembers(membersRes.data as MemberSearchResult[]);
@@ -262,18 +260,30 @@ export default function SearchPalette() {
         }
       } catch (err) {
         console.error('Error en búsqueda profunda:', err);
-        if (reqId === deepRequestIdRef.current) {
+        if (!cancelled && reqId === deepRequestIdRef.current) {
           setSearchError('Hubo un problema consultando datos remotos.');
         }
       } finally {
-        if (reqId === deepRequestIdRef.current) {
+        if (!cancelled && reqId === deepRequestIdRef.current) {
           setDeepLoading(false);
         }
       }
     }, 200);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      cancelled = true;
+    };
   }, [search, canSearchMembers]);
+
+  const handleSearchChange = (value: string) => {
+    deepRequestIdRef.current++;
+    setSearch(value);
+    setDeepResults({});
+    setCrmMembers([]);
+    setDeepLoading(false);
+    setSearchError(null);
+  };
 
   if (!isOpen) return null;
 
@@ -363,7 +373,7 @@ export default function SearchPalette() {
                 )}
                 <Command.Input 
                   value={search}
-                  onValueChange={setSearch}
+                  onValueChange={handleSearchChange}
                   placeholder={
                     isGuest 
                       ? "¿Qué deseas buscar? (Prédicas, alabanzas, biblia, cultos...)"

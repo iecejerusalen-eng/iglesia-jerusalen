@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
-import { X, Plus, Trash2, User, Mail, Phone, AlertCircle, ChevronRight } from 'lucide-react';
+import { X, Plus, Trash2, User, Mail, Phone, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimeFadeUp } from '../animations/AnimeWrappers';
 

@@ -112,7 +112,8 @@ export default function GlobalToolbox() {
   const [isPermanentlyHidden, setIsPermanentlyHidden] = useState(() => {
     try {
       return localStorage.getItem('toolbox_launcher_hidden') === 'true';
-    } catch {
+    } catch (error) {
+      console.error('No se pudo recuperar la preferencia de herramientas:', error);
       return false;
     }
   });
@@ -122,17 +123,21 @@ export default function GlobalToolbox() {
     setIsPermanentlyHidden(true);
     try {
       localStorage.setItem('toolbox_launcher_hidden', 'true');
-    } catch {}
+    } catch (error) {
+      console.error('No se pudo guardar la preferencia de herramientas:', error);
+    }
   };
 
-  useEffect(() => {
-    if (store.isOpen && isPermanentlyHidden) {
+  useEffect(() => useToolboxStore.subscribe((state, previous) => {
+    if (state.isOpen && !previous.isOpen) {
       setIsPermanentlyHidden(false);
       try {
         localStorage.removeItem('toolbox_launcher_hidden');
-      } catch {}
+      } catch (error) {
+        console.error('No se pudo restablecer la preferencia de herramientas:', error);
+      }
     }
-  }, [store.isOpen, isPermanentlyHidden]);
+  }), []);
 
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 

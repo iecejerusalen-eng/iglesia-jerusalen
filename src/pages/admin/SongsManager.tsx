@@ -1056,7 +1056,7 @@ const SongsManager = () => {
       await deleteDrumStyle(name);
       toast.success(`Toque "${name}" eliminado`);
     } catch (err) {
-      toast.error('Error al eliminar toque');
+      toast.error(err instanceof Error ? err.message : 'Error al eliminar toque');
     }
   };
 
