@@ -87,7 +87,7 @@ export const processSyncQueue = async (
                     phone: r.phone, dni: r.dni, address: r.address, maps_link: r.maps_link,
                     is_leader: r.is_leader ? 1 : 0, leadership_role: r.leadership_role,
                     ministry_id: r.ministry_id, role_id: r.role_id, latitude: r.latitude,
-                    longitude: r.longitude, deleted_at: r.deleted_at, tithes_sum: r.tithes_sum,
+                    longitude: r.longitude, deleted_at: r.deleted_at, tithes_sum: 0,
                     updated_at: r.updated_at, version: r.version,
                     education_level: r.education_level, career_id: r.career_id,
                     is_studying: r.is_studying ? 1 : 0, studying_career_id: r.studying_career_id,

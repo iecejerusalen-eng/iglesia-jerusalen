@@ -2,33 +2,15 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import type { z } from 'zod';
+import { productSchema } from '../types';
+import { toast } from 'sonner';
+import { useConfirmStore } from '../../../store/useConfirmStore';
 import MediaUploader from '../../../components/common/MediaUploader';
 import type { DbProduct, FormVariant, ProductMedia, ProductPriceTier, StoreCategory } from '../types';
 import { useStoreMutations } from '../hooks/useStoreMutations';
 import { getOptimizedCloudinaryImage } from '../../../lib/cloudinaryService';
 
-const productSchema = z.object({
-  name: z.string().min(1, 'El nombre del producto es obligatorio'),
-  price: z.number({ message: 'El precio debe ser un número válido' }).min(0, 'El precio no puede ser negativo'),
-  discount_price: z.number().optional().nullable().or(z.literal('')),
-  promo_tag: z.string().optional().nullable().or(z.literal('')),
-  stock: z.number({ message: 'El stock debe ser un número entero' }).int('El stock debe ser un número entero').min(0, 'El stock no puede ser negativo'),
-  category: z.string().min(1, 'La categoría es obligatoria'),
-  type: z.enum(['physical', 'digital'], { message: 'El tipo debe ser Físico (physical) o Digital (digital)' }),
-  image_url: z.string().url('Ingresa una URL de imagen válida').or(z.literal('')),
-  description: z.string().min(1, 'La descripción es obligatoria'),
-  features: z.string().optional(),
-  drive_link: z.string().url('Ingresa una URL de Google Drive válida').or(z.literal('')),
-  instructions: z.string().optional(),
-  sku: z.string().optional(),
-  cost_price: z.number().min(0).optional().nullable(),
-  tax_rate: z.number().min(0).max(100),
-  profit_margin: z.number().min(0).optional().nullable(),
-  sold_count: z.number().int().min(0),
-  is_active: z.boolean(),
-  tags: z.string().optional(),
-});
 
 type ProductFormType = z.infer<typeof productSchema>;
 
@@ -43,15 +25,18 @@ const ProductForm = ({
   categories: storeCategories,
   onCancel,
 }: ProductFormProps) => {
+  const confirm = useConfirmStore(state => state.confirm);
+  const [draftId] = useState(() => crypto.randomUUID());
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variants, setVariants] = useState<FormVariant[]>([]);
   const [priceTiers, setPriceTiers] = useState<ProductPriceTier[]>([]);
   const [gallery, setGallery] = useState<ProductMedia[]>([]);
-  
+
   const mutations = useStoreMutations();
   const actionLoading = mutations.createProduct.isPending || mutations.updateProduct.isPending;
 
-  const { register, handleSubmit, setValue, control, reset, formState: { errors } } = useForm<ProductFormType>({
+  const { register, handleSubmit, setValue, control, reset, formState: { errors, isDirty } } = useForm<ProductFormType>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
@@ -95,7 +80,7 @@ const ProductForm = ({
       reset({
         name: editingProduct.name,
         price: Number(editingProduct.price),
-        discount_price: editingProduct.discount_price ? Number(editingProduct.discount_price) : undefined,
+        discount_price: editingProduct.discount_price != null ? Number(editingProduct.discount_price) : undefined,
         promo_tag: editingProduct.promo_tag || '',
         stock: Number(editingProduct.stock),
         category: editingProduct.category,
@@ -103,6 +88,8 @@ const ProductForm = ({
         image_url: editingProduct.image_url || '',
         description: editingProduct.description || '',
         features: featuresStr,
+        drive_link: editingProduct.product_digital_assets?.drive_link || '',
+        instructions: editingProduct.product_digital_assets?.instructions || '',
         sku: editingProduct.sku || '',
         cost_price: editingProduct.cost_price ?? undefined,
         tax_rate: editingProduct.tax_rate ?? 15,
@@ -125,18 +112,43 @@ const ProductForm = ({
   const productType = useWatch({ control, name: 'type' });
   const productName = useWatch({ control, name: 'name' });
 
+  const closeForm = async () => {
+    if (actionLoading) return;
+    const changedExtras = JSON.stringify(variants) !== JSON.stringify(editingProduct?.product_variants || []) || JSON.stringify(priceTiers) !== JSON.stringify(editingProduct?.metadata?.price_tiers || []) || JSON.stringify(gallery) !== JSON.stringify(editingProduct?.metadata?.media || []);
+    if ((isDirty || changedExtras) && !await confirm({ title: '¿Descartar cambios?', message: 'Los cambios del producto todavía no se han guardado.' })) return;
+    onCancel();
+  };
   const onSubmitForm = (data: ProductFormType) => {
+    setValidationError(null);
+    const seenVariants = new Set<string>();
+    for (const variant of variants) {
+      const key = `${variant.color_name.trim().toLowerCase()}|${variant.size.trim().toLowerCase()}`;
+      if (seenVariants.has(key) || (!variant.color_name.trim() && !variant.size.trim()) || !Number.isInteger(variant.stock) || variant.stock < 0 || !Number.isFinite(variant.price_adjustment) || data.price + variant.price_adjustment < 0) {
+        setValidationError('Revisa las variantes: cada combinación debe ser única, tener color o talla, stock entero y precio válido.');
+        return;
+      }
+      seenVariants.add(key);
+    }
+    const thresholds = new Set<number>();
+    for (const tier of priceTiers) {
+      if (!Number.isInteger(tier.min_quantity) || tier.min_quantity < 2 || thresholds.has(tier.min_quantity) || !Number.isFinite(tier.unit_price) || tier.unit_price < 0 || tier.unit_price > (data.discount_price ?? data.price)) {
+        setValidationError('Cada nivel necesita una cantidad entera única desde 2 y un precio válido que no supere el precio vigente.');
+        return;
+      }
+      thresholds.add(tier.min_quantity);
+    }
     let featuresArray: string[] = [];
     if (data.features) {
       featuresArray = data.features.split('\n').map(f => f.trim()).filter(f => f.length > 0);
     }
 
     const payload: Partial<DbProduct> = {
-      name: data.name,
+      name: data.name.trim(),
+      ecommerce_product_type: data.type,
       price: data.price,
-      discount_price: data.discount_price || null,
+      discount_price: data.discount_price ?? null,
       promo_tag: data.promo_tag || null,
-      stock: data.stock,
+      stock: variants.length && data.type === 'physical' ? variants.reduce((sum, variant) => sum + variant.stock, 0) : data.stock,
       category: data.category,
       type: data.type,
       image_url: data.image_url || null,
@@ -164,12 +176,12 @@ const ProductForm = ({
 
     if (editingProduct) {
       mutations.updateProduct.mutate(
-        { id: editingProduct.id, product: payload, variants },
+        { id: editingProduct.id, product: payload, variants: data.type === 'physical' ? variants : [], digitalAsset: data.type === 'digital' ? { drive_link: data.drive_link, instructions: data.instructions || '' } : undefined },
         { onSuccess: onCancel }
       );
     } else {
       mutations.createProduct.mutate(
-        { product: payload, variants },
+        { product: { ...payload, id: draftId }, variants: data.type === 'physical' ? variants : [], digitalAsset: data.type === 'digital' ? { drive_link: data.drive_link, instructions: data.instructions || '' } : undefined },
         { onSuccess: onCancel }
       );
     }
@@ -181,15 +193,17 @@ const ProductForm = ({
         <h3 className="font-serif font-bold text-gray-800 dark:text-white text-lg">
           {editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto'}
         </h3>
-        <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-650 cursor-pointer p-1">
+        <button type="button" onClick={() => { void closeForm(); }} disabled={actionLoading} aria-label="Cerrar formulario de producto" className="text-gray-400 hover:text-gray-650 cursor-pointer p-2">
           <X size={20} />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmitForm, () => toast.error('Revisa los campos señalados antes de guardar.'))} className="space-y-5">
+        {(validationError || Object.keys(errors).length > 0) && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{validationError || Object.values(errors).map(error => error?.message).filter(Boolean).join('. ')}</div>}
+        <fieldset disabled={actionLoading} className="space-y-5 min-w-0">
         <div>
-          <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Nombre del Producto *</label>
-          <input
+          <label htmlFor="product-name" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Nombre del Producto *</label>
+          <input id="product-name"
             type="text"
             {...register('name')}
             className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -200,8 +214,8 @@ const ProductForm = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Precio Regular ($)</label>
-            <input
+            <label htmlFor="product-price" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Precio Regular ($)</label>
+            <input id="product-price"
               type="number"
               step="0.01"
               min="0"
@@ -212,19 +226,19 @@ const ProductForm = ({
             {errors.price && <p className="text-accent-red text-xs mt-1">{errors.price.message}</p>}
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Precio Oferta ($) (Opcional)</label>
-            <input
+            <label htmlFor="product-discount_price" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Precio Oferta ($) (Opcional)</label>
+            <input id="product-discount_price"
               type="number"
               step="0.01"
               min="0"
-              {...register('discount_price', { valueAsNumber: true })}
+              {...register('discount_price', { setValueAs: value => value === '' ? undefined : Number(value) })}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Etiqueta Promocional (Opcional)</label>
-            <input
+            <label htmlFor="product-promo_tag" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Etiqueta Promocional (Opcional)</label>
+            <input id="product-promo_tag"
               type="text"
               {...register('promo_tag')}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -232,8 +246,8 @@ const ProductForm = ({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Stock Base</label>
-            <input
+            <label htmlFor="product-stock" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Stock Base</label>
+            <input id="product-stock"
               type="number"
               min="0"
               {...register('stock', { valueAsNumber: true })}
@@ -246,28 +260,28 @@ const ProductForm = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 rounded-2xl border border-amber-200/60 bg-amber-50/40 p-4 dark:border-amber-500/15 dark:bg-amber-950/10">
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">SKU</label>
-            <input {...register('sku')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="BIB-001" />
+            <label htmlFor="product-sku" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">SKU</label>
+            <input id="product-sku" {...register('sku')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="BIB-001" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Costo ($)</label>
-            <input type="number" step="0.01" min="0" {...register('cost_price', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+            <label htmlFor="product-cost_price" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Costo ($)</label>
+            <input id="product-cost_price" type="number" step="0.01" min="0" {...register('cost_price', { setValueAs: value => value === '' ? undefined : Number(value) })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">IVA (%)</label>
-            <input type="number" step="0.01" min="0" max="100" {...register('tax_rate', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+            <label htmlFor="product-tax_rate" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">IVA (%)</label>
+            <input id="product-tax_rate" type="number" step="0.01" min="0" max="100" {...register('tax_rate', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Margen (%)</label>
-            <input type="number" step="0.01" min="0" {...register('profit_margin', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+            <label htmlFor="product-profit_margin" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Margen (%)</label>
+            <input id="product-profit_margin" type="number" step="0.01" min="0" {...register('profit_margin', { setValueAs: value => value === '' ? undefined : Number(value) })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Vendidos</label>
-            <input type="number" min="0" {...register('sold_count', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
+            <label htmlFor="product-sold_count" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Vendidos</label>
+            <input id="product-sold_count" type="number" min="0" {...register('sold_count', { valueAsNumber: true })} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" />
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tags (separados por coma)</label>
-            <input {...register('tags')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="biblia, estudio, regalo" />
+            <label htmlFor="product-tags" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tags (separados por coma)</label>
+            <input id="product-tags" {...register('tags')} className="w-full px-3 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900" placeholder="biblia, estudio, regalo" />
           </div>
           <label className="flex items-center gap-3 self-end rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold dark:border-white/10 dark:bg-slate-900">
             <input type="checkbox" {...register('is_active')} className="h-4 w-4" /> Visible en tienda
@@ -276,8 +290,8 @@ const ProductForm = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tipo de Producto</label>
-            <select
+            <label htmlFor="product-type" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Tipo de Producto</label>
+            <select id="product-type"
               {...register('type')}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
             >
@@ -286,11 +300,12 @@ const ProductForm = ({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Categoría de Tienda</label>
-            <select
+            <label htmlFor="product-category" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Categoría de Tienda</label>
+            <select id="product-category"
               {...register('category')}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer"
             >
+              {!storeCategories.some(cat => cat.name === (editingProduct?.category || 'Libros')) && <option value={editingProduct?.category || 'Libros'}>{editingProduct?.category || 'Libros'}</option>}
               {storeCategories.map(cat => (
                 <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
@@ -391,7 +406,7 @@ const ProductForm = ({
           </div>
           <div className="space-y-2">
             {priceTiers.map((tier, index) => (
-              <div key={`${index}-${tier.min_quantity}`} className="grid grid-cols-[1fr_1fr_2fr_auto] gap-2">
+              <div key={index} className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_2fr_auto]">
                 <input aria-label="Cantidad mínima" type="number" min="2" value={tier.min_quantity} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, min_quantity: Number(event.target.value) } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Cantidad" />
                 <input aria-label="Precio unitario" type="number" min="0" step="0.01" value={tier.unit_price} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, unit_price: Number(event.target.value) } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Precio" />
                 <input aria-label="Etiqueta del nivel" value={tier.label || ''} onChange={event => setPriceTiers(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))} className="rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-900" placeholder="Ej. Mayorista" />
@@ -404,10 +419,10 @@ const ProductForm = ({
 
         {/* Características */}
         <div>
-          <label className="block text-xs font-bold text-gray-405 uppercase mb-1.5">
+          <label htmlFor="product-features" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">
             Características / Incluye (Una por línea)
           </label>
-          <textarea
+          <textarea id="product-features"
             {...register('features')}
             rows={3}
             className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -424,8 +439,8 @@ const ProductForm = ({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-purple-700 uppercase mb-1.5">Enlace Seguro de Google Drive *</label>
-                <input
+                <label htmlFor="product-drive_link" className="block text-xs font-bold text-purple-700 uppercase mb-1.5">Enlace Seguro de Google Drive *</label>
+                <input id="product-drive_link"
                   type="text"
                   {...register('drive_link')}
                   className="w-full px-4 py-2 border border-purple-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-200 focus:outline-none"
@@ -433,8 +448,8 @@ const ProductForm = ({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-purple-700 uppercase mb-1.5">Instrucciones de Descarga</label>
-                <input
+                <label htmlFor="product-instructions" className="block text-xs font-bold text-purple-700 uppercase mb-1.5">Instrucciones de Descarga</label>
+                <input id="product-instructions"
                   type="text"
                   {...register('instructions')}
                   className="w-full px-4 py-2 border border-purple-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-200 focus:outline-none"
@@ -452,7 +467,7 @@ const ProductForm = ({
               <h4 className="font-serif font-bold text-gray-800 dark:text-gray-100 text-sm">Variantes de Producto (Tallas, Colores)</h4>
               <button
                 type="button"
-                onClick={() => setVariants(prev => [...prev, { color_name: '', color_hex: '', size: '', cloudinary_image_url: '', stock: 0, price_adjustment: 0 }])}
+                onClick={() => setVariants(prev => [...prev, { id: crypto.randomUUID(), color_name: '', color_hex: '', size: '', cloudinary_image_url: '', stock: 0, price_adjustment: 0 }])}
                 className="inline-flex items-center gap-1 px-3 py-1.5 border border-primary hover:bg-primary/5 text-primary text-xs font-semibold rounded-lg transition-colors cursor-pointer"
               >
                 <Plus size={14} />
@@ -530,6 +545,8 @@ const ProductForm = ({
                         <td className="py-2 px-3">
                           <input
                             type="number"
+                            step="1"
+                            aria-label={`Stock de variante ${idx + 1}`}
                             value={v.stock}
                             onChange={(e) => setVariants(prev => prev.map((item, i) => i === idx ? { ...item, stock: Number(e.target.value) } : item))}
                             className="w-14 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
@@ -549,7 +566,7 @@ const ProductForm = ({
                           <button
                             type="button"
                             onClick={() => setVariants(prev => prev.filter((_, i) => i !== idx))}
-                            className="text-red-500 hover:text-red-700 cursor-pointer"
+                            aria-label={`Eliminar variante ${idx + 1}`} className="text-red-500 hover:text-red-700 cursor-pointer p-2"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -567,7 +584,7 @@ const ProductForm = ({
         <div className="pt-4 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-slate-900 z-10">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => { void closeForm(); }} disabled={actionLoading}
             className="px-4 py-2 border border-gray-250 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             Cancelar
@@ -580,6 +597,7 @@ const ProductForm = ({
             {actionLoading ? <Loader2 className="animate-spin" size={16} /> : 'Guardar Producto'}
           </button>
         </div>
+        </fieldset>
       </form>
     </div>
   );

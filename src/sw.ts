@@ -28,7 +28,10 @@ registerRoute(
 
 // Images (Cache first, network fallback)
 registerRoute(
-  /\.(png|jpg|jpeg|svg|gif|webp)$/i,
+  ({ url }) => /\.(png|jpg|jpeg|svg|gif|webp)$/i.test(url.pathname)
+    && !url.pathname.includes('finance-proofs')
+    && !url.pathname.includes('donation-proofs')
+    && !url.pathname.includes('/storage/v1/object/sign/'),
   new CacheFirst({
     cacheName: 'images',
     plugins: [

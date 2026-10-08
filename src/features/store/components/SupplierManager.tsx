@@ -1,3 +1,8 @@
+import { useStoreDialog } from '../hooks/useStoreDialog';
+import { useState } from 'react';
+import CatalogToolbar from './CatalogToolbar';
+import CatalogPagination from './CatalogPagination';
+import { normalizeStoreSearch } from '../catalog';
 import { Plus, Edit2, X, Loader2 } from 'lucide-react';
 import type { Supplier } from '../types';
 
@@ -33,6 +38,12 @@ const SupplierManager = ({
   onSave,
   saving
 }: SupplierManagerProps) => {
+  const dialogRef = useStoreDialog(showModal, onCloseModal);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const filtered = suppliers.filter(item => normalizeStoreSearch(`${item.name} ${item.email || ''} ${item.phone || ''}`).includes(normalizeStoreSearch(search)));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 20)));
+
   return (
     <div className="space-y-4 animate-fade-in text-xs">
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-white/10">
@@ -46,6 +57,7 @@ const SupplierManager = ({
         </button>
       </div>
 
+      <CatalogToolbar label="Buscar proveedores" search={search} onSearch={value => { setSearch(value); setPage(1); }} count={filtered.length} />
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -61,8 +73,8 @@ const SupplierManager = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5 font-medium text-gray-700 dark:text-gray-300">
-              {suppliers.length > 0 ? (
-                suppliers.map(sup => (
+              {filtered.length > 0 ? (
+                filtered.slice((currentPage - 1) * 20, currentPage * 20).map(sup => (
                   <tr key={sup.id} className="hover:bg-slate-50/50">
                     <td className="py-4 px-6 font-bold">{sup.name}</td>
                     <td className="py-4 px-6 text-[11px]">
@@ -100,17 +112,18 @@ const SupplierManager = ({
         </div>
       </div>
 
+      <CatalogPagination page={currentPage} total={filtered.length} pageSize={20} onPage={setPage} />
       {showModal && editingSupplier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium max-h-[90vh] overflow-y-auto">
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="SupplierManager" className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-base">
                 {editingSupplier.id ? 'Detalles & KYC de Proveedor' : 'Incorporar Nuevo Proveedor'}
               </h3>
-              <button onClick={onCloseModal} className="text-gray-400 p-1"><X size={18} /></button>
+              <button aria-label="Cerrar" onClick={onCloseModal} className="text-gray-400 p-1"><X size={18} /></button>
             </div>
-            
-            <form onSubmit={onSave} className="p-6 space-y-4">
+
+            <form onSubmit={onSave} className="p-6 space-y-4"><fieldset disabled={saving} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre / Razón Social *</label>
                 <input
@@ -147,7 +160,7 @@ const SupplierManager = ({
 
               <div className="pt-3 border-t border-gray-150 dark:border-white/5 space-y-3">
                 <span className="font-bold text-slate-800 dark:text-gray-200 text-xs block">Carpeta KYC (Conformidad del Proveedor)</span>
-                
+
                 <div className="grid grid-cols-1 gap-3.5 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-gray-150 dark:border-white/5">
                   <div className="flex items-center justify-between">
                     <div>
@@ -241,7 +254,7 @@ const SupplierManager = ({
                   {saving ? <Loader2 className="animate-spin" size={14} /> : 'Guardar Proveedor'}
                 </button>
               </div>
-            </form>
+            </fieldset></form>
           </div>
         </div>
       )}

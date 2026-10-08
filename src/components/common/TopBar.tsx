@@ -284,6 +284,8 @@ const TopBar = () => {
                       <span>Panel de Estudiante</span>
                     </Link>
                     
+                    <Link to="/mis-aportes" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"><Heart size={14} /><span>Mis aportes privados</span></Link>
+
                     <Link 
                       to="/mis-compras" 
                       onClick={() => setUserMenuOpen(false)}

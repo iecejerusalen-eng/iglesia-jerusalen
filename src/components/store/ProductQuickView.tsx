@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import type { Product } from '../../types';
-import { 
+import {
   ShoppingBag, Plus, Minus,
   ChevronRight, BadgePercent, X, ChevronLeft
 } from 'lucide-react';
@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import BlockLessonRenderer from '../public/BlockLessonRenderer';
 import MagneticButton from '../animations/MagneticButton';
+import { getCartStock, isDigitalProduct } from '../../features/store/catalog';
+import { useStoreDialog } from '../../features/store/hooks/useStoreDialog';
 import { getPriceTiers, getProductImages, getUnitPrice } from '../../features/store/pricing';
 
 interface ProductQuickViewProps {
@@ -20,8 +22,9 @@ interface ProductQuickViewProps {
 }
 
 const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickViewProps) => {
+  const dialogRef = useStoreDialog(true, onClose);
   const addItem = useCartStore((state) => state.addItem);
-  
+
   const [added, setAdded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -30,12 +33,12 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
   const [selectedColor, setSelectedColor] = useState<string | null>(() => {
     const variants = product?.product_variants || [];
     const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
-    return availableColors.length > 0 ? availableColors[0].color_name : null;
+    return variants.find(variant => variant.stock > 0)?.color_name || availableColors[0]?.color_name || null;
   });
   const [selectedSize, setSelectedSize] = useState<string | null>(() => {
     const variants = product?.product_variants || [];
     const availableSizes = Array.from(new Set(variants.filter(v => v.size).map(v => v.size)));
-    return availableSizes.length > 0 ? availableSizes[0] : null;
+    return variants.find(variant => variant.stock > 0)?.size || availableSizes[0] || null;
   });
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState<string | null>(
@@ -55,7 +58,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
 
   const variants = product.product_variants || [];
   const availableColors = Array.from(new Map(variants.filter(v => v.color_name).map(v => [v.color_name, v])).values());
-  const availableSizes = Array.from(new Set(variants.filter(v => v.size).map(v => v.size)));
+  const availableSizes = Array.from(new Set(variants.filter(v => v.size && (!selectedColor || v.color_name === selectedColor)).map(v => v.size)));
 
   const currentVariant = variants.find(v => {
     const colorMatch = !selectedColor || v.color_name === selectedColor;
@@ -63,10 +66,10 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
     return colorMatch && sizeMatch;
   }) || null;
 
-  const matchedVariant = currentVariant || variants.find(v => !selectedColor || v.color_name === selectedColor) || null;
+  const matchedVariant = currentVariant;
 
   const finalPrice = getUnitPrice(product, quantity, matchedVariant);
-  const finalStock = matchedVariant ? matchedVariant.stock : (product.stock || 0);
+  const finalStock = getCartStock(product, matchedVariant);
   const priceTiers = getPriceTiers(product);
 
   let featuresList: string[] = [];
@@ -82,7 +85,9 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
 
   const handleAddToCart = () => {
     if (finalStock <= 0) return;
-    addItem(product, matchedVariant, quantity);
+    const before = useCartStore.getState().getTotalItems();
+    addItem(product, matchedVariant, Math.min(quantity, finalStock));
+    if (useCartStore.getState().getTotalItems() === before) { toast.warning('Ya agregaste la cantidad disponible al carrito.'); return; }
     setAdded(true);
     toast.success(`${product.name} agregado al carrito`);
     setTimeout(() => {
@@ -110,7 +115,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 20, opacity: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label={product.name} tabIndex={-1} className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Options */}
@@ -145,11 +150,11 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
         {/* Content Area - Scrollable */}
         <div className="overflow-y-auto flex-1 p-6 md:p-10 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            
+
             {/* Left Column: Media Gallery */}
             <div className="lg:col-span-5 xl:col-span-6 space-y-4">
               <div className="relative bg-slate-50 dark:bg-slate-800/50 rounded-3xl overflow-hidden shadow-md border border-slate-200/50 dark:border-white/10 flex items-center justify-center min-h-[300px] max-h-[500px] group">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsLightboxOpen(true)}
                   className="w-full h-full flex items-center justify-center cursor-zoom-in focus-visible:outline-none"
@@ -160,8 +165,8 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                     className="w-full h-auto max-h-[500px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 </button>
-                
-                {product.type === 'digital' && (
+
+                {isDigitalProduct(product) && (
                   <span className="absolute bottom-4 left-4 bg-purple-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm z-10 pointer-events-none">
                     Recurso Digital
                   </span>
@@ -188,7 +193,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
 
             {/* Right Column: Product Detail & Configurator */}
             <div className="lg:col-span-7 xl:col-span-6 space-y-6 text-left">
-              
+
               {/* Header Info */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2 pr-12">
@@ -240,16 +245,16 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                           {availableColors.map((col) => (
                             <button
                               key={col.id}
-                              onClick={() => setSelectedColor(col.color_name)}
+                              onClick={() => { setSelectedColor(col.color_name); setSelectedSize(variants.find(variant => variant.color_name === col.color_name && variant.stock > 0)?.size || variants.find(variant => variant.color_name === col.color_name)?.size || null); setQuantity(1); }} aria-pressed={selectedColor === col.color_name}
                               className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 focus-visible:outline-none ${
                                   selectedColor === col.color_name
                                     ? 'bg-blue-50 dark:bg-blue-950/30 border-primary dark:border-blue-500 text-primary dark:text-white shadow-sm font-bold'
                                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                 }`}
                             >
-                              <span 
-                                className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shrink-0" 
-                                style={{ backgroundColor: col.color_hex || '#CCC' }} 
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shrink-0"
+                                style={{ backgroundColor: col.color_hex || '#CCC' }}
                               />
                               {col.color_name}
                             </button>
@@ -266,7 +271,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                           {availableSizes.map((size) => (
                             <button
                               key={size}
-                              onClick={() => setSelectedSize(size)}
+                              onClick={() => { setSelectedSize(size); setQuantity(1); }} aria-pressed={selectedSize === size}
                               className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all focus-visible:outline-none ${
                                   selectedSize === size
                                     ? 'bg-primary dark:bg-blue-650 text-white border-primary dark:border-blue-650 shadow-xs font-bold'
@@ -302,12 +307,12 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                 <div className="flex items-center justify-between text-xs pt-2">
                   <span className="text-slate-500 dark:text-slate-400 font-bold">Disponibilidad</span>
                   <span className={`font-bold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider ${
-                    finalStock > 0 
-                      ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+                    finalStock > 0
+                      ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
                       : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
                   }`}>
-                    {finalStock > 0 
-                      ? product.type === 'digital' ? 'Acceso Instantáneo' : 'En Stock'
+                    {finalStock > 0
+                      ? isDigitalProduct(product) ? 'Acceso Instantáneo' : 'En Stock'
                       : 'Agotado'}
                   </span>
                 </div>
@@ -323,17 +328,17 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
 
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     {/* Quantity Controls */}
-                    {finalStock > 0 && product.type !== 'digital' && (
+                    {finalStock > 0 && !isDigitalProduct(product) && (
                       <div className="flex items-center border border-slate-300 dark:border-white/10 rounded-2xl bg-white dark:bg-slate-900 shrink-0">
                         <button
-                          onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                          aria-label="Disminuir cantidad" onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                           className="p-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-none"
                         >
                           <Minus size={14} />
                         </button>
                         <span className="w-8 text-center text-xs font-extrabold text-slate-800 dark:text-slate-200">{quantity}</span>
                         <button
-                          onClick={() => setQuantity(prev => Math.min(finalStock, prev + 1))}
+                          aria-label="Aumentar cantidad" onClick={() => setQuantity(prev => Math.min(finalStock, prev + 1))}
                           className="p-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-none"
                         >
                           <Plus size={14} />
@@ -360,7 +365,7 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                             Agotado
                           </>
                         ) : added ? (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, scale: 0.5 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="flex items-center gap-2"

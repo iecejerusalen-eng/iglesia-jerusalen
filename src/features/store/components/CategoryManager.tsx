@@ -1,8 +1,14 @@
+import { useStoreDialog } from '../hooks/useStoreDialog';
+import { useState } from 'react';
+import CatalogToolbar from './CatalogToolbar';
+import CatalogPagination from './CatalogPagination';
+import { normalizeStoreSearch } from '../catalog';
 import { Edit2, Trash2, Plus, Check, Loader2, X } from 'lucide-react';
 import type { StoreCategory } from '../types';
 
 interface CategoryManagerProps {
   categories: StoreCategory[];
+  canEdit?: boolean;
   onOpenCreate: (cat?: StoreCategory) => void;
   onDelete: (id: string) => void;
   showModal: boolean;
@@ -15,6 +21,7 @@ interface CategoryManagerProps {
 
 const CategoryManager = ({
   categories,
+  canEdit = true,
   onOpenCreate,
   onDelete,
   showModal,
@@ -24,12 +31,18 @@ const CategoryManager = ({
   onSave,
   saving
 }: CategoryManagerProps) => {
+  const dialogRef = useStoreDialog(showModal, onCloseModal);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const filtered = categories.filter(item => normalizeStoreSearch(`${item.name} ${item.description || ''}`).includes(normalizeStoreSearch(search)));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 20)));
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-white/10">
         <span className="text-xs font-semibold text-gray-500">Gestión de categorías dinámicas de la tienda</span>
         <button
-          onClick={() => onOpenCreate()}
+          disabled={!canEdit} onClick={() => onOpenCreate()}
           className="bg-primary text-white hover:bg-blue-900 px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
         >
           <Plus size={14} />
@@ -37,6 +50,7 @@ const CategoryManager = ({
         </button>
       </div>
 
+      <CatalogToolbar label="Buscar categorías" search={search} onSearch={value => { setSearch(value); setPage(1); }} count={filtered.length} />
       <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -48,15 +62,15 @@ const CategoryManager = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5 font-medium text-gray-700 dark:text-gray-300">
-              {categories.map(cat => (
+              {filtered.slice((currentPage - 1) * 20, currentPage * 20).map(cat => (
                 <tr key={cat.id} className="hover:bg-slate-50/50">
                   <td className="py-4 px-6 font-bold">{cat.name}</td>
                   <td className="py-4 px-6 text-gray-550">{cat.description || 'Sin descripción'}</td>
                   <td className="py-4 px-6 text-right space-x-2">
-                    <button onClick={() => onOpenCreate(cat)} className="text-gray-400 hover:text-primary cursor-pointer">
+                    <button aria-label={`Editar categoría ${cat.name}`} disabled={!canEdit} onClick={() => onOpenCreate(cat)} className="text-gray-400 hover:text-primary cursor-pointer">
                       <Edit2 size={14} />
                     </button>
-                    <button onClick={() => onDelete(cat.id)} className="text-gray-400 hover:text-red-500 cursor-pointer">
+                    <button aria-label={`Eliminar categoría ${cat.name}`} disabled={!canEdit} onClick={() => onDelete(cat.id)} className="text-gray-400 hover:text-red-500 cursor-pointer">
                       <Trash2 size={14} />
                     </button>
                   </td>
@@ -67,20 +81,21 @@ const CategoryManager = ({
         </div>
       </div>
 
+      <CatalogPagination page={currentPage} total={filtered.length} pageSize={20} onPage={setPage} />
       {/* Modal Categoría */}
       {showModal && editingCategory && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium">
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="CategoryManager" className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-base">
                 {editingCategory.id ? 'Editar Categoría' : 'Nueva Categoría'}
               </h3>
-              <button onClick={onCloseModal} className="text-gray-400 p-1">
+              <button aria-label="Cerrar" onClick={onCloseModal} className="text-gray-400 p-1">
                 <X size={18} />
               </button>
             </div>
-            
-            <form onSubmit={onSave} className="p-6 space-y-4">
+
+            <form onSubmit={onSave} className="p-6 space-y-4"><fieldset disabled={saving} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre *</label>
                 <input
@@ -120,7 +135,7 @@ const CategoryManager = ({
                   Guardar Categoría
                 </button>
               </div>
-            </form>
+            </fieldset></form>
           </div>
         </div>
       )}

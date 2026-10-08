@@ -10,7 +10,6 @@ import {
   Check,
   CheckCircle2,
   Clipboard,
-  ExternalLink,
   FileCheck2,
   Heart,
   HeartHandshake,
@@ -24,10 +23,13 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../../config/supabase';
+import { useAuthStore } from '../../store/useAuthStore';
+import { saveMovement, uploadProof, messageOf } from '../../features/finance/api';
+import { todayInEcuador, currentMonth } from '../../features/finance/model';
+import { ProofButton } from '../../features/finance/MovementTable';
 import { useDonationPageData } from '../../features/donations/hooks/useDonationPageData';
 import { formatWhatsAppLink } from '../../utils/whatsapp';
-import MediaUploader from '../../components/common/MediaUploader';
+
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
 
@@ -67,6 +69,9 @@ function cleanPhone(phone: string): string {
 export default function Donations() {
   const { settings, categories, loading, error, refetch } = useDonationPageData();
   const [receipt, setReceipt] = useState<DonationReceipt | null>(null);
+  const user = useAuthStore(state => state.user);
+  const [draftId, setDraftId] = useState(() => crypto.randomUUID());
+  const [uploadingProof, setUploadingProof] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { register, handleSubmit, setValue, reset, control, formState: { errors, isSubmitting } } = useForm<DonationForm>({
@@ -82,7 +87,7 @@ export default function Donations() {
 
   const whatsappMessage = useMemo(() => {
     if (!receipt) return '';
-    return `Hola, deseo reportar mi aporte a la Iglesia Jerusalén.\nRecibo Nº: ${receipt.receiptNumber}\nReferencia: ${receipt.id.slice(0, 8).toUpperCase()}\nMonto: $${receipt.amount.toFixed(2)}\nDestino: ${receipt.category}\nDonante: ${receipt.donorName}\nCorreo: ${receipt.donorEmail}\n${receipt.proofUrl ? `Comprobante: ${receipt.proofUrl}\n` : ''}Adjunto comprobante de transferencia.`;
+    return `Hola, deseo reportar mi aporte a la Iglesia Jerusalén.\nRecibo Nº: ${receipt.receiptNumber}\nReferencia: ${receipt.id.slice(0, 8).toUpperCase()}\nMonto: $${receipt.amount.toFixed(2)}\nDestino: ${receipt.category}\nDonante: ${receipt.donorName}\nCorreo: ${receipt.donorEmail}\nAdjunto comprobante de transferencia.`;
   }, [receipt]);
 
   const copyValue = async (label: string, value: string) => {
@@ -117,28 +122,16 @@ export default function Donations() {
     const donorName = formData.isAnonymous ? 'Anónimo' : formData.name?.trim() || '';
     const donorEmail = formData.email.trim();
 
-    const { data, error: insertError } = await supabase
-      .from('donations')
-      .insert({
-        donor_name: donorName,
-        donor_email: donorEmail,
-        amount: numericAmount,
-        category_id: selectedCategory.id,
-        category_name_backup: selectedCategory.name,
-        payment_method: 'transferencia',
-        status: 'pending',
-        proof_url: proofUrl || null,
-      })
-      .select('id, receipt_number, created_at')
-      .single();
-
-    if (insertError) {
-      console.error('Error registering pending donation:', insertError);
-      toast.error('No pudimos registrar el aporte. No se creó ningún comprobante; inténtalo otra vez.');
+    if (!user) { toast.error('Inicia sesión para registrar tu aporte privado.'); return; }
+    let data;
+    try {
+      data = await saveMovement({ id: draftId, kind: 'income', fund_id: selectedCategory.id, user_id: user.id, amount: numericAmount, occurred_on: todayInEcuador(), contribution_month: currentMonth(), method: 'transfer', status: 'pending', category: selectedCategory.name, description: 'Aporte voluntario', reference: null, proof_path: proofUrl, beneficiary: null, correction_reason: null });
+    } catch (error) {
+      toast.error('No pudimos confirmar el registro. Revisa Mis aportes antes de reintentar. ' + messageOf(error));
       return;
     }
 
-    const generatedReceiptNumber = data.receipt_number || `REC-${new Date().getFullYear()}-${data.id.slice(0, 5).toUpperCase()}`;
+    const generatedReceiptNumber = data.receipt_number;
 
     setReceipt({
       id: data.id,
@@ -152,6 +145,7 @@ export default function Donations() {
     });
 
     setProofUrl(null);
+    setDraftId(crypto.randomUUID());
     reset({ amount: '', categoryId: selectedCategory.id, isAnonymous: false, privacyAccepted: false, email: '', name: '' });
   };
 
@@ -242,7 +236,7 @@ export default function Donations() {
               {receipt.proofUrl && (
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                   <span className="inline-flex items-center gap-1.5"><FileCheck2 size={15} /> Comprobante adjuntado correctamente</span>
-                  <a href={receipt.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline dark:text-blue-300">Ver <ExternalLink size={12} /></a>
+                  <ProofButton path={receipt.proofUrl} />
                 </div>
               )}
             </div>
@@ -384,14 +378,7 @@ export default function Donations() {
                 </div>
                 {proofUrl ? (
                   <div className="flex items-center gap-2">
-                    <a
-                      href={proofUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline dark:text-blue-300"
-                    >
-                      Ver comprobante <ExternalLink size={12} />
-                    </a>
+                    <ProofButton path={proofUrl} />
                     <button
                       type="button"
                       onClick={() => setProofUrl(null)}
@@ -402,11 +389,16 @@ export default function Donations() {
                     </button>
                   </div>
                 ) : (
-                  <MediaUploader
-                    folder="donation-proofs"
-                    label="Adjuntar comprobante de transferencia (opcional)"
-                    onUploadSuccess={(url) => setProofUrl(url)}
-                  />
+                  <label className="text-xs font-semibold">Comprobante privado (máx. 5 MB)
+                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={!user || uploadingProof} onChange={async event => {
+                      const file = event.target.files?.[0]; if (!file || !user) return;
+                      setUploadingProof(true); setProofUrl(null);
+                      try { setProofUrl(await uploadProof(file, user.id)); }
+                      catch (error) { toast.error(messageOf(error)); }
+                      finally { setUploadingProof(false); }
+                    }} />
+                    {!user && <Link to="/login?redirectTo=%2Fdonaciones" className="block underline">Inicia sesión para registrar tu aporte</Link>}
+                  </label>
                 )}
               </div>
             </div>
@@ -415,7 +407,7 @@ export default function Donations() {
 
             <label className="mt-5 flex items-start gap-3 text-xs leading-5 text-slate-500 dark:text-slate-400"><input type="checkbox" {...register('privacyAccepted')} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" /><span>Acepto que mis datos sean usados para registrar, verificar y dar seguimiento a este aporte según la <Link to="/privacidad" className="font-bold text-primary hover:underline dark:text-blue-300">política de privacidad</Link>.</span></label>{errors.privacyAccepted && <p className="mt-1.5 text-xs text-red-500">{errors.privacyAccepted.message}</p>}
 
-            <button type="submit" disabled={isSubmitting || !canRegister} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700">{isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Registrando…</> : <>Registrar aporte {amount && `$${amount}`}<ArrowRight size={17} /></>}</button>
+            <button type="submit" disabled={isSubmitting || uploadingProof || !user || !canRegister} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700">{isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Registrando…</> : <>Registrar aporte {amount && `$${amount}`}<ArrowRight size={17} /></>}</button>
             {!canRegister && <p className="mt-2 text-center text-xs text-amber-600 dark:text-amber-300">El registro se habilitará cuando administración complete cuenta, destinos y transferencia.</p>}
             <p className="mt-3 text-center text-[10px] leading-4 text-slate-400">Registrar un aporte no mueve dinero ni confirma un pago. La conciliación se realiza después de recibir el comprobante.</p>
           </form>

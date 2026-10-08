@@ -5,6 +5,7 @@ import { useThemeStore } from '../../store/useThemeStore';
 import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay, Search } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
+import { useFinanceAccess } from '../../features/finance/api';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 
 interface SidebarProps {
@@ -18,6 +19,7 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
   const { user, userRole, firstName, lastName, logout } = useAuthStore();
   const { sidebarViewMode, sidebarAccordionMode, sidebarMenuMode, sidebarDefaultClosed, sidebarGridColumns, sidebarGridSort, sidebarCustomOrder } = useThemeStore();
   const { hasPermission } = usePermissions();
+  const financeAccess = useFinanceAccess();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   const [isPeeked, setIsPeeked] = useState(false);
@@ -43,8 +45,8 @@ const Sidebar = ({ isOpen, onClose, searchQuery = '', onSearchChange }: SidebarP
 
   // Filter items visible to the current user's permissions
   const visibleNavItems = useMemo(() => {
-    return ADMIN_MODULES.filter(item => item.available !== false && hasPermission(getAdminModulePermission(item), 'view'));
-  }, [hasPermission]);
+    return ADMIN_MODULES.filter(item => item.available !== false && (item.id === 'finances' ? financeAccess.data?.view === true : hasPermission(getAdminModulePermission(item), 'view')));
+  }, [hasPermission, financeAccess.data?.view]);
 
   // Group definitions matching keys
   const groupLabelMap = useMemo(() => {

@@ -1,3 +1,4 @@
+import { useFinanceAccess } from '../../features/finance/api';
 import { useState } from 'react';
 import { BarChart3, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -24,9 +25,10 @@ const DashboardHome = () => {
   const { hasPermission } = usePermissions();
   const onboarding = useOnboarding();
   const navigate = useNavigate();
+  const financeAccess = useFinanceAccess();
   const access = {
     members: hasPermission('members', 'view'),
-    finances: hasPermission('finances', 'view'),
+    finances: financeAccess.data?.view === true,
     petitions: hasPermission('petitions', 'view'),
     inventory: hasPermission('inventory', 'view'),
     volunteering: hasPermission('volunteering', 'view'),

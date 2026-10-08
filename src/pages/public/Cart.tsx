@@ -3,25 +3,26 @@ import { useCartStore } from '../../store/useCartStore';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Link } from 'react-router-dom';
-import { 
-  Trash2, 
-  ShoppingBag, 
-  ArrowRight, 
-  CreditCard, 
-  ChevronLeft, 
-  CheckCircle2, 
-  Ticket, 
-  Upload, 
-  Check, 
-  AlertCircle, 
-  Building2, 
+import {
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  CreditCard,
+  ChevronLeft,
+  CheckCircle2,
+  Ticket,
+  Upload,
+  Check,
+  AlertCircle,
+  Building2,
   Loader2,
-  Info
 } from 'lucide-react';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { uploadMediaFile } from '../../lib/mediaService';
 import { getLineTax, getUnitPrice } from '../../features/store/pricing';
-import type { StoreShippingMethod } from '../../types';
+import { getCartStock, isDigitalProduct, validateReceipt } from '../../features/store/catalog';
+import { Helmet } from 'react-helmet-async';
+import type { Product, StorePaymentMethod, StoreShippingMethod } from '../../types';
 
 interface StoreBankDetails {
   bank_name: string | null;
@@ -34,9 +35,13 @@ const getErrorMessage = (error: unknown) => error instanceof Error ? error.messa
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
   const { user } = useAuthStore();
-  
+
   const [step, setStep] = useState(1); // 1: Cart, 2: Delivery & Contact, 3: Payment
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer'>('transfer');
+  const paymentMethod = 'transfer';
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<StorePaymentMethod[]>([]);
+  const [incompleteOrder, setIncompleteOrder] = useState<string | null>(null);
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
   const [uploadingVoucher, setUploadingVoucher] = useState(false);
@@ -45,13 +50,9 @@ const Cart = () => {
     name: '',
     email: '',
     phone: '',
-    delivery: 'pickup', // 'pickup' | 'shipping'
+    delivery: '',
     address: '',
     city: '',
-    cardName: '',
-    cardNumber: '',
-    cardExpiry: '',
-    cardCvv: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -64,21 +65,32 @@ const Cart = () => {
     const fetchBankDetails = async () => {
       const { data, error: settingsError } = await supabase
         .from('church_settings')
-        .select('bank_name, bank_account, ruc, shipping_methods')
+        .select('bank_name, bank_account, ruc, shipping_methods, payment_methods')
         .eq('id', 1)
         .maybeSingle();
 
       if (settingsError) {
         console.error('No se pudieron cargar los datos bancarios:', settingsError);
-        setError('No se pudieron cargar los datos bancarios. No realices la transferencia todavía.');
+        setSettingsError('No se pudo cargar la configuración de pagos y entregas. No realices una transferencia todavía.');
+        setSettingsLoading(false);
         return;
       }
       setBankDetails(data);
-      setShippingMethods((data?.shipping_methods || []).filter((method: StoreShippingMethod) => method.active));
+      const methods = (data?.shipping_methods || []).filter((method: StoreShippingMethod) => method.active);
+      setShippingMethods(methods);
+      setPaymentMethods((data?.payment_methods || []).filter((method: StorePaymentMethod) => method.active));
+      setFormData(previous => ({ ...previous, delivery: methods[0]?.id || '' }));
+      setSettingsLoading(false);
     };
 
-    void fetchBankDetails();
+    void fetchBankDetails().catch((error: unknown) => { console.error('Error al cargar pagos y entregas:', error); setSettingsError('No se pudo cargar la configuración de compra.'); setSettingsLoading(false); });
   }, []);
+
+  const hasPhysicalItems = items.some(item => !isDigitalProduct(item.product));
+  const selectedShipping = shippingMethods.find(method => method.id === formData.delivery);
+  const requiresAddress = hasPhysicalItems && (selectedShipping?.requires_address ?? selectedShipping?.id !== 'pickup');
+  const selectedPayment = paymentMethods.find(method => method.id === 'transfer');
+  const canPay = !settingsLoading && !settingsError && Boolean(selectedPayment && bankDetails?.bank_name && bankDetails.bank_account) && (!hasPhysicalItems || Boolean(selectedShipping));
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -88,14 +100,17 @@ const Cart = () => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const fileError = validateReceipt(file);
+      if (fileError) { setError(fileError); return; }
+      setVoucherUrl(null);
       setVoucherFile(file);
-      
+
       // Subir archivo inmediatamente
       setUploadingVoucher(true);
       setError(null);
       try {
         // Subir a Cloudinary
-        const publicUrl = await uploadMediaFile(file, 'ecommerce_vouchers', 'image');
+        const publicUrl = await uploadMediaFile(file, 'ecommerce_vouchers', file.type === 'application/pdf' ? 'raw' : 'image');
         setVoucherUrl(publicUrl);
       } catch (err) {
         console.error('Error uploading receipt:', err);
@@ -110,14 +125,15 @@ const Cart = () => {
     if (step === 1) {
       setStep(2);
     } else if (step === 2) {
-      if (!formData.name || !formData.email || !formData.phone) {
+      if (!formData.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) || formData.phone.replace(/\D/g, '').length < 9) {
         setError('Por favor completa los datos de contacto obligatorios.');
         return;
       }
-      if (formData.delivery === 'shipping' && (!formData.address || !formData.city)) {
+      if (requiresAddress && (!formData.address || !formData.city)) {
         setError('Por favor completa la dirección de envío.');
         return;
       }
+      if (!canPay) { setError('No hay un método de pago o entrega disponible. Contacta con la iglesia antes de transferir.'); return; }
       setError(null);
       setStep(3);
     }
@@ -129,7 +145,8 @@ const Cart = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0) return;
+    if (items.length === 0 || loading || uploadingVoucher || incompleteOrder) return;
+    if (!canPay) { setError('La configuración de compra no está disponible. No realices una transferencia.'); return; }
 
     if (paymentMethod === 'transfer' && !voucherUrl) {
       setError('Por favor sube una imagen de tu comprobante de transferencia bancaria.');
@@ -139,14 +156,22 @@ const Cart = () => {
     setLoading(true);
     setError(null);
 
-    const shippingCost = formData.delivery === 'shipping'
-      ? shippingMethods.find(method => method.id === 'shipping')?.base_cost ?? 0
-      : shippingMethods.find(method => method.id === 'pickup')?.base_cost ?? 0;
+    const shippingCost = hasPhysicalItems ? Number(selectedShipping?.base_cost || 0) : 0;
+    const paymentFee = getTotalPrice() * (Number(selectedPayment?.fee_percent || 0) / 100);
     const orderTax = items.reduce((total, item) => total + getLineTax(item.product, item.quantity, item.variant), 0);
-    const finalTotal = getTotalPrice() + orderTax + shippingCost;
+    const finalTotal = Number((getTotalPrice() + orderTax + shippingCost + paymentFee).toFixed(2));
     const initialStatus = 'pending_payment';
 
+    let createdOrderId: string | null = null;
     try {
+      const { data: catalog, error: catalogError } = await supabase.from('products').select('*, product_variants(*)').in('id', items.map(item => item.product.id)).is('deleted_at', null);
+      if (catalogError) throw catalogError;
+      for (const item of items) {
+        const current = (catalog as Product[] | null)?.find(product => product.id === item.product.id);
+        const variant = current?.product_variants?.find(candidate => candidate.id === item.variant?.id);
+        if (!current || current.is_active === false || getCartStock(current, variant) < item.quantity) throw new Error(`Revisa la disponibilidad de ${item.product.name} en la tienda`);
+        if (getUnitPrice(current, item.quantity, variant) !== getUnitPrice(item.product, item.quantity, item.variant) || getLineTax(current, item.quantity, variant) !== getLineTax(item.product, item.quantity, item.variant)) throw new Error(`El precio de ${item.product.name} cambió. Vuelve a agregarlo desde la tienda`);
+      }
       // 1. Insert order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -157,18 +182,22 @@ const Cart = () => {
           total: finalTotal,
           status: initialStatus,
           payment_method: paymentMethod,
+          ecommerce_payment_method: paymentMethod,
+          ecommerce_payment_status: 'verifying',
+          ecommerce_fulfillment_status: 'processing',
           payment_voucher_url: paymentMethod === 'transfer' ? voucherUrl : null,
           shipping_recipient_name: formData.name,
           shipping_phone: formData.phone,
-          shipping_override_address: formData.delivery === 'shipping'
+          shipping_override_address: requiresAddress
             ? `${formData.address}, ${formData.city}`
             : null,
-          shipping_status_notes: `Método de entrega: ${formData.delivery}`,
+          shipping_status_notes: `Entrega: ${hasPhysicalItems ? selectedShipping?.name : 'Digital'}. Envío: ${shippingCost.toFixed(2)}. IVA: ${orderTax.toFixed(2)}. Comisión: ${paymentFee.toFixed(2)}.`,
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
+      createdOrderId = order.id;
 
       // 2. Insert order items
       const orderItems = items.map((item) => ({
@@ -191,7 +220,8 @@ const Cart = () => {
       setOrderCompleted(order.id);
     } catch (err: unknown) {
       console.error('Error procesando pedido:', err);
-      setError(`No se pudo registrar el pedido: ${getErrorMessage(err)}. Tu carrito permanece intacto.`);
+      if (createdOrderId) setIncompleteOrder(createdOrderId);
+      setError(createdOrderId ? `El pedido #${createdOrderId.slice(0, 8).toUpperCase()} necesita revisión. No vuelvas a transferir ni a enviar el pedido; contacta con la iglesia con este código.` : `No se pudo registrar el pedido: ${getErrorMessage(err)}. Tu carrito permanece intacto.`);
     } finally {
       setLoading(false);
     }
@@ -205,7 +235,7 @@ const Cart = () => {
         </div>
         <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mb-3">¡Pedido Recibido!</h1>
         <p className="text-gray-550 dark:text-gray-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
-          Gracias por tu compra. Tu orden <span className="font-mono font-bold text-primary dark:text-white">#{orderCompleted.slice(0, 8).toUpperCase()}</span> ha sido registrada exitosamente. 
+          Gracias por tu compra. Tu orden <span className="font-mono font-bold text-primary dark:text-white">#{orderCompleted.slice(0, 8).toUpperCase()}</span> ha sido registrada exitosamente.
           Un administrador verificará tu comprobante y autorizará el despacho.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -247,15 +277,16 @@ const Cart = () => {
     );
   }
 
-  const shippingCost = formData.delivery === 'shipping'
-    ? shippingMethods.find(method => method.id === 'shipping')?.base_cost ?? 0
-    : shippingMethods.find(method => method.id === 'pickup')?.base_cost ?? 0;
+  const shippingCost = hasPhysicalItems ? Number(selectedShipping?.base_cost || 0) : 0;
   const subtotal = getTotalPrice();
   const taxTotal = items.reduce((sum, item) => sum + getLineTax(item.product, item.quantity, item.variant), 0);
-  const total = subtotal + taxTotal + shippingCost;
+  const paymentFee = subtotal * (Number(selectedPayment?.fee_percent || 0) / 100);
+  const total = Number((subtotal + taxTotal + shippingCost + paymentFee).toFixed(2));
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
+      <Helmet><title>Carrito y compra | Tienda Jerusalén</title><meta name="description" content="Revisa tus productos, entrega y comprobante de compra en Tienda Jerusalén." /></Helmet>
+      {(settingsLoading || settingsError) && <p role="status" className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{settingsLoading ? 'Cargando métodos de pago y entrega…' : settingsError}</p>}
       {/* Indicador de Pasos / Stepper */}
       <div id="cart_hero" className="max-w-xl mx-auto mb-10 scroll-mt-28">
         <div className="flex justify-between items-center relative">
@@ -266,11 +297,11 @@ const Cart = () => {
             { n: 3, name: 'Pago' }
           ].map((s) => (
             <div key={s.n} className="flex flex-col items-center relative z-10">
-              <div 
+              <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border transition-all ${
-                  step === s.n 
-                    ? 'bg-primary text-white border-primary shadow-md' 
-                    : step > s.n 
+                  step === s.n
+                    ? 'bg-primary text-white border-primary shadow-md'
+                    : step > s.n
                     ? 'bg-green-600 text-white border-green-600 shadow-sm'
                     : 'bg-white dark:bg-slate-900 text-gray-405 border-gray-200 dark:border-slate-700'
                 }`}
@@ -286,8 +317,8 @@ const Cart = () => {
       </div>
 
       <div className="mb-6">
-        <button 
-          onClick={handleBackStep} 
+        <button
+          onClick={handleBackStep}
           disabled={step === 1}
           className="text-primary dark:text-blue-400 dark:hover:text-blue-300 hover:text-blue-900 flex items-center gap-1 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
         >
@@ -463,13 +494,12 @@ const Cart = () => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
                     >
-                      <option value="pickup">Retirar en el Templo (Gratis)</option>
-                      <option value="shipping">Envío a Domicilio (+$5.00)</option>
+                      {!hasPhysicalItems ? <option value="">Entrega digital</option> : shippingMethods.length ? shippingMethods.map(method => <option key={method.id} value={method.id}>{method.name} ({Number(method.base_cost) === 0 ? 'Sin costo' : `$${Number(method.base_cost).toFixed(2)}`})</option>) : <option value="">Sin métodos de entrega disponibles</option>}
                     </select>
                   </div>
                 </div>
 
-                {formData.delivery === 'shipping' && (
+                {requiresAddress && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                     <div className="md:col-span-2">
                       <label htmlFor="address" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Dirección de Entrega</label>
@@ -540,7 +570,7 @@ const Cart = () => {
                   </button>
 
                   <button
-                    onClick={() => { setPaymentMethod('transfer'); setError(null); }}
+                    type="button" aria-pressed="true" disabled={!canPay}
                     className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                       paymentMethod === 'transfer'
                         ? 'border-primary bg-blue-50/30 dark:bg-blue-950/20'
@@ -561,79 +591,7 @@ const Cart = () => {
                 </div>
 
                 {/* Contenido según método de pago */}
-                {paymentMethod === 'card' ? (
-                  <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
-                    <p className="text-gray-450 dark:text-gray-400 text-xs flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg">
-                      <Info size={14} className="text-primary dark:text-blue-400 shrink-0" />
-                      La pasarela está desactivada hasta configurar PayPhone o PayPal de forma segura en el servidor.
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="cardName" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Nombre en Tarjeta</label>
-                        <input
-                          id="cardName"
-                          type="text"
-                          name="cardName"
-                          required
-                          autoComplete="cc-name"
-                          value={formData.cardName}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                          placeholder="Ej. JUAN PEREZ"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="cardNumber" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Número de Tarjeta</label>
-                        <input
-                          id="cardNumber"
-                          type="text"
-                          name="cardNumber"
-                          required
-                          autoComplete="cc-number"
-                          maxLength={19}
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                          placeholder="4000 1234 5678 9010"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="cardExpiry" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Expiración (MM/AA)</label>
-                        <input
-                          id="cardExpiry"
-                          type="text"
-                          name="cardExpiry"
-                          required
-                          autoComplete="cc-exp"
-                          maxLength={5}
-                          value={formData.cardExpiry}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                          placeholder="12/28"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="cardCvv" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">CVV</label>
-                        <input
-                          id="cardCvv"
-                          type="password"
-                          name="cardCvv"
-                          required
-                          autoComplete="cc-csc"
-                          maxLength={3}
-                          value={formData.cardCvv}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                          placeholder="123"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+                {(
                   <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-150 dark:border-white/10 space-y-3">
                       <h4 className="font-bold text-sm text-gray-800 dark:text-white">Cuentas Bancarias de la Iglesia:</h4>
@@ -675,20 +633,20 @@ const Cart = () => {
                               </>
                             )}
                           </div>
-                          <input 
+                          <input
                             id="voucherFile"
                             name="voucherFile"
-                            type="file" 
-                            accept="image/*,application/pdf" 
-                            className="hidden" 
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            className="hidden"
                             onChange={handleFileChange}
-                            disabled={uploadingVoucher}
+                            disabled={uploadingVoucher || !canPay || loading}
                           />
                         </label>
-                        
+
                         {voucherUrl && (
                           <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-2xs relative shrink-0">
-                            <img loading="lazy" src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />
+                            {voucherFile?.type === 'application/pdf' ? <span className="grid h-full place-items-center text-sm font-bold">PDF</span> : <img loading="lazy" src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />}
                           </div>
                         )}
                       </div>
@@ -713,13 +671,14 @@ const Cart = () => {
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
-                <span>Entrega ({formData.delivery === 'pickup' ? 'Retiro' : 'Envío'})</span>
+                <span>Entrega ({hasPhysicalItems ? selectedShipping?.name || 'Por seleccionar' : 'Digital'})</span>
                 <span>{shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 pb-3 border-b border-gray-100 dark:border-white/10">
-                <span>IVA</span>
+                <span>IVA según productos</span>
                 <span>${taxTotal.toFixed(2)}</span>
               </div>
+              {paymentFee > 0 && <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300"><span>Comisión de pago</span><span>${paymentFee.toFixed(2)}</span></div>}
               <div className="flex justify-between text-base font-bold text-gray-800 dark:text-white pt-1">
                 <span>Total Final</span>
                 <span className="text-primary dark:text-white text-xl font-extrabold">${total.toFixed(2)}</span>
@@ -746,14 +705,14 @@ const Cart = () => {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading || uploadingVoucher}
+                disabled={loading || uploadingVoucher || !canPay || Boolean(incompleteOrder)}
                 className="w-full py-3.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
               >
                 {loading ? (
                   <Loader2 className="animate-spin h-5 w-5" />
                 ) : (
                   <>
-                    Pagar e Inscribir Pedido
+                    Enviar pedido para verificación
                     <ArrowRight size={16} />
                   </>
                 )}

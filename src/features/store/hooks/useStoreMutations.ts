@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { toast } from 'sonner';
+import { usePermissions } from '../../../hooks/usePermissions';
 import type { DbProduct, FormVariant, StoreCategory, Supplier } from '../types';
 import type { Order, OrderStatus } from '../../../types';
 
@@ -21,69 +22,79 @@ const getErrorMessage = (error: unknown): string => {
 
 export const useStoreMutations = () => {
   const queryClient = useQueryClient();
+  const { hasPermission, isAdmin } = usePermissions();
+  const requireEdit = (module: 'products' | 'orders' | 'admin') => {
+    if (module === 'admin' ? !isAdmin : !hasPermission(module, 'edit')) {
+      throw new Error('No tienes permiso para realizar esta acción.');
+    }
+  };
+  const invalidateProducts = () => queryClient.invalidateQueries({ queryKey: ['products'] });
+  const variantPayload = (variant: FormVariant, productId: string) => ({
+    id: variant.id || crypto.randomUUID(), product_id: productId,
+    color_name: variant.color_name.trim(), color_hex: variant.color_hex,
+    size: variant.size.trim(), cloudinary_image_url: variant.cloudinary_image_url,
+    stock: variant.stock, price_adjustment: variant.price_adjustment,
+    sku: variant.sku?.trim() || null, metadata: variant.metadata || {},
+  });
+  const saveDigitalAsset = async (productId: string, asset?: { drive_link: string; instructions: string }) => {
+    if (!asset) return;
+    const { error } = await supabase.from('product_digital_assets').upsert({ product_id: productId, ...asset }, { onConflict: 'product_id' });
+    if (error) throw new Error('El producto se guardó, pero no su recurso digital: ' + getErrorMessage(error));
+  };
 
   const createProduct = useMutation({
-    mutationFn: async ({ product, variants }: { product: Partial<DbProduct>, variants: FormVariant[] }) => {
-      const { data, error } = await supabase
-        .from('products')
-        .insert([product])
-        .select()
-        .single();
-      
+    mutationFn: async ({ product, variants, digitalAsset }: { product: Partial<DbProduct>, variants: FormVariant[], digitalAsset?: { drive_link: string; instructions: string } }) => {
+      requireEdit('products');
+      const { data, error } = await supabase.from('products').upsert(product).select('id').single();
       if (error) throw error;
-      
-      if (variants.length > 0 && data) {
-        const variantsToInsert = variants.map(v => ({
-          ...v,
-          product_id: data.id
-        }));
-        const { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
-        if (varError) throw varError;
+      if (variants.length) {
+        const { error: variantError } = await supabase.from('product_variants').upsert(variants.map(variant => variantPayload(variant, data.id)));
+        if (variantError) throw new Error('El producto se guardó, pero fallaron sus variantes: ' + getErrorMessage(variantError));
       }
+      await saveDigitalAsset(data.id, digitalAsset);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Producto creado exitosamente');
-    },
-    onError: (error: unknown) => toast.error('Error al crear: ' + getErrorMessage(error))
+    onSettled: invalidateProducts,
+    onSuccess: () => toast.success('Producto creado'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error)),
   });
 
   const updateProduct = useMutation({
-    mutationFn: async ({ id, product, variants }: { id: string, product: Partial<DbProduct>, variants: FormVariant[] }) => {
-      const { error } = await supabase
-        .from('products')
-        .update(product)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      const { error: delError } = await supabase.from('product_variants').delete().eq('product_id', id);
-      if (delError) throw delError;
-
-      if (variants.length > 0) {
-        const variantsToInsert = variants.map(v => {
-          const rest = { ...v };
-          delete rest.id;
-          return { ...rest, product_id: id };
-        });
-        const { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
-        if (varError) throw varError;
+    mutationFn: async ({ id, product, variants, digitalAsset }: { id: string, product: Partial<DbProduct>, variants: FormVariant[], digitalAsset?: { drive_link: string; instructions: string } }) => {
+      requireEdit('products');
+      const { data: previous, error: readError } = await supabase.from('product_variants').select('id').eq('product_id', id);
+      if (readError) throw readError;
+      const retained = new Set(variants.map(variant => variant.id).filter(Boolean));
+      const removed = (previous || []).filter(variant => !retained.has(variant.id)).map(variant => variant.id);
+      if (removed.length) {
+        const { count, error: referenceError } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).in('variant_id', removed);
+        if (referenceError) throw referenceError;
+        if (count == null || count > 0) throw new Error('Una variante tiene pedidos asociados. Conserva la variante y coloca su stock en cero.');
       }
+      const { error } = await supabase.from('products').update(product).eq('id', id).select('id').single();
+      if (error) throw error;
+      if (variants.length) {
+        const { error: variantError } = await supabase.from('product_variants').upsert(variants.map(variant => variantPayload(variant, id)));
+        if (variantError) throw new Error('El producto se guardó, pero fallaron sus variantes: ' + getErrorMessage(variantError));
+      }
+      if (removed.length) {
+        const { error: removeError } = await supabase.from('product_variants').delete().eq('product_id', id).in('id', removed);
+        if (removeError) throw removeError;
+      }
+      await saveDigitalAsset(id, digitalAsset);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Producto actualizado');
-    },
-    onError: (error: unknown) => toast.error('Error al actualizar: ' + getErrorMessage(error))
+    onSettled: invalidateProducts,
+    onSuccess: () => toast.success('Producto actualizado'),
+    onError: (error: unknown) => toast.error(getErrorMessage(error)),
   });
 
   const deleteProduct = useMutation({
     mutationFn: async (id: string) => {
+      requireEdit('products');
       const { error } = await supabase
         .from('products')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
@@ -95,8 +106,17 @@ export const useStoreMutations = () => {
 
   const saveCategory = useMutation({
     mutationFn: async (category: Partial<StoreCategory>) => {
+      requireEdit('products');
+      if (!category.name?.trim()) throw new Error('El nombre de la categoría es obligatorio.');
+      category = { ...category, name: category.name.trim() };
       if (category.id) {
-        const { error } = await supabase.from('store_categories').update(category).eq('id', category.id);
+        const { data: previous, error: readError } = await supabase.from('store_categories').select('name').eq('id', category.id).single();
+        if (readError) throw readError;
+        if (previous.name !== category.name) {
+          const { error: renameError } = await supabase.from('products').update({ category: category.name }).eq('category', previous.name);
+          if (renameError) throw renameError;
+        }
+        const { error } = await supabase.from('store_categories').update(category).eq('id', category.id).select('id').single();
         if (error) throw error;
       } else {
         const { error } = await supabase.from('store_categories').insert([category]);
@@ -105,6 +125,7 @@ export const useStoreMutations = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storeCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Categoría guardada');
     },
     onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
@@ -112,11 +133,18 @@ export const useStoreMutations = () => {
 
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('store_categories').delete().eq('id', id);
+      requireEdit('products');
+      const { data: category, error: readError } = await supabase.from('store_categories').select('name').eq('id', id).single();
+      if (readError) throw readError;
+      const { count, error: countError } = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('category', category.name).is('deleted_at', null);
+      if (countError) throw countError;
+      if (count == null || count > 0) throw new Error('Mueve los productos de esta categoría antes de eliminarla.');
+      const { error } = await supabase.from('store_categories').delete().eq('id', id).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storeCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Categoría eliminada');
     },
     onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
@@ -124,7 +152,8 @@ export const useStoreMutations = () => {
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string, status: OrderStatus }) => {
-      const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+      requireEdit('orders');
+      const { error } = await supabase.from('orders').update({ status, ...(status === 'paid' ? { ecommerce_payment_status: 'paid' } : {}), ...(status === 'completed' ? { ecommerce_fulfillment_status: 'delivered' } : {}) }).eq('id', orderId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
@@ -136,38 +165,32 @@ export const useStoreMutations = () => {
 
   const cancelOrder = useMutation({
     mutationFn: async (order: Order) => {
+      requireEdit('orders');
       if (order.status === 'completed' || order.status === 'cancelled') {
         throw new Error('No se puede cancelar en este estado');
       }
-      const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
+      const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id).eq('status', order.status).select('id').single();
       if (error) throw error;
 
-      if (order.order_items && order.order_items.length > 0) {
-        for (const item of order.order_items) {
-          if (item.product_variants) {
-             await supabase.rpc('increment_variant_stock', { variant_id: item.product_variants.id, qty: item.quantity });
-          } else if (item.products) {
-             await supabase.rpc('increment_product_stock', { product_id: item.products.id, qty: item.quantity });
-          }
-        }
-      }
+
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Pedido cancelado y stock devuelto');
+      toast.success('Pedido cancelado');
     },
     onError: (error: unknown) => toast.error('Error al cancelar: ' + getErrorMessage(error))
   });
 
   const saveShippingOverride = useMutation({
     mutationFn: async ({ orderId, data }: { orderId: string, data: ShippingOverrideData }) => {
+      requireEdit('orders');
       const { error } = await supabase.from('orders').update({
         shipping_recipient_name: data.recipient_name,
         shipping_phone: data.phone,
         shipping_override_address: data.override_address,
         shipping_status_notes: data.status_notes
-      }).eq('id', orderId);
+      }).eq('id', orderId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
@@ -179,11 +202,13 @@ export const useStoreMutations = () => {
 
   const saveRefund = useMutation({
     mutationFn: async ({ orderId, amount, reason, total }: { orderId: string, amount: number, reason: string, total: number }) => {
+      requireEdit('orders');
+      if (!Number.isFinite(amount) || amount <= 0 || amount > total || !reason.trim()) throw new Error('Indica un importe válido y el motivo del reembolso.');
       const { error } = await supabase.from('orders').update({
         refund_status: amount >= total ? 'full' : 'partial',
         refunded_amount: amount,
         refund_reason: reason
-      }).eq('id', orderId);
+      }).eq('id', orderId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {
@@ -195,8 +220,9 @@ export const useStoreMutations = () => {
 
   const saveSupplier = useMutation({
     mutationFn: async (supplier: Partial<Supplier>) => {
+      requireEdit('admin');
       if (supplier.id) {
-        const { error } = await supabase.from('store_suppliers').update(supplier).eq('id', supplier.id);
+        const { error } = await supabase.from('store_suppliers').update(supplier).eq('id', supplier.id).select('id').single();
         if (error) throw error;
       } else {
         const { error } = await supabase.from('store_suppliers').insert([supplier]);
@@ -212,10 +238,11 @@ export const useStoreMutations = () => {
 
   const saveDisputeResolution = useMutation({
     mutationFn: async ({ id, notes }: { id: string, notes: string }) => {
+      requireEdit('admin');
       const { error } = await supabase.from('store_disputes').update({
         status: 'resolved',
         resolution_notes: notes
-      }).eq('id', id);
+      }).eq('id', id).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => {

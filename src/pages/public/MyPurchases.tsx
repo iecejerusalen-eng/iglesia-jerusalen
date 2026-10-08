@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { Download, AlertCircle, ShoppingBag, Calendar, CreditCard, ChevronRight, CheckCircle2, Clock, Truck } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import type { Order, ProductDigitalAsset } from '../../types';
 
@@ -15,12 +16,16 @@ export default function MyPurchases() {
 
   const fetchOrders = useCallback(async () => {
     if (!user) {
+      setOrders([]);
+      setDigitalAssets({});
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
+      setDigitalAssets({});
       // Obtener órdenes del usuario con productos y variantes
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -80,9 +85,10 @@ export default function MyPurchases() {
         const { data: assetsData, error: assetsError } = await supabase
           .from('product_digital_assets')
           .select('*')
-          .in('product_id', paidProductIds);
+          .in('product_id', [...new Set(paidProductIds)]);
 
-        if (!assetsError && assetsData) {
+        if (assetsError) throw new Error('Tus pedidos se cargaron, pero no se pudieron consultar las descargas. Reintenta o contacta con la iglesia.');
+        if (assetsData) {
           const assetsMap: Record<string, ProductDigitalAsset> = {};
           (assetsData as ProductDigitalAsset[]).forEach((asset) => {
             assetsMap[asset.product_id] = asset;
@@ -124,7 +130,7 @@ export default function MyPurchases() {
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4">
-        <AnimeFadeUp 
+        <AnimeFadeUp
           className="max-w-md w-full text-center bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10"
         >
           <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 text-gold rounded-full flex items-center justify-center mx-auto mb-6">
@@ -132,8 +138,8 @@ export default function MyPurchases() {
           </div>
           <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2">Acceso Requerido</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">Debes iniciar sesión con tu cuenta para poder visualizar tu historial de compras y descargas.</p>
-          <Link 
-            to="/login?redirect=/mis-compras" 
+          <Link
+            to="/login?redirect=/mis-compras"
             className="inline-block w-full bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all"
           >
             Iniciar Sesión
@@ -192,13 +198,14 @@ export default function MyPurchases() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
-        <div id="purchases_hero" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 scroll-mt-28">
+        <Helmet><title>Mis compras | Tienda Jerusalén</title></Helmet>
+      <div id="purchases_hero" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 scroll-mt-28">
           <div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">Mis Compras</h1>
             <p className="text-gray-550 dark:text-gray-400 mt-1">Historial de pedidos y acceso a descargas seguras.</p>
           </div>
-          <Link 
-            to="/tienda" 
+          <Link
+            to="/tienda"
             className="inline-flex items-center gap-1.5 text-primary dark:text-white hover:text-gold transition-colors font-semibold text-sm"
           >
             Volver a la Tienda
@@ -220,8 +227,8 @@ export default function MyPurchases() {
             </div>
             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">Sin compras registradas</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">Aún no has realizado ninguna compra en nuestra tienda virtual.</p>
-            <Link 
-              to="/tienda" 
+            <Link
+              to="/tienda"
               className="inline-block bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-primary-dark text-white font-semibold py-2.5 px-6 rounded-xl shadow-md transition-all text-sm"
             >
               Explorar Catálogo
@@ -230,7 +237,7 @@ export default function MyPurchases() {
         ) : (
           <div id="purchases_history" className="space-y-6 scroll-mt-28">
             {orders.map((order) => (
-              <AnimeFadeUp 
+              <AnimeFadeUp
                 key={order.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 overflow-hidden"
               >
@@ -273,9 +280,9 @@ export default function MyPurchases() {
                     return (
                       <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <img loading="lazy" 
-                            src={product?.cover_image_url || product?.image_url || '/placeholder-product.png'} 
-                            alt={product?.name || 'Producto'} 
+                          <img loading="lazy"
+                            src={product?.cover_image_url || product?.image_url || '/placeholder-product.png'}
+                            alt={product?.name || 'Producto'}
                             className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-slate-800 shadow-2xs"
                           />
                           <div>
@@ -304,17 +311,17 @@ export default function MyPurchases() {
 
                         <div className="flex flex-col items-end gap-2">
                           <span className="font-bold text-gray-800 dark:text-white">${(Number(item.price) * item.quantity).toFixed(2)}</span>
-                          
+
                           {/* Botón de descarga para recursos digitales */}
                           {isDigital && (
                             <div className="mt-2 w-full md:w-auto">
                               {isPaid ? (
                                 digitalAsset ? (
                                   <div className="flex flex-col items-end gap-1.5">
-                                    <a 
-                                      href={digitalAsset.drive_link} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
+                                    <a
+                                      href={digitalAsset.drive_link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold-dark text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
                                     >
                                       <Download size={14} />

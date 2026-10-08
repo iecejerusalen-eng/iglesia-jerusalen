@@ -13,7 +13,7 @@ export const getPriceTiers = (product: Product): ProductPriceTier[] => {
   if (!Array.isArray(tiers)) return [];
 
   return tiers
-    .filter((tier) => Number.isInteger(tier.min_quantity) && tier.min_quantity > 1 && tier.unit_price >= 0)
+    .filter((tier) => Number.isInteger(tier.min_quantity) && tier.min_quantity > 1 && Number.isFinite(Number(tier.unit_price)) && tier.unit_price >= 0)
     .sort((a, b) => a.min_quantity - b.min_quantity);
 };
 
@@ -23,11 +23,9 @@ export const getUnitPrice = (
   variant?: ProductVariant | null,
 ) => {
   const basePrice = getProductBasePrice(product, variant);
-  const matchingTier = getPriceTiers(product)
-    .filter((tier) => quantity >= tier.min_quantity)
-    .at(-1);
-
-  return matchingTier ? Math.min(basePrice, Number(matchingTier.unit_price)) : basePrice;
+  return getPriceTiers(product)
+    .filter(tier => quantity >= tier.min_quantity)
+    .reduce((price, tier) => Math.min(price, Number(tier.unit_price)), basePrice);
 };
 
 export const getLineSubtotal = (

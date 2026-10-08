@@ -523,12 +523,12 @@ export interface SongResourceLink {
 export type SongStatus = 'draft' | 'review' | 'published' | 'archived';
 export type AccidentalPreference = 'sharp' | 'flat' | 'auto';
 
-export type SongBlockType = 
-  | 'lyrics' 
-  | 'chord_diagram' 
-  | 'sheet_music' 
-  | 'tablature' 
-  | 'media_embed' 
+export type SongBlockType =
+  | 'lyrics'
+  | 'chord_diagram'
+  | 'sheet_music'
+  | 'tablature'
+  | 'media_embed'
   | 'musician_note'
   | 'rich_text'
   | 'poll'
@@ -549,9 +549,9 @@ export interface BaseSongBlock {
 export interface LyricsSongBlock extends BaseSongBlock {
   type: 'lyrics';
   section_type: 'intro' | 'estrofa' | 'coro' | 'puente' | 'outro' | 'melodia' | 'solo' | 'otro';
-  label: string; 
-  melody_guide?: string | null; 
-  lyrics: string; 
+  label: string;
+  melody_guide?: string | null;
+  lyrics: string;
 }
 
 export interface ChordDiagramSongBlock extends BaseSongBlock {
@@ -617,12 +617,12 @@ export interface LinkCollectionSongBlock extends BaseSongBlock {
   links: Array<{ id: string; label: string; url: string; description?: string }>;
 }
 
-export type SongStructureBlock = 
-  | LyricsSongBlock 
-  | ChordDiagramSongBlock 
-  | SheetMusicSongBlock 
-  | TablatureSongBlock 
-  | MediaEmbedSongBlock 
+export type SongStructureBlock =
+  | LyricsSongBlock
+  | ChordDiagramSongBlock
+  | SheetMusicSongBlock
+  | TablatureSongBlock
+  | MediaEmbedSongBlock
   | MusicianNoteSongBlock
   | RichTextSongBlock
   | PollSongBlock
@@ -1206,6 +1206,7 @@ export interface StoreShippingMethod {
   name: string;
   active: boolean;
   base_cost: number;
+  requires_address?: boolean;
   description?: string;
 }
 

@@ -71,7 +71,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
       leadership_role: editingMember?.leadership_role || '',
       ministry_id: editingMember?.ministry_id || null,
       role_id: editingMember?.role_id || null,
-      tithes_sum: editingMember?.tithes_sum || 0,
+      tithes_sum: 0,
       emails: formattedEmails,
       education_level: editingMember?.education_level || '',
       career_id: editingMember?.career_id || '',
@@ -522,12 +522,7 @@ export const MemberForm = ({ editingMember, onClose, onSubmitMember, actionLoadi
                 <input type="date" {...register('baptism_date')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none" />
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Registro de Aportes/Diezmos ($ USD)</label>
-              <input type="number" step="0.01" min="0" {...register('tithes_sum', { valueAsNumber: true })} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono" placeholder="0.00" />
-              {errors.tithes_sum && <p className="text-accent-red text-xs mt-1">{errors.tithes_sum.message}</p>}
-              <span className="text-[10px] text-gray-400 font-medium mt-1 block">Suma histórica de diezmos registrados en el sistema de la iglesia.</span>
-            </div>
+
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-450 uppercase tracking-wider mb-1">Versículo Bíblico Dedicado</label>
               <input type="text" {...register('dedicated_verse')} className="w-full px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none bg-white dark:bg-slate-900 dark:text-white" placeholder="Ej. Juan 3:16" />

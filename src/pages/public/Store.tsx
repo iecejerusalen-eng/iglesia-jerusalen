@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -18,17 +18,20 @@ import {
 import { supabase } from '../../config/supabase';
 import type { Product } from '../../types';
 import OptimizedMedia from '../../components/common/OptimizedMedia';
-import ProductQuickView from '../../components/store/ProductQuickView';
-import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/AnimeWrappers';
 import { getPriceTiers, getProductBasePrice, getProductImages } from '../../features/store/pricing';
+import { getProductStock, isDigitalProduct } from '../../features/store/catalog';
 import { useCartStore } from '../../store/useCartStore';
+
+const ProductQuickView = lazy(() => import('../../components/store/ProductQuickView'));
 
 type StoreSort = 'featured' | 'newest' | 'price_asc' | 'price_desc' | 'name_asc';
 
-const formatCurrency = (value: number) => new Intl.NumberFormat('es-EC', {
+const currencyFormatter = new Intl.NumberFormat('es-EC', {
   style: 'currency',
   currency: 'USD',
-}).format(value);
+});
+const formatCurrency = (value: number) => currencyFormatter.format(value);
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 
 const mapProductImage = (product: Product): Product => {
   let img = product.image_url || product.cover_image_url || product.thumbnail_url || '';
@@ -78,21 +81,22 @@ const Store = () => {
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
+      if (error) {
         setProducts([]);
-        setLoadError(error
-          ? 'No se pudo conectar con el catálogo. Intenta nuevamente en unos instantes.'
-          : 'Todavía no hay productos publicados en la tienda.');
+        setLoadError('No se pudo conectar con el catálogo. Intenta nuevamente en unos instantes.');
       } else {
         const realProducts = (data || []) as Product[];
         const activeProducts = realProducts.filter((product) => product.is_active !== false).map(mapProductImage);
         setProducts(activeProducts);
-        if (activeProducts.length === 0) setLoadError('Todavía no hay productos publicados en la tienda.');
       }
       setLoading(false);
     };
 
-    void fetchProducts();
+    void fetchProducts().catch((error: unknown) => {
+      console.error('Error al cargar el catálogo de la tienda', error);
+      setLoadError('No se pudo conectar con el catálogo. Intenta nuevamente en unos instantes.');
+      setLoading(false);
+    });
   }, []);
 
   const categories = useMemo(
@@ -101,11 +105,10 @@ const Store = () => {
   );
 
   const visibleProducts = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLocaleLowerCase('es');
+    const normalizedSearch = normalizeSearch(searchQuery.trim());
     const filtered = products.filter((product) => {
       const tags = product.metadata?.tags?.join(' ') || '';
-      const searchableText = `${product.name} ${product.description || ''} ${product.category} ${tags}`
-        .toLocaleLowerCase('es');
+      const searchableText = normalizeSearch(`${product.name} ${product.description || ''} ${product.category} ${tags}`);
       const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch);
       const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
@@ -138,28 +141,28 @@ const Store = () => {
         <div aria-hidden="true" className="pointer-events-none absolute -right-48 top-[44rem] h-[30rem] w-[30rem] rounded-full bg-indigo-300/15 blur-[130px] dark:bg-indigo-500/5" />
 
         <section id="store_hero" className="px-4 pt-8 md:px-8 md:pt-12 scroll-mt-28">
-          <AnimeFadeUp className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/15 bg-[#081630] shadow-2xl lg:grid-cols-[1.25fr_0.75fr]">
-            <div className="relative z-10 p-8 text-white md:p-14 lg:p-16">
+          <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/15 bg-[#081630] shadow-2xl lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="relative z-10 p-6 text-white sm:p-8 lg:p-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-300">
                 <Sparkles size={13} /> Recursos con propósito
               </span>
-              <h1 className="mt-7 max-w-3xl font-serif text-5xl font-black leading-[0.98] tracking-[-0.035em] md:text-7xl">
+              <h1 className="mt-5 max-w-3xl font-serif text-4xl font-black leading-[0.98] tracking-[-0.035em] sm:text-5xl lg:text-6xl">
                 Fe que también se lleva contigo.
               </h1>
               <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-slate-300 md:text-lg">
                 Explora productos seleccionados para crecer, aprender y compartir. Cada compra apoya la obra de nuestra iglesia.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-bold text-slate-200">
+              <a href="#store_catalog" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-bold text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300">Explorar catálogo <ArrowRight size={16} /></a>
+              <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-200">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><ShieldCheck size={15} className="text-emerald-300" /> Datos protegidos</span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><PackageCheck size={15} className="text-amber-300" /> Stock verificable</span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2"><Truck size={15} className="text-blue-300" /> Retiro o envío</span>
               </div>
             </div>
 
-            <div className="relative hidden min-h-[26rem] lg:block">
+            <div className="relative hidden lg:block">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.24),transparent_62%)]" />
-              <div className="absolute inset-8 rotate-6 rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl" />
-              <div className="absolute inset-16 -rotate-3 rounded-[2rem] border border-white/15 bg-white/10 p-8 backdrop-blur-2xl">
+              <div className="absolute inset-10 rounded-[2rem] border border-white/15 bg-white/5 p-8">
                 <div className="flex h-full flex-col justify-between">
                   <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-400 text-slate-950"><ShoppingBag size={25} /></div>
                   <div>
@@ -169,11 +172,11 @@ const Store = () => {
                 </div>
               </div>
             </div>
-          </AnimeFadeUp>
+          </div>
         </section>
 
         <section id="store_categories" className="relative z-10 mx-auto mt-8 max-w-7xl px-4 md:px-8 scroll-mt-28">
-          <div id="store_featured" className="rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.35)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/75 md:p-6 scroll-mt-28">
+          <div id="store_featured" className="rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-slate-900/75 md:p-6 scroll-mt-28">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
               <label className="relative flex-1">
                 <span className="sr-only">Buscar productos</span>
@@ -190,7 +193,7 @@ const Store = () => {
               <label className="relative min-w-56">
                 <span className="sr-only">Ordenar productos</span>
                 <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <select value={sortBy} onChange={(event) => setSortBy(event.target.value as StoreSort)} className="h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200">
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value as StoreSort)} className="h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-white/80 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200">
                   <option value="featured">Destacados</option>
                   <option value="newest">Más recientes</option>
                   <option value="price_asc">Menor precio</option>
@@ -209,7 +212,7 @@ const Store = () => {
             <div className="mt-5 flex items-center gap-3 overflow-x-auto border-t border-slate-200/70 pt-5 dark:border-white/10">
               <SlidersHorizontal size={15} className="shrink-0 text-amber-600" />
               {categories.map((category) => (
-                <button key={category} onClick={() => setSelectedCategory(category)} className={`shrink-0 rounded-full px-4 py-2 text-xs font-extrabold transition ${selectedCategory === category ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/15' : 'border border-slate-200 bg-white/60 text-slate-600 hover:border-amber-300 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-300'}`}>
+                <button key={category} aria-pressed={selectedCategory === category} onClick={() => setSelectedCategory(category)} className={`shrink-0 rounded-full px-4 py-2 text-xs font-extrabold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 ${selectedCategory === category ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/15' : 'border border-slate-200 bg-white/60 text-slate-600 hover:border-amber-300 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-300'}`}>
                   {category}
                 </button>
               ))}
@@ -217,13 +220,13 @@ const Store = () => {
           </div>
         </section>
 
-        <section id="store_catalog" aria-live="polite" className="relative z-10 mx-auto mt-12 max-w-7xl px-4 md:px-8 scroll-mt-28">
+        <section id="store_catalog" aria-busy={loading} className="relative z-10 mx-auto mt-12 max-w-7xl px-4 md:px-8 scroll-mt-28">
           <div className="mb-7 flex items-end justify-between gap-4">
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">Catálogo</p>
               <h2 className="mt-2 font-serif text-3xl font-black text-slate-900 dark:text-white">Encuentra algo especial</h2>
             </div>
-            {!loading && !loadError && <p className="text-xs font-bold text-slate-500">{visibleProducts.length} {visibleProducts.length === 1 ? 'producto' : 'productos'}</p>}
+            {!loading && !loadError && <p role="status" className="text-xs font-bold text-slate-600 dark:text-slate-300">{visibleProducts.length} {visibleProducts.length === 1 ? 'producto' : 'productos'}</p>}
           </div>
 
           {loading ? (
@@ -239,24 +242,22 @@ const Store = () => {
           ) : visibleProducts.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center dark:border-white/15 dark:bg-slate-900/50">
               <ShoppingBag className="mx-auto text-slate-300" size={40} />
-              <h3 className="mt-5 font-serif text-2xl font-black text-slate-900 dark:text-white">No encontramos productos</h3>
-              <p className="mt-2 text-sm text-slate-500">Prueba con otra búsqueda o limpia los filtros.</p>
-              <button onClick={resetFilters} className="mt-6 rounded-xl bg-amber-500 px-5 py-3 text-sm font-extrabold text-slate-950">Ver todo el catálogo</button>
+              <h3 className="mt-5 font-serif text-2xl font-black text-slate-900 dark:text-white">{products.length === 0 ? 'Pronto habrá nuevos recursos' : 'No encontramos productos'}</h3>
+              <p className="mt-2 text-sm text-slate-500">{products.length === 0 ? 'Todavía no hay productos publicados. Vuelve a visitarnos para conocer las novedades.' : 'Prueba con otra búsqueda o limpia los filtros.'}</p>
+              {products.length > 0 && <button onClick={resetFilters} className="mt-6 rounded-xl bg-amber-500 px-5 py-3 text-sm font-extrabold text-slate-950">Ver todo el catálogo</button>}
             </div>
           ) : (
-            <AnimeStaggerGrid className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleProducts.map((product) => {
                 const images = getProductImages(product);
                 const price = getProductBasePrice(product);
                 const tiers = getPriceTiers(product);
-                const stock = product.product_variants?.length
-                  ? product.product_variants.reduce((total, variant) => total + Number(variant.stock || 0), 0)
-                  : Number(product.stock || 0);
+                const stock = getProductStock(product);
 
                 return (
-                  <button key={product.id} onClick={() => setSelectedProduct(product)} className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 text-left shadow-[0_18px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/25 dark:border-white/10 dark:bg-slate-900/75">
+                  <button key={product.id} onClick={() => setSelectedProduct(product)} className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 text-left shadow-[0_18px_60px_-38px_rgba(15,23,42,0.45)] transition duration-300 motion-reduce:transition-none motion-safe:hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/25 dark:border-white/10 dark:bg-slate-900/75">
                     <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      {images[0] ? <OptimizedMedia src={images[0]} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><ShoppingBag size={40} className="text-slate-300" /></div>}
+                      {images[0] ? <OptimizedMedia src={images[0]} alt={product.name} width={640} height={480} className="h-full w-full object-cover transition duration-300 motion-reduce:transition-none motion-safe:group-hover:scale-105" /> : <div className="grid h-full place-items-center"><ShoppingBag size={40} className="text-slate-300" /></div>}
                       <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
                         <span className="rounded-full border border-white/60 bg-white/85 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-800 backdrop-blur-md">{product.category}</span>
                         {product.promo_tag && <span className="rounded-full bg-amber-500 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-950">{product.promo_tag}</span>}
@@ -266,7 +267,7 @@ const Store = () => {
 
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {product.type === 'digital' ? 'Descarga digital' : stock > 0 ? `${stock} disponibles` : 'Agotado'}
+                        {isDigitalProduct(product) ? 'Descarga digital' : stock > 0 ? `${stock} disponibles` : 'Agotado'}
                         {stock > 0 && <Check size={12} className="text-emerald-500" />}
                       </div>
                       <h3 className="mt-3 line-clamp-2 font-serif text-xl font-black leading-tight text-slate-900 transition group-hover:text-amber-700 dark:text-white dark:group-hover:text-amber-300">{product.name}</h3>
@@ -286,12 +287,13 @@ const Store = () => {
                   </button>
                 );
               })}
-            </AnimeStaggerGrid>
+            </div>
           )}
         </section>
       </main>
 
       {selectedProduct && (
+        <Suspense fallback={<div role="status" className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 text-white">Cargando producto…</div>}>
         <ProductQuickView
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
@@ -304,6 +306,7 @@ const Store = () => {
             setSelectedProduct(visibleProducts[(index - 1 + visibleProducts.length) % visibleProducts.length]);
           }}
         />
+        </Suspense>
       )}
     </>
   );

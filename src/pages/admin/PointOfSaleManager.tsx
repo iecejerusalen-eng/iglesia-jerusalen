@@ -7,11 +7,20 @@ import { toast } from 'sonner';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { supabase } from '../../config/supabase';
 import type { Product } from '../../types';
-import { posService, type PosSession, type PosCartItem } from '../../features/store/services/posService';
+import { posService, IncompletePosSaleError, type PosSession, type PosCartItem } from '../../features/store/services/posService';
+
+import { getUnitPrice, getLineTax } from '../../features/store/pricing';
+import { usePermissions } from '../../hooks/usePermissions';
+import { AdminErrorState } from '../../components/admin/AdminState';
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(val);
 
 export default function PointOfSaleManager() {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('products', 'edit');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [incompleteOrder, setIncompleteOrder] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [session, setSession] = useState<PosSession | null>(null);
   const [openingBalance, setOpeningBalance] = useState<number>(50);
   const [cashierName, setCashierName] = useState<string>('Cajero Principal');
@@ -28,7 +37,7 @@ export default function PointOfSaleManager() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
   const [amountPaid, setAmountPaid] = useState<string>('');
-  
+
   // Modals
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptData, setReceiptData] = useState<{ receiptNumber: string; total: number; amountPaid: number; changeDue: number; date: string } | null>(null);
@@ -39,32 +48,16 @@ export default function PointOfSaleManager() {
 
     const load = async () => {
       setLoadingProducts(true);
-      const activeSess = await posService.getActiveSession(cashierName);
-      if (isMounted) setSession(activeSess);
-
+      setLoadError(null);
       try {
-        const { data } = await supabase
-          .from('products')
-          .select('*')
-          .is('deleted_at', null)
-          .order('name');
-        
-        if (isMounted && data && data.length > 0) {
-          setProducts(data as Product[]);
-        } else if (isMounted) {
-          setProducts([
-            { id: 'p-1', name: 'Biblia de Estudio Jerusalén', price: 35.00, stock: 15, category: 'Libros', type: 'physical' } as Product,
-            { id: 'p-2', name: 'Camiseta Oficial Jerusalén (Talla M)', price: 20.00, stock: 30, category: 'Ropa', type: 'physical' } as Product,
-            { id: 'p-3', name: 'Taza Cerámica "Jesucristo es el Mismo"', price: 12.00, stock: 25, category: 'Recursos', type: 'physical' } as Product,
-          ]);
-        }
-      } catch {
-        if (isMounted) {
-          setProducts([
-            { id: 'p-1', name: 'Biblia de Estudio Jerusalén', price: 35.00, stock: 15, category: 'Libros', type: 'physical' } as Product,
-            { id: 'p-2', name: 'Camiseta Oficial Jerusalén (Talla M)', price: 20.00, stock: 30, category: 'Ropa', type: 'physical' } as Product,
-          ]);
-        }
+        const activeSess = await posService.getActiveSession(cashierName);
+        if (isMounted) setSession(activeSess);
+        const { data, error } = await supabase.from('products').select('*, product_variants(*)').is('deleted_at', null).order('name');
+        if (error) throw error;
+        if (isMounted) setProducts((data || []).filter(product => product.is_active !== false) as Product[]);
+      } catch (error) {
+        console.error('Error al cargar el punto de venta:', error);
+        if (isMounted) setLoadError('No se pudieron cargar la caja y el catálogo. Reintenta antes de registrar una venta.');
       } finally {
         if (isMounted) setLoadingProducts(false);
       }
@@ -72,7 +65,7 @@ export default function PointOfSaleManager() {
 
     void load();
     return () => { isMounted = false; };
-  }, [cashierName]);
+  }, [cashierName, reloadKey]);
 
   // Categories
   const categories = useMemo(() => {
@@ -92,15 +85,17 @@ export default function PointOfSaleManager() {
   }, [products, category, search]);
 
   // Cart Calculations
-  const subtotal = useMemo(() => cart.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0), [cart]);
-  const taxTotal = useMemo(() => subtotal * 0.15, [subtotal]); // 15% IVA Ecuador
-  const grandTotal = useMemo(() => subtotal + taxTotal, [subtotal, taxTotal]);
-  
+  const subtotal = useMemo(() => cart.reduce((acc, item) => acc + getUnitPrice(item.product, item.quantity) * item.quantity, 0), [cart]);
+  const taxTotal = useMemo(() => cart.reduce((sum, item) => sum + getLineTax(item.product, item.quantity), 0), [cart]);
+  const grandTotal = useMemo(() => Number((subtotal + taxTotal).toFixed(2)), [subtotal, taxTotal]);
+
   const parsedPaid = parseFloat(amountPaid) || 0;
   const changeDue = Math.max(0, parsedPaid - grandTotal);
 
   // Cart handlers
   const handleAddToCart = (product: Product) => {
+    if (!canEdit || !session || loadError || incompleteOrder) return;
+    if (product.product_variants?.length) { toast.error('Selecciona las variantes de este producto desde la tienda.'); return; }
     if (product.stock !== undefined && product.stock <= 0) {
       toast.error(`Agotado: ${product.name} no tiene stock disponible.`);
       return;
@@ -118,7 +113,7 @@ export default function PointOfSaleManager() {
         next[existingIndex].quantity = newQty;
         return next;
       }
-      return [...prev, { product, quantity: 1, unit_price: product.price, discount: 0 }];
+      return [...prev, { product, quantity: 1, unit_price: getUnitPrice(product, 1), discount: 0 }];
     });
   };
 
@@ -141,12 +136,18 @@ export default function PointOfSaleManager() {
 
   const handleOpenShift = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSess = await posService.openSession(cashierName, openingBalance);
-    setSession(newSess);
-    toast.success(`Turno de caja iniciado con $${openingBalance.toFixed(2)} USD.`);
+    if (!canEdit || isProcessing || loadError) return;
+    setIsProcessing(true);
+    try {
+      const newSess = await posService.openSession(cashierName, openingBalance);
+      setSession(newSess);
+      toast.success(`Turno de caja iniciado con $${openingBalance.toFixed(2)} USD.`);
+    } catch (error) { console.error('Error al abrir caja:', error); toast.error('No se pudo abrir la caja. No se ha iniciado un turno.'); }
+    finally { setIsProcessing(false); }
   };
 
   const handleCheckout = async () => {
+    if (!canEdit || isProcessing || !session || loadError || incompleteOrder) return;
     if (cart.length === 0) {
       toast.error('El carrito de venta está vacío.');
       return;
@@ -165,7 +166,7 @@ export default function PointOfSaleManager() {
         customerName,
         customerPhone,
         paymentMethod,
-        items: cart,
+        items: cart.map(item => ({ ...item, unit_price: getUnitPrice(item.product, item.quantity) })),
         subtotal,
         taxTotal,
         discountTotal: 0,
@@ -183,11 +184,14 @@ export default function PointOfSaleManager() {
       });
 
       // Clear cart
+      setProducts(previous => previous.map(product => ({ ...product, stock: product.stock - (cart.find(item => item.product.id === product.id)?.quantity || 0) })));
       setCart([]);
       setAmountPaid('');
       toast.success(`Venta completada con éxito. Comprobante: ${result.receiptNumber}`);
-    } catch {
-      toast.error('Ocurrió un error al registrar la venta.');
+    } catch (error) {
+      console.error('Error al registrar venta POS:', error);
+      if (error instanceof IncompletePosSaleError) setIncompleteOrder(error.message);
+      toast.error(error instanceof Error ? error.message : 'No se pudo registrar la venta.');
     } finally {
       setIsProcessing(false);
     }
@@ -200,6 +204,10 @@ export default function PointOfSaleManager() {
         description="Terminal táctil para cobro en caja, control de turnos, emisión de recibos y descuento de inventario en tiempo real"
       />
 
+      {loadError && <AdminErrorState description={loadError} onAction={() => setReloadKey(key => key + 1)} />}
+      {incompleteOrder && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{incompleteOrder}</div>}
+      {!canEdit && <p className="rounded-xl bg-blue-50 p-4 text-sm text-blue-800">Acceso de consulta. No tienes permiso para abrir caja o registrar ventas.</p>}
+      <fieldset disabled={!canEdit || Boolean(loadError) || Boolean(incompleteOrder) || isProcessing} className="min-w-0 space-y-6">
       {/* SHIFT BANNER */}
       {!session ? (
         <div className="mx-auto max-w-xl rounded-3xl border border-amber-500/30 bg-gradient-to-br from-slate-900 to-slate-950 p-8 text-center shadow-2xl space-y-5">
@@ -244,10 +252,10 @@ export default function PointOfSaleManager() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* CATALOG SECTION (LEFT 7 COLS) */}
           <div className="lg:col-span-7 space-y-4">
-            
+
             {/* Search & Category Toolbar */}
             <div className="flex flex-col sm:flex-row gap-3 bg-slate-900/80 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
               <div className="relative flex-1">
@@ -379,7 +387,7 @@ export default function PointOfSaleManager() {
                     <div className="min-w-0 flex-1 pr-2">
                       <p className="font-bold truncate">{item.product.name}</p>
                       <span className="text-[11px] text-amber-400 font-mono">
-                        {formatCurrency(item.unit_price)} c/u
+                        {formatCurrency(getUnitPrice(item.product, item.quantity))} c/u
                       </span>
                     </div>
 
@@ -495,7 +503,7 @@ export default function PointOfSaleManager() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
               <CheckCircle2 size={28} />
             </div>
-            
+
             <div>
               <h3 className="font-serif text-xl font-bold">¡Venta Exitosa!</h3>
               <p className="text-xs text-slate-400">Comprobante de Caja POS</p>
@@ -537,6 +545,7 @@ export default function PointOfSaleManager() {
           </div>
         </div>
       )}
+      </fieldset>
     </div>
   );
 }

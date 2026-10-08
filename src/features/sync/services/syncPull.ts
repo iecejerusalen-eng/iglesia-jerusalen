@@ -73,7 +73,7 @@ export const pullFromServer = async () => {
           latitude: m.latitude || null,
           longitude: m.longitude || null,
           deleted_at: m.deleted_at || null,
-          tithes_sum: m.tithes_sum || 0,
+          tithes_sum: 0,
           created_at: m.created_at,
           updated_at: m.updated_at,
           version: m.version,

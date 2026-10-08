@@ -122,7 +122,7 @@ export const enqueueMutation = async (
             latitude: m.latitude || null,
             longitude: m.longitude || null,
             deleted_at: m.deleted_at || null,
-            tithes_sum: m.tithes_sum || 0,
+            tithes_sum: 0,
             created_at: existing?.created_at || createdAt,
             updated_at,
             version: (existing?.version || 0) + 1,

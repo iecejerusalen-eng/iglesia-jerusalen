@@ -373,8 +373,6 @@ export function BuilderTab({ datasets, dateFilter, onAddWidget }: BuilderTabProp
               
               {builderSettings.source === 'members' && (
                 <>
-                  <option value="sum:tithes_sum">Suma de Diezmos</option>
-                  <option value="avg:tithes_sum">Promedio de Diezmos</option>
                 </>
               )}
               {builderSettings.source === 'donations' && (

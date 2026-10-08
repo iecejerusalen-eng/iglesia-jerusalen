@@ -255,7 +255,7 @@ export const MembersList = ({ members, loading, actionLoading, onEdit, onDelete 
   const [filterLeadership, setFilterLeadership] = useState<'all' | 'leaders' | 'regulars'>('all');
   const [filterMinistry, setFilterMinistry] = useState<string>('all');
   const [filterSkill, setFilterSkill] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'first_name' | 'last_name' | 'birth_date' | 'tithes_sum'>('last_name');
+  const [sortBy, setSortBy] = useState<'first_name' | 'last_name' | 'birth_date'>('last_name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [groupBy, setGroupBy] = useState<'none' | 'leadership' | 'ministry' | 'service_area' | 'birth_month'>('none');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
@@ -305,8 +305,7 @@ export const MembersList = ({ members, loading, actionLoading, onEdit, onDelete 
       const dateA = a.birth_date ? new Date(a.birth_date).getTime() : 0;
       const dateB = b.birth_date ? new Date(b.birth_date).getTime() : 0;
       comparison = dateA - dateB;
-    } else if (sortBy === 'tithes_sum') {
-      comparison = (a.tithes_sum || 0) - (b.tithes_sum || 0);
+
     }
     
     return sortDirection === 'asc' ? comparison : -comparison;
@@ -549,13 +548,12 @@ export const MembersList = ({ members, loading, actionLoading, onEdit, onDelete 
               <select
                 id="sort-by"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'first_name' | 'last_name' | 'birth_date' | 'tithes_sum')}
+                onChange={(e) => setSortBy(e.target.value as 'first_name' | 'last_name' | 'birth_date')}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-205 rounded-xl px-3 py-2 text-xs font-semibold text-gray-755 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
               >
                 <option value="first_name">Nombre</option>
                 <option value="last_name">Apellido</option>
                 <option value="birth_date">Fecha Nacimiento</option>
-                <option value="tithes_sum">Total Diezmado</option>
               </select>
             </div>
             <button

@@ -1,9 +1,15 @@
+import { useStoreDialog } from '../hooks/useStoreDialog';
+import { useMemo, useState } from 'react';
+import CatalogToolbar from './CatalogToolbar';
+import CatalogPagination from './CatalogPagination';
+import { normalizeStoreSearch } from '../catalog';
 import { Eye, Clock, CheckCircle2, Truck, AlertCircle, ClipboardList, X, Download, ShoppingBag } from 'lucide-react';
 import type { Order, OrderStatus, OrderItem } from '../../../types';
 import { BorderBeam } from '../../../components/ui/magicui/border-beam';
 
 interface OrderManagerProps {
   orders: Order[];
+  canEdit?: boolean;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onCancelOrder: (order: Order) => void;
   onApproveTransfer: (order: Order) => void;
@@ -62,6 +68,7 @@ const getStatusBadge = (status: string) => {
 
 const OrderManager = ({
   orders,
+  canEdit = true,
   onUpdateOrderStatus,
   onCancelOrder,
   onApproveTransfer,
@@ -71,10 +78,22 @@ const OrderManager = ({
   setSelectedOrder,
   actionLoading
 }: OrderManagerProps) => {
+  const dialogRef = useStoreDialog(Boolean(selectedOrder), () => setSelectedOrder(null));
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const filtered = useMemo(() => orders.filter(order => (status === 'all' || order.status === status) && normalizeStoreSearch(`${order.id} ${order.customer_name} ${order.customer_email}`).includes(normalizeStoreSearch(search))), [orders, status, search]);
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 20)));
+  const receiptUrl = selectedOrder?.payment_voucher_url || selectedOrder?.payment_receipt_url;
+  const paymentType = (order: Order) => order.payment_method || order.ecommerce_payment_method;
+  const paymentLabel = (order: Order) => ({ transfer: 'Transferencia', cash: 'Efectivo', card: 'Tarjeta' }[paymentType(order) || ''] || paymentType(order) || 'Sin especificar');
   return (
     <>
+      <div className="mb-4"><CatalogToolbar label="Buscar pedidos por código, cliente o correo" search={search} onSearch={value => { setSearch(value); setPage(1); }} count={filtered.length}>
+        <select aria-label="Filtrar estado del pedido" value={status} onChange={event => { setStatus(event.target.value); setPage(1); }} className="h-11 rounded-xl border bg-transparent px-3 text-sm dark:bg-slate-900 dark:text-white"><option value="all">Todos los estados</option><option value="pending_payment">Por verificar</option><option value="paid">Pagados</option><option value="ready_for_pickup">Listos para entregar</option><option value="completed">Completados</option><option value="cancelled">Cancelados</option></select>
+      </CatalogToolbar></div>
       <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden animate-fade-in text-xs">
-        {orders.length > 0 ? (
+        {filtered.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -90,7 +109,7 @@ const OrderManager = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-700 dark:text-gray-300 font-medium">
-                {orders.map((order) => (
+                {filtered.slice((currentPage - 1) * 20, currentPage * 20).map((order) => (
                   <tr key={order.id} className="hover:bg-slate-55/30">
                     <td className="py-4 px-6 font-mono font-bold">
                       #{order.id.slice(0, 8).toUpperCase()}
@@ -100,7 +119,7 @@ const OrderManager = ({
                       <span className="text-[10px] text-gray-400 block">{order.customer_email}</span>
                     </td>
                     <td className="py-4 px-6 capitalize">
-                      {order.payment_method === 'transfer' ? 'Transferencia' : 'Tarjeta'}
+                      {paymentLabel(order)}
                     </td>
                     <td className="py-4 px-6 font-bold text-primary dark:text-church-gold-bright">
                       ${Number(order.total).toFixed(2)}
@@ -137,19 +156,20 @@ const OrderManager = ({
         ) : (
           <div className="text-center py-20">
             <ClipboardList className="mx-auto text-gray-300 mb-2" size={48} />
-            <p className="text-sm text-gray-400">No hay pedidos registrados.</p>
+            <p className="text-sm text-gray-400">No hay pedidos que coincidan con esta búsqueda.</p>
           </div>
         )}
       </div>
 
+      <CatalogPagination page={currentPage} total={filtered.length} pageSize={20} onPage={setPage} />
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setSelectedOrder(null)}
             className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-fade-in"
           />
-          
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col animate-scale-in text-xs font-medium text-gray-700 dark:text-gray-300">
+
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Gestionar pedido" className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col animate-scale-in text-xs font-medium text-gray-700 dark:text-gray-300">
               <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-gray-150 dark:border-white/10 flex justify-between items-center shrink-0">
                 <div>
                   <h3 className="font-serif font-bold text-gray-800 dark:text-white text-lg">
@@ -157,7 +177,7 @@ const OrderManager = ({
                   </h3>
                   <span className="text-xs text-gray-400 dark:text-gray-500 font-mono font-normal block">{selectedOrder.id}</span>
                 </div>
-                <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer">
+                <button aria-label="Cerrar detalle del pedido" onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer">
                   <X size={20} />
                 </button>
               </div>
@@ -213,23 +233,23 @@ const OrderManager = ({
                   </div>
                   <div className="bg-slate-50/30 dark:bg-slate-800/30 p-4 rounded-xl border border-gray-100 dark:border-white/5">
                     <h4 className="font-bold text-sm text-gray-800 dark:text-white mb-2">Método de Pago</h4>
-                    <p className="text-xs">Tipo: <span className="font-semibold text-gray-800 dark:text-white capitalize">{selectedOrder.payment_method === 'transfer' ? 'Transferencia Bancaria' : 'Tarjeta de Crédito'}</span></p>
-                    {selectedOrder.payment_method === 'transfer' && (
+                    <p className="text-xs">Tipo: <span className="font-semibold text-gray-800 dark:text-white capitalize">{paymentLabel(selectedOrder)}</span></p>
+                    {paymentType(selectedOrder) === 'transfer' && (
                       <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 font-bold">Requiere verificación manual.</p>
                     )}
                   </div>
                 </div>
 
-                {selectedOrder.payment_method === 'transfer' && selectedOrder.payment_voucher_url && (
+                {paymentType(selectedOrder) === 'transfer' && receiptUrl && (
                   <div className="space-y-2">
                     <h4 className="font-bold text-xs text-gray-850 dark:text-white flex items-center justify-between">
                       <span>Comprobante de Pago Subido:</span>
-                      <a href={selectedOrder.payment_voucher_url} target="_blank" rel="noopener noreferrer" className="text-primary dark:text-church-gold-bright hover:text-gold flex items-center gap-1">
+                      <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="text-primary dark:text-church-gold-bright hover:text-gold flex items-center gap-1">
                         <Download size={12} /> Ver Completo
                       </a>
                     </h4>
                     <div className="w-full max-h-56 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 flex justify-center items-center">
-                      <img loading="lazy" src={selectedOrder.payment_voucher_url} alt="Comprobante" className="max-h-56 object-contain" />
+                      {receiptUrl?.split('?')[0].toLowerCase().endsWith('.pdf') ? <p className="p-6 text-sm">Comprobante PDF. Usa «Ver Completo» para revisarlo.</p> : <img loading="lazy" src={receiptUrl} alt="Comprobante" className="max-h-56 object-contain" />}
                     </div>
                   </div>
                 )}
@@ -259,8 +279,8 @@ const OrderManager = ({
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-gray-150 dark:border-white/10 flex flex-wrap gap-2 shrink-0">
-                {selectedOrder.status === 'pending_payment' && selectedOrder.payment_method === 'transfer' && (
+              <fieldset disabled={!canEdit || actionLoading} className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-gray-150 dark:border-white/10 flex flex-wrap gap-2 shrink-0">
+                {selectedOrder.status === 'pending_payment' && paymentType(selectedOrder) === 'transfer' && (
                   <button
                     onClick={() => onApproveTransfer(selectedOrder)}
                     disabled={actionLoading}
@@ -290,7 +310,7 @@ const OrderManager = ({
                     Entregar / Completar
                   </button>
                 )}
-                
+
                 {selectedOrder.status !== 'cancelled' && (
                   <>
                     <button
@@ -321,8 +341,8 @@ const OrderManager = ({
                     )}
                   </>
                 )}
-              </div>
-              {selectedOrder.status === 'pending_payment' && selectedOrder.payment_method === 'transfer' && (
+              </fieldset>
+              {selectedOrder.status === 'pending_payment' && paymentType(selectedOrder) === 'transfer' && (
                 <BorderBeam size={250} duration={8} colorFrom="#F59E0B" colorTo="#FCD34D" />
               )}
           </div>

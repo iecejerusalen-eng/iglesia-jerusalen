@@ -29,9 +29,9 @@ export function useDonationPageData(): DonationPageState {
           .eq('id', 1)
           .single(),
         supabase
-          .from('donation_categories')
-          .select('id, name, description, is_active, created_at')
-          .eq('is_active', true)
+          .from('finance_funds')
+          .select('id, name, active')
+          .eq('active', true)
           .order('name', { ascending: true }),
       ]);
 
@@ -47,7 +47,7 @@ export function useDonationPageData(): DonationPageState {
         ruc: typeof settingsResult.data.ruc === 'string' ? settingsResult.data.ruc : '',
         donation_page_config: parseDonationPageConfig(settingsResult.data.donation_page_config),
       });
-      setCategories((categoriesResult.data || []) as DonationCategory[]);
+      setCategories((categoriesResult.data || []).map(item => ({ id: item.id, name: item.name, description: null, is_active: item.active, created_at: '' })));
     } catch (caughtError: unknown) {
       const message = caughtError instanceof Error ? caughtError.message : 'No fue posible consultar la configuración de donaciones.';
       console.error('Error loading donation page data:', caughtError);

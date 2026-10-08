@@ -159,7 +159,6 @@ export const PurposeDashboard = ({ members, loading, onEdit }: PurposeDashboardP
       gifts: aggregateNames(members, 'gifts'),
       areas: aggregateNames(members, 'areas'),
       ministries: [...ministryCounts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
-      totalTithes: members.reduce((sum, member) => sum + (member.tithes_sum || 0), 0),
     };
   }, [members, membershipsByMember]);
 
@@ -362,7 +361,7 @@ export const PurposeDashboard = ({ members, loading, onEdit }: PurposeDashboardP
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-violet-200/60 bg-violet-50/60 p-4 dark:border-violet-500/15 dark:bg-violet-500/10"><Gift className="text-violet-600" /><p className="mt-3 font-bold text-violet-950 dark:text-violet-100">Dones no son cargos</p><p className="mt-1 text-xs leading-5 text-violet-800/70 dark:text-violet-200/70">El tablero propone conversaciones; nunca declara el llamado de una persona ni la asigna sin consentimiento.</p></div>
         <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/60 p-4 dark:border-emerald-500/15 dark:bg-emerald-500/10"><HeartHandshake className="text-emerald-600" /><p className="mt-3 font-bold text-emerald-950 dark:text-emerald-100">Servir sin quemarse</p><p className="mt-1 text-xs leading-5 text-emerald-800/70 dark:text-emerald-200/70">Cruza capacidad, disponibilidad y tiempo de servicio para detectar rotación y prevenir sobrecarga.</p></div>
-        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/60 p-4 dark:border-amber-500/15 dark:bg-amber-500/10"><CircleDollarSign className="text-amber-600" /><p className="mt-3 font-bold text-amber-950 dark:text-amber-100">Finanzas separadas del llamado</p><p className="mt-1 text-xs leading-5 text-amber-800/70 dark:text-amber-200/70">Los diezmos ({new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(analytics.totalTithes)}) solo se muestran agregados y nunca influyen en afinidad o liderazgo.</p></div>
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/60 p-4 dark:border-amber-500/15 dark:bg-amber-500/10"><CircleDollarSign className="text-amber-600" /><p className="mt-3 font-bold text-amber-950 dark:text-amber-100">Finanzas separadas del llamado</p><p className="mt-1 text-xs leading-5 text-amber-800/70 dark:text-amber-200/70">Los aportes personales se consultan únicamente en el área financiera privada y nunca influyen en afinidad o liderazgo.</p></div>
       </section>
 
       {selected && (

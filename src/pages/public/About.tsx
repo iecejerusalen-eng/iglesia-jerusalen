@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -188,6 +189,13 @@ const About = () => {
 
       <div className="relative mx-auto max-w-6xl">
         <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
+
+        <section aria-labelledby="documents-heading" className="my-10 rounded-3xl bg-slate-950 p-7 text-white sm:p-10">
+          <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-300">Nuestra organización</p>
+          <h2 id="documents-heading" className="mt-3 font-serif text-3xl">Conoce los estatutos y el reglamento</h2>
+          <p className="mt-4 max-w-2xl leading-7 text-slate-300">Consulta los documentos de la Iglesia Cuadrangular, léelos en línea o descarga los PDF originales.</p>
+          <div className="mt-6 flex flex-wrap gap-5"><Link to="/nosotros/documentos" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-amber-300 px-5 font-semibold text-slate-950">Aprender más <ArrowRight size={18} /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar estatuto PDF</a><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar reglamento PDF</a></div>
+        </section>
 
         <section id="historia" className="scroll-mt-24 space-y-7">
           <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Raíces y horizonte</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Una historia, tres perspectivas</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Explora el recorrido de nuestra iglesia local y su conexión con la obra cuadrangular en Ecuador y el mundo.</p></div>

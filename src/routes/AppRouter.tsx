@@ -19,6 +19,7 @@ const Agenda = lazyWithRetry(() => import('../pages/admin/Agenda'));
 const Store = lazyWithRetry(() => import('../pages/public/Store'));
 const Cart = lazyWithRetry(() => import('../pages/public/Cart'));
 const Donations = lazyWithRetry(() => import('../pages/public/Donations'));
+const Governance = lazyWithRetry(() => import('../pages/public/Governance'));
 const About = lazyWithRetry(() => import('../pages/public/About'));
 const MinistriesOverview = lazyWithRetry(() => import('../pages/public/MinistriesOverview'));
 const MinistryDetail = lazyWithRetry(() => import('../pages/public/MinistryDetail'));
@@ -41,6 +42,7 @@ const ProgramDetail = lazyWithRetry(() => import('../pages/public/ProgramDetail'
 const EditorialSpacePage = lazyWithRetry(() => import('../pages/public/EditorialSpacePage'));
 const EditorialDocumentPage = lazyWithRetry(() => import('../pages/public/EditorialDocumentPage'));
 const PublicationsHub = lazyWithRetry(() => import('../pages/public/PublicationsHub'));
+const MyContributions = lazyWithRetry(() => import('../pages/public/MyContributions'));
 const MyPurchases = lazyWithRetry(() => import('../pages/public/MyPurchases'));
 const SundaySchool = lazyWithRetry(() => import('../pages/public/SundaySchool'));
 const ReadingPlan = lazyWithRetry(() => import('../pages/public/ReadingPlan'));
@@ -92,7 +94,6 @@ const DashboardHome = lazyWithRetry(() => import('../pages/admin/DashboardHome')
 const SermonsManager = lazyWithRetry(() => import('../pages/admin/SermonsManager'));
 const SpeakersManager = lazyWithRetry(() => import('../pages/admin/SpeakersManager'));
 const FinanceDashboard = lazyWithRetry(() => import('../pages/admin/FinanceDashboard'));
-const DonationPageManager = lazyWithRetry(() => import('../pages/admin/DonationPageManager'));
 const StoreManager = lazyWithRetry(() => import('../pages/admin/StoreManager'));
 const PointOfSaleManager = lazyWithRetry(() => import('../pages/admin/PointOfSaleManager'));
 const StoreSettings = lazyWithRetry(() => import('../pages/admin/StoreSettings'));
@@ -181,6 +182,8 @@ export default function AppRouter() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/donaciones" element={<Donations />} />
           <Route path="/nosotros" element={<About />} />
+          <Route path="/nosotros/documentos" element={<Governance />} />
+          <Route path="/nosotros/documentos/:document" element={<Governance />} />
           <Route path="/ministerios" element={<MinistriesOverview />} />
           <Route path="/ministerios/:slug" element={<MinistryDetail />} />
           <Route path="/ministerios/:slug/*" element={<MinistryPageDetail />} />
@@ -209,6 +212,7 @@ export default function AppRouter() {
           <Route path="/publicaciones/:spaceSlug/:documentId" element={<EditorialDocumentPage />} />
           <Route path="/aula-virtual" element={<VirtualClassroomLanding />} />
           <Route path="/certificados/:id" element={<CertificateViewer />} />
+          <Route path="/mis-aportes" element={<MyContributions />} />
           <Route path="/mis-compras" element={<MyPurchases />} />
           <Route path="/escuela-dominical" element={<SundaySchool />} />
           <Route path="/plan-lectura" element={<ReadingPlan />} />
@@ -354,7 +358,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="animations" />}><Route element={<AdminLayout />}><Route path="/admin/animaciones" element={<AnimationCatalog />} /></Route></Route>
         <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/contenido" element={<ContentHub />} /><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="analytics" />}><Route element={<AdminLayout />}><Route path="/admin/analisis" element={<AnalyticsDashboard />} /></Route></Route>
-        <Route element={<ProtectedRoute module="finances" />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<DonationPageManager />} /></Route></Route>
+        <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<Navigate to="/admin/finanzas" replace />} /></Route></Route>
         <Route element={<ProtectedRoute module="products" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/productos" element={<StoreManager />} />

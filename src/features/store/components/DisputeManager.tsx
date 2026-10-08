@@ -1,3 +1,8 @@
+import { useStoreDialog } from '../hooks/useStoreDialog';
+import { useState } from 'react';
+import CatalogToolbar from './CatalogToolbar';
+import CatalogPagination from './CatalogPagination';
+import { normalizeStoreSearch } from '../catalog';
 import { X, Loader2 } from 'lucide-react';
 import type { Dispute } from '../types';
 
@@ -20,11 +25,18 @@ const DisputeManager = ({
   onSaveResolution,
   savingDispute
 }: DisputeManagerProps) => {
+  const dialogRef = useStoreDialog(Boolean(selectedDispute), () => setSelectedDispute(null));
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const filtered = disputes.filter(item => normalizeStoreSearch(`${item.order_id} ${item.description}`).includes(normalizeStoreSearch(search)));
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 20)));
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-gray-150 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden animate-fade-in text-xs">
       <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-gray-150 dark:border-white/10 text-gray-500">
         Panel de control de disputas, contracargos bancarios o reportes de fraude.
       </div>
+      <CatalogToolbar label="Buscar casos por pedido o descripción" search={search} onSearch={value => { setSearch(value); setPage(1); }} count={filtered.length} />
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
@@ -39,8 +51,8 @@ const DisputeManager = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/5 font-medium text-gray-700 dark:text-gray-300">
-            {disputes.length > 0 ? (
-              disputes.map(disp => (
+            {filtered.length > 0 ? (
+              filtered.slice((currentPage - 1) * 20, currentPage * 20).map(disp => (
                 <tr key={disp.id} className="hover:bg-slate-50/50">
                   <td className="py-4 px-6">
                     <span className="font-bold block">{disp.profiles ? `${disp.profiles.first_name} ${disp.profiles.last_name}` : 'Anónimo'}</span>
@@ -59,10 +71,10 @@ const DisputeManager = ({
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${
-                      disp.status === 'resolved' 
-                        ? 'bg-green-100 text-green-700' 
-                        : disp.status === 'open' 
-                          ? 'bg-red-100 text-red-750' 
+                      disp.status === 'resolved'
+                        ? 'bg-green-100 text-green-700'
+                        : disp.status === 'open'
+                          ? 'bg-red-100 text-red-750'
                           : 'bg-amber-100 text-amber-700'
                     }`}>
                       {disp.status === 'resolved' ? 'Resuelto' : disp.status === 'open' ? 'Abierto' : 'Bajo Investigación'}
@@ -92,14 +104,15 @@ const DisputeManager = ({
         </table>
       </div>
 
+      <CatalogPagination page={currentPage} total={filtered.length} pageSize={20} onPage={setPage} />
       {selectedDispute && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium">
+          <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="DisputeManager" className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-150 dark:border-white/10 animate-scale-in text-xs font-medium">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
               <h3 className="font-serif font-bold text-gray-800 dark:text-white text-base">Resolver Controversia</h3>
               <button onClick={() => setSelectedDispute(null)} className="text-gray-400 p-1"><X size={18} /></button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-gray-150 dark:border-white/5 space-y-1.5">
                 <p>Caso reportado por: <strong>{selectedDispute.profiles ? `${selectedDispute.profiles.first_name} ${selectedDispute.profiles.last_name}` : 'Anónimo'}</strong></p>

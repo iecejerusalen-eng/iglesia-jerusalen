@@ -1,3 +1,4 @@
+import { loadMovements } from '../../finance/api';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import type { DashboardAccess, DashboardMember, DashboardData, TalentDirectoryEntry, WeeklyAlert } from '../types';
@@ -170,7 +171,7 @@ export const useDashboardStats = (access: DashboardAccess, includeDetails = fals
     queryFn: async () => {
       const canUseSummaryRpc = dashboardSummaryRpcEnabled
         && !includeDetails
-        && access.finances
+        && !access.finances
         && access.members
         && access.inventory
         && access.petitions;
@@ -186,7 +187,7 @@ export const useDashboardStats = (access: DashboardAccess, includeDetails = fals
       }
 
       const [donationsRes, membersSummaryRes, membersDetailsRes, inventoryRes, petitionsRes] = await Promise.all([
-        access.finances && !summaryRpcData ? supabase.from('donations').select('amount') : Promise.resolve(null),
+        access.finances ? loadMovements('1900-01-01', '2100-12-31').then(rows => ({ data: rows.filter(row => row.kind === 'income' && row.status === 'confirmed').map(row => ({ amount: Number(row.amount) })), error: null })) : Promise.resolve(null),
         access.members && !includeDetails && !summaryRpcData
           ? supabase.from('members').select('id, is_leader')
           : Promise.resolve(null),
@@ -206,7 +207,7 @@ export const useDashboardStats = (access: DashboardAccess, includeDetails = fals
       }
 
       const donations = donationsRes?.data || [];
-      const totalAmount = summaryRpcData
+      const totalAmount = summaryRpcData && !access.finances
         ? Number(summaryRpcData.total_donations_amount || 0)
         : donations.reduce((sum, d) => sum + (d.amount || 0), 0);
       const memberSummary = membersSummaryRes?.data || membersDetailsRes?.data || [];

@@ -31,6 +31,7 @@ export default defineConfig({
         globIgnores: [
           // Los recursos educativos pesados se cachean bajo demanda por el
           // runtime CacheFirst del service worker, no durante la instalación.
+          '**/documentos/**',
           '**/images/games/**',
           '**/images/bible/**',
           '**/assets/encyclopedia/**',

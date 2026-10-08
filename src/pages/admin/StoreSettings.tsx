@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
+import { usePermissions } from '../../hooks/usePermissions';
+import { AdminErrorState } from '../../components/admin/AdminState';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { CreditCard, Truck, Plus, Trash2, Save, Loader2 } from 'lucide-react';
@@ -15,6 +17,9 @@ interface StoreSettingsForm {
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Error desconocido';
 
 const StoreSettings = () => {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('store_settings', 'edit');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -25,20 +30,21 @@ const StoreSettings = () => {
     }
   });
 
-  const { 
-    fields: paymentFields, 
-    append: appendPayment, 
-    remove: removePayment 
+  const {
+    fields: paymentFields,
+    append: appendPayment,
+    remove: removePayment
   } = useFieldArray({ control, name: 'payment_methods' });
 
-  const { 
-    fields: shippingFields, 
-    append: appendShipping, 
-    remove: removeShipping 
+  const {
+    fields: shippingFields,
+    append: appendShipping,
+    remove: removeShipping
   } = useFieldArray({ control, name: 'shipping_methods' });
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const { data, error } = await supabase
         .from('church_settings')
@@ -46,16 +52,17 @@ const StoreSettings = () => {
         .eq('id', 1)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
 
       if (data) {
         reset({
           payment_methods: data.payment_methods || [],
-          shipping_methods: data.shipping_methods || []
+          shipping_methods: (data.shipping_methods || []).map((method: StoreShippingMethod) => ({ ...method, requires_address: method.requires_address ?? method.id !== 'pickup' }))
         });
       }
     } catch (err: unknown) {
       console.error('Error fetching store settings:', err);
+      setLoadError('No se pudo cargar la configuración. Reintenta antes de editar para evitar sobrescribir valores existentes.');
       toast.error('Error al cargar la configuración de tienda: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
@@ -68,16 +75,26 @@ const StoreSettings = () => {
   }, [fetchSettings]);
 
   const onSubmit = async (data: StoreSettingsForm) => {
+    if (!canEdit || saving || loadError) return;
+    const ids = new Set<string>();
+    for (const method of data.payment_methods) {
+      if (!method.name.trim() || !method.id.trim() || ids.has(method.id) || !Number.isFinite(method.fee_percent) || method.fee_percent < 0 || method.fee_percent > 100) { toast.error('Revisa los métodos de pago: nombre, ID único y comisión entre 0 y 100.'); return; }
+      ids.add(method.id);
+    }
+    ids.clear();
+    for (const method of data.shipping_methods) {
+      if (!method.name.trim() || !method.id.trim() || ids.has(method.id) || !Number.isFinite(method.base_cost) || method.base_cost < 0) { toast.error('Revisa las entregas: nombre, ID único y costo no negativo.'); return; }
+      ids.add(method.id);
+    }
     setSaving(true);
     try {
       const { error } = await supabase
         .from('church_settings')
-        .upsert({
-          id: 1,
+        .update({
           payment_methods: data.payment_methods,
           shipping_methods: data.shipping_methods,
           updated_at: new Date().toISOString(),
-        });
+        }).eq('id', 1).select('id').single();
 
       if (error) throw error;
       toast.success('Configuración de tienda guardada correctamente.');
@@ -97,15 +114,19 @@ const StoreSettings = () => {
     );
   }
 
+  if (loadError) return <AdminErrorState description={loadError} onAction={() => { void fetchSettings(); }} />;
+
   return (
     <AnimeFadeUp className="space-y-6 max-w-5xl pb-20">
-      <AdminHeader 
-        title="Pagos y Envíos" 
+      <AdminHeader
+        title="Pagos y Envíos"
         description="Configura los métodos de pago con sus respectivas comisiones porcentuales y los métodos de envío de la tienda."
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        
+      {!canEdit && <p className="rounded-xl bg-blue-50 p-4 text-sm text-blue-800">Acceso de consulta. Necesitas permiso de edición para modificar pagos y entregas.</p>}
+      <form onSubmit={handleSubmit(onSubmit, () => toast.error('Revisa los nombres y valores antes de guardar.'))} className="space-y-8">
+        <fieldset disabled={!canEdit || saving} className="space-y-8 min-w-0">
+
         {/* Payment Methods */}
         <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-4">
@@ -137,7 +158,7 @@ const StoreSettings = () => {
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre del Método</label>
                   <input
-                    {...register(`payment_methods.${index}.name`, { required: true })}
+                    {...register(`payment_methods.${index}.name`, { required: true, validate: value => Boolean(value.trim()) })}
                     className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     placeholder="Ej. Tarjeta de Crédito"
                   />
@@ -145,7 +166,7 @@ const StoreSettings = () => {
                 <div className="w-full sm:w-32">
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">ID (Sistema)</label>
                   <input
-                    {...register(`payment_methods.${index}.id`, { required: true })}
+                    {...register(`payment_methods.${index}.id`, { required: true, validate: value => Boolean(value.trim()) })}
                     className="w-full px-3 py-2 bg-gray-100 dark:bg-slate-700/50 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-500"
                     placeholder="id_unico"
                     readOnly
@@ -155,6 +176,9 @@ const StoreSettings = () => {
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Comisión (%)</label>
                   <input
                     type="number"
+                    min="0"
+                    max="100"
+                    required
                     step="0.01"
                     {...register(`payment_methods.${index}.fee_percent`, { valueAsNumber: true, min: 0, max: 100 })}
                     className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -187,7 +211,7 @@ const StoreSettings = () => {
                     />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
                   </label>
-                  
+
                   <button
                     type="button"
                     onClick={() => removePayment(index)}
@@ -219,7 +243,7 @@ const StoreSettings = () => {
             </div>
             <button
               type="button"
-              onClick={() => appendShipping({ id: `shipping_${Date.now()}`, name: '', active: true, base_cost: 0, description: '' })}
+              onClick={() => appendShipping({ id: `shipping_${Date.now()}`, name: '', active: true, base_cost: 0, requires_address: true, description: '' })}
               className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm font-semibold hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
             >
               <Plus size={16} /> Añadir Método
@@ -233,7 +257,7 @@ const StoreSettings = () => {
                   <div className="flex-1 w-full">
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
                     <input
-                      {...register(`shipping_methods.${index}.name`, { required: true })}
+                      {...register(`shipping_methods.${index}.name`, { required: true, validate: value => Boolean(value.trim()) })}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Ej. Envío a Domicilio"
                     />
@@ -242,8 +266,10 @@ const StoreSettings = () => {
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Costo Base ($)</label>
                     <input
                       type="number"
+                      min="0"
+                      required
                       step="0.01"
-                      {...register(`shipping_methods.${index}.base_cost`, { valueAsNumber: true, min: 0 })}
+                      {...register(`shipping_methods.${index}.base_cost`, { valueAsNumber: true, min: 0, required: true })}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="0.00"
                     />
@@ -257,7 +283,7 @@ const StoreSettings = () => {
                       />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
                     </label>
-                    
+
                     <button
                       type="button"
                       onClick={() => removeShipping(index)}
@@ -268,6 +294,7 @@ const StoreSettings = () => {
                     </button>
                   </div>
                 </div>
+                <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" {...register(`shipping_methods.${index}.requires_address`)} /> Solicitar dirección de entrega (desmarca para retiro)</label>
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción Corta (Opcional)</label>
                   <input
@@ -295,6 +322,7 @@ const StoreSettings = () => {
             {saving ? 'Guardando...' : 'Guardar Configuración'}
           </button>
         </div>
+        </fieldset>
       </form>
     </AnimeFadeUp>
   );

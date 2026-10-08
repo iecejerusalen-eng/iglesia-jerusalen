@@ -3,13 +3,15 @@ import { supabase } from '../../../config/supabase';
 import type { DbProduct, StoreCategory, Supplier, Dispute } from '../types';
 import type { Order } from '../../../types';
 
-export const useProducts = () => {
+export const useProducts = (enabled = true) => {
   return useQuery({
+    enabled,
+    staleTime: 30_000,
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('*, product_variants(*)')
+        .select('*, product_variants(*), product_digital_assets(*)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -19,8 +21,10 @@ export const useProducts = () => {
   });
 };
 
-export const useCategories = () => {
+export const useCategories = (enabled = true) => {
   return useQuery({
+    enabled,
+    staleTime: 30_000,
     queryKey: ['storeCategories'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -34,8 +38,10 @@ export const useCategories = () => {
   });
 };
 
-export const useOrders = () => {
+export const useOrders = (enabled = true) => {
   return useQuery({
+    enabled,
+    staleTime: 30_000,
     queryKey: ['orders'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,8 +62,10 @@ export const useOrders = () => {
   });
 };
 
-export const useSuppliers = () => {
+export const useSuppliers = (enabled = true) => {
   return useQuery({
+    enabled,
+    staleTime: 30_000,
     queryKey: ['suppliers'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,8 +79,10 @@ export const useSuppliers = () => {
   });
 };
 
-export const useDisputes = () => {
+export const useDisputes = (enabled = true) => {
   return useQuery({
+    enabled,
+    staleTime: 30_000,
     queryKey: ['disputes'],
     queryFn: async () => {
       const { data, error } = await supabase

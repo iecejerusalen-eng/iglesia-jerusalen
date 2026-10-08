@@ -1,3 +1,5 @@
+import { useFinanceAccess } from '../../finance/api';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import type { AnalyticsDatasets, AnalyticsRow, FormResponseData } from '../types';
@@ -15,19 +17,23 @@ function assertQuery<T>(name: string, result: QueryResult<T>): T[] {
 }
 
 export const useAnalytics = () => {
+  const financeAccess = useFinanceAccess();
+  const user = useAuthStore(state => state.user);
+  const canReadFinance = financeAccess.data?.view === true;
   return useQuery<AnalyticsDatasets, Error>({
-    queryKey: ['analytics_dashboard_data'],
+    queryKey: ['analytics_dashboard_data', user?.id, canReadFinance],
     queryFn: async () => {
       const results = await Promise.all([
         supabase
           .from('members')
-          .select('id,gender,leadership_role,birth_date,baptism_date,tithes_sum,created_at')
+          .select('id,gender,leadership_role,birth_date,baptism_date,created_at')
           .is('deleted_at', null)
           .limit(5000),
-        supabase
-          .from('donations')
-          .select('id,amount,payment_method,status,category_name_backup,created_at')
-          .limit(5000),
+        canReadFinance ? supabase
+          .from('finance_movements')
+          .select('id,amount,method,status,category,occurred_on')
+          .eq('kind', 'income')
+          .limit(5000) : Promise.resolve({ data: [], error: null }),
         supabase
           .from('inventory_items')
           .select('id,price,quantity,status,category_id,created_at,inventory_categories(name)')
@@ -60,7 +66,10 @@ export const useAnalytics = () => {
 
       const donations = donationRows.map((row) => ({
         ...row,
-        category: row.category_name_backup || 'Sin categoría',
+        category: row.category || 'Sin categoría',
+        payment_method: row.method,
+        status: row.status === 'confirmed' ? 'completed' : row.status === 'void' ? 'failed' : 'pending',
+        created_at: typeof row.occurred_on === 'string' ? row.occurred_on : null,
       }));
       const inventory = inventoryRows.map((row) => {
         const relation = row.inventory_categories;
