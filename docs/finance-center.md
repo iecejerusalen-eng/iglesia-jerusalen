@@ -96,3 +96,7 @@ Referencia técnica: [RLS de Supabase](https://supabase.com/docs/guides/database
 ## Validación al aplicar (8 de octubre de 2026)
 
 El trabajo `finance-private-reminders` está activo a las 14:00 UTC (09:00 Ecuador). TypeScript, Vite, las 188 pruebas unitarias y 48 comprobaciones PostgreSQL pasan. El lint general conserva ocho errores en archivos ajenos a estos cambios. E2E no inició por ausencia de los ejecutables Chromium/Firefox de Playwright. El asesor de seguridad devolvió 55 avisos; ninguno identifica objetos del módulo financiero. No se declara una auditoría global resuelta ni ejecución exitosa del trabajo cron antes de observar su historial.
+
+Verificación adicional de destino: proyecto `gqtatqekfrswvplemknc`, nombre `iecejerusalen Project`, organización `iecejerusalen Org` (`wvflujawsszxstgmahez`), cotejados mediante la API de gestión con el vínculo y entorno de la copia principal. No se reaplicó la migración ya registrada.
+
+Tras corregir los problemas ajenos al módulo, el lint general pasa sin avisos. Las 188 pruebas existentes y la nueva regresión de reapertura de herramientas pasan. Las dos pruebas E2E Chromium pasan sobre la integración con main. Firefox se reinstaló, pero Windows sigue rechazándolo por el ensamblado mozglue; sus pruebas permanecen bloqueadas por el entorno.

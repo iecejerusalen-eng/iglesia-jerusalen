@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import GlobalToolbox from '../../GlobalToolbox';
@@ -7,6 +7,7 @@ import { useToolboxStore } from '../../../../store/useToolboxStore';
 
 describe('GlobalToolbox', () => {
   beforeEach(() => {
+    localStorage.removeItem('toolbox_launcher_hidden');
     useAuthStore.setState({ role: 'member', roles: null });
     useToolboxStore.setState({
       isOpen: false,
@@ -19,6 +20,17 @@ describe('GlobalToolbox', () => {
 
   afterEach(() => {
     useToolboxStore.getState().close();
+  });
+
+  it('restaura el acceso oculto al abrir herramientas desde otro control', async () => {
+    localStorage.setItem('toolbox_launcher_hidden', 'true');
+    render(<MemoryRouter><GlobalToolbox /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: 'Abrir centro de herramientas' })).not.toBeInTheDocument();
+    act(() => useToolboxStore.getState().open('hub'));
+    expect(await screen.findByRole('complementary', { name: 'Centro de herramientas global' })).toBeVisible();
+    expect(localStorage.getItem('toolbox_launcher_hidden')).toBeNull();
+    act(() => useToolboxStore.getState().close());
+    expect(screen.getByRole('button', { name: 'Abrir centro de herramientas' })).toBeVisible();
   });
 
   it('abre el hub y solo muestra Biblia y Notas a un miembro', async () => {

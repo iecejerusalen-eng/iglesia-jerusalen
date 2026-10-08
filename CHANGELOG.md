@@ -3,6 +3,36 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.8] - 2026-10-07
+
+### Seguridad & Corrección (Fixed)
+- **Privacidad en Sección de Liderazgo (`About.tsx`)**:
+  - Eliminado el botón administrativo `Editar liderazgo` (`/admin/pastores`) que permanecía visible para los usuarios no autenticados en la página pública de la iglesia.
+  - Refactorizada la estructura de la cuadrícula de pastores y líderes comunitarios (`GlassCard`) para consistencia visual y accesibilidad.
+
+### Base de Datos & Migraciones (Database)
+- **Despliegue y Sincronización de Migraciones (`Supabase`)**:
+  - **Patrones de Batería (`song_drum_styles`)**: Aplicada la migración `20260925000000_add_song_drum_styles.sql` en producción, habilitando la tabla con RLS y el catálogo inicial de 13 estilos de batería.
+  - **Tolerancia a Fallos en Auditoría (`audit_logs`)**: Aplicada la migración `20260925010000_fix_audit_logs_trigger_and_resource.sql`, fijando el valor predeterminado `'system'` y evitando excepciones bloqueantes en el trigger `process_audit_log()`.
+
+---
+
+## [1.4.7] - 2026-10-07
+
+### Mejorado (Changed) & Optimizado (Performance)
+- **Catálogo de Tienda y Resiliencia en Búsqueda (`Store.tsx`, `catalog.ts`)**:
+  - **Migración a React Query (`useQuery`)**: Sustitución de la carga manual imperativa por `@tanstack/react-query` con caché de 30 segundos, estado de recarga (`refetch`, `isFetching`) y reintentos controlados.
+  - **Búsqueda Insensible a Acentos**: Nueva utilidad `normalizeCatalogSearch` con descomposición canónica NFD para emparejar búsquedas en español con o sin tildes de forma uniforme en nombre, descripción, categoría y etiquetas de metadatos.
+  - **Precios y Disponibilidad por Variante**: Integrada función `getCatalogPrice` para calcular el menor precio disponible entre variantes con inventario activo, junto con visualización de ahorro y precio anterior tachado.
+  - **Carga Perezosa y Aislamiento de Errores**: Carga diferida de `ProductQuickView` con `React.lazy()`, `Suspense` y `GlobalErrorBoundary` para proteger el catálogo de fallos imprevistos en el modal.
+  - **Prevención de CLS y Accesibilidad**: Dimensiones explícitas (`720x540`) en `<OptimizedMedia>` para evitar saltos de diseño (CLS), etiquetas ARIA mejoradas y esqueletos de carga de alto contraste.
+
+### Añadido (Added)
+- **Documentación Normativa Cuadrangular (`docs/normativa-cuadrangular/`)**:
+  - Archivo documental formal con el Estatuto y Reglamento Interno de la Iglesia Cuadrangular del Ecuador, conservados íntegros fuera del paquete público con registro de procedencia y hashes de verificación.
+
+---
+
 ## [1.4.6] - 2026-10-01
 
 ### Corregido (Fixed)

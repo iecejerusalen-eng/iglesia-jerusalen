@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
@@ -8,7 +9,7 @@ const { order } = vi.hoisted(() => ({ order: vi.fn() }));
 vi.mock('../../config/supabase', () => ({
   supabase: { from: () => ({ select: () => ({ is: () => ({ order }) }) }) },
 }));
-const renderStore = () => render(<HelmetProvider><MemoryRouter><Store /></MemoryRouter></HelmetProvider>);
+const renderStore = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })}><HelmetProvider><MemoryRouter><Store /></MemoryRouter></HelmetProvider></QueryClientProvider>);
 const products = [
   { id: '1', name: 'Guía de oración', description: 'Lectura diaria', category: 'Libros', price: 12, stock: 4, created_at: '2026-01-01', is_active: true },
   { id: '2', name: 'Taza', category: 'Accesorios', price: 8, stock: 3, created_at: '2026-01-02', is_active: true },
@@ -19,7 +20,7 @@ describe('Catálogo público', () => {
   it('distingue un catálogo vacío de un fallo de conexión', async () => {
     order.mockResolvedValue({ data: [], error: null });
     renderStore();
-    expect(await screen.findByText('Pronto habrá nuevos recursos')).toBeInTheDocument();
+    expect(await screen.findByText('Estamos preparando el catálogo')).toBeInTheDocument();
     expect(screen.queryByText('Volver a intentar')).not.toBeInTheDocument();
   });
   it('muestra un error recuperable cuando falla la consulta', async () => {
