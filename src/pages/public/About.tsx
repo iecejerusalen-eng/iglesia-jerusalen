@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -129,38 +129,40 @@ const About = () => {
   const [leaders, setLeaders] = useState<Speaker[]>(fallbackLeadersWithPhotos);
   const [content, setContent] = useState<PageContent | null>(null);
   const [contentError, setContentError] = useState(false);
+  const [leadersError, setLeadersError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
     const load = async () => {
-      const [{ data: pageData, error: pageError }, { data: speakerData, error: speakerError }] = await Promise.all([
-        supabase.from('page_contents').select('id,title,subtitle,cover_image_url').eq('page', 'about').eq('id', 'about_hero').maybeSingle(),
-        supabase.from('speakers').select('id,member_id,first_name,last_name,role,leadership_roles,is_public,display_order,photo_url,bio,created_at,updated_at').eq('is_public', true).order('display_order', { ascending: true }).order('created_at', { ascending: true }),
+      const [pageResult, speakerResult] = await Promise.allSettled([
+        supabase.from('page_contents').select('id,title,subtitle,cover_image_url').eq('page', 'about').eq('id', 'about_hero').abortSignal(controller.signal).maybeSingle(),
+        supabase.from('speakers').select('id,first_name,last_name,role,leadership_roles,is_public,display_order,photo_url,bio,created_at,updated_at').eq('is_public', true).order('display_order', { ascending: true }).order('created_at', { ascending: true }).abortSignal(controller.signal),
       ]);
-
-      if (pageError) {
-        console.error('No se pudo cargar la configuración de Nosotros:', pageError);
+      if (cancelled) return;
+      if (pageResult.status === 'rejected' || pageResult.value.error) {
+        console.error('No se pudo cargar la configuración de Nosotros:', pageResult.status === 'rejected' ? pageResult.reason : pageResult.value.error);
         setContentError(true);
-      } else if (pageData) {
-        setContent(pageData as PageContent);
+      } else {
+        setContent(pageResult.value.data as PageContent | null);
+        setContentError(false);
       }
-
-      if (speakerError) {
-        console.error('No se pudo cargar el liderazgo del CRM:', speakerError);
-        const { data: legacySpeakers, error: legacyError } = await supabase
-          .from('speakers')
-          .select('id,member_id,first_name,last_name,role,photo_url,bio,created_at,updated_at')
-          .order('created_at', { ascending: true });
-        if (legacyError) {
-          console.error('Tampoco se pudo cargar el catálogo legado de liderazgo:', legacyError);
-        } else if (legacySpeakers && legacySpeakers.length > 0) {
-          setLeaders(mergeLeaders(legacySpeakers.map((speaker) => ({ ...speaker, leadership_roles: [], is_public: true, display_order: 0 })) as Speaker[]));
-        }
-      } else if (speakerData && speakerData.length > 0) {
-        setLeaders(mergeLeaders(speakerData as Speaker[]));
+      if (speakerResult.status === 'rejected' || speakerResult.value.error) {
+        console.error('No se pudo cargar el liderazgo público:', speakerResult.status === 'rejected' ? speakerResult.reason : speakerResult.value.error);
+        setLeadersError(true);
+      } else {
+        setLeaders(mergeLeaders((speakerResult.value.data ?? []) as Speaker[]));
+        setLeadersError(false);
       }
+      setLoading(false);
     };
     void load();
-  }, []);
+    return () => { cancelled = true; controller.abort(); };
+  }, [reload]);
+
+  const retry = () => { setLoading(true); setReload(value => value + 1); };
 
   useEffect(() => {
     if (!historyModal) return undefined;
@@ -180,7 +182,7 @@ const About = () => {
   const ActiveIcon = active.icon;
   const heroTitle = content?.title || 'Somos una familia con propósito';
   const heroSubtitle = content?.subtitle || 'Una iglesia local, parte de una misión nacional e internacional, centrada en Jesús y abierta a todas las generaciones.';
-  const notice = useMemo(() => contentError ? 'Mostrando la presentación principal mientras se sincroniza el contenido editable.' : null, [contentError]);
+  const notice = contentError ? 'No se pudo cargar el contenido actualizado. Mostramos la presentación principal.' : null;
 
   return (
     <main className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-indigo-50/50 px-4 py-6 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950/30 sm:px-6 lg:px-8">
@@ -189,6 +191,8 @@ const About = () => {
 
       <div className="relative mx-auto max-w-6xl">
         <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
+
+        {(contentError || leadersError) && <div role="alert" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100"><p>{leadersError ? 'No se pudo actualizar la información del liderazgo. Se conserva la presentación disponible.' : 'No se pudo actualizar la presentación de la iglesia.'}</p><button type="button" disabled={loading} onClick={retry} className="min-h-11 rounded-lg border border-amber-500 px-4 py-2 font-semibold disabled:opacity-50">{loading ? 'Actualizando…' : 'Volver a intentar'}</button></div>}
 
         <section aria-labelledby="documents-heading" className="my-10 rounded-3xl bg-slate-950 p-7 text-white sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-300">Nuestra organización</p>
@@ -226,7 +230,7 @@ const About = () => {
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Personas que sirven</p>
             <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Liderazgo de la iglesia</h2>
-            <p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Pastores que acompañan, enseñan y sirven a nuestra comunidad. Sus perfiles se administran desde el catálogo de liderazgo vinculado al CRM.</p>
+            <p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Pastores que acompañan, enseñan y sirven a nuestra comunidad.</p>
           </div>
           <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
             {leaders.map((leader) => (
@@ -237,6 +241,8 @@ const About = () => {
                       src={leader.photo_url}
                       alt={`Foto de ${leader.first_name} ${leader.last_name}`}
                       loading="lazy"
+                      width={600}
+                      height={450}
                       className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105"
                     />
                   ) : (
@@ -251,11 +257,7 @@ const About = () => {
                     {leader.first_name} {leader.last_name}
                   </h3>
                   {leader.bio && <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">{leader.bio}</p>}
-                  {leader.member_id && (
-                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
-                      <Users size={13} /> Perfil CRM vinculado
-                    </span>
-                  )}
+
                 </div>
               </GlassCard>
             ))}
@@ -268,11 +270,27 @@ const About = () => {
 };
 
 function HistoryModal({ historyKey, onChange, onClose }: { historyKey: HistoryKey; onChange: (key: HistoryKey) => void; onClose: () => void }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const dialog = dialogRef.current;
+    const controls = () => Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]') ?? []);
+    controls()[0]?.focus();
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const items = controls(); const first = items[0]; const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    dialog?.addEventListener('keydown', trapFocus);
+    return () => { dialog?.removeEventListener('keydown', trapFocus); if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); };
+  }, []);
+
   const item = history[historyKey];
   const Icon = item.icon;
   return (
     <motion.div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/75 p-0 backdrop-blur-md sm:items-center sm:p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <motion.section initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.98 }} transition={{ type: 'spring', damping: 28, stiffness: 280 }} className="flex max-h-[94dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[2rem] border border-white/60 bg-slate-50/95 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/95 sm:rounded-[2rem]" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+      <motion.section ref={dialogRef} initial={{ opacity: 0, y: 28, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.98 }} transition={{ type: 'spring', damping: 28, stiffness: 280 }} className="flex max-h-[94dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[2rem] border border-white/60 bg-slate-50/95 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/95 sm:rounded-[2rem]" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
         <header className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-900 px-5 py-5 text-white sm:px-8">
           <div className="pointer-events-none absolute right-0 top-0 size-56 rounded-full bg-amber-400/10 blur-3xl" />
           <div className="relative flex items-start justify-between gap-4"><div><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300"><BookOpenText size={14} /> Archivo histórico</div><h2 id="history-modal-title" className="mt-2 font-serif text-2xl font-bold sm:text-3xl">{item.label}</h2><p className="mt-1 text-sm text-slate-300">{item.title}</p></div><button type="button" onClick={onClose} className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white" aria-label="Cerrar historia"><X size={18} /></button></div>
