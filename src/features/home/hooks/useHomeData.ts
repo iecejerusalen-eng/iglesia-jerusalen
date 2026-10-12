@@ -152,7 +152,7 @@ export const useHomeData = () => {
     queryKey: ['homeChurchAnnouncements'],
     queryFn: async () => {
       try {
-        return await fetchPublicChurchAnnouncements(3);
+        return await fetchPublicChurchAnnouncements(3, { excludePastEvents: true });
       } catch (error) {
         console.error('No se pudieron cargar los anuncios de la iglesia:', error);
         throw error;

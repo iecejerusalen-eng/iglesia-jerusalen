@@ -9,6 +9,7 @@ export interface AnnouncementEvent {
   end_time: string | null;
   location_name?: string | null;
   is_public?: boolean;
+  is_recurring?: boolean;
 }
 
 export interface ChurchAnnouncement {

@@ -3,6 +3,18 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.9] - 2026-10-11
+
+### Corregido (Fixed)
+- **Anuncios de inicio**: los eventos no recurrentes se ocultan después de su último día en la zona horaria America/Guayaquil. Los avisos generales y eventos recurrentes conservan su caducidad editorial.
+- **Comunicados vigentes**: el filtrado se aplica antes del límite de tres anuncios y consulta páginas adicionales para que eventos pasados destacados no desplacen los avisos actuales.
+- **Datos estructurados SEO**: eliminados los horarios fijos no verificados de `index.html`.
+
+### Verificación
+- Añadidas pruebas unitarias de vigencia y pruebas de navegador para paginación, anuncios vacíos y datos estructurados.
+
+---
+
 ## [1.4.8] - 2026-10-07
 
 ### Seguridad & Corrección (Fixed)
