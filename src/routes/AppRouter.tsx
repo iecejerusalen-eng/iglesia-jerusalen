@@ -114,6 +114,7 @@ const EventsManager = lazyWithRetry(() => import('../pages/admin/EventsManager')
 const ChurchAnnouncementsManager = lazyWithRetry(() => import('../pages/admin/ChurchAnnouncementsManager'));
 const StrategicMap = lazyWithRetry(() => import('../pages/admin/StrategicMap'));
 const StrategyCenter = lazyWithRetry(() => import('../pages/admin/StrategyCenter'));
+const LearningEditor = lazyWithRetry(() => import('../features/about/LearningEditor'));
 const PageEditor = lazyWithRetry(() => import('../pages/admin/PageEditor'));
 const AnalyticsDashboard = lazyWithRetry(() => import('../pages/admin/AnalyticsDashboard'));
 const NotificationsManager = lazyWithRetry(() => import('../pages/admin/NotificationsManager'));
@@ -362,7 +363,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="presentation_editor" />}><Route element={<AdminLayout />}><Route path="/admin/presentacion" element={<PresentationEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="design" />}><Route element={<AdminLayout />}><Route path="/admin/diseno" element={<DesignCatalog />} /></Route></Route>
         <Route element={<ProtectedRoute module="animations" />}><Route element={<AdminLayout />}><Route path="/admin/animaciones" element={<AnimationCatalog />} /></Route></Route>
-        <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/contenido" element={<ContentHub />} /><Route path="/admin/paginas" element={<PageEditor />} /></Route></Route>
+        <Route element={<ProtectedRoute module="pages" />}><Route element={<AdminLayout />}><Route path="/admin/contenido" element={<ContentHub />} /><Route path="/admin/paginas" element={<PageEditor />} /><Route path="/admin/paginas/lecturas" element={<LearningEditor />} /></Route></Route>
         <Route element={<ProtectedRoute module="analytics" />}><Route element={<AdminLayout />}><Route path="/admin/analisis" element={<AnalyticsDashboard />} /></Route></Route>
         <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}><Route path="/admin/finanzas" element={<FinanceDashboard />} /><Route path="/admin/finanzas/donaciones" element={<Navigate to="/admin/finanzas" replace />} /></Route></Route>
         <Route element={<ProtectedRoute module="products" />}>

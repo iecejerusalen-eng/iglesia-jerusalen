@@ -1,0 +1,6 @@
+<svg viewBox="0 0 600 360" role="img" aria-labelledby="flag-title flag-description" xmlns="http://www.w3.org/2000/svg">
+      <title id="flag-title">Bandera Cuadrangular: modelo descrito por Foursquare</title>
+      <desc id="flag-description">Franjas horizontales morada, azul, amarilla y roja, con una Biblia y el número cuatro en un cuadro blanco superior izquierdo.</desc>
+      <path fill="#742477" d="M0 0h600v90H0z" /><path fill="#245a9c" d="M0 90h600v90H0z" /><path fill="#f1c232" d="M0 180h600v90H0z" /><path fill="#b52327" d="M0 270h600v90H0z" />
+      <path fill="white" d="M0 0h180v180H0z" /><path d="M25 48q32-10 65 0q33-10 65 0v85q-33-10-65 0q-33-10-65 0z" fill="#f9f3de" stroke="#57452c" stroke-width="3" /><path d="M90 48v85" stroke="#57452c" stroke-width="2" /><path d="M52 38h76v99H52z" fill="none" stroke="#343556" stroke-width="3" /><text x="90" y="117" text-anchor="middle" font-family="serif" font-size="78" fill="#343556">4</text>
+    </svg>

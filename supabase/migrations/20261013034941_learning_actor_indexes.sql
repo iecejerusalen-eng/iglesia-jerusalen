@@ -1,0 +1,2 @@
+create index about_learning_drafts_updated_by_idx on public.about_learning_drafts(updated_by);
+create index about_learning_history_actor_idx on public.about_learning_history(actor_id);

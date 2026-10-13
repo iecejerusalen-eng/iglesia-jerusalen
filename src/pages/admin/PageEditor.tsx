@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Eye, FileText, Layers3, Loader2, Plus, RefreshCw, Sparkles, WandSparkles } from 'lucide-react';
 import { useConfirmStore } from '../../store/useConfirmStore';
@@ -124,6 +125,7 @@ const PageEditor = () => {
             <p className="mt-3 text-sm leading-6 text-slate-300">Construye la estructura de Inicio y Nosotros con secciones, bloques y módulos conectados a los datos reales de la iglesia.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link to="/admin/paginas/lecturas" className="inline-flex min-h-11 items-center rounded-xl border border-white/20 px-4 text-sm font-bold">Lecturas de Nosotros</Link>
             <a href={selectedPage === 'home' ? '/' : '/nosotros'} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 text-sm font-bold transition hover:bg-white/15"><Eye size={16} /> Ver página</a>
             <button type="button" onClick={() => setShowAddModal(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"><Plus size={17} /> Añadir sección</button>
           </div>

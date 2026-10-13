@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight, BookOpenText, Users } from 'lucide-react';
+import LearningProgress from '../../features/about/LearningProgress';
 import { learningTopics } from '../../features/about/learningContent';
 import { supabase } from '../../config/supabase';
 import type { Speaker } from '../../types';
@@ -115,6 +116,7 @@ const About = () => {
 
 
 
+        <LearningProgress />
         <section id="aprender" className="scroll-mt-28 py-8">
           <div className="mb-8 max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Conoce nuestra fe</p><h2 className="mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Un camino para aprender y vivir el Evangelio</h2><p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">Somos Iglesia Jerusalén, una comunidad en Milagro que anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Explora nuestra identidad con explicaciones, referencias bíblicas y preguntas para conversar en familia o en tu grupo de discipulado.</p></div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{learningTopics.map((topic, index) => <Link key={topic.slug} to={`/nosotros/${topic.slug}`} className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-amber-400 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:bg-slate-900"><span className="flex items-center justify-between text-sm font-bold text-amber-700 dark:text-amber-300"><span>0{index + 1}</span><BookOpenText size={22} /></span><h3 className="mt-6 font-serif text-2xl font-bold text-slate-950 dark:text-white">{topic.title}</h3><p className="mt-3 flex-1 leading-7 text-slate-600 dark:text-slate-300">{topic.summary}</p><span className="mt-6 inline-flex items-center gap-2 font-semibold text-indigo-800 dark:text-amber-300">Explorar <ArrowRight size={18} /></span></Link>)}</div>

@@ -3,6 +3,22 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.6.0] - 2026-10-12
+
+### Añadido
+- Recorrido de cinco lecturas con progreso opcional guardado en el dispositivo, preguntas de comprensión y explicación de respuestas.
+- Editor de lecturas en Contenido/Páginas con bloques compartidos, fuentes, vista previa, notas privadas, borradores, revisión pastoral, publicación y recuperación de versiones.
+- Snapshots públicos separados de borradores/historial, permisos en Supabase, publicación atómica y control de conflictos entre editores.
+- Interpretación del Himno Cuadrangular de ICC SUR Ibagué en YouTube, con carga voluntaria del reproductor, crédito y enlace original.
+- Reseña local del servicio educativo respaldada por la investigación de Isabel M. Ávila Burbano en UTPL, sin confundir fechas escolares y fundación de la congregación.
+
+### Mejorado
+- Sitemap incluye las cinco lecturas y se elimina el canonical fijo de Inicio; se conserva el canonical dinámico existente del layout.
+- Lecturas con imágenes originales optimizadas, estimación de lectura y firma/fecha de revisión solo cuando existe una revisión registrada.
+- Pruebas del recorrido, progreso, metadatos, derechos de edición, conflictos y publicación; notas de autorización de audio permanecen privadas.
+
+---
+
 ## [1.5.1] - 2026-10-12
 
 ### Corregido

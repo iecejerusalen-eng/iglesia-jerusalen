@@ -299,6 +299,11 @@ export const ADMIN_MODULES: AdminModule[] = [
     isAdvanced: true
   },
   {
+    id: 'about_learning', label: 'Lecturas de Nosotros', name: 'Lecturas y revisión pastoral',
+    path: '/admin/paginas/lecturas', icon: BookOpenCheck, group: 'contenido', permission: 'pages',
+    showInPermissions: false, keywords: ['nosotros', 'doctrina', 'himno', 'historia', 'revisión', 'borrador']
+  },
+  {
     id: 'pages',
     label: 'Editor de Páginas',
     name: 'Editor de Páginas',
