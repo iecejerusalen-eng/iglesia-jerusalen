@@ -4,6 +4,7 @@ import { User, Phone, Mail, Tag, Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface KanbanBoardProps {
+  canEdit?: boolean;
   stages: CrmStage[];
   contacts: CrmContact[];
   onStageChange: (contactId: string, newStageId: string) => Promise<void>;
@@ -17,6 +18,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onStageChange,
   onContactClick,
   onAddContact,
+  canEdit = true,
 }) => {
   const [draggedContactId, setDraggedContactId] = useState<string | null>(null);
 
@@ -31,6 +33,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const handleDrop = async (e: React.DragEvent, targetStageId: string) => {
     e.preventDefault();
+    if(!canEdit)return;
     const contactId = e.dataTransfer.getData('contactId') || draggedContactId;
     if (!contactId) return;
 
@@ -56,6 +59,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </p>
         </div>
         <button
+          disabled={!canEdit}
           onClick={onAddContact}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
@@ -91,12 +95,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
               <div className="flex-1 space-y-3">
                 {stageContacts.map((contact) => (
-                  <div
+                  <button type="button"
                     key={contact.id}
-                    draggable
+                    draggable={canEdit}
                     onDragStart={(e) => handleDragStart(e, contact.id)}
                     onClick={() => onContactClick(contact)}
-                    className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md cursor-grab active:cursor-grabbing transition-all hover:border-blue-500/50"
+                    className="min-h-11 w-full text-left bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md cursor-grab active:cursor-grabbing transition-all hover:border-blue-500/50"
                   >
                     <div className="flex items-start justify-between">
                       <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-1.5">
@@ -141,7 +145,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       </span>
                       <span className="capitalize">{contact.source}</span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

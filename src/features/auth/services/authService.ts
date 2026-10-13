@@ -149,9 +149,7 @@ async function internalFetchOrCreateProfile(user: User): Promise<UserProfile> {
   if (permissions) {
     permissions = { ...defaultFallbackPermissions, ...normalizePermissions(permissions) };
   } else {
-    const rolesToLoad = resolvedProfile.roles && resolvedProfile.roles.length > 0
-      ? resolvedProfile.roles
-      : [resolvedProfile.role];
+    const rolesToLoad = [...new Set([resolvedProfile.role, ...(resolvedProfile.roles ?? [])])];
 
     if (rolesToLoad.includes('admin')) {
       permissions = ADMIN_MODULES.reduce((acc, m) => {

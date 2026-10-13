@@ -12,8 +12,15 @@ import { SectionSidebar } from '../../features/page-editor/components/SectionSid
 import { SectionEditor } from '../../features/page-editor/components/SectionEditor';
 import { AddSectionModal } from '../../features/page-editor/components/AddSectionModal';
 import { PAGES_METADATA } from '../../features/page-editor/constants';
+import { usePermissions } from '../../hooks/usePermissions';
+import { useRecoveryDraft } from '../../hooks/useRecoveryDraft';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
+import VersionComparison from '../../components/admin/VersionComparison';
+import PageVersionHistory from '../../features/page-editor/components/PageVersionHistory';
+import { toast } from 'sonner';
 
 const PageEditor = () => {
+  const {hasPermission}=usePermissions();const canEdit=hasPermission('pages','edit');
   const confirm = useConfirmStore((state) => state.confirm);
   
   const {
@@ -26,8 +33,12 @@ const PageEditor = () => {
     activeSec,
     loading,
     refetch,
-    handleUpdateField
+    handleUpdateField,
+    baseline,
+    dirty
   } = usePageEditor();
+  const recovery=useRecoveryDraft(`pages:${selectedPage}`,sections,baseline,dirty,canEdit&&!loading);
+  useUnsavedChanges(dirty);
 
   const {
     saveSectionMutation,
@@ -64,6 +75,8 @@ const PageEditor = () => {
   };
 
   const handleMoveSection = (id: string, direction: 'up' | 'down') => {
+    if(!canEdit)return;
+    if(dirty){toast.error('Guarda los cambios antes de reordenar las secciones.');return;}
     const index = sections.findIndex(s => s.id === id);
     if (index === -1) return;
     const targetIdx = direction === 'up' ? index - 1 : index + 1;
@@ -80,10 +93,12 @@ const PageEditor = () => {
     }));
 
     setSections(reordered);
-    reorderSectionsMutation.mutate(reordered);
+    reorderSectionsMutation.mutate(reordered,{onSuccess:saved=>setSections(saved),onError:()=>setSections(baseline)});
   };
 
   const handleDeleteSection = async (id: string) => {
+    if(!canEdit)return;
+    if(dirty){toast.error('Guarda los cambios antes de eliminar una sección.');return;}
     const sec = sections.find(s => s.id === id);
     if (!sec) return;
     const confirmed = await confirm({
@@ -165,7 +180,7 @@ const PageEditor = () => {
 
       <PageTabs 
         selectedPage={selectedPage} 
-        onSelectPage={setSelectedPage} 
+        onSelectPage={async page => {if(dirty&&!await confirm({title:'Cambiar de página',message:'Hay cambios sin guardar en el servidor. La copia de esta pestaña queda disponible para recuperarlos.',confirmText:'Cambiar',cancelText:'Seguir editando'}))return;setSelectedPage(page);}}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
@@ -173,12 +188,17 @@ const PageEditor = () => {
           sections={sections}
           selectedSection={selectedSection}
           onSelectSection={setSelectedSection}
-          onAddSection={() => setShowAddModal(true)}
+          onAddSection={() => {if(canEdit)setShowAddModal(true);}}
           onMoveSection={handleMoveSection}
           onDeleteSection={handleDeleteSection}
         />
 
         <div className="lg:col-span-3 min-w-0 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6">
+          {canEdit && <p role="status" className="mb-4 text-xs text-slate-500 dark:text-slate-400">{recovery.savedAt?'Recuperación automática guardada en esta pestaña.':'Autoguardado de recuperación activo en esta pestaña (24 horas).'} Guardar sección actualiza el sitio público.</p>}
+          {recovery.error&&<p role="alert" className="mb-4 text-sm text-red-700 dark:text-red-300">{recovery.error}</p>}
+          {recovery.recovery&&canEdit&&<div className="mb-4 rounded-xl bg-amber-50 p-3 text-sm dark:bg-amber-500/10"><p>Hay una copia de recuperación. {recovery.recovery.baseline!==JSON.stringify(baseline)&&'La versión del servidor cambió; revisa las diferencias.'}</p><button className="min-h-11 font-bold underline" onClick={()=>{if(!Array.isArray(recovery.recovery!.value)){return;}setSections(recovery.recovery!.value);}}>Recuperar cambios</button><button onClick={recovery.clear} className="ml-4 min-h-11 underline">Descartar copia</button></div>}
+          {activeSec&&<VersionComparison previous={{section:baseline.find(section=>section.id===activeSec.id)}} current={{section:activeSec}}/>}
+          {activeSec&&<PageVersionHistory section={activeSec} canEdit={canEdit} onRecover={recovered=>setSections(previous=>previous.map(section=>section.id===recovered.id?recovered:section))}/>}
           {loading ? (
             <div className="flex justify-center items-center py-24">
               <Loader2 className="animate-spin text-primary mr-2" size={24} />
@@ -187,17 +207,17 @@ const PageEditor = () => {
               </span>
             </div>
           ) : activeSec ? (
-            <SectionEditor
+            <fieldset disabled={!canEdit}><SectionEditor
               section={activeSec}
               selectedPage={selectedPage}
               isSaving={saveSectionMutation.isPending}
               onUpdateField={handleUpdateField}
-              onSave={() => saveSectionMutation.mutate(activeSec)}
+              onSave={() => {if(canEdit)saveSectionMutation.mutate(activeSec,{onSuccess:saved=>{setSections(previous=>previous.map(section=>section.id===saved.id?saved:section));recovery.clear();}});}}
               onSearchMedia={(target) => {
                 setMediaModalTarget(target);
                 setIsMediaModalOpen(true);
               }}
-            />
+            /></fieldset>
           ) : (
             <div className="text-center py-16 text-slate-400 italic text-xs">
               No has seleccionado ninguna sección para editar. Elige una del listado en el menú izquierdo.

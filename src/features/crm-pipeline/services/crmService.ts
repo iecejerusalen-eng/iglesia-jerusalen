@@ -23,20 +23,25 @@ export const crmService = {
   },
 
   async updateContactStage(contactId: string, newStageId: string): Promise<void> {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('crm_contacts')
       .update({ stage_id: newStageId, updated_at: new Date().toISOString() })
-      .eq('id', contactId);
+      .eq('id', contactId).select('id').maybeSingle();
     
     if (error) throw error;
+    if (!data) throw new Error('No se pudo confirmar el cambio de etapa.');
 
     // Log activity
-    await supabase.from('crm_activities').insert({
+    const session = await supabase.auth.getSession();
+    if (session.error) throw session.error;
+    const activity = await supabase.from('crm_activities').insert({
       contact_id: contactId,
       type: 'stage_change',
       title: 'Cambio de etapa',
-      details: `Etapa actualizada a: ${newStageId}`
+      details: `Etapa actualizada a: ${newStageId}`,
+      created_by: session.data.session?.user.id
     });
+    if (activity.error) throw new Error(`La etapa cambió, pero no se pudo registrar su actividad: ${activity.error.message}`);
   },
 
   async createContact(contact: Partial<CrmContact>): Promise<CrmContact> {

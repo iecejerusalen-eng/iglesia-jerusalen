@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { toast } from 'sonner';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
+import { validateNewPassword } from '../../lib/passwordPolicy';
 
 const authSchema = z.object({
   email: z.string().email('Por favor ingresa un correo válido'),
@@ -33,6 +34,8 @@ const Login = () => {
     setErrorMsg('');
 
     if (isRegister) {
+      try { await validateNewPassword(data.password); }
+      catch (error) { setErrorMsg(error instanceof Error ? error.message : 'No se pudo verificar la contraseña.'); setLoading(false); return; }
       // Sign Up validation
       if (!data.firstName?.trim() || !data.lastName?.trim()) {
         setErrorMsg('El nombre y el apellido son obligatorios para el registro.');
@@ -216,13 +219,14 @@ const Login = () => {
             <label htmlFor="password" className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Contraseña</label>
             <input 
               id="password"
-              autoComplete="current-password"
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
               {...register('password')}
               type="password" 
               className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
               placeholder="••••••••"
             />
             {errors.password && <p className="text-accent-red dark:text-red-400 text-xs mt-1">{errors.password.message}</p>}
+            {isRegister && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Usa al menos 12 caracteres. Comprobamos filtraciones mediante un prefijo de la huella; tu contraseña nunca se envía al comprobador.</p>}
           </div>
 
           <button 

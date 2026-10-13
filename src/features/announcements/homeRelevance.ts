@@ -2,7 +2,7 @@ import type { ChurchAnnouncement } from './types';
 
 // Keep an event visible through its final day in the church's timezone.
 // General notices and recurring events need an explicit editorial expiry.
-export function isAnnouncementRelevantForHome(announcement: ChurchAnnouncement, now = new Date()): boolean {
+export function isAnnouncementRelevantForHome(announcement: Pick<ChurchAnnouncement,'event'>, now = new Date()): boolean {
   const event = announcement.event;
   if (!event || event.is_recurring !== false) return true;
   const finalDate = event.end_date || event.start_date;

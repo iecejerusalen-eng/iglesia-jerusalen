@@ -28,7 +28,7 @@ export const getAvailableMediaProviders = (): Array<{ id: MediaProvider; label: 
   ...(isR2Configured ? [{ id: 'r2' as const, label: 'Cloudflare R2', description: 'Objetos grandes y respaldos' }] : []),
 ];
 
-const registerAsset = async (asset: MediaAsset, file: File, folder: string): Promise<void> => {
+const registerAsset = async (asset: MediaAsset, file: File, folder: string, sha256: string | null): Promise<void> => {
   const { data: sessionData } = await supabase.auth.getSession();
   const { error } = await supabase.from('media_vault_files').insert({
     name: file.name,
@@ -39,7 +39,7 @@ const registerAsset = async (asset: MediaAsset, file: File, folder: string): Pro
     mimetype: file.type,
     size: file.size,
     uploaded_by: sessionData.session?.user.id || null,
-    metadata: { public_id: asset.publicId, resource_type: asset.resourceType, format: asset.format },
+    metadata: { public_id: asset.publicId, resource_type: asset.resourceType, format: asset.format, sha256, rights: 'unverified' },
   });
   if (error) throw new Error(`El recurso se subió, pero no pudo catalogarse: ${error.message}`);
 };
@@ -83,12 +83,19 @@ const uploadToR2 = async (file: File, folder: string, resourceType: MediaResourc
 };
 
 export const uploadMediaAsset = async (file: File, provider: MediaProvider, folder: string, resourceType: MediaResourceType = 'image'): Promise<MediaAsset> => {
+  // Bound hashing memory; large videos remain explicitly unverified for duplicates.
+  const sha256 = file.size <= 100 * 1024 * 1024 ? Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))).map(byte => byte.toString(16).padStart(2,'0')).join('') : null;
+  if (sha256) {
+    const duplicates = await supabase.from('media_vault_files').select('id').contains('metadata',{sha256}).limit(1);
+    if (duplicates.error) throw new Error(`No se pudo comprobar duplicados: ${duplicates.error.message}`);
+    if (duplicates.data?.length) throw new Error('Este archivo ya está en la biblioteca. Busca el recurso existente antes de volver a subirlo.');
+  }
   const asset = provider === 'cloudinary'
     ? { url: await uploadFileToCloudinary(file, folder, resourceType), provider, storagePath: null, publicId: null, format: file.name.split('.').pop()?.toLowerCase() || 'bin', resourceType }
     : provider === 'supabase'
       ? await uploadToSupabase(file, folder, resourceType)
       : await uploadToR2(file, folder, resourceType);
-  await registerAsset(asset, file, folder);
+  await registerAsset(asset, file, folder, sha256);
   return asset;
 };
 

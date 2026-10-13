@@ -1,0 +1,12 @@
+import { afterEach,beforeEach,describe,expect,it,vi } from 'vitest';
+const mocks=vi.hoisted(()=>({user:vi.fn(),permission:vi.fn(),content:vi.fn()}));
+vi.mock('@supabase/supabase-js',()=>({createClient:()=>({auth:{getUser:mocks.user},rpc:mocks.permission,from:()=>({select:mocks.content})})}));
+import handler from '../../api/admin-health';
+function response(){const res={status:vi.fn(),json:vi.fn(),setHeader:vi.fn()};res.status.mockReturnValue(res);return res;}
+beforeEach(()=>{vi.stubEnv('VITE_SUPABASE_URL','https://test.supabase.co');vi.stubEnv('VITE_SUPABASE_ANON_KEY','test-key');mocks.user.mockResolvedValue({data:{user:{id:'qa'}},error:null});mocks.permission.mockResolvedValue({data:true,error:null});mocks.content.mockResolvedValue({data:[],error:null});});
+afterEach(()=>{vi.clearAllMocks();vi.unstubAllGlobals();vi.unstubAllEnvs();});
+describe('manual site check boundary',()=>{
+ it('denies requests without a session before checking any URL',async()=>{const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);const res=response();await handler({method:'POST',headers:{}},res);expect(res.status).toHaveBeenCalledWith(401);expect(fetcher).not.toHaveBeenCalled();});
+ it('enforces server module permission',async()=>{mocks.permission.mockResolvedValue({data:false,error:null});const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);const res=response();await handler({method:'POST',headers:{authorization:'Bearer test-token'}},res);expect(res.status).toHaveBeenCalledWith(403);expect(fetcher).not.toHaveBeenCalled();});
+ it('rejects external references, strips queries and refuses redirects',async()=>{mocks.content.mockResolvedValue({data:[{sources:[{href:'//attacker.invalid/private'},{href:'/documentos?secret=not-forwarded'},{href:'https://www.iecejerusalen.com/images/broken.png'}]}],error:null});const fetcher=vi.fn().mockResolvedValue({status:200,headers:new Headers({'content-type':'text/html'})});vi.stubGlobal('fetch',fetcher);const res=response();await handler({method:'POST',headers:{authorization:'Bearer test-token'}},res);expect(res.status).toHaveBeenCalledWith(200);expect(fetcher.mock.calls.every(([url,options])=>String(url).startsWith('https://www.iecejerusalen.com/')&&options.redirect==='manual')).toBe(true);expect(JSON.stringify(fetcher.mock.calls)).not.toContain('secret=');expect(JSON.stringify(fetcher.mock.calls)).not.toContain('attacker');expect(res.json.mock.calls[0][0].results.find((item:{path:string})=>item.path==='/images/broken.png').ok).toBe(false);});
+});

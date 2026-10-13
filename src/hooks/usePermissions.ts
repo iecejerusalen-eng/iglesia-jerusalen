@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 
 export const usePermissions = () => {
   const { permissions, role, user, ministryId, allowedMinistries, roles } = useAuthStore();
-  const userRoles = useMemo(() => roles || (role ? [role] : []), [role, roles]);
+  const userRoles = useMemo(() => [...new Set([...(role ? [role] : []), ...(roles ?? [])])], [role, roles]);
   const normalizedRoles = useMemo(() => userRoles.map((item) => String(item).toLowerCase()), [userRoles]);
   const hasAdministrativeRole = normalizedRoles.some((item) => item === 'admin' || item === 'superadmin');
 
@@ -12,6 +12,7 @@ export const usePermissions = () => {
    * Admin role always returns true.
    */
   const hasPermission = useCallback((moduleName: string, action: 'view' | 'edit' = 'view'): boolean => {
+    if (!user) return false;
     // Admin and Superadmin have total access
     if (hasAdministrativeRole) return true;
 

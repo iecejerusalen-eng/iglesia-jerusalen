@@ -6,6 +6,7 @@ import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 import { useDashboardStats } from '../../features/dashboard/hooks/useDashboardStats';
 import { DashboardHero } from '../../features/dashboard/components/DashboardHero';
+import ActionQueue from '../../features/dashboard/components/ActionQueue';
 import { DashboardStats } from '../../features/dashboard/components/DashboardStats';
 import { DashboardCharts } from '../../features/dashboard/components/DashboardCharts';
 import { TalentsSkillsHub } from '../../features/dashboard/components/TalentsSkillsHub';
@@ -70,6 +71,7 @@ const DashboardHome = () => {
         displayName={displayName}
         membersCount={data?.stats.membersCount}
       />
+      <ActionQueue />
 
       {isError && (
         <div role="alert" className="rounded-2xl border border-red-200/80 bg-red-50/80 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm backdrop-blur-xl dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">

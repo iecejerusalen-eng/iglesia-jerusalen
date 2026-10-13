@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
@@ -10,6 +9,9 @@ import {
 } from 'lucide-react';
 import { getAvailableMediaProviders, uploadMediaFile, type MediaProvider } from '../../lib/mediaService';
 import { getPreferredMediaProvider, setPreferredMediaProvider } from '../../lib/mediaProviderPreference';
+import { usePermissions } from '../../hooks/usePermissions';
+import MediaCreditsEditor from '../../features/dashboard/components/MediaCreditsEditor';
+import { optimizeLibraryImage } from '../../lib/mediaOptimization';
 
 interface VaultFile {
   name: string;
@@ -22,21 +24,26 @@ interface VaultFile {
   previewUrl?: string;
   provider?: string;
   isCloudinary?: boolean;
+  catalogMetadata?: Record<string, unknown>;
 }
 
 const MediaVault = () => {
   const confirm = useConfirmStore((state) => state.confirm);
-  const { role } = useAuthStore();
+  const { hasPermission } = usePermissions();
+  const [search, setSearch] = useState('');
+  const [optimize, setOptimize] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [provider, setProvider] = useState<MediaProvider>(() => getPreferredMediaProvider());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canEdit = ['admin', 'multimedia'].includes(role || '');
+  const canEdit = hasPermission('media_vault', 'edit');
 
   const fetchFiles = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       // List all files in the bucket root
       const { data, error } = await supabase.storage
@@ -68,10 +75,7 @@ const MediaVault = () => {
         .select('*')
         .order('created_at', { ascending: false });
         
-      if (cloudinaryError && cloudinaryError.code !== '42P01') {
-        // Ignore 42P01 (relation does not exist) to avoid crashing before running the SQL script
-        console.error('Error fetching Cloudinary files:', cloudinaryError);
-      }
+      if (cloudinaryError) throw cloudinaryError;
       
       const cloudinaryFileList: VaultFile[] = (cloudinaryData || []).map(f => ({
         name: f.name,
@@ -84,6 +88,7 @@ const MediaVault = () => {
         previewUrl: f.url,
         provider: f.provider || 'legacy',
         isCloudinary: (f.provider || 'legacy') === 'cloudinary'
+        ,catalogMetadata: f.metadata ?? {}
       }));
 
       // Generate signed URLs for previews and downloads
@@ -115,6 +120,7 @@ const MediaVault = () => {
       setFiles(mergedFiles);
     } catch (err) {
       console.error('Error fetching media vault files:', err);
+      setLoadError('No se pudo cargar la biblioteca completa. Reintenta antes de modificar recursos.');
       toast.error('Error al cargar la bóveda de media');
     } finally {
       setLoading(false);
@@ -127,6 +133,7 @@ const MediaVault = () => {
   }, []);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canEdit) return;
     const fileList = event.target.files;
     if (!fileList || fileList.length === 0) return;
     
@@ -134,7 +141,8 @@ const MediaVault = () => {
     setUploading(true);
 
     try {
-      await uploadMediaFile(file, 'media_vault', 'auto');
+      const upload = optimize ? await optimizeLibraryImage(file) : file;
+      await uploadMediaFile(upload, 'media_vault', 'auto');
       toast.success(`Archivo subido mediante ${getAvailableMediaProviders().find((item) => item.id === provider)?.label || provider}.`);
       fetchFiles();
     } catch (err: unknown) {
@@ -183,9 +191,10 @@ const MediaVault = () => {
   };
 
   const handleDelete = async (file: VaultFile) => {
+    if (!canEdit) return;
     const confirmed = await confirm({
       title: 'Eliminar recurso',
-      message: '¿Estás seguro de eliminar este recurso permanentemente de la bóveda multimedia?',
+      message: file.catalogMetadata ? 'Se retirará del catálogo. El archivo original del proveedor se conservará; los enlaces existentes seguirán funcionando.' : 'Se eliminará el archivo del depósito privado. Confirma que conservas su original antes de continuar.',
       confirmText: 'Eliminar',
       cancelText: 'Cancelar',
       variant: 'danger',
@@ -193,7 +202,7 @@ const MediaVault = () => {
     if (!confirmed) return;
 
     try {
-      if (file.isCloudinary) {
+      if (file.catalogMetadata) {
         const { error } = await supabase
           .from('media_vault_files')
           .delete()
@@ -207,7 +216,7 @@ const MediaVault = () => {
       }
 
       setFiles(prev => prev.filter(f => f.id !== file.id));
-      toast.success('Recurso eliminado de la bóveda');
+      toast.success(file.catalogMetadata ? 'Recurso retirado del catálogo. El original del proveedor se conserva.' : 'Recurso eliminado de la bóveda');
     } catch (err) {
       console.error('Error deleting asset:', err);
       toast.error('No se pudo eliminar el recurso.');
@@ -229,17 +238,18 @@ const MediaVault = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
+    <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-96 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.11),transparent_38%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.09),transparent_35%)]" />
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-white/5 pb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <FolderLock className="text-amber-600" />
-            Bóveda de Media Privada
+            Biblioteca de medios
           </h1>
           <p className="text-gray-500 dark:text-gray-450 text-sm">
-            Recursos gráficos de alta resolución (SVG, PNG, JPG, AI) protegidos con firmas digitales temporales.
+            Recursos, procedencia, créditos y derechos de uso.
           </p>
         </div>
 
@@ -283,9 +293,11 @@ const MediaVault = () => {
       <div className="bg-slate-900 text-slate-100 rounded-2xl p-4 flex gap-3 items-center border border-slate-800 shadow-md">
         <Lock className="text-amber-500 shrink-0" size={20} />
         <p className="text-xs leading-relaxed text-slate-300">
-          <strong>Acceso Altamente Protegido:</strong> Las imágenes mostradas abajo son previsualizaciones generadas con enlaces firmados que expiran automáticamente en 1 hora. La bóveda está encriptada y bloqueada para cualquier acceso externo sin credenciales administrativas.
+          Los archivos del depósito privado usan enlaces temporales. Los recursos publicados en Cloudinary o en la biblioteca pública mantienen enlaces públicos; revisa sus derechos antes de utilizarlos.
         </p>
       </div>
+      <div className="flex flex-wrap items-center gap-4"><label className="min-w-0 flex-1 text-sm font-semibold">Buscar recurso<input type="search" value={search} onChange={e => setSearch(e.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-white/15 dark:bg-slate-950" /></label>{canEdit && <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={optimize} onChange={e=>setOptimize(e.target.checked)}/>Optimizar JPG/PNG grandes a WebP (1920 px)</label>}</div>
+      {loadError && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{loadError}</p>}
 
       {loading ? (
         <div className="flex justify-center items-center py-40">
@@ -295,10 +307,10 @@ const MediaVault = () => {
         /* Files Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <>
-            {files.map((file) => (
+            {files.filter(file => file.name.toLowerCase().includes(search.toLowerCase())).map((file) => (
               <AnimeFadeUp
                 key={file.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-[280px]"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
               >
                 {/* Preview window */}
                 <div className="h-36 bg-slate-950 flex items-center justify-center relative group overflow-hidden border-b border-gray-100 dark:border-white/5">
@@ -319,6 +331,8 @@ const MediaVault = () => {
                   <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white rounded-full p-1 border border-white/20">
                     {file.isCloudinary ? <Cloud size={12} className="text-blue-400" /> : <Lock size={12} className="text-amber-400" />}
                   </div>
+                  {file.catalogMetadata && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{file.catalogMetadata.rights === 'unverified' || !file.catalogMetadata.rights ? 'Derechos pendientes' : 'Derechos registrados'}{files.some(other => other.id !== file.id && file.catalogMetadata?.sha256 && other.catalogMetadata?.sha256 === file.catalogMetadata.sha256) ? ' · Duplicado exacto' : ''}{file.metadata.mimetype.startsWith('image/') && file.metadata.size > 1024*1024 ? ' · Imagen grande' : ''}</p>}
+                  {canEdit && file.catalogMetadata && <MediaCreditsEditor id={file.id} metadata={file.catalogMetadata} onSaved={() => void fetchFiles()} />}
                 </div>
 
                 {/* Details */}
@@ -350,7 +364,7 @@ const MediaVault = () => {
                     {canEdit && (
                       <button
                         onClick={() => handleDelete(file)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        className="grid min-h-11 min-w-11 place-items-center text-gray-500 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                         title="Eliminar recurso"
                       >
                         <Trash2 size={14} />

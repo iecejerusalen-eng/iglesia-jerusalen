@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { useRouteError } from 'react-router-dom';
+import { recordSessionError } from '../../utils/sessionErrors';
 
 interface Props {
   children?: ReactNode;
@@ -24,6 +25,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    recordSessionError();
     console.error('Uncaught error:', error, errorInfo);
   }
 

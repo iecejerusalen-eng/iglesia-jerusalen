@@ -120,7 +120,7 @@ const AdminLayout = () => {
     }
   };
 
-  const preferredMobileIds = ['dashboard', 'members', 'events'];
+  const preferredMobileIds = ['dashboard', 'contact_inbox', 'content_hub', 'members', 'events'];
   const mobileLinks = ADMIN_MODULES
     .filter((module) => module.available !== false && hasPermission(getAdminModulePermission(module), 'view'))
     .sort((a, b) => {

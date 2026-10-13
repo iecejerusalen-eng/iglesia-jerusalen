@@ -1,7 +1,8 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { GlobalErrorBoundary } from './components/common/ErrorBoundary';
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import UnsavedNavigationGuard from './components/admin/UnsavedNavigationGuard';
 import { useAuthStore } from './store/useAuthStore';
 import { Toaster as SonnerToaster } from 'sonner';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -21,6 +22,7 @@ const GlobalToolbox = lazy(() => import('./components/common/GlobalToolbox'));
 const MobileRefreshButton = lazy(() => import('./components/common/MobileRefreshButton'));
 import { I18nProvider } from './i18n/i18nContext';
 const SearchPalette = lazy(() => import('./components/public/SearchPalette'));
+const router=createBrowserRouter([{path:'*',element:<Suspense fallback={null}><GlobalContextMenu><ScrollToTop/><UnsavedNavigationGuard/><SearchPalette/><CRMRegistrationPrompt/><BirthdayCelebrationModal/><AppRouter/><GlobalToolbox/><MobileRefreshButton/></GlobalContextMenu></Suspense>}]);
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
@@ -88,20 +90,7 @@ export default function App() {
             }}
           />
           <ConfirmDialog />
-          <BrowserRouter>
-            <Suspense fallback={null}>
-              <GlobalContextMenu>
-                <ScrollToTop />
-                <SearchPalette />
-                {/* Modales cargados bajo demanda */}
-                <CRMRegistrationPrompt />
-                <BirthdayCelebrationModal />
-                <AppRouter />
-                <GlobalToolbox />
-                <MobileRefreshButton />
-              </GlobalContextMenu>
-            </Suspense>
-          </BrowserRouter>
+          <RouterProvider router={router}/>
         </GlobalErrorBoundary>
       </HelmetProvider>
     </I18nProvider>

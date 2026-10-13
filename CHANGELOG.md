@@ -3,6 +3,23 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.7.0] - 2026-10-13
+
+### Añadido
+- Inicio con pendientes por permiso, revisiones y solicitudes propias; seguimiento de visitas con responsable, etapa, recordatorio interno y auditoría.
+- Recuperación automática temporal de páginas/lecturas, comparación e historial de secciones, conflictos y avisos al salir, incluido Atrás/Adelante.
+- Medios con créditos, derechos, fuente, texto alternativo, detección SHA-256 de duplicados y optimización opcional a WebP.
+- Salud manual del sitio en Contenido: HTTPS/referencias internas, anuncios vencidos, errores de renderizado locales y revisión de seguridad fechada.
+
+### Seguridad
+- Vista store_orders respeta RLS; cinco funciones fijan search_path; triggers sin exposición RPC.
+- CRM, registros de automatización, páginas, catálogo y almacenamiento respetan permisos; restricciones individuales prevalecen sobre permisos heredados.
+- Registro con mínimo 12 caracteres y comprobación de filtraciones mediante prefijo de huella. Protección nativa de Auth pendiente de sesión del dashboard; no se declara activada.
+
+### Mejorado
+- Accesos móviles a comunicaciones/contenido, etapas sin arrastrar, notas opcionales plegables, controles táctiles y fechas locales de anuncios.
+- Guardar/reordenar no sobrescribe versiones ajenas; retirar un recurso del catálogo conserva su original y sus enlaces.
+
 ## [1.6.1] - 2026-10-12
 
 ### Corregido

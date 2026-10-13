@@ -4,6 +4,7 @@ import { crmService } from '../../features/crm-pipeline/services/crmService';
 import type { CrmPipeline, CrmContact, CrmStage } from '../../features/crm-pipeline/types';
 import { Users, Plus, Sparkles, X, Phone, Mail, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const DEFAULT_STAGES: CrmStage[] = [
   { id: 'new_guest', name: 'Visitante Nuevo', color: '#3B82F6' },
@@ -14,6 +15,7 @@ const DEFAULT_STAGES: CrmStage[] = [
 ];
 
 export default function CrmPipelineManager() {
+  const {hasPermission}=usePermissions();const canEdit=hasPermission('crm_pipeline','edit');
   const [pipelines, setPipelines] = useState<CrmPipeline[]>([]);
   const [activePipeline, setActivePipeline] = useState<CrmPipeline | null>(null);
   const [contacts, setContacts] = useState<CrmContact[]>([]);
@@ -71,13 +73,15 @@ export default function CrmPipelineManager() {
   }, [loadData]);
 
   const handleStageChange = async (contactId: string, newStageId: string) => {
+    if(!canEdit)return;
     try {
       setContacts((prev) =>
         prev.map((c) => (c.id === contactId ? { ...c, stage_id: newStageId } : c))
       );
       await crmService.updateContactStage(contactId, newStageId);
       toast.success('Etapa actualizada');
-    } catch {
+    } catch (error) {
+      console.error('No se pudo actualizar etapa',error);
       toast.error('Error al actualizar etapa');
       loadData();
     }
@@ -85,6 +89,7 @@ export default function CrmPipelineManager() {
 
   const handleCreateContact = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!canEdit)return;
     if (!newContactData.first_name) {
       return toast.error('El nombre es obligatorio');
     }
@@ -151,6 +156,7 @@ export default function CrmPipelineManager() {
           )}
 
           <button
+            disabled={!canEdit}
             onClick={() => setIsNewContactModalOpen(true)}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
           >
@@ -168,6 +174,7 @@ export default function CrmPipelineManager() {
           </div>
         ) : (
           <KanbanBoard
+            canEdit={canEdit}
             stages={currentStages}
             contacts={contacts}
             onStageChange={handleStageChange}
@@ -220,6 +227,7 @@ export default function CrmPipelineManager() {
             </div>
 
             <div className="pt-2">
+              <label className="mb-3 block text-sm text-slate-700 dark:text-slate-200">Etapa<select disabled={!canEdit} value={selectedContact.stage_id} onChange={async e=>{const stage=e.target.value;await handleStageChange(selectedContact.id,stage);setSelectedContact(null);}} className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-white/15 dark:bg-slate-950">{currentStages.map(stage=><option key={stage.id} value={stage.id}>{stage.name}</option>)}</select></label>
               <button
                 onClick={() => setSelectedContact(null)}
                 className="w-full py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-sm"

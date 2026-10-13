@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import type { DBPageSection } from '../types';
@@ -8,6 +8,8 @@ export const usePageEditor = () => {
   const [selectedPage, setSelectedPage] = useState<'home' | 'about'>('home');
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [sections, setSections] = useState<DBPageSection[]>([]);
+  const [baseline, setBaseline] = useState<DBPageSection[]>([]);
+  const baselineRef = useRef<DBPageSection[]>([]);
 
   // Query for fetching sections
   const { data: serverSections, isLoading, refetch } = useQuery({
@@ -28,7 +30,14 @@ export const usePageEditor = () => {
   useEffect(() => {
     const timer = window.setTimeout(() => {
     if (serverSections && serverSections.length > 0) {
-      setSections(serverSections);
+      const oldBaseline = baselineRef.current;
+      setSections(previous => serverSections.map(server => {
+        const local = previous.find(section => section.id === server.id);
+        const old = oldBaseline.find(section => section.id === server.id);
+        return local && old && JSON.stringify(local) !== JSON.stringify(old) ? local : server;
+      }));
+      setBaseline(serverSections);
+      baselineRef.current = serverSections;
       setSelectedSection(current => {
         if (!current || !serverSections.some(s => s.id === current)) {
           return serverSections[0].id;
@@ -54,6 +63,8 @@ export const usePageEditor = () => {
         cover_image_url: ''
       }));
       setSections(defaults);
+      setBaseline(defaults);
+      baselineRef.current = defaults;
       setSelectedSection(defaults[0].id);
     }
     }, 0);
@@ -87,5 +98,7 @@ export const usePageEditor = () => {
     loading: isLoading,
     refetch,
     handleUpdateField
+    ,baseline
+    ,dirty: JSON.stringify(sections) !== JSON.stringify(baseline)
   };
 };

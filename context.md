@@ -1,5 +1,7 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+Actualización admin 1.7.0 (12-oct-2026): pendientes por permiso en Inicio, seguimiento en Comunicaciones, salud en Contenido y procedencia en Medios. Recuperación por usuario/pestaña con caducidad 24 h; guardado servidor explícito, comparación/historial y protección de navegación mediante Data Router. Mobile prioriza Inicio/Comunicaciones/Contenido. Detalles y límites en `docs/admin-operations.md`; QA visual local con datos sintéticos no acredita sesión real ni publicación.
+
 Este archivo es la guía operativa para Codex, Antigravity y cualquier agente que cree o modifique interfaces en este proyecto.
 
 ## Objetivo

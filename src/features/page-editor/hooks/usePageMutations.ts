@@ -16,9 +16,7 @@ export const usePageMutations = () => {
 
   const saveSectionMutation = useMutation({
     mutationFn: async (section: DBPageSection) => {
-      const { error } = await supabase
-        .from('page_contents')
-        .upsert({
+      const payload = {
           id: section.id,
           page: section.page,
           section: section.section,
@@ -30,10 +28,13 @@ export const usePageMutations = () => {
           section_type: section.section_type,
           cover_image_url: section.cover_image_url || null,
           updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-      return section;
+        };
+      const result = section.updated_at
+        ? await supabase.from('page_contents').update(payload).eq('id', section.id).eq('updated_at', section.updated_at).select().maybeSingle()
+        : await supabase.from('page_contents').insert(payload).select().single();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('Otra persona cambió esta sección. Recarga y compara antes de guardar.');
+      return result.data as DBPageSection;
     },
     onSuccess: (data) => {
       toast.success('Sección guardada correctamente.');
@@ -47,23 +48,10 @@ export const usePageMutations = () => {
 
   const reorderSectionsMutation = useMutation({
     mutationFn: async (sections: DBPageSection[]) => {
-      const { error } = await supabase
-        .from('page_contents')
-        .upsert(sections.map(s => ({
-          id: s.id,
-          page: s.page,
-          section: s.section,
-          name: s.name,
-          title: s.title,
-          subtitle: s.subtitle,
-          content_blocks: s.content_blocks,
-          order_index: s.order_index,
-          section_type: s.section_type,
-          cover_image_url: s.cover_image_url || null,
-          updated_at: new Date().toISOString()
-        })));
-      if (error) throw error;
-      return sections;
+      const result = await supabase.rpc('reorder_page_sections', { items: sections.map(section => ({ id: section.id, order_index: section.order_index, expected_updated_at: section.updated_at ?? null })) });
+      if (result.error) throw result.error;
+      return result.data as DBPageSection[];
+
     },
     onSuccess: (data) => {
       toast.success('Orden de secciones guardado.');
@@ -86,24 +74,6 @@ export const usePageMutations = () => {
 
       if (error) throw error;
 
-      if (remaining.length > 0) {
-        const { error: orderError } = await supabase
-          .from('page_contents')
-          .upsert(remaining.map(s => ({
-            id: s.id,
-            page: s.page,
-            section: s.section,
-            name: s.name,
-            title: s.title,
-            subtitle: s.subtitle,
-            content_blocks: s.content_blocks,
-            order_index: s.order_index,
-            section_type: s.section_type,
-            cover_image_url: s.cover_image_url || null,
-            updated_at: new Date().toISOString()
-          })));
-        if (orderError) throw orderError;
-      }
       return { id, remaining };
     },
     onSuccess: (data) => {

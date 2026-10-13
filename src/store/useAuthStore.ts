@@ -79,6 +79,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   })),
 
   logout: async () => {
+    try {
+      const prefix = `jerusalen-recovery:${get().user?.id}:`;
+      for (const key of Object.keys(sessionStorage)) if (key.startsWith(prefix)) sessionStorage.removeItem(key);
+    } catch (error) { console.error('No se pudieron limpiar las copias de recuperación de esta pestaña',error); }
     // Cancelar el listener de onAuthStateChange antes de cerrar sesión
     // para evitar que se dispare el evento SIGNED_OUT y genere un ciclo redundante
     const subscription = get()._authSubscription;

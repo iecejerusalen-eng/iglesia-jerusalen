@@ -11,11 +11,12 @@ import { fetchChurchAnnouncements } from '../../features/announcements/service';
 import type { AnnouncementDraft, ChurchAnnouncement } from '../../features/announcements/types';
 import type { Event } from '../../types';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import { isAnnouncementExpired } from '../../features/announcements/adminHealth';
 
 type EventOption = Pick<Event, 'id' | 'title' | 'start_date' | 'end_date' | 'start_time' | 'location_name'>;
 
 const nowInputValue = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-const toInputValue = (value: string | null) => value ? new Date(value).toISOString().slice(0, 16) : '';
+const toInputValue = (value: string | null) => value ? new Date(Date.parse(value) - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`));
 
 const emptyDraft = (): AnnouncementDraft => ({
@@ -175,6 +176,7 @@ export default function ChurchAnnouncementsManager() {
       </section>
 
       {error && <AdminErrorState description={`Detalle: ${error}`} onAction={() => { void load(); }} />}
+      {announcements.some(item=>item.status==='published'&&isAnnouncementExpired(item))&&<div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">Hay {announcements.filter(item=>item.status==='published'&&isAnnouncementExpired(item)).length} anuncios vencidos por caducidad o por evento finalizado. Revisa y archiva los que ya no correspondan.</div>}
 
       {canEdit && <form onSubmit={saveAnnouncement} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6">
         <div className="mb-5 flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-600 dark:text-amber-300">{editingId ? 'Editar anuncio' : 'Nuevo comunicado'}</p><h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">Información visible para toda la iglesia</h2></div>{editingId && <Button type="button" size="icon-sm" variant="ghost" onClick={resetForm} aria-label="Cancelar edición"><X size={17} /></Button>}</div>

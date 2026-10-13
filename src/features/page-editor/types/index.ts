@@ -9,6 +9,7 @@ export interface DBPageSection {
   order_index: number;
   section_type: string;
   cover_image_url?: string;
+  updated_at?: string;
 }
 
 export interface GallerySlide {

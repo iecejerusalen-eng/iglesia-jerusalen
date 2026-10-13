@@ -15,11 +15,15 @@ import AdminHeader from '../../components/admin/AdminHeader';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { Button } from '../../components/ui/button';
 import { supabase } from '../../config/supabase';
+import { usePermissions } from '../../hooks/usePermissions';
+import { useAuthStore } from '../../store/useAuthStore';
+import FollowupEditor from '../../features/dashboard/components/FollowupEditor';
+import { followupLabels, type Followup } from '../../features/dashboard/followup';
 
 type MessageStatus = 'unread' | 'read';
 type StatusFilter = 'all' | MessageStatus;
 
-interface ContactMessage {
+interface ContactMessage extends Followup {
   id: string;
   name: string;
   email: string;
@@ -44,6 +48,10 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 const ContactInbox = () => {
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('chat', 'edit');
+  const userId = useAuthStore(state => state.user?.id);
+  const [followupFilter, setFollowupFilter] = useState(() => new URLSearchParams(window.location.search).get('seguimiento') === 'mine' ? 'mine' : 'all');
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [search, setSearch] = useState('');
@@ -68,13 +76,16 @@ const ContactInbox = () => {
 
       let messagesQuery = supabase
         .from('contact_messages')
-        .select('id,name,email,subject,message,status,created_at', { count: 'exact' })
+        .select('id,name,email,subject,message,status,created_at,assigned_to,followup_stage,followup_due_at,followup_notes,followup_revision', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (statusFilter !== 'all') {
         messagesQuery = messagesQuery.eq('status', statusFilter);
       }
+      if (followupFilter === 'mine') messagesQuery = messagesQuery.eq('assigned_to', userId ?? '').neq('followup_stage', 'completed');
+      if (followupFilter === 'due') messagesQuery = messagesQuery.lte('followup_due_at', new Date().toISOString()).neq('followup_stage', 'completed');
+      if (followupFilter === 'visits') messagesQuery = messagesQuery.eq('subject', 'Planifica tu visita');
 
       if (cleanSearch) {
         messagesQuery = messagesQuery.or(
@@ -107,7 +118,7 @@ const ContactInbox = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, followupFilter, userId]);
 
   useEffect(() => {
     const requestTimer = window.setTimeout(() => {
@@ -125,6 +136,7 @@ const ContactInbox = () => {
   }, [page, total]);
 
   const updateStatus = async (message: ContactMessage, status: MessageStatus) => {
+    if (!canEdit) return;
     if (message.status === status) return;
     setUpdatingId(message.id);
 
@@ -178,6 +190,7 @@ const ContactInbox = () => {
       />
 
       <section className="grid gap-3 sm:grid-cols-2">
+        <label className="sm:col-span-2 text-sm font-semibold">Seguimiento<select className="ml-2 min-h-11 rounded-xl border bg-white px-3 dark:border-white/15 dark:bg-slate-950" value={followupFilter} onChange={e => {setFollowupFilter(e.target.value);setPage(1);}}><option value="all">Todos</option><option value="visits">Visitas</option><option value="mine">Asignados a mí</option><option value="due">Recordatorios vencidos</option></select></label>
         <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/65">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Mensajes encontrados</p>
           <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{total}</p>
@@ -214,7 +227,7 @@ const ContactInbox = () => {
                   setStatusFilter(status);
                 }}
                 aria-pressed={statusFilter === status}
-                className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                className={`min-h-11 rounded-lg px-3 py-2 text-xs font-bold transition ${
                   statusFilter === status
                     ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-amber-300'
                     : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
@@ -263,12 +276,14 @@ const ContactInbox = () => {
                     {message.status === 'unread' && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">Nuevo</span>}
                   </div>
                   <p className="mt-1 truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{message.subject || 'Sin asunto'}</p>
+                  <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">{followupLabels[message.followup_stage]}{message.followup_due_at && ` · recordar ${formatDate(message.followup_due_at)}`}</p>
                   <p className="mt-1 truncate text-xs text-slate-500">{message.message}</p>
                 </button>
                 <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end">
                   <time className="text-xs text-slate-400" dateTime={message.created_at}>{formatDate(message.created_at)}</time>
                   <Button
                     variant="ghost"
+                    disabled={!canEdit}
                     size="sm"
                     loading={updatingId === message.id}
                     onClick={() => void updateStatus(message, message.status === 'unread' ? 'read' : 'unread')}
@@ -311,8 +326,9 @@ const ContactInbox = () => {
             </div>
             <time className="mt-4 block text-xs text-slate-400" dateTime={selectedMessage.created_at}>{formatDate(selectedMessage.created_at)}</time>
             <div className="mt-5 whitespace-pre-wrap rounded-2xl bg-slate-50 p-5 text-sm leading-7 text-slate-700 dark:bg-white/5 dark:text-slate-200">{selectedMessage.message}</div>
+            <FollowupEditor key={`${selectedMessage.id}:${selectedMessage.followup_revision}`} request={selectedMessage} onSaved={() => { setSelectedMessage(null); void loadMessages(); }} />
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variant="outline" loading={updatingId === selectedMessage.id} onClick={() => void updateStatus(selectedMessage, selectedMessage.status === 'read' ? 'unread' : 'read')}>
+              <Button disabled={!canEdit} variant="outline" loading={updatingId === selectedMessage.id} onClick={() => void updateStatus(selectedMessage, selectedMessage.status === 'read' ? 'unread' : 'read')}>
                 {selectedMessage.status === 'read' ? <Mail size={16} /> : <CheckCheck size={16} />}
                 {selectedMessage.status === 'read' ? 'Marcar no leído' : 'Marcar leído'}
               </Button>
