@@ -145,3 +145,7 @@ Prompts recomendados:
 - Otros IDEs compatibles: usar la instalación oficial de Magic UI CLI o copiar la configuración manual documentada por Magic UI.
 
 Fecha de revisión: 2026-08-16.
+
+## Nosotros — revisión del 12 de octubre de 2026
+
+Recorrido: presentación → navegación interna → historia → pilares → Himno Cuadrangular → principios de fe → liderazgo → documentos. El himno reutiliza la letra de Reglamento interno, página 2, con enlace al PDF original; datos en src/components/public/about/foursquareHymnData.ts, presentación en FoursquareHymn.tsx. Mantener las cuatro estrofas y el coro fieles a esa fuente; no sustituir por variantes de internet ni agregar autoría/grabaciones sin fuente. No cargar audio o vídeo automáticamente. La sección usa flujo natural, dos columnas desde tablet y una en móvil. Los metadatos de título/descripcion pertenecen a Nosotros; la navegación interna conserva destinos existentes. Historia y pilares respetan reduced motion en sus entradas.

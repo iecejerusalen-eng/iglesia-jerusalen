@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import {
   ArrowRight,
   BookOpenText,
@@ -21,6 +22,7 @@ import type { Speaker } from '../../types';
 import PrinciplesOfFaith from '../../components/public/PrinciplesOfFaith';
 import InternationalHistory from '../../components/public/about/InternationalHistory';
 import NationalHistory from '../../components/public/about/NationalHistory';
+import FoursquareHymn from '../../components/public/about/FoursquareHymn';
 import PremiumAboutHero from './components/PremiumAboutHero';
 import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.webp';
 import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.webp';
@@ -124,6 +126,7 @@ function GlassCard({ children, className = '' }: { children: ReactNode; classNam
 }
 
 const About = () => {
+  const reducedMotion = useReducedMotion();
   const [activeHistory, setActiveHistory] = useState<HistoryKey>('local');
   const [historyModal, setHistoryModal] = useState<HistoryKey | null>(null);
   const [leaders, setLeaders] = useState<Speaker[]>(fallbackLeadersWithPhotos);
@@ -186,20 +189,27 @@ const About = () => {
 
   return (
     <main className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-indigo-50/50 px-4 py-6 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950/30 sm:px-6 lg:px-8">
+      <Helmet>
+        <title>Nosotros | Iglesia Jerusalén</title>
+        <meta name="description" content="Conoce la historia, los pilares de fe, el Himno Cuadrangular y el liderazgo de Iglesia Jerusalén en Milagro." />
+        <meta property="og:title" content="Nosotros | Iglesia Jerusalén" />
+        <meta property="og:description" content="Nuestra historia, identidad y fe como parte de la familia Cuadrangular." />
+      </Helmet>
       <div className="pointer-events-none absolute -left-36 top-16 h-80 w-80 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
       <div className="pointer-events-none absolute -right-32 top-[38rem] h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl dark:bg-indigo-500/10" />
 
       <div className="relative mx-auto max-w-6xl">
         <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
 
+        <nav aria-label="En esta página" className="mb-12 flex flex-wrap gap-2 border-b border-slate-200 pb-6 dark:border-white/10">
+          {[['historia', 'Historia'], ['pilares', 'Nuestra identidad'], ['himno', 'Himno'], ['principios', 'Principios de fe'], ['liderazgo', 'Liderazgo'], ['documentos', 'Documentos']].map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:border-amber-400 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">{label}</a>
+          ))}
+        </nav>
+
         {(contentError || leadersError) && <div role="alert" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100"><p>{leadersError ? 'No se pudo actualizar la información del liderazgo. Se conserva la presentación disponible.' : 'No se pudo actualizar la presentación de la iglesia.'}</p><button type="button" disabled={loading} onClick={retry} className="min-h-11 rounded-lg border border-amber-500 px-4 py-2 font-semibold disabled:opacity-50">{loading ? 'Actualizando…' : 'Volver a intentar'}</button></div>}
 
-        <section aria-labelledby="documents-heading" className="my-10 rounded-3xl bg-slate-950 p-7 text-white sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-300">Nuestra organización</p>
-          <h2 id="documents-heading" className="mt-3 font-serif text-3xl">Conoce los estatutos y el reglamento</h2>
-          <p className="mt-4 max-w-2xl leading-7 text-slate-300">Consulta los documentos de la Iglesia Cuadrangular, léelos en línea o descarga los PDF originales.</p>
-          <div className="mt-6 flex flex-wrap gap-5"><Link to="/nosotros/documentos" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-amber-300 px-5 font-semibold text-slate-950">Aprender más <ArrowRight size={18} /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar estatuto PDF</a><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar reglamento PDF</a></div>
-        </section>
+
 
         <section id="historia" className="scroll-mt-24 space-y-7">
           <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Raíces y horizonte</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Una historia, tres perspectivas</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Explora el recorrido de nuestra iglesia local y su conexión con la obra cuadrangular en Ecuador y el mundo.</p></div>
@@ -213,7 +223,7 @@ const About = () => {
               })}
             </div>
           </GlassCard>
-          <motion.article key={activeHistory} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-900 p-6 text-white shadow-[0_26px_70px_-34px_rgba(15,23,42,.9)] sm:p-9">
+          <motion.article key={activeHistory} initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-900 p-6 text-white shadow-[0_26px_70px_-34px_rgba(15,23,42,.9)] sm:p-9">
             <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-amber-400/10 blur-3xl" />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_.8fr] lg:items-center">
               <div><div className="flex items-center gap-3 text-sm font-bold text-amber-300"><ActiveIcon size={18} /> {active.label}</div><h3 className="mt-5 max-w-xl font-serif text-3xl font-bold sm:text-4xl">{active.title}</h3><p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">{active.body}</p><button type="button" onClick={() => setHistoryModal(activeHistory)} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-amber-300"><Maximize2 size={15} /> Ver historia completa</button></div>
@@ -222,7 +232,9 @@ const About = () => {
           </motion.article>
         </section>
 
-        <section id="pilares" className="scroll-mt-24 py-16"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Nuestra identidad</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Los Pilares Cuadrangulares</h2></div><p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">Cuatro expresiones de una misma esperanza: Jesús sigue siendo suficiente.</p></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{pillars.map((pillar, index) => { const Icon = pillar.icon; return <motion.article key={pillar.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }} className="group rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_15px_45px_-30px_rgba(35,51,84,0.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/60"><div className={`mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${pillar.color} text-white shadow-lg`}><Icon size={23} /></div><h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">{pillar.title}</h3><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{pillar.description}</p><span className="mt-6 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">{pillar.reference}</span></motion.article>; })}</div></section>
+        <section id="pilares" className="scroll-mt-24 py-16"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600">Nuestra identidad</p><h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Los Pilares Cuadrangulares</h2></div><p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">Cuatro expresiones de una misma esperanza: Jesús sigue siendo suficiente.</p></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{pillars.map((pillar, index) => { const Icon = pillar.icon; return <motion.article key={pillar.title} initial={reducedMotion ? false : { opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }} className="group rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_15px_45px_-30px_rgba(35,51,84,0.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/60"><div className={`mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${pillar.color} text-white shadow-lg`}><Icon size={23} /></div><h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">{pillar.title}</h3><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{pillar.description}</p><span className="mt-6 inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">{pillar.reference}</span></motion.article>; })}</div></section>
+
+        <FoursquareHymn />
 
         <section id="principios" className="scroll-mt-24 py-8"><PrinciplesOfFaith /></section>
 
@@ -263,6 +275,13 @@ const About = () => {
             ))}
           </div>
         </section>
+        <section id="documentos" aria-labelledby="documents-heading" className="my-10 scroll-mt-28 rounded-3xl bg-slate-950 p-7 text-white sm:p-10">
+          <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-300">Nuestra organización</p>
+          <h2 id="documents-heading" className="mt-3 font-serif text-3xl">Conoce los estatutos y el reglamento</h2>
+          <p className="mt-4 max-w-2xl leading-7 text-slate-300">Consulta los documentos de la Iglesia Cuadrangular, léelos en línea o descarga los PDF originales.</p>
+          <div className="mt-6 flex flex-wrap gap-5"><Link to="/nosotros/documentos" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-amber-300 px-5 font-semibold text-slate-950">Aprender más <ArrowRight size={18} /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar estatuto PDF</a><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar reglamento PDF</a></div>
+        </section>
+
       </div>
       <AnimatePresence>{historyModal && <HistoryModal historyKey={historyModal} onChange={setHistoryModal} onClose={() => setHistoryModal(null)} />}</AnimatePresence>
     </main>

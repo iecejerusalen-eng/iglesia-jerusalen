@@ -16,7 +16,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**', 'scratch/**'],
+    // Node 25+ Web Storage shadows jsdom's browser storage in Vitest workers.
+    execArgv: Number(process.versions.node.split('.')[0]) >= 25 ? ['--no-experimental-webstorage'] : [],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**', 'scratch/**', 'LOCAL/**'],
   },
   plugins: [
     react(),

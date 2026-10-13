@@ -3,6 +3,21 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.10] - 2026-10-12
+
+### Añadido
+- Himno Cuadrangular completo en Nosotros, cotejado con el Reglamento interno, página 2, con enlace al PDF original.
+- Navegación interna para historia, identidad, himno, principios, liderazgo y documentos.
+
+### Mejorado
+- Documentos institucionales al final del recorrido de Nosotros y metadatos propios de la página.
+- Entradas de historia y pilares respetan la preferencia de movimiento reducido.
+
+### Corregido
+- Vitest utiliza el almacenamiento de jsdom en Node 25+ y excluye herramientas de LOCAL de las pruebas de la aplicación.
+
+---
+
 ## [1.4.9] - 2026-10-11
 
 ### Corregido (Fixed)
