@@ -83,10 +83,10 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
 
           <div className="mt-8 flex flex-wrap gap-3">
             <a
-              href="#historia"
+              href="#aprender"
               className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-xl shadow-slate-950/15 transition duration-300 hover:-translate-y-0.5 hover:bg-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:bg-amber-400 dark:text-slate-950 dark:shadow-amber-400/10 dark:hover:bg-amber-300 dark:focus-visible:ring-offset-[#050b1c]"
             >
-              Explorar nuestra historia
+              Explorar nuestra fe
               <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
             </a>
             <a
@@ -109,9 +109,9 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
             ))}
           </div>
 
-          <a href="#historia" className="mt-7 inline-flex items-center gap-2 text-xs font-bold text-slate-500 transition hover:text-indigo-700 dark:text-slate-400 dark:hover:text-amber-300">
+          <a href="#aprender" className="mt-7 inline-flex items-center gap-2 text-xs font-bold text-slate-500 transition hover:text-indigo-700 dark:text-slate-400 dark:hover:text-amber-300">
             <ArrowDown size={14} aria-hidden="true" />
-            Una historia que todavía se está escribiendo
+            Conoce el origen, los símbolos y nuestra historia
           </a>
         </div>
 

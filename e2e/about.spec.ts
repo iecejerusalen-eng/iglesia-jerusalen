@@ -6,6 +6,9 @@ test('Nosotros conduce a las seis lecturas y conserva el liderazgo público', as
   await expect(page.getByRole('link', { name: 'Aprender más', exact: true })).toHaveAttribute('href', '/nosotros/documentos');
   await expect(page.getByText('Perfil CRM vinculado')).toHaveCount(0);
   await expect(page.locator('#aprender a')).toHaveCount(6);
+  for (const link of await page.locator('main a[href^="#"]').all()) {
+    await expect(page.locator((await link.getAttribute('href'))!)).toHaveCount(1);
+  }
   await page.locator('#aprender a[href="/nosotros/origen-cuadrangular"]').click();
   await expect(page.getByRole('heading', { name: 'Origen Cuadrangular', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Continuar aprendiendo' }).getByRole('link', { name: /Siguiente lectura/ })).toHaveAttribute('href', '/nosotros/doctrina');

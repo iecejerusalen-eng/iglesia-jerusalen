@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.5.1] - 2026-10-12
+
+### Corregido
+- Accesos de la presentación principal de Nosotros apuntan al nuevo recorrido de aprendizaje.
+- Verificación de todos los enlaces internos de la portada para detectar destinos eliminados.
+
+---
+
 ## [1.5.0] - 2026-10-12
 
 ### Añadido
