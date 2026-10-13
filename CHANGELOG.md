@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.6.1] - 2026-10-12
+
+### Corregido
+- Retirada la reseña educativa y su referencia a UTPL de la historia de la iglesia, por corrección del usuario sobre su pertinencia.
+- Borrador activo y versión pública corregidos sin alterar los demás capítulos; prueba de regresión del alcance institucional.
+
+---
+
 ## [1.6.0] - 2026-10-12
 
 ### Añadido

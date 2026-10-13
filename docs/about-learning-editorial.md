@@ -13,7 +13,6 @@ La importación inicial conserva autor y fuentes; **no acredita revisión pastor
 - Texto doctrinal/himno: reglamento ecuatoriano aportado, `public/documentos/reglamento-interno.pdf`, pp. 1–4; la letra cotejada permanece en `foursquareHymnData.ts`.
 - Símbolos: originales de Drive Jerusalén; archivos fuente/procedencia en LOCAL, derivados en `public/images/cuadrangular`.
 - Origen: folleto internacional y relato de Aimee; diferencia entre visión bíblica e interpretación denominacional explícita.
-- Historia educativa local: Isabel M. Ávila Burbano, documento UTPL, pp. impresas 34–35 (PDF 53–54). Es reseña de la escuela, no fundación de la congregación.
 - Himno en YouTube: ICC SUR Ibagué, `-I1Omj7vE6k`, solicitado por el usuario. Se carga reproductor nocookie por clic; enlace original siempre disponible. No descarga de la grabación ni afirmación de licencia propia.
 
 ## Datos y verificación
@@ -25,3 +24,6 @@ Migraciones versionadas en `supabase/migrations`; pruebas transaccionales en `su
 SEO: `PublicLayout` conserva el canonical por ruta; se retiró el canonical fijo de index.html. Las cinco rutas están en sitemap. La inclusión no acredita que Google ya haya indexado las páginas.
 
 Pendiente: fuentes primarias/revisión de fechas de fundación local, testimonios y fotografías antiguas. La narrativa local marcada como propuesta no se publica como historia confirmada.
+
+
+Corrección del usuario, 12-oct-2026: la reseña educativa de UTPL no corresponde a la historia de la iglesia y fue retirada del lector, sus fuentes y el borrador activo. Mantener la historia de la congregación dentro de su alcance, con fuentes institucionales pertinentes.

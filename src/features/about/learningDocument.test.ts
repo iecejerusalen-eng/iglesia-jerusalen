@@ -7,6 +7,11 @@ describe('Learning documents', () => {
     expect(defaultLearningDocuments).toHaveLength(5);
     for (const document of defaultLearningDocuments) expect(validateLearningDocument(document).slug).toBe(document.slug);
   });
+  it('keeps school/UTPL material out of the church history', () => {
+    const history = defaultLearningDocuments.find(d => d.slug === 'historia')!;
+    expect(history.content.chapters.some(c => c.id === 'servicio-educativo')).toBe(false);
+    expect(JSON.stringify(history)).not.toMatch(/UTPL|dspace\.utpl|Ávila Burbano|Unidad Educativa/);
+  });
   it('rejects duplicated chapter destinations', () => {
     const document = structuredClone(defaultLearningDocuments[0]); document.content.chapters.push(document.content.chapters[0]);
     expect(() => validateLearningDocument(document)).toThrow(/únicos/);

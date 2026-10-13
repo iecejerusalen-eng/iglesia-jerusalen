@@ -159,3 +159,8 @@ Portada breve de seis destinos con liderazgo público preservado. Cinco rutas ex
 ## 12-oct-2026 — Aprendizaje y gobierno editorial (1.6.0)
 
 Nosotros y cinco lectores usan documentos JSONB con capítulos/bloques compartidos; el texto local documentado permanece disponible con aviso explícito si falla la consulta. `about_learning_published` contiene únicamente snapshots públicos; `about_learning_drafts` y `about_learning_history` son privados. Editar no altera publicación y reinicia el borrador; revisión/publicación requieren la versión actual, permiso pages/edit y rol pastor/admin. Firma/fecha de revisión no se inventan en la carga inicial. Editor integrado en `/admin/paginas/lecturas`, centro de Contenido y editor de páginas; preview comparte el renderer. Progreso local sin cuenta, preguntas formativas sin envío de datos personales. YouTube carga solo por clic (nocookie), enlace original siempre disponible. El canonical ya existía en PublicLayout: eliminar el fijo HTML evita duplicarlo; sitemap actualizado. Las fechas educativas atribuidas a UTPL son historia de la escuela, no fundación de la iglesia. No se publican las fechas sin aprobación de la narrativa local propuesta.
+
+
+## Corrección de alcance — 12-oct-2026, 1.6.1
+
+El usuario rechazó la relación de UTPL con esta página. Retirar reseña educativa y fuente de la historia pública/borrador activo. No usar historia de una unidad educativa para completar la historia de la iglesia; los registros previos de esa incorporación quedan corregidos por esta decisión.
