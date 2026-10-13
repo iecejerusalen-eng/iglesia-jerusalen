@@ -12,6 +12,13 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 describe('Herramientas documentales', () => {
+  it('mantiene un título completo para la biblioteca y el lector', async () => {
+    const view = render(<HelmetProvider><MemoryRouter><Governance /></MemoryRouter></HelmetProvider>);
+    await waitFor(() => expect(window.document.title).toBe('Estatutos y reglamento | Iglesia Jerusalén'));
+    view.unmount();
+    show();
+    await waitFor(() => expect(window.document.title).toBe('Reglamento interno | Iglesia Jerusalén'));
+  });
   it('resalta búsquedas sin tilde conservando el texto original', async () => {
     const view = show(); await screen.findByRole('heading', { name: 'Artículo 1.-' });
     fireEvent.change(screen.getByLabelText('Buscar palabra o artículo'), { target: { value: 'mision' } });

@@ -110,7 +110,7 @@ function GovernanceReader() {
   }, [data]);
   function changeSlide(index: number) { setSlide(index); document.getElementById('document-reader')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   return <main className={`governance ${selected ? "governance-document" : ""} ${focus ? "governance-focus" : ""} ${warm ? "governance-warm" : ""}`} style={{ "--reading-size": `${fontSize}px` } as CSSProperties}>
-    <Helmet><title>{selected?.title ?? 'Estatutos y reglamento'} | Iglesia Jerusalén</title><meta name="description" content="Lee los estatutos y el reglamento interno de la Iglesia Cuadrangular y descarga los documentos originales." /></Helmet>
+    <Helmet><title>{`${selected?.title ?? 'Estatutos y reglamento'} | Iglesia Jerusalén`}</title><meta name="description" content="Lee los estatutos y el reglamento interno de la Iglesia Cuadrangular y descarga los documentos originales." /></Helmet>
     <header className="governance-header">
       <div className="governance-hero-copy">
         <Link to={selected ? '/nosotros/documentos' : '/nosotros'} className="governance-controls governance-back"><ArrowLeft size={16} />{selected ? 'Todos los documentos' : 'Volver a Nosotros'}</Link>

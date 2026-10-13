@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.11] - 2026-10-12
+
+### Corregido
+- Título de la pestaña de Documentos: Helmet recibe una sola cadena para conservar el nombre de la biblioteca y del documento al navegar.
+- Prueba de regresión del título tanto en la biblioteca como en el lector.
+
+---
+
 ## [1.4.10] - 2026-10-12
 
 ### Añadido
