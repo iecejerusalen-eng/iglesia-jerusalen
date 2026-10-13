@@ -275,6 +275,11 @@ export const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     keywords: ['nosotros', 'doctrina', 'historia', 'que creemos', 'mision', 'vision', 'pastores'],
     icon: BookOpen,
   },
+  { id: 'nav-nosotros-origen-cuadrangular', path: '/nosotros/origen-cuadrangular', title: 'Origen Cuadrangular', subtitle: 'Ezequiel y Aimee Semple McPherson', category: 'institucional', keywords: ['cuadrangular', 'origen-cuadrangular'], icon: BookOpen },
+  { id: 'nav-nosotros-doctrina', path: '/nosotros/doctrina', title: 'Nuestra doctrina', subtitle: 'Los cuatro ministerios de Jesucristo y principios de fe', category: 'institucional', keywords: ['cuadrangular', 'doctrina'], icon: BookOpen },
+  { id: 'nav-nosotros-simbolos', path: '/nosotros/simbolos', title: 'Símbolos y bandera', subtitle: 'Rostros, cruz, paloma, copa, corona, colores y logo', category: 'institucional', keywords: ['cuadrangular', 'simbolos'], icon: BookOpen },
+  { id: 'nav-nosotros-historia', path: '/nosotros/historia', title: 'Nuestra historia', subtitle: 'Jerusalén, Ecuador y la familia internacional', category: 'institucional', keywords: ['cuadrangular', 'historia'], icon: BookOpen },
+  { id: 'nav-nosotros-himno', path: '/nosotros/himno', title: 'Nuestro himno', subtitle: 'Letra completa y explicación bíblica del Himno Cuadrangular', category: 'institucional', keywords: ['cuadrangular', 'himno'], icon: BookOpen },
   {
     id: 'nav-contacto',
     path: '/contacto',

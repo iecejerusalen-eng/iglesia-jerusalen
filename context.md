@@ -149,3 +149,8 @@ Fecha de revisión: 2026-08-16.
 ## Nosotros — revisión del 12 de octubre de 2026
 
 Recorrido: presentación → navegación interna → historia → pilares → Himno Cuadrangular → principios de fe → liderazgo → documentos. El himno reutiliza la letra de Reglamento interno, página 2, con enlace al PDF original; datos en src/components/public/about/foursquareHymnData.ts, presentación en FoursquareHymn.tsx. Mantener las cuatro estrofas y el coro fieles a esa fuente; no sustituir por variantes de internet ni agregar autoría/grabaciones sin fuente. No cargar audio o vídeo automáticamente. La sección usa flujo natural, dos columnas desde tablet y una en móvil. Los metadatos de título/descripcion pertenecen a Nosotros; la navegación interna conserva destinos existentes. Historia y pilares respetan reduced motion en sus entradas.
+
+
+## 12-oct-2026 — Nosotros como puerta de aprendizaje (1.5.0)
+
+Portada breve de seis destinos con liderazgo público preservado. Cinco rutas exactas de lectura lazy-loaded comparten índice, fuentes, preguntas y anterior/siguiente; Documentos mantiene su biblioteca y lector originales. Reutiliza PrinciplesOfFaith, FoursquareHymn y BibleVerseLink. Recursos auténticos de Drive exportados a public/images/cuadrangular como WebP, sin reconstrucción gráfica. La bandera SVG es didáctica y atribuye modelo internacional y diferencia ecuatoriana. Texto bíblico e interpretación de Aimee diferenciados; sin fechas locales ni significados ornamentales inventados. Diseño editorial responsive con serif existente, contraste claro/oscuro y navegación de teclado; sin dependencias nuevas. Procedencia y QA detalladas en LOCAL/04_Trabajos_y_proyectos/Nosotros_mejoras (excluida de Git).

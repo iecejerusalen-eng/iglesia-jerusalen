@@ -3,6 +3,20 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-10-12
+
+### Añadido
+- Cinco lecturas públicas: Origen Cuadrangular, Nuestra doctrina, Símbolos y bandera, Nuestra historia y Nuestro himno.
+- Referencias bíblicas, fuentes institucionales, índices, preguntas de reflexión y navegación entre lecturas.
+- Emblema y cuatro rostros originales del archivo de Jerusalén, optimizados en WebP; bandera didáctica con su fuente y variante ecuatoriana explicadas.
+
+### Mejorado
+- Nosotros como portada de seis destinos de aprendizaje, conservando presentación, liderazgo y documentos.
+- Distinción entre la visión bíblica y la interpretación de Aimee; cronología internacional corregida y fechas legales nacionales documentadas.
+- Búsqueda global con acceso a cada lectura; pruebas de enlaces, imágenes y fidelidad del himno.
+
+---
+
 ## [1.4.11] - 2026-10-12
 
 ### Corregido
