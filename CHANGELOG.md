@@ -3,6 +3,11 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.8.2] - 2026-10-16
+
+### Corregido
+- Modelo 3D del templo reconstruido con geometría propia, sin pegar una imagen de fachada ni duplicar el cerramiento. Incluye el cuerpo central proyectado, un solo portón frontal y corredores laterales; el menú y la experiencia de entrada se conservan.
+
 ## [1.8.1] - 2026-10-16
 
 ### Mejorado
