@@ -152,6 +152,10 @@ Prompts recomendados:
 
 Fecha de revisión: 2026-08-16.
 
+## 16-oct-2026 — Bienvenida 3D minimalista (1.8.1)
+
+La bienvenida inicial muestra solo el modelo, cielo/rejilla y «Entrar». El GLB gira automáticamente y admite arrastre; el encuadre se calcula desde sus dimensiones. Al entrar, la escena se contrae hacia un pequeño objeto lateral y revela el Inicio y su menú existentes. El scroll impulsa la rotación lateral con velocidad y dirección proporcionales, y el arrastre vuelve suavemente a la órbita. Conservar repetición discreta, Escape, fallback sin WebGL y preferencia de movimiento reducido. QA y procedencia en LOCAL/04_Trabajos_y_proyectos/Bienvenida_3D_Web.
+
 ## Nosotros — revisión del 12 de octubre de 2026
 
 Recorrido: presentación → navegación interna → historia → pilares → Himno Cuadrangular → principios de fe → liderazgo → documentos. El himno reutiliza la letra de Reglamento interno, página 2, con enlace al PDF original; datos en src/components/public/about/foursquareHymnData.ts, presentación en FoursquareHymn.tsx. Mantener las cuatro estrofas y el coro fieles a esa fuente; no sustituir por variantes de internet ni agregar autoría/grabaciones sin fuente. No cargar audio o vídeo automáticamente. La sección usa flujo natural, dos columnas desde tablet y una en móvil. Los metadatos de título/descripcion pertenecen a Nosotros; la navegación interna conserva destinos existentes. Historia y pilares respetan reduced motion en sus entradas.

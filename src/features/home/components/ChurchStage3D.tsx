@@ -3,16 +3,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 type StageProps = {
-  progress: number;
-  entering: boolean;
+  mode: 'intro' | 'entering' | 'companion';
   onUnavailable: () => void;
-  onEntered: () => void;
 };
 
-export default function ChurchStage({ progress, entering, onUnavailable, onEntered }: StageProps) {
+export default function ChurchStage({ mode, onUnavailable }: StageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef({ progress, entering, onEntered });
-  useEffect(() => { stateRef.current = { progress, entering, onEntered }; }, [progress, entering, onEntered]);
+  const modeRef = useRef(mode);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,13 +22,13 @@ export default function ChurchStage({ progress, entering, onUnavailable, onEnter
       onUnavailable();
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.25;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 130);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     scene.add(new THREE.HemisphereLight(0xf5faff, 0xbfcbe2, 2.5));
     const sun = new THREE.DirectionalLight(0xfff7e6, 3.1);
     sun.position.set(-8, 14, 10);
@@ -39,24 +37,43 @@ export default function ChurchStage({ progress, entering, onUnavailable, onEnter
     fill.position.set(9, 6, -5);
     scene.add(fill);
 
-    const modelPivot = new THREE.Group();
-    scene.add(modelPivot);
-    const loader = new GLTFLoader();
+    const pivot = new THREE.Group();
+    scene.add(pivot);
     let alive = true;
     let loadedModel: THREE.Group | null = null;
-    loader.load('/models/iglesia-jerusalen-intro.glb', (gltf) => {
+    let modelWidth = 8;
+    let modelHeight = 5;
+    let modelDepth = 5;
+    new GLTFLoader().load('/models/iglesia-jerusalen-intro.glb', (gltf) => {
       if (!alive) return;
-      loadedModel = gltf.scene;
-      modelPivot.add(gltf.scene);
-    }, undefined, () => {
-      if (alive) onUnavailable();
-    });
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      const dimensions = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const factor = 8 / Math.max(dimensions.x, dimensions.y, dimensions.z);
+      model.position.copy(center).multiplyScalar(-factor);
+      model.scale.setScalar(factor);
+      modelWidth = dimensions.x * factor;
+      modelHeight = dimensions.y * factor;
+      modelDepth = dimensions.z * factor;
+      loadedModel = model;
+      pivot.add(model);
+    }, undefined, () => { if (alive) onUnavailable(); });
 
     let frame = 0;
-    let current = 0;
-    let zoom = 0;
-    let entered = false;
-    const size = () => {
+    let lastTime = 0;
+    let orbit = 0;
+    let scrollVelocity = 0;
+    let dragYaw = 0;
+    let dragPitch = 0;
+    let targetYaw = 0;
+    let targetPitch = 0;
+    let dragging = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+    let lastScrollY = window.scrollY;
+
+    const resize = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       if (!width || !height) return;
@@ -64,35 +81,88 @@ export default function ChurchStage({ progress, entering, onUnavailable, onEnter
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
     };
-    const observer = new ResizeObserver(size);
+    const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    size();
+    resize();
 
-    const render = () => {
-      const target = stateRef.current;
-      current += (target.progress - current) * 0.18;
-      zoom += ((target.entering ? 1 : 0) - zoom) * 0.055;
-      const narrow = camera.aspect < 0.75;
-      const modelScale = narrow ? 0.46 : 0.67 + current * 0.13;
-      modelPivot.scale.setScalar(modelScale * (1 + zoom * 0.75));
-      modelPivot.position.set(narrow ? 0 : 3.1, (1 - current) * (narrow ? 12 : 5.1) - zoom * 0.8, 0);
-      modelPivot.rotation.y = (1 - current) * -1.25;
-      modelPivot.rotation.z = (1 - current) * -0.08;
-      const distance = narrow ? 21 : 19;
-      camera.position.set(0, 5.7 + (1 - current) * 2.7 - zoom * 1.4, distance - zoom * 9);
-      camera.lookAt(0, 3.55 + (1 - current) * 1.4, 0);
-      renderer.render(scene, camera);
-      if (target.entering && zoom > 0.985 && !entered) {
-        entered = true;
-        target.onEntered();
-      }
-      frame = requestAnimationFrame(render);
+    const pointerDown = (event: PointerEvent) => {
+      if (modeRef.current === 'entering') return;
+      dragging = true;
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+      canvas.setPointerCapture(event.pointerId);
+      canvas.classList.add('is-dragging');
     };
-    frame = requestAnimationFrame(render);
+    const pointerMove = (event: PointerEvent) => {
+      if (!dragging) return;
+      targetYaw += (event.clientX - lastPointerX) * 0.009;
+      targetPitch = THREE.MathUtils.clamp(targetPitch + (event.clientY - lastPointerY) * 0.007, -0.8, 0.8);
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+    };
+    const pointerUp = () => {
+      dragging = false;
+      canvas.classList.remove('is-dragging');
+      targetYaw = 0;
+      targetPitch = 0;
+    };
+    const wheel = (event: WheelEvent) => {
+      if (modeRef.current !== 'companion') return;
+      scrollVelocity += THREE.MathUtils.clamp(event.deltaY, -450, 450) * 0.0022;
+      scrollVelocity = THREE.MathUtils.clamp(scrollVelocity, -3.2, 3.2);
+    };
+    const scroll = () => {
+      const delta = window.scrollY - lastScrollY;
+      lastScrollY = window.scrollY;
+      if (modeRef.current === 'companion' && Math.abs(delta) > 0.5) {
+        scrollVelocity += THREE.MathUtils.clamp(delta, -260, 260) * 0.0011;
+        scrollVelocity = THREE.MathUtils.clamp(scrollVelocity, -3.2, 3.2);
+      }
+    };
+    canvas.addEventListener('pointerdown', pointerDown);
+    canvas.addEventListener('pointermove', pointerMove);
+    canvas.addEventListener('pointerup', pointerUp);
+    canvas.addEventListener('pointercancel', pointerUp);
+    window.addEventListener('wheel', wheel, { passive: true });
+    window.addEventListener('scroll', scroll, { passive: true });
+
+    const render = (time: number) => {
+      const dt = Math.min((time - (lastTime || time)) / 1000, 0.05);
+      lastTime = time;
+      const currentMode = modeRef.current;
+      if (!dragging) {
+        if (currentMode === 'intro') orbit += dt * 0.42;
+        if (currentMode === 'companion') orbit += scrollVelocity * dt;
+      }
+      scrollVelocity *= Math.exp(-dt * 3.5);
+      const ease = 1 - Math.exp(-dt * (dragging ? 18 : 5));
+      dragYaw += (targetYaw - dragYaw) * ease;
+      dragPitch += (targetPitch - dragPitch) * ease;
+      pivot.rotation.set(dragPitch, orbit + dragYaw, 0);
+
+      const aspect = Math.max(camera.aspect, 0.25);
+      const vertical = THREE.MathUtils.degToRad(camera.fov) / 2;
+      const widthForRotation = Math.max(modelWidth, modelDepth);
+      const distance = Math.max(
+        modelHeight / (2 * Math.tan(vertical)),
+        widthForRotation / (2 * Math.tan(vertical) * aspect),
+      ) * (currentMode === 'companion' ? 1.7 : aspect < 0.8 ? 1.35 : 1.8);
+      camera.position.set(0, distance * 0.1, distance);
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+      frame = window.requestAnimationFrame(render);
+    };
+    frame = window.requestAnimationFrame(render);
     return () => {
       alive = false;
-      cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frame);
       observer.disconnect();
+      canvas.removeEventListener('pointerdown', pointerDown);
+      canvas.removeEventListener('pointermove', pointerMove);
+      canvas.removeEventListener('pointerup', pointerUp);
+      canvas.removeEventListener('pointercancel', pointerUp);
+      window.removeEventListener('wheel', wheel);
+      window.removeEventListener('scroll', scroll);
       if (loadedModel) {
         loadedModel.traverse((node) => {
           if (!(node instanceof THREE.Mesh)) return;
@@ -108,5 +178,5 @@ export default function ChurchStage({ progress, entering, onUnavailable, onEnter
     };
   }, [onUnavailable]);
 
-  return <canvas ref={canvasRef} className="church-welcome__canvas" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className="church-welcome__canvas" aria-label="Modelo 3D interactivo de Iglesia Jerusalén" />;
 }
