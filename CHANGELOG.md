@@ -3,6 +3,15 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.8.0] - 2026-10-16
+
+### Añadido
+- Bienvenida 3D opcional en Inicio: templo visual inspirado en la fachada de Jerusalén, descenso y giro con scroll, acercamiento al entrar y acceso al Inicio existente.
+- Atajos para saltar y repetir la bienvenida, con alternativa estática para movimiento reducido o falta de WebGL.
+
+### Mejorado
+- Carga diferida del motor 3D para que las visitas posteriores mantengan ligero el Inicio habitual.
+
 ## [1.7.0] - 2026-10-13
 
 ### Añadido

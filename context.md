@@ -1,5 +1,9 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## Bienvenida 3D de Inicio (1.8.0, 16-oct-2026)
+
+`Home.tsx` añade una capa visual solo en la primera visita, con un GLB derivado de los renders locales de la fachada. El scroll controla el descenso y giro; «Entrar» acerca la cámara y muestra el Inicio existente. Hay salto, repetición, movimiento reducido y fallback si falla WebGL. El modelo es una interpretación visual, no un levantamiento medido. Fuentes y editable en `LOCAL/04_Trabajos_y_proyectos/Bienvenida_3D_Web/` del equipo de producción.
+
 Actualización admin 1.7.0 (12-oct-2026): pendientes por permiso en Inicio, seguimiento en Comunicaciones, salud en Contenido y procedencia en Medios. Recuperación por usuario/pestaña con caducidad 24 h; guardado servidor explícito, comparación/historial y protección de navegación mediante Data Router. Mobile prioriza Inicio/Comunicaciones/Contenido. Detalles y límites en `docs/admin-operations.md`; QA visual local con datos sintéticos no acredita sesión real ni publicación.
 
 Este archivo es la guía operativa para Codex, Antigravity y cualquier agente que cree o modifique interfaces en este proyecto.

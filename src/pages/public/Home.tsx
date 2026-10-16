@@ -15,6 +15,7 @@ import { DonationsSection } from '../../features/home/components/DonationsSectio
 import { CtaBanner } from '../../features/home/components/CtaBanner';
 import { BentoGridSection } from '../../features/home/components/BentoGridSection';
 import { HomeAtmosphere } from '../../features/home/components/HomeAtmosphere';
+import { ChurchWelcome3D } from '../../features/home/components/ChurchWelcome3D';
 import { ImageGallerySection, type GalleryImage } from '../../components/public/ImageGallerySection';
 import { Helmet } from 'react-helmet-async';
 import { DEFAULT_SECTIONS } from '../../features/home/constants';
@@ -43,6 +44,7 @@ const Home = () => {
 
   return (
     <>
+      <ChurchWelcome3D />
       <Helmet>
         <title>Iglesia Jerusalén | Inicio</title>
         <meta name="description" content="Bienvenido a la Iglesia Jerusalén. Únete a nuestra comunidad, descubre nuestros ministerios y acompáñanos en nuestros eventos y servicios." />
