@@ -4,6 +4,7 @@ import AdminHeader from '../../components/admin/AdminHeader';
 import { ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import { usePermissions } from '../../hooks/usePermissions';
 import SiteHealth from '../../features/dashboard/components/SiteHealth';
+import EditorialSchedulePanel from '../../features/editorial/components/EditorialSchedulePanel';
 
 const ContentHub = () => {
   const { hasPermission } = usePermissions();
@@ -34,6 +35,7 @@ const ContentHub = () => {
 
       {hasPermission('pages', 'view') && <Link to="/admin/paginas/lecturas" className="flex min-h-20 items-center justify-between gap-4 rounded-3xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-500/25 dark:bg-blue-500/10"><span><strong className="block">Nosotros · lecturas y revisión pastoral</strong><span className="mt-2 block text-sm text-slate-600 dark:text-slate-300">Borradores, fuentes, historia, himno y versiones publicadas.</span></span><ArrowRight size={20} /></Link>}
       {hasPermission('pages','view') && <SiteHealth />}
+      <EditorialSchedulePanel />
       <section className="grid gap-4 md:grid-cols-3" aria-label="Flujo editorial recomendado">
         {[
           { icon: Layers3, title: '1. Organiza', text: 'Actualiza páginas, ministerios y publicaciones desde sus editores.' },

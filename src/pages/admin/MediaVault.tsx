@@ -31,6 +31,7 @@ const MediaVault = () => {
   const confirm = useConfirmStore((state) => state.confirm);
   const { hasPermission } = usePermissions();
   const [search, setSearch] = useState('');
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'review' | 'complete' | 'private'>('all');
   const [optimize, setOptimize] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [files, setFiles] = useState<VaultFile[]>([]);
@@ -40,6 +41,26 @@ const MediaVault = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = hasPermission('media_vault', 'edit');
+
+  const catalogFiles = files.filter((file) => Boolean(file.catalogMetadata));
+  const needsReview = (file: VaultFile) => {
+    const metadata = file.catalogMetadata;
+    if (!metadata) return false;
+    return !metadata.credit || !metadata.source || !metadata.alt || !metadata.rights || metadata.rights === 'unverified';
+  };
+  const filteredFiles = files.filter((file) => {
+    const query = search.trim().toLocaleLowerCase();
+    const searchable = [file.name, file.catalogMetadata?.credit, file.catalogMetadata?.source]
+      .filter((value): value is string => typeof value === 'string')
+      .join(' ')
+      .toLocaleLowerCase();
+    const matchesSearch = !query || searchable.includes(query);
+    const matchesFilter = catalogFilter === 'all'
+      || (catalogFilter === 'private' && !file.catalogMetadata)
+      || (catalogFilter === 'review' && needsReview(file))
+      || (catalogFilter === 'complete' && Boolean(file.catalogMetadata) && !needsReview(file));
+    return matchesSearch && matchesFilter;
+  });
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -296,7 +317,16 @@ const MediaVault = () => {
           Los archivos del depósito privado usan enlaces temporales. Los recursos publicados en Cloudinary o en la biblioteca pública mantienen enlaces públicos; revisa sus derechos antes de utilizarlos.
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-4"><label className="min-w-0 flex-1 text-sm font-semibold">Buscar recurso<input type="search" value={search} onChange={e => setSearch(e.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-white/15 dark:bg-slate-950" /></label>{canEdit && <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={optimize} onChange={e=>setOptimize(e.target.checked)}/>Optimizar JPG/PNG grandes a WebP (1920 px)</label>}</div>
+      <div className="grid gap-3 sm:grid-cols-3" aria-label="Estado de la biblioteca">
+        <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-white/10 dark:bg-white/[0.03]"><strong className="block text-xl text-slate-900 dark:text-white">{catalogFiles.length}</strong><span className="text-xs text-slate-500">Recursos del catálogo</span></div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-300/20 dark:bg-amber-300/[0.05]"><strong className="block text-xl text-amber-900 dark:text-amber-100">{catalogFiles.filter(needsReview).length}</strong><span className="text-xs text-amber-900/75 dark:text-amber-100/75">Con datos de procedencia pendientes</span></div>
+        <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-white/10 dark:bg-white/[0.03]"><strong className="block text-xl text-slate-900 dark:text-white">{files.filter((file) => !file.catalogMetadata).length}</strong><span className="text-xs text-slate-500">Archivos del depósito privado</span></div>
+      </div>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="min-w-0 flex-1 text-sm font-semibold">Buscar recurso<input type="search" value={search} onChange={e => setSearch(e.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-white/15 dark:bg-slate-950" /></label>
+        <label className="text-sm font-semibold">Mostrar<select value={catalogFilter} onChange={(event) => setCatalogFilter(event.target.value as typeof catalogFilter)} className="mt-1 min-h-11 w-full min-w-56 rounded-xl border border-slate-200 bg-white px-3 dark:border-white/15 dark:bg-slate-950"><option value="all">Todos los recursos</option><option value="review">Procedencia por revisar</option><option value="complete">Procedencia registrada</option><option value="private">Depósito privado</option></select></label>
+        {canEdit && <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={optimize} onChange={e=>setOptimize(e.target.checked)}/>Optimizar JPG/PNG grandes a WebP (1920 px)</label>}
+      </div>
       {loadError && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{loadError}</p>}
 
       {loading ? (
@@ -307,7 +337,7 @@ const MediaVault = () => {
         /* Files Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <>
-            {files.filter(file => file.name.toLowerCase().includes(search.toLowerCase())).map((file) => (
+            {filteredFiles.map((file) => (
               <AnimeFadeUp
                 key={file.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
@@ -328,11 +358,10 @@ const MediaVault = () => {
                       </span>
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white rounded-full p-1 border border-white/20">
-                    {file.isCloudinary ? <Cloud size={12} className="text-blue-400" /> : <Lock size={12} className="text-amber-400" />}
+                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white rounded-full p-1 border border-white/20" title={file.catalogMetadata ? `Recurso público · ${file.provider || 'proveedor registrado'}` : 'Archivo del depósito privado'}>
+                    {file.catalogMetadata ? <Cloud size={12} className="text-blue-400" /> : <Lock size={12} className="text-amber-400" />}
                   </div>
-                  {file.catalogMetadata && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{file.catalogMetadata.rights === 'unverified' || !file.catalogMetadata.rights ? 'Derechos pendientes' : 'Derechos registrados'}{files.some(other => other.id !== file.id && file.catalogMetadata?.sha256 && other.catalogMetadata?.sha256 === file.catalogMetadata.sha256) ? ' · Duplicado exacto' : ''}{file.metadata.mimetype.startsWith('image/') && file.metadata.size > 1024*1024 ? ' · Imagen grande' : ''}</p>}
-                  {canEdit && file.catalogMetadata && <MediaCreditsEditor id={file.id} metadata={file.catalogMetadata} onSaved={() => void fetchFiles()} />}
+                  {file.catalogMetadata && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{needsReview(file) ? 'Procedencia por completar' : 'Procedencia registrada'}{files.some(other => other.id !== file.id && file.catalogMetadata?.sha256 && other.catalogMetadata?.sha256 === file.catalogMetadata.sha256) ? ' · Duplicado exacto' : ''}{file.metadata.mimetype.startsWith('image/') && file.metadata.size > 1024*1024 ? ' · Imagen grande' : ''}</p>}
                 </div>
 
                 {/* Details */}
@@ -350,6 +379,7 @@ const MediaVault = () => {
                       </span>
                     </div>
                   </div>
+                  {canEdit && file.catalogMetadata && <MediaCreditsEditor id={file.id} metadata={file.catalogMetadata} onSaved={() => void fetchFiles()} />}
 
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-white/5 mt-2">
@@ -383,6 +413,7 @@ const MediaVault = () => {
               <p className="text-gray-400 text-sm mt-1">Sube archivos vectoriales o de alta resolución para los ministerios.</p>
             </div>
           )}
+          {files.length > 0 && filteredFiles.length === 0 && <div className="col-span-full rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center text-sm text-slate-600 dark:border-white/15 dark:text-slate-300">No hay recursos que coincidan con esta búsqueda y filtro.</div>}
         </div>
       )}
 

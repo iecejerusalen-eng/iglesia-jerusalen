@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabase';
-import { Plus, Edit2, Trash2, Save, X, Image as ImageIcon, Smile, Search, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Smile, Search, AlertCircle } from 'lucide-react';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-import { uploadMediaFile } from '../../../lib/mediaService';
+import MediaAssetPicker from '../../../components/admin/MediaAssetPicker';
 import { toast } from 'sonner';
 
 interface Question {
@@ -25,7 +25,6 @@ export const BiblionarioEditor = () => {
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [activeEmojiPicker, setActiveEmojiPicker] = useState<'a' | 'b' | 'c' | 'd' | null>(null);
   
   const [formData, setFormData] = useState<Partial<Question>>({});
@@ -72,22 +71,6 @@ export const BiblionarioEditor = () => {
       difficulty_level: 1,
       image_url: ''
     });
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!e.target.files || e.target.files.length === 0) return;
-      
-      const file = e.target.files[0];
-      setUploadingImage(true);
-      const publicUrl = await uploadMediaFile(file, 'biblionario_assets', 'image');
-      setFormData({ ...formData, image_url: publicUrl });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Error al subir la imagen.');
-    } finally {
-      setUploadingImage(false);
-    }
   };
 
   const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -181,18 +164,8 @@ export const BiblionarioEditor = () => {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Imagen (Opcional)
           </label>
-          <div className="flex items-center gap-4">
-            <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <ImageIcon className="h-4 w-4" />
-              {uploadingImage ? 'Subiendo...' : 'Subir Imagen'}
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
-              />
-            </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <MediaAssetPicker folder="biblionario_assets" value={formData.image_url} label="Elegir o subir imagen" onSelect={(asset) => setFormData((current) => ({ ...current, image_url: asset.url }))} />
             {formData.image_url && (
               <div className="relative">
                 <img src={formData.image_url} alt="Preview" className="h-12 w-12 object-cover rounded" />

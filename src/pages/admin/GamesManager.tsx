@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
-import { Gamepad2, Edit2, Eye, EyeOff, AlertCircle, Plus, Music, X, Upload, Trash2 } from 'lucide-react';
+import { Gamepad2, Edit2, Eye, EyeOff, AlertCircle, Plus, Music, X, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { uploadMediaFile } from '../../lib/mediaService';
+import MediaAssetPicker from '../../components/admin/MediaAssetPicker';
 import { toast } from 'sonner';
 
 interface Game {
@@ -24,7 +24,6 @@ export const GamesManager = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({ title: '', description: '', image_url: '', slug: '' });
 
   const fetchGames = async () => {
@@ -55,23 +54,6 @@ export const GamesManager = () => {
     setEditingGame(game);
     setFormData({ title: game.title, description: game.description || '', image_url: game.image_url || '', slug: game.slug || '' });
     setIsModalOpen(true);
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingImage(true);
-    try {
-      const url = await uploadMediaFile(file, 'games');
-      setFormData(prev => ({ ...prev, image_url: url }));
-      toast.success('Imagen subida a Cloudinary exitosamente');
-    } catch (err: unknown) {
-      console.error('Error al subir imagen:', err);
-      toast.error('Error al subir imagen a Cloudinary');
-    } finally {
-      setUploadingImage(false);
-    }
   };
 
   const handleSave = async () => {
@@ -333,11 +315,7 @@ export const GamesManager = () => {
                     )}
                   </div>
                   <div className="flex-grow space-y-2">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors w-full justify-center border border-slate-200 dark:border-white/10">
-                      <Upload className="h-4 w-4" />
-                      {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
-                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
-                    </label>
+                    <MediaAssetPicker folder="games" value={formData.image_url} label="Elegir o subir portada" onSelect={(asset) => setFormData((current) => ({ ...current, image_url: asset.url }))} />
                     <input 
                       type="text" 
                       value={formData.image_url}

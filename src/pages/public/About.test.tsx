@@ -20,7 +20,7 @@ describe('Nosotros público', () => {
     result.mockResolvedValue({ data: null, error: null }); show();
     await waitFor(() => expect(filters).toHaveBeenCalledWith('speakers', 'is_public', true));
     expect(screen.queryByText(/CRM/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Aprender más' })).toHaveAttribute('href', '/nosotros/documentos');
+    expect(screen.getAllByRole('link', { name: 'Leer en línea' })[0]).toHaveAttribute('href', '/nosotros/documentos/estatutos');
   });
   it('conserva la página cuando rechaza una consulta y permite reintentar sin consulta insegura', async () => {
     result.mockImplementation((table: string) => table === 'speakers' ? Promise.reject(new Error('Sin conexión')) : Promise.resolve({ data: { title: 'Nuestra iglesia' }, error: null }));

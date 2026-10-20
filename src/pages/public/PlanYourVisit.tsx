@@ -190,11 +190,11 @@ export default function PlanYourVisit() {
           ))}
         </section>
 
-        <section className="border-y border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-900/40">
+        <section id="horarios" aria-labelledby="visit-schedules-title" className="scroll-mt-24 border-y border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-900/40">
           <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[.8fr_1.2fr] lg:py-20">
             <div>
               <p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">Plan simple, llegada tranquila</p>
-              <h2 className="mt-3 max-w-md font-serif text-4xl font-black leading-tight sm:text-5xl">Elige el momento para encontrarnos.</h2>
+              <h2 id="visit-schedules-title" className="mt-3 max-w-md font-serif text-4xl font-black leading-tight sm:text-5xl">Elige el momento para encontrarnos.</h2>
               <p className="mt-4 max-w-md text-sm leading-7 text-slate-600 dark:text-slate-400">Estos horarios se actualizan desde la agenda pública de la iglesia.</p>
               <a href="/eventos" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-800 underline decoration-amber-400 decoration-2 underline-offset-4 dark:text-blue-200">Ver agenda completa <ArrowRight size={15} /></a>
             </div>

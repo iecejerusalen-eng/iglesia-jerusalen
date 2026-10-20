@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowRight, BookOpenText, Users } from 'lucide-react';
+import { ArrowRight, BookOpenText, Download, HeartHandshake, MessageCircle, Users } from 'lucide-react';
 import LearningProgress from '../../features/about/LearningProgress';
 import { learningTopics } from '../../features/about/learningContent';
 import { supabase } from '../../config/supabase';
@@ -53,6 +53,8 @@ const mergeLeaders = (remote: Speaker[]) => {
     merged.set(key, {
       ...fallback,
       ...leader,
+      bio: leader.bio?.trim() ? leader.bio : fallback?.bio ?? '',
+      leadership_roles: leader.leadership_roles?.length ? leader.leadership_roles : fallback?.leadership_roles ?? [],
       photo_url: featuredPastorPortraits.get(key) ?? leader.photo_url ?? fallback?.photo_url ?? null,
     });
   });
@@ -187,12 +189,13 @@ const About = () => {
                   {leader.photo_url ? (
                     <img
                       src={leader.photo_url}
-                      alt={`Retrato editorial de ${leader.first_name} ${leader.last_name}`}
+                      alt={`${leader.role || 'Liderazgo de Iglesia Jerusalén'}: ${leader.first_name} ${leader.last_name}, retrato editorial ambientado en el auditorio de la iglesia`}
                       loading="lazy"
                       decoding="async"
                       width={600}
                       height={450}
-                      className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.03]"
+                      sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 100vw"
+                      className="h-full w-full object-cover object-center"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-slate-300">
@@ -206,17 +209,33 @@ const About = () => {
                     {leader.first_name} {leader.last_name}
                   </h3>
                   {leader.bio && <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">{leader.bio}</p>}
-
+                  {leader.leadership_roles?.length > 0 && <ul aria-label={`Áreas de servicio de ${leader.first_name} ${leader.last_name}`} className="mt-4 flex flex-wrap justify-center gap-2">{leader.leadership_roles.slice(0, 3).map((role) => <li key={role} className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-100">{role}</li>)}</ul>}
                 </div>
               </GlassCard>
             ))}
+          </div>
+          <div className="mx-auto mt-7 flex max-w-3xl flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/75 p-5 text-center dark:border-white/10 dark:bg-slate-900/55 sm:flex-row sm:text-left">
+            <div><p className="font-semibold text-slate-900 dark:text-white">¿Podemos acompañarte?</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Escríbenos por los canales oficiales de la iglesia o comparte una petición de oración.</p></div>
+            <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto">
+              <Link to="/contacto" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2"><MessageCircle size={16} aria-hidden="true" /> Contactar a la iglesia</Link>
+              <Link to="/peticiones" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-800 transition hover:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-white/20 dark:text-white"><HeartHandshake size={16} aria-hidden="true" /> Pedir oración</Link>
+            </div>
           </div>
         </section>
         <section id="documentos" aria-labelledby="documents-heading" className="my-10 scroll-mt-28 rounded-3xl bg-slate-950 p-7 text-white sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-300">Nuestra organización</p>
           <h2 id="documents-heading" className="mt-3 font-serif text-3xl">Conoce los estatutos y el reglamento</h2>
           <p className="mt-4 max-w-2xl leading-7 text-slate-300">Consulta los documentos de la Iglesia Cuadrangular, léelos en línea o descarga los PDF originales.</p>
-          <div className="mt-6 flex flex-wrap gap-5"><Link to="/nosotros/documentos" className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-amber-300 px-5 font-semibold text-slate-950">Aprender más <ArrowRight size={18} /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar estatuto PDF</a><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-12 items-center underline underline-offset-4">Descargar reglamento PDF</a></div>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            <article className="rounded-2xl border border-white/15 bg-white/[0.06] p-4">
+              <h3 className="font-semibold">Estatuto de la iglesia</h3>
+              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/estatutos" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-300 px-4 text-sm font-bold text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
+            </article>
+            <article className="rounded-2xl border border-white/15 bg-white/[0.06] p-4">
+              <h3 className="font-semibold">Reglamento interno</h3>
+              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/reglamento-interno" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-300 px-4 text-sm font-bold text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
+            </article>
+          </div>
         </section>
 
       </div>

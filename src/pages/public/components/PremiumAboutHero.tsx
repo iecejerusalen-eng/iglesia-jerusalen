@@ -1,7 +1,9 @@
 import { useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowDown,
   ArrowRight,
+  Clock3,
   Compass,
   Globe2,
   HeartHandshake,
@@ -79,19 +81,20 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
           {notice && <p className="mt-4 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">{notice}</p>}
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#aprender"
+            <Link
+              to="/visita"
               className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-xl shadow-slate-950/15 transition duration-300 hover:-translate-y-0.5 hover:bg-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:bg-amber-400 dark:text-slate-950 dark:shadow-amber-400/10 dark:hover:bg-amber-300 dark:focus-visible:ring-offset-[#050b1c]"
             >
-              Explorar nuestra fe
+              Planifica tu visita
               <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-            </a>
-            <a
-              href="#liderazgo"
+            </Link>
+            <Link
+              to="/visita#horarios"
               className="inline-flex min-h-12 items-center gap-2 rounded-full border border-slate-300/80 bg-white/70 px-5 py-3 text-sm font-bold text-slate-800 backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:border-white/15 dark:bg-white/[0.06] dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10 dark:focus-visible:ring-offset-[#050b1c]"
             >
-              Conocer a quienes sirven
-            </a>
+              <Clock3 size={16} aria-hidden="true" />
+              Horarios y ubicación
+            </Link>
           </div>
 
           <div className="mt-9 grid max-w-xl grid-cols-3 border-y border-slate-200/80 py-4 dark:border-white/10">
@@ -106,10 +109,15 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
             ))}
           </div>
 
-          <a href="#aprender" className="mt-7 inline-flex items-center gap-2 text-xs font-bold text-slate-500 transition hover:text-indigo-700 dark:text-slate-400 dark:hover:text-amber-300">
+          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+          <a href="#aprender" className="inline-flex min-h-11 items-center gap-2 transition hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:text-amber-300">
             <ArrowDown size={14} aria-hidden="true" />
-            Conoce el origen, los símbolos y nuestra historia
+            Explorar nuestra fe
           </a>
+          <a href="#liderazgo" className="inline-flex min-h-11 items-center gap-2 transition hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:text-amber-300">
+            Conocer a quienes sirven <ArrowRight size={14} aria-hidden="true" />
+          </a>
+          </div>
         </div>
 
         <div
@@ -129,8 +137,11 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
               {!imageUnavailable ? (
                 <img
                   src={imageSrc}
-                  alt="Retrato editorial de los pastores de la Iglesia Jerusalén, Rev. David Nicola y Corina Miranda"
-                  className="h-full w-full scale-[1.28] object-cover object-[center_15%] transition duration-700"
+                  alt="Pastores David Nicola y Corina Miranda en una composición editorial ambientada en el auditorio de Iglesia Jerusalén"
+                  width={1448}
+                  height={1086}
+                  sizes="(min-width: 1280px) 560px, (min-width: 1024px) 48vw, 100vw"
+                  className="h-full w-full object-cover object-[center_24%] transition duration-700"
                   loading="eager"
                   fetchPriority="high"
                   onError={handleImageError}

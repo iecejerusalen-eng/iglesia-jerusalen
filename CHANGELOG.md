@@ -3,6 +3,17 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.11.0] - 2026-10-20
+
+### Añadido
+- Acceso directo desde Nosotros a la planificación de visitas y a los horarios vigentes; los horarios se obtienen de la agenda.
+- Bandeja de trabajo con seguimientos y tareas del día, y calendario editorial con borradores, revisiones, programación y publicaciones.
+
+### Mejorado
+- Presentación del liderazgo con perfiles, textos alternativos, imágenes adaptables y acciones de contacto y oración; documentos institucionales con opciones claras para leer o descargar.
+- Biblioteca de medios con filtros de procedencia y selector reutilizable en los editores de contenido, juegos y presentaciones.
+- Panel de salud del sitio con fecha y fuente de las revisiones, y accesos a la administración de permisos.
+
 ## [1.10.1] - 2026-10-19
 
 ### Mejorado
