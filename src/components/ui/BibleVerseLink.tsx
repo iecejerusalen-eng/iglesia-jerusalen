@@ -1,13 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { parseBibleReferences, type ParsedVerse } from '../../utils/bibleParser';
+import BibleVersePreview from './BibleVersePreview';
 
 interface BibleVerseLinkProps {
   reference: string;
   className?: string;
+  preview?: boolean;
 }
 
-export function BibleVerseLink({ reference, className = '' }: BibleVerseLinkProps) {
+export function BibleVerseLink({ reference, className = '', preview = true }: BibleVerseLinkProps) {
   const parsedRefs = parseBibleReferences(reference);
 
   // If we couldn't parse any valid reference, fallback to simple text
@@ -24,7 +26,7 @@ export function BibleVerseLink({ reference, className = '' }: BibleVerseLinkProp
 
         return (
           <React.Fragment key={idx}>
-            <BibleVerseItem parsedRef={ref} className={className} />
+            <BibleVerseItem parsedRef={ref} className={className} preview={preview} />
             {idx < parsedRefs.length - 1 && <span>;</span>}
           </React.Fragment>
         );
@@ -36,10 +38,12 @@ export function BibleVerseLink({ reference, className = '' }: BibleVerseLinkProp
 interface BibleVerseItemProps {
   parsedRef: ParsedVerse;
   className?: string;
+  preview?: boolean;
 }
 
-function BibleVerseItem({ parsedRef, className = '' }: BibleVerseItemProps) {
+function BibleVerseItem({ parsedRef, className = '', preview = false }: BibleVerseItemProps) {
   const { bookId, chapter, verses, original } = parsedRef;
+  if (preview) return <BibleVersePreview reference={original} appearance="link" className={className} />;
   const versiculoParam = verses ? `&versiculo=${verses.replace(/\s+/g, '')}` : '';
   const toUrl = `/recursos/biblia?libro=${bookId}&capitulo=${chapter}${versiculoParam}`;
 

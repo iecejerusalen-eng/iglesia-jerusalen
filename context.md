@@ -174,3 +174,24 @@ Nosotros y cinco lectores usan documentos JSONB con capítulos/bloques compartid
 ## Corrección de alcance — 12-oct-2026, 1.6.1
 
 El usuario rechazó la relación de UTPL con esta página. Retirar reseña educativa y fuente de la historia pública/borrador activo. No usar historia de una unidad educativa para completar la historia de la iglesia; los registros previos de esa incorporación quedan corregidos por esta decisión.
+
+## 19-oct-2026 — Portada de Adivina la palabra
+
+La portada de Adivina la palabra usa la ilustración bíblica local de Biblia abierta y letras de madera para explicar visualmente el reto. La composición responsive conserva el fondo nocturno institucional, presenta primero el arte en móvil, resume oportunidades y puntos, y aclara selección con mouse/teclado y la dificultad antes de iniciar. El texto de atajos tiene contraste reforzado en esta superficie oscura. Sin dependencias nuevas ni cambios a rutas, reglas, datos o Supabase.
+
+## 19-oct-2026 — Vista emergente bíblica reutilizable
+
+`BibleVersePreview` es el popover compartido para leer un pasaje y abrir su cita exacta en la Biblia. `BibleVerseLink` conserva la navegación directa por defecto y ofrece `preview` para activar la vista en cualquier referencia individual. Ya se usa en Memorama, Adivina la palabra y Descubre el Personaje. Cada uso puede pasar `className`; el popover trae su lectura, cierre, estados de carga/error y enlace a Biblia.
+
+## 19-oct-2026 — Teclado para los cuatro juegos
+
+Se añadió el atajo común Mayús + Intro para continuar cuando aparece la siguiente acción: pregunta, palabra, personaje, aprendizaje o nueva ronda. En Biblionario también se eligen respuestas con A–D y se confirman con Intro; en Adivina la palabra las letras se pueden escribir o seleccionar con mouse. Las tarjetas del Memorama y opciones restantes se pueden recorrer con Tab e Intro. Los atajos se detienen en campos editables y no interceptan enlaces o botones ajenos al avance. La vista de éxito de Descubre el Personaje ahora espera a que el jugador avance, para permitir leer la respuesta y su referencia.
+
+El nombre público del antiguo Reto de Letras Bíblicas pasa a «Adivina la palabra» en el catálogo, el juego, las migas de pan y sus metadatos. Se conserva el slug y las tablas de datos para no romper enlaces ni marcadores. Cambio local en `src/features/games/` y páginas públicas; no requiere migración.
+
+## 19-oct-2026 — Lectura emergente en el Memorama Bíblico
+
+La cita de cada pareja encontrada abre una vista previa no modal del texto RVR1960. Se cierra con la X, al tocar fuera, con Escape o automáticamente a los 12 segundos; el texto y el botón «Abrir en la Biblia» navegan al libro, capítulo y rango exactos del pasaje. El texto se obtiene en el momento desde la misma fuente de capítulos que usa el lector bíblico; si falla la conexión, se muestra un aviso y se conserva el acceso al pasaje. Cambio local en `BibleVersePreview.tsx` y `MemoryMatch.tsx`; no se modificó ni aplicó una migración.
+## 19-oct-2026 — Popup de lectura para versículos vinculados
+
+`BibleVerseLink` abre la vista reutilizable `BibleVersePreview` por defecto para leer la referencia, cerrarla con Escape, fuera del popup, la X o el temporizador, y abrir el pasaje exacto en la Biblia en una pestaña nueva. Los usos que necesiten navegación directa pueden desactivar la vista previa explícitamente. Verificado en navegador local en `/nosotros/doctrina`; sin publicación previa.

@@ -8,7 +8,7 @@ const scoring = [
   { action: 'Respuesta incorrecta', points: '-25 pts', color: 'text-red-600 dark:text-red-400' },
   { action: 'Usar comodín "50/50"', points: '0 pts (sin penalización)', color: 'text-gray-500' },
   { action: 'Memorama completado (< 30 movimientos)', points: '+200 pts bonus', color: 'text-purple-600 dark:text-purple-400' },
-  { action: 'Ahorcado resuelto sin errores', points: '+150 pts bonus', color: 'text-amber-600 dark:text-amber-400' },
+  { action: 'Palabra completada (Adivina la palabra)', points: '+100 pts', color: 'text-amber-600 dark:text-amber-400' },
 ];
 
 const leaderboard = [
@@ -38,11 +38,18 @@ export default function Section5Games({ onNext }: { onNext: () => void }) {
       adminTip: 'El administrador configura el tamaño del tablero (4x4, 6x6) y las imágenes de las tarjetas. Se puede vincular con el contenido del Aula Virtual (ej. cartas de personajes del curso que se está estudiando).',
     },
     {
-      name: 'Ahorcado',
+      name: 'Descubre el Personaje',
+      color: 'blue',
+      icon: <Star className="w-6 h-6" />,
+      desc: 'Resuelve cuatro pistas bíblicas para reconocer a una persona. Las pistas adicionales y los errores reducen los puntos.',
+      adminTip: 'El editor permite revisar los personajes, las opciones y las pistas progresivas de cada ronda.',
+    },
+    {
+      name: 'Adivina la palabra',
       color: 'purple',
       icon: <Trophy className="w-6 h-6" />,
-      desc: 'Adivina palabras o nombres bíblicos letra por letra. Tiene 6 intentos antes de perder. Las palabras se sacan de la base de datos de la Biblia.',
-      adminTip: 'Se puede configurar la categoría de palabras: nombres de personajes, libros de la Biblia, términos doctrinales. También se puede limitar a vocabulario relacionado con el tema del servicio del domingo.',
+      desc: 'Descubre palabras y nombres bíblicos letra por letra. Cada fallo resta una de diez oportunidades; al completar la palabra recibes puntos y su referencia.',
+      adminTip: 'Se puede configurar la categoría de palabras: nombres de personajes, libros de la Biblia y términos bíblicos. También se puede limitar el vocabulario al tema que se está estudiando.',
     },
   ];
 
@@ -58,7 +65,7 @@ export default function Section5Games({ onNext }: { onNext: () => void }) {
         </div>
         <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">Aprender Jugando</h2>
         <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl">
-          Convertimos el aprendizaje bíblico en un hábito atractivo mediante 3 juegos interactivos conectados 
+          Convertimos el aprendizaje bíblico en un hábito atractivo mediante 4 juegos interactivos conectados
           a un sistema de puntuación y tabla de clasificación global en tiempo real.
         </p>
       </div>

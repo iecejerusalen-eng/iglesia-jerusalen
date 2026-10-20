@@ -17,6 +17,7 @@ interface CharacterRecord {
   category: string;
   difficulty: Difficulty;
   image_url: string | null;
+  bible_reference: string | null;
   is_active: boolean;
 }
 
@@ -27,6 +28,7 @@ interface CharacterForm {
   category: string;
   difficulty: Difficulty;
   imageUrl: string;
+  bibleReference: string;
   isActive: boolean;
 }
 
@@ -37,6 +39,7 @@ const emptyForm = (): CharacterForm => ({
   category: 'Personajes',
   difficulty: 'medium',
   imageUrl: '',
+  bibleReference: '',
   isActive: true
 });
 
@@ -66,7 +69,7 @@ export const GuessCharacterEditor = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('game_guess_characters')
-      .select('id, name, option_a, option_b, option_c, option_d, clues, category, difficulty, image_url, is_active')
+      .select('id, name, option_a, option_b, option_c, option_d, clues, category, difficulty, image_url, bible_reference, is_active')
       .order('category')
       .order('name');
 
@@ -103,6 +106,7 @@ export const GuessCharacterEditor = () => {
       category: character.category,
       difficulty: character.difficulty,
       imageUrl: character.image_url ?? '',
+      bibleReference: character.bible_reference ?? '',
       isActive: character.is_active
     });
     setIsOpen(true);
@@ -151,6 +155,7 @@ export const GuessCharacterEditor = () => {
       category: form.category.trim() || 'Personajes',
       difficulty: form.difficulty,
       image_url: form.imageUrl.trim() || null,
+      bible_reference: form.bibleReference.trim() || null,
       is_active: form.isActive,
       updated_at: new Date().toISOString()
     };
@@ -290,6 +295,9 @@ export const GuessCharacterEditor = () => {
               </label>
               <label className="sm:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Imagen opcional
                 <input type="url" value={form.imageUrl} onChange={event => setForm(current => ({ ...current, imageUrl: event.target.value }))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-4 font-normal outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950 dark:focus:ring-blue-950" placeholder="https://…" />
+              </label>
+              <label className="sm:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Referencia bíblica para el acierto
+                <input value={form.bibleReference} onChange={event => setForm(current => ({ ...current, bibleReference: event.target.value }))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-4 font-normal outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-white/10 dark:bg-slate-950 dark:focus:ring-blue-950" placeholder="Ej. Éxodo 14:21-22" />
               </label>
             </div>
 

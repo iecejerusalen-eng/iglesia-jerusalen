@@ -137,8 +137,8 @@ export const HangmanEditor = () => {
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-3xl border border-slate-200/70 bg-white/80 p-6 shadow-xl shadow-slate-200/40 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/20 sm:flex-row sm:items-center">
         <div>
           <span className="mb-2 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300"><Languages size={14} /> Contenido en español</span>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Editor: Ahorcado Bíblico</h1>
-          <p className="mt-1 text-sm text-gray-500">Gestiona respuestas, pistas y el pasaje que se revela al terminar.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Editor: Adivina la palabra</h1>
+          <p className="mt-1 text-sm text-gray-500">Gestiona palabras, pistas y el pasaje que se revela al terminar.</p>
         </div>
         <button 
           onClick={() => { resetForm(); setIsModalOpen(true); }}

@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { HelpCircle, Star, Award, RotateCcw, ChevronRight, Trophy, Lock, User, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '../../../config/supabase';
+import { drawContent } from '../../../features/games/utils/contentDeck';
+import BibleVersePreview from '../../../components/ui/BibleVersePreview';
+import { useGameKeyboardShortcuts } from '../../../features/games/hooks/useGameKeyboardShortcuts';
+import { GameKeyboardHint } from '../../../features/games/components/GameKeyboardHint';
+import { CharacterRevealPortrait } from '../../../features/games/components/CharacterRevealPortrait';
 
 // --- Data ---
 type Character = {
@@ -12,6 +17,8 @@ type Character = {
   name: string;
   options: string[];
   clues: string[];
+  bible_reference?: string | null;
+  image_url?: string | null;
 };
 
 type CharacterRow = {
@@ -22,6 +29,8 @@ type CharacterRow = {
   option_c: string;
   option_d: string;
   clues: unknown;
+  bible_reference: string | null;
+  image_url: string | null;
 };
 
 const charactersDb: Character[] = [
@@ -260,10 +269,11 @@ export const GuessCharacter = () => {
   const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [contentNotice, setContentNotice] = useState('Cargando los personajes publicados; puedes jugar mientras con la colección integrada.');
 
   const resetGame = useCallback((pool: Character[]) => {
     // Select 10 random characters
-    setCharacters(shuffleArray(pool).slice(0, 10).map(c => ({
+    setCharacters(drawContent(pool, 'descubre-personaje', Math.min(10, pool.length), (character) => character.id ?? character.name).map(c => ({
       ...c,
       options: shuffleArray(c.options)
     })));
@@ -284,32 +294,41 @@ export const GuessCharacter = () => {
     let isActive = true;
 
     const loadCharacters = async () => {
-      const { data, error } = await supabase
-        .from('game_guess_characters')
-        .select('id, name, option_a, option_b, option_c, option_d, clues')
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('game_guess_characters')
+          .select('id, name, option_a, option_b, option_c, option_d, clues, bible_reference, image_url')
+          .eq('is_active', true)
+          .order('name');
 
-      if (!isActive) return;
-
-      if (error) {
-        console.error('No se pudieron cargar los personajes administrables:', error);
-        resetGame(charactersDb);
-        return;
-      }
+        if (!isActive) return;
+        if (error) throw error;
 
       const remoteCharacters = ((data ?? []) as CharacterRow[])
         .map((row): Character => ({
           id: row.id,
           name: row.name,
           options: [row.option_a, row.option_b, row.option_c, row.option_d],
-          clues: parseClues(row.clues)
+          clues: parseClues(row.clues),
+          bible_reference: row.bible_reference,
+          image_url: row.image_url
         }))
         .filter(character => character.clues.length === 4 && character.options.includes(character.name));
 
-      const pool = remoteCharacters.length >= 10 ? remoteCharacters : charactersDb;
+      const hasEnoughPublished = remoteCharacters.length >= 10;
+      const pool = hasEnoughPublished ? remoteCharacters : charactersDb;
+      setContentNotice(hasEnoughPublished
+        ? ''
+        : `Hay ${remoteCharacters.length} personajes publicados y se necesitan 10 para una partida completa. Se usa la colección integrada mientras se completa el catálogo.`);
       setAvailableCharacters(pool);
       resetGame(pool);
+      } catch (error) {
+        if (!isActive) return;
+        console.error('No se pudieron cargar los personajes administrables:', error);
+        setContentNotice('No se pudo conectar con el contenido publicado. La partida continúa con la colección integrada; vuelve a cargar para intentar actualizarla.');
+        setAvailableCharacters(charactersDb);
+        resetGame(charactersDb);
+      }
     };
 
     void loadCharacters();
@@ -325,32 +344,35 @@ export const GuessCharacter = () => {
     }
   };
 
+  const advanceCharacter = () => {
+    if (!showSuccess) return;
+    if (currentIndex < characters.length - 1) {
+      setCurrentIndex((index) => index + 1);
+      setPotentialPoints(100);
+      setCluesRevealed(1);
+      setWrongGuesses([]);
+      setShowSuccess(false);
+    } else {
+      setGameOver(true);
+      setShowSuccess(false);
+    }
+  };
+
   const handleGuess = (option: string) => {
     if (wrongGuesses.includes(option)) return;
 
     if (option === currentCharacter.name) {
       // Success
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#D97706', '#1E3A8A', '#0EA5E9']
-      });
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#D97706', '#1E3A8A', '#0EA5E9']
+        });
+      }
       setScore(prev => prev + potentialPoints);
       setShowSuccess(true);
-      
-      setTimeout(() => {
-        if (currentIndex < characters.length - 1) {
-          setCurrentIndex(prev => prev + 1);
-          setPotentialPoints(100);
-          setCluesRevealed(1);
-          setWrongGuesses([]);
-          setShowSuccess(false);
-        } else {
-          setGameOver(true);
-          setShowSuccess(false);
-        }
-      }, 1500);
     } else {
       // Wrong guess
       toast.error('¡Personaje incorrecto!');
@@ -359,14 +381,21 @@ export const GuessCharacter = () => {
     }
   };
 
-  if (characters.length === 0) return null;
+  useGameKeyboardShortcuts({
+    onNext: showSuccess ? advanceCharacter : gameOver ? startGame : undefined,
+  });
+
+  if (characters.length === 0) {
+    return <main className="mx-auto min-h-[50vh] max-w-2xl px-4 pt-32 text-center"><p role="status" className="text-slate-700 dark:text-slate-200">{contentNotice || 'No hay personajes disponibles.'}</p><button type="button" onClick={startGame} className="mt-5 rounded-xl bg-blue-950 px-5 py-3 font-bold text-white dark:bg-amber-400 dark:text-slate-950">Reintentar</button></main>;
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-12 px-4 relative overflow-hidden transition-colors duration-500">
+    <MotionConfig reducedMotion="user">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-28 xl:pb-12 px-4 relative overflow-hidden transition-colors duration-500 motion-reduce:transition-none">
       {/* Premium Background Orbs */}
-      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/20 dark:bg-indigo-600/20 blur-[120px] z-0 animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-500/20 dark:bg-amber-600/20 blur-[120px] z-0 animate-pulse" style={{ animationDelay: '2s' }}></div>
-      <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] rounded-full bg-emerald-500/10 dark:bg-emerald-600/10 blur-[100px] z-0 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/20 dark:bg-indigo-600/20 blur-[120px] z-0 animate-pulse motion-reduce:animate-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-500/20 dark:bg-amber-600/20 blur-[120px] z-0 animate-pulse motion-reduce:animate-none" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] rounded-full bg-emerald-500/10 dark:bg-emerald-600/10 blur-[100px] z-0 animate-pulse motion-reduce:animate-none" style={{ animationDelay: '4s' }}></div>
 
       <div className="max-w-3xl mx-auto relative z-10">
         
@@ -387,6 +416,15 @@ export const GuessCharacter = () => {
           </motion.div>
         </div>
 
+        {contentNotice && <p role="status" aria-live="polite" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-sm leading-6 text-amber-950 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-100">{contentNotice}</p>}
+
+        {!gameOver && <section aria-labelledby="character-how-to-play" className="mb-6 rounded-2xl border border-indigo-200 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/70 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><h2 id="character-how-to-play" className="font-bold text-slate-900 dark:text-white">Cómo jugar</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Elige con el mouse o usa Tab e Intro para seleccionar quién encaja con las pistas. Cada pista adicional resta 20 puntos y cada respuesta incorrecta resta 10.</p><GameKeyboardHint instruction="Después de leer la respuesta, puedes continuar con el teclado." nextAction="siguiente personaje" /></div>
+            <span className="rounded-full bg-indigo-100 px-3 py-2 text-xs font-black text-indigo-950 dark:bg-indigo-400/15 dark:text-indigo-100">Dificultad progresiva · {cluesRevealed} de 4 pistas</span>
+          </div>
+        </section>}
+
         {gameOver ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -404,11 +442,13 @@ export const GuessCharacter = () => {
             </p>
             <button 
               onClick={startGame}
+              aria-keyshortcuts="Shift+Enter"
               className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 px-10 py-4 rounded-2xl font-bold transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 flex items-center gap-3 mx-auto text-lg"
             >
               <RotateCcw className="w-6 h-6" />
               Jugar de Nuevo
             </button>
+            <GameKeyboardHint instruction="Puedes volver a empezar con el teclado." nextAction="nueva partida" />
           </motion.div>
         ) : (
           <div className="space-y-6">
@@ -431,7 +471,7 @@ export const GuessCharacter = () => {
             </div>
 
             {/* Clues Container */}
-            <div className="p-6 md:p-8 rounded-[2rem] relative min-h-[360px] flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl">
+            <div className="p-5 sm:p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl">
               <AnimatePresence mode="wait">
                 {showSuccess ? (
                   <motion.div 
@@ -439,21 +479,25 @@ export const GuessCharacter = () => {
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2rem] z-20"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    className="flex w-full flex-col items-center justify-center px-1 py-2 text-center sm:px-4 sm:py-4"
                   >
-                    <div className="w-24 h-24 bg-emerald-500/20 dark:bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mb-6 text-emerald-500 shadow-xl border border-emerald-500/30">
-                      <Star className="w-12 h-12 fill-current" />
+                    <div className="mb-3 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-600 shadow-sm dark:text-emerald-400">
+                      <Star className="h-6 w-6 fill-current" />
                     </div>
-                    <h3 className="text-4xl font-serif font-bold text-slate-900 dark:text-white mb-2">¡Correcto!</h3>
-                    <p className="text-slate-600 dark:text-slate-300 text-xl font-medium mb-4">Era {currentCharacter.name}</p>
-                    <p className="text-amber-500 font-bold text-lg bg-amber-500/10 px-6 py-2 rounded-xl border border-amber-500/20 shadow-sm">
+                    <h3 className="mb-1 text-3xl font-serif font-bold text-slate-900 dark:text-white sm:text-4xl">¡Correcto!</h3>
+                    <p className="mb-3 text-center text-lg font-semibold text-slate-700 dark:text-slate-200 sm:text-xl">Era {currentCharacter.name}</p>
+                    <CharacterRevealPortrait characterName={currentCharacter.name} imageUrl={currentCharacter.image_url} />
+                    <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-5 py-2 text-base font-bold text-amber-700 shadow-sm dark:text-amber-300">
                       +{potentialPoints} puntos
                     </p>
+                    {currentCharacter.bible_reference && <div className="mt-4 flex max-w-full justify-center"><BibleVersePreview reference={currentCharacter.bible_reference} appearance="pill" /></div>}
+                    <button type="button" onClick={advanceCharacter} aria-keyshortcuts="Shift+Enter" className="mt-5 min-h-11 max-w-full rounded-xl bg-indigo-950 px-5 py-2 font-bold text-white transition hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300">{currentIndex < characters.length - 1 ? 'Siguiente personaje' : 'Ver resultados'}</button>
+                    <GameKeyboardHint instruction="Cuando termines de leer, puedes avanzar con el teclado." nextAction={currentIndex < characters.length - 1 ? 'siguiente personaje' : 'ver resultados'} />
                   </motion.div>
-                ) : null}
-              </AnimatePresence>
-
-              <div className="space-y-4 flex-1">
+                ) : (
+                  <motion.div key="clues" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
                 {currentCharacter.clues.map((clue, idx) => (
                   <motion.div
                     key={idx}
@@ -491,7 +535,6 @@ export const GuessCharacter = () => {
                     </div>
                   </motion.div>
                 ))}
-              </div>
 
               {cluesRevealed < 4 && !showSuccess && (
                 <div className="mt-8 text-center relative z-20">
@@ -507,10 +550,13 @@ export const GuessCharacter = () => {
                   </button>
                 </div>
               )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 relative z-20">
+            {!showSuccess && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
               {currentCharacter.options.map((option, idx) => {
                 const isWrong = wrongGuesses.includes(option);
                 return (
@@ -540,10 +586,11 @@ export const GuessCharacter = () => {
                   </motion.button>
                 );
               })}
-            </div>
+            </div>}
           </div>
         )}
       </div>
     </div>
+    </MotionConfig>
   );
 };

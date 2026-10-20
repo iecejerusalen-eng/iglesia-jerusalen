@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../config/supabase';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { Trophy, Heart, Users, X, Play,
-  Volume2, VolumeX, Shield, Crown, Sparkles, BookOpen,
+import { Trophy, Heart, Users, X, Play, ArrowLeft, Check,
+  Volume2, VolumeX, Shield, Crown, Sparkles, BookOpen, RefreshCw,
   ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import confetti from 'canvas-confetti';
 import { gameAudioService } from '../../../features/games/services/gameAudioService';
+import { drawContent } from '../../../features/games/utils/contentDeck';
+import { useGameKeyboardShortcuts } from '../../../features/games/hooks/useGameKeyboardShortcuts';
+import { GameKeyboardHint } from '../../../features/games/components/GameKeyboardHint';
 
 const getRandomFloat = () => {
   const array = new Uint32Array(1);
@@ -63,8 +66,6 @@ export const Biblionario = () => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   
-  // Anti-repetition tracking per session
-  const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
 
   // Interaction State
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -94,6 +95,8 @@ export const Biblionario = () => {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardMode, setLeaderboardMode] = useState<'normal' | 'infinite'>('normal');
   const [leaderboardTimeframe] = useState<'all_time' | 'monthly'>('all_time');
+  const [questionLoadError, setQuestionLoadError] = useState<string | null>(null);
+  const [questionLoading, setQuestionLoading] = useState(false);
 
   // Toggle Mute Audio
   const handleToggleSound = () => {
@@ -116,7 +119,9 @@ export const Biblionario = () => {
     else if (type === 'finalAnswer' || type === 'suspense') gameAudioService.playTick();
   };
 
-  const fetchQuestionForLevel = async (level: number, gameMode: 'normal' | 'infinite') => {
+  const fetchQuestionForLevel = async (level: number, gameMode: 'normal' | 'infinite'): Promise<boolean> => {
+    setQuestionLoading(true);
+    setQuestionLoadError(null);
     try {
       const fetchLevel = gameMode === 'normal' ? level : Math.min(level, 15);
       
@@ -128,25 +133,26 @@ export const Biblionario = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Anti-repetition: Filter out already used questions in this session if possible
-        const unusedQuestions = data.filter(q => !usedQuestionIds.includes(q.id));
-        const pool = unusedQuestions.length > 0 ? unusedQuestions : data;
-        
-        const randomIndex = Math.floor(getRandomFloat() * pool.length);
-        const selected = pool[randomIndex];
+        // The session deck deals the full level pool once before starting a new cycle.
+        const selected = drawContent(data, `biblionario:${fetchLevel}`, 1, (question) => question.id)[0];
+        if (!selected) throw new Error('No se pudo escoger una pregunta disponible.');
         
         setCurrentQuestion(selected);
-        setUsedQuestionIds(prev => [...prev, selected.id]);
+        return true;
       } else {
         if (level > 1) {
-          fetchQuestionForLevel(level - 1, gameMode);
+          return await fetchQuestionForLevel(level - 1, gameMode);
         } else {
-          console.error("No questions available in the database.");
-          setGameState('menu');
+          setQuestionLoadError('No hay preguntas publicadas para comenzar esta partida. Inténtalo de nuevo más tarde.');
+          return false;
         }
       }
     } catch (err) {
-      console.error('Error fetching question:', err);
+      console.error('No se pudo cargar la pregunta del Biblionario.', err);
+      setQuestionLoadError('No pudimos cargar una pregunta. Revisa tu conexión e inténtalo de nuevo.');
+      return false;
+    } finally {
+      setQuestionLoading(false);
     }
   };
 
@@ -156,7 +162,6 @@ export const Biblionario = () => {
     setScore(0);
     setGuaranteedPrize(0);
     setLives(selectedMode === 'infinite' ? 3 : 1);
-    setUsedQuestionIds([]);
     
     // Reset lifelines
     setUsed5050(false);
@@ -171,12 +176,12 @@ export const Biblionario = () => {
     setIsLocked(false);
     setShowExplanation(false);
     
-    await fetchQuestionForLevel(1, selectedMode);
-    setGameState('playing');
+    const loaded = await fetchQuestionForLevel(1, selectedMode);
+    if (loaded) setGameState('playing');
   };
 
   const handleOptionSelect = (optionKey: string) => {
-    if (isLocked || hiddenOptions.includes(optionKey)) return;
+    if (isLocked || showExplanation || hiddenOptions.includes(optionKey)) return;
     setSelectedOption(optionKey);
   };
 
@@ -185,10 +190,7 @@ export const Biblionario = () => {
     
     setIsLocked(true);
     playEffect('finalAnswer');
-    
-    setTimeout(() => {
-      checkAnswer();
-    }, 2000);
+    checkAnswer();
   };
 
   const checkAnswer = () => {
@@ -204,36 +206,29 @@ export const Biblionario = () => {
       if (mode === 'normal' && SAFE_HAVENS.includes(currentLevel - 1)) {
         setGuaranteedPrize(prizeWon);
         playEffect('win');
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FFA500', '#FFFFFF']
-        });
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#FFFFFF']
+          });
+        }
       }
       
-      setTimeout(() => {
-        setShowExplanation(true);
-      }, 1000);
+      setShowExplanation(true);
 
     } else {
       playEffect('wrong');
       if (mode === 'infinite') {
         const remainingLives = lives - 1;
         setLives(remainingLives);
-        
-        setTimeout(() => {
-          setShowExplanation(true);
-        }, 1000);
-      } else {
-        setTimeout(() => {
-          endGame(false);
-        }, 2000);
       }
+      setShowExplanation(true);
     }
   };
 
-  const nextLevel = () => {
+  const nextLevel = async () => {
     if (mode === 'normal' && currentLevel === 15) {
       endGame(true);
       return;
@@ -247,19 +242,22 @@ export const Biblionario = () => {
     setAudienceVotes(null);
     setPhoneModalOpen(false);
     
-    fetchQuestionForLevel(nextLvl, mode);
+    const loaded = await fetchQuestionForLevel(nextLvl, mode);
+    if (!loaded) setGameState('menu');
   };
 
   const endGame = async (won: boolean) => {
     stopAllAudio();
     if (won) {
       playEffect('win');
-      confetti({
-        particleCount: 150,
-        spread: 180,
-        origin: { y: 0.6 },
-        colors: ['#FFD700', '#FFA500', '#FFFFFF']
-      });
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        confetti({
+          particleCount: 150,
+          spread: 180,
+          origin: { y: 0.6 },
+          colors: ['#FFD700', '#FFA500', '#FFFFFF']
+        });
+      }
       setGameState('won');
     } else {
       setGameState('gameover');
@@ -284,6 +282,36 @@ export const Biblionario = () => {
       }
     }
   };
+
+  const continueAfterAnswer = () => {
+    if (showExplanation && currentQuestion && selectedOption) {
+      const isIncorrect = selectedOption !== currentQuestion.correct_option.toUpperCase();
+      const hasNoLivesLeft = mode === 'infinite' && lives <= 0;
+
+      if ((mode === 'normal' && isIncorrect) || hasNoLivesLeft) {
+        void endGame(false);
+        return;
+      }
+    }
+
+    void nextLevel();
+  };
+
+  useGameKeyboardShortcuts({
+    enabled: gameState === 'playing' || gameState === 'gameover' || gameState === 'won',
+    onNext: showExplanation || gameState === 'gameover' || gameState === 'won' ? () => {
+      if (gameState === 'playing' && showExplanation) continueAfterAnswer();
+      else if (gameState === 'gameover' || gameState === 'won') setGameState('menu');
+    } : undefined,
+    onLetter: gameState === 'playing' && !isLocked && !showExplanation ? (key) => {
+      if ('ABCD'.includes(key) && !hiddenOptions.includes(key)) handleOptionSelect(key);
+    } : undefined,
+    onNumber: gameState === 'playing' && !isLocked && !showExplanation ? (number) => {
+      const optionKey = String.fromCharCode(64 + number);
+      if (!hiddenOptions.includes(optionKey)) handleOptionSelect(optionKey);
+    } : undefined,
+    onEnter: gameState === 'playing' && selectedOption && !isLocked && !showExplanation ? () => lockAnswer() : undefined,
+  });
 
   const withdraw = () => {
     endGame(true);
@@ -397,85 +425,117 @@ export const Biblionario = () => {
 
   // RENDERS
   const renderMenu = () => (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex flex-col items-center justify-center min-h-[65vh] max-w-4xl mx-auto text-center font-sans"
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="mx-auto w-full max-w-6xl pb-8 font-sans"
     >
-      <div className="w-32 h-32 bg-gradient-to-br from-amber-500 to-indigo-900 rounded-full flex items-center justify-center shadow-2xl shadow-amber-500/20 mb-8 border-4 border-amber-400 relative overflow-hidden group">
-        <Crown className="w-16 h-16 text-amber-300 relative z-10 animate-bounce" />
-      </div>
-      
-      <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-300 mb-4 tracking-tight">
-        ¿Quién Quiere Ser <br/>
-        <span className="text-amber-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.6)] uppercase tracking-widest">Biblionario?</span>
-      </h1>
-      
-      <p className="text-lg text-slate-300 mb-10 max-w-2xl font-light">
-        Pon a prueba tus conocimientos bíblicos, supera los 15 niveles de sabiduría y conviértete en un maestro de las Escrituras.
-      </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full px-4 mb-10 max-w-5xl mx-auto">
-        {/* CLASSIC MODE CARD */}
-        <motion.div 
-          whileHover={{ y: -6, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative overflow-hidden group cursor-pointer"
-          onClick={() => startGame('normal')}
-        >
-          <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 border border-amber-500/30 group-hover:border-amber-400 shadow-2xl transition-all duration-300 flex flex-col h-full z-10 overflow-hidden">
-            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
-              <Play className="w-7 h-7 text-white fill-current" />
-            </div>
-            
-            <h3 className="text-2xl font-bold text-white mb-3 text-left">Modo Clásico</h3>
-            
-            <p className="text-slate-300 text-left mb-8 flex-grow leading-relaxed text-sm">
-              El desafío bíblico supremo. <span className="text-amber-300 font-bold">15 niveles</span> de conocimiento bíblico progresivo con 3 escalones de seguridad.
-            </p>
-            
-            <div className="flex items-center text-amber-400 font-bold group-hover:text-amber-300 transition-colors mt-auto bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
-              <span className="flex-grow text-left">Comenzar Aventura</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </div>
+      <section className="grid items-center gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12" aria-labelledby="biblionario-title">
+        <div className="text-center lg:text-left">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/[0.08] px-3.5 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-amber-200">
+            <Sparkles size={15} aria-hidden="true" /> Concurso bíblico
           </div>
-        </motion.div>
-        
-        {/* INFINITE MODE CARD */}
-        <motion.div 
-          whileHover={{ y: -6, scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative overflow-hidden group cursor-pointer"
-          onClick={() => startGame('infinite')}
-        >
-          <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 border border-indigo-500/30 group-hover:border-indigo-400 shadow-2xl transition-all duration-300 flex flex-col h-full z-10 overflow-hidden">
-            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/30">
-              <Shield className="w-7 h-7 text-white" />
-            </div>
-            
-            <h3 className="text-2xl font-bold text-white mb-3 text-left flex items-center justify-between w-full">
-              Modo Infinito
-              <span className="text-[10px] px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded-md border border-indigo-500/30 font-bold uppercase">Supervivencia</span>
-            </h3>
-            
-            <p className="text-slate-300 text-left mb-8 flex-grow leading-relaxed text-sm">
-              Sobrevive el mayor tiempo posible respondiendo preguntas aleatorias con solo <span className="text-indigo-300 font-bold">3 vidas</span>.
-            </p>
-            
-            <div className="flex items-center text-indigo-300 font-bold group-hover:text-indigo-200 transition-colors mt-auto bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20">
-              <span className="flex-grow text-left">Desafío Infinito</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </div>
+          <h1 id="biblionario-title" className="font-serif text-4xl font-bold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-6xl">
+            ¿Quién quiere ser <span className="text-amber-300">Biblionario?</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-300 sm:text-lg lg:mx-0">
+            Responde, avanza de nivel y descubre cuánto sabes de las Escrituras. Elige un reto para comenzar.
+          </p>
+
+          <div className="mt-7 flex flex-wrap justify-center gap-2.5 lg:justify-start" aria-label="Características del juego">
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-sm font-semibold text-slate-200"><BookOpen size={16} className="text-amber-300" aria-hidden="true" />15 preguntas</span>
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-sm font-semibold text-slate-200"><Shield size={16} className="text-emerald-300" aria-hidden="true" />3 niveles seguros</span>
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-sm font-semibold text-slate-200"><Sparkles size={16} className="text-sky-300" aria-hidden="true" />Modo supervivencia</span>
           </div>
-        </motion.div>
+        </div>
+
+        <figure className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-amber-200/20 bg-slate-900 shadow-[0_28px_80px_rgba(0,0,0,0.4)]">
+          <img
+            src="/images/games/covers/biblionario.webp"
+            alt="Biblia abierta en el centro de un escenario de concurso"
+            className="aspect-[4/3] w-full object-cover sm:aspect-[16/10] lg:aspect-[4/3]"
+            width="1440"
+            height="810"
+            fetchPriority="high"
+            decoding="async"
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/5 to-slate-950/10" />
+          <figcaption className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/65 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md">
+              <BookOpen size={14} className="text-amber-300" aria-hidden="true" /> La Biblia, en el centro del desafío
+            </span>
+          </figcaption>
+        </figure>
+      </section>
+
+      {questionLoadError && (
+        <div role="alert" className="mx-auto mt-8 max-w-4xl rounded-2xl border border-rose-300/35 bg-rose-950/70 p-4 text-left text-sm text-rose-50 sm:flex sm:items-center sm:justify-between sm:gap-5">
+          <p className="leading-6">{questionLoadError}</p>
+          <button type="button" disabled={questionLoading} onClick={() => void startGame(mode)} className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 font-bold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 disabled:cursor-wait disabled:opacity-60 sm:mt-0">
+            <RefreshCw size={15} className={questionLoading ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />{questionLoading ? 'Cargando…' : 'Reintentar'}
+          </button>
+        </div>
+      )}
+
+      {questionLoading && <p role="status" className="mx-auto mt-6 flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-slate-200"><RefreshCw size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />Preparando tu pregunta…</p>}
+
+      <div className="mt-8 grid w-full gap-4 md:grid-cols-2 md:gap-5" aria-busy={questionLoading}>
+        <motion.button
+          type="button"
+          disabled={questionLoading}
+          whileHover={questionLoading ? undefined : { y: -3 }}
+          whileTap={questionLoading ? undefined : { scale: 0.99 }}
+          className="group relative flex min-h-60 flex-col rounded-[1.6rem] border border-amber-300/25 bg-gradient-to-br from-amber-300/[0.08] via-slate-900/95 to-slate-900 p-5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition-colors hover:border-amber-300/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-wait disabled:opacity-60 sm:p-7"
+          onClick={() => void startGame('normal')}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/15"><Play size={21} fill="currentColor" aria-hidden="true" /></span>
+            <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-200">15 niveles</span>
+          </div>
+          <h2 className="mt-5 text-2xl font-bold tracking-tight text-white">Modo clásico</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-slate-300 sm:text-base">
+            Completa la escalera de preguntas. Asegura tu premio al llegar a los niveles 5, 10 y 15.
+          </p>
+          <span className="mt-6 inline-flex min-h-12 items-center justify-between gap-4 rounded-xl border border-amber-300/25 bg-amber-300/[0.08] px-4 font-bold text-amber-100 transition group-hover:bg-amber-300/15">
+            <span>{questionLoading ? 'Preparando partida…' : 'Jugar modo clásico'}</span>
+            <ArrowRight size={19} className="shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </span>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          disabled={questionLoading}
+          whileHover={questionLoading ? undefined : { y: -3 }}
+          whileTap={questionLoading ? undefined : { scale: 0.99 }}
+          className="group relative flex min-h-60 flex-col rounded-[1.6rem] border border-indigo-300/25 bg-gradient-to-br from-indigo-400/[0.09] via-slate-900/95 to-slate-900 p-5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition-colors hover:border-indigo-300/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-wait disabled:opacity-60 sm:p-7"
+          onClick={() => void startGame('infinite')}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"><Shield size={22} aria-hidden="true" /></span>
+            <span className="rounded-full border border-indigo-300/25 bg-indigo-300/10 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-indigo-200">3 vidas</span>
+          </div>
+          <h2 className="mt-5 text-2xl font-bold tracking-tight text-white">Modo supervivencia</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-slate-300 sm:text-base">
+            Responde tantas preguntas como puedas. Cada error consume una vida; la partida termina al perder las tres.
+          </p>
+          <span className="mt-6 inline-flex min-h-12 items-center justify-between gap-4 rounded-xl border border-indigo-300/25 bg-indigo-300/[0.08] px-4 font-bold text-indigo-100 transition group-hover:bg-indigo-300/15">
+            <span>{questionLoading ? 'Preparando partida…' : 'Jugar supervivencia'}</span>
+            <ArrowRight size={19} className="shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </span>
+        </motion.button>
       </div>
 
-      <button
-        onClick={() => fetchLeaderboard()}
-        className="px-8 py-3.5 bg-slate-800/80 hover:bg-slate-700 text-white rounded-full font-bold text-base backdrop-blur-md transition-all border border-slate-700 flex items-center justify-center gap-3"
-      >
-        <Trophy className="w-5 h-5 text-amber-400" /> Tabla de Clasificación
-      </button>
+      <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-5 sm:flex-row">
+        <p className="flex items-center gap-2 text-center text-sm text-slate-300 sm:text-left"><BookOpen size={16} className="shrink-0 text-amber-300" aria-hidden="true" />Después de responder, revisa la explicación bíblica para aprender más.</p>
+        <button
+          type="button"
+          onClick={() => fetchLeaderboard()}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.05] px-4 font-bold text-white transition hover:border-amber-300/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+        >
+          <Trophy size={17} className="text-amber-300" aria-hidden="true" /> Tabla de clasificación
+        </button>
+      </div>
     </motion.div>
   );
 
@@ -574,21 +634,29 @@ export const Biblionario = () => {
     ];
 
     return (
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 min-h-[70vh] max-w-7xl mx-auto pb-8 font-sans">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-start gap-5 pb-8 font-sans lg:flex-row lg:gap-7">
         
         {/* Main Game Arena */}
-        <div className="flex-1 flex flex-col pt-4">
+        <main aria-label="Partida del Biblionario" className="flex min-w-0 w-full flex-1 flex-col pt-2 lg:pt-4">
           
           {/* Lifelines & Control Bar */}
-          <div className="flex justify-between items-center mb-8 px-4 bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-slate-800">
-            <div className="flex gap-3">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/65 p-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-4">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <div className="pr-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Comodines</p>
+                <p className="mt-0.5 text-xs text-slate-400">Úsalos antes de responder</p>
+              </div>
+              <div className="flex gap-2">
               <button 
                 onClick={use5050}
                 disabled={used5050 || isLocked}
-                className={`w-14 h-10 rounded-xl flex items-center justify-center font-black text-sm border transition-all
+                type="button"
+                aria-label={used5050 ? 'Comodín cincuenta-cincuenta usado' : 'Usar comodín cincuenta-cincuenta'}
+                aria-pressed={used5050}
+                className={`h-11 min-w-11 rounded-xl flex items-center justify-center px-3 font-black text-sm border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
                   ${used5050 
-                    ? 'border-slate-800 bg-slate-950/50 text-slate-600 cursor-not-allowed' 
-                    : 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                    ? 'border-slate-800 bg-slate-950/50 text-slate-500 cursor-not-allowed'
+                    : 'border-amber-400/40 bg-amber-400/10 text-amber-200 hover:border-amber-300/70 hover:bg-amber-400/20'
                   }`}
               >
                 50:50
@@ -596,10 +664,13 @@ export const Biblionario = () => {
               <button 
                 onClick={usePhone}
                 disabled={usedPhone || isLocked}
-                className={`w-14 h-10 rounded-xl flex items-center justify-center border transition-all
+                type="button"
+                aria-label={usedPhone ? 'Consulta al Teólogo usada' : 'Consultar al Teólogo'}
+                aria-pressed={usedPhone}
+                className={`h-11 w-11 rounded-xl flex items-center justify-center border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
                   ${usedPhone 
-                    ? 'border-slate-800 bg-slate-950/50 text-slate-600 cursor-not-allowed' 
-                    : 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                    ? 'border-slate-800 bg-slate-950/50 text-slate-500 cursor-not-allowed'
+                    : 'border-amber-400/40 bg-amber-400/10 text-amber-200 hover:border-amber-300/70 hover:bg-amber-400/20'
                   }`}
                 title="Consulta al Teólogo"
               >
@@ -608,42 +679,81 @@ export const Biblionario = () => {
               <button 
                 onClick={useAudience}
                 disabled={usedAudience || isLocked}
-                className={`w-14 h-10 rounded-xl flex items-center justify-center border transition-all
+                type="button"
+                aria-label={usedAudience ? 'Voto de la Congregación usado' : 'Pedir voto de la Congregación'}
+                aria-pressed={usedAudience}
+                className={`h-11 w-11 rounded-xl flex items-center justify-center border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
                   ${usedAudience 
-                    ? 'border-slate-800 bg-slate-950/50 text-slate-600 cursor-not-allowed' 
-                    : 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                    ? 'border-slate-800 bg-slate-950/50 text-slate-500 cursor-not-allowed'
+                    : 'border-amber-400/40 bg-amber-400/10 text-amber-200 hover:border-amber-300/70 hover:bg-amber-400/20'
                   }`}
                 title="Voto de la Congregación"
               >
                 <Users size={18} />
               </button>
+              </div>
             </div>
             
             <button 
               onClick={withdraw}
               disabled={isLocked || currentLevel === 1}
-              className="text-slate-400 hover:text-amber-400 transition-colors text-xs uppercase tracking-widest font-bold"
+              type="button"
+              className="min-h-11 rounded-xl px-4 text-xs font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Retirarse
             </button>
           </div>
 
           {/* Question Box */}
-          <div className="relative w-full mb-8">
-            <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-700/50 rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden">
-              <span className="text-amber-400 font-bold text-xs tracking-widest uppercase mb-4 block">
-                Nivel {currentLevel} de 15
-              </span>
-
-              <h2 className="text-xl md:text-3xl text-white font-bold leading-relaxed">
-                {currentQuestion.question}
-              </h2>
+          <section aria-labelledby="biblionario-question" className="relative mb-5 w-full overflow-hidden rounded-3xl border border-amber-200/15 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-900/80 p-5 shadow-xl shadow-black/20 sm:p-7 md:p-8">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-amber-400/[0.07] blur-3xl" />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-200/80">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                  {mode === 'normal' ? 'Modo clásico' : 'Modo supervivencia'}
+                </span>
+                <p className="mt-1.5 text-sm font-semibold text-slate-300">
+                  {mode === 'normal' ? 'Nivel' : 'Racha'} <span className="text-white">{currentLevel}</span>{mode === 'normal' ? ' de 15' : ''}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-950/50 px-3.5 py-2 text-right">
+                <span className="block text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
+                  {mode === 'normal' ? 'Premio posible' : 'Puntos'}
+                </span>
+                <strong className="mt-0.5 block text-sm font-black tabular-nums text-amber-200">
+                  {mode === 'normal' ? (PRIZE_TREE[currentLevel - 1] ?? 0).toLocaleString() : score.toLocaleString()} pts
+                </strong>
+              </div>
             </div>
+
+            {mode === 'normal' && (
+              <div
+                role="progressbar"
+                aria-label="Avance en el modo clásico"
+                aria-valuemin={1}
+                aria-valuemax={15}
+                aria-valuenow={currentLevel}
+                className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-white/10"
+              >
+                <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-200 transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${(currentLevel / 15) * 100}%` }} />
+              </div>
+            )}
+
+            <h2 id="biblionario-question" className="relative mt-5 text-balance text-left text-2xl font-bold leading-snug tracking-tight text-white sm:text-center sm:text-3xl md:mt-6 md:text-4xl">
+              {currentQuestion.question}
+            </h2>
+            <p className="relative mt-2 text-xs font-medium text-slate-400 sm:text-center">Elige la respuesta que consideres correcta</p>
+          </section>
+
+          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Elige una opción</h3>
+            <span className="text-xs font-medium text-slate-400">1–4 · A–D</span>
           </div>
 
           {/* Options Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {options.map((opt) => {
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            {options.map((opt, index) => {
               const isHidden = hiddenOptions.includes(opt.key);
               const isSelected = selectedOption === opt.key;
               const isCorrect = showExplanation && opt.key === currentQuestion.correct_option.toUpperCase();
@@ -669,18 +779,23 @@ export const Biblionario = () => {
                 <button
                   key={opt.key}
                   onClick={() => handleOptionSelect(opt.key)}
-                  disabled={isLocked}
-                  className={`relative min-h-[4.5rem] rounded-2xl border-2 transition-all duration-300 flex items-center px-6 py-3
+                  disabled={isLocked || showExplanation}
+                  aria-pressed={isSelected}
+                  aria-label={`Opción ${index + 1}, ${opt.key}: ${opt.text}`}
+                  aria-keyshortcuts={`${index + 1} ${opt.key}`}
+                  className={`group relative flex min-h-[5.25rem] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-5
                     ${bgClass}
-                    ${!isLocked && !isSelected ? 'hover:bg-slate-800 hover:border-amber-500/50 transform hover:-translate-y-0.5' : ''}
+                    ${!isLocked && !isSelected ? 'hover:-translate-y-0.5 hover:border-amber-300/50 hover:bg-slate-800 motion-reduce:hover:transform-none' : ''}
                   `}
                 >
-                  <span className={`font-black text-lg mr-4 ${isSelected && !showExplanation ? 'text-slate-950' : 'text-amber-400'}`}>
-                    {opt.key}:
+                  <span className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl border font-black leading-none ${isSelected && !showExplanation ? 'border-slate-950/15 bg-slate-950/10 text-slate-950' : 'border-white/10 bg-slate-950/30 text-amber-200'}`}>
+                    <span className="text-base">{index + 1}</span>
+                    <span className="mt-1 text-[8px] font-extrabold opacity-75">{opt.key}</span>
                   </span>
-                  <span className="text-base font-medium text-left truncate w-full">
+                  <span className="min-w-0 flex-1 text-sm font-semibold leading-5 sm:text-base sm:leading-6">
                     {opt.text}
                   </span>
+                  {showExplanation && isCorrect && <Check size={19} className="shrink-0 text-emerald-200" aria-hidden="true" />}
                   
                   {audienceVotes && !isLocked && !showExplanation && (
                     <div className="absolute right-4 bg-slate-950/80 px-2.5 py-1 rounded-lg text-xs text-amber-300 font-bold border border-amber-500/30">
@@ -691,9 +806,29 @@ export const Biblionario = () => {
               );
             })}
           </div>
+
+          {showExplanation && currentQuestion && selectedOption && (
+            <div
+              role="status"
+              aria-live="assertive"
+              className={`mt-4 rounded-2xl border px-5 py-4 text-center font-bold ${
+                selectedOption === currentQuestion.correct_option.toUpperCase()
+                  ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-200'
+                  : 'border-rose-400/50 bg-rose-500/10 text-rose-200'
+              }`}
+            >
+              {selectedOption === currentQuestion.correct_option.toUpperCase()
+                ? '¡Respuesta correcta!'
+                : `Respuesta incorrecta. La respuesta correcta es ${options.find((option) => option.key === currentQuestion.correct_option.toUpperCase())?.text ?? currentQuestion.correct_option}.`}
+            </div>
+          )}
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-1 sm:px-5">
+            <GameKeyboardHint instruction="Elige con el mouse, pulsa 1–4 (también sirve el teclado numérico) o A–D; Intro confirma." nextAction="continuar después de revisar la respuesta y el fundamento bíblico" tone="dark-surface" />
+          </div>
           
           {/* Action Area */}
-          <div className="mt-8 flex justify-center min-h-[4rem]">
+          <div className="mt-6 flex min-h-12 justify-center">
             <AnimatePresence mode="wait">
               {selectedOption && !isLocked && (
                 <motion.button
@@ -701,7 +836,8 @@ export const Biblionario = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
                   onClick={lockAnswer}
-                  className="px-10 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-lg rounded-full shadow-lg shadow-amber-500/30 hover:scale-105 transition-transform"
+                  type="button"
+                  className="min-h-12 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-8 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-10 sm:text-lg"
                 >
                   Confirmar Respuesta
                 </motion.button>
@@ -714,10 +850,17 @@ export const Biblionario = () => {
                   className="flex gap-4"
                 >
                   <button 
-                    onClick={nextLevel}
-                    className="px-10 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg rounded-full shadow-lg flex items-center gap-2"
+                    onClick={continueAfterAnswer}
+                    aria-keyshortcuts="Shift+Enter"
+                    type="button"
+                    className="min-h-12 rounded-full bg-indigo-500 px-8 py-3 text-base font-bold text-white shadow-lg shadow-indigo-950/30 transition-colors hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-10 sm:text-lg"
                   >
-                    Siguiente Pregunta <ArrowRight size={20} />
+                    {selectedOption !== currentQuestion.correct_option.toUpperCase()
+                      && (mode === 'normal' || lives <= 0)
+                      ? 'Ver resultados'
+                      : mode === 'normal' && currentLevel === 15
+                        ? 'Ver resultados'
+                        : 'Siguiente Pregunta'} <ArrowRight size={20} />
                   </button>
                 </motion.div>
               )}
@@ -770,61 +913,87 @@ export const Biblionario = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          
-        </div>
+        </main>
         
         {/* Money Tree Sidebar */}
-        <div className="w-full lg:w-64 shrink-0 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 flex flex-col-reverse lg:flex-col overflow-y-auto max-h-48 lg:max-h-[70vh]">
+        <aside aria-label={mode === 'normal' ? 'Escalera de premios' : 'Estado de supervivencia'} className="w-full shrink-0 rounded-3xl border border-white/10 bg-slate-900/80 p-4 shadow-lg shadow-black/10 backdrop-blur-xl lg:sticky lg:top-6 lg:w-64">
           {mode === 'normal' ? (
-            PRIZE_TREE.map((prize, idx) => {
-              const lvl = idx + 1;
-              const isCurrent = currentLevel === lvl;
-              const isPassed = currentLevel > lvl;
-              const isSafe = SAFE_HAVENS.includes(idx);
-              
-              return (
-                <div 
-                  key={lvl}
-                  className={`flex items-center justify-between px-3 py-1.5 rounded-xl mb-1 font-bold text-xs font-mono transition-colors
-                    ${isCurrent ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 
-                      isPassed ? 'text-amber-400' : 
-                      isSafe ? 'text-white' : 'text-slate-500'}
-                  `}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 text-right">{lvl}</span>
-                    <span className="opacity-50">♦</span>
-                  </span>
-                  <span>{prize.toLocaleString()} pts</span>
+            <>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Escalera de premios</h3>
+                  <p className="mt-0.5 text-[11px] text-slate-400">Niveles seguros: 5, 10 y 15</p>
                 </div>
-              );
-            }).reverse()
+                <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-extrabold text-amber-100">{currentLevel}/15</span>
+              </div>
+              <ol className="flex snap-x snap-mandatory flex-row gap-2 overflow-x-auto pb-2 [scrollbar-width:thin] lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
+                {PRIZE_TREE.map((prize, idx) => {
+                  const lvl = idx + 1;
+                  const isCurrent = currentLevel === lvl;
+                  const isPassed = currentLevel > lvl;
+                  const isSafe = SAFE_HAVENS.includes(idx);
+
+                  return (
+                    <li
+                      key={lvl}
+                      aria-current={isCurrent ? 'step' : undefined}
+                      aria-label={`Nivel ${lvl}: ${prize.toLocaleString()} puntos${isSafe ? ', nivel seguro' : ''}${isCurrent ? ', nivel actual' : ''}`}
+                      className={`flex min-w-[136px] snap-start items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs font-bold tabular-nums transition-colors lg:min-w-0 lg:border-transparent lg:py-1.5 ${
+                        isCurrent
+                          ? 'border-amber-300/50 bg-amber-400 text-slate-950 shadow-md shadow-amber-500/15 lg:border-amber-300/40'
+                          : isPassed
+                            ? 'border-emerald-300/15 bg-emerald-300/[0.06] text-emerald-100/80 lg:bg-transparent'
+                            : isSafe
+                              ? 'border-white/10 bg-white/[0.04] text-slate-200 lg:bg-transparent'
+                              : 'border-white/[0.06] bg-slate-950/25 text-slate-400 lg:bg-transparent'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="grid h-6 w-6 place-items-center rounded-lg bg-black/10 text-[11px]">{lvl}</span>
+                        <span>{isSafe ? 'Seguro' : 'Nivel'}</span>
+                      </span>
+                      <span>{prize.toLocaleString()} pts</span>
+                    </li>
+                  );
+                }).reverse()}
+              </ol>
+            </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-              <Shield className="w-12 h-12 text-indigo-400 mb-4 opacity-50" />
-              <h3 className="text-lg font-bold text-white mb-2">Supervivencia</h3>
-              <div className="flex gap-2 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-1 sm:p-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-indigo-300" aria-hidden="true" />
+                  <h3 className="text-sm font-extrabold text-white">Supervivencia</h3>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">Racha de {currentLevel} {currentLevel === 1 ? 'pregunta' : 'preguntas'}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-400">Puntaje</div>
+                <div className="mt-0.5 text-xl font-black tabular-nums text-amber-200">{score.toLocaleString()}</div>
+              </div>
+              <div className="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-slate-950/30 px-3 py-2 sm:w-auto sm:min-w-40">
+                <span className="text-xs font-semibold text-slate-300">Vidas restantes</span>
+                <span className="flex gap-1.5" role="img" aria-label={`${lives} de 3 vidas`}>
                 {[...Array(3)].map((_, i) => (
                   <Heart 
                     key={i} 
-                    className={`w-6 h-6 ${i < lives ? 'text-rose-500 fill-rose-500' : 'text-slate-700'}`} 
+                    className={`h-4 w-4 ${i < lives ? 'fill-rose-400 text-rose-300' : 'text-slate-600'}`}
+                    aria-hidden="true"
                   />
                 ))}
+                </span>
               </div>
-              <div className="text-3xl font-black text-amber-400">
-                {score.toLocaleString()}
-              </div>
-              <div className="text-xs text-slate-400 uppercase tracking-widest mt-1">Puntos</div>
             </div>
           )}
-        </div>
+        </aside>
         
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pt-20 pb-10 overflow-hidden relative">
+    <MotionConfig reducedMotion="user">
+    <div className="relative min-h-screen overflow-x-hidden bg-slate-950 pt-20 text-white pb-28 xl:pb-10">
       <Helmet>
         <title>Biblionario | Juegos Bíblicos</title>
         <meta name="theme-color" content="#020617" />
@@ -832,21 +1001,27 @@ export const Biblionario = () => {
       
       {/* Ambient background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-amber-500/10 rounded-full blur-[140px]"></div>
+        <div className="absolute -left-40 -top-40 h-[34rem] w-[38rem] rounded-full bg-amber-500/[0.08] blur-[140px]"></div>
+        <div className="absolute -right-48 top-20 h-[30rem] w-[34rem] rounded-full bg-blue-500/[0.08] blur-[150px]"></div>
+        <div aria-hidden="true" className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.45) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.45) 1px, transparent 1px)', backgroundSize: '56px 56px', maskImage: 'linear-gradient(to bottom, black, transparent 80%)' }} />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 relative z-10 h-full flex flex-col font-sans">
         {/* Header navigation bar */}
-        <div className="flex justify-between items-center mb-8">
-          <Link to="/recursos/juegos" className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-            <X size={16} /> Salir al Catálogo
+        <div className="mb-8 flex min-h-11 items-center justify-between">
+          <Link to="/recursos/juegos" className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+            <ArrowLeft size={17} aria-hidden="true" /> Volver a juegos
           </Link>
           
           <button 
             onClick={handleToggleSound}
-            className="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-900 border border-slate-800"
+            type="button"
+            aria-label={soundEnabled ? 'Silenciar el sonido' : 'Activar el sonido'}
+            aria-pressed={soundEnabled}
+            title={soundEnabled ? 'Silenciar sonido' : 'Activar sonido'}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
           >
-            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {soundEnabled ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
           </button>
         </div>
 
@@ -869,9 +1044,10 @@ export const Biblionario = () => {
                   Puntaje obtenido: <br/>
                   <span className="text-4xl font-black text-amber-400 mt-2 block">{score.toLocaleString()} pts</span>
                 </p>
-                <button onClick={() => setGameState('menu')} className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors">
+                <button onClick={() => setGameState('menu')} aria-keyshortcuts="Shift+Enter" className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors">
                   Volver al Menú
                 </button>
+                <GameKeyboardHint instruction="También puedes volver al menú con el teclado." nextAction="volver al menú" />
               </div>
             </motion.div>
           )}
@@ -890,9 +1066,10 @@ export const Biblionario = () => {
                 <p className="text-slate-300 text-sm mb-6">
                   Has completado exitosamente los 15 niveles bíblicos.
                 </p>
-                <button onClick={() => setGameState('menu')} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-colors">
+                <button onClick={() => setGameState('menu')} aria-keyshortcuts="Shift+Enter" className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-colors">
                   Jugar de Nuevo
                 </button>
+                <GameKeyboardHint instruction="También puedes volver al menú con el teclado." nextAction="volver al menú" />
               </div>
             </motion.div>
           )}
@@ -900,5 +1077,6 @@ export const Biblionario = () => {
 
       </div>
     </div>
+    </MotionConfig>
   );
 };

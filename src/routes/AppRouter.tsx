@@ -228,7 +228,8 @@ export default function AppRouter() {
           <Route path="/recursos/biblia" element={<Bible />} />
           <Route path="/recursos/juegos" element={<GamesHub />} />
           <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
-          <Route path="/recursos/juegos/ahorcado-biblico" element={<Hangman />} />
+          <Route path="/recursos/juegos/reto-de-letras-biblicas" element={<Hangman />} />
+          <Route path="/recursos/juegos/ahorcado-biblico" element={<Navigate to="/recursos/juegos/reto-de-letras-biblicas" replace />} />
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />

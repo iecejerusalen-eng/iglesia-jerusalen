@@ -3,6 +3,20 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.0] - 2026-10-19
+
+### Añadido
+- Memorama Bíblico con 4, 6 u 8 parejas, modo individual o por turnos para 2–4 personas, imágenes dobles, explicación, referencia y pregunta de repaso al encontrar una pareja.
+- Nuevas asociaciones ilustradas de objetos y relatos bíblicos, junto con más personajes, preguntas y opciones para renovar las partidas.
+- Lectura emergente reutilizable de referencias bíblicas, con acceso directo al pasaje en una nueva pestaña.
+- Teclas A–D e Intro en Biblionario, Mayús + Intro para avanzar en los cuatro juegos y escritura de letras con teclado en Adivina la palabra.
+- Retratos de personajes al revelar respuestas, nuevas portadas y herramientas de administración para completar, previsualizar y publicar contenido de Memorama.
+
+### Mejorado
+- Catálogo unificado y responsive de cuatro juegos; el antiguo Ahorcado ahora se presenta como «Adivina la palabra» sin romper su dirección anterior.
+- Respuesta inmediata y accesible al confirmar preguntas de Biblionario, con estados claros de acierto y error.
+- Orden aleatorio de preguntas, palabras, personajes y parejas que reduce repeticiones consecutivas.
+
 ## [1.8.2] - 2026-10-16
 
 ### Corregido

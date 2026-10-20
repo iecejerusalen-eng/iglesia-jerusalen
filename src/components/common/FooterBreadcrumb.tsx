@@ -29,6 +29,7 @@ const routeNames: Record<string, string> = {
   "profesor": "Portal Docente",
   "lms": "Plataforma de Aprendizaje",
   "admin": "Panel de Administración",
+  "reto-de-letras-biblicas": "Adivina la palabra",
 };
 
 export const FooterBreadcrumb = () => {

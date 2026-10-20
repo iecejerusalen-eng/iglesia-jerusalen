@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../../config/supabase';
+import { drawContent } from '../../../features/games/utils/contentDeck';
+import { useGameKeyboardShortcuts } from '../../../features/games/hooks/useGameKeyboardShortcuts';
+import { GameKeyboardHint } from '../../../features/games/components/GameKeyboardHint';
 import { useAuthStore } from '../../../store/useAuthStore';
 import BibleVerseLink from '../../../components/ui/BibleVerseLink';
 import { BorderBeam } from '../../../components/ui/magicui/border-beam';
@@ -39,19 +42,7 @@ interface HangmanLeaderboardEntry {
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
-
-const HANGMAN_PARTS = [
-  <line key="base" x1="28" y1="258" x2="168" y2="258" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />,
-  <line key="pole" x1="92" y1="258" x2="92" y2="28" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />,
-  <line key="beam" x1="88" y1="28" x2="224" y2="28" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />,
-  <line key="rope" x1="224" y1="28" x2="224" y2="65" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-  <circle key="head" cx="224" cy="92" r="27" stroke="currentColor" strokeWidth="6" fill="transparent" />,
-  <line key="body" x1="224" y1="119" x2="224" y2="184" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-  <line key="arm-left" x1="224" y1="138" x2="184" y2="164" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-  <line key="arm-right" x1="224" y1="138" x2="264" y2="164" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-  <line key="leg-left" x1="224" y1="184" x2="194" y2="232" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-  <line key="leg-right" x1="224" y1="184" x2="254" y2="232" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />,
-];
+const MAX_MISTAKES = 10;
 
 const difficultyStyles = {
   easy: 'border-emerald-300/25 bg-emerald-400/10 text-emerald-200',
@@ -59,36 +50,16 @@ const difficultyStyles = {
   hard: 'border-fuchsia-300/25 bg-fuchsia-400/10 text-fuchsia-200',
 };
 
-function shuffleWords(words: HangmanWord[]): HangmanWord[] {
-  const shuffled = [...words];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-  return shuffled;
-}
-
-function HangmanFigure({ mistakes }: { mistakes: number }) {
-  const remaining = HANGMAN_PARTS.length - mistakes;
+function WordLives({ mistakes }: { mistakes: number }) {
+  const remaining = MAX_MISTAKES - mistakes;
   return (
-    <div className="relative mx-auto w-full max-w-[230px] sm:max-w-[310px]" aria-label={`${remaining} intentos disponibles`}>
-      <div className="absolute inset-8 rounded-full bg-amber-400/10 blur-3xl" />
-      <svg viewBox="0 0 300 290" className="relative aspect-square w-full text-amber-300" role="img">
-        <title>{`Ilustración del juego: ${mistakes} de ${HANGMAN_PARTS.length} errores`}</title>
-        <g className="opacity-[0.11]">{HANGMAN_PARTS}</g>
-        <g className={mistakes >= 7 ? 'text-rose-300' : 'text-amber-300'}>
-          {HANGMAN_PARTS.slice(0, mistakes)}
-        </g>
-        {mistakes === 0 && (
-          <g className="text-amber-100/80">
-            <circle cx="150" cy="145" r="58" fill="currentColor" opacity="0.06" />
-            <path d="M150 104v82M120 128h60" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.7" />
-          </g>
-        )}
-      </svg>
-      <div className="absolute right-1 top-1 rounded-2xl border border-white/10 bg-slate-950/65 px-3 py-2 text-right shadow-xl backdrop-blur-xl">
-        <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Intentos</span>
-        <strong className={remaining <= 3 ? 'text-rose-300' : 'text-emerald-300'}>{remaining}/{HANGMAN_PARTS.length}</strong>
+    <div className="mx-auto w-full max-w-[310px] rounded-2xl border border-white/10 bg-white/[0.035] p-4" role="progressbar" aria-label="Oportunidades restantes" aria-valuemin={0} aria-valuemax={MAX_MISTAKES} aria-valuenow={remaining}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-300"><Lightbulb size={16} className="text-amber-300" aria-hidden="true" /> Oportunidades</span>
+        <strong className={remaining <= 3 ? 'text-rose-300' : 'text-amber-200'}>{remaining} de {MAX_MISTAKES}</strong>
+      </div>
+      <div className="grid grid-cols-5 gap-2" aria-hidden="true">
+        {Array.from({ length: MAX_MISTAKES }, (_, index) => <span key={index} className={`h-3 rounded-full transition-colors duration-300 motion-reduce:transition-none ${index < remaining ? 'bg-gradient-to-r from-amber-300 to-amber-500 shadow-sm shadow-amber-300/30' : 'bg-slate-700/70'}`} />)}
       </div>
     </div>
   );
@@ -103,7 +74,7 @@ function ReferenceReveal({ word, revealed }: { word: HangmanWord; revealed: bool
       <div className="min-w-0">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/70">Referencia bíblica</p>
         {revealed ? (
-          <BibleVerseLink reference={word.bible_reference} className="mt-1 inline-block text-base font-bold text-amber-100" />
+          <BibleVerseLink reference={word.bible_reference} preview className="mt-1 inline-block text-base font-bold text-amber-100" />
         ) : (
           <p className="mt-1 text-sm text-slate-400">Se revelará al completar esta adivinanza.</p>
         )}
@@ -146,7 +117,7 @@ export const Hangman = () => {
         .select('id,word,hint,category,difficulty,bible_reference');
 
       if (response.error?.code === '42703' && response.error.message.includes('bible_reference')) {
-        console.warn('La migración de referencias del Ahorcado Bíblico aún no está aplicada; usando el catálogo bíblico revisado durante la transición.');
+      console.warn('La migración de referencias de Adivina la palabra aún no está aplicada; usando el catálogo bíblico revisado durante la transición.');
         response = await supabase
           .from('game_hangman_words')
           .select('id,word,hint,category,difficulty');
@@ -161,7 +132,7 @@ export const Hangman = () => {
         throw new Error('No existen adivinanzas completas con referencia bíblica.');
       }
 
-      const shuffled = shuffleWords(prepared.words);
+      const shuffled = drawContent(prepared.words, 'reto-letras', prepared.words.length, (word) => word.id);
       if (startRoundAfterLoad) {
         beginRound(shuffled);
       } else {
@@ -192,12 +163,14 @@ export const Hangman = () => {
   };
 
   const handleWinRound = useCallback(() => {
-    confetti({
-      particleCount: 110,
-      spread: 78,
-      origin: { y: 0.62 },
-      colors: ['#fbbf24', '#38bdf8', '#ffffff'],
-    });
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      confetti({
+        particleCount: 110,
+        spread: 78,
+        origin: { y: 0.62 },
+        colors: ['#fbbf24', '#38bdf8', '#ffffff'],
+      });
+    }
     setScore((currentScore) => currentScore + 100);
     setWordsGuessed((currentWords) => currentWords + 1);
     setGameState('won');
@@ -215,7 +188,7 @@ export const Hangman = () => {
       }]);
       if (error) throw error;
     } catch (error) {
-      console.error('No se pudo guardar el puntaje del Ahorcado Bíblico.', error);
+      console.error('No se pudo guardar el puntaje de Adivina la palabra.', error);
       toast.error('La partida terminó, pero no pudimos guardar tu puntaje.');
     }
   }, [score, user, wordsGuessed]);
@@ -233,7 +206,7 @@ export const Hangman = () => {
     if (!normalizedWord.includes(normalizedLetter)) {
       const newMistakes = mistakes + 1;
       setMistakes(newMistakes);
-      if (newMistakes >= HANGMAN_PARTS.length) void endGame();
+      if (newMistakes >= MAX_MISTAKES) void endGame();
       return;
     }
 
@@ -259,75 +232,94 @@ export const Hangman = () => {
       setLeaderboard(entries);
       setGameState('leaderboard');
     } catch (error) {
-      console.error('No se pudo cargar la clasificación del Ahorcado Bíblico.', error);
+      console.error('No se pudo cargar la clasificación de Adivina la palabra.', error);
       toast.error('No pudimos cargar la clasificación.');
     } finally {
       setLeaderboardLoading(false);
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (gameState !== 'playing') return;
-      const key = event.key.toLocaleUpperCase('es');
-      if (ALPHABET.includes(key)) handleGuess(key);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, handleGuess]);
+  useGameKeyboardShortcuts({
+    enabled: gameState !== 'menu' && gameState !== 'leaderboard',
+    onNext: gameState === 'won' ? nextWord : gameState === 'gameover' ? startGame : undefined,
+    onLetter: gameState === 'playing' ? handleGuess : undefined,
+  });
 
   useEffect(() => {
     if (gameState !== 'playing') return;
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [currentWord?.id, gameState]);
 
-  const remainingAttempts = HANGMAN_PARTS.length - mistakes;
+  const remainingLives = MAX_MISTAKES - mistakes;
 
   const renderMenu = () => (
     <motion.section
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mx-auto grid w-full min-w-0 max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/55 shadow-[0_40px_120px_-50px_rgba(245,158,11,.5)] backdrop-blur-2xl lg:grid-cols-[.9fr_1.1fr]"
+      className="relative mx-auto grid w-full min-w-0 max-w-6xl overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/75 shadow-[0_40px_120px_-50px_rgba(245,158,11,.5)] backdrop-blur-2xl lg:grid-cols-[.92fr_1.08fr]"
     >
       <BorderBeam size={180} duration={15} colorFrom="#fbbf24" colorTo="#38bdf8" />
-      <div className="relative order-2 min-h-[360px] min-w-0 overflow-hidden border-t border-white/10 p-6 sm:p-8 lg:order-1 lg:border-r lg:border-t-0">
-        <div className="absolute -left-16 -top-16 h-52 w-52 rounded-full bg-sky-500/20 blur-3xl" />
-        <div className="absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-amber-400/20 blur-3xl" />
-        <div className="relative mx-auto grid h-full max-w-sm place-items-center rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_50%_18%,rgba(251,191,36,.17),transparent_45%)] p-6">
-          <div className="absolute inset-x-10 top-8 grid grid-cols-5 gap-3 opacity-40" aria-hidden="true">
-            {Array.from({ length: 15 }, (_, index) => (
-              <span key={index} className={`aspect-square rounded-full ${index % 3 === 0 ? 'bg-sky-400' : index % 2 === 0 ? 'bg-amber-300' : 'bg-indigo-400'}`} />
-            ))}
-          </div>
-          <div className="relative grid h-36 w-36 place-items-center rounded-full border border-amber-200/25 bg-slate-950/75 shadow-2xl shadow-amber-500/20 backdrop-blur-xl">
-            <BookOpen className="text-amber-200" size={62} strokeWidth={1.35} />
-            <Sparkles className="absolute right-2 top-4 text-sky-300" size={24} />
-          </div>
-          <div className="relative grid w-full grid-cols-3 gap-3 text-center">
+      <div className="relative order-1 min-w-0 border-b border-white/10 p-5 sm:p-8 lg:order-1 lg:border-b-0 lg:border-r">
+        <div className="pointer-events-none absolute -left-16 -top-16 h-52 w-52 rounded-full bg-sky-500/15 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-amber-400/15 blur-3xl" aria-hidden="true" />
+        <div className="relative mx-auto flex h-full w-full max-w-xl flex-col justify-center lg:max-w-none">
+          <figure className="group relative isolate aspect-[1.48] overflow-hidden rounded-[1.4rem] border border-white/15 bg-slate-900 shadow-2xl shadow-black/30 sm:aspect-[1.6]">
+            <img
+              src="/images/games/covers/reto-letras.webp"
+              alt="Biblia abierta y letras de madera preparadas para descubrir una palabra bíblica"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+              fetchPriority="high"
+              decoding="async"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-slate-950/10" aria-hidden="true" />
+            <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 p-4 sm:p-5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/65 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100 shadow-lg backdrop-blur-md">
+                <BookOpen size={14} aria-hidden="true" /> Palabras de la Biblia
+              </span>
+              <span className="rounded-full border border-emerald-200/25 bg-emerald-950/70 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-100 backdrop-blur-md">A tu ritmo</span>
+            </div>
+            <figcaption className="absolute inset-x-0 bottom-0 p-5 pt-16 sm:p-6 sm:pt-20">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Observa la pista · forma la palabra</p>
+              <p className="mt-2 max-w-sm font-serif text-2xl font-bold leading-tight text-white sm:text-3xl">Cada respuesta abre una nueva historia.</p>
+            </figcaption>
+            <div className="absolute bottom-5 right-5 hidden items-center gap-1.5 sm:flex" aria-hidden="true">
+              {['L', 'U', '?'].map((letter, index) => <span key={index} className={`grid h-9 w-8 place-items-center rounded-lg border border-amber-100/50 text-sm font-black text-slate-950 shadow-lg ${index === 2 ? 'bg-white/90' : 'bg-gradient-to-b from-amber-200 to-amber-500'}`}>{letter}</span>)}
+            </div>
+          </figure>
+          <div className="mt-4 grid grid-cols-3 gap-2.5 text-center sm:gap-3">
             {[
-              ['10', 'intentos'],
-              ['+100', 'por acierto'],
+              ['10', 'oportunidades'],
+              ['+100', 'puntos por acierto'],
               ['Biblia', 'como guía'],
             ].map(([value, label]) => (
-              <div key={label} className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] px-1.5 py-3 sm:px-2">
-                <strong className="block text-sm text-white">{value}</strong>
-                <span className="break-words text-[8px] font-bold uppercase tracking-wide text-slate-400 sm:text-[9px] sm:tracking-wider">{label}</span>
+              <div key={label} className="min-w-0 rounded-xl border border-white/10 bg-white/[0.055] px-1.5 py-3 sm:rounded-2xl sm:px-2.5">
+                <strong className="block text-sm text-white sm:text-base">{value}</strong>
+                <span className="mt-1 block break-words text-[8px] font-bold uppercase leading-tight tracking-wide text-slate-300 sm:text-[9px] sm:tracking-wider">{label}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="relative order-1 flex min-w-0 flex-col justify-center p-6 sm:p-12 lg:order-2">
-        <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-amber-200">
-          <Sparkles size={13} /> Aprende jugando
+      <div className="relative order-2 flex min-w-0 flex-col justify-center p-5 sm:p-9 lg:order-2 lg:p-10 xl:p-12">
+        <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-100">
+          <Sparkles size={13} aria-hidden="true" /> Aprende jugando
         </span>
-        <h1 className="font-serif text-4xl font-bold leading-[1.03] text-white sm:text-6xl">
-          Ahorcado <span className="bg-gradient-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">Bíblico</span>
+        <h1 className="max-w-xl font-serif text-[2.65rem] font-bold leading-[1.02] tracking-tight text-white sm:text-6xl">
+          Adivina <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-orange-400 bg-clip-text text-transparent">la palabra</span>
         </h1>
-        <p className="mt-5 max-w-xl break-words text-base leading-7 text-slate-300 sm:text-lg">
-          Descubre personajes, lugares, libros y enseñanzas. Cada respuesta termina con el pasaje bíblico para seguir aprendiendo.
+        <p className="mt-4 max-w-xl break-words text-base leading-7 text-slate-300 sm:text-lg">
+          Descubre palabras, personajes y lugares de la Biblia. Al acertar, conocerás el pasaje que inspira cada respuesta.
         </p>
+
+        <section aria-labelledby="hangman-how-to-play" className="mt-5 border-l-2 border-amber-300/70 pl-4 sm:pl-5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 id="hangman-how-to-play" className="text-sm font-black text-white">Cómo jugar</h2>
+            {currentWord && <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-xs font-bold text-amber-100">Dificultad: {DIFFICULTY_LABELS[currentWord.difficulty]}</span>}
+          </div>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Elige letras en pantalla o escríbelas. Cada error resta una oportunidad; completa la palabra para sumar puntos y descubrir su referencia.</p>
+          <GameKeyboardHint instruction="También puedes moverte entre letras con Tab e Intro." nextAction="siguiente palabra después de resolverla" tone="dark-surface" />
+        </section>
 
         {loadError && (
           <div className="mt-6 rounded-2xl border border-rose-400/25 bg-rose-400/10 p-4 text-sm text-rose-100" role="alert">
@@ -336,19 +328,19 @@ export const Hangman = () => {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ShinyButton
             onClick={startGame}
             disabled={loadingWords || !currentWord}
-            className="min-h-14 bg-gradient-to-r from-amber-500 to-orange-600 px-8 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-14 w-full bg-gradient-to-r from-amber-500 to-orange-600 px-8 text-sm shadow-lg shadow-amber-900/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             shinyColor="#ffffff"
           >
-            {loadingWords ? <RefreshCw className="animate-spin" size={18} /> : <Play className="fill-current" size={18} />}
+            {loadingWords ? <RefreshCw className="animate-spin motion-reduce:animate-none" size={18} /> : <Play className="fill-current" size={18} />}
             {loadingWords ? 'Preparando' : 'Comenzar desafío'}
           </ShinyButton>
           <button
             onClick={() => void fetchLeaderboard()}
-            className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.055] px-6 text-sm font-black text-white transition hover:bg-white/10"
+            className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.055] px-6 text-sm font-black text-white transition hover:border-amber-200/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
             <Trophy size={18} className="text-amber-300" /> Clasificación
           </button>
@@ -373,7 +365,7 @@ export const Hangman = () => {
         <button onClick={() => setGameState('menu')} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" aria-label="Cerrar clasificación"><X /></button>
       </div>
       {leaderboardLoading ? (
-        <div className="grid min-h-60 place-items-center"><RefreshCw className="animate-spin text-amber-300" size={30} /></div>
+        <div className="grid min-h-60 place-items-center"><RefreshCw className="animate-spin motion-reduce:animate-none text-amber-300" size={30} /></div>
       ) : leaderboard.length === 0 ? (
         <p className="py-14 text-center text-slate-400">Aún no hay puntajes registrados. ¡Sé el primero!</p>
       ) : (
@@ -399,7 +391,7 @@ export const Hangman = () => {
   );
 
   const renderPlaying = () => {
-    if (!currentWord) return <div className="grid min-h-[55vh] place-items-center"><RefreshCw className="animate-spin text-amber-300" /></div>;
+    if (!currentWord) return <div className="grid min-h-[55vh] place-items-center"><RefreshCw className="animate-spin motion-reduce:animate-none text-amber-300" /></div>;
     const normalizedWord = normalizeForGuess(currentWord.word);
     const wordLetters = currentWord.word.toLocaleUpperCase('es').split('');
     const roundFinished = gameState === 'won' || gameState === 'gameover';
@@ -408,12 +400,12 @@ export const Hangman = () => {
     return (
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="relative order-2 overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/55 p-5 shadow-2xl backdrop-blur-2xl sm:p-7 lg:order-1">
-          <BorderBeam size={120} duration={12} colorFrom={remainingAttempts <= 3 ? '#fb7185' : '#fbbf24'} colorTo="#38bdf8" />
+          <BorderBeam size={120} duration={12} colorFrom={remainingLives <= 3 ? '#fb7185' : '#fbbf24'} colorTo="#38bdf8" />
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tu recorrido</span>
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">Ronda {roundNumber}</span>
           </div>
-          <HangmanFigure mistakes={mistakes} />
+          <WordLives mistakes={mistakes} />
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
               <Target size={18} className="mb-2 text-sky-300" />
@@ -433,7 +425,7 @@ export const Hangman = () => {
           <div className="relative flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">{currentWord.category}</span>
             <span className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] ${difficultyStyles[currentWord.difficulty]}`}>{DIFFICULTY_LABELS[currentWord.difficulty]}</span>
-            <span className={`ml-auto rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] lg:hidden ${remainingAttempts <= 3 ? 'border-rose-300/25 bg-rose-300/10 text-rose-200' : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'}`}>{remainingAttempts} intentos</span>
+            <span className={`ml-auto rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] lg:hidden ${remainingLives <= 3 ? 'border-rose-300/25 bg-rose-300/10 text-rose-200' : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'}`}>{remainingLives} oportunidades</span>
           </div>
 
           <div className="relative mt-5 flex items-start gap-3 rounded-2xl border border-sky-300/15 bg-sky-300/[0.07] p-4 sm:p-5">
@@ -470,16 +462,16 @@ export const Hangman = () => {
                 <Sparkles className="mx-auto text-emerald-300" />
                 <h3 className="mt-2 text-2xl font-black text-emerald-100">¡Respuesta correcta!</h3>
                 <p className="mt-1 text-sm text-emerald-100/70">Sumaste 100 puntos y desbloqueaste el pasaje bíblico.</p>
-                <button onClick={nextWord} className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-7 text-sm font-black text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"><Play size={17} /> Siguiente adivinanza</button>
+                <button type="button" onClick={nextWord} aria-keyshortcuts="Shift+Enter" className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-7 text-sm font-black text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"><Play size={17} /> Siguiente adivinanza</button>
               </motion.div>
             ) : gameState === 'gameover' ? (
               <motion.div key="lost" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-rose-300/25 bg-rose-300/10 p-5 text-center">
                 <Info className="mx-auto text-rose-300" />
-                <h3 className="mt-2 text-2xl font-black text-rose-100">Fin de la ronda</h3>
+                <h3 className="mt-2 text-2xl font-black text-rose-100">Se acabaron las oportunidades</h3>
                 <p className="mt-1 text-sm text-rose-100/70">La respuesta era <strong className="text-white">{currentWord.word}</strong>.</p>
                 <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
                   <button onClick={() => setGameState('menu')} className="min-h-12 rounded-xl border border-white/10 bg-white/5 px-6 text-sm font-black text-white hover:bg-white/10">Volver al inicio</button>
-                  <button onClick={startGame} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-amber-500 px-7 text-sm font-black text-slate-950 hover:bg-amber-400"><RefreshCw size={17} /> Nueva partida</button>
+                  <button onClick={startGame} aria-keyshortcuts="Shift+Enter" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-amber-500 px-7 text-sm font-black text-slate-950 hover:bg-amber-400"><RefreshCw size={17} /> Nueva partida</button>
                 </div>
               </motion.div>
             ) : (
@@ -508,15 +500,20 @@ export const Hangman = () => {
           </AnimatePresence>
 
           <ReferenceReveal word={currentWord} revealed={roundFinished} />
-          <p className="sr-only" aria-live="polite">{mistakes > 0 ? `${mistakes} errores; quedan ${remainingAttempts} intentos.` : 'Aún no hay errores.'}</p>
+          <GameKeyboardHint
+            instruction={gameState === 'playing' ? 'Escribe letras o selecciónalas en pantalla.' : 'Usa los botones para continuar o empezar otra partida.'}
+            nextAction={gameState === 'won' ? 'siguiente palabra' : 'nueva partida después de terminar'}
+          />
+          <p className="sr-only" aria-live="polite">{mistakes > 0 ? `Llevas ${mistakes} errores; quedan ${remainingLives} oportunidades.` : 'Aún tienes las diez oportunidades.'}</p>
         </div>
       </motion.section>
     );
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#070b16] px-4 py-8 text-white sm:py-12">
-      <Helmet><title>Ahorcado Bíblico | Juegos Cristianos</title></Helmet>
+    <MotionConfig reducedMotion="user">
+    <div className="relative min-h-screen overflow-hidden bg-[#070b16] px-4 py-8 pb-28 text-white sm:py-12 xl:pb-12">
+      <Helmet><title>Adivina la palabra | Juegos Bíblicos</title><meta name="description" content="Adivina palabras bíblicas eligiendo o escribiendo letras. Cada error resta una oportunidad y cada respuesta revela su referencia." /></Helmet>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(14,165,233,.16),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(245,158,11,.18),transparent_26%),radial-gradient(circle_at_50%_100%,rgba(79,70,229,.14),transparent_38%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(255,255,255,.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.9)_1px,transparent_1px)] [background-size:48px_48px]" />
 
@@ -535,5 +532,6 @@ export const Hangman = () => {
         {(gameState === 'playing' || gameState === 'won' || gameState === 'gameover') && renderPlaying()}
       </main>
     </div>
+    </MotionConfig>
   );
 };

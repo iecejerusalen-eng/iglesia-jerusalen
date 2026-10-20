@@ -1,269 +1,308 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../../config/supabase';
-import { Plus, Trash2, Edit2, Image as ImageIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
+import { BookOpen, Eye, EyeOff, Image as ImageIcon, Plus, Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '../../../config/supabase';
+import type { MemoryDifficulty } from '../../public/games/memoryMatchLogic';
 
-import EmojiPicker from 'emoji-picker-react';
-
-interface MemoryCard {
+interface MemoryPairRecord {
   id: string;
   pair_name: string;
   image_url: string | null;
+  match_image_url: string | null;
+  card_label: string | null;
+  match_label: string | null;
+  match_text: string | null;
+  explanation: string | null;
+  bible_reference: string | null;
+  difficulty: MemoryDifficulty;
+  learning_question: string | null;
+  learning_options: unknown;
+  learning_answer: string | null;
+  is_active: boolean;
 }
 
+interface PairForm {
+  pairName: string;
+  imageUrl: string;
+  matchImageUrl: string;
+  cardLabel: string;
+  matchLabel: string;
+  matchText: string;
+  explanation: string;
+  bibleReference: string;
+  difficulty: MemoryDifficulty;
+  learningQuestion: string;
+  learningOptions: string;
+  learningAnswer: string;
+}
+
+const EMPTY_FORM: PairForm = {
+  pairName: '',
+  imageUrl: '',
+  matchImageUrl: '',
+  cardLabel: 'Objeto',
+  matchLabel: 'Relato',
+  matchText: '',
+  explanation: '',
+  bibleReference: '',
+  difficulty: 'easy',
+  learningQuestion: '',
+  learningOptions: '',
+  learningAnswer: '',
+};
+
+const DIFFICULTY_LABELS: Record<MemoryDifficulty, string> = {
+  easy: 'Inicial',
+  medium: 'Intermedio',
+  hard: 'Desafío',
+};
+
+const isImageSource = (value: string | null | undefined): boolean =>
+  typeof value === 'string' && /^(https?:\/\/|\/)/i.test(value.trim());
+
 export const MemoryEditor = () => {
-  const [cards, setCards] = useState<MemoryCard[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCard, setEditingCard] = useState<MemoryCard | null>(null);
-  
-  // Form State
-  const [pairName, setPairName] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [pairs, setPairs] = useState<MemoryPairRecord[]>([]);
+  const [form, setForm] = useState<PairForm>(EMPTY_FORM);
+  const [editingPair, setEditingPair] = useState<MemoryPairRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const intent = useRef<'draft' | 'publish'>('draft');
 
-  const fetchCards = async () => {
+  const publishable = useMemo(() => {
+    const first = form.pairName.trim().toLocaleLowerCase('es');
+    const second = form.matchText.trim().toLocaleLowerCase('es');
+    return Boolean(
+      first && second && first !== second &&
+      form.explanation.trim() && form.bibleReference.trim() && isImageSource(form.imageUrl) && isImageSource(form.matchImageUrl) &&
+      form.learningQuestion.trim() && form.learningAnswer.trim() &&
+      form.learningOptions.split('\n').map((option) => option.trim()).filter(Boolean).length >= 3 &&
+      form.learningOptions.split('\n').map((option) => option.trim()).filter(Boolean).includes(form.learningAnswer.trim()),
+    );
+  }, [form]);
+
+  const fetchPairs = useCallback(async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('game_memory_cards')
-        .select('*')
-        .order('pair_name');
-      
-      if (error) throw error;
-      setCards(data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al cargar cartas');
-    } finally {
-      setLoading(false);
+    setLoadError(null);
+    const { data, error } = await supabase
+      .from('game_memory_cards')
+      .select('id,pair_name,image_url,match_image_url,card_label,match_label,match_text,explanation,bible_reference,difficulty,learning_question,learning_options,learning_answer,is_active')
+      .order('pair_name');
+    if (error) {
+      console.error('No se pudieron cargar las parejas del Memorama.', error);
+      setLoadError('No pudimos cargar el contenido. Revisa tu conexión e inténtalo de nuevo.');
+      setPairs([]);
+    } else {
+      setPairs((data ?? []) as MemoryPairRecord[]);
     }
-  };
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void fetchCards(); }, 0);
-    return () => window.clearTimeout(timer);
+    setLoading(false);
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        pair_name: pairName,
-        image_url: imageUrl || null
-      };
-
-      if (editingCard) {
-        const { error } = await supabase
-          .from('game_memory_cards')
-          .update(payload)
-          .eq('id', editingCard.id);
-        if (error) throw error;
-        toast.success('Carta actualizada');
-      } else {
-        const { error } = await supabase
-          .from('game_memory_cards')
-          .insert([payload]);
-        if (error) throw error;
-        toast.success('Carta añadida');
-      }
-      
-      setIsModalOpen(false);
-      resetForm();
-      fetchCards();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al guardar carta');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar esta carta?')) return;
-    try {
-      const { error } = await supabase
-        .from('game_memory_cards')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      toast.success('Carta eliminada');
-      fetchCards();
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al eliminar');
-    }
-  };
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchPairs(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchPairs]);
 
   const resetForm = () => {
-    setEditingCard(null);
-    setPairName('');
-    setImageUrl('');
+    setEditingPair(null);
+    setForm(EMPTY_FORM);
   };
 
-  const openEdit = (c: MemoryCard) => {
-    setEditingCard(c);
-    setPairName(c.pair_name);
-    setImageUrl(c.image_url || '');
-    setIsModalOpen(true);
+  const editPair = (pair: MemoryPairRecord) => {
+    setEditingPair(pair);
+    setForm({
+      pairName: pair.pair_name,
+      imageUrl: pair.image_url ?? '',
+      matchImageUrl: pair.match_image_url ?? '',
+      cardLabel: pair.card_label ?? 'Concepto',
+      matchLabel: pair.match_label ?? 'Relato',
+      matchText: pair.match_text ?? '',
+      explanation: pair.explanation ?? '',
+      bibleReference: pair.bible_reference ?? '',
+      difficulty: pair.difficulty,
+      learningQuestion: pair.learning_question ?? '',
+      learningOptions: Array.isArray(pair.learning_options) ? pair.learning_options.filter((item): item is string => typeof item === 'string').join('\n') : '',
+      learningAnswer: pair.learning_answer ?? '',
+    });
+    document.getElementById('memory-pair-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Editor: Memorama Bíblico</h1>
-          <p className="text-gray-500">Gestiona las parejas de cartas del juego. (Se necesitan mínimo 8)</p>
-        </div>
-        <button 
-          onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus size={20} /> Añadir Pareja
-        </button>
-      </div>
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const publish = intent.current === 'publish';
+    intent.current = 'draft';
+    if (!form.pairName.trim()) {
+      toast.error('Añade el concepto de la primera carta.');
+      return;
+    }
+    if (publish && !publishable) {
+      toast.error('Completa las imágenes, explicación, referencia y pregunta de repaso antes de publicar.');
+      return;
+    }
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Cargando cartas...</div>
-        ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 text-sm border-b border-gray-200 dark:border-gray-700">
-                <th className="p-4 font-medium w-16">Imagen</th>
-                <th className="p-4 font-medium">Nombre de Pareja</th>
-                <th className="p-4 font-medium text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {cards.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="p-4">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden flex items-center justify-center">
-                      {c.image_url ? (
-                        c.image_url.startsWith('<svg') ? (
-                          <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.image_url, { USE_PROFILES: { svg: true } }) }} />
-                        ) : c.image_url.startsWith('http') || c.image_url.startsWith('/') || c.image_url.startsWith('data:') ? (
-                          <img src={c.image_url} alt={c.pair_name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xl">{c.image_url}</span>
-                        )
-                      ) : (
-                        <ImageIcon size={20} className="text-gray-400" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4 font-medium dark:text-white">{c.pair_name}</td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => openEdit(c)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded">
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(c.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {cards.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="p-8 text-center text-gray-500">
-                    No hay cartas configuradas. Añade al menos 8 para poder jugar.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+    setSaving(true);
+    const payload = {
+      pair_name: form.pairName.trim(),
+      image_url: form.imageUrl.trim() || null,
+      match_image_url: form.matchImageUrl.trim() || null,
+      card_label: form.cardLabel.trim() || 'Concepto',
+      match_label: form.matchLabel.trim() || 'Relato',
+      match_text: form.matchText.trim() || null,
+      explanation: form.explanation.trim() || null,
+      bible_reference: form.bibleReference.trim() || null,
+      difficulty: form.difficulty,
+      learning_question: form.learningQuestion.trim() || null,
+      learning_options: form.learningOptions.split('\n').map((option) => option.trim()).filter(Boolean),
+      learning_answer: form.learningAnswer.trim() || null,
+      is_active: publish,
+    };
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4 dark:text-white">
-              {editingCard ? 'Editar Carta' : 'Nueva Carta'}
-            </h2>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Nombre de la Pareja</label>
-                <input 
-                  required
-                  type="text" 
-                  value={pairName}
-                  onChange={e => setPairName(e.target.value)}
-                  className="w-full p-2 border dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                  placeholder="Ej. Arca de Noé"
-                />
-                <p className="text-xs text-gray-500 mt-1">Este texto se mostrará si no hay imagen.</p>
-              </div>
-              <div className="relative">
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300 flex justify-between">
-                  <span>URL, Emoji o SVG (Opcional)</span>
-                  <button 
-                    type="button"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="text-xs text-blue-500 hover:text-blue-600"
-                  >
-                    {showEmojiPicker ? 'Ocultar Emojis' : '😁 Añadir Emoji'}
-                  </button>
-                </label>
-                <input 
-                  type="text" 
-                  value={imageUrl}
-                  onChange={e => setImageUrl(e.target.value)}
-                  className="w-full p-2 border dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                  placeholder="https://... o pega un emoji/svg"
-                />
-                
-                {showEmojiPicker && (
-                  <div className="absolute z-10 right-0 mt-2">
-                    <EmojiPicker 
-                      onEmojiClick={(emojiData) => {
-                        setImageUrl(emojiData.emoji);
-                        setShowEmojiPicker(false);
-                      }} 
-                    />
-                  </div>
-                )}
-              </div>
-              
-              {imageUrl && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium mb-2 dark:text-gray-300">Vista previa:</p>
-                  <div className="w-24 h-24 border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 mx-auto flex items-center justify-center">
-                    {imageUrl.startsWith('<svg') ? (
-                      <div className="w-full h-full text-gray-600 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(imageUrl, { USE_PROFILES: { svg: true } }) }} />
-                    ) : imageUrl.startsWith('http') || imageUrl.startsWith('/') || imageUrl.startsWith('data:') ? (
-                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => {
-                        (e.target as HTMLImageElement).src = '';
-                      }} />
-                    ) : (
-                      <span className="text-4xl">{imageUrl}</span>
-                    )}
-                  </div>
-                </div>
-              )}
+    try {
+      const result = editingPair
+        ? await supabase.from('game_memory_cards').update(payload).eq('id', editingPair.id)
+        : await supabase.from('game_memory_cards').insert([payload]);
+      if (result.error) throw result.error;
+      toast.success(publish ? 'Pareja publicada en el juego.' : 'Borrador guardado.');
+      resetForm();
+      await fetchPairs();
+    } catch (error) {
+      console.error('No se pudo guardar la pareja del Memorama.', error);
+      toast.error('No se pudo guardar. Comprueba los campos y vuelve a intentarlo.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-              <div className="flex justify-end gap-3 mt-6">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                >
-                  Guardar
-                </button>
+  const deletePair = async (pair: MemoryPairRecord) => {
+    if (!window.confirm(`¿Eliminar la pareja “${pair.pair_name}”? Esta acción no se puede deshacer.`)) return;
+    const { error } = await supabase.from('game_memory_cards').delete().eq('id', pair.id);
+    if (error) {
+      console.error('No se pudo eliminar la pareja del Memorama.', error);
+      toast.error('No se pudo eliminar la pareja.');
+      return;
+    }
+    toast.success('Pareja eliminada.');
+    if (editingPair?.id === pair.id) resetForm();
+    await fetchPairs();
+  };
+
+  const togglePublish = async (pair: MemoryPairRecord) => {
+    const options = Array.isArray(pair.learning_options) ? pair.learning_options.filter((item): item is string => typeof item === 'string') : [];
+    const complete = Boolean(pair.pair_name.trim() && isImageSource(pair.image_url) && isImageSource(pair.match_image_url) && pair.match_text?.trim() && pair.explanation?.trim() && pair.bible_reference?.trim() && pair.learning_question?.trim() && pair.learning_answer?.trim() && options.length >= 3 && options.includes(pair.learning_answer.trim())
+      && pair.pair_name.trim().toLocaleLowerCase('es') !== pair.match_text?.trim().toLocaleLowerCase('es'));
+    if (!pair.is_active && !complete) {
+      toast.error('Completa las imágenes, explicación, referencia y pregunta de repaso antes de publicar.');
+      return;
+    }
+    const { error } = await supabase.from('game_memory_cards').update({ is_active: !pair.is_active }).eq('id', pair.id);
+    if (error) {
+      console.error('No se pudo cambiar el estado de la pareja.', error);
+      toast.error('No se pudo cambiar el estado de publicación.');
+      return;
+    }
+    toast.success(pair.is_active ? 'Pareja retirada del juego.' : 'Pareja publicada.');
+    await fetchPairs();
+  };
+
+  const updateField = <K extends keyof PairForm>(key: K, value: PairForm[K]) =>
+    setForm((current) => ({ ...current, [key]: value }));
+
+  return <main className="relative mx-auto max-w-7xl space-y-7 p-4 sm:p-6 lg:p-8">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-96 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.11),transparent_38%),radial-gradient(circle_at_top_right,rgba(139,92,246,0.09),transparent_35%)]" />
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">Formación · Juego público</p><h1 className="mt-2 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Parejas del Memorama</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Relaciona dos ideas bíblicas distintas. Revisa la vista previa y añade una referencia antes de publicar el contenido.</p></div>
+      <button type="button" onClick={() => { resetForm(); document.getElementById('memory-pair-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-950 px-4 font-bold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-400 dark:text-slate-950"><Plus size={18} /> Nueva pareja</button>
+    </header>
+
+    <section className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/60 sm:p-6" aria-labelledby="pair-list-title">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 id="pair-list-title" className="text-xl font-bold text-slate-950 dark:text-white">Biblioteca de contenido</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{pairs.filter((pair) => pair.is_active).length} publicadas · {pairs.length} en total</p></div><button type="button" onClick={() => void fetchPairs()} className="min-h-10 rounded-xl border border-slate-300 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">Actualizar</button></div>
+      {loading ? <p role="status" className="py-10 text-center text-slate-500">Cargando contenido…</p> : loadError ? <div role="alert" className="mt-5 rounded-2xl border border-rose-300 bg-rose-50 p-5 text-sm text-rose-900 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-100">{loadError}<button type="button" onClick={() => void fetchPairs()} className="ml-3 font-black underline">Reintentar</button></div> : pairs.length === 0 ? <p className="py-10 text-center text-slate-500 dark:text-slate-400">Aún no hay parejas. Crea una para comenzar.</p> : (
+        <ul className="mt-5 grid gap-3 md:grid-cols-2">
+          {pairs.map((pair) => {
+            const options = Array.isArray(pair.learning_options) ? pair.learning_options.filter((item): item is string => typeof item === 'string') : [];
+            const complete = Boolean(isImageSource(pair.image_url) && isImageSource(pair.match_image_url) && pair.match_text?.trim() && pair.explanation?.trim() && pair.bible_reference?.trim() && pair.learning_question?.trim() && pair.learning_answer?.trim() && options.length >= 3 && options.includes(pair.learning_answer.trim())
+              && pair.pair_name.trim().toLocaleLowerCase('es') !== pair.match_text?.trim().toLocaleLowerCase('es'));
+            return <li key={pair.id} className="min-w-0 rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="break-words font-bold text-slate-950 dark:text-white">{pair.pair_name} <span className="text-slate-400">↔</span> {pair.match_text || 'Asociación pendiente'}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${pair.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300'}`}>{pair.is_active ? 'Publicada' : 'Borrador'}</span></div><p className="mt-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{pair.explanation || 'Añade una explicación bíblica.'}</p><p className="mt-2 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-200"><BookOpen size={14} />{pair.bible_reference || 'Referencia pendiente'} · {DIFFICULTY_LABELS[pair.difficulty]}</p>{!complete && <p className="mt-2 text-xs font-bold text-amber-700 dark:text-amber-300">Falta completar el contenido para publicarlo.</p>}</div>
+                <div className="flex shrink-0 gap-1.5">{[pair.image_url, pair.match_image_url].filter((image): image is string => Boolean(image)).map((image, imageIndex) => <div key={`${pair.id}-${imageIndex}`} className="grid size-12 place-items-center overflow-hidden rounded-xl bg-slate-100 dark:bg-white/5">{/^(https?:\/\/|\/)/.test(image) ? <img src={image} alt="" className="size-full object-cover" /> : <span className="text-2xl">{image}</span>}</div>)}</div>
               </div>
-            </form>
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-3 dark:border-white/10">
+                <button type="button" onClick={() => editPair(pair)} className="min-h-10 rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/15 dark:text-white dark:hover:bg-white/5">Editar y previsualizar</button>
+                <button type="button" onClick={() => void togglePublish(pair)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/15 dark:text-white dark:hover:bg-white/5" aria-label={pair.is_active ? `Retirar ${pair.pair_name}` : `Publicar ${pair.pair_name}`}>{pair.is_active ? <EyeOff size={14} /> : <Eye size={14} />}{pair.is_active ? 'Retirar' : 'Publicar'}</button>
+                <button type="button" onClick={() => void deletePair(pair)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-bold text-rose-700 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:text-rose-300 dark:hover:bg-rose-500/10" aria-label={`Eliminar ${pair.pair_name}`}><Trash2 size={14} /> Eliminar</button>
+              </div>
+            </li>;
+          })}
+        </ul>
+      )}
+    </section>
+
+    <section id="memory-pair-editor" className="scroll-mt-24 rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/60 sm:p-6">
+      <div className="mb-5"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-blue-700 dark:text-blue-300">{editingPair ? 'Editar contenido' : 'Crear contenido'}</p><h2 className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{editingPair ? editingPair.pair_name : 'Nueva asociación bíblica'}</h2></div>
+      <form onSubmit={(event) => void handleSave(event)} className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Primera carta" value={form.pairName} onChange={(value) => updateField('pairName', value)} required maxLength={100} placeholder="Ej. David" />
+            <Field label="Imagen de la primera carta" value={form.imageUrl} onChange={(value) => updateField('imageUrl', value)} maxLength={2000} placeholder="Ruta pública, URL o emoji" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3"><Field label="Etiqueta de carta 1" value={form.cardLabel} onChange={(value) => updateField('cardLabel', value)} maxLength={32} placeholder="Objeto" /><Field label="Imagen de la carta asociada" value={form.matchImageUrl} onChange={(value) => updateField('matchImageUrl', value)} maxLength={2000} placeholder="Ruta pública o URL" /><Field label="Etiqueta de carta 2" value={form.matchLabel} onChange={(value) => updateField('matchLabel', value)} maxLength={32} placeholder="Relato" /></div>
+          <Field label="Carta que forma pareja" value={form.matchText} onChange={(value) => updateField('matchText', value)} maxLength={220} placeholder="Ej. Venció a Goliat" />
+          <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">Pregunta de repaso
+            <input value={form.learningQuestion} onChange={(event) => updateField('learningQuestion', event.target.value)} maxLength={220} placeholder="¿Qué hizo David con la espada de Goliat?" className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal dark:border-white/15 dark:bg-slate-900 dark:text-white" />
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold text-slate-700 dark:text-slate-200">Opciones (una por línea)
+            <textarea value={form.learningOptions} onChange={(event) => updateField('learningOptions', event.target.value)} rows={4} maxLength={600} placeholder={'La guardó en el templo\nLa usó para derrotar al gigante\nLa entregó al rey'} className="mt-1.5 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm font-normal dark:border-white/15 dark:bg-slate-900 dark:text-white" />
+          </label><Field label="Respuesta correcta (exacta)" value={form.learningAnswer} onChange={(value) => updateField('learningAnswer', value)} maxLength={180} placeholder="La usó para derrotar al gigante" /></div>
+          <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">Explicación breve
+            <textarea value={form.explanation} onChange={(event) => updateField('explanation', event.target.value)} maxLength={600} rows={3} placeholder="Explica por qué se relacionan estas dos cartas." className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-slate-300 bg-white p-3 text-sm font-normal leading-6 text-slate-900 focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/20 dark:border-white/15 dark:bg-slate-900 dark:text-white" />
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Referencia bíblica" value={form.bibleReference} onChange={(value) => updateField('bibleReference', value)} maxLength={120} placeholder="Ej. 1 Samuel 17:49-50" />
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">Nivel
+              <select value={form.difficulty} onChange={(event) => updateField('difficulty', event.target.value as MemoryDifficulty)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-white/15 dark:bg-slate-900 dark:text-white">
+                {(Object.keys(DIFFICULTY_LABELS) as MemoryDifficulty[]).map((value) => <option key={value} value={value}>{DIFFICULTY_LABELS[value]}</option>)}
+              </select>
+            </label>
+          </div>
+          <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Antes de publicar, verifica que la explicación corresponda a la cita. El juego muestra la referencia, no reproduce una traducción bíblica.</p>
+          <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
+            <button type="submit" disabled={saving} onClick={() => { intent.current = 'draft'; }} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/15 dark:text-white dark:hover:bg-white/5"><Save size={16} />Guardar borrador</button>
+            <button type="submit" disabled={saving || !publishable} onClick={() => { intent.current = 'publish'; }} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-950 px-4 font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-400 dark:text-slate-950"><Eye size={16} />Guardar y publicar</button>
+            {editingPair && <button type="button" onClick={resetForm} className="min-h-11 rounded-xl px-4 font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5">Cancelar edición</button>}
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        <aside className="rounded-3xl bg-slate-50 p-4 dark:bg-slate-900/70 sm:p-6">
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Vista previa de las cartas</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <PreviewCard title={form.pairName || 'Primera carta'} image={form.imageUrl} />
+            <PreviewCard title={form.matchText || 'Carta asociada'} image={form.matchImageUrl} />
+          </div>
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
+            <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">Al encontrar la pareja</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">{form.explanation || 'La explicación que completes aparecerá durante la partida.'}</p>
+            <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-200"><BookOpen size={14} />{form.bibleReference || 'Referencia bíblica pendiente'}</p>
+            <p className="mt-3 border-t border-slate-200 pt-3 text-xs leading-5 text-slate-600 dark:border-white/10 dark:text-slate-300"><strong>Repaso:</strong> {form.learningQuestion || 'Añade una pregunta para recordar el pasaje.'}<br /><strong>Respuesta:</strong> {form.learningAnswer || 'Pendiente'}</p>
+          </div>
+          {!publishable && <p className="mt-4 rounded-xl bg-amber-100/80 p-3 text-xs leading-5 text-amber-950 dark:bg-amber-300/10 dark:text-amber-100">Para publicar, completa ambas imágenes, las dos cartas, explicación, referencia y pregunta de repaso. Añade al menos tres opciones e incluye la respuesta correcta exactamente.</p>}
+        </aside>
+      </form>
+    </section>
+  </main>;
 };
+
+function Field({ label, value, onChange, required = false, maxLength, placeholder }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; maxLength?: number; placeholder?: string }) {
+  return <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">{label}
+    <input required={required} value={value} maxLength={maxLength} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/20 dark:border-white/15 dark:bg-slate-900 dark:text-white" />
+  </label>;
+}
+
+function PreviewCard({ title, image }: { title: string; image?: string }) {
+  return <div className="grid min-h-36 place-items-center rounded-2xl border-2 border-blue-900/20 bg-white p-4 text-center shadow-md dark:border-blue-300/20 dark:bg-slate-100">
+    {image && (/^(https?:\/\/|\/)/.test(image) ? <img src={image} alt="" className="mb-2 size-12 rounded-xl object-cover" /> : image.trim().startsWith('<svg') ? <span className="mb-2 grid size-10 place-items-center" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(image, { USE_PROFILES: { svg: true } }) }} /> : <span className="mb-2 text-3xl">{image}</span>)}
+    {!image && <ImageIcon size={20} className="mb-2 text-blue-900" aria-hidden="true" />}
+    <span className="break-words text-sm font-black text-slate-900">{title}</span>
+  </div>;
+}

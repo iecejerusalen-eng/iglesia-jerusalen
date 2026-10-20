@@ -125,9 +125,9 @@ export const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     id: 'nav-juegos',
     path: '/recursos/juegos',
     title: 'Juegos Bíblicos Educativos',
-    subtitle: 'Aprende las Escrituras de forma divertida (Biblionario, Ahorcado, etc.)',
+    subtitle: 'Aprende las Escrituras con el Biblionario, el Memorama y retos de letras bíblicas.',
     category: 'recursos',
-    keywords: ['juegos', 'biblionario', 'trivias', 'ahorcado', 'memorama', 'ninos', 'jovenes', 'educativo'],
+    keywords: ['juegos', 'biblionario', 'trivias', 'reto de letras', 'letras bíblicas', 'ahorcado', 'memorama', 'ninos', 'jovenes', 'educativo'],
     icon: Gamepad2,
   },
   {
