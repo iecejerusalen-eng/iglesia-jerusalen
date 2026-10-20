@@ -9,8 +9,8 @@ import type { Speaker } from '../../types';
 import PremiumAboutHero from './components/PremiumAboutHero';
 import QuadrangularSymbol from '../../components/public/QuadrangularSymbol';
 import VolumetricIcon from '../../components/public/VolumetricIcon';
-import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David liderazgo auditorio.webp';
-import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina liderazgo auditorio.webp';
+import pastorDavidPhoto from '../../assets/Jerusalén/Pastor-David-auditorio-jerusalen-v01.webp';
+import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora-Corina-auditorio-jerusalen-v01.webp';
 
 
 interface PageContent {

@@ -8,7 +8,7 @@ import {
   Landmark,
   Sparkles,
 } from 'lucide-react';
-import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores iglesia interior.webp';
+import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores-juntos-auditorio-jerusalen-v01.webp';
 
 interface PremiumAboutHeroProps {
   title: string;
