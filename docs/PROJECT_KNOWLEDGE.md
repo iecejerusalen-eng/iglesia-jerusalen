@@ -48,6 +48,7 @@ Múltiples niveles de acceso (Pastor, Admin, Docente, Estudiante, etc). Controla
 - **Estética "Premium" (Taste-Skill & UI/UX Pro Max)**: Ver [`docs/DESIGN_AND_AI_TOOLKIT.md`](file:///g:/CODE/Iglesia%20Jerusal%C3%A9n/docs/DESIGN_AND_AI_TOOLKIT.md) y la skill [`.agents/skills/taste-skill/SKILL.md`](file:///g:/CODE/Iglesia%20Jerusal%C3%A9n/.agents/skills/taste-skill/SKILL.md).
   - Uso de bloque `design_plan` previo al código.
   - Paleta oficial: Azul primario `#1E3A8A` y Dorado de la iglesia `#C79D3F` (`--color-church-gold`).
+  - Para énfasis adaptado al tema, usar `text-church-gold-emphasis` (texto pequeño, `#9D660E` claro / `#FFD679` oscuro), `text-church-gold-gradient` (titulares), `gold-emphasis-line`, `bg-church-gold-emphasis-soft` o `border-church-gold-emphasis`. Mantener azul para navegación y acciones principales; reservar el oro para jerarquía, hitos y selección. Evitar el degradado en texto pequeño.
   - Tipografías oficiales: Playfair Display (Serif) e Inter (Sans-serif).
   - Prevención de *card-ception* (cajas anidadas excesivas) y layouts con flujo natural sin recortes de texto.
 - **UI UX**: Notificaciones con `sonner`, íconos con `lucide-react`, componentes interactivos de Magic UI y Framer Motion.

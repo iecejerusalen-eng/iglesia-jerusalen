@@ -37,7 +37,7 @@ export const FooterBreadcrumb = () => {
   const pathnames = location.pathname.split("/").filter((x) => x);
 
   return (
-    <div className="w-full bg-slate-950/40 backdrop-blur-md border-b border-white/10 py-3.5 px-4">
+    <div className="relative z-20 isolate min-h-14 w-full border-b border-white/10 bg-slate-900 px-4 py-3.5">
       <div className="max-w-7xl mx-auto flex items-center justify-center">
         <Breadcrumb>
           <BreadcrumbList className="text-xs md:text-sm text-gray-300 flex-wrap justify-center">

@@ -10,7 +10,7 @@ const publicPages = [
   { id: 'multimedia', title: 'Sermones y Alabanzas', icon: Music, desc: 'Audios, videos, acordes y letras de canciones.', admin: 'Catálogo multimedia y Bóveda Media.' },
   { id: 'tienda', title: 'Tienda en Línea', icon: ShoppingBag, desc: 'Compra de libros, merchandising y recursos digitales.', admin: 'Inventario, pagos y órdenes.' },
   { id: 'lms', title: 'Aula Virtual', icon: GraduationCap, desc: 'Plataforma educativa para discipulado.', admin: 'Creación de cursos, lecciones y calificaciones.' },
-  { id: 'juegos', title: 'Juegos Bíblicos', icon: Gamepad2, desc: 'Biblionario, Ahorcado, etc., para aprender jugando.', admin: 'Editor de preguntas y sonidos.' },
+  { id: 'juegos', title: 'Juegos Bíblicos', icon: Gamepad2, desc: 'Biblionario, Memorama, Descubre el Personaje y Adivina la palabra.', admin: 'Editores de preguntas y palabras bíblicas.' },
 ];
 
 export default function Section2Public({ onNext }: { onNext: () => void }) {

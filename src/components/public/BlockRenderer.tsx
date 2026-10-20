@@ -15,6 +15,7 @@ import {
 
 interface BlockRendererProps {
   blocks: (ContentBlock | LessonBlock)[] | null | undefined;
+  imageAccessory?: React.ReactNode;
 }
 
 type FormAnswer = string | string[];
@@ -43,7 +44,7 @@ const getErrorMessage = (error: unknown): string => {
   return String(error);
 };
 
-const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
+const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks, imageAccessory }) => {
   const { user, firstName, lastName } = useAuthStore();
   const [formData, setFormData] = useState<FormDataState>({});
   const [guestInfo, setGuestInfo] = useState<{ name: string; email: string }>({ name: '', email: '' });
@@ -51,6 +52,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
   const [results, setResults] = useState<{ [blockId: string]: { submitted: boolean; score?: number; maxScore?: number; gradedQuestions?: { [qId: string]: boolean } } }>({});
 
   if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return null;
+  const accessoryImageId = imageAccessory ? blocks.find(block => block.type === 'image')?.id : undefined;
 
   const handleInputChange = (blockId: string, qId: string, val: FormAnswer) => {
     setFormData(prev => ({
@@ -203,14 +205,16 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks }) => {
             const isRight = align === 'right';
 
             if (isCenter) {
+              const hasImageAccessory = Boolean(imageAccessory && key === accessoryImageId);
               return (
                 <div key={key} className="space-y-2 text-center my-6">
-                  <div className="rounded-2xl overflow-hidden border border-gray-150 shadow-sm max-h-[500px] bg-slate-50">
+                  <div className={hasImageAccessory ? 'flex flex-wrap items-center justify-center gap-4 sm:flex-nowrap sm:gap-6' : 'rounded-2xl overflow-hidden border border-gray-150 shadow-sm max-h-[500px] bg-slate-50'}>
                     <OptimizedMedia 
                       src={imageUrl} 
                       alt={caption} 
-                      className="w-full h-full object-cover"
+                      className={hasImageAccessory ? '!mx-0 !h-40 !w-40 rounded-2xl border border-gray-150 bg-slate-50 object-contain shadow-sm sm:!h-56 sm:!w-56' : 'w-full h-full object-cover'}
                     />
+                    {hasImageAccessory && <div className="flex size-40 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:size-56 sm:p-5">{imageAccessory}</div>}
                   </div>
                   {caption && (
                     <p className="text-xs text-gray-400 italic font-medium">{caption}</p>

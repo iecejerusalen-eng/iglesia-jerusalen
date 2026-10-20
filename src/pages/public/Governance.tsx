@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, ArrowRight, Download, Printer, BookOpen, Search, ChevronLeft, ChevronRight, Columns2, FileText, Bookmark, Focus, Type, Link2, RotateCcw, ArrowUp, Clock } from 'lucide-react';
 import logo from '../../assets/Jerusalén/Logo completo colorido.svg';
-import facade from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import facade from '../../assets/Jerusalén/Fachada Iglesia Jerusalén v03.jpg';
 import './Governance.css';
 
 type Page = { number: number; text: string };

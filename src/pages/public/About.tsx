@@ -7,8 +7,10 @@ import { learningTopics } from '../../features/about/learningContent';
 import { supabase } from '../../config/supabase';
 import type { Speaker } from '../../types';
 import PremiumAboutHero from './components/PremiumAboutHero';
-import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David.webp';
-import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina.webp';
+import QuadrangularSymbol from '../../components/public/QuadrangularSymbol';
+import VolumetricIcon from '../../components/public/VolumetricIcon';
+import pastorDavidPhoto from '../../assets/Jerusalén/Pastor David liderazgo auditorio.webp';
+import pastoraCorinaPhoto from '../../assets/Jerusalén/Pastora Corina liderazgo auditorio.webp';
 
 
 interface PageContent {
@@ -18,15 +20,23 @@ interface PageContent {
   cover_image_url: string | null;
 }
 
-const fallbackLeaders: Speaker[] = [
-  { id: 'pastor-david', member_id: null, first_name: 'David', last_name: 'Nicola', role: 'Pastor Principal', leadership_roles: ['Predicación', 'Discipulado'], is_public: true, display_order: 0, photo_url: '/assets/Jerusalén/Pastor David.webp', bio: 'Guiando a la congregación con pasión por la Palabra y cuidado espiritual.', created_at: '', updated_at: '' },
-  { id: 'pastora-corina', member_id: null, first_name: 'Corina', last_name: 'Miranda', role: 'Pastora Co-Principal', leadership_roles: ['Consejería', 'Familias'], is_public: true, display_order: 1, photo_url: '/assets/Jerusalén/Pastora Corina.webp', bio: 'Acompañando familias y fortaleciendo los ministerios de la iglesia.', created_at: '', updated_at: '' },
+const fallbackLeadersWithPhotos: Speaker[] = [
+  { id: 'pastor-david', member_id: null, first_name: 'David', last_name: 'Nicola', role: 'Pastor Principal', leadership_roles: ['Predicación', 'Discipulado'], is_public: true, display_order: 0, photo_url: pastorDavidPhoto, bio: 'Guiando a la congregación con pasión por la Palabra y cuidado espiritual.', created_at: '', updated_at: '' },
+  { id: 'pastora-corina', member_id: null, first_name: 'Corina', last_name: 'Miranda', role: 'Pastora Co-Principal', leadership_roles: ['Consejería', 'Familias'], is_public: true, display_order: 1, photo_url: pastoraCorinaPhoto, bio: 'Acompañando familias y fortaleciendo los ministerios de la iglesia.', created_at: '', updated_at: '' },
 ];
 
-const fallbackLeadersWithPhotos = fallbackLeaders.map((leader, index) => ({
-  ...leader,
-  photo_url: index === 0 ? pastorDavidPhoto : pastoraCorinaPhoto,
-}));
+// Estos retratos editoriales reemplazan el fondo plano de las fotografías de los pastores principales.
+const featuredPastorPortraits = new Map([
+  ['david nicola', pastorDavidPhoto],
+  ['corina miranda', pastoraCorinaPhoto],
+]);
+
+const quadrangularSymbols = [
+  { name: 'Cruz', symbol: 'cross', ministry: 'Jesucristo, el Salvador' },
+  { name: 'Paloma', symbol: 'dove', ministry: 'Jesucristo, el Bautizador con el Espíritu Santo' },
+  { name: 'Copa', symbol: 'cup', ministry: 'Jesucristo, el Sanador' },
+  { name: 'Corona', symbol: 'crown', ministry: 'Jesucristo, el Rey que viene' },
+] as const;
 
 const isChurchLeader = (leader: Speaker) => {
   const fullName = `${leader.first_name} ${leader.last_name}`.trim().toLocaleLowerCase('es');
@@ -40,7 +50,11 @@ const mergeLeaders = (remote: Speaker[]) => {
   remote.filter(isChurchLeader).forEach((leader) => {
     const key = `${leader.first_name} ${leader.last_name}`.toLowerCase();
     const fallback = merged.get(key);
-    merged.set(key, { ...fallback, ...leader, photo_url: leader.photo_url ?? fallback?.photo_url ?? null });
+    merged.set(key, {
+      ...fallback,
+      ...leader,
+      photo_url: featuredPastorPortraits.get(key) ?? leader.photo_url ?? fallback?.photo_url ?? null,
+    });
   });
   return Array.from(merged.values()).sort((a, b) => a.display_order - b.display_order);
 };
@@ -107,7 +121,7 @@ const About = () => {
         <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
 
         <nav aria-label="En esta página" className="mb-12 flex flex-wrap gap-2 border-b border-slate-200 pb-6 dark:border-white/10">
-          {[['aprender', 'Conoce nuestra fe'], ['liderazgo', 'Liderazgo'], ['documentos', 'Documentos']].map(([id, label]) => (
+          {[['proposito', 'Visión y misión'], ['aprender', 'Conoce nuestra fe'], ['liderazgo', 'Liderazgo'], ['documentos', 'Documentos']].map(([id, label]) => (
             <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:border-amber-400 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">{label}</a>
           ))}
         </nav>
@@ -115,10 +129,48 @@ const About = () => {
         {(contentError || leadersError) && <div role="alert" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100"><p>{leadersError ? 'No se pudo actualizar la información del liderazgo. Se conserva la presentación disponible.' : 'No se pudo actualizar la presentación de la iglesia.'}</p><button type="button" disabled={loading} onClick={retry} className="min-h-11 rounded-lg border border-amber-500 px-4 py-2 font-semibold disabled:opacity-50">{loading ? 'Actualizando…' : 'Volver a intentar'}</button></div>}
 
 
+        <section id="proposito" aria-labelledby="purpose-heading" className="scroll-mt-28 py-8">
+          <div className="mb-6 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Nuestra identidad</p>
+            <h2 id="purpose-heading" className="mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Visión y misión</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <article className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-[0_18px_60px_-40px_rgba(35,51,84,0.4)] dark:border-white/10 dark:bg-slate-900/65 sm:p-8">
+              <VolumetricIcon imageSrc="/assets/about/vision-eye-3d.png" tone="indigo" />
+              <h3 className="mt-5 font-serif text-2xl font-bold text-slate-950 dark:text-white">Nuestra visión</h3>
+              <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">Ser una iglesia que evangeliza y discípula en el Ecuador y el mundo, estableciendo comunidades cristianas saludables y multiplicadoras, en todas las provincias del país, enviando misioneros a otros países y con una administración eficiente.</p>
+            </article>
+            <article className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-[0_18px_60px_-40px_rgba(35,51,84,0.4)] dark:border-white/10 dark:bg-slate-900/65 sm:p-8">
+              <VolumetricIcon imageSrc="/assets/about/mission-heart-3d.png" tone="amber" />
+              <h3 className="mt-5 font-serif text-2xl font-bold text-slate-950 dark:text-white">Nuestra misión</h3>
+              <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">Predicar el Evangelio de Nuestro Señor Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, formar discípulos llenos de santidad, amor fraternal y servicio.</p>
+            </article>
+          </div>
+        </section>
 
         <LearningProgress />
         <section id="aprender" className="scroll-mt-28 py-8">
           <div className="mb-8 max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Conoce nuestra fe</p><h2 className="mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Un camino para aprender y vivir el Evangelio</h2><p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">Somos Iglesia Jerusalén, una comunidad en Milagro que anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Explora nuestra identidad con explicaciones, referencias bíblicas y preguntas para conversar en familia o en tu grupo de discipulado.</p></div>
+          <div className="mb-8 rounded-3xl border border-slate-200 bg-white/75 p-5 dark:border-white/10 dark:bg-slate-900/60 sm:p-7">
+            <div className="max-w-2xl">
+              <h3 className="font-serif text-2xl font-bold text-slate-950 dark:text-white">Cuatro símbolos, un mismo mensaje</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">La cruz, la paloma, la copa y la corona nos recuerdan los cuatro ministerios de Jesucristo.</p>
+            </div>
+            <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-4">
+              {quadrangularSymbols.map((symbol) => (
+                <li key={symbol.name} className="flex flex-col items-center gap-3 text-center">
+                  <QuadrangularSymbol symbol={symbol.symbol} className="size-16 rounded-2xl shadow-sm sm:size-[4.5rem]" />
+                  <div className="w-full max-w-[12rem]">
+                    <p className="font-semibold text-slate-900 dark:text-white">{symbol.name}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">{symbol.ministry}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link to="/nosotros/simbolos" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg font-semibold text-indigo-800 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 dark:text-amber-300">
+              Conoce el significado de los símbolos <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{learningTopics.map((topic, index) => <Link key={topic.slug} to={`/nosotros/${topic.slug}`} className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-amber-400 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:bg-slate-900"><span className="flex items-center justify-between text-sm font-bold text-amber-700 dark:text-amber-300"><span>0{index + 1}</span><BookOpenText size={22} /></span><h3 className="mt-6 font-serif text-2xl font-bold text-slate-950 dark:text-white">{topic.title}</h3><p className="mt-3 flex-1 leading-7 text-slate-600 dark:text-slate-300">{topic.summary}</p><span className="mt-6 inline-flex items-center gap-2 font-semibold text-indigo-800 dark:text-amber-300">Explorar <ArrowRight size={18} /></span></Link>)}</div>
         </section>
 
@@ -131,15 +183,16 @@ const About = () => {
           <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
             {leaders.map((leader) => (
               <GlassCard key={leader.id} className="group overflow-hidden">
-                <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-amber-100 via-slate-100 to-indigo-100 dark:from-amber-950/50 dark:via-slate-800 dark:to-indigo-950">
                   {leader.photo_url ? (
                     <img
                       src={leader.photo_url}
-                      alt={`Foto de ${leader.first_name} ${leader.last_name}`}
+                      alt={`Retrato editorial de ${leader.first_name} ${leader.last_name}`}
                       loading="lazy"
+                      decoding="async"
                       width={600}
                       height={450}
-                      className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105"
+                      className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.03]"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-slate-300">

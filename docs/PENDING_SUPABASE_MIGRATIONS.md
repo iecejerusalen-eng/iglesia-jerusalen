@@ -1,6 +1,20 @@
 # Migraciones Supabase pendientes
 
-Última revisión: 2026-09-06.
+Última revisión: 2026-10-20.
+
+## Verificación remota del 20-oct-2026
+
+Se comparó el historial del proyecto Supabase `iecejerusalen Project` con las 185 migraciones locales. Todas las versiones del historial remoto tienen su archivo local correspondiente. Se aplicó y verificó `20261020022107_fix_public_study_program_rls.sql`, que quedó registrado con esa misma versión remota. Después de la corrección, la consulta anónima del catálogo de `/programas` respondió HTTP 200 y devolvió el programa publicado «Chicas Sabias».
+
+La migración de galerías por ministerio fue aplicada al proyecto remoto `gqtatqekfrswvplemknc` el 2026-10-20. El historial registra la versión `20261020030253`, alineada con el archivo local `supabase/migrations/20261020030253_ministry_photo_galleries.sql`; la tabla quedó habilitada con RLS y cuatro políticas (lectura pública y escritura para responsables autorizados). La función `private.can_manage_ministry_page(uuid)` existía antes de aplicar la migración.
+
+No quedan migraciones locales pendientes: las 185 versiones locales tienen registro remoto y no hay versiones remotas sin archivo local.
+
+| Archivo | Alcance | Estado remoto |
+|---|---|---|
+| `supabase/migrations/20261020030253_ministry_photo_galleries.sql` | Galerías de fotos públicas por ministerio, con gestión limitada a responsables autorizados. | Aplicada; RLS y políticas verificadas. |
+
+Antes de esta revisión, `/programas` fallaba con HTTP 401 / `42501` (`permission denied for function can_view_study_program_admin`). La política RLS de lectura combinaba filas públicas con una función privada de autorización en una misma expresión asignada a `PUBLIC`; la nueva migración separa políticas públicas y autenticadas, sin ampliar la visibilidad pública de filas.
 
 ## Estado
 

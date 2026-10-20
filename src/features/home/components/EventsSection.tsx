@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Calendar, Clock } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeHoverCard } from '../../../components/animations/AnimeWrappers';
 import type { Event as DbEvent } from '../../../types';
 import type { PageSection } from '../types';
+
+// Foto de congregación usada solo cuando la portada administrada del evento no carga.
+// Fuente: https://unsplash.com/photos/a-person-standing-on-a-stage-with-a-guitar-FN-majlr-iE
+const EVENT_COVER_FALLBACK = 'https://images.unsplash.com/photo-1635178935549-9aeed03174cb?auto=format&fit=crop&w=1200&q=80';
 
 interface EventsSectionProps {
   sectionData: PageSection;
@@ -12,6 +17,7 @@ interface EventsSectionProps {
 
 export const EventsSection = ({ sectionData, events, loading }: EventsSectionProps) => {
   const { title, subtitle } = sectionData;
+  const [failedEventCovers, setFailedEventCovers] = useState<Record<string, boolean>>({});
 
   const formatEventDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-').map(Number);
@@ -82,8 +88,9 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                   {event.cover_image_url ? (
                     <div className="w-full h-44 overflow-hidden relative">
                       <img loading="lazy"
-                        src={event.cover_image_url}
-                        alt={event.title}
+                        src={failedEventCovers[event.id] ? EVENT_COVER_FALLBACK : event.cover_image_url}
+                        onError={() => setFailedEventCovers((current) => current[event.id] ? current : { ...current, [event.id]: true })}
+                        alt={failedEventCovers[event.id] ? 'Congregación reunida en un servicio de adoración, imagen referencial' : event.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent"></div>

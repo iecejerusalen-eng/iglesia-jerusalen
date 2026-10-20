@@ -20,7 +20,7 @@ import { AnimeFadeUp, AnimeStaggerGrid } from '../../components/animations/Anime
 import { ChurchRouteMap, JERUSALEN_CHURCH_COORDS } from '../../components/map/ChurchRouteMap';
 import { GoogleChurchMap } from '../../components/map/GoogleChurchMap';
 import { CHURCH_LOCATION } from '../../components/map/churchLocation';
-import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén v03.jpg';
 import PremiumContactHero from './components/PremiumContactHero';
 
 const CHURCH_ADDRESS = 'Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Guayas, Ecuador';

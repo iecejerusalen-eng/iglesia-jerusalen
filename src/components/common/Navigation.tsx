@@ -94,7 +94,7 @@ const Navigation = () => {
         </Link>
         
         {/* Enlaces Escritorio */}
-        <ul className={`hidden md:flex gap-8 font-semibold text-sm items-center transition-colors duration-500 ${
+        <ul className={`hidden xl:flex gap-8 font-semibold text-sm items-center transition-colors duration-500 ${
           isTransparent ? 'text-white/95' : 'text-primary dark:text-gray-200'
         }`}>
           {topLevelItems.map((item) => {
@@ -210,7 +210,7 @@ const Navigation = () => {
           </button>
           <Link
             to="/visita"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md shadow-amber-500/20 transition hover:scale-105 hover:from-amber-400 hover:to-amber-500"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-800 px-3.5 py-1.5 text-xs font-extrabold text-white shadow-md shadow-blue-900/20 transition-[background-color,box-shadow] duration-200 ease-out hover:bg-blue-900 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300 dark:focus-visible:ring-blue-300"
           >
             Planifica tu Visita
           </Link>

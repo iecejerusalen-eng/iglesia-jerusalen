@@ -299,8 +299,9 @@ export const Biblionario = () => {
 
   useGameKeyboardShortcuts({
     enabled: gameState === 'playing' || gameState === 'gameover' || gameState === 'won',
-    onNext: showExplanation || gameState === 'gameover' || gameState === 'won' ? () => {
-      if (gameState === 'playing' && showExplanation) continueAfterAnswer();
+    onNext: gameState === 'playing' || gameState === 'gameover' || gameState === 'won' ? () => {
+      if (gameState === 'playing' && !showExplanation && selectedOption && !isLocked) lockAnswer();
+      else if (gameState === 'playing' && showExplanation) continueAfterAnswer();
       else if (gameState === 'gameover' || gameState === 'won') setGameState('menu');
     } : undefined,
     onLetter: gameState === 'playing' && !isLocked && !showExplanation ? (key) => {
@@ -782,7 +783,7 @@ export const Biblionario = () => {
                   disabled={isLocked || showExplanation}
                   aria-pressed={isSelected}
                   aria-label={`Opción ${index + 1}, ${opt.key}: ${opt.text}`}
-                  aria-keyshortcuts={`${index + 1} ${opt.key}`}
+                  aria-keyshortcuts={`${index + 1} ${opt.key}${isSelected ? ' Shift+Enter' : ''}`}
                   className={`group relative flex min-h-[5.25rem] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-5
                     ${bgClass}
                     ${!isLocked && !isSelected ? 'hover:-translate-y-0.5 hover:border-amber-300/50 hover:bg-slate-800 motion-reduce:hover:transform-none' : ''}
@@ -824,7 +825,7 @@ export const Biblionario = () => {
           )}
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-1 sm:px-5">
-            <GameKeyboardHint instruction="Elige con el mouse, pulsa 1–4 (también sirve el teclado numérico) o A–D; Intro confirma." nextAction="continuar después de revisar la respuesta y el fundamento bíblico" tone="dark-surface" />
+            <GameKeyboardHint instruction="Elige con el mouse, pulsa 1–4 (también sirve el teclado numérico) o A–D; Intro confirma." nextAction="confirmar la opción elegida o continuar después de revisar la respuesta y el fundamento bíblico" tone="dark-surface" />
           </div>
           
           {/* Action Area */}
@@ -837,6 +838,7 @@ export const Biblionario = () => {
                   exit={{ opacity: 0, y: 15 }}
                   onClick={lockAnswer}
                   type="button"
+                  aria-keyshortcuts="Enter Shift+Enter"
                   className="min-h-12 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-8 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:px-10 sm:text-lg"
                 >
                   Confirmar Respuesta

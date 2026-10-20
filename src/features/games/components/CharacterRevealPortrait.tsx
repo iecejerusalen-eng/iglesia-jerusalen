@@ -24,11 +24,11 @@ export const CharacterRevealPortrait = ({ characterName, imageUrl }: CharacterRe
 
   return (
     <figure className="mb-4 w-full max-w-md">
-      <div className="overflow-hidden rounded-2xl border border-amber-200/80 bg-slate-100 shadow-lg shadow-slate-950/10 dark:border-amber-300/20 dark:bg-slate-800">
+      <div className="flex min-h-40 items-center justify-center overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-slate-100 via-white to-amber-50 shadow-lg shadow-slate-950/10 dark:border-amber-300/20 dark:from-slate-900 dark:via-slate-800 dark:to-amber-950/30">
         <img
           src={imageSrc}
           alt={portrait?.alt ?? `Representación artística de ${characterName}`}
-          className="h-40 w-full object-cover sm:h-48"
+          className="block h-auto max-h-[min(42vh,26rem)] max-w-full w-auto object-contain"
           loading="eager"
           decoding="async"
           onError={() => {

@@ -1,5 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, PlayCircle, FileText } from 'lucide-react';
+import { ArrowRight, CalendarDays, Headphones, UserRound } from 'lucide-react';
 import { AnimeFadeUp, AnimeStaggerGrid } from '../../../components/animations/AnimeWrappers';
 import type { Sermon } from '../../../types';
 import type { PageSection } from '../types';
@@ -13,14 +14,64 @@ interface SermonsSectionProps {
 
 export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSectionProps) => {
   const { title, subtitle } = sectionData;
+  const [viewport, setViewport] = useState<'mobile' | 'tablet' | 'desktop'>(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    if (window.innerWidth < 640) return 'mobile';
+    if (window.innerWidth < 1024) return 'tablet';
+    return 'desktop';
+  });
+  const [failedCovers, setFailedCovers] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    const updateViewport = () => {
+      const nextViewport = window.innerWidth < 640
+        ? 'mobile'
+        : window.innerWidth < 1024 ? 'tablet' : 'desktop';
+      setViewport((current) => current === nextViewport ? current : nextViewport);
+    };
+
+    window.addEventListener('resize', updateViewport, { passive: true });
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-ES', {
+    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const date = dateOnlyMatch
+      ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
+      : new Date(dateStr);
+    return date.toLocaleDateString('es-EC', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   };
+
+  const formatCompactDate = (dateStr: string) => {
+    const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const date = dateOnlyMatch
+      ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
+      : new Date(dateStr);
+    return date.toLocaleDateString('es-EC', { year: '2-digit', month: 'short', day: 'numeric' });
+  };
+
+  const sermonMedia = useMemo(() => sermons.map((sermon) => {
+    const youtubeId = getYoutubeId(sermon.youtube_url);
+    return {
+      sermon,
+      youtubeId,
+      imageUrl: failedCovers.has(sermon.id) ? null : sermon.metadata?.cover_image_url || (youtubeId
+        ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
+        : null),
+    };
+  }), [failedCovers, sermons]);
+
+  const baseCount = viewport === 'mobile' ? 4 : viewport === 'tablet' ? 6 : 8;
+  const maxCount = viewport === 'mobile' ? 8 : 12;
+  const compactCardsInBase = sermonMedia
+    .slice(0, baseCount)
+    .filter(({ imageUrl }) => !imageUrl).length;
+  const visibleCount = Math.min(sermonMedia.length, baseCount + compactCardsInBase, maxCount);
+  const visibleSermons = sermonMedia.slice(0, visibleCount);
 
   return (
     <section id="sermons" className="bg-slate-50 dark:bg-[#0a0f1d] py-16 border-y border-slate-200 dark:border-white/5 scroll-mt-24 transition-colors duration-300 !mt-0 relative overflow-hidden">
@@ -59,89 +110,74 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-amber-500"></div>
           </div>
         ) : (
-          <AnimeStaggerGrid className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {sermons.map((sermon) => {
-              const hasYoutube = !!sermon.youtube_url;
-              const coverVideo = sermon.metadata?.cover_video_url ?? null;
-              const metadataCoverImage = sermon.metadata?.cover_image_url ?? null;
-              const hasVideoCover = !!coverVideo;
-              const hasImageCover = !!metadataCoverImage;
-
-              const coverImage = hasImageCover 
-                ? metadataCoverImage
-                : hasYoutube ? `https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url!)}/maxresdefault.jpg` : null;
-
+          <AnimeStaggerGrid className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 items-start gap-3 sm:gap-5 lg:gap-6">
+            {visibleSermons.map(({ sermon, imageUrl, youtubeId }, index) => {
+              const hasImage = !!imageUrl;
+              const sermonDate = sermon.date || sermon.created_at;
               return (
-                <div key={sermon.id} className="group relative h-[380px] rounded-[2rem] overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-500 border border-slate-200 dark:border-white/5">
-                  <Link 
-                    to={`/predicas/${sermon.id}`} 
-                    className="absolute inset-0 z-20 outline-none focus-visible:ring-4 focus-visible:ring-amber-500 rounded-[2rem]" 
-                    aria-label={`Ver prédica: ${sermon.title}`} 
-                  />
-                  
-                  {/* Background Media */}
-                  <div className="absolute inset-0 bg-slate-900">
-                    {hasVideoCover ? (
-                      <video 
-                        src={coverVideo!}
-                        className="w-full h-full object-cover filter brightness-[0.7] group-hover:brightness-[0.85] group-hover:scale-105 transition-all duration-700" 
-                        autoPlay muted loop playsInline 
-                      />
-                    ) : coverImage ? (
-                      <img 
-                        loading="lazy" 
-                        src={coverImage}
-                        alt=""
-                        className="w-full h-full object-cover filter brightness-[0.7] group-hover:brightness-[0.85] group-hover:scale-105 transition-all duration-700"
-                        onError={(e) => {
-                          // Fallback to hqdefault if maxresdefault doesn't exist
-                          if (hasYoutube && coverImage.includes('maxresdefault')) {
-                            e.currentTarget.src = `https://img.youtube.com/vi/${getYoutubeId(sermon.youtube_url!)}/hqdefault.jpg`;
+                <Link
+                  key={sermon.id}
+                  to={`/predicas/${sermon.id}`}
+                  aria-label={`Ver prédica: ${sermon.title}`}
+                  className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl hover:shadow-slate-900/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/60 dark:border-white/10 dark:bg-slate-900 ${hasImage ? '' : 'min-h-[150px] sm:min-h-[170px]'}`}
+                >
+                  {hasImage ? (
+                    <div className="relative aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                      <img
+                        loading={index < 4 ? 'eager' : 'lazy'}
+                        fetchPriority={index === 0 ? 'high' : 'auto'}
+                        decoding="async"
+                        src={imageUrl ?? undefined}
+                        alt={`Miniatura de la prédica: ${sermon.title}`}
+                        sizes="(max-width: 639px) 46vw, (max-width: 1023px) 30vw, 23vw"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                        onError={(event) => {
+                          const image = event.currentTarget;
+                          if (youtubeId && !image.dataset.fallback) {
+                            image.dataset.fallback = 'true';
+                            image.src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+                          } else {
+                            setFailedCovers((current) => {
+                              if (current.has(sermon.id)) return current;
+                              const next = new Set(current);
+                              next.add(sermon.id);
+                              return next;
+                            });
                           }
                         }}
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 group-hover:scale-105 transition-all duration-700 flex items-center justify-center">
-                        <FileText size={48} className="text-slate-300 dark:text-slate-700" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Gradient Overlay for Text Readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/40 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-80" />
-
-                  {/* Play Button Icon Hover State */}
-                  {(hasYoutube || hasVideoCover) && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-500 z-10">
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 shadow-2xl">
-                        <PlayCircle size={32} className="text-white ml-1 drop-shadow-md" />
-                      </div>
+                      <span aria-hidden="true" className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-slate-950/65 text-white backdrop-blur-sm">
+                        <Headphones size={15} />
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 px-4 pt-4 text-amber-700 dark:text-amber-300">
+                      <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/10">
+                        <Headphones size={17} />
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Prédica reciente</span>
                     </div>
                   )}
 
-                  {/* Glassmorphism Content Area */}
-                  <div className="absolute bottom-4 left-4 right-4 z-10">
-                    <div className="bg-white/10 dark:bg-black/20 backdrop-blur-xl border border-white/20 dark:border-white/10 p-5 rounded-2xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-500 group-hover:bg-white/20 dark:group-hover:bg-black/40 shadow-lg">
-                      <div className="flex flex-col gap-3">
-                        {/* Title */}
-                        <h3 className="font-serif font-black text-xl text-white leading-tight line-clamp-2 drop-shadow-sm">
-                          {sermon.title}
-                        </h3>
-                        
-                        {/* Meta */}
-                        <div className="flex items-center justify-between text-xs font-semibold text-white/80 border-t border-white/20 pt-3">
-                          <span className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] backdrop-blur-sm border border-white/10">
-                              👤
-                            </span>
-                            <span className="truncate max-w-[120px]">{sermon.pastor_name}</span>
-                          </span>
-                          <span>{sermon.date ? formatDate(sermon.date) : formatDate(sermon.created_at)}</span>
-                        </div>
-                      </div>
+                  <div className={`flex flex-1 flex-col ${hasImage ? 'p-3 sm:p-4' : 'px-4 pb-4 pt-3'}`}>
+                    <h3 className="line-clamp-3 font-serif text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-blue-800 dark:text-white dark:group-hover:text-amber-200 sm:text-base">
+                      {sermon.title}
+                    </h3>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-slate-100 pt-2.5 text-[10px] font-semibold text-slate-500 dark:border-white/10 dark:text-slate-400 sm:text-xs">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <UserRound size={13} className="shrink-0" />
+                        <span className="truncate">{sermon.pastor_name}</span>
+                      </span>
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <CalendarDays size={12} />
+                        <time dateTime={sermonDate}>
+                          <span className="sm:hidden">{formatCompactDate(sermonDate)}</span>
+                          <span className="hidden sm:inline">{formatDate(sermonDate)}</span>
+                        </time>
+                      </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </AnimeStaggerGrid>

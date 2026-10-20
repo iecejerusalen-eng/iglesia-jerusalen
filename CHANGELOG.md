@@ -3,6 +3,19 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.10.0] - 2026-10-20
+
+### Añadido
+- Galerías de fotos por departamento y ministerio, con administración para líderes autorizados y visualización en sus páginas y en la comunidad.
+- Ilustraciones editoriales para personajes bíblicos y nuevos recursos visuales volumétricos para la sección de visión y misión.
+- Información ampliada de los libros bíblicos, con autoría, contexto histórico, temas y línea temporal aproximada.
+
+### Mejorado
+- Biblioteca de la enciclopedia bíblica adaptable a pantallas pequeñas, con imágenes completas y fichas más informativas de personajes y lugares.
+- Portada, páginas de identidad y visita, galería, tarjetas de prédicas y fondo de Alabanzas con ajustes de presentación, imágenes y navegación.
+- Controles de programas públicos para separar la lectura publicada de las comprobaciones privadas de administración.
+- Experiencia de los juegos bíblicos y sus controles de teclado.
+
 ## [1.9.0] - 2026-10-19
 
 ### Añadido

@@ -3,7 +3,9 @@ import {
   ArrowUpRight,
   BookOpen,
   CalendarDays,
+  Clock3,
   HeartHandshake,
+  MapPin,
   Play,
   Users,
 } from 'lucide-react';
@@ -16,12 +18,13 @@ interface BentoGridSectionProps {
   nextEvent?: DbEvent;
 }
 
-const formatEventDate = (dateValue: string) => {
+const getEventDateParts = (dateValue: string) => {
   const [year, month, day] = dateValue.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('es-EC', {
-    day: 'numeric',
-    month: 'short',
-  });
+  const date = new Date(year, month - 1, day);
+  return {
+    day: date.toLocaleDateString('es-EC', { day: '2-digit' }),
+    month: date.toLocaleDateString('es-EC', { month: 'short' }).replace('.', '').toUpperCase(),
+  };
 };
 
 const getSermonThumbnail = (sermon: Sermon) => {
@@ -39,11 +42,11 @@ export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionPr
       <div className="mx-auto max-w-7xl">
         <AnimeFadeUp>
           <div className="rounded-[2rem] border border-white/80 bg-white/78 p-2.5 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.42)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/78 md:p-3.5">
-            <div className="flex flex-col gap-3 lg:grid lg:grid-cols-12 lg:auto-rows-[11.5rem]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:auto-rows-[11.5rem]">
               <Link
                 to={latestSermon ? '/predicas/' + latestSermon.id : '/predicas'}
                 aria-label={latestSermon ? `Escuchar prédica: ${latestSermon.title}` : 'Explorar las últimas prédicas'}
-                className="group min-h-[22rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-300 dark:focus-visible:ring-offset-slate-900 lg:col-span-6 lg:row-span-2"
+                className="group min-h-[22rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-300 dark:focus-visible:ring-offset-slate-900 sm:col-span-2 lg:col-span-6 lg:row-span-2"
               >
                 <AnimeHoverCard className="relative h-full overflow-hidden rounded-[1.5rem] bg-[#081630] p-7 text-white md:p-9">
                   <div className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-blue-500/20 blur-3xl transition duration-700 group-hover:bg-amber-400/20" />
@@ -54,6 +57,16 @@ export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionPr
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-700 group-hover:scale-105 group-hover:opacity-30"
                     />
+                  )}
+                  {!sermonThumbnail && (
+                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+                      <div className="absolute right-[12%] top-1/2 size-64 -translate-y-1/2 rounded-full border border-white/10 bg-blue-400/[0.04] shadow-[0_0_90px_rgba(96,165,250,0.12)]" />
+                      <div className="absolute right-[calc(12%+7rem)] top-1/2 flex h-36 -translate-y-1/2 items-center gap-1 opacity-45">
+                        {[24, 38, 56, 32, 68, 46, 82, 42, 60, 34, 76, 48, 30, 64, 40, 72, 36, 54, 28, 62, 44, 78, 34, 58, 40, 68, 30, 50].map((height, index) => (
+                          <span key={index} className="w-1 rounded-full bg-gradient-to-t from-blue-300/50 via-white to-amber-300/80" style={{ height: `${height}%` }} />
+                        ))}
+                      </div>
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#07132f] via-[#07132f]/75 to-[#07132f]/15" />
                   <div className="relative flex h-full flex-col justify-between">
@@ -81,13 +94,20 @@ export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionPr
                 </AnimeHoverCard>
               </Link>
 
-              <Link to="/eventos" aria-label={nextEvent ? `Ver evento: ${nextEvent.title}` : 'Consultar el calendario de eventos'} className="group min-h-[15rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-amber-300 dark:focus-visible:ring-offset-slate-900 lg:col-span-3 lg:row-span-2">
+              <Link to="/eventos" aria-label={nextEvent ? `Ver evento: ${nextEvent.title}` : 'Consultar el calendario de eventos'} className="group min-h-[15rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-amber-300 dark:focus-visible:ring-offset-slate-900 sm:col-span-2 lg:col-span-3 lg:row-span-2">
                 <AnimeHoverCard className="relative flex h-full flex-col justify-between overflow-hidden rounded-[1.5rem] border border-amber-200/70 bg-amber-50/90 p-6 dark:border-amber-500/15 dark:bg-amber-950/25">
                   <div className="absolute -right-12 -top-10 h-36 w-36 rounded-full bg-amber-300/30 blur-3xl" />
                   <div className="relative flex items-start justify-between">
-                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition duration-300 group-hover:rotate-3 group-hover:scale-105">
-                      <CalendarDays size={20} />
-                    </span>
+                    {nextEvent ? (
+                      <span className="grid min-h-14 min-w-14 place-items-center rounded-2xl bg-amber-500 px-2 py-1 text-white shadow-lg shadow-amber-500/20 transition duration-300 group-hover:rotate-3 group-hover:scale-105">
+                        <span className="text-xl font-black leading-none">{getEventDateParts(nextEvent.start_date).day}</span>
+                        <span className="mt-1 text-[9px] font-extrabold uppercase tracking-[0.14em]">{getEventDateParts(nextEvent.start_date).month}</span>
+                      </span>
+                    ) : (
+                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition duration-300 group-hover:rotate-3 group-hover:scale-105">
+                        <CalendarDays size={20} aria-hidden="true" />
+                      </span>
+                    )}
                     <span aria-hidden="true" className="grid size-9 place-items-center rounded-full border border-amber-700/15 text-amber-700 transition group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:bg-amber-500 group-hover:text-white dark:border-amber-300/15 dark:text-amber-300"><ArrowUpRight size={17} /></span>
                   </div>
                   <div className="relative space-y-3">
@@ -97,36 +117,40 @@ export const BentoGridSection = ({ latestSermon, nextEvent }: BentoGridSectionPr
                     <h3 className="font-serif text-2xl font-black leading-tight text-slate-900 dark:text-white">
                       {nextEvent?.title || 'Consulta nuestro calendario'}
                     </h3>
-                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                      {nextEvent ? formatEventDate(nextEvent.start_date) : 'Actividades para toda la familia'}
-                      {nextEvent?.start_time ? ' · ' + nextEvent.start_time.slice(0, 5) : ''}
-                    </p>
+                    {nextEvent ? (
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        {nextEvent.start_time && <span className="inline-flex items-center gap-1.5"><Clock3 size={14} aria-hidden="true" />{nextEvent.start_time.slice(0, 5)}</span>}
+                        {nextEvent.location_name && <span className="inline-flex items-center gap-1.5"><MapPin size={14} aria-hidden="true" />{nextEvent.location_name}</span>}
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Actividades para toda la familia</p>
+                    )}
                   </div>
                 </AnimeHoverCard>
               </Link>
 
-              <Link to="/ministerios" aria-label="Encontrar un ministerio" className="group min-h-[11.5rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-300 dark:focus-visible:ring-offset-slate-900 lg:col-span-3">
+              <Link to="/ministerios" aria-label="Explorar los ministerios de la iglesia" className="group min-h-[11.5rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-300 dark:focus-visible:ring-offset-slate-900 sm:col-span-1 lg:col-span-3">
                 <AnimeHoverCard className="relative flex h-full items-end justify-between overflow-hidden rounded-[1.5rem] border border-indigo-200/60 bg-indigo-50/90 p-6 dark:border-indigo-400/15 dark:bg-indigo-950/30">
                   <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-indigo-300/25 blur-3xl" />
                   <div className="space-y-3">
                     <span className="grid size-11 place-items-center rounded-2xl bg-white/75 text-indigo-600 shadow-sm transition duration-300 group-hover:-rotate-3 group-hover:scale-105 dark:bg-white/10 dark:text-indigo-300"><Users size={23} /></span>
                     <div>
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">Comunidad</p>
-                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Encuentra tu lugar</h3>
+                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Explora los ministerios</h3>
                     </div>
                   </div>
                   <span aria-hidden="true" className="grid size-9 place-items-center rounded-full border border-indigo-300/30 text-indigo-600 transition group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:bg-indigo-600 group-hover:text-white dark:border-indigo-300/20 dark:text-indigo-300"><ArrowUpRight size={18} /></span>
                 </AnimeHoverCard>
               </Link>
 
-              <Link to="/peticiones" aria-label="Enviar una petición de oración" className="group min-h-[11.5rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-rose-300 dark:focus-visible:ring-offset-slate-900 lg:col-span-3">
+              <Link to="/peticiones" aria-label="Enviar una petición de oración" className="group min-h-[11.5rem] rounded-[1.5rem] outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-rose-300 dark:focus-visible:ring-offset-slate-900 sm:col-span-1 lg:col-span-3">
                 <AnimeHoverCard className="relative flex h-full items-end justify-between overflow-hidden rounded-[1.5rem] border border-rose-200/60 bg-rose-50/90 p-6 dark:border-rose-400/15 dark:bg-rose-950/25">
                   <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-rose-300/25 blur-3xl" />
                   <div className="space-y-3">
                     <span className="grid size-11 place-items-center rounded-2xl bg-white/75 text-rose-600 shadow-sm transition duration-300 group-hover:rotate-3 group-hover:scale-105 dark:bg-white/10 dark:text-rose-300"><HeartHandshake size={23} /></span>
                     <div>
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-rose-600 dark:text-rose-300">Estamos contigo</p>
-                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Podemos orar por ti</h3>
+                      <h3 className="mt-1 font-serif text-xl font-black text-slate-900 dark:text-white">Pide oración</h3>
                     </div>
                   </div>
                   <span aria-hidden="true" className="grid size-9 place-items-center rounded-full border border-rose-300/30 text-rose-600 transition group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:bg-rose-600 group-hover:text-white dark:border-rose-300/20 dark:text-rose-300"><ArrowUpRight size={18} /></span>

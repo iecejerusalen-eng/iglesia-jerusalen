@@ -4,6 +4,7 @@ import { ArrowLeft, User, Calendar, Users, AlertCircle, ChevronRight, FileText, 
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
 import BlockRenderer from '../../components/public/BlockRenderer';
+import { ImageGallerySection, type GalleryImage } from '../../components/public/ImageGallerySection';
 import RichTextRenderer from '../../components/common/RichTextRenderer';
 import { AnimeFadeUp, AnimeStaggerGrid, AnimeZoomIn } from '../../components/animations/AnimeWrappers';
 import MagneticButton from '../../components/animations/MagneticButton';
@@ -39,6 +40,7 @@ const MinistryDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ministryPages, setMinistryPages] = useState<MinistryPage[]>([]);
+  const [galleryPhotos, setGalleryPhotos] = useState<GalleryImage[]>([]);
 
   // Estados para la visualización de miembros en Cuerpo de Apoyo y Directiva
   const [members, setMembers] = useState<PublicMember[]>([]);
@@ -63,6 +65,18 @@ const MinistryDetail = () => {
 
         if (data) {
           setMinistry(data);
+
+          const { data: galleryData, error: galleryError } = await supabase
+            .from('ministry_gallery_items')
+            .select('id, image_url, alt_text, caption')
+            .eq('ministry_id', data.id)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: false });
+          if (galleryError) {
+            console.error('Error loading ministry gallery:', galleryError);
+          } else {
+            setGalleryPhotos((galleryData || []).map((photo) => ({ id: photo.id, url: photo.image_url, alt: photo.alt_text, caption: photo.caption, category: data.name })));
+          }
 
           const { data: pagesData, error: pagesError } = await supabase
             .from('ministry_pages')
@@ -296,6 +310,15 @@ const MinistryDetail = () => {
         )}
       </div>
       </AnimeFadeUp>
+
+      {galleryPhotos.length > 0 && <AnimeFadeUp delay={60}>
+        <ImageGallerySection
+          title={`Momentos de ${ministry.name}`}
+          subtitle="Fotos y recuerdos compartidos por este departamento o ministerio."
+          slides={galleryPhotos}
+          showMinistryCollections={false}
+        />
+      </AnimeFadeUp>}
 
       {ministryPages.length > 0 && (
         <AnimeFadeUp delay={80}>

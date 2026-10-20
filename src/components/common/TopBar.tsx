@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, User, LogOut, ChevronDown, ShoppingBag, Heart, LayoutDashboard, Upload, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, ChevronDown, ShoppingBag, Heart, LayoutDashboard, Upload, MapPin, Radio, HandHeart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -9,7 +9,6 @@ import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
 import { uploadMediaFile } from '../../lib/mediaService';
-import { useSearchStore } from '../../store/useSearchStore';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
@@ -68,65 +67,65 @@ const TopBar = () => {
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
 
-  const handleOpenSearch = () => {
-    useSearchStore.getState().open();
-  };
-
   return (
-    <div className={`transition-all duration-500 ease-in-out ${
+    <div className={`h-[46px] transition-all duration-500 ease-in-out ${
       isHomeAtTop
         ? `absolute top-0 left-0 right-0 w-full z-[100] ${isTransparent ? 'bg-transparent border-transparent text-white/95' : 'bg-white/90 dark:bg-slate-950/90 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 backdrop-blur-md'}`
         : 'bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-white/10 text-gray-600 dark:text-gray-200 relative z-[100]'
-    } text-sm py-2.5 px-4 md:px-8 flex justify-between items-center`}>
-      <div className="flex items-center gap-3">
-        <span className={`hidden sm:inline font-medium text-xs transition-colors duration-500 ${
-          isTransparent ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
-        }`}>
-          Iglesia del Evangelio Cuadrangular Jerusalén
-        </span>
-
-        {/* Botón Buscador Inteligente Unificado */}
-        <button
-          type="button"
-          onClick={handleOpenSearch}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
-            isTransparent
-              ? 'bg-white/10 border-white/20 text-white/90 hover:bg-white/20'
-              : 'bg-slate-900/10 dark:bg-slate-900/60 border-gray-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-gold/40'
+    } text-sm`}>
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-4 md:px-8">
+        <Link
+          to="/contacto"
+          className={`group flex min-w-0 items-center gap-2 rounded-full py-1 pr-2 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+            isTransparent ? 'text-white/75 hover:text-white' : 'text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white'
           }`}
-          title="Buscar alabanzas, biblia, actividades y módulos (Ctrl + K)"
+          aria-label="Iglesia Jerusalén en Milagro, Ecuador"
         >
-          <Search size={12} className="text-gold" />
-          <span className="hidden md:inline">Buscar...</span>
-          <kbd className="px-1 py-0.2 rounded bg-slate-950/50 font-mono text-[10px] text-gold font-bold">⌘K</kbd>
-        </button>
-      </div>
-      
-      <div className="flex items-center gap-3 sm:gap-5">
+          <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
+            isTransparent
+              ? 'border-white/15 bg-white/10 text-gold'
+              : 'border-primary/10 bg-primary/5 text-primary dark:border-white/10 dark:bg-white/5 dark:text-gold'
+          }`}>
+            <MapPin size={12} aria-hidden="true" />
+          </span>
+          <span className="whitespace-nowrap">
+            Milagro<span className="hidden sm:inline">, Ecuador</span>
+          </span>
+          <span className={`hidden h-3 w-px lg:block ${isTransparent ? 'bg-white/20' : 'bg-slate-200 dark:bg-white/15'}`} aria-hidden="true" />
+          <span className="hidden truncate lg:block">Iglesia del Evangelio Cuadrangular Jerusalén</span>
+        </Link>
+
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
 
         {/* Botón de Culto En Vivo */}
         <Link 
           to="/en-vivo" 
-          className="font-bold transition-all duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 cursor-pointer shadow-xs"
+          className="group flex h-7 items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/[0.08] px-2.5 text-[11px] font-extrabold text-red-500 shadow-xs transition hover:border-red-500/35 hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 sm:px-3"
+          aria-label="Ir al culto en vivo"
         >
-          <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
-          🔴 En Vivo
+          <span className="relative flex h-2 w-2" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-40 motion-reduce:animate-none" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+          </span>
+          <Radio size={12} className="hidden sm:block" aria-hidden="true" />
+          <span className="hidden sm:inline">En Vivo</span>
+          <span className="sm:hidden">Vivo</span>
         </Link>
 
         {/* Único Botón de Donaciones / Diezmos destacado */}
         <Link 
           to="/donaciones" 
-          className={`hidden sm:flex font-bold transition-all duration-500 items-center gap-1.5 px-3.5 py-1 rounded-full text-xs shadow-2xs cursor-pointer ${
+          className={`hidden h-7 items-center gap-1.5 rounded-full border px-3 text-[11px] font-extrabold shadow-2xs transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold lg:flex ${
             isTransparent 
-              ? 'text-gold bg-gold/10 hover:bg-gold/20 border border-gold/40' 
-              : 'text-gold bg-gold/5 hover:bg-gold/10 border border-gold/25'
+              ? 'border-gold/35 bg-gold/10 text-gold hover:bg-gold/20'
+              : 'border-gold/25 bg-gold/5 text-amber-700 hover:border-gold/45 hover:bg-gold/10 dark:text-gold'
           }`}
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse"></span>
+          <HandHeart size={13} aria-hidden="true" />
           Donaciones / Diezmos
         </Link>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-2">
           <NotificationTray />
 
           {/* Cart Icon Link */}
@@ -337,6 +336,7 @@ const TopBar = () => {
               <span>Ingresar</span>
             </Link>
           )}
+        </div>
         </div>
       </div>
     </div>

@@ -1,31 +1,52 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import OptimizedMedia from '../common/OptimizedMedia';
 import { ScrollReveal } from '../animations/MotionWrappers';
-import { X, ChevronLeft, ChevronRight, Maximize2, ImageIcon, Play, Pause } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Maximize2, ImageIcon, Play, Pause, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../../config/supabase';
 
 export interface GalleryImage {
   id: string;
   url: string;
   caption?: string;
   category?: string;
+  alt?: string;
+}
+
+interface MinistryGalleryCollection {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  coverUrl: string | null;
+  images: GalleryImage[];
 }
 
 interface ImageGallerySectionProps {
   title: string;
   subtitle: string;
   slides: GalleryImage[];
+  showMinistryCollections?: boolean;
 }
 
 // Sub-component for individual category card with auto-rotating slideshow background
 const CategoryCard = ({ 
   categoryName, 
   images, 
-  onClick 
+  onClick,
+  getImageSrc,
+  onImageError,
+  count,
+  coverUrl,
 }: { 
   categoryName: string; 
   images: GalleryImage[]; 
   onClick: () => void; 
+  getImageSrc: (image: GalleryImage) => string;
+  onImageError: (image: GalleryImage, categoryName: string) => void;
+  count?: number;
+  coverUrl?: string | null;
 }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -45,17 +66,20 @@ const CategoryCard = ({
   const activeImage = images[currentIdx];
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="relative rounded-3xl overflow-hidden shadow-md dark:shadow-none bg-slate-950 border border-slate-200 dark:border-white/10 cursor-pointer aspect-[4/3] group transition-all duration-500 w-full h-full hover:shadow-[0_20px_40px_rgba(30,41,59,0.15)] dark:hover:shadow-[0_20px_40px_rgba(255,255,255,0.02)] hover:border-amber-500/40 dark:hover:border-amber-500/30"
+      aria-label={`Abrir galería: ${categoryName}`}
+      className="relative block rounded-3xl overflow-hidden text-left shadow-md dark:shadow-none bg-slate-950 border border-slate-200 dark:border-white/10 cursor-pointer aspect-[4/3] group transition-all duration-500 w-full h-full hover:shadow-[0_20px_40px_rgba(30,41,59,0.15)] dark:hover:shadow-[0_20px_40px_rgba(255,255,255,0.02)] hover:border-amber-500/40 dark:hover:border-amber-500/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/50"
     >
       {/* Animated background slides */}
       <div className="absolute inset-0 w-full h-full select-none">
         <AnimatePresence mode="wait">
-          {activeImage && (
+          {activeImage ? (
             <motion.img
               key={activeImage.id}
-              src={activeImage.url}
+              src={getImageSrc(activeImage)}
+              onError={() => onImageError(activeImage, categoryName)}
               alt={categoryName}
               initial={{ opacity: 0, scale: 1.02 }}
               animate={{ opacity: 1, scale: 1.06 }}
@@ -63,6 +87,10 @@ const CategoryCard = ({
               transition={{ duration: 1.2, ease: 'easeInOut' }}
               className="w-full h-full object-cover transition-transform duration-1000 select-none pointer-events-none"
             />
+          ) : coverUrl ? (
+            <motion.img key={coverUrl} src={getImageSrc({ id: `cover:${categoryName}`, url: coverUrl, category: categoryName })} onError={() => onImageError({ id: `cover:${categoryName}`, url: coverUrl, category: categoryName }, categoryName)} alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-amber-950/80"><ImageIcon size={42} className="text-white/45" /></div>
           )}
         </AnimatePresence>
       </div>
@@ -74,7 +102,7 @@ const CategoryCard = ({
 
       {/* Slides Count Badge */}
       <div className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1.5 rounded-xl border border-white/10 select-none">
-        {images.length} {images.length === 1 ? 'Foto' : 'Fotos'}
+        {count ?? images.length} {(count ?? images.length) === 1 ? 'Foto' : 'Fotos'}
       </div>
 
       {/* Center Interactive Maximize Icon */}
@@ -85,7 +113,7 @@ const CategoryCard = ({
       </div>
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-500 pointer-events-none" />
 
       {/* Caption/Description Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-6 text-left transform-gpu transition-all duration-500 z-10">
@@ -96,20 +124,77 @@ const CategoryCard = ({
           {activeImage?.caption || `Ver galería de ${categoryName}`}
         </p>
       </div>
-    </div>
+    </button>
   );
 };
 
 export const ImageGallerySection = ({ 
   title, 
   subtitle, 
-  slides 
+  slides,
+  showMinistryCollections = true,
 }: ImageGallerySectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
   const [direction, setDirection] = useState<number>(0); // -1 = Left, 1 = Right
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [failedImages, setFailedImages] = useState<Record<string, string>>({});
+  const [ministryCollections, setMinistryCollections] = useState<MinistryGalleryCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(showMinistryCollections);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMinistryCollections) return;
+    let active = true;
+    const loadMinistryCollections = async () => {
+      const [ministriesResult, photosResult] = await Promise.all([
+        supabase.from('ministries').select('id, name, slug, category, image_url').order('name'),
+        supabase.from('ministry_gallery_items').select('id, ministry_id, image_url, alt_text, caption, sort_order').order('sort_order').order('created_at', { ascending: false }),
+      ]);
+      if (!active) return;
+      if (ministriesResult.error || photosResult.error) {
+        console.error('Error loading public ministry galleries:', ministriesResult.error || photosResult.error);
+        setMinistryCollections([]);
+        setCollectionsLoading(false);
+        return;
+      }
+      const photos = (photosResult.data || []) as Array<{ id: string; ministry_id: string; image_url: string; alt_text: string; caption: string; sort_order: number }>;
+      const items = (ministriesResult.data || []) as Array<{ id: string; name: string; slug: string; category: string; image_url: string | null }>;
+      setMinistryCollections(items.map((ministry) => ({
+        id: ministry.id,
+        name: ministry.name,
+        slug: ministry.slug,
+        category: ministry.category,
+        coverUrl: ministry.image_url,
+        images: photos.filter((photo) => photo.ministry_id === ministry.id).map((photo) => ({
+          id: photo.id,
+          url: photo.image_url,
+          caption: photo.caption,
+          alt: photo.alt_text,
+          category: ministry.name,
+        })),
+      })));
+      setCollectionsLoading(false);
+    };
+    void loadMinistryCollections();
+    return () => { active = false; };
+  }, [showMinistryCollections]);
+
+  const getImageFallback = (categoryName: string) => {
+    const normalizedCategory = categoryName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+    return normalizedCategory.includes('ensenanza') || normalizedCategory.includes('estudio') || normalizedCategory.includes('palabra')
+      ? '/products/biblia-estudio.webp'
+      : null;
+  };
+
+  const getImageSrc = (image: GalleryImage) =>
+    failedImages[image.id] || image.url;
+
+  const handleImageError = (image: GalleryImage, categoryName: string) => {
+    const fallback = getImageFallback(categoryName);
+    if (!fallback || image.url === fallback) return;
+    setFailedImages((current) => current[image.id] ? current : { ...current, [image.id]: fallback });
+  };
 
   // Group slides by category dynamically
   const categoriesMap = useMemo(() => {
@@ -126,8 +211,9 @@ export const ImageGallerySection = ({
 
   const activeCategoryImages = useMemo(() => {
     if (!selectedCategory) return [];
-    return categoriesMap[selectedCategory] || [];
-  }, [selectedCategory, categoriesMap]);
+    return categoriesMap[selectedCategory] || ministryCollections.find((item) => `ministry:${item.id}` === selectedCategory)?.images || [];
+  }, [selectedCategory, categoriesMap, ministryCollections]);
+  const selectedMinistry = ministryCollections.find((item) => `ministry:${item.id}` === selectedCategory);
 
   // Action handlers defined above useEffect
   const handleOpenCategory = useCallback((catName: string) => {
@@ -194,7 +280,7 @@ export const ImageGallerySection = ({
     }
   }, [lightboxIndex]);
 
-  if (!slides || slides.length === 0) return null;
+  if ((!slides || slides.length === 0) && ministryCollections.length === 0 && !collectionsLoading) return null;
 
   // Variants for slide animation (left/right sliding)
   const slideVariants = {
@@ -251,22 +337,38 @@ export const ImageGallerySection = ({
         </div>
 
         {/* Grid of Categories */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+        <div className="grid grid-cols-1 gap-6 w-full sm:grid-cols-2 lg:grid-cols-3">
           {Object.keys(categoriesMap).map((catName) => (
-            <ScrollReveal key={catName} direction="up" distance={20} duration={1.2}>
+            <ScrollReveal key={`category:${catName}`} direction="up" distance={20} duration={1.2}>
               <CategoryCard
                 categoryName={catName}
                 images={categoriesMap[catName]}
                 onClick={() => handleOpenCategory(catName)}
+                getImageSrc={getImageSrc}
+                onImageError={handleImageError}
               />
             </ScrollReveal>
           ))}
+          {ministryCollections.map((collection) => (
+            <ScrollReveal key={`ministry:${collection.id}`} direction="up" distance={20} duration={1.2}>
+              <CategoryCard
+                categoryName={collection.name}
+                images={collection.images}
+                coverUrl={collection.coverUrl}
+                count={collection.images.length}
+                onClick={() => handleOpenCategory(`ministry:${collection.id}`)}
+                getImageSrc={getImageSrc}
+                onImageError={handleImageError}
+              />
+            </ScrollReveal>
+          ))}
+          {collectionsLoading && <div className="flex aspect-[4/3] items-center justify-center rounded-3xl border border-slate-200 bg-white/70 text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900/60"><span className="inline-flex items-center gap-2 text-sm font-semibold"><ImageIcon size={17} className="animate-pulse" /> Cargando espacios de la comunidad</span></div>}
         </div>
       </section>
 
       {/* MODERN GLASSMORPH POPUP MODAL */}
       <AnimatePresence>
-        {selectedCategory && activeCategoryImages.length > 0 && (
+        {selectedCategory && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -289,19 +391,20 @@ export const ImageGallerySection = ({
                     Galería de la Iglesia
                   </span>
                   <h3 className="font-serif font-bold text-xl md:text-2xl text-white">
-                    {selectedCategory === 'General' ? 'Otros Momentos' : selectedCategory}
+                    {selectedMinistry?.name || (selectedCategory === 'General' ? 'Otros Momentos' : selectedCategory)}
                   </h3>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {/* Autoplay toggle button */}
-                  <button
+                  {activeCategoryImages.length > 1 && <button
                     onClick={() => setIsPlaying(prev => !prev)}
                     className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all cursor-pointer border border-white/15"
                     title={isPlaying ? 'Pausar reproducción' : 'Reproducir automáticamente'}
                   >
                     {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                  </button>
+                  </button>}
+                  {selectedMinistry && <Link to={`/ministerios/${selectedMinistry.slug}`} onClick={handleClose} className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-300/30 bg-amber-400 px-3 py-2.5 text-xs font-black text-slate-950 transition hover:bg-amber-300"><ArrowUpRight size={15} /> Ir al {selectedMinistry.category === 'departamento' ? 'departamento' : 'ministerio'}</Link>}
                   {/* Close button */}
                   <button 
                     onClick={handleClose}
@@ -328,7 +431,14 @@ export const ImageGallerySection = ({
 
                 {/* Central slide viewer wrapper */}
                 <div className="w-full h-full flex items-center justify-center px-8 md:px-14 relative overflow-hidden select-none">
-                  <AnimatePresence initial={false} custom={direction} mode="wait">
+                  {activeCategoryImages.length === 0 ? (
+                    <div className="max-w-md text-center text-white">
+                      <ImageIcon size={38} className="mx-auto text-white/60" />
+                      <h4 className="mt-4 font-serif text-xl font-bold">Pronto tendremos fotos</h4>
+                      <p className="mt-2 text-sm leading-6 text-white/70">Este espacio de la comunidad aún no tiene imágenes publicadas.</p>
+                      {selectedMinistry && <Link to={`/ministerios/${selectedMinistry.slug}`} onClick={handleClose} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-900 transition hover:bg-amber-100">Conocer {selectedMinistry.name}<ArrowUpRight size={15} /></Link>}
+                    </div>
+                  ) : <AnimatePresence initial={false} custom={direction} mode="wait">
                     <motion.div
                       key={lightboxIndex}
                       custom={direction}
@@ -339,8 +449,9 @@ export const ImageGallerySection = ({
                       className="w-full h-full flex flex-col items-center justify-center relative select-none"
                     >
                       <OptimizedMedia
-                        src={activeCategoryImages[lightboxIndex].url}
-                        alt={activeCategoryImages[lightboxIndex].caption || 'Slide'}
+                        src={getImageSrc(activeCategoryImages[lightboxIndex])}
+                        alt={activeCategoryImages[lightboxIndex].alt || activeCategoryImages[lightboxIndex].caption || 'Foto de la comunidad'}
+                        onError={() => handleImageError(activeCategoryImages[lightboxIndex], activeCategoryImages[lightboxIndex].category || selectedCategory)}
                         className="max-w-full max-h-[42vh] md:max-h-[50vh] object-contain rounded-2xl shadow-xl select-none pointer-events-none border border-white/5"
                       />
                       
@@ -352,7 +463,7 @@ export const ImageGallerySection = ({
                         </div>
                       )}
                     </motion.div>
-                  </AnimatePresence>
+                  </AnimatePresence>}
                 </div>
 
                 {/* Next Button */}
@@ -390,7 +501,8 @@ export const ImageGallerySection = ({
                           }`}
                         >
                           <img loading="lazy"
-                            src={img.url}
+                            src={getImageSrc(img)}
+                            onError={() => handleImageError(img, selectedCategory)}
                             alt={`Thumbnail ${index + 1}`}
                             className="w-full h-full object-cover pointer-events-none select-none"
                           />
@@ -401,12 +513,12 @@ export const ImageGallerySection = ({
                 )}
                 
                 {/* Status Bar Indicator */}
-                <div className="flex items-center justify-between w-full text-[10px] text-white/55 font-mono px-1">
+                {activeCategoryImages.length > 0 && <div className="flex items-center justify-between w-full text-[10px] text-white/55 font-mono px-1">
                   <span>Autoplay: <span className={isPlaying ? 'text-green-400 font-bold' : 'text-red-400 font-bold'}>{isPlaying ? 'Activo' : 'Pausado'}</span></span>
                   <span className="font-bold tracking-widest bg-white/5 border border-white/10 px-3 py-1 rounded-full text-white/70">
                     {lightboxIndex + 1} / {activeCategoryImages.length}
                   </span>
-                </div>
+                </div>}
               </div>
 
             </motion.div>

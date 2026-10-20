@@ -1,4 +1,5 @@
 import { FileText, Download } from 'lucide-react';
+import type { ReactEventHandler } from 'react';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 type ResourceType = 'image' | 'video' | 'raw';
@@ -86,6 +87,8 @@ interface OptimizedMediaProps {
   sizes?: string;
   /** Resource priority; reserve high for above-the-fold media */
   fetchPriority?: 'high' | 'low' | 'auto';
+  /** Optional image load error handler */
+  onError?: ReactEventHandler<HTMLImageElement>;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -98,6 +101,7 @@ export default function OptimizedMedia({
   height,
   sizes,
   fetchPriority = 'auto',
+  onError,
 }: OptimizedMediaProps) {
   if (!src) return null;
 
@@ -114,6 +118,7 @@ export default function OptimizedMedia({
         loading="lazy"
         decoding="async"
         fetchPriority={fetchPriority}
+        onError={onError}
         className={className}
         {...(sizes ? { sizes } : {})}
         {...(width ? { width } : {})}

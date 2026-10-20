@@ -100,7 +100,7 @@ export default function ChurchJourneySection() {
           <div className="absolute left-[28px] md:left-1/2 top-0 bottom-0 w-1 bg-slate-200 dark:bg-slate-800 -translate-x-1/2 rounded-full overflow-hidden">
             <div 
               ref={lineRef}
-              className="absolute top-0 w-full bg-gradient-to-b from-amber-500 via-amber-600 to-yellow-400 transition-all duration-100 ease-linear"
+              className="gold-emphasis-line absolute top-0 w-full transition-all duration-100 ease-linear"
               style={{ height: '0%', transformOrigin: 'top' }}
             />
           </div>

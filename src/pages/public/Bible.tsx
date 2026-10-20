@@ -8,11 +8,9 @@ import {
 import { toast } from 'sonner';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import type { BibleBook } from '../../config/bibleBooks';
-import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { parseVerseRange, parseBibleReferences } from '../../utils/bibleParser';
 import BibleIndexes from '../../components/public/bible/BibleIndexes';
 import { useBibleStudy } from '../../hooks/useBibleStudy';
-import PremiumBibleHero from './components/PremiumBibleHero';
 import VerseImageShareModal from '../../components/public/bible/VerseImageShareModal';
 
 interface Verse {
@@ -630,38 +628,8 @@ export default function Bible() {
     return 'bg-white dark:bg-[#070b14] text-slate-900 dark:text-white';
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
-  const showLegacyBibleBanner = import.meta.env.VITE_BIBLE_LEGACY_BANNER === 'true';
-
   return (
     <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses()}`}>
-      {!focusMode && (
-        <PremiumBibleHero
-          bookName={currentBook.name}
-          chapter={chapterNum}
-          versionName={BIBLE_VERSIONS.find(v => v.id === version)?.name || version.toUpperCase()}
-        />
-      )}
-
-      {showLegacyBibleBanner && (
-      <div id="bible_hero_legacy" className="bg-gradient-to-r from-amber-850 via-amber-900 to-slate-900 text-white py-14 px-4 border-b border-gold/15 relative overflow-hidden scroll-mt-28">
-        {/* Glow Effects */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="max-w-5xl mx-auto text-center space-y-4 relative z-10">
-          <AnimeFadeUp delay={0} duration={600}>
-            <div className="inline-flex p-3 bg-gold/10 text-gold rounded-3xl border border-gold/20 mb-2 shadow-inner">
-              <BookOpen size={30} className="animate-pulse" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight">La Santa Biblia</h1>
-            <p className="text-amber-100/90 text-sm md:text-base max-w-xl mx-auto font-light">
-              Explora, busca pasajes doctrinales y medita en la Palabra de Dios de forma rápida y sencilla.
-            </p>
-          </AnimeFadeUp>
-        </div>
-      </div>
-      )}
-
       <div id="bible_reader" className={`max-w-6xl mx-auto px-4 py-8 space-y-6 scroll-mt-28 ${focusMode ? 'pt-24' : ''}`}>
         
         {/* Main Controls Panel - Glassmorphism & Sticky */}

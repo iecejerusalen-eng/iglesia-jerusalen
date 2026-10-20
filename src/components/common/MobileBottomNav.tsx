@@ -115,7 +115,7 @@ const RECURSOS_ITEMS: SubMenuItem[] = [
   {
     id: 'rec-juegos',
     label: 'Juegos Bíblicos',
-    description: 'Biblionario, Ahorcado y memoria bíblica',
+    description: 'Biblionario, Memorama, personajes y palabras bíblicas',
     url: '/recursos/juegos',
     icon: Gamepad2,
   },
@@ -353,7 +353,7 @@ const MobileBottomNav: React.FC = () => {
         initial={{ y: 0 }}
         animate={{ y: shouldShowNav ? 0 : '110%' }}
         transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-        className="fixed inset-x-0 bottom-0 z-40 md:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)] pb-safe transition-colors duration-300"
+        className="fixed inset-x-0 bottom-0 z-40 xl:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)] pb-safe transition-colors duration-300"
       >
         <div className="mx-auto flex h-16 max-w-md items-center justify-between px-2">
           {/* 1. INICIO */}
@@ -447,16 +447,16 @@ const MobileBottomNav: React.FC = () => {
           </button>
 
           {/* 3. CTA CENTRAL ELEVADO - BUSCAR */}
-          <div className="relative flex-1 min-w-[60px] h-full flex items-center justify-center">
+          <div className="relative flex-1 min-w-[56px] h-full flex items-center justify-center">
             <motion.button
               type="button"
               onClick={handleCtaSearch}
               aria-label="Abrir buscador inteligente (Ctrl+K)"
               whileTap={{ scale: 0.9 }}
               whileHover={{ scale: 1.05 }}
-              className="absolute -top-3.5 flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary via-blue-700 to-church-gold-medium dark:from-primary dark:via-indigo-800 dark:to-gold text-white shadow-[0_8px_20px_rgba(30,58,138,0.35)] dark:shadow-[0_8px_25px_rgba(217,119,6,0.35)] border-2 border-white dark:border-slate-900 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-transform"
+              className="absolute -top-2.5 flex size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary via-blue-700 to-church-gold-medium text-white shadow-[0_5px_14px_rgba(30,58,138,0.28)] dark:from-primary dark:via-indigo-800 dark:to-gold dark:shadow-[0_5px_16px_rgba(217,119,6,0.28)] border-2 border-white dark:border-slate-900 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-transform"
             >
-              <Search size={22} strokeWidth={2.5} className="text-white drop-shadow-sm" />
+              <Search size={18} strokeWidth={2.5} className="text-white drop-shadow-sm" />
               {isSearchOpen && (
                 <span className="absolute inset-0 rounded-2xl border-2 border-gold animate-ping opacity-60 pointer-events-none" />
               )}
@@ -575,7 +575,7 @@ const MobileBottomNav: React.FC = () => {
                 triggerHaptic(6);
                 closeSheet();
               }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm xl:hidden"
               aria-hidden="true"
             />
 
@@ -599,7 +599,7 @@ const MobileBottomNav: React.FC = () => {
               role="dialog"
               aria-modal="true"
               aria-label={activeSheet === 'recursos' ? 'Recursos Bíblicos' : 'Comunidad y Ministerios'}
-              className="fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[min(78dvh,38rem)] flex flex-col rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white/98 dark:bg-slate-900/98 backdrop-blur-2xl shadow-[0_-12px_40px_rgba(0,0,0,0.22)] md:hidden overflow-hidden"
+              className="fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[min(78dvh,38rem)] flex flex-col rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white/98 dark:bg-slate-900/98 backdrop-blur-2xl shadow-[0_-12px_40px_rgba(0,0,0,0.22)] xl:hidden overflow-hidden"
             >
               {/* Drag Handle & Header */}
               <div className="pt-3 pb-2 px-5 shrink-0 border-b border-slate-100 dark:border-white/5">

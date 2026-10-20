@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowDown, ArrowRight, Church, Compass, MapPin, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import fachadaImage from '../../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import fachadaImage from '../../../assets/Jerusalén/Fachada Iglesia Jerusalén v03.jpg';
 import BlockRenderer from '../../../components/public/BlockRenderer';
-import MagneticButton from '../../../components/animations/MagneticButton';
 import type { PageSection } from '../types';
 
 interface PremiumHeroVisualProps {
@@ -189,25 +188,23 @@ export const PremiumHeroVisual = ({ subtitle, contentBlocks, coverImage }: Premi
           </div>
 
           <div className="hero-reveal hero-reveal-delay-3 mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <MagneticButton>
-              <Link
-                to="/visita"
-                className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 text-sm font-black text-slate-950 shadow-[0_20px_40px_-18px_rgba(245,158,11,.9)] transition duration-300 hover:-translate-y-1 hover:from-amber-400 hover:to-amber-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/30 sm:w-auto"
-              >
-                <Sparkles size={17} className="text-slate-950" />
-                Planifica tu Visita
-              </Link>
-            </MagneticButton>
+            <Link
+              to="/visita"
+              className="group inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-blue-800 px-6 text-sm font-black text-white shadow-[0_12px_28px_-18px_rgba(30,58,138,.55)] transition-[background-color,box-shadow] duration-200 ease-out hover:bg-blue-900 hover:shadow-[0_16px_32px_-18px_rgba(30,58,138,.62)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/30 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300 dark:focus-visible:ring-blue-300/40 sm:w-auto"
+            >
+              <Sparkles size={17} className="text-current" />
+              Planifica tu Visita
+            </Link>
             <Link
               to="/nosotros"
-              className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-800 px-6 text-sm font-black text-white shadow-[0_20px_40px_-18px_rgba(30,64,175,.9)] transition duration-300 hover:-translate-y-1 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 dark:bg-blue-400 dark:text-slate-950 dark:hover:bg-blue-300 sm:w-auto"
+              className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-blue-800/20 bg-white/75 px-6 text-sm font-black text-blue-900 shadow-sm backdrop-blur-xl transition-[background-color,border-color,box-shadow] duration-200 ease-out hover:border-blue-800/40 hover:bg-blue-50/70 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 dark:border-blue-200/20 dark:bg-white/[0.06] dark:text-blue-100 dark:hover:border-blue-200/40 dark:hover:bg-white/10 sm:w-auto"
             >
               Conócenos
-              <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+              <ArrowRight size={17} className="transition-colors duration-200" />
             </Link>
             <a
               href="#home_schedules"
-              className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300/80 bg-white/70 px-6 text-sm font-black text-slate-800 shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-blue-700/30 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:border-white/15 dark:bg-white/[0.06] dark:text-white dark:hover:border-blue-300/40 dark:hover:bg-white/10 sm:w-auto"
+              className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-300/80 bg-white/70 px-6 text-sm font-black text-slate-800 shadow-sm backdrop-blur-xl transition-[background-color,border-color,box-shadow] duration-200 ease-out hover:border-blue-700/30 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:border-white/15 dark:bg-white/[0.06] dark:text-white dark:hover:border-blue-300/40 dark:hover:bg-white/10 sm:w-auto"
             >
               Ver horarios
               <ArrowDown size={16} className="text-amber-600 dark:text-amber-300" />

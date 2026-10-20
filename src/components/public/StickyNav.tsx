@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronUp, Navigation as NavIcon } from 'lucide-react';
+import { ChevronUp, Navigation as NavIcon, X } from 'lucide-react';
 import { getSectionsForPath } from '../../config/sectionNavigationConfig';
 
 export default function StickyNav() {
@@ -14,6 +14,15 @@ export default function StickyNav() {
   }, [pathname]);
 
   const sections = useMemo(() => pageNavInfo?.sections ?? [], [pageNavInfo]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (sections.length === 0) {
@@ -113,10 +122,10 @@ export default function StickyNav() {
 
   return (
     <>
-      {/* DESKTOP FLOATING SIDEBAR (GLASSMORPHISM) */}
-      <aside 
+      {/* DESKTOP FLOATING SIDEBAR */}
+      <nav
         aria-label="Navegación de secciones de página"
-        className="fixed right-5 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3 p-2.5 rounded-full backdrop-blur-xl bg-white/40 dark:bg-slate-900/60 border border-white/40 dark:border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.12)] transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-900/80 group/sidebar"
+        className="fixed right-4 top-1/2 z-40 hidden max-h-[calc(100dvh-2rem)] -translate-y-1/2 flex-col gap-1.5 overflow-y-auto overscroll-contain rounded-[1.75rem] border border-white/80 bg-white/80 p-2 shadow-[0_16px_48px_-20px_rgba(15,23,42,.38)] backdrop-blur-2xl transition-colors dark:border-white/10 dark:bg-slate-950/80 lg:flex"
       >
         {sections.map((section) => {
           const isActive = activeSection === section.id;
@@ -125,51 +134,36 @@ export default function StickyNav() {
 
           return (
             <div key={section.id} className="relative flex items-center justify-center">
-              {/* Tooltip flotante */}
-              <div
-                className={`absolute right-12 px-3 py-1.5 rounded-xl bg-slate-900/90 dark:bg-slate-800/95 text-white text-xs font-semibold whitespace-nowrap shadow-xl border border-white/10 pointer-events-none transition-all duration-200 backdrop-blur-md ${
-                  isHovered
-                    ? 'opacity-100 -translate-x-1 scale-100'
-                    : 'opacity-0 translate-x-3 scale-95'
-                }`}
-              >
-                {section.label}
-              </div>
-
               {/* Botón de Sección */}
               <button
                 type="button"
                 onClick={() => scrollToSection(section.id)}
                 onMouseEnter={() => setHoveredSection(section.id)}
                 onMouseLeave={() => setHoveredSection(null)}
+                onFocus={() => setHoveredSection(section.id)}
+                onBlur={() => setHoveredSection(null)}
                 aria-label={`Navegar a ${section.label}`}
-                title={section.label}
-                className={`relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                aria-current={isActive ? 'location' : undefined}
+                className={`relative flex size-10 shrink-0 items-center justify-center rounded-full outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 ${
                   isActive
-                    ? 'bg-primary dark:bg-indigo-600 text-white shadow-md shadow-primary/30 scale-110'
+                    ? 'bg-primary text-white shadow-md shadow-primary/30 ring-2 ring-amber-300/70 dark:bg-indigo-600 dark:ring-amber-300/50'
                     : isHovered
-                    ? 'bg-amber-400 dark:bg-amber-500 text-slate-900 scale-105 shadow-sm'
-                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200/50 dark:border-white/5'
+                    ? 'bg-amber-400 text-slate-900 shadow-sm dark:bg-amber-500'
+                    : 'border border-slate-200/70 bg-white/90 text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 dark:border-white/10 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
                 }`}
               >
-                {/* Anillo de pulso/resaltado para sección activa */}
-                {isActive && (
-                  <span className="absolute -inset-1 rounded-full border-2 border-primary/40 dark:border-indigo-400/40 animate-pulse pointer-events-none" />
-                )}
-
-                {/* Ícono SVG minimalista */}
-                <Icon className="w-4 h-4" strokeWidth={isActive || isHovered ? 2.5 : 2} />
+                <Icon aria-hidden="true" className="size-[18px]" strokeWidth={isActive || isHovered ? 2.4 : 2} />
               </button>
             </div>
           );
         })}
-      </aside>
+      </nav>
 
       {/* MOBILE COMPACT FLOATING DOCK */}
       <div className="fixed right-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 md:hidden flex flex-col items-end gap-2">
         {/* Desplegable de Secciones Móvil */}
         {isMobileMenuOpen && (
-          <div className="flex flex-col gap-2 p-2 rounded-2xl backdrop-blur-2xl bg-slate-900/90 dark:bg-slate-950/95 text-white border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 max-h-[60vh] overflow-y-auto custom-scrollbar">
+          <nav id="mobile-section-menu" aria-label="Secciones de la página" className="flex max-h-[60dvh] flex-col gap-1.5 overflow-y-auto rounded-2xl border border-white/15 bg-slate-900/95 p-2 text-white shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 custom-scrollbar dark:bg-slate-950/95">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pt-1 pb-0.5 border-b border-white/10">
               Secciones
             </span>
@@ -181,7 +175,8 @@ export default function StickyNav() {
                   key={section.id}
                   type="button"
                   onClick={() => scrollToSection(section.id)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  aria-current={isActive ? 'location' : undefined}
+                  className={`flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${
                     isActive
                       ? 'bg-primary text-white shadow-sm font-bold'
                       : 'text-slate-300 hover:bg-white/10 hover:text-white'
@@ -200,17 +195,19 @@ export default function StickyNav() {
             >
               <ChevronUp className="w-3.5 h-3.5" /> Ir al inicio
             </button>
-          </div>
+          </nav>
         )}
 
         {/* Botón Gatillo Flotante Móvil */}
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Abrir menú de secciones"
-          className="flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-xl bg-slate-900/90 dark:bg-slate-800/90 text-white border border-white/20 shadow-lg active:scale-95 transition-transform"
+          aria-label={isMobileMenuOpen ? 'Cerrar menú de secciones' : 'Abrir menú de secciones'}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-section-menu"
+          className="flex size-11 items-center justify-center rounded-full border border-white/30 bg-slate-900/95 text-white shadow-[0_12px_30px_-10px_rgba(15,23,42,.7)] backdrop-blur-xl transition-transform active:scale-95 dark:border-white/20 dark:bg-slate-800/95"
         >
-          <NavIcon className={`w-5 h-5 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-45 text-amber-400' : ''}`} />
+          {isMobileMenuOpen ? <X className="size-5 text-amber-300" aria-hidden="true" /> : <NavIcon className="size-5" aria-hidden="true" />}
         </button>
       </div>
     </>

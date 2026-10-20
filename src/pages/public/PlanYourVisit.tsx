@@ -10,7 +10,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { CHURCH_LOCATION } from '../../components/map/churchLocation';
-import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén.jpg';
+import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén v03.jpg';
 import type { Event as DbEvent, Schedule } from '../../types';
 import { formatEventDateRange, formatEventTime } from '../../features/events/utils/eventPresentation';
 import { toast } from 'sonner';

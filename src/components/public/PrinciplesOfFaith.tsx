@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import {
   BookOpen, 
   Sun, 
   AlertTriangle, 
@@ -25,11 +25,29 @@ import {
   X,
   Compass
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BibleVerseLink } from '../ui/BibleVerseLink';
+import QuadrangularSymbol, { type QuadrangularSymbolName } from './QuadrangularSymbol';
+import DoctrineIcon3D from './DoctrineIcon3D';
+import VolumetricIcon, { type VolumetricIconTone } from './VolumetricIcon';
+
+const VOLUMETRIC_TONES: VolumetricIconTone[] = ['amber', 'blue', 'cyan', 'emerald', 'green', 'indigo', 'orange', 'pink', 'purple', 'red', 'rose', 'sky', 'slate', 'teal', 'yellow'];
+
+const getPrincipleTone = (iconColor: string): VolumetricIconTone => {
+  const toneName = iconColor.match(/text-([a-z]+)-\d+/)?.[1];
+  return VOLUMETRIC_TONES.find((tone) => tone === toneName) ?? 'blue';
+};
+
+const quadrangularPrincipleSymbols: Partial<Record<number, QuadrangularSymbolName>> = {
+  4: 'cross',
+  10: 'dove',
+  14: 'cup',
+  15: 'crown',
+};
 
 // Dynamic icon mapping to render icons dynamically based on string ID
-const iconMap: { [key: string]: React.ElementType } = {
+const iconMap: Record<string, LucideIcon> = {
   BookOpen,
   Sun,
   AlertTriangle,
@@ -61,6 +79,17 @@ interface Principle {
   reference: string;
   iconName: string;
   iconColor: string;
+}
+
+function PrincipleCardIcon({ principle }: { principle: Principle }) {
+  if (principle.iconName === 'Scale' || principle.iconName === 'Cloud' || principle.iconName === 'Flame') {
+    const kind = principle.iconName === 'Scale' ? 'scale' : principle.iconName === 'Cloud' ? 'cloud' : 'flame';
+    return <DoctrineIcon3D kind={kind} principleId={principle.id} />;
+  }
+
+  const IconComponent = iconMap[principle.iconName] || BookOpen;
+
+  return <VolumetricIcon icon={IconComponent} tone={getPrincipleTone(principle.iconColor)} />;
 }
 
 interface CategoryGroup {
@@ -426,7 +455,7 @@ export default function PrinciplesOfFaith() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
                 {filteredPrinciples.map((principle) => {
-                  const IconComponent = iconMap[principle.iconName] || BookOpen;
+                  const quadrangularSymbol = quadrangularPrincipleSymbols[principle.id];
                   return (
                     <motion.div
                       layout
@@ -440,9 +469,13 @@ export default function PrinciplesOfFaith() {
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-transparent to-transparent group-hover:from-primary/[0.02] dark:group-hover:from-church-gold-medium/[0.03] transition-all duration-500 pointer-events-none" />
                       <div className="space-y-4 relative z-10">
                         <div className="flex items-center justify-between">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${principle.iconColor}`}>
-                            <IconComponent size={20} />
-                          </div>
+                          {quadrangularSymbol ? (
+                            <VolumetricIcon tone={getPrincipleTone(principle.iconColor)}>
+                              <QuadrangularSymbol symbol={quadrangularSymbol} className="size-8" />
+                            </VolumetricIcon>
+                          ) : (
+                            <PrincipleCardIcon principle={principle} />
+                          )}
                           <span className="text-2xl font-serif font-black text-slate-200 dark:text-slate-800/80 group-hover:text-church-gold-bright transition-colors">
                             {principle.id < 10 ? `0${principle.id}` : principle.id}
                           </span>
@@ -573,7 +606,7 @@ export default function PrinciplesOfFaith() {
                 {/* Principles Cards Grid within Selected Category */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {currentCategory.principles.map((principle) => {
-                    const IconComponent = iconMap[principle.iconName] || BookOpen;
+                    const quadrangularSymbol = quadrangularPrincipleSymbols[principle.id];
                     return (
                       <div
                         key={principle.id}
@@ -584,9 +617,15 @@ export default function PrinciplesOfFaith() {
                         
                         <div className="space-y-4 relative z-10">
                           <div className="flex items-center justify-between">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-transform duration-500 group-hover:scale-110 ${principle.iconColor}`}>
-                              <IconComponent size={20} />
-                            </div>
+                          {quadrangularSymbol ? (
+                            <VolumetricIcon tone={getPrincipleTone(principle.iconColor)} className="transition-transform duration-300 group-hover:scale-[1.04]">
+                              <QuadrangularSymbol symbol={quadrangularSymbol} className="size-8" />
+                            </VolumetricIcon>
+                          ) : (
+                            <span className="transition-transform duration-500 group-hover:scale-110">
+                              <PrincipleCardIcon principle={principle} />
+                            </span>
+                          )}
                             <span className="text-2xl font-serif font-black text-slate-100 dark:text-slate-800/80 group-hover:text-church-gold-bright transition-colors">
                               {principle.id < 10 ? `0${principle.id}` : principle.id}
                             </span>

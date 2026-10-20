@@ -5,7 +5,7 @@ test('Nosotros conduce a las seis lecturas y conserva el liderazgo público', as
   await page.goto('/nosotros');
   await expect(page.getByRole('link', { name: 'Aprender más', exact: true })).toHaveAttribute('href', '/nosotros/documentos');
   await expect(page.getByText('Perfil CRM vinculado')).toHaveCount(0);
-  await expect(page.locator('#aprender a')).toHaveCount(6);
+  await expect(page.locator('#aprender a')).toHaveCount(7);
   for (const link of await page.locator('main a[href^="#"]').all()) {
     await expect(page.locator((await link.getAttribute('href'))!)).toHaveCount(1);
   }

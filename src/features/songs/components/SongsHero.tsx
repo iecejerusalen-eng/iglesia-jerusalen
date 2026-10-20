@@ -10,33 +10,38 @@ interface SongsHeroProps {
 
 export const SongsHero = ({ totalSongs, songsWithChords, onExplore, onRandomSong }: SongsHeroProps) => {
   return (
-    <section className="relative overflow-hidden border-b border-white/[0.08] bg-gradient-to-b from-[#020617] via-[#071333] to-[#04091a] px-4 py-16 text-white md:py-24">
+    <section className="relative overflow-hidden border-b border-white/[0.08] bg-[radial-gradient(ellipse_at_18%_10%,rgba(199,157,63,0.14),transparent_36%),radial-gradient(ellipse_at_84%_38%,rgba(59,130,246,0.2),transparent_46%),linear-gradient(128deg,#030817_0%,#0a1734_52%,#060d20_100%)] px-4 py-16 text-white md:py-24">
       {/* ─── Celestial Worship Ambient Lights ─── */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-20 -top-24 size-[32rem] rounded-full bg-[radial-gradient(circle,rgba(199,157,63,0.18),transparent_65%)] blur-3xl"
+        className="pointer-events-none absolute -left-28 -top-36 size-[36rem] rounded-full bg-[radial-gradient(circle,rgba(199,157,63,0.16),transparent_65%)] blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-1/4 size-[28rem] rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.15),transparent_60%)] blur-3xl"
+        className="pointer-events-none absolute -right-20 top-[8%] size-[34rem] rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.18),transparent_62%)] blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.025),transparent_24%,transparent_76%,rgba(2,6,23,0.3))]"
       />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-church-gold/40 to-transparent"
       />
 
-      {/* ─── Subtle Sacred Stave / Waveform Lines ─── */}
+      {/* ─── Quiet concentric sound waves ─── */}
       <svg
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 h-full w-full text-blue-100 opacity-[0.04]"
+        viewBox="0 0 1440 760"
+        preserveAspectRatio="xMidYMid slice"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <defs>
-          <pattern id="stave-pattern" width="120" height="80" patternUnits="userSpaceOnUse">
-            <path d="M 0 16 L 120 16 M 0 28 L 120 28 M 0 40 L 120 40 M 0 52 L 120 52 M 0 64 L 120 64" fill="none" stroke="currentColor" strokeWidth="0.8" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#stave-pattern)" />
+        <g fill="none" stroke="currentColor" strokeWidth="1">
+          <ellipse cx="1110" cy="380" rx="228" ry="156" />
+          <ellipse cx="1110" cy="380" rx="286" ry="196" />
+          <ellipse cx="1110" cy="380" rx="344" ry="236" />
+        </g>
       </svg>
 
       <div className="relative mx-auto max-w-6xl">

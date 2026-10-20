@@ -24,7 +24,8 @@ export function useGameKeyboardShortcuts({ enabled = true, onNext, onLetter, onN
       if (event.key === 'Enter' && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && onNext) {
         const targetElement = event.target instanceof HTMLElement ? event.target : null;
         const focusedControl = targetElement?.closest('button, a, [role="button"]');
-        if (focusedControl && focusedControl.getAttribute('aria-keyshortcuts') !== 'Shift+Enter') return;
+        const advertisedShortcuts = focusedControl?.getAttribute('aria-keyshortcuts')?.split(/\s+/) ?? [];
+        if (focusedControl && !advertisedShortcuts.includes('Shift+Enter')) return;
         event.preventDefault();
         event.stopPropagation();
         onNext();

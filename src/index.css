@@ -107,16 +107,25 @@
   box-shadow: 0 25px 50px -12px rgba(199, 157, 63, 0.15);
 }
 
-.text-gold-gradient {
-  background: linear-gradient(135deg, #FFD679 0%, #C79D3F 50%, #9D660E 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  :root {
+    --church-gold-emphasis: #9D660E;
+    --church-gold-emphasis-soft: rgb(157 102 14 / 10%);
+    --church-gold-gradient-start: #9D660E;
+    --church-gold-gradient-mid: #AE8333;
+    --church-gold-gradient-end: #AE8333;
+  }
+
+  .dark {
+    --church-gold-emphasis: #FFD679;
+    --church-gold-emphasis-soft: rgb(255 214 121 / 12%);
+    --church-gold-gradient-start: #FFD679;
+    --church-gold-gradient-mid: #EECF92;
+    --church-gold-gradient-end: #C79D3F;
+  }
+
   html, body {
     @apply font-sans bg-surface text-gray-800 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-200 overflow-x-hidden;
   }
@@ -268,16 +277,42 @@
     @apply bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200/50 dark:border-red-800/30;
   }
 
-  /* Degradados dorados de la Iglesia Jerusalén */
-  .bg-gold-gradient {
-    background: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%);
+  /* Acento semántico dorado: tono sobrio en claro y luminoso en oscuro. */
+  .text-church-gold-emphasis {
+    color: var(--church-gold-emphasis);
   }
 
+  .bg-church-gold-emphasis-soft {
+    background-color: var(--church-gold-emphasis-soft);
+  }
+
+  .bg-church-gold-emphasis {
+    background-color: var(--church-gold-emphasis);
+  }
+
+  .border-church-gold-emphasis {
+    border-color: var(--church-gold-emphasis);
+  }
+
+  .border-church-gold-emphasis-soft {
+    border-color: color-mix(in srgb, var(--church-gold-emphasis) 30%, transparent);
+  }
+
+  .text-church-gold-gradient,
   .text-gold-gradient {
-    background: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%);
+    background: linear-gradient(105deg, var(--church-gold-gradient-start) 0%, var(--church-gold-gradient-mid) 52%, var(--church-gold-gradient-end) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  .gold-emphasis-line {
+    background: linear-gradient(180deg, var(--church-gold-gradient-start) 0%, var(--church-gold-gradient-mid) 52%, var(--church-gold-gradient-end) 100%);
+  }
+
+  /* Legacy gradient retained for existing fills; new emphasis uses semantic tokens above. */
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, var(--color-church-gold-dark) 0%, var(--color-church-gold-medium) 50%, var(--color-church-gold-bright) 100%);
   }
 
   .border-gold-gradient {

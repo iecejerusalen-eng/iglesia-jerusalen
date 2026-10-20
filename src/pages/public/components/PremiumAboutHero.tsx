@@ -2,16 +2,13 @@ import { useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   ArrowDown,
   ArrowRight,
-  BookOpenText,
   Compass,
   Globe2,
   HeartHandshake,
   Landmark,
   Sparkles,
-  Users,
 } from 'lucide-react';
-import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores.jpg';
-import missionArchivePhoto from '../../../assets/Imágenes Cuadrangular/Imagen Aime Semple Mcpherson.webp';
+import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores iglesia interior.webp';
 
 interface PremiumAboutHeroProps {
   title: string;
@@ -120,7 +117,6 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setTilt({ x: 0, y: 0 })}
           style={{ perspective: '1200px' }}
-          aria-label="Composición visual de la familia y la misión de la Iglesia Jerusalén"
         >
           <div className="absolute inset-[8%_5%_5%] rounded-[2.5rem] border border-indigo-300/30 bg-indigo-950/5 shadow-inner dark:border-indigo-300/10 dark:bg-indigo-400/[0.04]" />
           <div className="absolute inset-x-[14%] bottom-[8%] h-16 rounded-full bg-indigo-950/15 blur-2xl dark:bg-black/50" />
@@ -133,15 +129,15 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
               {!imageUnavailable ? (
                 <img
                   src={imageSrc}
-                  alt="Familia pastoral de la Iglesia Jerusalén"
-                  className="h-full w-full object-cover object-center transition duration-700"
+                  alt="Retrato editorial de los pastores de la Iglesia Jerusalén, Rev. David Nicola y Corina Miranda"
+                  className="h-full w-full scale-[1.28] object-cover object-[center_15%] transition duration-700"
                   loading="eager"
                   fetchPriority="high"
                   onError={handleImageError}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-8 text-center text-white">
-                  <div><HeartHandshake className="mx-auto text-amber-300" size={42} aria-hidden="true" /><p className="mt-3 text-sm font-semibold">Una familia que sirve con propósito</p></div>
+                  <div><HeartHandshake className="mx-auto text-amber-300" size={42} aria-hidden="true" /><p className="mt-3 text-sm font-semibold">Pastores de Iglesia Jerusalén</p></div>
                 </div>
               )}
               <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_36%,rgba(2,8,23,.08)_56%,rgba(2,8,23,.9)_100%)]" />
@@ -149,21 +145,6 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300"><Sparkles size={13} aria-hidden="true" /> Comunidad con propósito</div>
                 <p className="mt-2 max-w-xs font-serif text-2xl font-bold leading-tight sm:text-3xl">La fe se vuelve hogar cuando la vivimos juntos.</p>
               </div>
-            </div>
-
-            <div className="absolute -left-8 top-[12%] hidden w-40 -rotate-6 overflow-hidden rounded-2xl border border-white/70 bg-white p-1.5 shadow-2xl dark:border-white/15 dark:bg-slate-900 sm:block">
-              <img src={missionArchivePhoto} alt="Archivo histórico de la misión cuadrangular" className="aspect-[4/3] w-full rounded-xl object-cover grayscale" loading="lazy" />
-              <div className="px-1.5 pb-1 pt-2"><p className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-600">Raíces</p><p className="mt-1 text-[11px] font-bold leading-4 text-slate-700 dark:text-slate-200">Una misión que cruza generaciones</p></div>
-            </div>
-
-            <div className="absolute -right-7 top-[8%] flex items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-3 py-2.5 shadow-xl backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/85">
-              <span className="flex size-8 items-center justify-center rounded-xl bg-amber-400 text-slate-950"><Users size={16} aria-hidden="true" /></span>
-              <span><strong className="block text-xs text-slate-900 dark:text-white">Todas las generaciones</strong><span className="text-[10px] text-slate-500 dark:text-slate-400">Un mismo hogar de fe</span></span>
-            </div>
-
-            <div className="absolute -bottom-5 -right-5 rounded-2xl border border-white/70 bg-slate-950 px-4 py-3 text-white shadow-2xl dark:border-white/15 sm:-right-8">
-              <div className="flex items-center gap-2"><BookOpenText size={15} className="text-amber-300" aria-hidden="true" /><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">Identidad viva</span></div>
-              <p className="mt-1 text-xs font-bold">Jesús al centro</p>
             </div>
           </div>
 

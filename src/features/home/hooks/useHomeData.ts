@@ -109,9 +109,10 @@ export const useHomeData = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sermons')
-        .select('id, title, pastor_name, youtube_url, audio_url, content, created_at')
+        .select('id, title, pastor_name, youtube_url, audio_url, content, date, created_at, metadata')
+        .order('date', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(12);
 
       if (error) throw error;
       if (data && data.length > 0) {

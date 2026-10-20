@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BookOpen, ExternalLink, LoaderCircle, X } from 'lucide-react';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import { parseBibleReferences, parseVerseRange } from '../../utils/bibleParser';
@@ -15,6 +16,37 @@ interface BibleApiVerse {
 }
 
 const AUTO_CLOSE_MS = 12_000;
+const VIEWPORT_GUTTER = 12;
+const POPUP_MAX_WIDTH = 384;
+
+type PopupPosition = {
+  left: number;
+  top: number;
+  width: number;
+  maxHeight: number;
+};
+
+const getPopupPosition = (trigger: HTMLElement): PopupPosition => {
+  const rect = trigger.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const width = Math.min(POPUP_MAX_WIDTH, viewportWidth - VIEWPORT_GUTTER * 2);
+  const idealHeight = Math.min(520, viewportHeight * 0.72);
+  const spaceBelow = viewportHeight - rect.bottom - VIEWPORT_GUTTER - 8;
+  const spaceAbove = rect.top - VIEWPORT_GUTTER - 8;
+  const openAbove = spaceBelow < idealHeight && spaceAbove > spaceBelow;
+  const availableHeight = Math.max(160, openAbove ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(idealHeight, availableHeight);
+  const left = Math.max(
+    VIEWPORT_GUTTER,
+    Math.min(rect.left, viewportWidth - width - VIEWPORT_GUTTER),
+  );
+  const top = openAbove
+    ? Math.max(VIEWPORT_GUTTER, rect.top - 8 - maxHeight)
+    : Math.min(rect.bottom + 8, viewportHeight - VIEWPORT_GUTTER - maxHeight);
+
+  return { left, top, width, maxHeight };
+};
 
 /** Small, dismissible reading preview that links to the same passage in the Bible reader. */
 export default function BibleVersePreview({ reference, className = '', appearance = 'pill' }: BibleVersePreviewProps) {
@@ -23,11 +55,37 @@ export default function BibleVersePreview({ reference, className = '', appearanc
   const [verses, setVerses] = useState<BibleApiVerse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLElement>(null);
   const bibleUrl = parsedReference
     ? `/recursos/biblia?libro=${encodeURIComponent(parsedReference.bookId)}&capitulo=${encodeURIComponent(parsedReference.chapter)}${parsedReference.verses ? `&versiculo=${encodeURIComponent(parsedReference.verses.replace(/\s+/g, ''))}` : ''}`
     : '/recursos/biblia';
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const nextPosition = getPopupPosition(trigger);
+      setPopupPosition((currentPosition) => currentPosition
+        && currentPosition.left === nextPosition.left
+        && currentPosition.top === nextPosition.top
+        && currentPosition.width === nextPosition.width
+        && currentPosition.maxHeight === nextPosition.maxHeight
+        ? currentPosition
+        : nextPosition);
+    };
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -35,7 +93,9 @@ export default function BibleVersePreview({ reference, className = '', appearanc
     const controller = new AbortController();
     const closeTimer = window.setTimeout(() => setIsOpen(false), AUTO_CLOSE_MS);
     const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && !containerRef.current?.contains(event.target)) setIsOpen(false);
+      if (event.target instanceof Node
+        && !containerRef.current?.contains(event.target)
+        && !popupRef.current?.contains(event.target)) setIsOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -101,17 +161,33 @@ export default function BibleVersePreview({ reference, className = '', appearanc
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label={`Leer ${reference}`}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          if (isOpen) {
+            setIsOpen(false);
+            return;
+          }
+
+          if (triggerRef.current) setPopupPosition(getPopupPosition(triggerRef.current));
+          setIsOpen(true);
+        }}
         className={`${appearance === 'pill' ? 'inline-flex min-h-10 items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-bold text-amber-950 underline decoration-amber-500/50 underline-offset-4 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 dark:bg-amber-300/10 dark:text-amber-200 dark:hover:bg-amber-300/15' : 'inline-flex min-h-10 items-center rounded-sm bg-transparent p-0 text-sm font-semibold text-current underline decoration-amber-500/50 underline-offset-4 transition hover:bg-transparent hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 dark:hover:text-amber-200'} ${className}`}
       >
         {appearance === 'pill' && <BookOpen size={16} aria-hidden="true" />}
         <span>{reference}</span>
       </button>
 
-      {isOpen && <section
+      {isOpen && popupPosition && createPortal(<section
+        ref={popupRef}
         role="dialog"
         aria-label={`Vista previa de ${reference}`}
-        className="absolute left-0 top-full z-[70] mt-2 w-[min(24rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-amber-200 bg-white text-left shadow-[0_18px_50px_rgba(15,23,42,.28)] dark:border-amber-200/20 dark:bg-slate-900"
+        style={{
+          position: 'fixed',
+          left: popupPosition.left,
+          top: popupPosition.top,
+          width: popupPosition.width,
+          maxHeight: popupPosition.maxHeight,
+        }}
+        className="z-[10000] flex flex-col overflow-hidden rounded-2xl border border-amber-200 bg-white text-left shadow-[0_18px_50px_rgba(15,23,42,.28)] dark:border-amber-200/20 dark:bg-slate-900"
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-white/10">
           <div className="min-w-0">
@@ -122,7 +198,7 @@ export default function BibleVersePreview({ reference, className = '', appearanc
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <div className="max-h-[38vh] overflow-y-auto px-4 py-3 text-sm leading-6 text-slate-700 dark:text-slate-200" aria-live="polite">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-sm leading-6 text-slate-700 dark:text-slate-200" aria-live="polite">
           {loading ? <p role="status" className="flex items-center gap-2 py-2 text-slate-500"><LoaderCircle size={16} className="animate-spin" aria-hidden="true" />Cargando el pasaje…</p>
             : error ? <p role="alert">{error}</p>
               : <ol className="space-y-2">{verses.map((verse) => <li key={verse.verse} className="flex gap-2"><span className="shrink-0 text-xs font-black text-amber-700 dark:text-amber-300">{verse.verse}</span><a href={bibleUrl} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${reference} en una pestaña nueva`} className="rounded-sm underline decoration-amber-500/50 underline-offset-2 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:hover:text-amber-200">{verse.text?.replace(/<[^>]*>?/gm, '')}</a></li>)}</ol>}
@@ -133,7 +209,7 @@ export default function BibleVersePreview({ reference, className = '', appearanc
           </a>
           <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Esta vista se cierra automáticamente en unos segundos.</p>
         </div>
-      </section>}
+      </section>, document.body)}
     </div>
   );
 }

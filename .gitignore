@@ -34,3 +34,6 @@ playwright-report/
 test-results/
 supabase/.temp/
 
+# Biblioteca de conocimiento y trabajos locales (no publicar ni versionar)
+/LOCAL/
+
