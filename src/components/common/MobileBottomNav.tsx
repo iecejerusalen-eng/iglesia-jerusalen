@@ -452,18 +452,24 @@ const MobileBottomNav: React.FC = () => {
               type="button"
               onClick={handleCtaSearch}
               aria-label="Abrir buscador inteligente (Ctrl+K)"
+              aria-expanded={isSearchOpen}
               whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.05 }}
-              className="absolute -top-2.5 flex size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary via-blue-700 to-church-gold-medium text-white shadow-[0_5px_14px_rgba(30,58,138,0.28)] dark:from-primary dark:via-indigo-800 dark:to-gold dark:shadow-[0_5px_16px_rgba(217,119,6,0.28)] border-2 border-white dark:border-slate-900 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-transform"
+              className="group flex h-full w-full flex-col items-center justify-center rounded-xl py-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <Search size={18} strokeWidth={2.5} className="text-white drop-shadow-sm" />
-              {isSearchOpen && (
-                <span className="absolute inset-0 rounded-2xl border-2 border-gold animate-ping opacity-60 pointer-events-none" />
-              )}
+              <span className={`relative rounded-xl p-1 transition-colors duration-300 ${isSearchOpen ? 'text-primary dark:text-gold' : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'}`}>
+                <Search size={22} strokeWidth={isSearchOpen ? 2.5 : 2} aria-hidden="true" />
+                {isSearchOpen && (
+                  <motion.span
+                    layoutId="bottomNavActiveIndicator"
+                    className="absolute -bottom-1 left-1/2 h-1 w-4 -translate-x-1/2 rounded-full bg-primary shadow-sm shadow-primary/40 dark:bg-gold dark:shadow-gold/40"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </span>
+              <span className={`mt-0.5 text-[11px] tracking-tight transition-colors duration-200 ${isSearchOpen ? 'font-bold text-primary dark:text-gold' : 'font-medium text-slate-500 dark:text-slate-400'}`}>
+                Buscar
+              </span>
             </motion.button>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-7 pointer-events-none">
-              Buscar
-            </span>
           </div>
 
           {/* 4. EVENTOS */}

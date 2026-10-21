@@ -97,7 +97,7 @@ export default function GlobalToolbox() {
     setPlaying: state.setPlaying,
     setTimerIsRunning: state.setTimerIsRunning,
   })));
-  const { role, roles } = useAuthStore(useShallow((state) => ({ role: state.role, roles: state.roles })));
+  const { user, role, roles } = useAuthStore(useShallow((state) => ({ user: state.user, role: state.role, roles: state.roles })));
   const location = useLocation();
   const panelRef = useRef<HTMLElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
@@ -139,6 +139,10 @@ export default function GlobalToolbox() {
     }
   }), []);
 
+  useEffect(() => useAuthStore.subscribe((state, previous) => {
+    if (previous.user && !state.user) setShowCloseDialog(false);
+  }), []);
+
   const toolboxRoles = useMemo(() => getToolboxRoles(role, roles ?? []), [role, roles]);
 
   const availableTools = useMemo(
@@ -148,6 +152,16 @@ export default function GlobalToolbox() {
   const availableToolIds = useMemo(() => new Set(availableTools.map((tool) => tool.id)), [availableTools]);
   const activeDefinition = getToolDefinition(store.activePanel);
   const hasBackgroundActivity = store.isPlaying || store.timerIsRunning;
+
+  useEffect(() => {
+    if (user || (!store.isOpen && !hasBackgroundActivity)) return;
+
+    const state = useToolboxStore.getState();
+    state.setPlaying(false);
+    state.setTimerIsRunning(false);
+    state.setActivePanel('hub');
+    state.close();
+  }, [hasBackgroundActivity, store.isOpen, user]);
 
   const clearLauncherHideTimer = useCallback(() => {
     if (launcherHideTimerRef.current !== null) {
@@ -341,6 +355,8 @@ export default function GlobalToolbox() {
     if (!store.isMinimized) store.toggleMinimized();
     setShowCloseDialog(false);
   };
+
+  if (!user) return null;
 
   if (!store.isOpen) {
     if (isPermanentlyHidden && !hasBackgroundActivity) {

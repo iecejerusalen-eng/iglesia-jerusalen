@@ -412,3 +412,77 @@ Verificación local: la vista accesible de `/nosotros` mostró los enlaces de vi
 Seguridad pendiente confirmada en Supabase de Iglesia Jerusalén mediante lectura de `admin_security_checks`: `auth_passwords` y `rpc_advisors` figuran pendientes; las fechas de esa revisión registrada son 13-oct-2026. La documentación oficial actual indica que la protección nativa de contraseñas filtradas requiere el plan Pro o superior. El conector de Supabase disponible no ofrece operación para cambiar Auth settings y el registro vigente indica que el Dashboard requiere iniciar sesión; el plan no fue expuesto por la consulta de proyecto. No se modificó Auth ni se marcó la revisión como completada.
 
 Fuentes: `/visita`, `src/pages/public/About.tsx`, `src/features/dashboard/components/ActionQueue.tsx`, `src/features/editorial/components/EditorialSchedulePanel.tsx`, `src/pages/admin/MediaVault.tsx`, `src/components/admin/MediaAssetPicker.tsx`, `src/features/dashboard/components/SiteHealth.tsx`; consulta de solo lectura a Supabase el 19-oct-2026; [Supabase Password Security](https://supabase.com/docs/guides/auth/password-security).
+
+## 20-oct-2026 — Navegación contextual y ajuste local de Nosotros
+
+En `/nosotros`, los enlaces de “En esta página” ahora resaltan la sección visible y exponen `aria-current="location"` para ubicar mejor a quien recorre el contenido. Si fallan simultáneamente el hero y la carga de liderazgo, el aviso informa ambos problemas. El hero usa el retrato editorial elegido `Pastores iglesia interior.webp`, con el mensaje sobre la fotografía y el distintivo inferior conservados.
+
+QA local: revisión visual en 320, 390, 768 y 1440 px; sin desbordamiento horizontal, y navegación directa a “Conoce nuestra fe” comprobada a 768 px. ESLint focalizado, TypeScript y compilación de producción pasan; `git diff --check` pasa. No se ejecutaron pruebas. Cambio local sin publicación.
+
+Fuente: `src/pages/public/About.tsx`, `src/pages/public/components/PremiumAboutHero.tsx`, `src/assets/Jerusalén/Pastores iglesia interior.webp` (20-oct-2026).
+
+## 20-oct-2026 — Verificación pública y permisos de Supabase
+
+La respuesta de `verify_student_status(uuid)` se redujo a nombre, vigencia y fecha; ya no entrega foto, correo, rol ni UUID. Los RPC de autorización de ProPresenter y del planificador de adoración quedaron sin ejecución anónima y disponibles para `authenticated`. La migración `20261020061056_harden_public_student_verification.sql` está aplicada al proyecto `gqtatqekfrswvplemknc`; los tres campos de respuesta y ACL se verificaron por SQL. En el chequeo de logs posterior a la migración no aparecieron errores PostgREST, Edge ni Realtime.
+
+Pendiente externo: habilitar la protección de contraseñas filtradas desde la configuración de Supabase Auth; el conector disponible no ofrece edición de Auth settings. La revisión de Vercel sigue bloqueada por `403` en el scope `iglesia-jerusalen`; los permisos del equipo/proyecto deben repararse en la conexión antes de verificar o desplegar desde Vercel.
+
+Verificación local: ESLint focalizado y `npm run build` pasaron; en esta compilación aparecieron avisos de deprecación de `module.register()`, de `inlineDynamicImports` en PWA y sobre plugins/chunks grandes. No se determinó si todos son preexistentes. `git diff --check` pasó. No se publicaron cambios de frontend a GitHub/Vercel.
+
+## 20-oct-2026 — Endurecimiento de accesos Supabase; frontend de certificados pendiente de Vercel
+
+En el proyecto Supabase gqtatqekfrswvplemknc se aplicaron cinco migraciones (versiones remotas UTC 20261021010012, 20261021010143, 20261021010556, 20261021010825 y 20261021011043). Se cerró lectura anónima de datos de estudio bíblico, miembros familiares, intercesores, bancos de preguntas/cuestionarios, insignias LMS y muro de oración; los comentarios ahora se limitan a publicaciones publicadas. Las consultas de certificados usan RPC acotados que no devuelven identificadores de estudiante ni URL de PDF. Las lecturas con códigos inexistentes devolvieron null.
+
+Las 191 versiones del historial remoto ya tienen archivo local con la misma versión; queda 20261021011400_restrict_public_certificate_table_access.sql como única migración local no aplicada. Debe ejecutarse después de publicar el frontend, porque Vercel todavía no permite acceso al scope iglesia-jerusalen (403 y CLI sin scope). Hasta entonces, las dos tablas de certificados conservan su lectura pública antigua para evitar romper las páginas desplegadas. No se hizo deploy ni push.
+
+Advisors posteriores: 3 tablas con RLS sin políticas (fallo cerrado revisado), 10 RPC SECURITY DEFINER anónimos (funciones públicas intencionales revisadas), 28 SECURITY DEFINER autenticados; protección de contraseñas filtradas aún desactivada. Performance: 255 claves foráneas sin índice, 121 índices sin uso registrado y 448 políticas permisivas múltiples; evitar correcciones masivas sin medir carga. ESLint focalizado y npm run build pasan; la compilación mantiene avisos de deprecación existentes. git diff --check pasa.
+
+Fuentes: historial/advisors/consultas/logs de Supabase, migraciones locales, build y respuesta 403 de Vercel (20-oct-2026, zona Guayaquil).
+
+Aclaración de logs: aparecieron tres timeouts PostgREST "Warp server error: Thread killed by timeout manager" a las 00:59:12 UTC del 21-oct, 60 segundos antes de la primera migración (01:00:12 UTC). La causa no quedó identificada y no se atribuye a las migraciones. Desde la primera migración hasta la última consulta no hubo errores Postgres/PostgREST.
+
+## 20-oct-2026 — Historia local y galería de pastores, v01 local
+
+Se integraron `/nosotros/historia` y `/nosotros/pastores`, con acceso Pastores desde Nosotros, ámbitos internacional/nacional/local, fachada limpia v03, siete hitos animados, relato íntegro aportado y 35 entradas de pastores/familias. Galería de seis etapas principales, asistentes Freddy Loor y Jeannyna Vega por separado, teclado/flechas/deslizamiento y movimiento reducido. Se conservaron los períodos inciertos como sucesión sin inventar años.
+
+Se generaron siete retratos de estudio con IA, preservando las fuentes y ofreciendo comparación con el original. Catorce WebP con nombres estables se sirven bajo demanda; fuentes, maestros, hashes y procedencia están en `LOCAL/04_Trabajos_y_proyectos/Historia_y_pastores/`. El texto nuevo vive en archivos del frontend; la edición del admin existente sigue correspondiendo a la lectura complementaria, cuestionario y fuentes. No se modificó Supabase.
+
+ESLint focalizado, TypeScript/build y diff check correctos; avisos de compilación preexistentes de module.register, inlineDynamicImports y terser. No se ejecutaron suites de pruebas. Revisión visual local en escritorio 1280 px, Pastores 390 px e Historia 320 px, claro/oscuro, sin desbordamiento observado; navegación hasta etapa 06, retorno con teclado y original/restauración confirmados. Se corrigió el seguimiento de la etapa activa al terminar el desplazamiento. Vite ignora LOCAL para evitar el EBUSY del observador de archivos.
+
+Fuentes: texto adjunto, TRIFOLD 01 p. 2, rótulos de fotos y confirmación del usuario para Freddy/esposa y David/Corina. Gamma no pudo consultarse. Evidencia y límites en la ficha local del proyecto y Control/historia-escritorio-v01.png. Trabajo sin publicación; no se hicieron commit/push ni despliegue.
+
+## 21-oct-2026 — Preferencia visual: dorado e identidad editorial
+
+El usuario expresa que le gusta el dorado y el sistema editorial aplicado recientemente, y pide conservarlo como guía reusable para futuras mejoras en otras secciones que hoy no le convencen. Tratar el dorado como acento de identidad coherente con el logo: gradiente más oscuro y legible en modo claro, gradiente dorado luminoso en modo oscuro. Usarlo con intención en títulos o palabras destacadas, etiquetas, iconos, marcadores y acciones prioritarias; mantener equilibradas las superficies y el contraste.
+
+La dirección editorial que quiere conservar combina jerarquía tipográfica clara (serif expresiva para títulos y sans serif legible para lectura), etiquetas breves, aire entre elementos, tarjetas cuidadas, composición y encuadre de imágenes deliberados, gradientes y sombras sutiles, adaptación a claro/oscuro y móvil/escritorio, accesibilidad de contraste y teclado, y animación contenida que respete movimiento reducido. Es una preferencia de diseño para aplicar selectivamente después de revisar cada sección existente; no se define aquí una paleta CSS final ni se recolorea todo el sitio automáticamente.
+
+Fuente: petición directa del usuario en Codex, 21-oct-2026. El usuario solicita seguir desarrollando criterio de diseño a partir de esta dirección y del trabajo editorial reciente.
+
+## 21-oct-2026 — Encabezado móvil, buscador y acceso a toolbox
+
+En móvil, el encabezado principal se alinea al borde superior y se elimina la franja utilitaria que dejaba espacio antes de la navegación. El acceso Buscar de la barra inferior adopta el mismo tamaño, color, foco y estado activo que sus otros iconos. La toolbox global queda oculta sin sesión; si la sesión termina, cierra el panel y detiene metrónomo/temporizador. Las herramientas dentro del panel siguen filtradas por los roles ya existentes (administración/edición, logística y música); Biblia y Notas quedan disponibles a usuarios autenticados.
+
+La línea de ámbitos de Historia se mantiene como acordeón exclusivo, con un panel abierto a la vez. Cambio local en `PublicLayout.tsx`, `Navigation.tsx`, `MobileBottomNav.tsx`, `GlobalToolbox.tsx`, `ChurchHistory.tsx` y `churchHistory.css`. ESLint focalizado, TypeScript y build de producción pasaron; la captura local a 390 px confirma la navegación al borde superior y el buscador con el estilo común. Se creó en Supabase un borrador 1.11.2 con cuatro cambios. Publicación Git/Vercel aún pendiente; no atribuir despliegue hasta verificar el dominio público. El MCP Vercel devuelve 403 para `iglesia-jerusalen` y la CLI local no reconoce ese ámbito; el push a `main` debe activar el despliegue integrado y luego se verificará la web pública.
+
+## 21-oct-2026 — Ámbitos conectados en la historia local
+
+La navegación de `/nosotros/historia` ahora presenta la relación Internacional → Ecuador → Jerusalén como tres etapas numeradas, enlazadas con conectores dorados. En pantallas pequeñas, el recorrido se apila y los conectores cambian a vertical; cada etapa conserva su ancla y foco de teclado. Es una interpretación visual de las flechas dibujadas por el usuario; se eligió una secuencia de jerarquía institucional en vez de un ciclo cerrado.
+
+Verificación local: revisión visual en escritorio 1280 px y móvil 390 px, tres enlaces presentes y sin overflow horizontal; ESLint focalizado, TypeScript, build de producción y `git diff --check` correctos. Build conserva avisos previos de `module.register()` e `inlineDynamicImports`. Sin publicación.
+
+Fuente: `src/features/about/ChurchHistory.tsx`, `src/features/about/churchHistory.css`, capturas `C:/Users/Nicola/AppData/Local/Temp/iglesia-historia-conectores-desktop.png` y `iglesia-historia-conectores-mobile.png` (21-oct-2026).
+
+## 21-oct-2026 — Ámbitos de historia como panel desplegable
+
+Los tres pasos de la franja ahora son botones tipo acordeón: abren un panel de contenido para Internacional, Ecuador o Jerusalén; solo un ámbito queda abierto y volver a pulsar el activo lo cierra. El contenido internacional y nacional se presenta allí, evitando repetir las mismas tarjetas al final de la página; el panel local ofrece acceso a la línea de tiempo. Los botones exponen `aria-expanded`/`aria-controls`, funcionan con Enter/Espacio y el panel inactivo queda oculto para tecnologías asistivas.
+
+Verificación local: los tres contenidos abren correctamente, la selección cambia de ámbito, el cierre por segundo clic y por Enter funciona, Espacio abre el ámbito, y móvil 390 px no presenta overflow. ESLint focalizado, TypeScript, build y `git diff --check` correctos. Sin publicación.
+
+Fuente: `src/features/about/ChurchHistory.tsx`, `src/features/about/churchHistory.css`; capturas con el ámbito nacional abierto en escritorio y móvil en `C:/Users/Nicola/AppData/Local/Temp/iglesia-historia-ambito-desplegado{,-mobile}.png` (21-oct-2026).
+
+## 21-oct-2026 — Corrección de estado de migración Supabase de certificados
+
+La nota del 20-oct sobre la migración pendiente de certificados quedó desactualizada: la migración fue aplicada en Supabase como versión remota `20261021051358`; el archivo local se alineó y el commit `c35fbb1` se subió a `main`. La verificación disponible confirmó que el rol anónimo ya no puede hacer SELECT directo en las tablas de certificados y que los RPC acotados siguen ejecutables. La inspección pública de los bundles encontró los dos RPC; Vercel no permitió listar despliegues por respuesta 403, por lo que no se afirma una verificación completa del despliegue desde su API.
+
+Fuente: historial y consultas de solo lectura de Supabase, estado Git remoto y revisión de recursos públicos (21-oct-2026).

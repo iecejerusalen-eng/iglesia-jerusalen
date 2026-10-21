@@ -1,14 +1,23 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { User } from '@supabase/supabase-js';
 import GlobalToolbox from '../../GlobalToolbox';
 import { useAuthStore } from '../../../../store/useAuthStore';
 import { useToolboxStore } from '../../../../store/useToolboxStore';
 
+const authenticatedTestUser: User = {
+  id: 'toolbox-test-user',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: '2026-01-01T00:00:00.000Z',
+};
+
 describe('GlobalToolbox', () => {
   beforeEach(() => {
     localStorage.removeItem('toolbox_launcher_hidden');
-    useAuthStore.setState({ role: 'member', roles: null });
+    useAuthStore.setState({ user: authenticatedTestUser, role: 'member', roles: null });
     useToolboxStore.setState({
       isOpen: false,
       isMinimized: false,

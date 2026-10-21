@@ -64,7 +64,9 @@ const PublicLayout = () => {
       </a>
       <Preloader />
       <StickyNav />
-      <TopBar />
+      <div className="hidden sm:block">
+        <TopBar />
+      </div>
       <Navigation />
       <main id="main-content" className={`flex-grow pb-20 pb-safe md:pb-0 ${isHome ? '' : 'pt-[78px]'}`}>
         <Outlet />

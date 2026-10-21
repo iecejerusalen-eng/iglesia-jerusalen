@@ -22,12 +22,25 @@
 .history-hero figure{position:relative;align-self:stretch;min-height:350px;margin:0;background:#80b8e5}
 .history-hero figure img{width:100%;height:100%;object-fit:cover;object-position:50% 50%}
 .history-hero figcaption{position:absolute;bottom:16px;left:16px;right:16px;display:flex;align-items:center;gap:8px;width:fit-content;padding:10px 14px;border-radius:8px;background:#08162ce6;color:#fff;font-size:.72rem;backdrop-filter:blur(12px)}
-.history-scope-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:24px;border-block:1px solid var(--history-line);padding:16px 0;gap:16px}
-.history-scope-nav a{display:flex;align-items:center;gap:14px;min-height:76px;padding:12px 16px;border-radius:12px;font-size:.85rem;font-weight:700;transition:background .2s}
-.history-scope-nav a:hover{background:var(--history-surface)}
-.history-scope-nav svg{flex-shrink:0;color:#a78037}.dark .history-scope-nav svg{color:#eecf92}
-.history-scope-nav a>svg:last-child{margin-left:auto}
-.history-scope-nav small{display:block;color:var(--history-muted);font-size:.66rem;font-weight:500;margin-bottom:5px}
+.history-scope-nav{margin-top:24px;border-block:1px solid var(--history-line);padding:16px 0}
+.history-scope-steps{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) 34px minmax(0,1fr);align-items:center;gap:8px;margin:0;padding:0;list-style:none}
+.history-scope-steps>li{min-width:0}
+.history-scope-steps button{display:flex;align-items:center;gap:14px;width:100%;min-height:76px;padding:12px 16px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .2s,color .2s}
+.history-scope-steps button:hover,.history-scope-steps button[aria-expanded="true"]{background:var(--history-surface)}
+.history-scope-steps button>svg:first-child{width:28px;height:28px;flex-shrink:0;color:var(--church-gold-emphasis);transition:transform .2s}
+.history-scope-steps button>svg:last-child{margin-left:auto;flex-shrink:0;color:var(--church-gold-emphasis);transition:transform .2s}
+.history-scope-steps button[aria-expanded="true"]>svg:last-child{transform:rotate(180deg)}
+.history-scope-steps small{display:block;color:var(--history-muted);font-size:.66rem;font-weight:500;margin-bottom:5px}
+.history-scope-steps small b{color:var(--church-gold-emphasis);font-weight:750}
+.history-scope-connector{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px;color:var(--church-gold-emphasis)}
+.history-scope-connector span{height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--church-gold-emphasis) 58%,transparent))}
+.history-scope-connector svg{width:16px;height:16px}
+.history-scope-panel{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .28s ease,opacity .2s ease}
+.history-scope-panel.is-open{grid-template-rows:1fr;opacity:1}
+.history-scope-panel-inner{min-height:0;overflow:hidden;padding:0 22px;border-left:2px solid transparent;transition:padding .28s ease,border-color .2s ease}
+.history-scope-panel.is-open .history-scope-panel-inner{padding-block:20px;border-color:var(--church-gold-emphasis)}
+.history-scope-panel h2{font-size:clamp(1.35rem,2.2vw,1.8rem);line-height:1.25;margin:4px 0 10px}
+.history-scope-panel p:not(.history-eyebrow){max-width:78ch;color:var(--history-muted);font-size:.9rem;line-height:1.8;margin:8px 0}
 .history-local{padding-top:90px}.history-section-heading{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-bottom:22px}
 .history-section-heading h2{font-size:clamp(2rem,3.4vw,3rem);line-height:1.2;max-width:620px;margin-top:12px;letter-spacing:-.035em}
 .history-text-link{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-size:.85rem;font-weight:700;color:#1e3a8a}.dark .history-text-link{color:#eecf92}
@@ -54,8 +67,6 @@
 .pastor-portrait button{display:inline-flex;align-items:center;gap:5px;min-height:44px;font-size:.67rem;font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .pastoral-era-copy{padding:24px}.pastoral-era-copy h3{font-size:1.8rem;line-height:1.25;margin:10px 0 16px}.pastoral-era-copy>p:last-child{font-size:.88rem;line-height:1.85;color:var(--history-muted)}
 .history-footnote{margin:18px 0;color:var(--history-muted);font-size:.73rem;line-height:1.7}
-.history-roots{display:grid;grid-template-columns:1fr 1fr;gap:64px;border-block:1px solid var(--history-line);margin:80px 0;padding:56px 0}
-.history-roots article>svg{color:#a78037;margin-bottom:16px}.history-roots h2{font-size:2rem;line-height:1.2;margin:12px 0 20px}.history-roots article>p:not(.history-eyebrow){font-size:.95rem;line-height:1.9;color:var(--history-muted);margin:16px 0}
 .history-full-story{display:grid;grid-template-columns:30% 1fr;gap:72px;align-items:start;margin:70px 0}
 .history-full-story aside{position:sticky;top:140px}.history-full-story h2{font-size:2.5rem;line-height:1.2;margin:12px 0 18px}.history-full-story aside>p:not(.history-eyebrow){font-size:.88rem;color:var(--history-muted);line-height:1.8}
 .history-prose{max-width:70ch}.history-prose p{line-height:1.95;margin-bottom:26px;color:var(--history-muted);font-size:1rem}.history-prose p:first-child:first-letter{float:left;font-family:Georgia,serif;font-size:4rem;line-height:.9;margin:10px 12px 0 0;color:#a78037}
@@ -67,6 +78,6 @@
 .pastors-page-header{max-width:850px;padding:38px 0 20px}.pastors-page-header h1{font-size:clamp(2.5rem,5vw,4.5rem);line-height:1.12;margin:20px 0}.pastors-page-header>p:last-of-type{font-size:1.1rem;line-height:1.8;color:var(--history-muted);max-width:60ch}
 .assistant-pastors{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin:80px 0;border-top:1px solid var(--history-line);padding-top:60px}.assistant-pastors .pastor-portrait{border-radius:16px;overflow:hidden;border:1px solid var(--history-line)}.assistant-pastors h2{font-size:2.4rem;line-height:1.2;margin:16px 0}.assistant-pastors p:last-child{color:var(--history-muted);line-height:1.85}
 .pastoral-track{padding-right:max(2px,calc(100% - min(78vw,520px) - 2px))}
-@media(max-width:850px){.history-hero{grid-template-columns:1fr}.history-hero figure{min-height:0}.history-hero figure img{aspect-ratio:4/3;height:auto;object-fit:contain}.history-scope-nav{grid-template-columns:1fr;gap:0}.history-scope-nav a{min-height:64px}.history-roots{gap:32px}.history-full-story{grid-template-columns:1fr;gap:24px}.history-full-story aside{position:static}.history-full-story aside h2{max-width:24ch}.history-section-heading{align-items:start}.history-local{padding-top:60px}}
+@media(max-width:850px){.history-hero{grid-template-columns:1fr}.history-hero figure{min-height:0}.history-hero figure img{aspect-ratio:4/3;height:auto;object-fit:contain}.history-scope-steps{grid-template-columns:1fr;gap:0}.history-scope-steps button{min-height:64px}.history-scope-connector{grid-template-columns:1fr;justify-items:center;min-height:22px;padding-left:26px}.history-scope-connector span{width:1px;height:8px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--church-gold-emphasis) 58%,transparent))}.history-scope-connector svg{transform:rotate(90deg)}.history-full-story{grid-template-columns:1fr;gap:24px}.history-full-story aside{position:static}.history-full-story aside h2{max-width:24ch}.history-section-heading{align-items:start}.history-local{padding-top:60px}}
 @media(max-width:600px){.history-shell{width:calc(100% - 32px)}.church-history{padding-top:12px}.history-back{margin-bottom:12px}.history-hero{border-radius:20px}.history-hero-copy{padding:28px 24px}.history-hero h1,.history-hero h2{font-size:2.65rem}.history-hero-years{gap:16px}.history-hero-years small{font-size:.58rem}.history-section-heading{flex-wrap:wrap;gap:16px}.history-section-heading h2{font-size:2rem}.history-timeline{margin-top:30px}.history-timeline li{display:block;padding:0 0 46px 28px}.history-timeline-rail{left:5px}.history-timeline-dot{left:-1px;top:12px}.history-year{text-align:left;margin-bottom:18px}.history-year>span{font-size:2.8rem}.history-year small{margin:8px 0 0;max-width:100%}.history-milestone h3{font-size:1.65rem}.history-milestone img{margin-top:18px}.pastoral-timeline{padding-top:42px;margin-top:0}.pastoral-era{flex-basis:calc(100vw - 48px)}.pastoral-track{padding-right:16px;gap:16px}.pastoral-era-copy{padding:20px}.pastoral-era-copy h3{font-size:1.6rem}.pastoral-era-nav{gap:18px}.history-roots{grid-template-columns:1fr;gap:40px;margin:50px 0;padding:40px 0}.history-full-story{margin:50px 0}.history-full-story h2{font-size:2rem}.history-legacy ul{grid-template-columns:1fr}.history-legacy{padding:40px 0}.assistant-pastors{grid-template-columns:1fr;gap:24px;margin:50px 0;padding-top:40px}.assistant-pastors h2{font-size:2rem}.history-closing{padding:50px 0 10px}.history-arrow-controls{margin-left:auto}.history-prose p{font-size:.95rem}.pastors-page-header{padding:20px 0}}
 @media(prefers-reduced-motion:reduce){.church-history *{scroll-behavior:auto!important;animation:none!important;transition:none!important}.history-button:hover{transform:none}}

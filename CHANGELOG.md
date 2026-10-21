@@ -3,6 +3,16 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.11.2] - 2026-10-21
+
+### Mejorado
+- Encabezado móvil alineado al borde superior, sin la franja vacía antes de la navegación.
+- Acceso «Buscar» integrado visualmente con los demás iconos de la barra inferior.
+- Ámbitos de la historia con contenido desplegable en una sola vista a la vez.
+
+### Seguridad
+- La toolbox requiere una sesión iniciada y conserva el filtrado de herramientas según los roles autorizados; cierra las herramientas activas al cerrar sesión.
+
 ## [1.11.1] - 2026-10-21
 
 ### Seguridad
