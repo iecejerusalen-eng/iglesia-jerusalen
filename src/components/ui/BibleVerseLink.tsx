@@ -52,7 +52,7 @@ function BibleVerseItem({ parsedRef, className = '', preview = false }: BibleVer
       to={toUrl} 
       target="_blank"
       rel="noopener noreferrer"
-      className={`hover:text-amber-600 dark:hover:text-gold underline decoration-amber-500/30 hover:decoration-amber-500 underline-offset-4 transition-colors ${className}`}
+      className={`rounded-sm transition-colors hover:text-church-gold-emphasis focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:hover:text-church-gold-light ${className}`}
     >
       {original}
     </Link>

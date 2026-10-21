@@ -82,7 +82,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div className="space-y-3 text-left">
             <AnimeFadeUp>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
+              <h2 className="editorial-heading-accent text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
                 {title || 'Últimos Mensajes'}
               </h2>
             </AnimeFadeUp>
@@ -97,7 +97,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
           <AnimeFadeUp delay={0.2}>
             <Link
               to="/predicas"
-              className="text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
+              className="text-church-gold-emphasis hover:brightness-90 dark:hover:brightness-110 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
             >
               Ver Todos los Mensajes
               <ArrowRight size={16} />
@@ -119,7 +119,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
                   key={sermon.id}
                   to={`/predicas/${sermon.id}`}
                   aria-label={`Ver prédica: ${sermon.title}`}
-                  className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-xl hover:shadow-slate-900/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/60 dark:border-white/10 dark:bg-slate-900 ${hasImage ? '' : 'min-h-[150px] sm:min-h-[170px]'}`}
+                  className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-church-gold-emphasis hover:shadow-xl hover:shadow-slate-900/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/60 dark:border-white/10 dark:bg-slate-900 ${hasImage ? '' : 'min-h-[150px] sm:min-h-[170px]'}`}
                 >
                   {hasImage ? (
                     <div className="relative aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
@@ -152,7 +152,7 @@ export const SermonsSection = ({ sectionData, sermons, loading }: SermonsSection
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 px-4 pt-4 text-amber-700 dark:text-amber-300">
-                      <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/10">
+                      <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-church-gold-emphasis-soft text-church-gold-emphasis">
                         <Headphones size={17} />
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Prédica reciente</span>

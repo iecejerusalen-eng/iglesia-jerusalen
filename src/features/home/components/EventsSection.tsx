@@ -46,7 +46,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div className="space-y-3 text-left">
           <AnimeFadeUp>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
+            <h2 className="editorial-heading-accent text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white text-left">
               {title || 'Próximos Eventos'}
             </h2>
           </AnimeFadeUp>
@@ -61,7 +61,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
         <AnimeFadeUp delay={0.2}>
           <Link
             to="/eventos"
-            className="text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
+            className="text-church-gold-emphasis hover:brightness-90 dark:hover:brightness-110 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all whitespace-nowrap"
           >
             Ver Calendario Completo
             <ArrowRight size={16} />
@@ -83,7 +83,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                   <AnimeHoverCard
                     className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-amber-500/5 hover:border-amber-500/30 flex flex-col h-full group relative"
                   >
-                    <div className="w-full h-1.5 bg-gradient-to-r from-amber-500 to-amber-600" />
+                    <div className="w-full h-1.5 bg-church-gold-gradient" />
 
                   {event.cover_image_url ? (
                     <div className="w-full h-44 overflow-hidden relative">
@@ -95,7 +95,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent"></div>
                       
-                      <div className="absolute top-4 left-4 bg-amber-500 text-white rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
+                      <div className="absolute top-4 left-4 bg-church-gold-gradient text-white dark:text-slate-950 rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
                         <span className="text-lg leading-none font-serif">{dateObj.day}</span>
                         <span className="text-[9px] tracking-wider font-mono">{dateObj.month}</span>
                       </div>
@@ -105,7 +105,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                       <Calendar size={48} className="opacity-10 absolute" />
                       <span className="text-3xl font-bold font-serif opacity-15 select-none tracking-widest">JERUSALÉN</span>
                       
-                      <div className="absolute top-4 left-4 bg-amber-500 text-white rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
+                      <div className="absolute top-4 left-4 bg-church-gold-gradient text-white dark:text-slate-950 rounded-2xl px-3 py-1.5 flex flex-col items-center justify-center font-bold shadow-md">
                         <span className="text-lg leading-none font-serif">{dateObj.day}</span>
                         <span className="text-[9px] tracking-wider font-mono">{dateObj.month}</span>
                       </div>
@@ -115,7 +115,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                   <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-center text-[10px] font-bold">
-                        <span className="bg-amber-100 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        <span className="bg-church-gold-emphasis-soft text-church-gold-emphasis border border-church-gold-emphasis-soft px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                           {event.ministries?.name || 'General'}
                         </span>
                         <span className="text-slate-400">
@@ -123,7 +123,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                         </span>
                       </div>
 
-                      <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-100 line-clamp-1 flex items-center gap-1.5 text-left group-hover:text-amber-500 dark:group-hover:text-amber-500 transition-colors">
+                      <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-100 line-clamp-1 flex items-center gap-1.5 text-left group-hover:text-church-gold-emphasis transition-colors">
                         {event.emoji && <span>{event.emoji}</span>}
                         {event.title}
                       </h3>
@@ -138,7 +138,7 @@ export const EventsSection = ({ sectionData, events, loading }: EventsSectionPro
                         <Clock size={14} className="text-amber-500" />
                         <span>{formatTime(event.start_time)}</span>
                       </div>
-                      <span className="text-xs font-bold text-amber-600 dark:text-amber-500 group-hover:underline flex items-center gap-1">
+                      <span className="text-xs font-bold text-church-gold-emphasis group-hover:underline flex items-center gap-1">
                         Ver Detalles
                         <ArrowRight size={12} />
                       </span>

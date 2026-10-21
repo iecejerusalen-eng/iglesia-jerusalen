@@ -62,7 +62,7 @@ export const FooterBreadcrumb = () => {
                   <BreadcrumbSeparator className="text-amber-400/80" />
                   <BreadcrumbItem>
                     {isLast ? (
-                      <BreadcrumbPage className="text-amber-300 font-bold drop-shadow-xs">
+                      <BreadcrumbPage className="text-church-gold-gradient-on-dark font-bold drop-shadow-xs">
                         {formattedName}
                       </BreadcrumbPage>
                     ) : (

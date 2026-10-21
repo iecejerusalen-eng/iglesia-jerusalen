@@ -36,7 +36,7 @@ export const SchedulesSection = ({ sectionData, schedules, loading }: SchedulesS
           <span className="text-xs font-bold text-church-gold-dark dark:text-church-gold-bright uppercase tracking-widest bg-amber-100/50 dark:bg-amber-950/20 px-4 py-1.5 rounded-full">
             Reuniones y Servicios
           </span>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
+          <h2 className="editorial-heading-accent editorial-heading-accent-center text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">
             {title || 'Horarios de Reunión'}
           </h2>
           {subtitle && (
@@ -62,7 +62,7 @@ export const SchedulesSection = ({ sectionData, schedules, loading }: SchedulesS
                       <AnimeHoverCard
                         className="h-full bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-xl dark:hover:shadow-church-gold-light/5 hover:border-church-gold-light/30 transition-all flex flex-col justify-between relative overflow-hidden pl-8 animate-all"
                       >
-                        <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-gold-gradient" />
+                        <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-church-gold-gradient" />
                         
                         <div>
                           <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-3 mb-4">
@@ -94,7 +94,7 @@ export const SchedulesSection = ({ sectionData, schedules, loading }: SchedulesS
               <div className="lg:col-span-1">
                 <AnimeFadeUp className="h-full">
                   <AnimeHoverCard
-                    className="h-full bg-gold-gradient text-slate-950 p-8 rounded-3xl border border-church-gold-bright/35 shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_25px_50px_rgba(157,102,14,0.4)] transition-all duration-500"
+                    className="h-full bg-church-gold-gradient text-slate-950 p-8 rounded-3xl border border-church-gold-emphasis-soft shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:shadow-[0_25px_50px_rgba(157,102,14,0.3)] transition-all duration-500"
                   >
                     {/* Modern background design with glowing blobs and micro-patterns */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl select-none">

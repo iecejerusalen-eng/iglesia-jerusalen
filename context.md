@@ -1,5 +1,11 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 21-oct-2026 — Acentos editoriales dorados y enlaces bíblicos
+
+Se aplicó el acento dorado de la identidad en las acciones de lectura de documentos, la ruta de navegación y el versículo del día, conservando azul para los controles de copiar/actualizar. El degradado de botones usa tonos oscuros en tema claro y luminosos en tema oscuro; se reforzó el foco de teclado. El componente compartido de referencias bíblicas y su vista previa ya no subrayan las referencias ni el texto del pasaje. Fuente: solicitud del usuario y referencias visuales de `codex-clipboard-0341e7d9-6c38-47f1-af7d-090da12a83bb.png`, `codex-clipboard-7d7de503-7a9c-4c52-b540-f37ebb9ff2ec.png` y `codex-clipboard-37d2f279-66a1-4f6a-aa57-e92321a136d3.png`; implementación local en `src/pages/public/About.tsx`, `src/components/common/FooterBreadcrumb.tsx`, `src/components/ui/BibleVerseLink.tsx`, `src/components/ui/BibleVersePreview.tsx`, `src/features/home/components/DailyVerseSection.tsx` y `src/index.css`. Sin publicación en esta entrega.
+
+Preparación: el usuario informó que prevé lanzar oficialmente el sitio el 25-oct-2026, durante el aniversario, y que el folleto distribuirá un QR y enlace a aproximadamente 500 hermanos. Es una previsión comunicada por el usuario, no una verificación de asistencia ni de distribución. Antes del lanzamiento conviene priorizar una revisión de navegación móvil, enlaces del QR y rutas públicas clave.
+
 ## 20-oct-2026 — Catálogo público de programas
 
 `/programas` no cargaba porque las políticas RLS de `study_programs`, `study_program_sections`, `study_program_lessons` y `study_cohorts` incluían llamadas a `private.can_view_study_program_admin()` dentro de políticas `PUBLIC`. El endpoint REST con rol anónimo respondía HTTP 401 / `42501` (`permission denied for function can_view_study_program_admin`), aunque la migración base y las tablas ya existían. Se separaron las reglas de filas publicadas de las comprobaciones para usuarios autenticados; la migración `20261020022107_fix_public_study_program_rls.sql` se aplicó al proyecto Supabase de Iglesia Jerusalén y aparece en su historial remoto. Verificación: consulta REST anónima HTTP 200 con el programa publicado «Chicas Sabias» y página local mostrando 1 programa.
@@ -458,6 +464,12 @@ El usuario expresa que le gusta el dorado y el sistema editorial aplicado recien
 La dirección editorial que quiere conservar combina jerarquía tipográfica clara (serif expresiva para títulos y sans serif legible para lectura), etiquetas breves, aire entre elementos, tarjetas cuidadas, composición y encuadre de imágenes deliberados, gradientes y sombras sutiles, adaptación a claro/oscuro y móvil/escritorio, accesibilidad de contraste y teclado, y animación contenida que respete movimiento reducido. Es una preferencia de diseño para aplicar selectivamente después de revisar cada sección existente; no se define aquí una paleta CSS final ni se recolorea todo el sitio automáticamente.
 
 Fuente: petición directa del usuario en Codex, 21-oct-2026. El usuario solicita seguir desarrollando criterio de diseño a partir de esta dirección y del trabajo editorial reciente.
+
+## 21-oct-2026 — Extensión del acento editorial dorado
+
+Se extendió de forma selectiva el lenguaje dorado a los encabezados de agenda, horarios, prédicas y secciones de fe/liderazgo de Nosotros. Las tarjetas de eventos ahora comparten el gradiente institucional en su remate, fecha, categoría y enlaces; la tarjeta dominical y los detalles de tarjetas de prédicas también usan los tokens dorados adaptables a tema. Las acciones principales y la navegación conservan el azul. Los títulos configurables del inicio siguen siendo texto dinámico intacto; el acento se dibuja como remate CSS y no depende de dividir su contenido.
+
+Verificación local: ESLint focalizado, `npm run build` y `git diff --check`. Estado de publicación actualizado en el registro de la versión 1.11.3.
 
 ## 21-oct-2026 — Encabezado móvil, buscador y acceso a toolbox
 

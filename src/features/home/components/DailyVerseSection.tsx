@@ -31,7 +31,7 @@ export const DailyVerseSection = () => {
         </div>
 
         <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-church-gold-emphasis dark:text-church-gold-light text-xs font-bold uppercase tracking-wider mb-2">
             <BookOpen size={14} />
             <span>Versículo del Día</span>
           </div>
@@ -51,7 +51,7 @@ export const DailyVerseSection = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-amber-600 dark:text-amber-500 font-medium italic text-lg mb-2">
+                  <p className="text-church-gold-emphasis dark:text-church-gold-light font-medium italic text-lg mb-2">
                     {firstName ? `${firstName}, este versículo es para ti:` : 'Hola, este versículo es para ti:'}
                   </p>
                   <Link 
@@ -69,7 +69,7 @@ export const DailyVerseSection = () => {
                     }
                     className="block hover:opacity-80 transition-opacity"
                   >
-                    <p className="text-xl md:text-2xl lg:text-3xl font-serif text-slate-800 dark:text-white leading-relaxed">
+                    <p className="text-church-gold-gradient text-xl md:text-2xl lg:text-3xl font-serif leading-relaxed">
                       "{verseData?.text}"
                     </p>
                   </Link>
@@ -77,7 +77,7 @@ export const DailyVerseSection = () => {
               )}
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
-                <span className="text-base md:text-lg font-bold text-amber-600 dark:text-amber-500 font-mono bg-amber-50 dark:bg-amber-950/30 px-4 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/50">
+                <span className="text-base md:text-lg font-bold text-church-gold-emphasis dark:text-church-gold-light font-mono bg-amber-50 dark:bg-amber-950/30 px-4 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/50">
                   <BibleVerseLink reference={verseData?.reference || ''} />
                 </span>
                 
@@ -85,16 +85,18 @@ export const DailyVerseSection = () => {
                   {!error && (
                     <button 
                       onClick={handleCopy}
-                      className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors"
+                      className="p-2 text-primary hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                       title="Copiar versículo"
+                      aria-label="Copiar versículo"
                     >
                       <Copy size={16} />
                     </button>
                   )}
                   <button 
                     onClick={fetchRandomVerse}
-                    className="p-2 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-100 hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-amber-950/30 rounded-full transition-colors"
+                    className="p-2 text-primary hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     title="Leer otro versículo"
+                    aria-label="Leer otro versículo"
                   >
                     <RefreshCw size={16} />
                   </button>

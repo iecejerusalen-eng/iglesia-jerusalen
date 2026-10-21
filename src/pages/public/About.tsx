@@ -170,7 +170,7 @@ const About = () => {
         <section id="proposito" aria-labelledby="purpose-heading" className="scroll-mt-28 py-8">
           <div className="mb-6 max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Nuestra identidad</p>
-            <h2 id="purpose-heading" className="mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Visión y misión</h2>
+            <h2 id="purpose-heading" className="editorial-heading-accent mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Visión y misión</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <article className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-[0_18px_60px_-40px_rgba(35,51,84,0.4)] dark:border-white/10 dark:bg-slate-900/65 sm:p-8">
@@ -188,7 +188,7 @@ const About = () => {
 
         <LearningProgress />
         <section id="aprender" className="scroll-mt-28 py-8">
-          <div className="mb-8 max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Conoce nuestra fe</p><h2 className="mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Un camino para aprender y vivir el Evangelio</h2><p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">Somos Iglesia Jerusalén, una comunidad en Milagro que anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Explora nuestra identidad con explicaciones, referencias bíblicas y preguntas para conversar en familia o en tu grupo de discipulado.</p></div>
+          <div className="mb-8 max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-amber-600">Conoce nuestra fe</p><h2 className="editorial-heading-accent mt-3 font-serif text-3xl font-bold text-slate-950 dark:text-white sm:text-4xl">Un camino para aprender y vivir el Evangelio</h2><p className="mt-4 leading-8 text-slate-600 dark:text-slate-300">Somos Iglesia Jerusalén, una comunidad en Milagro que anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Explora nuestra identidad con explicaciones, referencias bíblicas y preguntas para conversar en familia o en tu grupo de discipulado.</p></div>
           <div className="mb-8 rounded-3xl border border-slate-200 bg-white/75 p-5 dark:border-white/10 dark:bg-slate-900/60 sm:p-7">
             <div className="max-w-2xl">
               <h3 className="font-serif text-2xl font-bold text-slate-950 dark:text-white">Cuatro símbolos, un mismo mensaje</h3>
@@ -215,12 +215,12 @@ const About = () => {
         <section id="liderazgo" className="scroll-mt-24 py-16">
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Personas que sirven</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Liderazgo de la iglesia</h2>
+            <h2 className="editorial-heading-accent editorial-heading-accent-center mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">Liderazgo de la iglesia</h2>
             <p className="mt-3 leading-7 text-slate-600 dark:text-slate-400">Pastores que acompañan, enseñan y sirven a nuestra comunidad.</p>
           </div>
           <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
             {leaders.map((leader) => (
-              <GlassCard key={leader.id} className="group overflow-hidden">
+              <GlassCard key={leader.id} className="group overflow-hidden border-t-2 border-t-church-gold-emphasis-soft">
                 <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-amber-100 via-slate-100 to-indigo-100 dark:from-amber-950/50 dark:via-slate-800 dark:to-indigo-950">
                   {leader.photo_url ? (
                     <img
@@ -265,11 +265,11 @@ const About = () => {
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
             <article className="rounded-2xl border border-white/15 bg-white/[0.06] p-4">
               <h3 className="font-semibold">Estatuto de la iglesia</h3>
-              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/estatutos" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-300 px-4 text-sm font-bold text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
+              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/estatutos" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-church-gold-gradient px-4 text-sm font-bold text-white shadow-md shadow-amber-950/15 transition hover:brightness-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 dark:text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/estatutos.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
             </article>
             <article className="rounded-2xl border border-white/15 bg-white/[0.06] p-4">
               <h3 className="font-semibold">Reglamento interno</h3>
-              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/reglamento-interno" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-300 px-4 text-sm font-bold text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
+              <div className="mt-3 flex flex-wrap gap-3"><Link to="/nosotros/documentos/reglamento-interno" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-church-gold-gradient px-4 text-sm font-bold text-white shadow-md shadow-amber-950/15 transition hover:brightness-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 dark:text-slate-950">Leer en línea <ArrowRight size={16} aria-hidden="true" /></Link><a href="/documentos/reglamento-interno.pdf" download className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-semibold text-white underline underline-offset-4"><Download size={15} aria-hidden="true" /> Descargar PDF</a></div>
             </article>
           </div>
         </section>

@@ -290,6 +290,10 @@
     background-color: var(--church-gold-emphasis);
   }
 
+  .bg-church-gold-gradient {
+    background-image: linear-gradient(110deg, var(--church-gold-gradient-start) 0%, var(--church-gold-gradient-mid) 52%, var(--church-gold-gradient-end) 100%);
+  }
+
   .border-church-gold-emphasis {
     border-color: var(--church-gold-emphasis);
   }
@@ -304,6 +308,37 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  .text-church-gold-gradient-on-dark {
+    background: linear-gradient(105deg, #ffd679 0%, #eecf92 52%, #c79d3f 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Remate editorial discreto para encabezados de sección. */
+  .editorial-heading-accent {
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .editorial-heading-accent::after {
+    content: "";
+    display: block;
+    width: 2.75rem;
+    height: 3px;
+    margin-top: 0.65rem;
+    border-radius: 9999px;
+    background-image: linear-gradient(110deg, var(--church-gold-gradient-start), var(--church-gold-gradient-mid) 52%, var(--church-gold-gradient-end));
+  }
+
+  .editorial-heading-accent-center {
+    margin-inline: auto;
+  }
+
+  .editorial-heading-accent-center::after {
+    margin-inline: auto;
   }
 
   .gold-emphasis-line {

@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.11.3] - 2026-10-21
+
+### Mejorado
+- Identidad dorada adaptable a modo claro y oscuro en encabezados, agenda, horarios, prédicas y perfiles de Nosotros.
+- Tarjetas de eventos y horarios con fechas, etiquetas y acentos dorados coherentes con el logo.
+- Referencias y lecturas bíblicas sin subrayado, con foco visible y acceso al pasaje en una pestaña nueva.
+- Versículo del día, navegación de ruta y documentos institucionales con acentos editoriales coordinados.
+
 ## [1.11.2] - 2026-10-21
 
 ### Mejorado
