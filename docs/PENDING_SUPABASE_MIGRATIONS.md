@@ -1,10 +1,10 @@
 # Migraciones Supabase pendientes
 
-Última revisión: 2026-10-20 (hora de Guayaquil; versiones remotas en UTC).
+Última revisión: 2026-10-21 (hora de Guayaquil; versiones remotas en UTC).
 
-## Estado verificado del proyecto gqtatqekfrswvplemknc — 20-oct-2026
+## Estado verificado del proyecto gqtatqekfrswvplemknc — 21-oct-2026
 
-El historial remoto contiene 191 migraciones. Estas cinco correcciones están aplicadas y verificadas en el proyecto de Iglesia Jerusalén:
+El historial remoto contiene 192 migraciones. Estas seis correcciones de seguridad y certificados están aplicadas y verificadas en el proyecto de Iglesia Jerusalén:
 
 | Versión remota | Migración | Alcance |
 |---|---|---|
@@ -13,12 +13,13 @@ El historial remoto contiene 191 migraciones. Estas cinco correcciones están ap
 | 20261021010556 | secure_sensitive_public_policies | Restringe datos familiares, intercesores y contenido de cuestionarios a usuarios autorizados. |
 | 20261021010825 | add_public_certificate_lookup_rpcs | Añade consultas acotadas para certificados sin entregar identificadores de estudiante ni URL de PDF. |
 | 20261021011043 | secure_public_community_reads | Limita comentarios a publicaciones públicas y restringe el muro de oración. |
+| 20261021051358 | restrict_public_certificate_table_access | Retira lectura anónima directa de certificados y deja su consulta pública mediante RPC acotados. |
 
 La consulta de políticas y privilegios confirmó que anon ya no puede leer directamente bible_highlights, bible_notes, bible_bookmarks, family_members, petition_prayers, lms_quiz_questions, lms_quizzes, lms_user_badges ni prayer_wall_posts. Las políticas de comentarios y familias quedaron vinculadas al estado publicado y a permisos de administración. Los RPC de certificados no devolvieron datos ante códigos de prueba inexistentes.
 
 En los logs de PostgREST aparecieron tres timeouts del servidor a las 00:59:12 UTC, antes de la primera migración (01:00:12 UTC); no se conoce su causa. No se encontraron errores Postgres/PostgREST desde la primera migración hasta la última revisión.
 
-**Pendiente por coordinación con Vercel:** lms_certificates y lms_certificates_issued aún permiten lectura pública para que las páginas actualmente desplegadas no fallen. El frontend local ya usa los nuevos RPC. La migración 20261021011400_restrict_public_certificate_table_access.sql debe aplicarse después de desplegar ese frontend. El conector de Vercel sigue respondiendo 403 para el equipo iglesia-jerusalen y la CLI no reconoce ese scope; no se considera publicado.
+**Migración de certificados aplicada:** producción contiene los módulos `CertificateViewer` y `CertificateVerification`, que llaman `get_public_lms_certificate` y `verify_lms_certificate_issued`. La migración remota `20261021051358_restrict_public_certificate_table_access` revoca SELECT anónimo directo y conserva la lectura propia/autorizada mediante RLS y las verificaciones públicas mediante los RPC. El conector de Vercel aún responde 403 para inspeccionar el deployment, pero los módulos activos fueron confirmados en los bundles públicos.
 
 También queda pendiente activar la protección de contraseñas filtradas en Supabase Auth desde el Dashboard. La integración disponible no permite cambiar esa opción.
 
@@ -103,3 +104,14 @@ Los siguientes archivos consumen las entidades anteriores y no deben desplegarse
 - `api/changelog/dar-de-baja.ts`
 - `api/changelog/reaccionar.ts`
 - `api/changelog/suscribir.ts`
+
+## Chequeo de publicación — 21-oct-2026
+
+El commit `a0e560e` fue enviado a `main` (repo `iecejerusalen-eng/iglesia-jerusalen`). En esta revisión, los bundles públicos incluyen ambos RPC de certificados aunque el conector Vercel sigue denegando el scope `iglesia-jerusalen` con 403. La migración `20261021051358_restrict_public_certificate_table_access` ya consta aplicada y verificada en `gqtatqekfrswvplemknc`; el historial remoto generó esta versión UTC y el archivo local fue renombrado para coincidir.
+
+
+## Verificación posterior — 21-oct-2026
+
+- anon ya no tiene privilegio SELECT en lms_certificates ni lms_certificates_issued; ambas tablas conservan RLS.
+- Los RPC get_public_lms_certificate y verify_lms_certificate_issued siguen ejecutables por anon y authenticated; SELECT de lms_certificates para usuarios autenticados queda filtrado por identidad propia y políticas de emisión autorizada.
+- Advisors de seguridad: persisten avisos de funciones SECURITY DEFINER accesibles por roles de API (incluidos intencionalmente los RPC acotados de certificados), tres tablas con RLS sin políticas y la protección de contraseñas filtradas de Auth desactivada. Requieren revisión individual; no se alteraron en esta migración.

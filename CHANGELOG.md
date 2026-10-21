@@ -3,6 +3,11 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.11.1] - 2026-10-21
+
+### Seguridad
+- La verificación pública de certificados conserva sus consultas mediante funciones acotadas y ya no permite leer directamente las tablas de certificados con acceso anónimo.
+
 ## [1.11.0] - 2026-10-20
 
 ### Añadido
