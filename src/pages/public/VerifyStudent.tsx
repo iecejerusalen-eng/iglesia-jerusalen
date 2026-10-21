@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShieldCheck, XCircle, Loader2, ArrowLeft, User, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, XCircle, Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
 import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 
 interface VerificationResult {
-  id: string;
   full_name: string;
-  avatar_url: string | null;
-  role: string;
-  email_masked: string | null;
   is_active: boolean;
   verified_at: string;
 }
@@ -101,28 +97,10 @@ export default function VerifyStudent() {
                 </div>
 
                 <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-gray-100 dark:border-white/5 text-center">
-                  <div className="mb-4">
-                    {result.avatar_url ? (
-                      <img 
-                        src={result.avatar_url} 
-                        alt={result.full_name} 
-                        className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white dark:border-slate-700 shadow-md"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full mx-auto bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-400 border-4 border-white dark:border-slate-800 shadow-md">
-                        <User size={40} />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <h4 className="text-xl font-black text-slate-900 dark:text-white mb-1">{result.full_name}</h4>
-                  {result.email_masked && (
-                    <p className="text-sm text-gray-500 font-medium mb-3">{result.email_masked}</p>
-                  )}
-                  
-                  <span className="inline-block px-3 py-1 bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider rounded-full">
-                    {result.role === 'student' ? 'Estudiante' : result.role}
-                  </span>
+                  <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2">{result.full_name}</h4>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Credencial de la comunidad educativa de Iglesia Jerusalén
+                  </p>
                 </div>
               </div>
             ) : null}

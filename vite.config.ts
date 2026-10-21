@@ -7,6 +7,9 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    watch: { ignored: ['**/LOCAL/**'] },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -36,6 +39,7 @@ export default defineConfig({
           '**/documentos/**',
           '**/images/games/**',
           '**/images/bible/**',
+          '**/images/historia/**',
           '**/assets/encyclopedia/**',
           // El panel administrativo se carga con lazy routes y no debe
           // instalarse en el dispositivo de cada visitante público.

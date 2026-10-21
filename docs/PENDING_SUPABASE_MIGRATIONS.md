@@ -1,22 +1,49 @@
 # Migraciones Supabase pendientes
 
-Última revisión: 2026-10-20.
+Última revisión: 2026-10-20 (hora de Guayaquil; versiones remotas en UTC).
+
+## Estado verificado del proyecto gqtatqekfrswvplemknc — 20-oct-2026
+
+El historial remoto contiene 191 migraciones. Estas cinco correcciones están aplicadas y verificadas en el proyecto de Iglesia Jerusalén:
+
+| Versión remota | Migración | Alcance |
+|---|---|---|
+| 20261021010012 | optimize_rls_auth_initplans | Evita reevaluar helpers de autenticación por fila en políticas RLS. |
+| 20261021010143 | secure_personal_bible_study | Retira lectura anónima de notas, marcadores y resaltados bíblicos personales. |
+| 20261021010556 | secure_sensitive_public_policies | Restringe datos familiares, intercesores y contenido de cuestionarios a usuarios autorizados. |
+| 20261021010825 | add_public_certificate_lookup_rpcs | Añade consultas acotadas para certificados sin entregar identificadores de estudiante ni URL de PDF. |
+| 20261021011043 | secure_public_community_reads | Limita comentarios a publicaciones públicas y restringe el muro de oración. |
+
+La consulta de políticas y privilegios confirmó que anon ya no puede leer directamente bible_highlights, bible_notes, bible_bookmarks, family_members, petition_prayers, lms_quiz_questions, lms_quizzes, lms_user_badges ni prayer_wall_posts. Las políticas de comentarios y familias quedaron vinculadas al estado publicado y a permisos de administración. Los RPC de certificados no devolvieron datos ante códigos de prueba inexistentes.
+
+En los logs de PostgREST aparecieron tres timeouts del servidor a las 00:59:12 UTC, antes de la primera migración (01:00:12 UTC); no se conoce su causa. No se encontraron errores Postgres/PostgREST desde la primera migración hasta la última revisión.
+
+**Pendiente por coordinación con Vercel:** lms_certificates y lms_certificates_issued aún permiten lectura pública para que las páginas actualmente desplegadas no fallen. El frontend local ya usa los nuevos RPC. La migración 20261021011400_restrict_public_certificate_table_access.sql debe aplicarse después de desplegar ese frontend. El conector de Vercel sigue respondiendo 403 para el equipo iglesia-jerusalen y la CLI no reconoce ese scope; no se considera publicado.
+
+También queda pendiente activar la protección de contraseñas filtradas en Supabase Auth desde el Dashboard. La integración disponible no permite cambiar esa opción.
+
+Los avisos de índices sin índice para claves foráneas y de índices no utilizados son recomendaciones para analizar con cargas reales; no se aplicaron cambios masivos.
+
+## Registro previo del mismo día (20-oct-2026)
 
 ## Verificación remota del 20-oct-2026
 
-Se comparó el historial del proyecto Supabase `iecejerusalen Project` con las 185 migraciones locales. Todas las versiones del historial remoto tienen su archivo local correspondiente. Se aplicó y verificó `20261020022107_fix_public_study_program_rls.sql`, que quedó registrado con esa misma versión remota. Después de la corrección, la consulta anónima del catálogo de `/programas` respondió HTTP 200 y devolvió el programa publicado «Chicas Sabias».
+Se comparó el historial del proyecto Supabase `iecejerusalen Project` con las 186 migraciones locales. Todas las versiones del historial remoto tienen su archivo local correspondiente. Se aplicó y verificó `20261020022107_fix_public_study_program_rls.sql`, que quedó registrado con esa misma versión remota. Después de la corrección, la consulta anónima del catálogo de `/programas` respondió HTTP 200 y devolvió el programa publicado «Chicas Sabias».
 
 La migración de galerías por ministerio fue aplicada al proyecto remoto `gqtatqekfrswvplemknc` el 2026-10-20. El historial registra la versión `20261020030253`, alineada con el archivo local `supabase/migrations/20261020030253_ministry_photo_galleries.sql`; la tabla quedó habilitada con RLS y cuatro políticas (lectura pública y escritura para responsables autorizados). La función `private.can_manage_ministry_page(uuid)` existía antes de aplicar la migración.
 
-No quedan migraciones locales pendientes: las 185 versiones locales tienen registro remoto y no hay versiones remotas sin archivo local.
+La migración `20261020061056_harden_public_student_verification.sql` fue aplicada al mismo proyecto. El RPC público `verify_student_status(uuid)` conserva la verificación de credenciales, pero su respuesta se limita a nombre, vigencia y fecha de verificación; se retiraron correo parcial, foto, rol e identificador. `current_user_can_propresenter(text)` y `current_user_can_worship_manager()` quedaron ejecutables solo por `authenticated`, no por `anon`. La consulta de privilegios confirmó `anon_exec=false` y `auth_exec=true` para ambos RPC de autorización; la respuesta del verificador confirmó las claves `full_name`, `is_active` y `verified_at`.
+
+No quedan migraciones locales pendientes: las 186 versiones locales tienen registro remoto y no hay versiones remotas sin archivo local.
 
 | Archivo | Alcance | Estado remoto |
 |---|---|---|
 | `supabase/migrations/20261020030253_ministry_photo_galleries.sql` | Galerías de fotos públicas por ministerio, con gestión limitada a responsables autorizados. | Aplicada; RLS y políticas verificadas. |
+| `supabase/migrations/20261020061056_harden_public_student_verification.sql` | Minimiza los datos personales devueltos por el verificador público de credenciales y restringe dos RPC auxiliares al rol autenticado. | Aplicada; permisos y campos de respuesta verificados. |
 
 Antes de esta revisión, `/programas` fallaba con HTTP 401 / `42501` (`permission denied for function can_view_study_program_admin`). La política RLS de lectura combinaba filas públicas con una función privada de autorización en una misma expresión asignada a `PUBLIC`; la nueva migración separa políticas públicas y autenticadas, sin ampliar la visibilidad pública de filas.
 
-## Estado
+## Estado al 20-oct-2026 (histórico)
 
 Estos cambios existen en el workspace local, pero no hay evidencia en este repositorio de que hayan sido aplicados al proyecto Supabase remoto. Deben permanecer pendientes hasta ejecutar y verificar cada migración en el proyecto correcto.
 

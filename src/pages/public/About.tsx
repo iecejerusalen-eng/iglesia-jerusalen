@@ -38,6 +38,15 @@ const quadrangularSymbols = [
   { name: 'Corona', symbol: 'crown', ministry: 'Jesucristo, el Rey que viene' },
 ] as const;
 
+const aboutSections = [
+  ['proposito', 'Visión y misión'],
+  ['aprender', 'Conoce nuestra fe'],
+  ['liderazgo', 'Liderazgo'],
+  ['documentos', 'Documentos'],
+] as const;
+
+const aboutDestinations = [...learningTopics, { slug: 'pastores', title: 'Pastores', summary: 'Conoce las familias pastorales que han acompañado nuestra historia. Recorre sus retratos y su legado de servicio.' }];
+
 const isChurchLeader = (leader: Speaker) => {
   const fullName = `${leader.first_name} ${leader.last_name}`.trim().toLocaleLowerCase('es');
   const role = leader.role?.toLocaleLowerCase('es') ?? '';
@@ -72,6 +81,7 @@ const About = () => {
   const [leadersError, setLeadersError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
+  const [activeSection, setActiveSection] = useState<(typeof aboutSections)[number][0]>('proposito');
 
   useEffect(() => {
     let cancelled = false;
@@ -102,11 +112,37 @@ const About = () => {
     return () => { cancelled = true; controller.abort(); };
   }, [reload]);
 
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const sections = aboutSections
+      .map(([id]) => document.getElementById(id))
+      .filter((section): section is HTMLElement => section !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const current = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (current?.target.id) {
+        setActiveSection(current.target.id as (typeof aboutSections)[number][0]);
+      }
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 0.25, 0.5, 1] });
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
   const retry = () => { setLoading(true); setReload(value => value + 1); };
 
   const heroTitle = content?.title || 'Somos una familia con propósito';
   const heroSubtitle = content?.subtitle || 'Una iglesia local, parte de una misión nacional e internacional, centrada en Jesús y abierta a todas las generaciones.';
   const notice = contentError ? 'No se pudo cargar el contenido actualizado. Mostramos la presentación principal.' : null;
+  const errorMessage = contentError && leadersError
+    ? 'No se pudieron actualizar la presentación de la iglesia ni la información del liderazgo. Se conserva el contenido disponible.'
+    : leadersError
+      ? 'No se pudo actualizar la información del liderazgo. Se conserva la presentación disponible.'
+      : 'No se pudo actualizar la presentación de la iglesia.';
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-indigo-50/50 px-4 py-6 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950/30 sm:px-6 lg:px-8">
@@ -123,12 +159,12 @@ const About = () => {
         <PremiumAboutHero title={heroTitle} subtitle={heroSubtitle} notice={notice} coverImage={content?.cover_image_url} />
 
         <nav aria-label="En esta página" className="mb-12 flex flex-wrap gap-2 border-b border-slate-200 pb-6 dark:border-white/10">
-          {[['proposito', 'Visión y misión'], ['aprender', 'Conoce nuestra fe'], ['liderazgo', 'Liderazgo'], ['documentos', 'Documentos']].map(([id, label]) => (
-            <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:border-amber-400 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">{label}</a>
+          {aboutSections.map(([id, label]) => (
+            <a key={id} href={`#${id}`} aria-current={activeSection === id ? 'location' : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition hover:border-amber-400 hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-4 dark:hover:bg-white/5 ${activeSection === id ? 'border-amber-400 bg-amber-50 text-amber-900 dark:border-amber-300/40 dark:bg-amber-300/10 dark:text-amber-200' : 'border-slate-200 text-slate-700 dark:border-white/15 dark:text-slate-200'}`}>{label}</a>
           ))}
         </nav>
 
-        {(contentError || leadersError) && <div role="alert" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100"><p>{leadersError ? 'No se pudo actualizar la información del liderazgo. Se conserva la presentación disponible.' : 'No se pudo actualizar la presentación de la iglesia.'}</p><button type="button" disabled={loading} onClick={retry} className="min-h-11 rounded-lg border border-amber-500 px-4 py-2 font-semibold disabled:opacity-50">{loading ? 'Actualizando…' : 'Volver a intentar'}</button></div>}
+        {(contentError || leadersError) && <div role="alert" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100"><p>{errorMessage}</p><button type="button" disabled={loading} onClick={retry} className="min-h-11 rounded-lg border border-amber-500 px-4 py-2 font-semibold disabled:opacity-50">{loading ? 'Actualizando…' : 'Volver a intentar'}</button></div>}
 
 
         <section id="proposito" aria-labelledby="purpose-heading" className="scroll-mt-28 py-8">
@@ -173,7 +209,7 @@ const About = () => {
               Conoce el significado de los símbolos <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{learningTopics.map((topic, index) => <Link key={topic.slug} to={`/nosotros/${topic.slug}`} className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-amber-400 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:bg-slate-900"><span className="flex items-center justify-between text-sm font-bold text-amber-700 dark:text-amber-300"><span>0{index + 1}</span><BookOpenText size={22} /></span><h3 className="mt-6 font-serif text-2xl font-bold text-slate-950 dark:text-white">{topic.title}</h3><p className="mt-3 flex-1 leading-7 text-slate-600 dark:text-slate-300">{topic.summary}</p><span className="mt-6 inline-flex items-center gap-2 font-semibold text-indigo-800 dark:text-amber-300">Explorar <ArrowRight size={18} /></span></Link>)}</div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{aboutDestinations.map((topic, index) => <Link key={topic.slug} to={`/nosotros/${topic.slug}`} className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-amber-400 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 dark:border-white/15 dark:bg-slate-900"><span className="flex items-center justify-between text-sm font-bold text-amber-700 dark:text-amber-300"><span>0{index + 1}</span><BookOpenText size={22} /></span><h3 className="mt-6 font-serif text-2xl font-bold text-slate-950 dark:text-white">{topic.title}</h3><p className="mt-3 flex-1 leading-7 text-slate-600 dark:text-slate-300">{topic.summary}</p><span className="mt-6 inline-flex items-center gap-2 font-semibold text-indigo-800 dark:text-amber-300">Explorar <ArrowRight size={18} /></span></Link>)}</div>
         </section>
 
         <section id="liderazgo" className="scroll-mt-24 py-16">

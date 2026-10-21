@@ -24,31 +24,14 @@ export function CertificateVerification() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('lms_certificates_issued')
-          .select(`
-            issue_date,
-            validation_hash,
-            profiles (first_name, last_name),
-            lms_courses (title)
-          `)
-          .eq('validation_hash', hash)
-          .single();
+        const { data, error } = await supabase.rpc('verify_lms_certificate_issued', {
+          p_validation_hash: hash,
+        });
 
         if (error || !data) {
           throw new Error('Certificado no encontrado');
         }
-
-        // Parse joined data
-        const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
-        const course = Array.isArray(data.lms_courses) ? data.lms_courses[0] : data.lms_courses;
-
-        setDetails({
-          issue_date: data.issue_date,
-          student_name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
-          course_name: course?.title || 'Curso Desconocido',
-          validation_hash: data.validation_hash
-        });
+        setDetails(data as CertificateDetails);
 
         setStatus('valid');
       } catch (error) {

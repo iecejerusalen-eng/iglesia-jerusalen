@@ -12,6 +12,7 @@ import type { LearningDocument, PublishedLearningDocument } from './learningDocu
 import LearningProgress from './LearningProgress';
 import LearningQuiz from './LearningQuiz';
 import LearningMedia from './LearningMedia';
+import ChurchHistory from './ChurchHistory';
 
 const doctrineSymbols: Record<string, QuadrangularSymbolName> = {
   salvador: 'cross',
@@ -20,7 +21,13 @@ const doctrineSymbols: Record<string, QuadrangularSymbolName> = {
   rey: 'crown',
 };
 
-export default function LearningDocumentView({ document, published, preview = false }: { document: LearningDocument; published?: PublishedLearningDocument; preview?: boolean }) {
+type LearningDocumentViewProps = { document: LearningDocument; published?: PublishedLearningDocument; preview?: boolean };
+
+export default function LearningDocumentView(props: LearningDocumentViewProps) {
+  return props.document.slug === 'historia' ? <ChurchHistory {...props} /> : <StandardLearningDocumentView {...props} />;
+}
+
+function StandardLearningDocumentView({ document, published, preview = false }: LearningDocumentViewProps) {
   const { slug, content } = document;
   const isDoctrine = slug === 'doctrina';
   const [activeMinistryId, setActiveMinistryId] = useState(() => {

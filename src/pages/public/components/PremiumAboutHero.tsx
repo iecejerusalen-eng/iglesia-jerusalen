@@ -10,7 +10,7 @@ import {
   Landmark,
   Sparkles,
 } from 'lucide-react';
-import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores-juntos-auditorio-jerusalen-v01.webp';
+import pastorCouplePhoto from '../../../assets/Jerusalén/Pastores iglesia interior.webp';
 
 interface PremiumAboutHeroProps {
   title: string;
@@ -141,7 +141,7 @@ export default function PremiumAboutHero({ title, subtitle, notice, coverImage }
                   width={1448}
                   height={1086}
                   sizes="(min-width: 1280px) 560px, (min-width: 1024px) 48vw, 100vw"
-                  className="h-full w-full object-cover object-[center_24%] transition duration-700"
+                  className="h-full w-full scale-[1.04] object-cover object-[center_24%] transition duration-700"
                   loading="eager"
                   fetchPriority="high"
                   onError={handleImageError}

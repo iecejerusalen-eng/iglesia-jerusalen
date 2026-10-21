@@ -618,7 +618,7 @@ export default function CourseViewer() {
       }
 
       if (!existingCertId) {
-        const validationHash = `CERT-${id.slice(0, 8)}-${userId.slice(0, 8)}-${Date.now()}`;
+        const validationHash = `CERT-${crypto.randomUUID().replaceAll('-', '').toUpperCase()}`;
 
         const { data: newCert } = await supabase
           .from("lms_certificates")
