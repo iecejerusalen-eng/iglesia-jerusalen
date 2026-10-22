@@ -1,6 +1,6 @@
 # Conocimiento del Proyecto: Iglesia Jerusalén
 
-> Continuidad 21-oct-2026: fase 4 de tienda, versión 1.14.0 (seguimiento privado, vinculación de invitados, biblioteca por compra y enlaces de productos). Contrato, pruebas, límites de Google Drive y publicación coordinada en [store-customer-portal.md](store-customer-portal.md). Ventas cerradas; no confundir este estado con producción.
+> Continuidad 21-oct-2026: fase 4 de tienda, versión 1.14.1 (seguimiento privado, vinculación de invitados, biblioteca por compra y enlaces de productos). Contrato, pruebas, límites de Google Drive y publicación coordinada en [store-customer-portal.md](store-customer-portal.md). Ventas cerradas; no confundir este estado con producción.
 
 Este documento centraliza el conocimiento técnico, arquitectónico y funcional del proyecto **Iglesia Jerusalén**.
 

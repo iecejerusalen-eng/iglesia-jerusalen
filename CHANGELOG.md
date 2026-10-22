@@ -3,6 +3,11 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.1] - 2026-10-21
+
+### Corregido
+- La verificación de correo en compras y biblioteca usa permisos de servidor limitados a identidad y confirmación. No concede lectura completa de usuarios ni acceso desde el navegador. La regresión reproduce los permisos reales de producción.
+
 ## [1.14.0] - 2026-10-21
 
 ### Añadido

@@ -1,5 +1,8 @@
 -- Isolated fixture only. Never apply to a remote project.
 alter table auth.users add column email text;
+alter table auth.users add column encrypted_password text;
+-- Production service_role cannot SELECT auth.users by default.
+revoke all on auth.users from service_role;
 update auth.users set email=case when id='00000000-0000-0000-0000-000000000001' then 'owner@example.invalid' else 'other@example.invalid' end;
 alter table public.product_digital_assets add column instructions text;
 alter table public.product_digital_assets enable row level security;

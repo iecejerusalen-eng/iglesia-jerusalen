@@ -1,6 +1,8 @@
 # Tienda: seguimiento y biblioteca — fase 4
 
-Versión 1.14.0, publicación coordinada del 21-oct-2026. Migración 20261022030818 y store-checkout v3 instaladas; cliente compatible preparado para esta versión. Ventas deshabilitadas. No se enviaron correos, verificaron depósitos ni crearon compras reales.
+Versión 1.14.1, publicación coordinada del 21-oct-2026. Migraciones 20261022030818 y 20261022031805, con store-checkout v3 instaladas. Ventas deshabilitadas. No se enviaron correos, verificaron depósitos ni crearon compras reales.
+
+La comprobación en producción detectó que `service_role` no puede leer `auth.users` por defecto. La corrección concede SELECT solo de `id`, `email` y `email_confirmed_at` al servidor y cambia la consulta del portal a la columna necesaria; no concede SELECT global ni lectura de contraseñas/sesiones, ni privilegios de Auth al navegador. Se mantienen las funciones INVOKER. El fixture reproduce ese permiso limitado y verifica compra digital y biblioteca bajo el rol real del servicio.
 
 ## Experiencia del comprador
 
@@ -38,7 +40,7 @@ Los fixtures de `supabase/tests/` y `e2e/fixtures/` son exclusivamente de prueba
 ## Procedimiento de publicación coordinada
 
 1. Revisar el esquema remoto y las compras desde la última inspección. Conservar respaldo y ventas cerradas.
-2. Aplicar solamente `20261022030818_store_customer_portal.sql` sobre las fases 2 y 3 ya instaladas; no arrastrar migraciones de otros trabajos.
+2. Aplicar `20261022030818_store_customer_portal.sql` y su corrección `20261022031805_store_customer_identity_columns.sql` sobre las fases 2 y 3 ya instaladas; no arrastrar migraciones de otros trabajos.
 3. Desplegar `store-checkout` con `index.ts` y `handler.ts` de esta fase y comprobar las tres acciones `customer_*`, rechazos y permisos.
 4. Publicar el cliente compatible en la misma ventana. La restricción de fuentes maestras hace incompatible la lectura digital del cliente anterior; la reversión debe conservar el bloqueo de venta y el acceso por servidor, sin restaurar lectura pública.
 5. Verificar el dominio público, sesión real, historial y recurso de prueba autorizado. Actualizar CHANGELOG y su registro en Supabase al preparar el commit de publicación.

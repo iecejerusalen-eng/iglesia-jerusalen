@@ -5,7 +5,7 @@ const db=new PGlite(); let checks=0;
 const owner='00000000-0000-0000-0000-000000000001', other='00000000-0000-0000-0000-000000000002';
 const physical='10000000-0000-0000-0000-000000000001', digital='10000000-0000-0000-0000-000000000002', secret='a'.repeat(64);
 try {
- for(const p of ['supabase/tests/store_checkout_fixture.sql','supabase/migrations/20261022001552_secure_store_checkout_v2.sql','supabase/tests/store_inventory_fixture.sql','supabase/migrations/20261022022116_store_inventory_control.sql','supabase/tests/store_customer_fixture.sql','supabase/migrations/20261022030818_store_customer_portal.sql']) await db.exec(await readFile(p,'utf8'));
+ for(const p of ['supabase/tests/store_checkout_fixture.sql','supabase/migrations/20261022001552_secure_store_checkout_v2.sql','supabase/tests/store_inventory_fixture.sql','supabase/migrations/20261022022116_store_inventory_control.sql','supabase/tests/store_customer_fixture.sql','supabase/migrations/20261022030818_store_customer_portal.sql','supabase/migrations/20261022031805_store_customer_identity_columns.sql']) await db.exec(await readFile(p,'utf8'));
  const sql=async(q,args=[])=>(await db.query(q,args)).rows;
  const rpc=async(action,payload={},actor=owner,cap=secret,portal=true)=>{
   await db.exec('savepoint req');
@@ -83,6 +83,16 @@ try {
   assert.equal((await rpc('customer_library',{},other))[0].state,'available');assert.deepEqual(await rpc('customer_library'),[]);
   assert.equal((await rpc('customer_digital_open',{item_id:o.order_items[0].id},other)).kind,'external_google');
   await assert.rejects(rpc('customer_digital_open',{item_id:o.order_items[0].id},owner),/no disponible/);
+ });
+ await test('servidor solo lee identidad necesaria, compra digital y portal sin SELECT global de Auth',async()=>{
+  assert.equal((await sql("select has_table_privilege('service_role','auth.users','SELECT') x"))[0].x,false);
+  assert.equal((await sql("select has_column_privilege('service_role','auth.users','email','SELECT') x"))[0].x,true);
+  assert.equal((await sql("select has_column_privilege('service_role','auth.users','encrypted_password','SELECT') x"))[0].x,false);
+  await db.exec('set local role service_role');
+  const o=await create(true,other);await pay(o);
+  assert.equal((await rpc('customer_library',{},other))[0].state,'available');
+  assert.equal((await rpc('customer_digital_open',{item_id:o.order_items[0].id},other)).kind,'external_google');
+  await db.exec('reset role');
  });
  console.log(`Customer portal assertions: ${checks} passed. Isolated fixtures; no real email or delivery.`);
 } finally {await db.close();}

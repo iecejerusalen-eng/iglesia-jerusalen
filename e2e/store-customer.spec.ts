@@ -11,6 +11,7 @@ for (const width of [390, 1280]) test('seguimiento y biblioteca a '+width+'px', 
   const errors: string[] = []; page.on('pageerror', e => { errors.push(e.message); console.error('QA browser:', e.message); });
   try {
     for (const path of ['supabase/tests/store_checkout_fixture.sql','supabase/migrations/20261022001552_secure_store_checkout_v2.sql','supabase/tests/store_inventory_fixture.sql','supabase/migrations/20261022022116_store_inventory_control.sql','supabase/tests/store_customer_fixture.sql','supabase/migrations/20261022030818_store_customer_portal.sql']) await db.exec(await readFile(path,'utf8'));
+    await db.exec(await readFile('supabase/migrations/20261022031805_store_customer_identity_columns.sql','utf8'));
     await db.exec('update private.store_checkout_settings set enabled=true');
     const rpc = async (action: string, actor: string | null, payload: Record<string, unknown>, cap = secret) => {
       const name = action.startsWith('customer_') ? 'store_customer_api' : 'store_api';
