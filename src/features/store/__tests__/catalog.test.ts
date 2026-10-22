@@ -5,6 +5,10 @@ import { product, variant } from './fixtures';
 import { productSchema } from '../types';
 
 describe('Reglas compartidas de tienda', () => {
+  it('redondea IVA por línea como PostgreSQL, sin perder el medio centavo', () => {
+    expect(getLineTax({ ...product, price: 19.9, tax_rate: 15 }, 1)).toBe(2.99);
+    expect(getUnitPrice({ ...product, metadata: { price_tiers: [{ min_quantity: 3, unit_price: 7 }] } }, 3, variant)).toBe(9);
+  });
   it('calcula inventario desde variantes, sin sumar el stock base dos veces', () => {
     expect(getProductStock({ ...product, stock: 100, product_variants: [variant, { ...variant, id: 'variant-2', stock: 4 }] })).toBe(7);
   });

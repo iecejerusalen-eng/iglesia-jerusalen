@@ -11,6 +11,7 @@
     "deploy": "vercel --prod",
     "check:assets": "node scripts/check-asset-budget.mjs",
     "test": "vitest --pool=threads",
+    "test:store:db": "node scripts/test-store-database.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -102,6 +103,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@testing-library/dom": "^10.4.1",

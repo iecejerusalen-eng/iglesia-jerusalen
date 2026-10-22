@@ -259,6 +259,9 @@ export type EcommercePaymentStatus = 'pending' | 'paid' | 'verifying' | 'failed'
 export type EcommerceFulfillmentStatus = 'unfulfilled' | 'processing' | 'shipped' | 'delivered' | string;
 
 export interface Order {
+  checkout_version?: number | null;
+  receipt_storage_path?: string | null;
+  receipt_number?: string | null;
   id: string;
   user_id: string | null;
   customer_name: string;
@@ -285,6 +288,16 @@ export interface Order {
 }
 
 export interface OrderItem {
+  product_snapshot?: {
+    id: string;
+    name: string;
+    type?: string;
+    sku?: string | null;
+    image_url?: string | null;
+    cover_image_url?: string | null;
+    color_name?: string | null;
+    size?: string | null;
+  } | null;
   id: string;
   order_id: string;
   product_id: string;

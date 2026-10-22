@@ -1,733 +1,154 @@
 import { useEffect, useState } from 'react';
-import { useCartStore } from '../../store/useCartStore';
-import { supabase } from '../../config/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
 import { Link } from 'react-router-dom';
-import {
-  Trash2,
-  ShoppingBag,
-  ArrowRight,
-  CreditCard,
-  ChevronLeft,
-  CheckCircle2,
-  Ticket,
-  Upload,
-  Check,
-  AlertCircle,
-  Building2,
-  Loader2,
-} from 'lucide-react';
-import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { uploadMediaFile } from '../../lib/mediaService';
-import { getLineTax, getUnitPrice } from '../../features/store/pricing';
-import { getCartStock, isDigitalProduct, validateReceipt } from '../../features/store/catalog';
 import { Helmet } from 'react-helmet-async';
-import type { Product, StorePaymentMethod, StoreShippingMethod } from '../../types';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, ShoppingBag, Trash2, Building2, Upload } from 'lucide-react';
+import { useCartStore } from '../../store/useCartStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { getLineSubtotal, getLineTax } from '../../features/store/pricing';
+import { formatStoreCurrency, isDigitalProduct } from '../../features/store/catalog';
+import { forgetCompletedCheckout, getCheckout, getCheckoutOptions, readPendingCheckout, reserveCheckout, retryPendingCheckout, submitPrivateReceipt } from '../../features/store/services/checkoutService';
+import type { SecureOrder } from '../../features/store/services/checkoutService';
 
-interface StoreBankDetails {
-  bank_name: string | null;
-  bank_account: string | null;
-  ruc: string | null;
-}
+const panel = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6';
+const button = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 disabled:opacity-50';
+const input = 'mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3 dark:border-slate-700 focus-visible:outline-2 focus-visible:outline-blue-500';
+const message = (error: unknown) => error instanceof Error ? error.message : 'No se pudo completar la operación';
 
-const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Error desconocido';
-
-const Cart = () => {
-  const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore();
-  const { user } = useAuthStore();
-
-  const [step, setStep] = useState(1); // 1: Cart, 2: Delivery & Contact, 3: Payment
-  const paymentMethod = 'transfer';
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<StorePaymentMethod[]>([]);
-  const [incompleteOrder, setIncompleteOrder] = useState<string | null>(null);
-  const [voucherFile, setVoucherFile] = useState<File | null>(null);
-  const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
-  const [uploadingVoucher, setUploadingVoucher] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    delivery: '',
-    address: '',
-    city: '',
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [orderCompleted, setOrderCompleted] = useState<string | null>(null);
+export default function Cart() {
+  const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+  const { user, isLoading: authLoading } = useAuthStore();
+  const options = useQuery({ queryKey: ['store-checkout-options'], queryFn: getCheckoutOptions, staleTime: 30000, retry: false });
+  const [order, setOrder] = useState<SecureOrder | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bankDetails, setBankDetails] = useState<StoreBankDetails | null>(null);
-  const [shippingMethods, setShippingMethods] = useState<StoreShippingMethod[]>([]);
+  const [restoring, setRestoring] = useState(true);
+  const [uncertain, setUncertain] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [contact, setContact] = useState({ name: '', email: '', phone: '' });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const physical = items.some(item => !isDigitalProduct(item.product));
+  const digital = items.some(item => isDigitalProduct(item.product));
+  const subtotal = items.reduce((sum, item) => sum + Math.round(getLineSubtotal(item.product, item.quantity, item.variant) * 100) / 100, 0);
+  const tax = items.reduce((sum, item) => sum + Math.round(getLineTax(item.product, item.quantity, item.variant) * 100) / 100, 0);
+  const fee = Math.round(Math.round(subtotal * 100) * Math.round((options.data?.transfer_fee_percent || 0) * 100) / 10000) / 100;
+  const expectedTotal = Math.round((subtotal + tax + fee) * 100) / 100;
 
   useEffect(() => {
-    const fetchBankDetails = async () => {
-      const { data, error: settingsError } = await supabase
-        .from('church_settings')
-        .select('bank_name, bank_account, ruc, shipping_methods, payment_methods')
-        .eq('id', 1)
-        .maybeSingle();
-
-      if (settingsError) {
-        console.error('No se pudieron cargar los datos bancarios:', settingsError);
-        setSettingsError('No se pudo cargar la configuración de pagos y entregas. No realices una transferencia todavía.');
-        setSettingsLoading(false);
-        return;
-      }
-      setBankDetails(data);
-      const methods = (data?.shipping_methods || []).filter((method: StoreShippingMethod) => method.active);
-      setShippingMethods(methods);
-      setPaymentMethods((data?.payment_methods || []).filter((method: StorePaymentMethod) => method.active));
-      setFormData(previous => ({ ...previous, delivery: methods[0]?.id || '' }));
-      setSettingsLoading(false);
-    };
-
-    void fetchBankDetails().catch((error: unknown) => { console.error('Error al cargar pagos y entregas:', error); setSettingsError('No se pudo cargar la configuración de compra.'); setSettingsLoading(false); });
-  }, []);
-
-  const hasPhysicalItems = items.some(item => !isDigitalProduct(item.product));
-  const selectedShipping = shippingMethods.find(method => method.id === formData.delivery);
-  const requiresAddress = hasPhysicalItems && (selectedShipping?.requires_address ?? selectedShipping?.id !== 'pickup');
-  const selectedPayment = paymentMethods.find(method => method.id === 'transfer');
-  const canPay = !settingsLoading && !settingsError && Boolean(selectedPayment && bankDetails?.bank_name && bankDetails.bank_account) && (!hasPhysicalItems || Boolean(selectedShipping));
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const fileError = validateReceipt(file);
-      if (fileError) { setError(fileError); return; }
-      setVoucherUrl(null);
-      setVoucherFile(file);
-
-      // Subir archivo inmediatamente
-      setUploadingVoucher(true);
-      setError(null);
+    if (authLoading) return;
+    let mounted = true;
+    async function restore() {
       try {
-        // Subir a Cloudinary
-        const publicUrl = await uploadMediaFile(file, 'ecommerce_vouchers', file.type === 'application/pdf' ? 'raw' : 'image');
-        setVoucherUrl(publicUrl);
-      } catch (err) {
-        console.error('Error uploading receipt:', err);
-        setError('Error al subir el comprobante. Intenta de nuevo.');
-      } finally {
-        setUploadingVoucher(false);
-      }
+        const previous = readPendingCheckout();
+        if (previous?.orderId) {
+          const restored = await getCheckout(previous.orderId, previous.secret);
+          if (mounted) setOrder(restored);
+        } else if (previous && mounted) setUncertain(true);
+      } catch (caught) { if (mounted) setError(message(caught)); }
+      finally { if (mounted) setRestoring(false); }
     }
-  };
+    void restore();
+    return () => { mounted = false; };
+  }, [authLoading, user?.id]);
 
-  const handleNextStep = () => {
-    if (step === 1) {
-      setStep(2);
-    } else if (step === 2) {
-      if (!formData.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) || formData.phone.replace(/\D/g, '').length < 9) {
-        setError('Por favor completa los datos de contacto obligatorios.');
-        return;
-      }
-      if (requiresAddress && (!formData.address || !formData.city)) {
-        setError('Por favor completa la dirección de envío.');
-        return;
-      }
-      if (!canPay) { setError('No hay un método de pago o entrega disponible. Contacta con la iglesia antes de transferir.'); return; }
-      setError(null);
-      setStep(3);
-    }
-  };
-
-  const handleBackStep = () => {
-    setStep(prev => Math.max(1, prev - 1));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (items.length === 0 || loading || uploadingVoucher || incompleteOrder) return;
-    if (!canPay) { setError('La configuración de compra no está disponible. No realices una transferencia.'); return; }
-
-    if (paymentMethod === 'transfer' && !voucherUrl) {
-      setError('Por favor sube una imagen de tu comprobante de transferencia bancaria.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const shippingCost = hasPhysicalItems ? Number(selectedShipping?.base_cost || 0) : 0;
-    const paymentFee = getTotalPrice() * (Number(selectedPayment?.fee_percent || 0) / 100);
-    const orderTax = items.reduce((total, item) => total + getLineTax(item.product, item.quantity, item.variant), 0);
-    const finalTotal = Number((getTotalPrice() + orderTax + shippingCost + paymentFee).toFixed(2));
-    const initialStatus = 'pending_payment';
-
-    let createdOrderId: string | null = null;
+  const reserve = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true); setError(null);
     try {
-      const { data: catalog, error: catalogError } = await supabase.from('products').select('*, product_variants(*)').in('id', items.map(item => item.product.id)).is('deleted_at', null);
-      if (catalogError) throw catalogError;
-      for (const item of items) {
-        const current = (catalog as Product[] | null)?.find(product => product.id === item.product.id);
-        const variant = current?.product_variants?.find(candidate => candidate.id === item.variant?.id);
-        if (!current || current.is_active === false || getCartStock(current, variant) < item.quantity) throw new Error(`Revisa la disponibilidad de ${item.product.name} en la tienda`);
-        if (getUnitPrice(current, item.quantity, variant) !== getUnitPrice(item.product, item.quantity, item.variant) || getLineTax(current, item.quantity, variant) !== getLineTax(item.product, item.quantity, item.variant)) throw new Error(`El precio de ${item.product.name} cambió. Vuelve a agregarlo desde la tienda`);
-      }
-      // 1. Insert order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user?.id || null,
-          customer_name: formData.name,
-          customer_email: formData.email,
-          total: finalTotal,
-          status: initialStatus,
-          payment_method: paymentMethod,
-          ecommerce_payment_method: paymentMethod,
-          ecommerce_payment_status: 'verifying',
-          ecommerce_fulfillment_status: 'processing',
-          payment_voucher_url: paymentMethod === 'transfer' ? voucherUrl : null,
-          shipping_recipient_name: formData.name,
-          shipping_phone: formData.phone,
-          shipping_override_address: requiresAddress
-            ? `${formData.address}, ${formData.city}`
-            : null,
-          shipping_status_notes: `Entrega: ${hasPhysicalItems ? selectedShipping?.name : 'Digital'}. Envío: ${shippingCost.toFixed(2)}. IVA: ${orderTax.toFixed(2)}. Comisión: ${paymentFee.toFixed(2)}.`,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      createdOrderId = order.id;
-
-      // 2. Insert order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        variant_id: item.variant?.id || null,
-        quantity: item.quantity,
-        price: getUnitPrice(item.product, item.quantity, item.variant),
-      }));
-
-      if (orderItems.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-        if (itemsError) throw itemsError;
-      }
-
-      // 3. Clear cart and set success state
-      clearCart();
-      setOrderCompleted(order.id);
-    } catch (err: unknown) {
-      console.error('Error procesando pedido:', err);
-      if (createdOrderId) setIncompleteOrder(createdOrderId);
-      setError(createdOrderId ? `El pedido #${createdOrderId.slice(0, 8).toUpperCase()} necesita revisión. No vuelvas a transferir ni a enviar el pedido; contacta con la iglesia con este código.` : `No se pudo registrar el pedido: ${getErrorMessage(err)}. Tu carrito permanece intacto.`);
-    } finally {
-      setLoading(false);
-    }
+      const created = await reserveCheckout({ ...contact, delivery: physical ? 'pickup' : '', expected_total: expectedTotal,
+        items: items.map(item => ({ product_id: item.product.id, variant_id: item.variant?.id || null, quantity: item.quantity })) }, user?.id || 'guest');
+      setOrder(created); setUncertain(false);
+    } catch (caught) {
+      setError(message(caught));
+      try { setUncertain(Boolean(readPendingCheckout())); }
+      catch (readError) { setError(message(readError)); }
+    } finally { setBusy(false); }
   };
+  const retry = async () => {
+    setBusy(true); setError(null);
+    try { setOrder(await retryPendingCheckout()); setUncertain(false); }
+    catch (caught) { setError(message(caught)); setUncertain(Boolean(readPendingCheckout())); }
+    finally { setBusy(false); }
+  };
+  const receipt = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!order || !file || busy) return;
+    setBusy(true); setError(null);
+    try {
+      setOrder(await submitPrivateReceipt(order.id, file, readPendingCheckout()?.secret));
+      clearCart(); setFile(null);
+    } catch (caught) { setError(message(caught)); }
+    finally { setBusy(false); }
+  };
+  const refresh = async () => {
+    if (!order) return;
+    setBusy(true); setError(null);
+    try { setOrder(await getCheckout(order.id, readPendingCheckout()?.secret)); }
+    catch (caught) { setError(message(caught)); }
+    finally { setBusy(false); }
+  };
+  const submitted = order?.ecommerce_payment_status === 'verifying';
+  const paid = order?.ecommerce_payment_status === 'paid';
+  const expired = order?.status === 'cancelled' || Boolean(order?.reservation_expires_at && !submitted && !paid && new Date(order.reservation_expires_at).getTime() <= now);
 
-  if (orderCompleted) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full mb-6">
-          <CheckCircle2 size={48} />
-        </div>
-        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mb-3">¡Pedido Recibido!</h1>
-        <p className="text-gray-550 dark:text-gray-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
-          Gracias por tu compra. Tu orden <span className="font-mono font-bold text-primary dark:text-white">#{orderCompleted.slice(0, 8).toUpperCase()}</span> ha sido registrada exitosamente.
-          Un administrador verificará tu comprobante y autorizará el despacho.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to="/mis-compras"
-            className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-semibold shadow-md transition-all text-sm"
-          >
-            Ver mis Compras
-          </Link>
-          <Link
-            to="/tienda"
-            className="px-6 py-3 bg-white dark:bg-slate-900 border border-gray-250 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all text-sm"
-          >
-            Seguir Comprando
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 dark:bg-slate-800 text-gray-300 dark:text-gray-600 rounded-full mb-6">
-          <ShoppingBag size={40} />
-        </div>
-        <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-white mb-2">Tu carrito está vacío</h1>
-        <p className="text-gray-550 dark:text-gray-400 mb-8 text-sm">
-          Aún no has agregado recursos o materiales de estudio a tu carrito.
-        </p>
-        <Link
-          to="/tienda"
-          className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl font-medium shadow-md hover:bg-blue-900 transition-all text-sm inline-flex items-center gap-2"
-        >
-          Explorar Tienda
-          <ArrowRight size={16} />
-        </Link>
-      </div>
-    );
-  }
-
-  const shippingCost = hasPhysicalItems ? Number(selectedShipping?.base_cost || 0) : 0;
-  const subtotal = getTotalPrice();
-  const taxTotal = items.reduce((sum, item) => sum + getLineTax(item.product, item.quantity, item.variant), 0);
-  const paymentFee = subtotal * (Number(selectedPayment?.fee_percent || 0) / 100);
-  const total = Number((subtotal + taxTotal + shippingCost + paymentFee).toFixed(2));
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-      <Helmet><title>Carrito y compra | Tienda Jerusalén</title><meta name="description" content="Revisa tus productos, entrega y comprobante de compra en Tienda Jerusalén." /></Helmet>
-      {(settingsLoading || settingsError) && <p role="status" className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{settingsLoading ? 'Cargando métodos de pago y entrega…' : settingsError}</p>}
-      {/* Indicador de Pasos / Stepper */}
-      <div id="cart_hero" className="max-w-xl mx-auto mb-10 scroll-mt-28">
-        <div className="flex justify-between items-center relative">
-          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-150 dark:bg-slate-800 -translate-y-1/2 z-0" />
-          {[
-            { n: 1, name: 'Carrito' },
-            { n: 2, name: 'Entrega' },
-            { n: 3, name: 'Pago' }
-          ].map((s) => (
-            <div key={s.n} className="flex flex-col items-center relative z-10">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border transition-all ${
-                  step === s.n
-                    ? 'bg-primary text-white border-primary shadow-md'
-                    : step > s.n
-                    ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                    : 'bg-white dark:bg-slate-900 text-gray-405 border-gray-200 dark:border-slate-700'
-                }`}
-              >
-                {step > s.n ? <Check size={16} /> : s.n}
-              </div>
-              <span className={`text-[11px] font-bold mt-1.5 transition-colors ${step === s.n ? 'text-primary dark:text-white' : 'text-gray-450'}`}>
-                {s.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <button
-          onClick={handleBackStep}
-          disabled={step === 1}
-          className="text-primary dark:text-blue-400 dark:hover:text-blue-300 hover:text-blue-900 flex items-center gap-1 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft size={16} />
-          Paso anterior
-        </button>
-        <h1 className="text-3xl font-serif font-bold text-gray-800 dark:text-white mt-3">
-          {step === 1 ? 'Revisión del Carrito' : step === 2 ? 'Datos de Contacto' : 'Detalles de Pago'}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Tienes {getTotalItems()} artículos en tu carrito.</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Lado Izquierdo: Pasos Dinámicos */}
-        <div id="cart_items" className="lg:col-span-8 scroll-mt-28">
-          <div className="relative">
-            {step === 1 && (
-              <AnimeFadeUp
-                key="step-1"
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-4 shadow-2xs"
-              >
-                <div className="divide-y divide-gray-100 dark:divide-white/5">
-                  {items.map((item) => {
-                    const price = Number(item.product.price) + (item.variant?.price_adjustment ? Number(item.variant.price_adjustment) : 0);
-                    const itemKey = item.variant ? `${item.product.id}-${item.variant.id}` : item.product.id;
-                    return (
-                      <div
-                        key={itemKey}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-5 first:pt-0 last:pb-0"
-                      >
-                        <div className="flex items-center gap-4">
-                          {(item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url) ? (
-                            <img loading="lazy" src={item.variant?.cloudinary_image_url || item.product.cover_image_url || item.product.image_url || undefined} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-white/10 shadow-2xs" />
-                          ) : (
-                            <div aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-xl border border-gray-100 bg-slate-100 text-slate-400 shadow-2xs dark:border-white/10 dark:bg-slate-800 dark:text-slate-500"><ShoppingBag size={22} /></div>
-                          )}
-                          <div>
-                            <h3 className="font-serif font-bold text-gray-800 dark:text-white text-sm md:text-base">
-                              {item.product.name}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              <span className="text-[10px] text-gray-400 font-bold bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-150 dark:border-white/10">
-                                {item.product.category}
-                              </span>
-                              {item.variant && (
-                                <span className="text-xs text-gray-550 dark:text-gray-400 font-medium">
-                                  {item.variant.color_name ? `${item.variant.color_name} ` : ''}{item.variant.size ? `[Talla ${item.variant.size}]` : ''}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between w-full sm:w-auto gap-6 mt-4 sm:mt-0">
-                          {item.product.type !== 'digital' ? (
-                            <div className="flex items-center border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity - 1)}
-                                className="px-2.5 py-1 text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-white font-bold text-sm"
-                              >
-                                -
-                              </button>
-                              <span className="px-3 py-1 text-gray-800 dark:text-white font-medium text-xs">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity + 1)}
-                                className="px-2.5 py-1 text-gray-550 dark:text-gray-400 hover:text-primary dark:hover:text-white font-bold text-sm"
-                              >
-                                +
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-xs font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-2.5 py-1 rounded-md border border-purple-200/50 dark:border-purple-900/30">
-                              Acceso Digital
-                            </span>
-                          )}
-
-                          <div className="text-right flex items-center gap-4">
-                            <div>
-                              <span className="text-sm font-bold text-gray-800 dark:text-white">
-                                ${(price * item.quantity).toFixed(2)}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => removeItem(item.product.id, item.variant?.id)}
-                              className="text-gray-400 hover:text-accent-red p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
-                  <button
-                    onClick={handleNextStep}
-                    className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
-                  >
-                    Datos de Entrega
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </AnimeFadeUp>
-            )}
-
-            {step === 2 && (
-              <AnimeFadeUp
-                key="step-2"
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
-              >
-                <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
-                  <Ticket size={20} className="text-primary dark:text-white" />
-                  Información del Cliente
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Nombre Completo</label>
-                    <input
-                      id="name"
-                      type="text"
-                      name="name"
-                      required
-                      autoComplete="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                      placeholder="Ej. Juan Pérez"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
-                    <input
-                      id="email"
-                      type="email"
-                      name="email"
-                      required
-                      autoComplete="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                      placeholder="Ej. juan@correo.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="phone" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Teléfono</label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      required
-                      autoComplete="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                      placeholder="Ej. 0991234567"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="delivery" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Método de Entrega</label>
-                    <select
-                      id="delivery"
-                      name="delivery"
-                      autoComplete="shipping"
-                      value={formData.delivery}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                    >
-                      {!hasPhysicalItems ? <option value="">Entrega digital</option> : shippingMethods.length ? shippingMethods.map(method => <option key={method.id} value={method.id}>{method.name} ({Number(method.base_cost) === 0 ? 'Sin costo' : `$${Number(method.base_cost).toFixed(2)}`})</option>) : <option value="">Sin métodos de entrega disponibles</option>}
-                    </select>
-                  </div>
-                </div>
-
-                {requiresAddress && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-                    <div className="md:col-span-2">
-                      <label htmlFor="address" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Dirección de Entrega</label>
-                      <input
-                        id="address"
-                        type="text"
-                        name="address"
-                        required
-                        autoComplete="street-address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                        placeholder="Ej. Calle Principal 123 y Av. Intermedia"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="city" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Ciudad</label>
-                      <input
-                        id="city"
-                        type="text"
-                        name="city"
-                        required
-                        autoComplete="address-level2"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none focus:border-primary transition-all"
-                        placeholder="Ej. Guayaquil"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
-                  <button
-                    onClick={handleNextStep}
-                    className="px-6 py-3 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 flex items-center gap-2 text-sm transition-all"
-                  >
-                    Seleccionar Pago
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </AnimeFadeUp>
-            )}
-
-            {step === 3 && (
-              <AnimeFadeUp
-                key="step-3"
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs"
-              >
-                <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2">
-                  <CreditCard size={20} className="text-primary dark:text-white" />
-                  Método de Pago
-                </h2>
-
-                {/* Toggles de opción de pago */}
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    disabled
-                    className="cursor-not-allowed rounded-xl border-2 border-dashed border-gray-250 p-4 text-left opacity-65 dark:border-slate-700"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <CreditCard className="text-gray-405" size={20} />
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-500 dark:bg-slate-800">Próximamente</span>
-                    </div>
-                    <span className="block font-bold text-sm text-gray-800 dark:text-white">PayPhone / PayPal</span>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Requiere credenciales de servidor</span>
-                  </button>
-
-                  <button
-                    type="button" aria-pressed="true" disabled={!canPay}
-                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                      paymentMethod === 'transfer'
-                        ? 'border-primary bg-blue-50/30 dark:bg-blue-950/20'
-                        : 'border-gray-250 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <Building2 className={paymentMethod === 'transfer' ? 'text-primary dark:text-white' : 'text-gray-405'} size={20} />
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        paymentMethod === 'transfer' ? 'border-primary bg-primary' : 'border-gray-300 dark:border-slate-600'
-                      }`}>
-                        {paymentMethod === 'transfer' && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full" />}
-                      </div>
-                    </div>
-                    <span className="block font-bold text-sm text-gray-800 dark:text-white">Transferencia / Depósito</span>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Verificación manual (12-24h)</span>
-                  </button>
-                </div>
-
-                {/* Contenido según método de pago */}
-                {(
-                  <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
-                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-gray-150 dark:border-white/10 space-y-3">
-                      <h4 className="font-bold text-sm text-gray-800 dark:text-white">Cuentas Bancarias de la Iglesia:</h4>
-                      {bankDetails?.bank_name && bankDetails.bank_account ? (
-                        <div className="rounded-xl border border-gray-100 bg-white p-4 text-xs dark:border-white/10 dark:bg-slate-900">
-                          <p className="font-bold text-primary dark:text-white">{bankDetails.bank_name}</p>
-                          <p className="mt-1 text-gray-500 dark:text-gray-400">Cuenta registrada por la administración</p>
-                          <p className="font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">{bankDetails.bank_account}</p>
-                          {bankDetails.ruc && <p className="mt-1 text-[10px] text-gray-405">RUC: {bankDetails.ruc}</p>}
-                        </div>
-                      ) : (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-300">
-                          Los datos bancarios aún no están configurados. No realices una transferencia.
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label id="voucher-label" className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Subir Foto de Comprobante</label>
-                      <div className="flex items-center gap-4">
-                        <label htmlFor="voucherFile" className="flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-gray-250 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors relative">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
-                            {uploadingVoucher ? (
-                              <>
-                                <Loader2 className="animate-spin text-primary dark:text-white mb-2" size={24} />
-                                <p className="text-xs font-medium">Subiendo comprobante...</p>
-                              </>
-                            ) : voucherUrl ? (
-                              <>
-                                <CheckCircle2 className="text-green-600 mb-2 animate-bounce" size={24} />
-                                <p className="text-xs font-bold text-green-700 dark:text-green-400">¡Subido con éxito!</p>
-                                <p className="text-[10px] mt-0.5 text-gray-400 truncate max-w-[200px]">{voucherFile?.name}</p>
-                              </>
-                            ) : (
-                              <>
-                                <Upload className="mb-2" size={24} />
-                                <p className="text-xs font-bold">Seleccionar archivo</p>
-                                <p className="text-[9px] mt-0.5">PNG, JPG, PDF hasta 5MB</p>
-                              </>
-                            )}
-                          </div>
-                          <input
-                            id="voucherFile"
-                            name="voucherFile"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,application/pdf"
-                            className="hidden"
-                            onChange={handleFileChange}
-                            disabled={uploadingVoucher || !canPay || loading}
-                          />
-                        </label>
-
-                        {voucherUrl && (
-                          <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-2xs relative shrink-0">
-                            {voucherFile?.type === 'application/pdf' ? <span className="grid h-full place-items-center text-sm font-bold">PDF</span> : <img loading="lazy" src={voucherUrl} alt="Comprobante" className="w-full h-full object-cover" />}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </AnimeFadeUp>
-            )}
-          </div>
-        </div>
-
-        {/* Lado Derecho: Resumen de Compra Fijo */}
-        <div id="cart_summary" className="lg:col-span-4 lg:sticky lg:top-24 scroll-mt-28">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-white/10 p-6 space-y-6 shadow-2xs">
-            <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-white pb-2 border-b border-gray-100 dark:border-white/10">
-              Resumen del Pedido
-            </h2>
-
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
-                <span>Entrega ({hasPhysicalItems ? selectedShipping?.name || 'Por seleccionar' : 'Digital'})</span>
-                <span>{shippingCost === 0 ? 'Gratis' : `$${shippingCost.toFixed(2)}`}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 pb-3 border-b border-gray-100 dark:border-white/10">
-                <span>IVA según productos</span>
-                <span>${taxTotal.toFixed(2)}</span>
-              </div>
-              {paymentFee > 0 && <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300"><span>Comisión de pago</span><span>${paymentFee.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-base font-bold text-gray-800 dark:text-white pt-1">
-                <span>Total Final</span>
-                <span className="text-primary dark:text-white text-xl font-extrabold">${total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 dark:bg-red-950/20 text-accent-red dark:text-red-400 p-3 rounded-xl text-xs font-semibold border border-red-200 dark:border-red-900/30 flex items-start gap-1.5">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {step < 3 ? (
-              <button
-                type="button"
-                onClick={handleNextStep}
-                className="w-full py-3.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
-              >
-                Continuar
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading || uploadingVoucher || !canPay || Boolean(incompleteOrder)}
-                className="w-full py-3.5 bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-blue-900 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl font-bold shadow-md shadow-blue-100 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin h-5 w-5" />
-                ) : (
-                  <>
-                    Enviar pedido para verificación
-                    <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-            )}
-
-            <div className="flex justify-center items-center gap-2 text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
-              <CheckCircle2 size={12} className="text-green-500" />
-              Encriptación de seguridad SSL
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Cart;
+  return <div className="mx-auto max-w-6xl px-4 py-8 text-slate-900 dark:text-white sm:px-8">
+    <Helmet><title>Carrito y compra | Tienda Jerusalén</title><meta name="description" content="Revisa tu compra, reserva y comprobante privado en Tienda Jerusalén." /></Helmet>
+    <p className="text-xs font-bold uppercase tracking-widest text-church-gold-emphasis">Tienda Jerusalén</p>
+    <h1 className="mt-3 font-serif text-3xl font-bold">{order ? 'Tu pedido' : 'Revisión del carrito'}</h1>
+    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">1. Revisa tu compra · 2. Reserva · 3. Transfiere y adjunta el comprobante</p>
+    {error && <p role="alert" className="my-5 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}
+    {options.isError && <p role="alert" className="my-5 text-sm text-red-700 dark:text-red-300">{options.error.message} <button type="button" onClick={() => { void options.refetch(); }} className="min-h-11 underline">Reintentar configuración</button></p>}
+    {options.isSuccess && !options.data.enabled && <p className="my-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">La tienda está en preparación. Puedes revisar el catálogo; contacta con la iglesia antes de transferir.</p>}
+    {restoring || authLoading ? <p role="status" className="flex gap-3 py-10"><Loader2 className="animate-spin" /> Consultando tu pedido…</p> : order && (!order.user_id || order.user_id === user?.id) ?
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <section className={panel} aria-label="Estado del pedido">
+          <h2 className="font-serif text-xl font-bold">Pedido #{order.id.slice(0, 8).toUpperCase()}</h2>
+          <p className="mt-2 break-all font-mono text-xs text-slate-500">Referencia completa: {order.id}</p>
+          <p className="mt-4 text-2xl font-bold">{formatStoreCurrency(order.total)}</p>
+          <ul className="mt-4 space-y-2 text-sm">{order.order_items?.map(item => <li key={item.id}>{item.products?.name || 'Producto'} · {item.quantity} × {formatStoreCurrency(item.price)}</li>)}</ul>
+          <p className="mt-4 text-sm">{expired ? 'Reserva vencida o cancelada. Contacta con la iglesia si ya transferiste; no repitas el pago.' : paid ? 'Pago confirmado. Consulta la entrega de tus productos.' : submitted ? 'Comprobante recibido. El pago está en revisión; no vuelvas a transferir.' : 'Tu reserva está registrada. Usa el total confirmado para transferir.'}</p>
+          {order.reservation_expires_at && !submitted && !paid && !expired && <p className="mt-3 text-sm">Adjunta tu comprobante antes del {new Date(order.reservation_expires_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })} (hora de Ecuador).</p>}
+          <button type="button" onClick={() => { void refresh(); }} disabled={busy} className={button + ' mt-5'}>Actualizar estado</button>
+          {(paid || submitted) && <p className="mt-4 text-sm">{user ? <Link to="/mis-compras" className="underline">Mis compras</Link> : 'Conserva esta pestaña para seguir tu pedido como invitado.'}</p>}
+          {(paid || expired) && <button type="button" onClick={() => { forgetCompletedCheckout(); setOrder(null); }} className="mt-4 block min-h-11 text-sm underline">Volver al carrito</button>}
+        </section>
+        {!expired && !submitted && !paid && <section className={panel} aria-label="Transferencia y comprobante">
+          <h2 className="flex items-center gap-2 font-serif text-xl font-bold"><Building2 /> Transferencia bancaria</h2>
+          {order.bank ? <div className="mt-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p>{order.bank.bank_name}</p><p className="mt-2 break-all font-mono">{order.bank.bank_account}</p>{order.bank.ruc && <p className="mt-2 text-sm">RUC: {order.bank.ruc}</p>}</div> : <p className="mt-4">Los datos de transferencia no están disponibles. Actualiza el pedido o contacta con la iglesia antes de pagar.</p>}
+          <form onSubmit={receipt} className="mt-6 space-y-4">
+            <label className="block text-sm font-semibold" htmlFor="receipt">Comprobante privado (JPG, PNG, WebP o PDF; hasta 5 MB)</label>
+            <input id="receipt" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setFile(event.target.files?.[0] || null)} disabled={busy} className="block w-full text-sm" />
+            <button className={button} disabled={!file || busy || !order.bank}>{busy ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />} Enviar comprobante</button>
+            <p className="text-xs text-slate-500">Adjuntar un comprobante no confirma el cobro. Revisaremos el ingreso antes de entregar.</p>
+          </form>
+        </section>}
+      </div> : uncertain ? <section className={panel + ' mt-6'}>
+        <h2 className="font-bold">Hay una solicitud pendiente de respuesta</h2><p className="mt-3 text-sm">Consultaremos el mismo registro para evitar duplicar tu pedido. No repitas una transferencia.</p>
+        <button type="button" onClick={() => { void retry(); }} disabled={busy} className={button + ' mt-4'}>Recuperar mi pedido</button>
+      </section> : items.length === 0 ? <section className={panel + ' mt-6 text-center'}><ShoppingBag className="mx-auto" /><p className="mt-4">Tu carrito está vacío.</p><Link to="/tienda" className={button + ' mt-5'}>Explorar tienda</Link></section> :
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <section className={panel} aria-label="Productos del carrito">
+          <h2 className="font-serif text-xl font-bold">Productos</h2>
+          <ul className="divide-y divide-slate-200 dark:divide-white/10">{items.map(item => <li key={item.product.id + '-' + (item.variant?.id || '')} className="flex flex-wrap items-center justify-between gap-4 py-5">
+            <div className="min-w-0 flex-1"><h3 className="font-bold">{item.product.name}</h3><p className="mt-1 text-sm text-slate-500">{item.variant?.color_name} {item.variant?.size} {isDigitalProduct(item.product) && 'Acceso digital'}</p><p className="mt-2 font-bold">{formatStoreCurrency(getLineSubtotal(item.product, item.quantity, item.variant))}</p></div>
+            {!isDigitalProduct(item.product) && <div className="flex items-center gap-3"><button type="button" aria-label={'Disminuir ' + item.product.name} onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity - 1)} className="min-h-11 min-w-11 rounded-lg border">−</button><span>{item.quantity}</span><button type="button" aria-label={'Aumentar ' + item.product.name} onClick={() => updateQuantity(item.product.id, item.variant?.id, item.quantity + 1)} className="min-h-11 min-w-11 rounded-lg border">+</button></div>}
+            <button type="button" aria-label={'Quitar ' + item.product.name} onClick={() => removeItem(item.product.id, item.variant?.id)} className="min-h-11 p-3 text-red-600"><Trash2 size={18} /></button>
+          </li>)}</ul>
+        </section>
+        <form onSubmit={reserve} className={panel + ' space-y-4'}>
+          <h2 className="font-serif text-xl font-bold">Contacto y resumen</h2>
+          <label className="block text-sm" htmlFor="customer-name">Nombre completo<input id="customer-name" autoComplete="name" required minLength={2} maxLength={160} value={contact.name} onChange={event => setContact({ ...contact, name: event.target.value })} className={input} /></label>
+          <label className="block text-sm" htmlFor="customer-email">Correo<input id="customer-email" type="email" autoComplete="email" required maxLength={254} value={contact.email} onChange={event => setContact({ ...contact, email: event.target.value })} className={input} /></label>
+          {physical && <label className="block text-sm" htmlFor="customer-phone">Teléfono para coordinar retiro<input id="customer-phone" type="tel" autoComplete="tel" required value={contact.phone} onChange={event => setContact({ ...contact, phone: event.target.value })} className={input} /></label>}
+          <dl className="space-y-3 border-t pt-4 text-sm"><div className="flex justify-between"><dt>Subtotal</dt><dd>{formatStoreCurrency(subtotal)}</dd></div><div className="flex justify-between"><dt>IVA según productos</dt><dd>{formatStoreCurrency(tax)}</dd></div>{fee > 0 && <div className="flex justify-between"><dt>Recargo del medio de pago</dt><dd>{formatStoreCurrency(fee)}</dd></div>}<div className="flex justify-between"><dt>{physical ? 'Retiro coordinado en iglesia' : 'Entrega digital'}</dt><dd>Sin envío</dd></div><div className="flex justify-between text-lg font-bold"><dt>Total estimado</dt><dd>{formatStoreCurrency(expectedTotal)}</dd></div></dl>
+          {digital && !user ? <p className="text-sm">Tu carrito incluye un digital. <Link to="/login?redirectTo=%2Fcart" className="font-bold underline">Inicia sesión</Link> para vincularlo a tu biblioteca.</p> : <button className={button + ' w-full'} disabled={busy || !options.data?.enabled}>{busy && <Loader2 className="animate-spin" size={18} />} Reservar y ver datos de pago</button>}
+          <p className="text-xs leading-relaxed text-slate-500">El servidor confirma disponibilidad y total antes de mostrar la transferencia. Dispones de 24 horas para adjuntar el comprobante. No transfieras antes de tener tu referencia.</p>
+        </form>
+      </div>}
+  </div>;
+}

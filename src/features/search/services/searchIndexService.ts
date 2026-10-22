@@ -274,7 +274,7 @@ export async function searchDeepSupabase(rawQuery: string): Promise<Partial<Sear
     ] = await Promise.all([
       supabase.from('songs').select('id, title, artist, lyrics, slug').or(`title.ilike.%${q}%,lyrics.ilike.%${q}%`).limit(5),
       supabase.from('events').select('id, title, description, start_date, start_time, emoji').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
-      supabase.from('products').select('id, name, description, price, category').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
+      supabase.from('store_catalog').select('id, name, description, price, category').or(`name.ilike.%${q}%,description.ilike.%${q}%`).limit(4),
       supabase.from('schedules').select('id, title, day, time_range, description').or(`title.ilike.%${q}%,description.ilike.%${q}%`).limit(3),
       supabase.from('church_announcements').select('id, title, summary, body').eq('status', 'published').or(`title.ilike.%${q}%,summary.ilike.%${q}%,body.ilike.%${q}%`).limit(3),
       supabase.from('sermons').select('id, title, pastor_name, date, description').or(`title.ilike.%${q}%,pastor_name.ilike.%${q}%,description.ilike.%${q}%`).order('date', { ascending: false }).limit(4),

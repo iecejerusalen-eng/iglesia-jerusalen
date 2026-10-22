@@ -6,13 +6,15 @@ import { normalizeStoreSearch } from '../catalog';
 import { Eye, Clock, CheckCircle2, Truck, AlertCircle, ClipboardList, X, Download, ShoppingBag } from 'lucide-react';
 import type { Order, OrderStatus, OrderItem } from '../../../types';
 import { BorderBeam } from '../../../components/ui/magicui/border-beam';
+import PrivateReceiptViewer from './PrivateReceiptViewer';
 
 interface OrderManagerProps {
   orders: Order[];
   canEdit?: boolean;
+  canRefund?: boolean;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onCancelOrder: (order: Order) => void;
-  onApproveTransfer: (order: Order) => void;
+  onApproveTransfer: (order: Order, reference: string) => void;
   onOpenShippingOverride: (order: Order) => void;
   onOpenRefundModal: (order: Order) => void;
   selectedOrder: Order | null;
@@ -69,6 +71,7 @@ const getStatusBadge = (status: string) => {
 const OrderManager = ({
   orders,
   canEdit = true,
+  canRefund = false,
   onUpdateOrderStatus,
   onCancelOrder,
   onApproveTransfer,
@@ -82,6 +85,8 @@ const OrderManager = ({
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const [paymentReference, setPaymentReference] = useState({ orderId: '', value: '' });
+  const reference = paymentReference.orderId === selectedOrder?.id ? paymentReference.value : '';
   const filtered = useMemo(() => orders.filter(order => (status === 'all' || order.status === status) && normalizeStoreSearch(`${order.id} ${order.customer_name} ${order.customer_email}`).includes(normalizeStoreSearch(search))), [orders, status, search]);
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 20)));
   const receiptUrl = selectedOrder?.payment_voucher_url || selectedOrder?.payment_receipt_url;
@@ -240,7 +245,8 @@ const OrderManager = ({
                   </div>
                 </div>
 
-                {paymentType(selectedOrder) === 'transfer' && receiptUrl && (
+                {selectedOrder.receipt_storage_path && <PrivateReceiptViewer key={selectedOrder.id} orderId={selectedOrder.id} path={selectedOrder.receipt_storage_path} />}
+                {paymentType(selectedOrder) === 'transfer' && receiptUrl && !selectedOrder.receipt_storage_path && (
                   <div className="space-y-2">
                     <h4 className="font-bold text-xs text-gray-850 dark:text-white flex items-center justify-between">
                       <span>Comprobante de Pago Subido:</span>
@@ -260,12 +266,12 @@ const OrderManager = ({
                     {selectedOrder.order_items?.map((item: OrderItem) => (
                       <div key={item.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          {item.products?.image_url ? <img loading="lazy" src={item.products.image_url} alt={item.products?.name} className="w-10 h-10 rounded object-cover" /> : <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"><ShoppingBag size={16} /></div>}
+                          {(item.product_snapshot?.image_url || item.products?.image_url) ? <img loading="lazy" src={item.product_snapshot?.image_url || item.products?.image_url || undefined} alt={item.product_snapshot?.name || item.products?.name} className="w-10 h-10 rounded object-cover" /> : <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"><ShoppingBag size={16} /></div>}
                           <div>
-                            <span className="font-bold text-gray-800 dark:text-white block">{item.products?.name}</span>
-                            {item.product_variants && (
+                            <span className="font-bold text-gray-800 dark:text-white block">{item.product_snapshot?.name || item.products?.name}</span>
+                            {(item.product_variants || item.product_snapshot?.color_name || item.product_snapshot?.size) && (
                               <span className="text-[9px] text-gray-400 block mt-0.5">
-                                Variante: {item.product_variants.color_name || ''} {item.product_variants.size ? `[Talla ${item.product_variants.size}]` : ''}
+                                Variante: {item.product_snapshot?.color_name || item.product_variants?.color_name || ''} {item.product_snapshot?.size || item.product_variants?.size || ''}
                               </span>
                             )}
                           </div>
@@ -280,10 +286,11 @@ const OrderManager = ({
               </div>
 
               <fieldset disabled={!canEdit || actionLoading} className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-gray-150 dark:border-white/10 flex flex-wrap gap-2 shrink-0">
+                {selectedOrder.status === 'pending_payment' && <label className="block w-full text-xs font-bold">Referencia bancaria conciliada<input aria-label="Referencia bancaria conciliada" value={reference} onChange={event => setPaymentReference({ orderId: selectedOrder.id, value: event.target.value })} className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 dark:border-slate-600" placeholder="Referencia del ingreso confirmado en el banco" /></label>}
                 {selectedOrder.status === 'pending_payment' && paymentType(selectedOrder) === 'transfer' && (
                   <button
-                    onClick={() => onApproveTransfer(selectedOrder)}
-                    disabled={actionLoading}
+                    onClick={() => onApproveTransfer(selectedOrder, reference)}
+                    disabled={actionLoading || reference.trim().length < 3}
                     className="bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold px-3 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
                   >
                     <CheckCircle2 size={14} />
@@ -320,7 +327,7 @@ const OrderManager = ({
                     >
                       Editar Envío
                     </button>
-                    {['paid', 'ready_for_pickup', 'completed'].includes(selectedOrder.status) && (
+                    {canRefund && ['paid', 'ready_for_pickup', 'completed'].includes(selectedOrder.status) && (
                       <button
                         onClick={() => onOpenRefundModal(selectedOrder)}
                         className="border border-amber-200 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-[11px] font-bold px-3 py-2 rounded-xl cursor-pointer"

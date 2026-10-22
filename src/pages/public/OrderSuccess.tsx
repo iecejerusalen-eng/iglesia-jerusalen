@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, Download, Package, ArrowRight } from 'lucide-rea
 import { supabase } from '../../config/supabase';
 import type { Order, OrderItem } from '../../types';
 import { toast } from 'sonner';
+import { getCheckout, readPendingCheckout } from '../../features/store/services/checkoutService';
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
@@ -22,26 +23,9 @@ export default function OrderSuccess() {
 
     const fetchOrder = async () => {
       try {
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('id', orderId)
-          .single();
-
-        if (orderError) throw orderError;
+        const orderData = await getCheckout(orderId, readPendingCheckout()?.secret);
         setOrder(orderData);
-
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('order_items')
-          .select(`
-            *,
-            products (*),
-            product_variants (*)
-          `)
-          .eq('order_id', orderId);
-
-        if (itemsError) throw itemsError;
-        setOrderItems(itemsData || []);
+        setOrderItems(orderData.order_items || []);
 
       } catch (error) {
         console.error('Error fetching order:', error);
@@ -88,7 +72,7 @@ export default function OrderSuccess() {
     );
   }
 
-  const hasPhysical = orderItems.some(item => item.products?.ecommerce_product_type === 'physical');
+  const hasPhysical = orderItems.some(item => item.products?.type === 'physical');
   const isPaid = order.ecommerce_payment_status === 'paid' || order.status === 'paid';
 
   return (
@@ -141,13 +125,11 @@ export default function OrderSuccess() {
                     </p>
                     
                     {/* Digital Product Delivery */}
-                    {item.products?.ecommerce_product_type === 'digital' && (
+                    {item.products?.type === 'digital' && (
                       <div className="mt-2">
                         {isPaid ? (
-                          <a 
-                            href={item.products.digital_file_url || '#'} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                          <a
+                            href="/mis-compras"
                             className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <Download className="w-4 h-4 mr-1" />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../config/supabase';
 import type { EcommerceFulfillmentStatus, EcommercePaymentStatus, Order } from '../types';
 import { toast } from 'sonner';
+import { callStore } from '../features/store/services/checkoutService';
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Error desconocido';
 
@@ -57,14 +58,10 @@ export function useOrders() {
     };
   }, [fetchOrders]);
 
-  const updatePaymentStatus = async (orderId: string, newStatus: EcommercePaymentStatus) => {
+  const updatePaymentStatus = async (orderId: string, newStatus: EcommercePaymentStatus, reference?: string) => {
     try {
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ ecommerce_payment_status: newStatus, status: newStatus === 'paid' ? 'paid' : 'pending_payment' })
-        .eq('id', orderId);
-
-      if (updateError) throw updateError;
+      if (newStatus !== 'paid') throw new Error('Gestiona la revisión del comprobante desde Tienda y comercio.');
+      await callStore('admin_update', { order_id: orderId, status: 'paid', reference });
       setError(null);
       toast.success('Estado de pago actualizado');
     } catch (updateError) {
@@ -76,12 +73,8 @@ export function useOrders() {
 
   const updateFulfillmentStatus = async (orderId: string, newStatus: EcommerceFulfillmentStatus) => {
     try {
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ ecommerce_fulfillment_status: newStatus })
-        .eq('id', orderId);
-
-      if (updateError) throw updateError;
+      if (!['delivered', 'processing'].includes(newStatus)) throw new Error('Esta entrega requiere coordinación desde Tienda y comercio.');
+      await callStore('admin_update', { order_id: orderId, status: newStatus === 'delivered' ? 'completed' : 'ready_for_pickup' });
       setError(null);
       toast.success('Estado logístico actualizado');
     } catch (updateError) {

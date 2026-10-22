@@ -1,4 +1,5 @@
 import { supabase } from '../../../config/supabase';
+import { callStore, parseSecureOrder, StoreRejectedError } from './checkoutService';
 import type { Product } from '../../../types';
 
 export interface PosSession {
@@ -52,8 +53,6 @@ export class IncompletePosSaleError extends Error {
   }
 }
 
-const errorMessage = (error: unknown) => error instanceof Error ? error.message : typeof error === 'object' && error && 'message' in error ? String(error.message) : String(error);
-
 export const posService = {
   async getActiveSession(cashierName?: string): Promise<PosSession | null> {
     let query = supabase.from('pos_sessions').select('*').eq('status', 'open');
@@ -80,53 +79,38 @@ export const posService = {
   },
   async processPosSale(payload: PosTransactionPayload) {
     if (!payload.sessionId || !payload.items.length) throw new Error('Abre una caja y agrega productos antes de registrar la venta.');
-    const { error: sessionError } = await supabase.from('pos_sessions').select('id').eq('id', payload.sessionId).eq('status', 'open').single();
-    if (sessionError) throw sessionError;
-    const uniqueProducts = new Set(payload.items.map(item => item.product.id));
-    if (uniqueProducts.size !== payload.items.length) throw new Error('Agrupa las unidades del mismo producto en una sola línea.');
-    // Check current inventory before writing; the conditional update below also detects concurrent changes.
-    const snapshots: { item: PosCartItem; stock: number }[] = [];
-    for (const item of payload.items) {
-      if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !Number.isFinite(item.unit_price) || item.unit_price < 0 || item.discount !== 0) throw new Error('La venta contiene cantidades o precios inválidos.');
-      if (item.selected_variant_id || item.product.product_variants?.length) throw new Error('Los productos con variantes deben gestionarse desde la tienda para seleccionar su combinación.');
-      const { data, error } = await supabase.from('products').select('stock, is_active, deleted_at').eq('id', item.product.id).single();
-      if (error) throw error;
-      if (data.is_active === false || data.deleted_at || data.stock < item.quantity) throw new Error(`Revisa la disponibilidad de ${item.product.name}.`);
-      snapshots.push({ item, stock: Number(data.stock) });
-    }
-    const receiptNumber = `REC-${crypto.randomUUID().slice(0, 12).toUpperCase()}`;
-    const orderRecord = {
-      channel: 'pos', receipt_number: receiptNumber, cashier_name: payload.cashierName,
-      customer_name: payload.customerName || 'Cliente presencial', customer_email: payload.customerEmail || '',
-      member_id: payload.memberId || null, payment_method: payload.paymentMethod,
-      ecommerce_payment_method: payload.paymentMethod, ecommerce_payment_status: 'pending',
-      ecommerce_fulfillment_status: 'processing', status: 'pending_payment',
-      subtotal: payload.subtotal, total: payload.total, pos_session_id: payload.sessionId,
+    if (payload.items.some(item => item.discount !== 0 || !Number.isInteger(item.quantity) || item.quantity <= 0)) throw new Error('La venta contiene cantidades o descuentos inválidos.');
+    const body = {
+      name: payload.customerName || 'Cliente presencial', email: payload.customerEmail || '', phone: payload.customerPhone || '',
+      delivery: 'pickup', expected_total: payload.total, session_id: payload.sessionId,
+      payment_method: payload.paymentMethod, amount_paid: payload.amountPaid,
+      items: payload.items.map(item => ({ product_id: item.product.id, variant_id: item.selected_variant_id || null, quantity: item.quantity })),
     };
-    const { data: order, error: orderError } = await supabase.from('orders').insert(orderRecord).select('id').single();
-    if (orderError) throw orderError;
-    try {
-      const { error: itemsError } = await supabase.from('order_items').insert(payload.items.map(item => ({
-        order_id: order.id, product_id: item.product.id, variant_id: item.selected_variant_id || null,
-        price: item.unit_price, quantity: item.quantity,
-      })));
-      if (itemsError) throw itemsError;
-      for (const { item, stock } of snapshots) {
-        const nextStock = stock - item.quantity;
-        const { error: stockError } = await supabase.from('products').update({ stock: nextStock }).eq('id', item.product.id).eq('stock', stock).select('id').single();
-        if (stockError) throw stockError;
-        const { error: movementError } = await supabase.from('inventory_movements').insert({
-          product_id: item.product.id, movement_type: 'pos_sale', quantity: item.quantity,
-          previous_stock: stock, new_stock: nextStock, reference_order_id: order.id,
-          created_by_name: payload.cashierName, reason: `Venta POS (${receiptNumber})`,
-        });
-        if (movementError) throw movementError;
+    const key = 'store-pos-operation:' + payload.sessionId;
+    const fingerprint = JSON.stringify(body);
+    const raw = sessionStorage.getItem(key);
+    let requestId: string;
+    let secret: string;
+    if (raw) {
+      const previous: unknown = JSON.parse(raw);
+      if (!previous || typeof previous !== 'object' || !('fingerprint' in previous) || previous.fingerprint !== fingerprint
+        || !('requestId' in previous) || typeof previous.requestId !== 'string' || !('secret' in previous) || typeof previous.secret !== 'string') {
+        throw new Error('Hay una venta pendiente de respuesta en esta caja. Revisa su estado antes de volver a cobrar.');
       }
-      const { error: completeError } = await supabase.from('orders').update({ status: 'completed', ecommerce_payment_status: 'paid', ecommerce_fulfillment_status: 'delivered' }).eq('id', order.id).select('id').single();
-      if (completeError) throw completeError;
-    } catch (error) {
-      throw new IncompletePosSaleError(order.id, errorMessage(error));
+      requestId = previous.requestId; secret = previous.secret;
+    } else {
+      requestId = crypto.randomUUID();
+      secret = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+      sessionStorage.setItem(key, JSON.stringify({ requestId, secret, fingerprint }));
     }
-    return { success: true, orderId: order.id, receiptNumber, transactionDate: new Date().toISOString(), orderRecord };
+    let order;
+    try { order = parseSecureOrder(await callStore('pos', { ...body, request_id: requestId }, secret)); }
+    catch (error) {
+      if (error instanceof StoreRejectedError) sessionStorage.removeItem(key);
+      throw error;
+    }
+    sessionStorage.removeItem(key);
+    return { success: true, orderId: order.id, receiptNumber: order.receipt_number || order.id,
+      transactionDate: order.created_at, orderRecord: order };
   },
 };

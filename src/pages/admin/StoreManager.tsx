@@ -111,7 +111,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
   const [shippingOverride, setShippingOverride] = useState({ recipient_name: '', phone: '', override_address: '', status_notes: '' });
 
   const [showRefundModal, setShowRefundModal] = useState(false);
-  const [refundData, setRefundData] = useState({ amount: 0, reason: '' });
+  const [refundData, setRefundData] = useState(() => ({ amount: 0, reason: '', operationId: crypto.randomUUID() }));
   const shippingDialogRef = useStoreDialog(showShippingModal, () => { if (!mutations.saveShippingOverride.isPending) setShowShippingModal(false); });
   const refundDialogRef = useStoreDialog(showRefundModal, () => { if (!mutations.saveRefund.isPending) setShowRefundModal(false); });
 
@@ -127,13 +127,13 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
       mutations.cancelOrder.mutate(order, { onSuccess: () => setSelectedOrder(null) });
     }
   };
-  const handleApproveTransfer = async (order: Order) => {
+  const handleApproveTransfer = async (order: Order, reference: string) => {
     const isConfirmed = await confirm({
       title: '¿Aprobar Pago?',
       message: 'Confirma que el depósito o transferencia ha sido recibido en la cuenta bancaria de la iglesia.'
     });
     if (isConfirmed) {
-      mutations.updateOrderStatus.mutate({ orderId: order.id, status: 'paid' });
+      mutations.updateOrderStatus.mutate({ orderId: order.id, status: 'paid', reference });
     }
   };
 
@@ -166,7 +166,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
   };
 
   const handleOpenRefundModal = (order: Order) => {
-    setRefundData({ amount: Number(order.total) || 0, reason: '' });
+    setRefundData({ amount: Math.max(0, Number(order.total) - Number(order.refunded_amount || 0)), reason: '', operationId: crypto.randomUUID() });
     setShowRefundModal(true);
   };
 
@@ -177,16 +177,12 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
         orderId: selectedOrder.id,
         amount: refundData.amount,
         reason: refundData.reason,
-        total: Number(selectedOrder.total)
+        total: Math.max(0, Number(selectedOrder.total) - Number(selectedOrder.refunded_amount || 0)),
+        operationId: refundData.operationId
       }, {
-        onSuccess: () => {
+        onSuccess: (updatedOrder) => {
           setShowRefundModal(false);
-          setSelectedOrder(prev => prev ? {
-            ...prev,
-            refund_status: refundData.amount >= Number(prev.total) ? 'full' : 'partial',
-            refunded_amount: refundData.amount,
-            refund_reason: refundData.reason
-          } : null);
+          setSelectedOrder(updatedOrder);
         }
       });
     }
@@ -322,6 +318,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
           {activeTab === 'orders' && (
             <OrderManager
               canEdit={canEditOrders}
+              canRefund={canEditOrders && hasPermission('finances', 'edit')}
               orders={orders}
               onUpdateOrderStatus={handleUpdateOrderStatus}
               onCancelOrder={handleCancelOrder}
@@ -466,7 +463,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
                   type="number"
                   step="0.01"
                   min="0"
-                  max={Number(selectedOrder?.total) || 0}
+                  max={Math.max(0, Number(selectedOrder?.total || 0) - Number(selectedOrder?.refunded_amount || 0))}
                   required
                   value={refundData.amount}
                   onChange={(e) => setRefundData({ ...refundData, amount: parseFloat(e.target.value) })}

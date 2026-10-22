@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
 import { toast } from 'sonner';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { callStore, parseSecureOrder } from '../services/checkoutService';
 import type { DbProduct, FormVariant, StoreCategory, Supplier } from '../types';
 import type { Order, OrderStatus } from '../../../types';
 
@@ -28,7 +29,10 @@ export const useStoreMutations = () => {
       throw new Error('No tienes permiso para realizar esta acción.');
     }
   };
-  const invalidateProducts = () => queryClient.invalidateQueries({ queryKey: ['products'] });
+  const invalidateProducts = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['products'] }),
+    queryClient.invalidateQueries({ queryKey: ['public-store-catalog'] }),
+  ]);
   const variantPayload = (variant: FormVariant, productId: string) => ({
     id: variant.id || crypto.randomUUID(), product_id: productId,
     color_name: variant.color_name.trim(), color_hex: variant.color_hex,
@@ -151,14 +155,14 @@ export const useStoreMutations = () => {
   });
 
   const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string, status: OrderStatus }) => {
+    mutationFn: async ({ orderId, status, reference }: { orderId: string, status: OrderStatus, reference?: string }) => {
       requireEdit('orders');
-      const { error } = await supabase.from('orders').update({ status, ...(status === 'paid' ? { ecommerce_payment_status: 'paid' } : {}), ...(status === 'completed' ? { ecommerce_fulfillment_status: 'delivered' } : {}) }).eq('id', orderId).select('id').single();
-      if (error) throw error;
+      await callStore('admin_update', { order_id: orderId, status, reference });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Estado actualizado');
+      void invalidateProducts();
     },
     onError: (error: unknown) => toast.error('Error: ' + getErrorMessage(error))
   });
@@ -169,8 +173,7 @@ export const useStoreMutations = () => {
       if (order.status === 'completed' || order.status === 'cancelled') {
         throw new Error('No se puede cancelar en este estado');
       }
-      const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id).eq('status', order.status).select('id').single();
-      if (error) throw error;
+      await callStore('admin_update', { order_id: order.id, status: 'cancelled' });
 
 
     },
@@ -185,13 +188,7 @@ export const useStoreMutations = () => {
   const saveShippingOverride = useMutation({
     mutationFn: async ({ orderId, data }: { orderId: string, data: ShippingOverrideData }) => {
       requireEdit('orders');
-      const { error } = await supabase.from('orders').update({
-        shipping_recipient_name: data.recipient_name,
-        shipping_phone: data.phone,
-        shipping_override_address: data.override_address,
-        shipping_status_notes: data.status_notes
-      }).eq('id', orderId).select('id').single();
-      if (error) throw error;
+      await callStore('admin_update', { order_id: orderId, operation: 'shipping', ...data });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -201,15 +198,11 @@ export const useStoreMutations = () => {
   });
 
   const saveRefund = useMutation({
-    mutationFn: async ({ orderId, amount, reason, total }: { orderId: string, amount: number, reason: string, total: number }) => {
+    mutationFn: async ({ orderId, amount, reason, total, operationId }: { orderId: string, amount: number, reason: string, total: number, operationId: string }) => {
       requireEdit('orders');
+      if (!hasPermission('finances', 'edit')) throw new Error('Necesitas permiso financiero para registrar reembolsos.');
       if (!Number.isFinite(amount) || amount <= 0 || amount > total || !reason.trim()) throw new Error('Indica un importe válido y el motivo del reembolso.');
-      const { error } = await supabase.from('orders').update({
-        refund_status: amount >= total ? 'full' : 'partial',
-        refunded_amount: amount,
-        refund_reason: reason
-      }).eq('id', orderId).select('id').single();
-      if (error) throw error;
+      return parseSecureOrder(await callStore('admin_update', { order_id: orderId, operation: 'refund', amount, reason, operation_id: operationId }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });

@@ -7,6 +7,11 @@ import type { Order } from '../../../types';
 
 const actions = { onOpenCreate: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn() };
 describe('Gestión de comercio', () => {
+  it('conserva la descripción comprada aunque el operador no pueda leer el catálogo interno', () => {
+    const order: Order = { id: 'order-snapshot', user_id: null, customer_name: 'Cliente', customer_email: 'test@example.invalid', total: 10, status: 'paid', created_at: '2026-10-21', order_items: [{ id: 'item-1', order_id: 'order-snapshot', product_id: 'product-1', quantity: 1, price: 10, product_snapshot: { id: 'product-1', name: 'Nombre al comprar', color_name: 'Azul', size: 'M' } }] };
+    render(<OrderManager orders={[order]} canEdit={false} selectedOrder={order} setSelectedOrder={vi.fn()} actionLoading={false} onUpdateOrderStatus={vi.fn()} onCancelOrder={vi.fn()} onApproveTransfer={vi.fn()} onOpenShippingOverride={vi.fn()} onOpenRefundModal={vi.fn()} />);
+    expect(screen.getByText('Nombre al comprar')).toBeInTheDocument();
+  });
   it('filtra por SKU y calcula stock desde variantes', () => {
     render(<ProductList products={[{ ...product, sku: 'GUI-01', stock: 100, product_variants: [{ color_name: 'Azul', color_hex: '', size: 'M', cloudinary_image_url: '', stock: 0, price_adjustment: 0 }] }]} {...actions} />);
     fireEvent.change(screen.getByLabelText('Buscar productos por nombre, SKU o categoría'), { target: { value: 'gui-01' } });

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
+import { listPurchases } from '../../features/store/services/checkoutService';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import { Download, AlertCircle, ShoppingBag, Calendar, CreditCard, ChevronRight, CheckCircle2, Clock, Truck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -26,45 +27,7 @@ export default function MyPurchases() {
       setLoading(true);
       setError(null);
       setDigitalAssets({});
-      // Obtener órdenes del usuario con productos y variantes
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          user_id,
-          customer_name,
-          customer_email,
-          total,
-          status,
-          payment_method,
-          payment_voucher_url,
-          created_at,
-          order_items (
-            id,
-            quantity,
-            price,
-            product_id,
-            variant_id,
-            products (
-              id,
-              name,
-              image_url,
-              cover_image_url,
-              type
-            ),
-            product_variants (
-              id,
-              color_name,
-              size
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (ordersError) throw ordersError;
-
-      const typedOrders = (ordersData || []) as unknown as Order[];
+      const typedOrders = await listPurchases();
       setOrders(typedOrders);
 
       // Identificar los IDs de productos digitales que se han pagado

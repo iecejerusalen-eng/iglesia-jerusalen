@@ -3,6 +3,13 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.12.0] - 2026-10-21
+
+### Seguridad y operación
+- Checkout transaccional con cálculo de importes en servidor, reservas de 24 horas e identidad estable para reintentos.
+- Comprobantes privados con lectura temporal autorizada, catálogo público sin costos internos ni enlaces maestros y acciones administrativas verificadas en servidor.
+- Carrito, compras y POS adaptados al flujo seguro. Migración y función instaladas; nuevas ventas deshabilitadas hasta confirmar catálogo y conteo físico.
+
 ## [1.11.3] - 2026-10-21
 
 ### Mejorado

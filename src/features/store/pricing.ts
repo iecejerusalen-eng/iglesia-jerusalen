@@ -2,7 +2,7 @@ import type { Product, ProductPriceTier, ProductVariant } from '../../types';
 
 export const getProductBasePrice = (product: Product, variant?: ProductVariant | null) => {
   const regularPrice = Number(product.price) || 0;
-  const salePrice = product.discount_price != null && Number(product.discount_price) < regularPrice
+  const salePrice = product.discount_price != null && Number(product.discount_price) >= 0 && Number(product.discount_price) < regularPrice
     ? Number(product.discount_price)
     : regularPrice;
   return salePrice + (Number(variant?.price_adjustment) || 0);
@@ -22,10 +22,11 @@ export const getUnitPrice = (
   quantity: number,
   variant?: ProductVariant | null,
 ) => {
-  const basePrice = getProductBasePrice(product, variant);
-  return getPriceTiers(product)
+  const basePrice = getProductBasePrice(product);
+  const price = getPriceTiers(product)
     .filter(tier => quantity >= tier.min_quantity)
     .reduce((price, tier) => Math.min(price, Number(tier.unit_price)), basePrice);
+  return (Math.round(price * 100) + Math.round((Number(variant?.price_adjustment) || 0) * 100)) / 100;
 };
 
 export const getLineSubtotal = (
@@ -38,7 +39,7 @@ export const getLineTax = (
   product: Product,
   quantity: number,
   variant?: ProductVariant | null,
-) => getLineSubtotal(product, quantity, variant) * ((Number(product.tax_rate) || 0) / 100);
+) => Math.round(Math.round(getLineSubtotal(product, quantity, variant) * 100) * Math.round((Number(product.tax_rate) || 0) * 100) / 10000) / 100;
 
 export const getProductImages = (product: Product, variant?: ProductVariant | null) => {
   const mediaUrls = product.metadata?.media

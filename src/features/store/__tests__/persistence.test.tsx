@@ -3,11 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStoreMutations } from '../hooks/useStoreMutations';
-import { IncompletePosSaleError, posService } from '../services/posService';
+import { posService } from '../services/posService';
 import { product, variant } from './fixtures';
 
-const state = vi.hoisted(() => ({ from: vi.fn(), canEdit: true, failure: '', referenced: 0 }));
-vi.mock('../../../config/supabase', () => ({ supabase: { from: state.from } }));
+const state = vi.hoisted(() => ({ from: vi.fn(), invoke: vi.fn(), canEdit: true, failure: '', referenced: 0 }));
+vi.mock('../../../config/supabase', () => ({ supabase: { from: state.from, functions: { invoke: state.invoke } } }));
 vi.mock('../../../hooks/usePermissions', () => ({ usePermissions: () => ({ hasPermission: () => state.canEdit, isAdmin: state.canEdit }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -38,7 +38,11 @@ class Query {
   maybeSingle() { return Promise.resolve(this.result()); }
   then(resolve: (result: ReturnType<Query['result']>) => unknown) { return Promise.resolve(this.result()).then(resolve); }
 }
-beforeEach(() => { calls.length = 0; state.canEdit = true; state.failure = ''; state.referenced = 0; state.from.mockReset().mockImplementation((table: string) => new Query(table)); });
+beforeEach(() => {
+  sessionStorage.clear(); calls.length = 0; state.canEdit = true; state.failure = ''; state.referenced = 0;
+  state.from.mockReset().mockImplementation((table: string) => new Query(table));
+  state.invoke.mockReset().mockResolvedValue({ data: { id: 'order-1', customer_name: 'Cliente', total: 11, status: 'completed', order_items: [], created_at: '2026-10-21', receipt_number: 'REC-QA' }, error: null });
+});
 function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } })}>{children}</QueryClientProvider>;
 }
@@ -78,21 +82,22 @@ describe('Punto de venta', () => {
     state.failure = 'pos_sessions:update';
     await expect(posService.closeSession('session-1', 100)).rejects.toEqual({ message: 'Database unavailable' });
   });
-  it('rechaza falta de caja o stock antes de crear el pedido', async () => {
+  it('rechaza falta de caja antes de invocar la venta', async () => {
     await expect(posService.processPosSale({ ...payload, sessionId: undefined })).rejects.toThrow('Abre una caja');
-    await expect(posService.processPosSale({ ...payload, items: [{ ...payload.items[0], quantity: 100 }] })).rejects.toThrow('disponibilidad');
-    expect(calls.some(call => call.table === 'orders' && call.action === 'insert')).toBe(false);
+    expect(state.invoke).not.toHaveBeenCalled();
   });
-  it('informa el ID del pedido incompleto y no lo marca pagado', async () => {
-    state.failure = 'order_items:insert';
-    await expect(posService.processPosSale(payload)).rejects.toBeInstanceOf(IncompletePosSaleError);
-    expect(calls.some(call => call.table === 'orders' && call.action === 'update')).toBe(false);
+  it('conserva identidad de venta ante respuesta perdida y reutiliza el registro', async () => {
+    state.invoke.mockResolvedValueOnce({ data: null, error: new Error('network') });
+    await expect(posService.processPosSale(payload)).rejects.toThrow('reintenta');
+    await posService.processPosSale(payload);
+    expect(state.invoke.mock.calls[0][1].body.payload.request_id).toBe(state.invoke.mock.calls[1][1].body.payload.request_id);
+    expect(state.invoke.mock.calls[0][1].body.secret).toBe(state.invoke.mock.calls[1][1].body.secret);
+    expect(state.from).not.toHaveBeenCalled();
   });
-  it('solo confirma venta después de registrar artículos e inventario', async () => {
+  it('envía cantidades al servidor sin escribir artículos, precios ni stock directamente', async () => {
     const result = await posService.processPosSale(payload);
     expect(result.success).toBe(true);
-    expect(calls.find(call => call.table === 'order_items')?.payload).toEqual([expect.objectContaining({ price: 10, quantity: 1 })]);
-    expect(calls.find(call => call.table === 'products' && call.action === 'update')?.filters).toContainEqual(['stock', 5]);
-    expect(calls.at(-1)?.payload).toEqual(expect.objectContaining({ status: 'completed', ecommerce_payment_status: 'paid' }));
+    expect(state.invoke.mock.calls[0][1].body.payload.items).toEqual([{ product_id: product.id, variant_id: null, quantity: 1 }]);
+    expect(state.from).not.toHaveBeenCalled();
   });
 });

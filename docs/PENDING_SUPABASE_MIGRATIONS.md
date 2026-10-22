@@ -2,6 +2,10 @@
 
 Última revisión: 2026-10-21 (hora de Guayaquil; versiones remotas en UTC).
 
+## Tienda fase 2 — aplicada el 21-oct-2026
+
+`20261022001552_secure_store_checkout_v2.sql` fue aplicada en el proyecto remoto con la misma versión; `store-checkout` está activa en versión 1. Bloquea escrituras directas de pedidos, añade reservas/comprobantes privados y vistas públicas acotadas. Mantiene nuevas ventas deshabilitadas hasta confirmar catálogo y conteo. Publicación coordinada del cliente 1.12.0; instalación, verificación y límites en [store-checkout.md](store-checkout.md).
+
 ## Estado verificado del proyecto gqtatqekfrswvplemknc — 21-oct-2026
 
 El historial remoto contiene 192 migraciones. Estas seis correcciones de seguridad y certificados están aplicadas y verificadas en el proyecto de Iglesia Jerusalén:

@@ -65,14 +65,8 @@ const Store = () => {
     retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id, name, description, price, discount_price, promo_tag, sku,
-          tax_rate, sold_count, is_active, thumbnail_url, image_url, stock,
-          category, type, ecommerce_product_type, features, cover_image_url,
-          deleted_at, created_at, metadata,
-          product_variants(id, product_id, color_name, color_hex, size, cloudinary_image_url, stock, price_adjustment, sku, metadata, created_at)
-        `)
+        .from('store_catalog')
+        .select('*')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
