@@ -8,6 +8,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 ### Mejorado
 - Se actualizó la identidad visual del sitio con el nuevo emblema de Iglesia Jerusalén en navegación, pie, administración, certificados, presentación y favicon.
 - El pie de página usa el logo horizontal con «Posesión de Paz»; las secciones institucionales usan la variante sin lema.
+- Se corrigió el tamaño y el contraste del logo del pie para que el emblema y el lema se vean completos.
 - El catálogo administrativo identifica las tres variantes vigentes y conserva las anteriores como referencia.
 - Se incorporaron los recursos SVG y PNG a la biblioteca de medios con su fuente, crédito y derechos registrados.
 
