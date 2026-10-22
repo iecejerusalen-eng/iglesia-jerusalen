@@ -103,7 +103,7 @@ const Footer = () => {
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 className="flex items-center gap-4"
               >
-                <img loading="lazy" src={logoHorizontal} alt="Iglesia Jerusalén — Posesión de Paz" className="h-auto max-h-14 w-auto max-w-[17rem] rounded-lg bg-white p-2 shadow-sm transition-transform duration-300 group-hover:scale-[1.02]" />
+                <img loading="eager" decoding="async" width="3961" height="738" src={logoHorizontal} alt="Iglesia Jerusalén — Posesión de Paz" className="block h-auto max-h-16 w-auto max-w-[min(100%,18rem)] rounded-lg bg-white p-2 shadow-sm transition-transform duration-300 group-hover:scale-[1.02]" />
               </motion.div>
             </Link>
             
