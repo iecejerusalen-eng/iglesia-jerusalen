@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore } from '../../store/useThemeStore';
 import { Moon, Sun, Menu, X, ChevronUp, ChevronDown, Maximize, Play, Pause } from 'lucide-react';
-import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
+import soloLogoBlanco from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
+import soloLogoColorido from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 
 import Section1Overview from './Section1Overview';
 import Section2LMS from './Section2LMS';

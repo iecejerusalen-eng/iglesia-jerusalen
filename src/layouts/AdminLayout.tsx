@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Globe, LogOut, Menu, Search, Settings, ShieldCheck } from 'lucide-react';
 import Sidebar from '../components/admin/Sidebar';
 import CommandMenu from '../components/admin/CommandMenu';
-import soloLogoBlanco from '../assets/Jerusalén/solo logo blanco.svg';
+import soloLogoBlanco from '../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { GlobalErrorBoundary } from '../components/common/ErrorBoundary';
 import { toast } from 'sonner';

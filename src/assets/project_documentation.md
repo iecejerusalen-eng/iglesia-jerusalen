@@ -124,13 +124,13 @@ La paleta está calibrada para cumplir con los estándares de contraste y legibi
 * **Playfair Display**: Serif elegante (`--font-serif`) empleada en títulos heroicos y nombres de secciones.
 * **Inter**: Sans-serif limpia (`--font-sans`) empleada en el cuerpo de lectura, tablas, paneles y formularios.
 
-### Logos de la Iglesia e Integración
-La carpeta `src/assets/Jerusalén/` contiene los logos oficiales de la congregación en formato SVG vectorial:
-* **Logotipo Completo Colorido** (`Logo completo colorido.svg`)
-* **Logotipo Completo Blanco** (`Logo completo blanco.svg`)
-* **Isotipo Circular Colorido** (`Logo circular colorido.svg`)
-* **Isotipo Circular Blanco** (`Logo circular blanco.svg`)
-* **Logotipo Horizontal y Vertical** en colores institucionales y variantes monocromáticas sólidas.
+### Identidad visual vigente e integración
+La versión vigente aportada por el usuario el 22 de octubre de 2026 está en `src/assets/Jerusalén/nueva-identidad/`:
+* **Logo horizontal** (`logo-iglesia-jerusalen-horizontal.svg`), con «Posesión de Paz».
+* **Logo sin lema** (`logo-iglesia-jerusalen-sin-slogan.svg`).
+* **Emblema** (`emblema-iglesia-jerusalen.svg`).
+
+Los archivos anteriores de `src/assets/Jerusalén/` se conservan como referencias históricas; no deben confundirse con la identidad vigente.
 
 ### Favicon Dinámico desde la Base de Datos
 * **Funcionalidad**: En lugar de utilizar un favicon estático o emojis de iglesia, el favicon de la pestaña del navegador se actualiza dinámicamente mediante código Javascript al iniciar la aplicación.

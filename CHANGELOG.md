@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.3] - 2026-10-22
+
+### Mejorado
+- Se actualizó la identidad visual del sitio con el nuevo emblema de Iglesia Jerusalén en navegación, pie, administración, certificados, presentación y favicon.
+- El pie de página usa el logo horizontal con «Posesión de Paz»; las secciones institucionales usan la variante sin lema.
+- El catálogo administrativo identifica las tres variantes vigentes y conserva las anteriores como referencia.
+- Se incorporaron los recursos SVG y PNG a la biblioteca de medios con su fuente, crédito y derechos registrados.
+
 ## [1.14.2] - 2026-10-21
 
 ### Mejorado

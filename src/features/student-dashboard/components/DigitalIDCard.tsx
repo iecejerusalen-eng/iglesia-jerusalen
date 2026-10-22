@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, ShieldCheck, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
-import soloLogoNegro from '../../../assets/Jerusalén/solo logo negro.svg';
+import soloLogoNegro from '../../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 
 interface DigitalIDCardProps {
   isOpen: boolean;

@@ -5,7 +5,7 @@ import type { BirthdayInfo } from '../features/birthdays/hooks/useBirthdays';
 import { toast } from 'sonner';
 
 // Import SVG logo as raw text string so jsPDF can parse it
-import logoSvg from '../assets/Jerusalén/solo logo colorido.svg?raw';
+import logoSvg from '../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg?raw';
 
 export interface PdfExportOptions {
   viewMode: 'cards' | 'table' | 'calendar' | 'grid' | 'year';

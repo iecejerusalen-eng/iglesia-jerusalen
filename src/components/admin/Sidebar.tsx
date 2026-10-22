@@ -6,7 +6,7 @@ import { X, ChevronRight, Settings, Globe, LogOut, MonitorPlay, Search } from 'l
 import { usePermissions } from '../../hooks/usePermissions';
 import { MODULE_GROUPS, ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import { useFinanceAccess } from '../../features/finance/api';
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
+import soloLogoColorido from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 
 interface SidebarProps {
   isOpen: boolean;

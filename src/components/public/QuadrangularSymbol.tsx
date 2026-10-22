@@ -1,4 +1,4 @@
-import logoSymbols from '../../assets/Jerusalén/solo logo colorido.svg';
+import logoSymbols from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 
 export type QuadrangularSymbolName = 'cross' | 'dove' | 'cup' | 'crown';
 

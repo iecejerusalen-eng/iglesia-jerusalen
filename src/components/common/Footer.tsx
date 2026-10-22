@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FooterBreadcrumb } from './FooterBreadcrumb';
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
+import logoHorizontal from '../../assets/Jerusalén/nueva-identidad/logo-iglesia-jerusalen-horizontal.svg';
 import { 
   Mail, Phone, MapPin, Heart, ShieldCheck, Scale,
   Users, GraduationCap, Gamepad2, ShoppingBag, Globe, Video,
@@ -103,15 +103,7 @@ const Footer = () => {
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 className="flex items-center gap-4"
               >
-                <img loading="lazy" src={soloLogoColorido} alt="Logo Jerusalén" className="h-12 w-auto drop-shadow-md transition-transform duration-300 group-hover:scale-105" />
-                <div>
-                  <span className="font-serif text-2xl font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors block leading-tight">
-                    Jerusalén
-                  </span>
-                  <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-indigo-600 dark:text-indigo-400/80 block mt-0.5">
-                    Iglesia del Evangelio Cuadrangular
-                  </p>
-                </div>
+                <img loading="lazy" src={logoHorizontal} alt="Iglesia Jerusalén — Posesión de Paz" className="h-auto max-h-14 w-auto max-w-[17rem] rounded-lg bg-white p-2 shadow-sm transition-transform duration-300 group-hover:scale-[1.02]" />
               </motion.div>
             </Link>
             

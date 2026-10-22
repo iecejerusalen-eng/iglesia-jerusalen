@@ -15,6 +15,9 @@ import textoBlanco from '../../assets/Jerusalén/texto blanco.svg';
 import textoNegro from '../../assets/Jerusalén/texto negro.svg';
 import logoHorizontalBlanco from '../../assets/Jerusalén/Logo Jerusalen Horizontal Blanco.png';
 import logoHorizontalNegro from '../../assets/Jerusalén/Logo Jerusalen Horizontal Negro.png';
+import logoJerusalenHorizontal from '../../assets/Jerusalén/nueva-identidad/logo-iglesia-jerusalen-horizontal.svg';
+import logoJerusalenSinSlogan from '../../assets/Jerusalén/nueva-identidad/logo-iglesia-jerusalen-sin-slogan.svg';
+import emblemaJerusalen from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 
 type CatalogTab = 'colors' | 'gradients' | 'typography' | 'logos';
 
@@ -156,76 +159,100 @@ const GRADIENTS = [
 
 const LOGO_ASSETS = [
   {
-    name: 'Logotipo Completo Colorido',
+    name: 'Logo Jerusalén horizontal · versión vigente',
+    src: logoJerusalenHorizontal,
+    fileName: 'nueva-identidad/logo-iglesia-jerusalen-horizontal.svg',
+    dimensions: 'Vectorial (SVG)',
+    format: 'SVG',
+    notes: 'Versión horizontal con el lema «Posesión de Paz»; identidad principal para encabezados, pies y espacios institucionales.'
+  },
+  {
+    name: 'Logo Jerusalén sin lema · versión vigente',
+    src: logoJerusalenSinSlogan,
+    fileName: 'nueva-identidad/logo-iglesia-jerusalen-sin-slogan.svg',
+    dimensions: 'Vectorial (SVG)',
+    format: 'SVG',
+    notes: 'Composición vertical sin lema para tarjetas institucionales y espacios compactos.'
+  },
+  {
+    name: 'Emblema Jerusalén · versión vigente',
+    src: emblemaJerusalen,
+    fileName: 'nueva-identidad/emblema-iglesia-jerusalen.svg',
+    dimensions: 'Vectorial (SVG)',
+    format: 'SVG',
+    notes: 'Emblema multicolor sin nombre para identificadores, navegación e iconos.'
+  },
+  {
+    name: 'Logotipo completo anterior · referencia',
     src: logoCompletoColorido,
     fileName: 'Logo completo colorido.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Logotipo principal con el isotipo de la paloma y cruz en dorado y el texto completo.'
+    notes: 'Versión previa conservada como referencia; ya no es la identidad vigente.'
   },
   {
-    name: 'Logo Circular Colorido',
+    name: 'Emblema anterior colorido · referencia',
     src: soloLogoColorido,
     fileName: 'solo logo colorido.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Solo el isotipo colorido (paloma y cruz) con relieve dorado. Ideal para avatares y botones.'
+    notes: 'Versión previa conservada como referencia; ya no es la identidad vigente.'
   },
   {
-    name: 'Logo Circular Blanco',
+    name: 'Emblema monocromático blanco · archivo anterior',
     src: soloLogoBlanco,
     fileName: 'solo logo blanco.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Isotipo monocromático blanco. Útil en fondos oscuros planos o fotográficos.'
+    notes: 'Variante anterior conservada para consulta; usa el emblema vigente en interfaces nuevas.'
   },
   {
-    name: 'Logo Circular Negro',
+    name: 'Emblema monocromático negro · archivo anterior',
     src: soloLogoNegro,
     fileName: 'solo logo negro.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Isotipo monocromático negro. Útil en fondos claros planos.'
+    notes: 'Variante anterior conservada para consulta; usa el emblema vigente en interfaces nuevas.'
   },
   {
-    name: 'Logo Horizontal Blanco (Fondo Oscuro)',
+    name: 'Logo horizontal blanco · archivo anterior',
     src: logoHorizontalBlanco,
     fileName: 'Logo Jerusalen Horizontal Blanco.png',
     dimensions: 'Alta Resolución (PNG)',
     format: 'PNG',
-    notes: 'Logotipo horizontal de alta resolución diseñado especialmente para fondos oscuros.'
+    notes: 'Exportación anterior conservada para consulta; el archivo horizontal vigente es la versión vectorial nueva.'
   },
   {
-    name: 'Logo Horizontal Negro (Fondo Claro)',
+    name: 'Logo horizontal negro · archivo anterior',
     src: logoHorizontalNegro,
     fileName: 'Logo Jerusalen Horizontal Negro.png',
     dimensions: 'Alta Resolución (PNG)',
     format: 'PNG',
-    notes: 'Logotipo horizontal de alta resolución diseñado para papelería o interfaces claras.'
+    notes: 'Exportación anterior conservada para consulta; el archivo horizontal vigente es la versión vectorial nueva.'
   },
   {
-    name: 'Texto Logo Colorido',
+    name: 'Texto colorido · archivo anterior',
     src: soloTextoColorido,
     fileName: 'solo texto colorido.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Texto JERUSALÉN con el degradado dorado oficial.'
+    notes: 'Elemento anterior conservado para consulta; el logo vigente incluye su propia composición tipográfica.'
   },
   {
-    name: 'Texto Blanco',
+    name: 'Texto blanco · archivo anterior',
     src: textoBlanco,
     fileName: 'texto blanco.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Texto JERUSALÉN en blanco plano para cabeceras oscuras.'
+    notes: 'Elemento anterior conservado para consulta; el logo vigente incluye su propia composición tipográfica.'
   },
   {
-    name: 'Texto Negro',
+    name: 'Texto negro · archivo anterior',
     src: textoNegro,
     fileName: 'texto negro.svg',
     dimensions: 'Vectorial (SVG)',
     format: 'SVG',
-    notes: 'Texto JERUSALÉN en negro plano para cabeceras claras.'
+    notes: 'Elemento anterior conservado para consulta; el logo vigente incluye su propia composición tipográfica.'
   }
 ];
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShieldCheck, XCircle, Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
+import soloLogoColorido from '../../assets/Jerusalén/nueva-identidad/emblema-iglesia-jerusalen.svg';
 import { supabase } from '../../config/supabase';
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 

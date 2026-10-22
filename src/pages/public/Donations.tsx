@@ -30,8 +30,8 @@ import { ProofButton } from '../../features/finance/MovementTable';
 import { useDonationPageData } from '../../features/donations/hooks/useDonationPageData';
 import { formatWhatsAppLink } from '../../utils/whatsapp';
 
-import soloLogoColorido from '../../assets/Jerusalén/solo logo colorido.svg';
-import soloLogoBlanco from '../../assets/Jerusalén/solo logo blanco.svg';
+import soloLogoColorido from '../../assets/Jerusalén/nueva-identidad/logo-iglesia-jerusalen-sin-slogan.svg';
+import soloLogoBlanco from '../../assets/Jerusalén/nueva-identidad/logo-iglesia-jerusalen-sin-slogan.svg';
 
 const donationSchema = z.object({
   name: z.string().trim().max(120, 'El nombre es demasiado largo').optional(),
