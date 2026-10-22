@@ -51,9 +51,12 @@ const payload = { sessionId: 'session-1', cashierName: 'Caja', customerName: 'Cl
 describe('Persistencia de productos', () => {
   it('actualiza variantes conservando sus identificadores', async () => {
     const { result } = renderHook(() => useStoreMutations(), { wrapper });
-    await act(async () => { await result.current.updateProduct.mutateAsync({ id: product.id, product: { name: 'Nuevo nombre' }, variants: [variant] }); });
+    await act(async () => { await result.current.updateProduct.mutateAsync({ id: product.id, product: { name: 'Nuevo nombre', stock: 777 }, variants: [{ ...variant, stock: 777 }] }); });
     expect(calls.some(call => call.table === 'product_variants' && call.action === 'delete')).toBe(false);
-    expect(calls.find(call => call.table === 'product_variants' && call.action === 'upsert')?.payload).toEqual([expect.objectContaining({ id: variant.id, product_id: product.id })]);
+    const update = calls.find(call => call.table === 'product_variants' && call.action === 'update');
+    expect(update?.payload).toEqual(expect.objectContaining({ id: variant.id, product_id: product.id }));
+    expect(update?.payload).not.toHaveProperty('stock');
+    expect(calls.find(call => call.table === 'products' && call.action === 'update')?.payload).not.toHaveProperty('stock');
   });
   it('protege variantes con pedidos antes de modificar el producto', async () => {
     state.referenced = 1;
@@ -68,7 +71,7 @@ describe('Persistencia de productos', () => {
     expect(state.from).not.toHaveBeenCalled();
   });
   it('no confirma éxito cuando fallan las variantes', async () => {
-    state.failure = 'product_variants:upsert';
+    state.failure = 'product_variants:insert';
     const { result } = renderHook(() => useStoreMutations(), { wrapper });
     await act(async () => { await expect(result.current.createProduct.mutateAsync({ product, variants: [variant] })).rejects.toThrow('fallaron sus variantes'); });
   });

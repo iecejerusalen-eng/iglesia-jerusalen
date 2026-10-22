@@ -85,8 +85,9 @@ export function createStoreHandler(backend: StoreBackend, anonKey: string) {
       const input: unknown = JSON.parse(new TextDecoder().decode(bytes));
       if (!record(input) || typeof input.action !== 'string' || !record(input.payload)) throw new Error('Solicitud inválida');
       const { action, payload } = input;
-      if (!['create', 'pos', 'status', 'list_orders', 'receipt_read', 'admin_update'].includes(action)) throw new Error('Operación no disponible');
-      if (['pos', 'list_orders', 'admin_update'].includes(action) && !actor) return response({ error: 'Inicia sesión para continuar' }, 401);
+      const inventoryActions = ['inventory_read', 'inventory_profile', 'inventory_move', 'inventory_count_start', 'inventory_count_save', 'inventory_count_commit', 'inventory_count_cancel'];
+      if (!['create', 'pos', 'status', 'list_orders', 'receipt_read', 'admin_update', ...inventoryActions].includes(action)) throw new Error('Operación no disponible');
+      if ((['pos', 'list_orders', 'admin_update'].includes(action) || inventoryActions.includes(action)) && !actor) return response({ error: 'Inicia sesión para continuar' }, 401);
       const result = await backend.execute(action, actor, typeof input.secret === 'string' ? input.secret : '', payload);
       if (action === 'receipt_read') {
         if (!record(result) || typeof result.path !== 'string') throw new Error('Comprobante no disponible');

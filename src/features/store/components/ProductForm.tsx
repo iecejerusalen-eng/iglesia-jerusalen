@@ -43,7 +43,7 @@ const ProductForm = ({
       price: undefined,
       discount_price: undefined,
       promo_tag: '',
-      stock: undefined,
+      stock: 0,
       category: storeCategories[0]?.name || 'Libros',
       type: 'physical',
       image_url: '',
@@ -246,15 +246,17 @@ const ProductForm = ({
             />
           </div>
           <div>
-            <label htmlFor="product-stock" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Stock Base</label>
+            <label htmlFor="product-stock" className="block text-xs font-bold text-gray-405 uppercase mb-1.5">Existencias registradas</label>
             <input id="product-stock"
               type="number"
               min="0"
+              readOnly
               {...register('stock', { valueAsNumber: true })}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
               placeholder="10"
             />
             {errors.stock && <p className="text-accent-red text-xs mt-1">{errors.stock.message}</p>}
+            <p className="mt-2 text-xs text-slate-500">Registra entradas, salidas y conteos en la pestaña Inventario. Los productos nuevos comienzan en cero.</p>
           </div>
         </div>
 
@@ -548,7 +550,7 @@ const ProductForm = ({
                             step="1"
                             aria-label={`Stock de variante ${idx + 1}`}
                             value={v.stock}
-                            onChange={(e) => setVariants(prev => prev.map((item, i) => i === idx ? { ...item, stock: Number(e.target.value) } : item))}
+                            readOnly
                             className="w-14 px-2 py-1 border border-gray-200 dark:border-white/10 rounded-md focus:outline-none"
                             min="0"
                           />

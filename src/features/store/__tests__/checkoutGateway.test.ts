@@ -17,6 +17,13 @@ beforeEach(() => {
   backend.signedUrl.mockResolvedValue('https://example.invalid/signed');
 });
 describe('Pasarela de pedidos', () => {
+  it('exige sesión para todas las acciones de inventario y usa actor verificado', async () => {
+    for (const action of ['inventory_read', 'inventory_profile', 'inventory_move', 'inventory_count_start', 'inventory_count_save', 'inventory_count_commit', 'inventory_count_cancel']) {
+      expect((await handler(jsonRequest({ action, payload: {} }))).status).toBe(401);
+    }
+    await handler(jsonRequest({ action: 'inventory_read', payload: { actor_id: 'forged' } }, { authorization: 'Bearer verified-token' }));
+    expect(backend.execute).toHaveBeenCalledWith('inventory_read', 'verified-user', '', { actor_id: 'forged' });
+  });
   it('deriva usuario de auth y nunca del cuerpo enviado', async () => {
     const response = await handler(jsonRequest({ action: 'create', actor: 'forged-admin', secret: 'capability', payload: {} }, { authorization: 'Bearer session-token' }));
     expect(response.status).toBe(200);

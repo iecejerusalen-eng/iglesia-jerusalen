@@ -3,6 +3,15 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.13.0] - 2026-10-21
+
+### Añadido
+- Inventario central integrado en Tienda y comercio: fichas, ubicación, notas, campos adicionales, mínimos y disponibilidad por variante.
+- Conteos físicos con borrador, confirmación, control de conflictos y trazabilidad; entradas/salidas con motivo, responsable y recuperación segura de reintentos.
+
+### Seguridad
+- Existencias protegidas frente a sobrescrituras del editor; movimientos de checkout y POS auditados en la misma transacción. Nuevos productos en cero, variantes conciliadas y stock heredado pendiente de conteo real. Migración y función instaladas; ventas deshabilitadas hasta completar la preparación operativa.
+
 ## [1.12.0] - 2026-10-21
 
 ### Seguridad y operación

@@ -2,6 +2,10 @@
 
 Última revisión: 2026-10-21 (hora de Guayaquil; versiones remotas en UTC).
 
+## Tienda fase 3 — aplicada el 21-oct-2026
+
+`20261022022116_store_inventory_control.sql` aplicada con la misma versión remota; store-checkout activa en versión 2 y cliente compatible 1.13.0. Fichas, conteos y movimientos comerciales con identidad estable, permisos y auditoría. Reutiliza inventory_movements, protege cantidades y sincroniza agregado de variantes; no certifica existencias heredadas ni habilita ventas. Procedimiento y límites en [store-inventory.md](store-inventory.md). Los fixtures son exclusivos de pruebas aisladas y nunca deben aplicarse al proyecto remoto.
+
 ## Tienda fase 2 — aplicada el 21-oct-2026
 
 `20261022001552_secure_store_checkout_v2.sql` fue aplicada en el proyecto remoto con la misma versión; `store-checkout` está activa en versión 1. Bloquea escrituras directas de pedidos, añade reservas/comprobantes privados y vistas públicas acotadas. Mantiene nuevas ventas deshabilitadas hasta confirmar catálogo y conteo. Publicación coordinada del cliente 1.12.0; instalación, verificación y límites en [store-checkout.md](store-checkout.md).

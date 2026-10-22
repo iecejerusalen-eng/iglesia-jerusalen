@@ -37,7 +37,7 @@ export const useStoreMutations = () => {
     id: variant.id || crypto.randomUUID(), product_id: productId,
     color_name: variant.color_name.trim(), color_hex: variant.color_hex,
     size: variant.size.trim(), cloudinary_image_url: variant.cloudinary_image_url,
-    stock: variant.stock, price_adjustment: variant.price_adjustment,
+    price_adjustment: variant.price_adjustment,
     sku: variant.sku?.trim() || null, metadata: variant.metadata || {},
   });
   const saveDigitalAsset = async (productId: string, asset?: { drive_link: string; instructions: string }) => {
@@ -49,10 +49,10 @@ export const useStoreMutations = () => {
   const createProduct = useMutation({
     mutationFn: async ({ product, variants, digitalAsset }: { product: Partial<DbProduct>, variants: FormVariant[], digitalAsset?: { drive_link: string; instructions: string } }) => {
       requireEdit('products');
-      const { data, error } = await supabase.from('products').upsert(product).select('id').single();
+      const { data, error } = await supabase.from('products').insert({ ...product, stock: 0 }).select('id').single();
       if (error) throw error;
       if (variants.length) {
-        const { error: variantError } = await supabase.from('product_variants').upsert(variants.map(variant => variantPayload(variant, data.id)));
+        const { error: variantError } = await supabase.from('product_variants').insert(variants.map(variant => ({ ...variantPayload(variant, data.id), stock: 0 })));
         if (variantError) throw new Error('El producto se guardó, pero fallaron sus variantes: ' + getErrorMessage(variantError));
       }
       await saveDigitalAsset(data.id, digitalAsset);
@@ -73,13 +73,22 @@ export const useStoreMutations = () => {
       if (removed.length) {
         const { count, error: referenceError } = await supabase.from('order_items').select('id', { count: 'exact', head: true }).in('variant_id', removed);
         if (referenceError) throw referenceError;
-        if (count == null || count > 0) throw new Error('Una variante tiene pedidos asociados. Conserva la variante y coloca su stock en cero.');
+        if (count == null || count > 0) throw new Error('Una variante tiene pedidos asociados. Conserva la variante y gestiona sus existencias en Inventario.');
       }
-      const { error } = await supabase.from('products').update(product).eq('id', id).select('id').single();
+      const metadata = { ...product };
+      delete metadata.stock;
+      const { error } = await supabase.from('products').update(metadata).eq('id', id).select('id').single();
       if (error) throw error;
       if (variants.length) {
-        const { error: variantError } = await supabase.from('product_variants').upsert(variants.map(variant => variantPayload(variant, id)));
-        if (variantError) throw new Error('El producto se guardó, pero fallaron sus variantes: ' + getErrorMessage(variantError));
+        const existing = new Set((previous || []).map(variant => variant.id));
+        for (const variant of variants) {
+          const payload = variantPayload(variant, id);
+          const query = existing.has(payload.id)
+            ? supabase.from('product_variants').update(payload).eq('id', payload.id).eq('product_id', id)
+            : supabase.from('product_variants').insert({ ...payload, stock: 0 });
+          const { error: variantError } = await query;
+          if (variantError) throw new Error('El producto se guardó, pero fallaron sus variantes: ' + getErrorMessage(variantError));
+        }
       }
       if (removed.length) {
         const { error: removeError } = await supabase.from('product_variants').delete().eq('product_id', id).in('id', removed);

@@ -24,12 +24,13 @@ import { useStoreMutations } from '../../features/store/hooks/useStoreMutations'
 
 import ProductList from '../../features/store/components/ProductList';
 const ProductForm = lazy(() => import('../../features/store/components/ProductForm'));
+const InventoryManager = lazy(() => import('../../features/store/components/InventoryManager'));
 const CategoryManager = lazy(() => import('../../features/store/components/CategoryManager'));
 const OrderManager = lazy(() => import('../../features/store/components/OrderManager'));
 const SupplierManager = lazy(() => import('../../features/store/components/SupplierManager'));
 const DisputeManager = lazy(() => import('../../features/store/components/DisputeManager'));
 
-type StoreTab = 'products' | 'categories' | 'orders' | 'suppliers' | 'disputes';
+type StoreTab = 'products' | 'inventory' | 'categories' | 'orders' | 'suppliers' | 'disputes';
 export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: StoreTab }) => {
   const { hasPermission, isAdmin } = usePermissions();
   const canViewProducts = hasPermission('products');
@@ -49,8 +50,8 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
   const orders = ordersQuery.data || [];
   const suppliers = suppliersQuery.data || [];
   const disputes = disputesQuery.data || [];
-  const activeQuery = { products: productsQuery, categories: categoriesQuery, orders: ordersQuery, suppliers: suppliersQuery, disputes: disputesQuery }[activeTab];
-  const canEditActive = activeTab === 'orders' ? canEditOrders : activeTab === 'products' || activeTab === 'categories' ? canEditProducts : isAdmin;
+  const activeQuery = { products: productsQuery, inventory: productsQuery, categories: categoriesQuery, orders: ordersQuery, suppliers: suppliersQuery, disputes: disputesQuery }[activeTab];
+  const canEditActive = activeTab === 'orders' ? canEditOrders : ['products', 'inventory', 'categories'].includes(activeTab) ? canEditProducts : isAdmin;
 
   // Mutations
   const mutations = useStoreMutations();
@@ -226,6 +227,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
 
   const tabs = [
     { id: 'products', label: 'Productos', icon: Package, count: productsQuery.isSuccess ? products.length : null, visible: canViewProducts },
+    { id: 'inventory', label: 'Inventario', icon: ClipboardList, count: productsQuery.isSuccess ? products.length : null, visible: canViewProducts },
     { id: 'categories', label: 'Categorías', icon: FolderOpen, count: categoriesQuery.isSuccess ? storeCategories.length : null, visible: canViewProducts },
     { id: 'orders', label: 'Pedidos', icon: ClipboardList, count: ordersQuery.isSuccess ? orders.length : null, visible: canViewOrders },
     { id: 'suppliers', label: 'Proveedores', icon: Users, count: suppliersQuery.isSuccess ? suppliers.length : null, visible: isAdmin },
@@ -278,6 +280,7 @@ export const StoreWorkspace = ({ initialTab = 'products' }: { initialTab?: Store
         {activeQuery.isError ? <AdminErrorState description={activeQuery.error?.message} onAction={() => { void activeQuery.refetch(); }} /> : activeQuery.isPending ? <div role="status" className="flex items-center gap-3 py-12 text-slate-500"><Loader2 className="animate-spin" size={22} /> Cargando información de tienda…</div> : <>
         {!canEditActive && <p className="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">Acceso de consulta. Las acciones de edición requieren permiso.</p>}
         <Suspense fallback={<div role="status" className="py-8 text-slate-500">Cargando sección…</div>}>
+          {activeTab === 'inventory' && <InventoryManager products={products} canEdit={canEditProducts} />}
           {activeTab === 'products' && (
             <>
               {!showForm ? (

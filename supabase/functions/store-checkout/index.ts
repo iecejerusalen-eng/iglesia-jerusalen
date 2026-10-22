@@ -22,7 +22,9 @@ const backend: StoreBackend = {
     return data.user.id;
   },
   async limit(key) { await rpc('store_request_limit', { p_key: key }); },
-  execute: (action, actor, secret, payload) => rpc('store_api', { p_action: action, p_actor: actor, p_secret: secret, p_payload: payload }),
+  execute: (action, actor, secret, payload) => action.startsWith('inventory_')
+    ? rpc('store_inventory_api', { p_action: action, p_actor: actor, p_payload: payload })
+    : rpc('store_api', { p_action: action, p_actor: actor, p_secret: secret, p_payload: payload }),
   async upload(path, file) {
     const { error } = await client.storage.from('store-receipts').upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw new Error('No se pudo guardar el comprobante privado. Tu reserva se conserva.');

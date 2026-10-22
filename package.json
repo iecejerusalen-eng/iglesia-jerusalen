@@ -12,6 +12,7 @@
     "check:assets": "node scripts/check-asset-budget.mjs",
     "test": "vitest --pool=threads",
     "test:store:db": "node scripts/test-store-database.mjs",
+    "test:store:inventory": "node scripts/test-store-inventory.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
