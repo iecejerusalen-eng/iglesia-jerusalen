@@ -9,6 +9,7 @@ import { getLineSubtotal, getLineTax } from '../../features/store/pricing';
 import { formatStoreCurrency, isDigitalProduct } from '../../features/store/catalog';
 import { forgetCompletedCheckout, getCheckout, getCheckoutOptions, readPendingCheckout, reserveCheckout, retryPendingCheckout, submitPrivateReceipt } from '../../features/store/services/checkoutService';
 import type { SecureOrder } from '../../features/store/services/checkoutService';
+import TrackingKey from '../../features/store/components/TrackingKey';
 
 const panel = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6';
 const button = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 disabled:opacity-50';
@@ -93,6 +94,7 @@ export default function Cart() {
     finally { setBusy(false); }
   };
   const submitted = order?.ecommerce_payment_status === 'verifying';
+  const pendingAccess = readPendingCheckout();
   const paid = order?.ecommerce_payment_status === 'paid';
   const expired = order?.status === 'cancelled' || Boolean(order?.reservation_expires_at && !submitted && !paid && new Date(order.reservation_expires_at).getTime() <= now);
 
@@ -114,7 +116,7 @@ export default function Cart() {
           <p className="mt-4 text-sm">{expired ? 'Reserva vencida o cancelada. Contacta con la iglesia si ya transferiste; no repitas el pago.' : paid ? 'Pago confirmado. Consulta la entrega de tus productos.' : submitted ? 'Comprobante recibido. El pago está en revisión; no vuelvas a transferir.' : 'Tu reserva está registrada. Usa el total confirmado para transferir.'}</p>
           {order.reservation_expires_at && !submitted && !paid && !expired && <p className="mt-3 text-sm">Adjunta tu comprobante antes del {new Date(order.reservation_expires_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })} (hora de Ecuador).</p>}
           <button type="button" onClick={() => { void refresh(); }} disabled={busy} className={button + ' mt-5'}>Actualizar estado</button>
-          {(paid || submitted) && <p className="mt-4 text-sm">{user ? <Link to="/mis-compras" className="underline">Mis compras</Link> : 'Conserva esta pestaña para seguir tu pedido como invitado.'}</p>}
+          {order.user_id ? <Link to="/mis-compras" className="mt-4 block min-h-11 underline">Seguimiento y biblioteca en Mis compras</Link> : pendingAccess?.orderId === order.id && <TrackingKey orderId={order.id} secret={pendingAccess.secret} />}
           {(paid || expired) && <button type="button" onClick={() => { forgetCompletedCheckout(); setOrder(null); }} className="mt-4 block min-h-11 text-sm underline">Volver al carrito</button>}
         </section>
         {!expired && !submitted && !paid && <section className={panel} aria-label="Transferencia y comprobante">

@@ -1,352 +1,90 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useAuthStore } from '../../store/useAuthStore';
-import { supabase } from '../../config/supabase';
-import { listPurchases } from '../../features/store/services/checkoutService';
-import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
-import { Download, AlertCircle, ShoppingBag, Calendar, CreditCard, ChevronRight, CheckCircle2, Clock, Truck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import type { Order, ProductDigitalAsset } from '../../types';
+import { useAuthStore } from '../../store/useAuthStore';
+import { listPurchases, getCheckout, submitPrivateReceipt } from '../../features/store/services/checkoutService';
+import type { SecureOrder } from '../../features/store/services/checkoutService';
+import { claimTrackedOrder, forgetTrackingCode, getDigitalLibrary, openDigitalResource, parseTrackingCode, readTrackingCode, restoreTrackedOrder } from '../../features/store/services/customerService';
+import type { LibraryItem } from '../../features/store/services/customerService';
+import { formatStoreCurrency } from '../../features/store/catalog';
+
+const panel = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6';
+const button = 'min-h-11 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-50';
+const input = 'min-h-11 w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm dark:border-slate-600 focus-visible:outline-2 focus-visible:outline-blue-500';
+const reason = (e: unknown) => e instanceof Error ? e.message : 'No se pudo completar la consulta';
+const orderLabel = (order: SecureOrder) => order.status === 'cancelled' ? 'Cancelado o vencido'
+  : order.refunded_amount && order.refunded_amount > 0 ? 'Reembolso registrado; consulta su conciliación'
+    : order.ecommerce_payment_status === 'verifying' ? 'Comprobante recibido · pago en revisión'
+      : order.status === 'completed' ? 'Entrega completada' : order.status === 'ready_for_pickup' ? 'Listo para retiro coordinado'
+        : order.ecommerce_payment_status === 'paid' ? 'Pago confirmado' : 'Pendiente de comprobante y pago';
 
 export default function MyPurchases() {
-  const { user, isLoading: authLoading } = useAuthStore();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [digitalAssets, setDigitalAssets] = useState<Record<string, ProductDigitalAsset>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, isLoading } = useAuthStore();
+  const cache = useQueryClient();
+  const orders = useQuery({ queryKey: ['customer-orders', user?.id], queryFn: listPurchases, enabled: Boolean(user) && !isLoading, retry: false });
+  const library = useQuery({ queryKey: ['customer-library', user?.id], queryFn: getDigitalLibrary, enabled: Boolean(user) && !isLoading, retry: false });
+  const [selected, setSelected] = useState<SecureOrder | null>(null);
+  const refresh = async () => { await Promise.all([cache.invalidateQueries({ queryKey: ['customer-orders'] }), cache.invalidateQueries({ queryKey: ['customer-library'] })]); };
+  return <main className="mx-auto max-w-6xl space-y-6 px-4 py-10 text-slate-900 dark:text-white sm:px-8">
+    <Helmet><title>Mis compras y seguimiento | Tienda Jerusalén</title><meta name="description" content="Consulta tus pedidos, presenta un comprobante y accede a los recursos digitales adquiridos." /><meta name="referrer" content="no-referrer" /><meta name="robots" content="noindex,nofollow" /></Helmet>
+    <header><p className="text-xs font-bold uppercase tracking-widest text-church-gold-emphasis">Tienda Jerusalén</p><h1 className="mt-2 font-serif text-3xl font-bold">Mis compras</h1><p className="mt-2 text-slate-600 dark:text-slate-300">Seguimiento de pedidos y biblioteca de recursos digitales.</p><Link className="mt-3 inline-flex min-h-11 items-center underline" to="/tienda">Volver a la tienda</Link></header>
+    <TrackingOrders key={user?.id || 'guest'} canClaim={Boolean(user)} onClaimed={refresh} />
+    {isLoading ? <p role="status">Consultando tu sesión…</p> : !user ? <section className={panel}><h2 className="font-serif text-xl font-bold">Tus pedidos vinculados y recursos digitales</h2><p className="my-3">Inicia sesión para consultar tu historial y biblioteca. Para seguir una compra como invitado, utiliza tu clave privada arriba.</p><Link to="/login?redirectTo=%2Fmis-compras" className={button + ' inline-block'}>Iniciar sesión</Link></section> : <>
+      <section className={panel}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-serif text-xl font-bold">Pedidos de tu cuenta</h2><button className={button} disabled={orders.isFetching || library.isFetching} onClick={() => { void refresh(); }}>Actualizar compras</button></div>
+        {orders.isPending ? <p role="status" className="mt-4">Consultando pedidos…</p> : orders.isError ? <p role="alert" className="mt-4 text-red-700 dark:text-red-300">{orders.error.message}</p> : !orders.data.length ? <p className="mt-4">Todavía no hay pedidos vinculados a esta cuenta.</p> : <ul className="mt-5 space-y-3">{orders.data.map(order => <li key={order.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-white/10"><div><p className="font-bold">Pedido #{order.id.slice(0, 8).toUpperCase()} · {formatStoreCurrency(order.total)}</p><p className="text-sm">{orderLabel(order)}</p><p className="text-xs text-slate-500 dark:text-slate-400">{new Date(order.created_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}</p></div><button className={button} onClick={() => setSelected(order)}>Consultar pedido {order.id.slice(0, 8)}</button></li>)}</ul>}
+      </section>
+      {selected && selected.user_id === user.id && <OrderPanel key={selected.id} initial={selected} secret="" />}
+      <section className={panel}><h2 className="font-serif text-xl font-bold">Biblioteca digital</h2><p className="mt-2 text-sm text-slate-600 dark:text-slate-300">El acceso se comprueba al abrir cada recurso. Un comprobante presentado todavía requiere confirmación de pago.</p>{library.isPending ? <p role="status" className="mt-4">Consultando biblioteca…</p> : library.isError ? <p role="alert" className="mt-4 text-red-700 dark:text-red-300">{library.error.message}</p> : !library.data.length ? <p className="mt-4">Aún no hay recursos digitales en tu historial.</p> : <div className="mt-5 space-y-4">{library.data.map(item => <DigitalResource key={`${user.id}:${item.item_id}`} item={item} />)}</div>}</section>
+    </>}
+  </main>;
+}
 
-  const fetchOrders = useCallback(async () => {
-    if (!user) {
-      setOrders([]);
-      setDigitalAssets({});
-      setLoading(false);
-      return;
-    }
-
+function TrackingOrders({ canClaim, onClaimed }: { canClaim: boolean; onClaimed: () => Promise<void> }) {
+  const [code, setCode] = useState(readTrackingCode);
+  const [order, setOrder] = useState<SecureOrder | null>(null);
+  const [activeCode, setActiveCode] = useState('');
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const submit = async (claim = false) => {
+    setBusy(true); setError('');
     try {
-      setLoading(true);
-      setError(null);
-      setDigitalAssets({});
-      const typedOrders = await listPurchases();
-      setOrders(typedOrders);
-
-      // Identificar los IDs de productos digitales que se han pagado
-      const paidProductIds: string[] = [];
-      typedOrders.forEach(order => {
-        const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(order.status);
-        if (isPaid && order.order_items) {
-          order.order_items.forEach(item => {
-            if (item.products?.type === 'digital') {
-              paidProductIds.push(item.product_id);
-            }
-          });
-        }
-      });
-
-      // Si hay productos digitales pagados, buscar sus assets (links de descarga seguros por RLS)
-      if (paidProductIds.length > 0) {
-        const { data: assetsData, error: assetsError } = await supabase
-          .from('product_digital_assets')
-          .select('*')
-          .in('product_id', [...new Set(paidProductIds)]);
-
-        if (assetsError) throw new Error('Tus pedidos se cargaron, pero no se pudieron consultar las descargas. Reintenta o contacta con la iglesia.');
-        if (assetsData) {
-          const assetsMap: Record<string, ProductDigitalAsset> = {};
-          (assetsData as ProductDigitalAsset[]).forEach((asset) => {
-            assetsMap[asset.product_id] = asset;
-          });
-          setDigitalAssets(assetsMap);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching purchases:', err);
-      const errMsg = err instanceof Error ? err.message : 'Error al cargar el historial de compras';
-      setError(errMsg);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      fetchOrders();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [user, fetchOrders]);
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-550 dark:text-gray-400 font-medium">Cargando tus compras...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4">
-        <AnimeFadeUp
-          className="max-w-md w-full text-center bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10"
-        >
-          <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 text-gold rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag size={30} />
-          </div>
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2">Acceso Requerido</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">Debes iniciar sesión con tu cuenta para poder visualizar tu historial de compras y descargas.</p>
-          <Link
-            to="/login?redirect=/mis-compras"
-            className="inline-block w-full bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all"
-          >
-            Iniciar Sesión
-          </Link>
-        </AnimeFadeUp>
-      </div>
-    );
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending_payment':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-250 dark:border-amber-900/40">
-            <Clock size={12} />
-            Esperando Pago
-          </span>
-        );
-      case 'paid':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-250 dark:border-green-900/30">
-            <CheckCircle2 size={12} />
-            Pagado
-          </span>
-        );
-      case 'ready_for_pickup':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border border-blue-250 dark:border-blue-900/30">
-            <Truck size={12} />
-            Listo para Retirar
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            <CheckCircle2 size={12} />
-            Entregado
-          </span>
-        );
-      case 'cancelled':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/30">
-            <AlertCircle size={12} />
-            Cancelado
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-150 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
-            {status}
-          </span>
-        );
-    }
+      const result = claim ? await claimTrackedOrder(activeCode) : await restoreTrackedOrder(code);
+      setOrder(result); setActiveCode(claim ? '' : code.trim());
+      if (claim) { setCode(''); await onClaimed(); }
+    } catch (e) { setError(reason(e)); } finally { setBusy(false); }
   };
+  return <section className={panel + ' space-y-4'} aria-label="Seguimiento de invitado"><h2 className="font-serif text-xl font-bold">Seguir un pedido con clave privada</h2><p className="text-sm">Pega la clave que guardaste al reservar. No se envía por correo automáticamente y el número de pedido solo no permite consultar datos. La clave vence a los 30 días desde la reserva.</p>
+    <form onSubmit={e => { e.preventDefault(); void submit(); }} className="space-y-3"><label className="block text-sm font-bold">Clave privada de seguimiento<input type="password" autoComplete="off" spellCheck={false} className={input + ' mt-2 font-mono'} maxLength={110} value={code} onChange={e => setCode(e.target.value)} required /></label><div className="flex flex-wrap gap-3"><button className={button} disabled={busy}>{busy ? 'Consultando…' : 'Consultar con clave'}</button><button type="button" className="min-h-11 underline" onClick={() => { forgetTrackingCode(); setCode(''); setActiveCode(''); setOrder(null); setError(''); }}>Quitar clave de esta pestaña</button></div></form>
+    {error && <p role="alert" className="break-words text-red-700 dark:text-red-300">{error}</p>}
+    {order && <><OrderPanel key={order.id + activeCode} initial={order} secret={activeCode ? parseTrackingCode(activeCode).secret : ''} />{!order.user_id && canClaim && <div><p className="mb-3 text-sm">Puedes vincularlo si el correo verificado de tu cuenta coincide con el usado al comprar. La clave invitada dejará de funcionar.</p><button type="button" className={button} disabled={busy} onClick={() => { void submit(true); }}>Vincular este pedido a mi cuenta</button></div>}</>}
+    <p className="text-sm text-slate-600 dark:text-slate-300">Si perdiste tu clave o ya venció, contacta con la iglesia para revisar el pedido antes de volver a pagar.</p>
+    {!canClaim && <Link className="inline-block min-h-11 underline" to="/login?redirectTo=%2Fmis-compras">Iniciar sesión para vincular un pedido</Link>}
+  </section>;
+}
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto">
-        <Helmet><title>Mis compras | Tienda Jerusalén</title></Helmet>
-      <div id="purchases_hero" className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 scroll-mt-28">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white">Mis Compras</h1>
-            <p className="text-gray-550 dark:text-gray-400 mt-1">Historial de pedidos y acceso a descargas seguras.</p>
-          </div>
-          <Link
-            to="/tienda"
-            className="inline-flex items-center gap-1.5 text-primary dark:text-white hover:text-gold transition-colors font-semibold text-sm"
-          >
-            Volver a la Tienda
-            <ChevronRight size={16} />
-          </Link>
-        </div>
+function OrderPanel({ initial, secret }: { initial: SecureOrder; secret: string }) {
+  const [order, setOrder] = useState(initial); const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []);
+  const expired = order.status === 'cancelled' || Boolean(order.ecommerce_payment_status === 'pending' && order.reservation_expires_at && Date.parse(order.reservation_expires_at) <= now);
+  const canSubmit = !expired && order.status === 'pending_payment' && ['pending', 'verifying', 'failed'].includes(order.ecommerce_payment_status || 'pending');
+  const act = async (upload = false) => { setBusy(true); setError(''); try { setOrder(upload && file ? await submitPrivateReceipt(order.id, file, secret) : await getCheckout(order.id, secret)); setFile(null); } catch (e) { setError(reason(e)); } finally { setBusy(false); } };
+  return <section className="space-y-3 rounded-xl border border-slate-300 p-4 dark:border-slate-600" aria-label="Detalle de pedido"><h3 className="font-bold">Pedido #{order.id.slice(0, 8).toUpperCase()}</h3><p className="break-all font-mono text-xs">{order.id}</p><p>{orderLabel(order)}</p><p className="text-xl font-bold">{formatStoreCurrency(order.total)}</p><ul className="space-y-2 text-sm">{order.order_items?.map(item => <li key={item.id}>{item.products?.name || 'Producto adquirido'} · {item.quantity} × {formatStoreCurrency(item.price)}</li>)}</ul>
+    {order.reservation_expires_at && canSubmit && order.ecommerce_payment_status === 'pending' && <p className="text-sm">Presenta el comprobante antes del {new Date(order.reservation_expires_at).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' })}. Al vencer, contacta con la iglesia si ya transferiste; no repitas el pago.</p>}
+    {!expired && canSubmit && order.bank && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><h4 className="font-bold">Transferencia del pedido reservado</h4><p>{order.bank.bank_name}</p><p className="break-all font-mono">{order.bank.bank_account}</p><p className="text-sm">Usa el total confirmado; adjuntar el comprobante no confirma el cobro.</p></div>}
+    <button className={button} disabled={busy} onClick={() => { void act(); }}>Actualizar estado del pedido</button>
+    {error && <p role="alert" className="text-red-700 dark:text-red-300">{error}</p>}
+    {canSubmit && <form onSubmit={e => { e.preventDefault(); void act(true); }} className="space-y-3"><label className="block text-sm">Comprobante privado, hasta 5 MB<input className="mt-2 block w-full min-w-0 text-sm" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={busy} onChange={e => setFile(e.target.files?.[0] || null)} /></label><button className={button} disabled={busy || !file}>{order.ecommerce_payment_status === 'verifying' ? 'Reemplazar comprobante' : 'Enviar comprobante'}</button></form>}
+  </section>;
+}
 
-        {error && (
-          <div className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/30 mb-6 flex items-center gap-2">
-            <AlertCircle size={18} />
-            <p className="font-medium">{error}</p>
-          </div>
-        )}
-
-        {orders.length === 0 ? (
-          <div id="purchases_active" className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 p-12 text-center scroll-mt-28">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShoppingBag size={28} />
-            </div>
-            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">Sin compras registradas</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">Aún no has realizado ninguna compra en nuestra tienda virtual.</p>
-            <Link
-              to="/tienda"
-              className="inline-block bg-primary dark:bg-blue-600 dark:hover:bg-blue-700 hover:bg-primary-dark text-white font-semibold py-2.5 px-6 rounded-xl shadow-md transition-all text-sm"
-            >
-              Explorar Catálogo
-            </Link>
-          </div>
-        ) : (
-          <div id="purchases_history" className="space-y-6 scroll-mt-28">
-            {orders.map((order) => (
-              <AnimeFadeUp
-                key={order.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-150 dark:border-white/10 overflow-hidden"
-              >
-                {/* Cabecera del pedido */}
-                <div className="bg-slate-50 dark:bg-slate-800/40 px-6 py-4 border-b border-gray-150 dark:border-white/10 flex flex-wrap justify-between items-center gap-4">
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    <div>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 block font-semibold uppercase tracking-wider">Código de Pedido</span>
-                      <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">#{order.id.slice(0, 8).toUpperCase()}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 block font-semibold uppercase tracking-wider">Fecha de Compra</span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
-                        {new Date(order.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 block font-semibold uppercase tracking-wider">Método de Pago</span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                        <CreditCard size={14} className="text-gray-400" />
-                        {order.payment_method === 'transfer' ? 'Transferencia' : 'Tarjeta de Crédito'}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    {getStatusBadge(order.status)}
-                  </div>
-                </div>
-
-                {/* Contenido del pedido */}
-                <div className="p-6 divide-y divide-gray-100 dark:divide-white/10">
-                  {order.order_items?.map((item) => {
-                    const product = item.products;
-                    const variant = item.product_variants;
-                    const isDigital = product?.type === 'digital';
-                    const isPaid = ['paid', 'ready_for_pickup', 'completed'].includes(order.status);
-                    const digitalAsset = isDigital && isPaid ? digitalAssets[item.product_id] : null;
-
-                    return (
-                      <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <img loading="lazy"
-                            src={product?.cover_image_url || product?.image_url || '/placeholder-product.png'}
-                            alt={product?.name || 'Producto'}
-                            className="w-16 h-16 rounded-xl object-cover border border-gray-100 dark:border-slate-800 shadow-2xs"
-                          />
-                          <div>
-                            <h4 className="font-bold text-gray-800 dark:text-white text-base">{product?.name}</h4>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              {isDigital ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-900/30">
-                                  Recurso Digital
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-350 border border-slate-200 dark:border-slate-700">
-                                  Físico
-                                </span>
-                              )}
-                              {variant && (
-                                <span className="text-xs text-gray-550 dark:text-gray-400 font-medium">
-                                  Variante: {variant.color_name ? `${variant.color_name} ` : ''}{variant.size ? `[Talla ${variant.size}]` : ''}
-                                </span>
-                              )}
-                              <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                                Cantidad: {item.quantity} x ${Number(item.price).toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-2">
-                          <span className="font-bold text-gray-800 dark:text-white">${(Number(item.price) * item.quantity).toFixed(2)}</span>
-
-                          {/* Botón de descarga para recursos digitales */}
-                          {isDigital && (
-                            <div className="mt-2 w-full md:w-auto">
-                              {isPaid ? (
-                                digitalAsset ? (
-                                  <div className="flex flex-col items-end gap-1.5">
-                                    <a
-                                      href={digitalAsset.drive_link}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 bg-gold hover:bg-gold-dark text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
-                                    >
-                                      <Download size={14} />
-                                      Descargar Recurso
-                                    </a>
-                                    {digitalAsset.instructions && (
-                                      <p className="text-[11px] text-gray-400 dark:text-gray-500 max-w-[200px] text-right italic">
-                                        Instrucciones: {digitalAsset.instructions}
-                                      </p>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                                    <AlertCircle size={14} />
-                                    Generando enlace de descarga...
-                                  </span>
-                                )
-                              ) : order.status === 'pending_payment' ? (
-                                <span className="text-xs text-gray-550 dark:text-gray-400 font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                                  <Clock size={14} />
-                                  Se habilitará al verificar el pago
-                                </span>
-                              ) : (
-                                <span className="text-xs text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                                  <AlertCircle size={14} />
-                                  Pago fallido o cancelado
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Notificación de retiro en punto de información */}
-                          {!isDigital && order.status === 'ready_for_pickup' && (
-                            <div className="bg-primary/5 dark:bg-blue-950/20 text-primary dark:text-blue-300 border border-primary/20 dark:border-blue-900/30 px-3 py-2 rounded-lg text-xs max-w-[250px] text-right font-medium mt-1">
-                              📍 Retíralo en el punto de información de la Iglesia Jerusalén.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Pie del pedido */}
-                <div className="bg-slate-50/50 dark:bg-slate-800/20 px-6 py-4 border-t border-gray-100 dark:border-white/10 flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    {order.status === 'pending_payment' && order.payment_method === 'transfer' && (
-                      <span className="text-xs text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 px-2 py-1 rounded-md">
-                        Comprobante enviado para revisión
-                      </span>
-                    )}
-                  </span>
-                  <div className="text-right">
-                    <span className="text-xs text-gray-400 dark:text-gray-500 block font-semibold uppercase tracking-wider">Total del Pedido</span>
-                    <span className="text-xl font-extrabold text-primary dark:text-white">${Number(order.total).toFixed(2)}</span>
-                  </div>
-                </div>
-              </AnimeFadeUp>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+function DigitalResource({ item }: { item: LibraryItem }) {
+  const [access, setAccess] = useState<Awaited<ReturnType<typeof openDigitalResource>> | null>(null);
+  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const states = { available: 'Disponible para consultar', pending_payment: 'Pendiente de confirmación de pago', preparing: 'Entrega en preparación; contacta con la iglesia', cancelled: 'Pedido cancelado', reconciliation: 'Acceso en conciliación por reembolso' };
+  return <article className="space-y-3 border-b border-slate-200 pb-4 dark:border-white/10"><h3 className="font-bold">{item.name}</h3><p className="text-sm">{states[item.state]}</p><p className="text-xs text-slate-500 dark:text-slate-400">Pedido #{item.order_id.slice(0, 8).toUpperCase()}</p>
+    {item.state === 'available' && <button className={button} disabled={busy} onClick={async () => { setBusy(true); setError(''); setAccess(null); try { setAccess(await openDigitalResource(item.item_id)); } catch (e) { setError(reason(e)); } finally { setBusy(false); } }}>{busy ? 'Comprobando acceso…' : 'Preparar acceso al recurso'}</button>}
+    {error && <p role="alert" className="text-red-700 dark:text-red-300">{error}</p>}{access && item.state === 'available' && <div className="space-y-2 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800"><p>Este recurso se abre en Google Drive o Documentos de Google. Su enlace externo no caduca automáticamente; no lo compartas. Se comprobará tu compra cada vez que prepares el acceso desde esta biblioteca.</p>{access.instructions && <p className="whitespace-pre-wrap">{access.instructions}</p>}<a href={access.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" className="inline-flex min-h-11 items-center font-bold underline">Abrir recurso en Google</a></div>}
+  </article>;
 }

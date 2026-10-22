@@ -3,6 +3,17 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.0] - 2026-10-21
+
+### Añadido
+- Seguimiento de invitados con clave privada guardable y vinculación a una cuenta con el mismo correo verificado.
+- Mis compras reúne historial, comprobantes privados y biblioteca digital con acceso comprobado por compra.
+- Enlaces compartibles de productos que conservan su ficha al recargar.
+
+### Seguridad y operación
+- Entrega digital por línea de pedido, fuente e instrucciones conservadas, auditoría de apertura y bloqueo ante cancelación o reembolso. Enlaces maestros restringidos al personal autorizado.
+- Los recursos actuales se abren en Google Drive/Docs con enlaces externos persistentes. Sin correo automático ni verificación bancaria automática; ventas deshabilitadas hasta completar la preparación operativa.
+
 ## [1.13.0] - 2026-10-21
 
 ### Añadido

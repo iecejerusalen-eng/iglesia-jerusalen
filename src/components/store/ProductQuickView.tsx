@@ -211,6 +211,12 @@ const ProductQuickView = ({ product, onClose, onNext, onPrev }: ProductQuickView
                 <h1 className="text-2xl md:text-3xl font-extrabold text-primary dark:text-white leading-tight font-serif">
                   {product.name}
                 </h1>
+                <button type="button" className="mt-2 min-h-11 text-sm font-semibold underline" onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(`${window.location.origin}/tienda?producto=${encodeURIComponent(product.id)}`);
+                    toast.success('Enlace del producto copiado');
+                  } catch { toast.error('No se pudo copiar. Copia la dirección de esta página desde el navegador.'); }
+                }}>Copiar enlace del producto</button>
               </div>
 
               {/* Description */}

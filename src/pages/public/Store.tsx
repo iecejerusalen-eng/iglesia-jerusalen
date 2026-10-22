@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   ArrowRight,
@@ -55,7 +55,8 @@ const mapProductImage = (product: Product): Product => {
 const Store = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [params, setParams] = useSearchParams();
+  const setSelectedProduct = (product: Product | null) => { const next = new URLSearchParams(params); if (product) next.set('producto', product.id); else next.delete('producto'); setParams(next); };
   const [sortBy, setSortBy] = useState<StoreSort>('featured');
   const totalCartItems = useCartStore((state) => state.getTotalItems());
 
@@ -76,6 +77,7 @@ const Store = () => {
     },
   });
 
+  const selectedProduct = products.find(product => product.id === params.get('producto')) || null;
   const categories = useMemo(
     () => ['Todos', ...new Set(products.map((product) => product.category).filter(Boolean))],
     [products],
@@ -265,6 +267,8 @@ const Store = () => {
           )}
         </section>
       </main>
+
+      {params.has('producto') && !loading && !loadError && !selectedProduct && <p role="alert" className="fixed inset-x-4 bottom-24 z-50 rounded-xl border bg-white p-4 text-slate-900 shadow-xl dark:bg-slate-900 dark:text-white">Este producto ya no está disponible. <button type="button" className="min-h-11 underline" onClick={() => setSelectedProduct(null)}>Volver al catálogo</button></p>}
 
       {selectedProduct && (
         <GlobalErrorBoundary key={selectedProduct.id} fallback={<div role="alert" className="fixed inset-x-4 bottom-24 z-[70] rounded-2xl bg-white p-6 text-slate-900 shadow-xl">No se pudieron cargar los detalles. <button onClick={() => setSelectedProduct(null)} className="underline">Volver al catálogo</button></div>}>

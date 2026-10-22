@@ -17,6 +17,11 @@ beforeEach(() => {
   backend.signedUrl.mockResolvedValue('https://example.invalid/signed');
 });
 describe('Pasarela de pedidos', () => {
+  it('exige sesión verificada para vincular y abrir biblioteca', async () => {
+    for (const action of ['customer_claim', 'customer_library', 'customer_digital_open']) expect((await handler(jsonRequest({ action, payload: {} }))).status).toBe(401);
+    await handler(jsonRequest({ action: 'customer_library', payload: { actor_id: 'forged' } }, { authorization: 'Bearer verified-token' }));
+    expect(backend.execute).toHaveBeenCalledWith('customer_library', 'verified-user', '', { actor_id: 'forged' });
+  });
   it('exige sesión para todas las acciones de inventario y usa actor verificado', async () => {
     for (const action of ['inventory_read', 'inventory_profile', 'inventory_move', 'inventory_count_start', 'inventory_count_save', 'inventory_count_commit', 'inventory_count_cancel']) {
       expect((await handler(jsonRequest({ action, payload: {} }))).status).toBe(401);

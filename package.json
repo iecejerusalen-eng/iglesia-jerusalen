@@ -13,6 +13,7 @@
     "test": "vitest --pool=threads",
     "test:store:db": "node scripts/test-store-database.mjs",
     "test:store:inventory": "node scripts/test-store-inventory.mjs",
+    "test:store:customer": "node scripts/test-store-customer.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -36,13 +36,7 @@ for (const width of [390, 1280]) test('conteo y movimiento de inventario a '+wid
     await page.route('**/__inventory-qa*', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inventario QA aislado</title></head><body><div id="root"></div><script type="module">
       import RefreshRuntime from '/@react-refresh'; RefreshRuntime.injectIntoGlobalHook(window); window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;
       </script><script type="module">
-      import React from '/node_modules/.vite/deps/react.js'; import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
-      import {QueryClient,QueryClientProvider} from '/node_modules/.vite/deps/@tanstack_react-query.js';
-      import InventoryManager from '/src/features/store/components/InventoryManager.tsx'; import ConfirmDialog from '/src/components/common/ConfirmDialog.tsx';
-      import {useAuthStore} from '/src/store/useAuthStore.ts'; import '/src/index.css';
-      useAuthStore.setState({user:{id:'${staff}'}});
-      const products=[{id:'${productId}',name:'Inventario QA físico',sku:'QA-ONLY',category:'Prueba aislada',type:'physical',stock:3,product_variants:[],price:10}];
-      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(QueryClientProvider,{client:new QueryClient()},React.createElement('main',{className:'min-h-screen bg-slate-50 dark:bg-slate-950',style:{padding:'16px'}},React.createElement(InventoryManager,{products,canEdit:!location.search.includes('readonly')}),React.createElement(ConfirmDialog))));
+      import '/e2e/fixtures/store-inventory-harness.tsx';
     </script></body></html>` }));
     await page.goto('/__inventory-qa');
     await expect(page.getByText(/Último conteo: Pendiente/)).toBeVisible();
@@ -56,6 +50,7 @@ for (const width of [390, 1280]) test('conteo y movimiento de inventario a '+wid
     await page.getByRole('button', { name: 'Iniciar conteo físico' }).click();
     await page.getByLabel('Cantidad contada: Existencias generales').fill('5');
     await page.getByRole('button', { name: 'Guardar borrador' }).click();
+    await expect(page.getByRole('button', { name: 'Guardar borrador' })).toBeEnabled();
     await page.reload();
     await expect(page.getByLabel('Ubicación o área responsable')).toHaveValue('Armario de prueba');
     await expect(page.getByLabel('Valor del campo 1')).toHaveValue('QA-2026');

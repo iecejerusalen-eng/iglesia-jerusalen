@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, Download, Package, ArrowRight } from 'lucide-react';
-import { supabase } from '../../config/supabase';
 import type { Order, OrderItem } from '../../types';
 import { toast } from 'sonner';
 import { getCheckout, readPendingCheckout } from '../../features/store/services/checkoutService';
+import TrackingKey from '../../features/store/components/TrackingKey';
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
@@ -37,22 +37,6 @@ export default function OrderSuccess() {
 
     fetchOrder();
 
-    // Subscribe to changes to update payment/fulfillment status in real-time
-    const subscription = supabase
-      .channel(`public:orders:id=eq.${orderId}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'orders',
-        filter: `id=eq.${orderId}`
-      }, (payload) => {
-        setOrder(payload.new as Order);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
   }, [orderId, navigate]);
 
   if (loading) {
@@ -73,7 +57,8 @@ export default function OrderSuccess() {
   }
 
   const hasPhysical = orderItems.some(item => item.products?.type === 'physical');
-  const isPaid = order.ecommerce_payment_status === 'paid' || order.status === 'paid';
+  const isPaid = order.ecommerce_payment_status === 'paid' && order.status !== 'cancelled' && !order.refunded_amount;
+  const pendingAccess = readPendingCheckout();
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
@@ -133,7 +118,7 @@ export default function OrderSuccess() {
                             className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <Download className="w-4 h-4 mr-1" />
-                            Descargar Archivo Digital
+                            Consultar mi biblioteca digital
                           </a>
                         ) : (
                           <span className="inline-flex items-center text-sm text-gray-500">
@@ -150,7 +135,8 @@ export default function OrderSuccess() {
             </ul>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {!order.user_id && pendingAccess?.orderId === order.id && <TrackingKey orderId={order.id} secret={pendingAccess.secret} />}
+          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/mis-compras')}
               className="px-6 py-3 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium flex items-center justify-center"
