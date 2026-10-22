@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.2] - 2026-10-21
+
+### Mejorado
+- La bienvenida 3D presenta el modelo integral más reciente de la iglesia, exportado desde el archivo maestro de Blender y comprimido para reducir la descarga inicial.
+- Se ajustó la iluminación de la escena para conservar mejor el contraste de fachada, ventanas y molduras.
+
 ## [1.14.1] - 2026-10-21
 
 ### Corregido

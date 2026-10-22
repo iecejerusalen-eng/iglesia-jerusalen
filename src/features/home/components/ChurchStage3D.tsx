@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 type StageProps = {
@@ -25,15 +26,15 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.0;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    scene.add(new THREE.HemisphereLight(0xf5faff, 0xbfcbe2, 2.5));
-    const sun = new THREE.DirectionalLight(0xfff7e6, 3.1);
+    scene.add(new THREE.HemisphereLight(0xf5faff, 0xbfcbe2, 1.8));
+    const sun = new THREE.DirectionalLight(0xfff7e6, 2.2);
     sun.position.set(-8, 14, 10);
     scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xc9dfff, 1.4);
+    const fill = new THREE.DirectionalLight(0xc9dfff, 0.9);
     fill.position.set(9, 6, -5);
     scene.add(fill);
 
@@ -44,7 +45,10 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
     let modelWidth = 8;
     let modelHeight = 5;
     let modelDepth = 5;
-    new GLTFLoader().load('/models/iglesia-jerusalen-intro.glb', (gltf) => {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('/draco/');
+    dracoLoader.setDecoderConfig({ type: 'wasm' });
+    new GLTFLoader().setDRACOLoader(dracoLoader).load('/models/iglesia-jerusalen-intro.glb', (gltf) => {
       if (!alive) return;
       const model = gltf.scene;
       const box = new THREE.Box3().setFromObject(model);
@@ -175,6 +179,7 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
         });
       }
       renderer.dispose();
+      dracoLoader.dispose();
     };
   }, [onUnavailable]);
 
