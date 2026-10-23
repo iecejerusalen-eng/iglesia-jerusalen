@@ -1,57 +1,45 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { animate, motion, useInView, useReducedMotion } from 'framer-motion';
 
-export const AnimatedCounter = ({ value, suffix = "", text }: { value: number, suffix?: string, text: string }) => {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
+const formatter = new Intl.NumberFormat('es-EC');
 
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
+export const AnimatedCounter = ({ value, suffix = '', text, caption, icon: Icon, index = 0 }: {
+  value: number; suffix?: string; text: string; caption?: string; icon?: LucideIcon; index?: number;
+}) => {
+  const container = useRef<HTMLDivElement>(null);
+  const number = useRef<HTMLSpanElement>(null);
+  const inView = useInView(container, { once: true, amount: 0.3 });
+  const reducedMotion = useReducedMotion();
+  const formatted = formatter.format(value);
 
   useEffect(() => {
-    if (isInView) {
-      const end = value;
-      const duration = 2.0; // seconds
-      const totalFrames = Math.round(duration * 60);
-      let frame = 0;
+    if (!number.current || !inView) return;
+    if (reducedMotion || value === 0) { number.current.textContent = formatted; return; }
+    const control = animate(0, value, {
+      duration: 1.25, delay: index * 0.09, ease: [0.16, 1, 0.3, 1],
+      onUpdate: current => { if (number.current) number.current.textContent = formatter.format(Math.round(current)); },
+      onComplete: () => { if (number.current) number.current.textContent = formatted; },
+    });
+    return () => control.stop();
+  }, [value, formatted, inView, reducedMotion, index]);
 
-      const timer = setInterval(() => {
-        frame++;
-        const progress = frame / totalFrames;
-        // Ease out quadratic interpolation
-        const current = Math.round(end * (1 - (1 - progress) * (1 - progress)));
-        setCount(current);
+  const style: CSSProperties & { '--stat-max-size': string } = { '--stat-max-size': Math.min(88, 220 / (formatted.length + suffix.length)) + 'px' };
 
-        if (frame >= totalFrames) {
-          setCount(end);
-          clearInterval(timer);
-        }
-      }, 1000 / 60);
-
-      return () => clearInterval(timer);
-    }
-  }, [isInView, value]);
-
-  return (
-    <div ref={ref} className="flex flex-col items-center p-6 text-center space-y-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-slate-150 dark:border-white/5 shadow-xs">
-      <span className="text-4xl md:text-5xl font-extrabold font-serif text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 drop-shadow-sm">
-        +{count}{suffix}
-      </span>
-      <span className="text-slate-600 dark:text-slate-350 text-xs font-bold tracking-wider uppercase">
-        {text}
-      </span>
+  return <motion.div ref={container} className="community-metric" style={style}
+    initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }}
+    transition={{ duration: reducedMotion ? 0 : 0.65, delay: reducedMotion ? 0 : index * 0.075, ease: [0.16, 1, 0.3, 1] }}>
+    <div className="community-metric__meta" aria-hidden="true">
+      {Icon && <Icon size={21} strokeWidth={1.5} />}
+      <span>{caption}</span><span className="community-metric__index">{String(index + 1).padStart(2, '0')}</span>
     </div>
-  );
+    <dt className="community-metric__label">{text}</dt>
+    <dd className="community-metric__value">
+      <span aria-hidden="true"><span ref={number}>{formatted}</span>{suffix}</span>
+      <span className="sr-only">{formatted}{suffix}</span>
+    </dd>
+    <span className="community-metric__line" aria-hidden="true" />
+  </motion.div>;
 };

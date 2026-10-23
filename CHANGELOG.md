@@ -3,6 +3,15 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.8] - 2026-10-23
+
+### Mejorado
+- La sección de cifras del Inicio estrena «Cada vida cuenta», con composición editorial, iconos, tonos azul noche y dorado e invitación a conocer la iglesia.
+- Los contadores aparecen de forma escalonada y una luz suave sigue el cursor; la sección se adapta a móvil, modo oscuro, teclado y movimiento reducido.
+
+### Corregido
+- Los totales se muestran sin signo de incremento y las cifras por edad usan las etiquetas «Niños en comunidad» y «Jóvenes en comunidad».
+
 ## [1.14.7] - 2026-10-22
 
 ### Mejorado
