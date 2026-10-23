@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.5] - 2026-10-22
+
+### Mejorado
+- La bienvenida 3D muestra la fachada de frente durante la apertura y gira después de forma gradual para facilitar su lectura.
+- El encuadre se adapta al ángulo y al ancho de pantalla, con mayor presencia de la iglesia en móvil y una sombra suave de apoyo.
+
 ## [1.14.4] - 2026-10-22
 
 ### Corregido
