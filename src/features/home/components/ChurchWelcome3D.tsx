@@ -91,6 +91,7 @@ export function ChurchWelcome3D() {
           <div className="church-welcome__sky" aria-hidden="true" />
           <div className="church-welcome__cloud church-welcome__cloud--left" aria-hidden="true" />
           <div className="church-welcome__cloud church-welcome__cloud--right" aria-hidden="true" />
+          <div className="church-welcome__cloud church-welcome__cloud--high" aria-hidden="true" />
           <div className="church-welcome__ground" aria-hidden="true" />
           {!unavailable ? (
             <Suspense fallback={null}><ChurchStage mode={phase} onUnavailable={markUnavailable} /></Suspense>

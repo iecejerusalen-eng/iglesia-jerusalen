@@ -2,9 +2,12 @@
 .church-welcome__stage--entering,.church-welcome__stage--companion{inset:calc(56% - 56px) auto auto 8px;width:112px;height:112px;border-radius:50%;box-shadow:0 14px 40px #173b6330;border:1px solid #ffffffb0}
 .church-welcome__stage--companion{z-index:40}
 .church-welcome__sky{position:absolute;inset:0;background:radial-gradient(ellipse 46% 23% at 18% 30%,#fff9 0%,transparent 100%),radial-gradient(ellipse 36% 16% at 84% 26%,#fff9 0%,transparent 100%)}
-.church-welcome__cloud{position:absolute;width:min(36vw,520px);height:110px;border-radius:50%;background:#fff8;filter:blur(26px);pointer-events:none;animation:church-cloud 19s ease-in-out infinite alternate}
-.church-welcome__cloud--left{left:-8%;top:31%}.church-welcome__cloud--right{right:-8%;top:20%;animation-delay:-8s}
-.church-welcome__ground{position:absolute;left:-40%;right:-40%;bottom:-32%;height:78%;transform:perspective(700px) rotateX(66deg);transform-origin:center top;background-color:#fff;background-image:linear-gradient(#bfd5e4a3 1px,transparent 1px),linear-gradient(90deg,#bfd5e4a3 1px,transparent 1px);background-size:55px 55px;mask-image:linear-gradient(transparent,#000 40%);box-shadow:0 -40px 80px #fff}
+.church-welcome__cloud{position:absolute;left:-45vw;width:min(36vw,520px);height:clamp(80px,11vw,145px);pointer-events:none;background:radial-gradient(ellipse 30% 43% at 24% 66%,#ffffffe8 52%,transparent 78%),radial-gradient(ellipse 34% 56% at 50% 46%,#fffffff2 50%,transparent 77%),radial-gradient(ellipse 29% 41% at 76% 67%,#ffffffd9 52%,transparent 78%);filter:drop-shadow(0 12px 16px #80afd022) blur(6px);animation:church-cloud-drift 52s linear infinite;will-change:transform}
+.church-welcome__cloud--left{top:15%;animation-delay:-12s}
+.church-welcome__cloud--right{top:29%;animation-duration:63s;animation-delay:-39s;opacity:.78}
+.church-welcome__cloud--high{top:4%;animation-duration:57s;animation-delay:-29s;opacity:.55}
+.church-welcome__ground{position:absolute;left:-40%;right:-40%;bottom:-32%;height:78%;transform:perspective(700px) rotateX(66deg);transform-origin:center top;background-color:#fff;mask-image:linear-gradient(transparent,#000 40%);box-shadow:0 -40px 80px #fff}
+.church-welcome__ground::before{content:"";position:absolute;inset:-55px 0;background-image:linear-gradient(#bfd5e4a3 1px,transparent 1px),linear-gradient(90deg,#bfd5e4a3 1px,transparent 1px);background-size:55px 55px;animation:church-ground-depth 3.6s linear infinite;will-change:transform}
 .church-welcome__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;cursor:grab;touch-action:none;outline:none}.church-welcome__canvas.is-dragging{cursor:grabbing}
 .church-welcome__fallback{position:absolute;z-index:2;left:50%;top:50%;width:min(78vw,960px);max-height:72%;object-fit:contain;transform:translate(-50%,-50%);filter:drop-shadow(0 25px 30px #1c49714d)}
 .church-welcome__stage--companion .church-welcome__fallback,.church-welcome__stage--entering .church-welcome__fallback{width:90%;max-height:90%}
@@ -13,6 +16,8 @@
 .church-welcome__enter{position:absolute;left:50%;bottom:calc(34px + env(safe-area-inset-bottom));transform:translateX(-50%);pointer-events:auto;min-width:100px;min-height:46px;padding:10px 21px;border:1px solid #ffffffb0;border-radius:999px;background:#fffdf0e8;color:#0b2454;font:700 13px Inter,system-ui,sans-serif;box-shadow:0 12px 35px #12376330;backdrop-filter:blur(14px);cursor:pointer;transition:transform .25s ease,background .25s ease,box-shadow .25s ease}
 .church-welcome__enter span{margin-left:8px}.church-welcome__enter:hover,.church-welcome__enter:focus-visible{background:#fff;transform:translateX(-50%) translateY(-3px);box-shadow:0 15px 40px #12376342}.church-welcome__enter:disabled{pointer-events:none}
 .church-welcome__replay{position:fixed;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:45;min-height:38px;padding:8px 13px;border:1px solid #acc4e1;border-radius:999px;background:#fffc;color:#153a78;font:700 11px Inter,system-ui,sans-serif;box-shadow:0 5px 17px #153a7822;cursor:pointer;backdrop-filter:blur(10px)}.church-welcome__replay:hover,.church-welcome__replay:focus-visible{background:#fff;box-shadow:0 0 0 3px #376edb55}
-@keyframes church-cloud{to{transform:translateX(13%)}}
+@keyframes church-cloud-drift{to{transform:translate3d(190vw,0,0)}}
+@keyframes church-ground-depth{to{transform:translate3d(0,-55px,0)}}
+.church-welcome__stage--entering .church-welcome__cloud,.church-welcome__stage--companion .church-welcome__cloud,.church-welcome__stage--entering .church-welcome__ground::before,.church-welcome__stage--companion .church-welcome__ground::before{animation-play-state:paused}
 @media(max-width:700px){.church-welcome__stage--entering,.church-welcome__stage--companion{inset:calc(52% - 40px) auto auto 6px;width:80px;height:80px}.church-welcome__enter{bottom:calc(24px + env(safe-area-inset-bottom))}.church-welcome__replay{bottom:calc(84px + env(safe-area-inset-bottom))}}
-@media(prefers-reduced-motion:reduce){.church-welcome__cloud{animation:none}.church-welcome__stage,.church-welcome__overlay{transition:none}}
+@media(prefers-reduced-motion:reduce){.church-welcome__cloud,.church-welcome__ground::before{animation:none}.church-welcome__stage,.church-welcome__overlay{transition:none}}

@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.6] - 2026-10-22
+
+### Mejorado
+- La retícula del suelo avanza hacia el fondo en un bucle continuo durante la bienvenida 3D.
+- Tres nubes se desplazan lentamente por el cielo a velocidades distintas, sin tapar la fachada; la animación se detiene al entrar y respeta la preferencia de movimiento reducido.
+
 ## [1.14.5] - 2026-10-22
 
 ### Mejorado
