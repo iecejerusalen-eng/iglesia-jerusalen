@@ -6,12 +6,18 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 type StageProps = {
   mode: 'intro' | 'entering' | 'companion';
   onUnavailable: () => void;
+  autoRotate: boolean;
+  command: { id: number; action: 'zoom-in' | 'zoom-out' | 'reset' } | null;
 };
 
-export default function ChurchStage({ mode, onUnavailable }: StageProps) {
+export default function ChurchStage({ mode, onUnavailable, autoRotate, command }: StageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modeRef = useRef(mode);
+  const autoRotateRef = useRef(autoRotate);
+  const commandRef = useRef(command);
   useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { autoRotateRef.current = autoRotate; }, [autoRotate]);
+  useEffect(() => { commandRef.current = command; }, [command]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -92,19 +98,24 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
 
     let frame = 0;
     let lastTime = 0;
-    let orbit = 0;
-    let introElapsed = 0;
+    let yaw = 0;
+    let pitch = 0;
+    let yawVelocity = 0;
+    let autoSpeed = 0;
+    let targetZoom = 1;
+    let zoom = 1;
+    let handledCommand = 0;
+    let resetting = false;
+    let lastInteraction = performance.now();
+    let hasInteracted = false;
     let scrollVelocity = 0;
-    let dragYaw = 0;
-    let dragPitch = 0;
-    let targetYaw = 0;
-    let targetPitch = 0;
     let cameraDistance = 0;
-    let dragging = false;
-    let lastPointerX = 0;
-    let lastPointerY = 0;
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinchDistance = 0;
+    let lastPointerTime = 0;
     let lastScrollY = window.scrollY;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clampZoom = (value: number) => THREE.MathUtils.clamp(value, 0.72, 2.1);
 
     const resize = () => {
       const width = canvas.clientWidth;
@@ -120,29 +131,79 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
 
     const pointerDown = (event: PointerEvent) => {
       if (modeRef.current === 'entering') return;
-      dragging = true;
-      lastPointerX = event.clientX;
-      lastPointerY = event.clientY;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      lastInteraction = performance.now();
+      hasInteracted = true;
+      lastPointerTime = event.timeStamp;
+      yawVelocity = 0;
+      resetting = false;
       canvas.setPointerCapture(event.pointerId);
       canvas.classList.add('is-dragging');
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        pinchDistance = Math.hypot(a.x - b.x, a.y - b.y);
+      }
     };
     const pointerMove = (event: PointerEvent) => {
-      if (!dragging) return;
-      targetYaw += (event.clientX - lastPointerX) * 0.009;
-      targetPitch = THREE.MathUtils.clamp(targetPitch + (event.clientY - lastPointerY) * 0.007, -0.8, 0.8);
-      lastPointerX = event.clientX;
-      lastPointerY = event.clientY;
+      const previous = pointers.get(event.pointerId);
+      if (!previous) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      lastInteraction = performance.now();
+      if (pointers.size === 2 && modeRef.current === 'intro') {
+        const [a, b] = [...pointers.values()];
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchDistance > 0) targetZoom = clampZoom(targetZoom * distance / pinchDistance);
+        pinchDistance = distance;
+        yawVelocity = 0;
+        return;
+      }
+      const dx = event.clientX - previous.x;
+      yaw += dx * 0.008;
+      pitch = THREE.MathUtils.clamp(pitch + (event.clientY - previous.y) * 0.006, -0.55, 0.55);
+      const elapsed = (event.timeStamp - lastPointerTime) / 1000;
+      if (elapsed > 0.005 && elapsed < 0.12) {
+        const instantaneous = THREE.MathUtils.clamp(dx * 0.008 / elapsed, -1.7, 1.7);
+        yawVelocity = THREE.MathUtils.lerp(yawVelocity, instantaneous, 0.55);
+      }
+      lastPointerTime = event.timeStamp;
     };
-    const pointerUp = () => {
-      dragging = false;
-      canvas.classList.remove('is-dragging');
-      targetYaw = 0;
-      targetPitch = 0;
+    const pointerUp = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
+      if (event.timeStamp - lastPointerTime > 90) yawVelocity = 0;
+      lastInteraction = performance.now();
+      if (pointers.size < 2) pinchDistance = 0;
+      if (pointers.size === 1) lastPointerTime = event.timeStamp;
+      if (pointers.size === 0) canvas.classList.remove('is-dragging');
     };
     const wheel = (event: WheelEvent) => {
-      if (modeRef.current !== 'companion') return;
+      if (modeRef.current === 'intro' && event.currentTarget === canvas) {
+        event.preventDefault();
+        targetZoom = clampZoom(targetZoom * Math.exp(-THREE.MathUtils.clamp(event.deltaY, -300, 300) * 0.001));
+        lastInteraction = performance.now();
+        hasInteracted = true;
+        return;
+      }
+      if (modeRef.current !== 'companion' || event.currentTarget === canvas) return;
       scrollVelocity += THREE.MathUtils.clamp(event.deltaY, -450, 450) * 0.0022;
       scrollVelocity = THREE.MathUtils.clamp(scrollVelocity, -3.2, 3.2);
+    };
+    const keyboard = (event: globalThis.KeyboardEvent) => {
+      if (modeRef.current !== 'intro') return;
+      let handled = true;
+      if (event.key === 'ArrowLeft') yaw -= 0.18;
+      else if (event.key === 'ArrowRight') yaw += 0.18;
+      else if (event.key === 'ArrowUp') pitch = THREE.MathUtils.clamp(pitch - 0.12, -0.55, 0.55);
+      else if (event.key === 'ArrowDown') pitch = THREE.MathUtils.clamp(pitch + 0.12, -0.55, 0.55);
+      else if (event.key === '+' || event.key === '=') targetZoom = clampZoom(targetZoom * 1.18);
+      else if (event.key === '-') targetZoom = clampZoom(targetZoom / 1.18);
+      else handled = false;
+      if (handled) {
+        event.preventDefault();
+        yawVelocity = 0;
+        resetting = false;
+        lastInteraction = performance.now();
+        hasInteracted = true;
+      }
     };
     const scroll = () => {
       const delta = window.scrollY - lastScrollY;
@@ -156,6 +217,8 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
     canvas.addEventListener('pointermove', pointerMove);
     canvas.addEventListener('pointerup', pointerUp);
     canvas.addEventListener('pointercancel', pointerUp);
+    canvas.addEventListener('wheel', wheel, { passive: false });
+    canvas.addEventListener('keydown', keyboard);
     window.addEventListener('wheel', wheel, { passive: true });
     window.addEventListener('scroll', scroll, { passive: true });
 
@@ -163,29 +226,48 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
       const dt = Math.min((time - (lastTime || time)) / 1000, 0.05);
       lastTime = time;
       const currentMode = modeRef.current;
-      if (!dragging) {
-        if (currentMode === 'intro' && !reducedMotion.matches) {
-          introElapsed += dt;
-          orbit += dt * 0.32 * THREE.MathUtils.smoothstep(introElapsed, 0.7, 2.3);
+      const requested = commandRef.current;
+      if (requested && requested.id !== handledCommand) {
+        handledCommand = requested.id;
+        lastInteraction = time;
+        hasInteracted = true;
+        yawVelocity = 0;
+        if (requested.action === 'zoom-in') targetZoom = clampZoom(targetZoom * 1.25);
+        else if (requested.action === 'zoom-out') targetZoom = clampZoom(targetZoom / 1.25);
+        else {
+          targetZoom = 1;
+          resetting = true;
         }
-        if (currentMode === 'companion') orbit += scrollVelocity * dt;
       }
+      const dragging = pointers.size > 0;
+      if (!dragging) {
+        if (resetting) {
+          const front = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2;
+          yaw = THREE.MathUtils.damp(yaw, front, 6, dt);
+          pitch = THREE.MathUtils.damp(pitch, 0, 6, dt);
+          if (Math.abs(yaw - front) < 0.002 && Math.abs(pitch) < 0.002) resetting = false;
+        } else {
+          yaw += yawVelocity * dt;
+          yawVelocity *= Math.exp(-dt * 4.2);
+        }
+        if (currentMode === 'companion') yaw += scrollVelocity * dt;
+      }
+      const canOrbit = currentMode === 'intro' && autoRotateRef.current && !reducedMotion.matches &&
+        !dragging && !resetting && time - lastInteraction > (hasInteracted ? 850 : 1800);
+      autoSpeed = THREE.MathUtils.damp(autoSpeed, canOrbit ? 0.24 : 0, 3, dt);
+      if (!dragging && !resetting) yaw += autoSpeed * dt;
       scrollVelocity *= Math.exp(-dt * 3.5);
-      const ease = 1 - Math.exp(-dt * (dragging ? 18 : 5));
-      dragYaw += (targetYaw - dragYaw) * ease;
-      dragPitch += (targetPitch - dragPitch) * ease;
-      pivot.rotation.set(dragPitch, orbit + dragYaw, 0);
+      zoom = THREE.MathUtils.damp(zoom, currentMode === 'intro' ? targetZoom : 1, 6, dt);
+      pivot.rotation.set(pitch, yaw, 0);
 
       const aspect = Math.max(camera.aspect, 0.25);
       const vertical = THREE.MathUtils.degToRad(camera.fov) / 2;
-      const yaw = orbit + dragYaw;
-      const widthForRotation = currentMode === 'companion'
-        ? Math.max(modelWidth, modelDepth)
-        : Math.abs(modelWidth * Math.cos(yaw)) + Math.abs(modelDepth * Math.sin(yaw));
+      // Una caja de encuadre fija evita que la cámara parezca «respirar» al girar.
+      const widthForRotation = Math.hypot(modelWidth, modelDepth);
       const targetDistance = Math.max(
         modelHeight / (2 * Math.tan(vertical)),
         widthForRotation / (2 * Math.tan(vertical) * aspect),
-      ) * (currentMode === 'companion' ? 1.7 : aspect < 0.8 ? 1.28 : 1.8);
+      ) * (currentMode === 'companion' ? 1.7 : aspect < 0.8 ? 0.94 : 1.5) / zoom;
       cameraDistance = cameraDistance
         ? THREE.MathUtils.lerp(cameraDistance, targetDistance, 1 - Math.exp(-dt * 3))
         : targetDistance;
@@ -203,6 +285,8 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
       canvas.removeEventListener('pointermove', pointerMove);
       canvas.removeEventListener('pointerup', pointerUp);
       canvas.removeEventListener('pointercancel', pointerUp);
+      canvas.removeEventListener('wheel', wheel);
+      canvas.removeEventListener('keydown', keyboard);
       window.removeEventListener('wheel', wheel);
       window.removeEventListener('scroll', scroll);
       if (loadedModel) {
@@ -227,5 +311,5 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
     };
   }, [onUnavailable]);
 
-  return <canvas ref={canvasRef} className="church-welcome__canvas" aria-label="Modelo 3D interactivo de Iglesia Jerusalén" />;
+  return <canvas ref={canvasRef} className="church-welcome__canvas" tabIndex={mode === 'intro' ? 0 : -1} aria-label="Modelo 3D interactivo de Iglesia Jerusalén. Usa las flechas para girar y las teclas más y menos para acercar o alejar." />;
 }

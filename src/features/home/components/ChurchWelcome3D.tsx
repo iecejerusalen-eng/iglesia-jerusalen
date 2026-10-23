@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { Maximize2, Minus, Pause, Play, Plus, RotateCcw } from 'lucide-react';
 import './church-welcome-3d.css';
 
 const STORAGE_KEY = 'jerusalen_welcome_3d_seen_v1';
@@ -24,6 +25,9 @@ const ChurchStage = lazy(() => import('./ChurchStage3D'));
 export function ChurchWelcome3D() {
   const [phase, setPhase] = useState<Phase>(() => canShowIntro() ? 'intro' : 'hidden');
   const [unavailable, setUnavailable] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [command, setCommand] = useState<{ id: number; action: 'zoom-in' | 'zoom-out' | 'reset' } | null>(null);
+  const commandId = useRef(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
   const markUnavailable = useCallback(() => setUnavailable(true), []);
@@ -51,7 +55,14 @@ export function ChurchWelcome3D() {
 
   const start = () => {
     setUnavailable(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    setAutoRotate(true);
+    setCommand(null);
     setPhase('intro');
+  };
+
+  const sendCommand = (action: 'zoom-in' | 'zoom-out' | 'reset') => {
+    if (action === 'reset') setAutoRotate(false);
+    setCommand({ id: ++commandId.current, action });
   };
 
   useEffect(() => {
@@ -94,7 +105,7 @@ export function ChurchWelcome3D() {
           <div className="church-welcome__cloud church-welcome__cloud--high" aria-hidden="true" />
           <div className="church-welcome__ground" aria-hidden="true" />
           {!unavailable ? (
-            <Suspense fallback={null}><ChurchStage mode={phase} onUnavailable={markUnavailable} /></Suspense>
+            <Suspense fallback={null}><ChurchStage mode={phase} onUnavailable={markUnavailable} autoRotate={autoRotate} command={command} /></Suspense>
           ) : (
             <img className="church-welcome__fallback" src="/images/church-welcome-fallback.webp" alt="Fachada de Iglesia Jerusalén" />
           )}
@@ -110,7 +121,19 @@ export function ChurchWelcome3D() {
           aria-label="Bienvenida a Iglesia Jerusalén"
           tabIndex={-1}
         >
-          <p className="sr-only">La iglesia gira automáticamente. Arrástrala para explorarla y pulsa Entrar para ir al inicio. Presiona Escape para omitir la bienvenida.</p>
+          <p className="sr-only">Arrastra o usa las flechas para girar. Acerca con la rueda, pellizca en pantalla táctil o usa los controles. Pulsa Entrar para ir al inicio. Presiona Escape para omitir la bienvenida.</p>
+          {phase === 'intro' && !unavailable && (
+            <>
+              <div className="church-welcome__tools" role="group" aria-label="Controles del modelo 3D">
+                <button type="button" onClick={() => sendCommand('zoom-in')} aria-label="Acercar modelo" title="Acercar"><Plus size={19} aria-hidden="true" /></button>
+                <button type="button" onClick={() => sendCommand('zoom-out')} aria-label="Alejar modelo" title="Alejar"><Minus size={19} aria-hidden="true" /></button>
+                <span className="church-welcome__tools-divider" aria-hidden="true" />
+                <button type="button" onClick={() => setAutoRotate(value => !value)} aria-label={autoRotate ? 'Pausar giro automático' : 'Reanudar giro automático'} title={autoRotate ? 'Pausar giro' : 'Reanudar giro'}>{autoRotate ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}</button>
+                <button type="button" onClick={() => sendCommand('reset')} aria-label="Volver a la vista frontal" title="Vista frontal"><RotateCcw size={17} aria-hidden="true" /></button>
+              </div>
+              <p className="church-welcome__hint"><Maximize2 size={14} aria-hidden="true" /><span className="church-welcome__hint-desktop">Arrastra para girar · Rueda para acercar</span><span className="church-welcome__hint-mobile">Desliza para girar · Pellizca para acercar</span></p>
+            </>
+          )}
           <button type="button" className="church-welcome__enter" onClick={enter} disabled={phase === 'entering'}>
             Entrar <span aria-hidden="true">↗</span>
           </button>

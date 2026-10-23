@@ -3,6 +3,13 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.7] - 2026-10-22
+
+### Mejorado
+- El giro 3D conserva el ángulo elegido, se desacelera con una inercia breve y reanuda suavemente la rotación automática desde esa posición.
+- El encuadre permanece estable durante el giro; se elimina el efecto de «respiración» de la cámara.
+- La bienvenida permite acercar y alejar con botones, rueda o pellizco, pausar el giro, volver a la vista frontal y explorar con el teclado; los controles se adaptan al móvil.
+
 ## [1.14.6] - 2026-10-22
 
 ### Mejorado

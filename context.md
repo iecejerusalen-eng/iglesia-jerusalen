@@ -1,5 +1,9 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 22-oct-2026 — Exploración de la bienvenida 3D
+
+La escena de bienvenida conserva el ángulo al soltar el modelo y retoma desde allí un giro automático suave tras una pausa breve. La cámara usa un encuadre fijo durante la rotación para evitar el efecto de «respiración». Hay zoom por rueda, pellizco y botones, pausa/reanudación, regreso a la fachada y flechas de teclado. Los controles tienen etiquetas accesibles y pistas distintas para escritorio y móvil. La geometría Blender y el GLB siguen siendo los mismos. Fuente: solicitud del usuario y QA visual local a 1440 y 390 px (22-oct-2026). Estado: validado localmente; publicación se registra por separado.
+
 ## 22-oct-2026 — Acabado de la bienvenida 3D
 
 El GLB de bienvenida se vuelve a exportar del mismo archivo maestro Blender después de corregir cuatro materiales que tenían alfa cero. El ventanal central, los vidrios del acceso y las ventanas junto a la terraza vuelven a ser visibles; la iluminación web recupera contraste y calidez. No cambia la geometría ni el flujo de entrada. Fuente: revisión visual de la bienvenida local y materiales del maestro el 22-oct-2026. Publicación se confirma por separado.
