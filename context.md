@@ -1,5 +1,9 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 22-oct-2026 — Acabado de la bienvenida 3D
+
+El GLB de bienvenida se vuelve a exportar del mismo archivo maestro Blender después de corregir cuatro materiales que tenían alfa cero. El ventanal central, los vidrios del acceso y las ventanas junto a la terraza vuelven a ser visibles; la iluminación web recupera contraste y calidez. No cambia la geometría ni el flujo de entrada. Fuente: revisión visual de la bienvenida local y materiales del maestro el 22-oct-2026. Publicación se confirma por separado.
+
 ## 21-oct-2026 — Acentos editoriales dorados y enlaces bíblicos
 
 Se aplicó el acento dorado de la identidad en las acciones de lectura de documentos, la ruta de navegación y el versículo del día, conservando azul para los controles de copiar/actualizar. El degradado de botones usa tonos oscuros en tema claro y luminosos en tema oscuro; se reforzó el foco de teclado. El componente compartido de referencias bíblicas y su vista previa ya no subrayan las referencias ni el texto del pasaje. Fuente: solicitud del usuario y referencias visuales de `codex-clipboard-0341e7d9-6c38-47f1-af7d-090da12a83bb.png`, `codex-clipboard-7d7de503-7a9c-4c52-b540-f37ebb9ff2ec.png` y `codex-clipboard-37d2f279-66a1-4f6a-aa57-e92321a136d3.png`; implementación local en `src/pages/public/About.tsx`, `src/components/common/FooterBreadcrumb.tsx`, `src/components/ui/BibleVerseLink.tsx`, `src/components/ui/BibleVersePreview.tsx`, `src/features/home/components/DailyVerseSection.tsx` y `src/index.css`. Sin publicación en esta entrega.

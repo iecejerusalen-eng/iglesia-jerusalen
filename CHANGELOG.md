@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.4] - 2026-10-22
+
+### Corregido
+- El ventanal central y otros paños de vidrio de la bienvenida 3D recuperan sus acabados visibles; se eliminó la transparencia total heredada de la importación.
+- La luz de la escena conserva el color crema de la fachada y mejora el contraste con los ventanales azules.
+
 ## [1.14.3] - 2026-10-22
 
 ### Mejorado

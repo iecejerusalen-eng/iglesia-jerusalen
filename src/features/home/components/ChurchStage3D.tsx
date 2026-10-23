@@ -26,15 +26,15 @@ export default function ChurchStage({ mode, onUnavailable }: StageProps) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 0.9;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    scene.add(new THREE.HemisphereLight(0xf5faff, 0xbfcbe2, 1.8));
-    const sun = new THREE.DirectionalLight(0xfff7e6, 2.2);
+    scene.add(new THREE.HemisphereLight(0xfff8eb, 0xd5dbe2, 1.35));
+    const sun = new THREE.DirectionalLight(0xffefd9, 1.8);
     sun.position.set(-8, 14, 10);
     scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xc9dfff, 0.9);
+    const fill = new THREE.DirectionalLight(0xc9dfff, 0.6);
     fill.position.set(9, 6, -5);
     scene.add(fill);
 
