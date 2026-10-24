@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.11] - 2026-10-24
+
+### Corregido
+- La bienvenida del Código de las Parábolas ya no recorta el botón para entrar en móviles; la escena se ajusta al ancho disponible.
+- La zona táctil de la escoba cubre su figura completa para que se pueda activar al tocar el objeto.
+
 ## [1.14.10] - 2026-10-23
 
 ### Añadido
