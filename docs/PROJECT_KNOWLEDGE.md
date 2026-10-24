@@ -1,5 +1,9 @@
 # Conocimiento del Proyecto: Iglesia Jerusalén
 
+## 2026-10-24 — Respuestas pastorales e institucionales del asistente
+
+Preparación de la versión 1.14.22. El asistente ahora reconoce preguntas sobre quiénes pastorean la iglesia, la visión y misión institucionales, los símbolos y el himno Cuadrangulares, y variantes naturales de la pregunta por ubicación. También ofrece una respuesta empática a expresiones de tristeza y, ante desesperanza o posible autolesión, orienta a buscar compañía, contactar ECU 911 si existe peligro inmediato y acceder a Samaritans by Anima EC. El chat sigue indicando que no es confidencial ni un servicio de emergencia. La evidencia de producción queda registrada en la nota de continuidad de Obsidian.
+
 ## 2026-10-24 — Reservas, tienda y comunidad en el asistente
 
 El asistente responde con los espacios activos publicados en `spaces`, leyendo solo los campos que ya muestra `/reservas`; no consulta las reservas de personas ni confirma disponibilidad por fecha. Explica que la solicitud requiere iniciar sesión y queda pendiente de confirmación. También dirige a `/tienda` para el catálogo y a `/comunidad` para testimonios, peticiones y noticias, con una indicación para no publicar datos privados. Reservas y Tienda se añaden a los atajos del chat. Release 1.14.19 publicado en Vercel el 2026-10-24; la lista de episodios puede quedar vacía mientras no existan episodios publicados.
@@ -116,3 +120,4 @@ El hub `/programas/estudio-biblico` incorpora un panel desplegable que muestra o
 Fuentes actuales enlazadas en la interfaz: https://tyndaleopenresources.com/ ; https://churchmaps.info/index.html ; https://www.openbible.info/geo/ ; https://www.foursquare.org/about/beliefs/ ; https://ag.org/Beliefs/Statement-of-Fundamental-truths ; https://bfm.sbc.net/bfm2000/ ; https://ebible.org/bible/details.php?id=spaRV1909 ; https://openbibleimages.org/license ; https://open.bible/resources ; https://bibleproject.com/terms/ . Se preserva la atribución visible y no se declara que una fuente comparativa sea doctrina local ni que una fuente gratuita sea de dominio público.
 
 Implementación local: `src/data/bibleStudySources.ts` y `src/pages/public/BibleStudyHub.tsx`. ESLint focalizado y build TypeScript/Vite/PWA pasaron; 213 recursos precargados, CSS principal 899,864/900,000 bytes. `git diff --check` pendiente de cierre. Sin pruebas añadidas/ejecutadas, Supabase ni publicación. Work no tuvo navegador disponible para QA visual.
+

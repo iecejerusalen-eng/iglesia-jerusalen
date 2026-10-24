@@ -71,6 +71,9 @@ export const CHURCH_LINKS = {
   store: { label: 'Explorar la tienda', href: '/tienda' },
   community: { label: 'Abrir la comunidad', href: '/comunidad' },
   doctrine: { label: 'Conocer nuestra fe', href: '/nosotros/doctrina' },
+  symbols: { label: 'Ver los símbolos Cuadrangulares', href: '/nosotros/simbolos' },
+  hymn: { label: 'Leer el Himno Cuadrangular', href: '/nosotros/himno' },
+  pastors: { label: 'Conocer a los pastores', href: '/nosotros#liderazgo' },
 } satisfies Record<string, AssistantLink>;
 
 export function normalizeAssistantText(value: string) {
@@ -261,8 +264,64 @@ function plainTextSummary(value: string | null, maxLength = 220) {
   return `${prefix.slice(0, boundary > maxLength * 0.75 ? boundary : prefix.length).trimEnd()}…`;
 }
 
-export function answerFromPublicInfo(message: string, knowledge: ChurchAssistantKnowledge) {
+export function answerFromPublicInfo(message: string, knowledge: ChurchAssistantKnowledge, conversation: AssistantConversationMessage[] = []) {
   const query = normalizeAssistantText(message);
+
+  const lastAssistantMessage = [...conversation].reverse().find((item) => item.role === 'assistant');
+  const isSafetyFollowUp = lastAssistantMessage?.text.includes('¿Estás en peligro inmediato o pensando en hacerte daño ahora?') ?? false;
+  const safetyFollowUp = query.replace(/[¿?¡!.,;:]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (isSafetyFollowUp && /^(si|si estoy en peligro|si podria hacerme dano|si pienso hacerme dano|si pienso hacerme dano ahora)$/.test(safetyFollowUp)) {
+    return {
+      text: 'Gracias por decírmelo. Llama al ECU 911 ahora y, si puedes, pide a una persona de confianza que se quede contigo y te acompañe a un servicio de emergencia. También puedes llamar o escribir a Samaritans by Anima EC al (593) 99 719 6911. No tienes que pasar este momento a solas.',
+      links: [
+        { label: 'Llamar al ECU 911 · 9-1-1', href: 'tel:911' },
+        { label: 'Llamar o escribir a Anima EC · (593) 99 719 6911', href: 'tel:+593997196911?oai_link_source=model_response_hotline' },
+        { label: 'Anima EC en Instagram', href: 'https://www.instagram.com/animaec.inc?igsh=cTMyd216dzZ1amxx&oai_link_source=model_response_hotline' },
+        CHURCH_LINKS.contact,
+      ],
+    };
+  }
+  if (isSafetyFollowUp && /^(no|no ahora|no estoy en peligro|no pienso hacerme dano|estoy a salvo)$/.test(safetyFollowUp)) {
+    return {
+      text: 'Gracias por responder. Siento que estés pasando por esto. Si puedes, habla hoy con alguien de confianza y no te quedes a solas con lo que sientes. Samaritans by Anima EC ofrece apoyo gratuito por teléfono y WhatsApp al (593) 99 719 6911. También puedes pedir acompañamiento a la iglesia.',
+      links: [
+        { label: 'Llamar o escribir a Anima EC · (593) 99 719 6911', href: 'tel:+593997196911?oai_link_source=model_response_hotline' },
+        { label: 'Anima EC en Instagram', href: 'https://www.instagram.com/animaec.inc?igsh=cTMyd216dzZ1amxx&oai_link_source=model_response_hotline' },
+        CHURCH_LINKS.contact,
+        CHURCH_LINKS.prayer,
+      ],
+    };
+  }
+  if (isSafetyFollowUp && /^(no se|no se que hacer|ayudame|tengo miedo|no puedo mas|no puedo solo|no puedo sola)$/.test(safetyFollowUp)) {
+    return {
+      text: 'Gracias por seguir aquí. No tienes que resolverlo todo ahora. Si podrías hacerte daño, llama al ECU 911 y busca a alguien de confianza que pueda acompañarte en persona. También puedes llamar o escribir por WhatsApp a Samaritans by Anima EC al (593) 99 719 6911. ¿Puedes acercarte o llamar ahora a una persona de confianza?',
+      links: [
+        { label: 'Llamar al ECU 911 · 9-1-1', href: 'tel:911' },
+        { label: 'Llamar o escribir a Anima EC · (593) 99 719 6911', href: 'tel:+593997196911?oai_link_source=model_response_hotline' },
+        { label: 'Anima EC en Instagram', href: 'https://www.instagram.com/animaec.inc?igsh=cTMyd216dzZ1amxx&oai_link_source=model_response_hotline' },
+        CHURCH_LINKS.contact,
+      ],
+    };
+  }
+
+  if (/\b(no me gusta mi vida|no quiero vivir|no quiero seguir viviendo|no tiene sentido seguir|no puedo seguir|no puedo mas|no aguanto mas|quiero desaparecer|sin salida|quiero morir|me quiero morir|quitarme la vida|hacerme dano|lastimarme|autolesion|suicid)\b/.test(query)) {
+    return {
+      text: 'Siento mucho que estés pasando por un momento así. Gracias por decírmelo. ¿Estás en peligro inmediato o pensando en hacerte daño ahora? Si sí, llama al ECU 911 y busca a alguien de confianza que pueda estar contigo. En Ecuador puedes llamar o escribir por WhatsApp a Samaritans by Anima EC al (593) 99 719 6911. Este chat no es un canal de emergencia ni confidencial.',
+      links: [
+        { label: 'Llamar al ECU 911 · 9-1-1', href: 'tel:911' },
+        { label: 'Llamar o escribir a Anima EC · (593) 99 719 6911', href: 'tel:+593997196911?oai_link_source=model_response_hotline' },
+        { label: 'Anima EC en Instagram', href: 'https://www.instagram.com/animaec.inc?igsh=cTMyd216dzZ1amxx&oai_link_source=model_response_hotline' },
+        CHURCH_LINKS.contact,
+      ],
+    };
+  }
+
+  if (/\b(estoy triste|me siento triste|ando triste|estoy deprimid[oa]|me siento deprimid[oa]|me siento sol[oa]|estoy angustiad[oa]|tengo ansiedad)\b/.test(query)) {
+    return {
+      text: 'Siento que estés pasando por un momento difícil. Gracias por contármelo. Si te ayuda, puedes hablar con alguien de confianza, pedir oración o contactar a la iglesia. No compartas aquí información personal; este chat no es confidencial.',
+      links: [CHURCH_LINKS.prayer, CHURCH_LINKS.contact],
+    };
+  }
 
   // Event language takes precedence when a question also names a day of the week.
   if (isEventQuestion(query)) {
@@ -316,7 +375,7 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
     return { text: `${intro}\n${lines.join('\n')}`, links: [CHURCH_LINKS.visit] };
   }
 
-  if (/\b(ubicacion|direccion|llegar|mapa|navegar|como llego|donde queda|donde esta (?:la )?iglesia|donde es la iglesia|donde nos reunimos|donde estan ubicados|donde se encuentra la iglesia)\b/.test(query)) {
+  if (/\b(ubicacion|direccion|llegar|mapa|navegar|como llego|donde queda|donde esta (?:ubicad[oa] )?(?:la )?iglesia|donde es la iglesia|donde nos reunimos|donde estan ubicados|donde se encuentra la iglesia)\b/.test(query)) {
     return {
       text: 'Estamos en Baquerizo Moreno, entre Av. Colón y Tulcán, en Milagro, Guayas. Elige tu aplicación de mapas para ver la ruta.',
       links: [
@@ -336,7 +395,7 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
     return { text: '¡Nos encantará recibirte! Puedes revisar los horarios, indicarnos si necesitas apoyo y encontrar cómo llegar. Avisarnos antes es opcional.', links: [CHURCH_LINKS.visit, { label: 'Cómo llegar', href: 'https://www.google.com/maps/search/?api=1&query=Iglesia+Cuadrangular+Jerusalen+Milagro+Ecuador' }] };
   }
 
-  if (/\b(oracion|orar|peticion|peticiones|consejeria|ayuda espiritual)\b/.test(query)) {
+  if (/\b(oracion|orar|oren|peticion|peticiones|consejeria|ayuda espiritual)\b/.test(query)) {
     return { text: 'Puedes enviar una petición desde la página de Peticiones. Para usar ese formulario necesitas iniciar sesión; allí eliges si compartirla en el muro público o mantenerla privada. No escribas aquí información personal o confidencial.', links: [CHURCH_LINKS.prayer, CHURCH_LINKS.contact] };
   }
 
@@ -375,6 +434,10 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
       return { text: `${intro}\n${lines.join('\n')}`, links: [CHURCH_LINKS.podcast] };
     }
     return { text: 'En el podcast de la iglesia puedes explorar y escuchar los episodios que estén publicados. Si buscas mensajes de predicación, también puedes abrir la página de prédicas.', links: [CHURCH_LINKS.podcast, { label: 'Ver prédicas', href: '/predicas' }] };
+  }
+
+  if (/\b(himno cuadrangular|himno de la cuadrangular|himno de iglesia cuadrangular)\b/.test(query)) {
+    return { text: 'El Himno Cuadrangular canta sobre Jesús como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Puedes leer sus estrofas y el coro en la sección de aprendizaje de la iglesia.', links: [CHURCH_LINKS.hymn, CHURCH_LINKS.songs] };
   }
 
   if (/\b(alabanza|alabanzas|himno|himnos|himnario|cancion|canciones|letra|repertorio|coros|musica)\b/.test(query)
@@ -457,13 +520,32 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
   if (/\b(en vivo|transmision|transmiten|streaming|youtube)\b/.test(query)) return { text: 'Puedes abrir la transmisión y comprobar si hay un culto en vivo en este momento.', links: [{ label: 'Ver en vivo', href: '/en-vivo' }] };
   if (/\b(predica|predicas|sermon|sermones|mensaje|mensajes)\b/.test(query)) return { text: 'En la página de prédicas puedes explorar mensajes publicados por la iglesia.', links: [{ label: 'Ver prédicas', href: '/predicas' }] };
   if (/\b(biblia|biblico|biblica|leer la biblia|estudio biblico)\b/.test(query)) return { text: 'Puedes leer pasajes en el lector bíblico o explorar el estudio por libros y capítulos.', links: [{ label: 'Leer la Biblia', href: '/recursos/biblia' }, { label: 'Explorar el estudio bíblico', href: '/programas/estudio-biblico' }] };
-  if (/\b(doctrina|creencias|fe cuadrangular|principios de fe|evangelio cuadrangular|cuatro simbolos|que cree la iglesia|que cree iglesia|que creemos como iglesia|en que creemos|salvador|sanador|bautizador|rey que viene)\b/.test(query)) {
+  if (/\b(quien es (?:el )?pastor|quien es (?:la )?pastora|pastor(?:es)? principal(?:es)?|liderazgo pastoral)\b/.test(query)) {
+    return { text: 'La página institucional presenta a David Nicola Olvera y Corina Miranda Sánchez en el liderazgo pastoral de Iglesia Jerusalén. Allí puedes conocer más sobre el liderazgo y la historia pastoral.', links: [CHURCH_LINKS.pastors, { label: 'Historia de los pastores', href: '/nosotros/pastores' }, CHURCH_LINKS.contact] };
+  }
+
+  if (/\b(vision|mision)\b/.test(query) && /\b(iglesia|jerusalen|nuestra|su)\b/.test(query)) {
+    if (/\bvision\b/.test(query)) {
+      return { text: 'La visión publicada de Iglesia Jerusalén es ser una iglesia que evangeliza y discipula en Ecuador y el mundo, formando comunidades cristianas saludables y multiplicadoras, enviando misioneros y administrando sus recursos con eficiencia.', links: [{ label: 'Leer visión y misión', href: '/nosotros#proposito' }, { label: 'Conocer la iglesia', href: '/nosotros' }] };
+    }
+    return { text: 'La misión publicada de Iglesia Jerusalén es predicar a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene; y formar discípulos que vivan en santidad, amor fraternal y servicio.', links: [{ label: 'Leer visión y misión', href: '/nosotros#proposito' }, CHURCH_LINKS.doctrine] };
+  }
+
+  if (/\b(simbol(?:o|os)|emblema(?:s)?|bandera)\b/.test(query) && /\b(cuadrangular|iglesia|jerusalen|cuatro|simbol(?:o|os)|emblema(?:s)?)\b/.test(query)) {
+    return { text: 'Los cuatro símbolos expresan los ministerios de Jesús: la cruz, Jesucristo como Salvador; la paloma, Bautizador con el Espíritu Santo; la copa, Sanador; y la corona, Rey que viene.', links: [CHURCH_LINKS.symbols, CHURCH_LINKS.doctrine] };
+  }
+
+  if (/\b(dios santo|santo dios|santidad de dios|dios es santo)\b/.test(query)) {
+    return { text: 'La doctrina publicada de Iglesia Jerusalén describe la santificación como un proceso continuo que ayuda a vivir una vida santa y consagrada a Dios, con sus referencias bíblicas.', links: [CHURCH_LINKS.doctrine, { label: 'Leer la Biblia', href: '/recursos/biblia' }] };
+  }
+
+  if (/\b(doctrina|creencias|fe cuadrangular|principios de fe|evangelio cuadrangular|que cree la iglesia|que cree iglesia|que creemos como iglesia|en que creemos|salvador|sanador|bautizador|rey que viene)\b/.test(query)) {
     return {
       text: 'La Iglesia Jerusalén anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto. La página doctrinal reúne los principios de fe y sus referencias bíblicas.',
       links: [CHURCH_LINKS.doctrine, { label: 'Conocer la iglesia', href: '/nosotros' }],
     };
   }
-  if (/\b(quienes somos|que iglesia|denominacion|cuadrangular)\b/.test(query)) return { text: 'Somos la Iglesia Evangélica Cuadrangular Jerusalén y nos reunimos en Milagro, Ecuador. Conoce más sobre nuestra comunidad en la página institucional.', links: [{ label: 'Conocer la iglesia', href: '/nosotros' }, { label: 'Planificar una visita', href: '/visita' }] };
+  if (/\b(quienes somos|que iglesia|denominacion|cuadrangular)\b/.test(query)) return { text: 'La identidad Cuadrangular resume cuatro verdades sobre Jesús: Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene. Iglesia Evangélica Cuadrangular Jerusalén es una comunidad en Milagro, Ecuador.', links: [CHURCH_LINKS.doctrine, { label: 'Conocer la iglesia', href: '/nosotros' }, { label: 'Planificar una visita', href: '/visita' }] };
   if (/\b(donacion|donaciones|ofrenda|ofrendas|diezmo|diezmos|aportar|apoyo economico)\b/.test(query)) return { text: 'Puedes consultar los canales de diezmos y ofrendas publicados en la sección de donaciones.', links: [{ label: 'Ver donaciones', href: '/donaciones' }] };
   if (/\b(tienda|catalogo|productos|comprar|compras|pedido|pedidos|carrito)\b/.test(query)) return { text: 'En la tienda puedes consultar el catálogo publicado y revisar el precio, los detalles y la disponibilidad en cada producto. El chat no procesa pedidos ni pagos; usa las opciones que aparecen en la tienda.', links: [CHURCH_LINKS.store, { label: 'Ver carrito', href: '/cart' }, CHURCH_LINKS.contact] };
   if (/\b(comunidad|testimonio|testimonios|publicar|compartir|muro)\b/.test(query)) return { text: 'El muro de la comunidad reúne testimonios, peticiones y noticias. Para publicar debes iniciar sesión; no compartas allí información personal que quieras mantener privada. Para una petición de oración, la página de Peticiones permite elegir si compartirla o mantenerla privada.', links: [CHURCH_LINKS.community, { label: 'Iniciar sesión', href: '/login' }, CHURCH_LINKS.prayer] };
@@ -495,3 +577,4 @@ export function offlineAssistantAnswer(message: string): { text: string; links: 
     links: uniqueLinks.slice(0, 4),
   };
 }
+

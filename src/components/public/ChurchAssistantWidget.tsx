@@ -218,7 +218,7 @@ export default function ChurchAssistantWidget() {
         spaces: loadedSpaces,
         programs: loadedPrograms,
         podcastEpisodes: loadedPodcastEpisodes,
-      });
+      }, messages);
       if (knownAnswer) {
         setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: knownAnswer.text, links: knownAnswer.links }]);
         return;
@@ -347,3 +347,4 @@ export default function ChurchAssistantWidget() {
     </div>
   );
 }
+
