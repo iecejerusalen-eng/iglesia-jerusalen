@@ -3,6 +3,18 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.9] - 2026-10-23
+
+### Añadido
+- Nuevo espacio de estudio bíblico con Atlas, Enciclopedia de lugares y Cronología conectados con el lector de `/recursos/biblia`.
+- Recorrido exploratorio del Éxodo y Canaán con 14 escenas, mapa móvil accesible, referencias y preguntas de observación; el trazado se identifica como tradicional y señala lugares discutidos.
+- Atlas de los viajes de Pablo con diez escalas enlazadas a Hechos 27–28 y fichas de lugares con referencias bíblicas.
+- Panel de fuentes y permisos que distingue recursos en uso, referencias doctrinales, candidatas y materiales de uso condicionado.
+
+### Accesibilidad y contenido
+- Se conservan las atribuciones y licencias de las fuentes, y se aclara que el acceso gratuito no concede permiso para reutilizar contenido.
+- El contenido bíblico enlaza al lector compartido en lugar de duplicar versiones; los mapas se presentan como recursos de estudio, no como reconstrucciones históricas definitivas.
+
 ## [1.14.8] - 2026-10-23
 
 ### Mejorado

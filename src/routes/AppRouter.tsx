@@ -37,6 +37,7 @@ const Changelog = lazyWithRetry(() => import('../pages/public/Changelog'));
 const Petitions = lazyWithRetry(() => import('../pages/public/Petitions'));
 const SongsLibrary = lazyWithRetry(() => import('../pages/public/SongsLibrary'));
 const ProgramsOverview = lazyWithRetry(() => import('../pages/public/ProgramsOverview'));
+const BibleStudyHub = lazyWithRetry(() => import('../pages/public/BibleStudyHub'));
 const CertificateViewer = lazyWithRetry(() => import('../pages/lms/CertificateViewer'));
 const VirtualClassroomLanding = lazyWithRetry(() => import('../pages/public/VirtualClassroomLanding'));
 const Presentation = lazyWithRetry(() => import('../pages/public/Presentation').then(m => ({ default: m.Presentation })));
@@ -57,6 +58,7 @@ const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionari
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
 const GuessCharacter = lazyWithRetry(() => import('../pages/public/games/GuessCharacter').then(m => ({ default: m.GuessCharacter })));
+const ParableCode = lazyWithRetry(() => import('../pages/public/games/ParableCode').then(m => ({ default: m.ParableCode })));
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
 const MyChurch = lazyWithRetry(() => import('../pages/public/MyChurch'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
@@ -215,6 +217,7 @@ export default function AppRouter() {
           <Route path="/recursos/alabanzas" element={<SongsLibrary />} />
           <Route path="/recursos/alabanzas/:songSlug" element={<SongsLibrary />} />
           <Route path="/programas" element={<ProgramsOverview />} />
+          <Route path="/programas/estudio-biblico" element={<BibleStudyHub />} />
           <Route path="/programas/:id" element={<ProgramDetail />} />
           <Route path="/publicaciones" element={<PublicationsHub />} />
           <Route path="/publicaciones/:spaceSlug" element={<EditorialSpacePage />} />
@@ -234,6 +237,7 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/ahorcado-biblico" element={<Navigate to="/recursos/juegos/reto-de-letras-biblicas" replace />} />
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
+          <Route path="/recursos/juegos/el-codigo-de-las-parabolas" element={<ParableCode />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/mi-iglesia" element={<MyChurch />} />
           <Route path="/reservas" element={<Bookings />} />

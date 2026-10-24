@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRight, BookOpen, CalendarDays, CheckCircle2, Clock3, Download,
-  GraduationCap, Laptop, Search, Sparkles, Users, WifiOff,
+  GraduationCap, Laptop, Map as MapIcon, Search, Sparkles, Users, WifiOff,
 } from 'lucide-react';
 import { fetchProgramCatalog } from '../../features/study-programs/service';
 import type { StudyProgram, StudyProgramType } from '../../features/study-programs/types';
@@ -113,6 +113,16 @@ export default function ProgramsOverview() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto -mt-7 max-w-7xl px-4 pb-14 sm:px-6 lg:px-8" aria-labelledby="bible-study-title">
+        <Link to="/programas/estudio-biblico" className="group relative block overflow-hidden rounded-[2rem] border border-amber-900/15 bg-[#f7f0df] p-6 shadow-[0_28px_80px_-55px_rgba(31,41,55,.65)] transition hover:-translate-y-1 hover:shadow-[0_34px_90px_-55px_rgba(31,41,55,.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-amber-200/15 dark:bg-[#111d31] sm:p-9">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-20 h-72 w-72 rounded-full border border-amber-800/10 bg-[radial-gradient(circle,rgba(206,163,70,.28),transparent_68%)] dark:border-amber-200/10 dark:bg-[radial-gradient(circle,rgba(240,206,135,.16),transparent_68%)]" />
+          <div className="relative grid items-center gap-7 md:grid-cols-[1fr_auto]">
+            <div><span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.18em] text-amber-900 dark:text-amber-200"><MapIcon size={14} /> Nuevo espacio de estudio</span><h2 id="bible-study-title" className="mt-3 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">La Biblia también se explora en un mapa.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Sigue el viaje de Pablo a Roma y conecta pasajes, lugares y contexto en un atlas, una enciclopedia y una cronología.</p><div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200"><span className="rounded-full border border-amber-900/10 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">Hechos 27–28</span><span className="rounded-full border border-amber-900/10 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">Atlas esquemático</span><span className="rounded-full border border-amber-900/10 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">Fuentes abiertas</span></div></div>
+            <span className="inline-flex items-center justify-center gap-2 justify-self-start rounded-full bg-gradient-to-r from-[#9a6517] via-[#d6aa4d] to-[#9a6517] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-amber-900/15 transition group-hover:gap-3 group-hover:brightness-105 dark:from-[#f0d899] dark:via-[#f8e9bd] dark:to-[#c89d42] dark:text-slate-950 md:justify-self-end">Explorar estudio <ArrowRight size={17} /></span>
+          </div>
+        </Link>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">

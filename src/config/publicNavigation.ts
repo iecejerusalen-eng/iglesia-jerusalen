@@ -4,12 +4,14 @@
  */
 export const PUBLIC_NAVIGATION_LINKS = {
   podcast: { label: 'Podcast', url: '/podcast', description: 'Mensajes, conversaciones y devocionales en audio' },
+  estudioBiblico: { label: 'Estudio bíblico', url: '/programas/estudio-biblico', description: 'Atlas, enciclopedia y cronología conectados con la Biblia' },
   novedades: { label: 'Novedades', url: '/novedades', description: 'Actualizaciones y nuevas funciones de Iglesia Jerusalén' },
   boletin: { label: 'Boletín dominical', url: '/boletin', description: 'Información y recursos del próximo culto' },
 } as const;
 
 export const REQUIRED_PUBLIC_MENU_ITEMS = [
   { ...PUBLIC_NAVIGATION_LINKS.podcast, parentLabel: 'Recursos', order_index: 25, icon: 'Radio' },
+  { ...PUBLIC_NAVIGATION_LINKS.estudioBiblico, parentLabel: 'Recursos', order_index: 38, icon: 'Map' },
   { ...PUBLIC_NAVIGATION_LINKS.novedades, parentLabel: 'Comunidad', order_index: 35, icon: 'Sparkles' },
   { ...PUBLIC_NAVIGATION_LINKS.boletin, parentLabel: 'Comunidad', order_index: 36, icon: 'Newspaper' },
 ] as const;

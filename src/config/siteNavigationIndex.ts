@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Heart,
   Megaphone,
+  Map,
   Music,
   Radio,
   Send,
@@ -120,6 +121,15 @@ export const SITE_NAVIGATION_ITEMS: SiteNavigationItem[] = [
     category: 'recursos',
     keywords: ['plan de lectura', 'lectura biblica', 'año', 'devocional', 'guia', 'cronograma'],
     icon: BookOpen,
+  },
+  {
+    id: 'nav-estudio-biblico',
+    path: '/programas/estudio-biblico',
+    title: 'Atlas y Estudio Bíblico',
+    subtitle: 'Explora lugares, contexto y cronología conectados con pasajes bíblicos',
+    category: 'recursos',
+    keywords: ['atlas biblico', 'mapa biblico', 'enciclopedia biblica', 'cronologia biblica', 'pablo', 'malta', 'roma', 'hechos 27', 'hechos 28'],
+    icon: Map,
   },
   {
     id: 'nav-juegos',

@@ -1,5 +1,11 @@
 # Conocimiento del Proyecto: Iglesia Jerusalén
 
+## 2026-10-23 — Personajes del Éxodo conectados con el estudio
+
+La Cronología «Éxodo y Canaán» abre desde cada escena las fichas correspondientes de Moisés, Aarón, Miriam, Josué, Caleb y el faraón del Éxodo. Se añadieron perfiles con síntesis y referencias directas a los pasajes, reutilizando el selector de personas y el lector bíblico existente. La ficha del faraón conserva el anonimato del relato, sin asignarle una identidad histórica no indicada por el texto.
+
+Verificación local: ESLint focalizado y build TypeScript/Vite/PWA pasaron; precache 213 recursos. Sin pruebas adicionales, QA visual, cambios Supabase o publicación.
+
 > Continuidad 21-oct-2026: fase 4 de tienda, versión 1.14.1 (seguimiento privado, vinculación de invitados, biblioteca por compra y enlaces de productos). Contrato, pruebas, límites de Google Drive y publicación coordinada en [store-customer-portal.md](store-customer-portal.md). Ventas cerradas; no confundir este estado con producción.
 
 Este documento centraliza el conocimiento técnico, arquitectónico y funcional del proyecto **Iglesia Jerusalén**.
@@ -81,3 +87,22 @@ Consultar [`docs/DESIGN_AND_AI_TOOLKIT.md`](file:///g:/CODE/Iglesia%20Jerusal%C3
 - **Bright Data MCP**: Web scraping sin bloqueos para investigación.
 - **Graphiti MCP**: Memoria a largo plazo en Neo4j.
 - **Meshy AI & WebGL 3D**: Generación e integración de modelos y objetos 3D.
+
+## 2026-10-23 — Cronología de Éxodo y Canaán en el estudio bíblico
+
+Se añadió localmente al hub `/programas/estudio-biblico` el recorrido «Éxodo y Canaán» con 14 escenas, desde la opresión en Egipto hasta la renovación del pacto en Siquem. Cada escena abre referencias en el lector `/recursos/biblia`, presenta una pregunta de observación y enlaza con el mapa existente. El panorama permite entrar al recorrido desde las tarjetas de Éxodo y la entrada en Canaán; el estado de estudio guardado v1 admite restaurar el nuevo alcance y su escena. El mapa de ChurchMaps presenta una ruta tradicional con lugares debatidos marcados «?»; no se afirma una reconstrucción definitiva ni fechas históricas.
+
+Verificación local registrada: ESLint focalizado y build TypeScript/Vite/PWA pasaron, con 213 recursos precargados. QA visual del navegador no disponible en Work. Sin pruebas añadidas/ejecutadas, cambios Supabase o publicación. El inventario LOCAL terminó con cero diferencias tras dos sincronizaciones.
+
+## 23-oct-2026 — Mapa exploratorio del Éxodo conectado con la Cronología
+
+El mapa de ChurchMaps para «Éxodo y Canaán» ahora se acompaña de una lista interactiva de sus 14 escenas. Al elegir una escena, el panel muestra su resumen, referencias bíblicas, número dentro del recorrido y acceso para abrir el hito completo con su pregunta de reflexión. La selección se comparte con la Cronología. La lista se apila bajo el mapa en pantallas estrechas y permite recorrer escenas sin colocar pines con coordenadas no sustentadas. La nota del mapa conserva que la ruta es tradicional y que algunos topónimos son discutidos.
+
+Implementación local en `src/pages/public/BibleStudyHub.tsx`. ESLint focalizado y `npm run build` (TypeScript, Vite y PWA) pasaron; precache de 213 recursos y CSS principal de 899,377 bytes frente al límite de 900,000. `git diff --check` sin errores; solo avisos de normalización LF/CRLF del checkout. No hubo QA visual de navegador en Work, ni pruebas añadidas/ejecutadas, cambios Supabase o publicación.
+## 23-oct-2026 — Fuentes, permisos y criterio de lectura en el hub
+
+El hub `/programas/estudio-biblico` incorpora un panel desplegable que muestra once recursos y distingue «En uso», «Referencia doctrinal», «Candidata» y «Uso condicionado». Explica que acceso gratuito no equivale a licencia reutilizable y que el lector `/recursos/biblia` sigue siendo el lugar compartido para consultar pasajes. El catálogo registra Tyndale Open Resources (CC BY-SA 4.0), ChurchMaps (dominio público declarado por su fuente), datos geográficos OpenBible.info (CC BY, con obligaciones ODbL cuando corresponda a datos OSM), declaración Cuadrangular internacional y reglamento ecuatoriano como referencias institucionales, más la declaración de Asambleas de Dios y la Fe y Mensaje de la Convención Bautista del Sur solo como comparaciones. RV1909/eBible.org y Open.Bible quedan como candidatas sin integración; imágenes se revisan por ficha; BibleProject solo se considera para enlace/inserción oficial bajo sus términos, no para copiar o alojar videos.
+
+Fuentes actuales enlazadas en la interfaz: https://tyndaleopenresources.com/ ; https://churchmaps.info/index.html ; https://www.openbible.info/geo/ ; https://www.foursquare.org/about/beliefs/ ; https://ag.org/Beliefs/Statement-of-Fundamental-truths ; https://bfm.sbc.net/bfm2000/ ; https://ebible.org/bible/details.php?id=spaRV1909 ; https://openbibleimages.org/license ; https://open.bible/resources ; https://bibleproject.com/terms/ . Se preserva la atribución visible y no se declara que una fuente comparativa sea doctrina local ni que una fuente gratuita sea de dominio público.
+
+Implementación local: `src/data/bibleStudySources.ts` y `src/pages/public/BibleStudyHub.tsx`. ESLint focalizado y build TypeScript/Vite/PWA pasaron; 213 recursos precargados, CSS principal 899,864/900,000 bytes. `git diff --check` pendiente de cierre. Sin pruebas añadidas/ejecutadas, Supabase ni publicación. Work no tuvo navegador disponible para QA visual.
