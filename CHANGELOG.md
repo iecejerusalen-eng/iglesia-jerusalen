@@ -15,6 +15,9 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - Se conservan las atribuciones y licencias de las fuentes, y se aclara que el acceso gratuito no concede permiso para reutilizar contenido.
 - El contenido bíblico enlaza al lector compartido en lugar de duplicar versiones; los mapas se presentan como recursos de estudio, no como reconstrucciones históricas definitivas.
 
+### Corregido
+- Se elimina del lanzamiento la ruta del juego piloto de parábolas que aún no está incluido entre los archivos publicados, evitando que interrumpa la compilación de producción.
+
 ## [1.14.8] - 2026-10-23
 
 ### Mejorado
