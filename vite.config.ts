@@ -32,7 +32,7 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectManifest: {
-        maximumFileSizeToCacheInBytes: 900000,
+        maximumFileSizeToCacheInBytes: 1_500_000,
         globIgnores: [
           // Los recursos educativos pesados se cachean bajo demanda por el
           // runtime CacheFirst del service worker, no durante la instalación.

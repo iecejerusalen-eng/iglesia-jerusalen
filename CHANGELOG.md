@@ -3,6 +3,11 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.13] - 2026-10-24
+
+### Corregido
+- Se amplía el límite de precarga del service worker para incluir la hoja de estilos principal y permitir que la compilación de producción termine.
+
 ## [1.14.12] - 2026-10-24
 
 ### Añadido
