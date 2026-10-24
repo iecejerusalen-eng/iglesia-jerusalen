@@ -2,6 +2,13 @@
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.22] - 2026-10-24
+
+### Mejorado
+- Génesis 2 ahora comparte con Génesis 3 una estructura de cuatro movimientos con referencias directas por pasaje.
+- Se actualiza el rótulo del estudio de Génesis 2 y se corrige el aviso obsoleto que aún anunciaba su desarrollo como trabajo futuro.
+- El flujo editorial documenta fuentes y alcance afirmación por afirmación para Génesis 2 y 3, incluida la procedencia verificable de sus imágenes y recursos externos.
+
 ## [1.14.21] - 2026-10-24
 
 ### Mejorado

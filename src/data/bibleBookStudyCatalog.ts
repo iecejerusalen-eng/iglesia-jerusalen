@@ -84,6 +84,12 @@ export const genesisChapterTwo = {
   title: 'El jardín, la tarea y las relaciones',
   summary: 'Génesis 2:4–25 enfoca la creación desde la vida en el jardín: Dios forma al ser humano, planta un huerto, confía una tarea, presenta los animales y establece la relación entre el hombre y la mujer.',
   references: ['Génesis 2:4-7', 'Génesis 2:8-17', 'Génesis 2:18-20', 'Génesis 2:21-25'],
+  structure: [
+    { label: 'Vida', reference: 'Génesis 2:4-7', theme: 'La tierra, el aliento y el ser humano' },
+    { label: 'Vocación', reference: 'Génesis 2:8-17', theme: 'El jardín, el encargo y el límite' },
+    { label: 'Compañía', reference: 'Génesis 2:18-20', theme: 'Los animales y la búsqueda de una ayuda correspondiente' },
+    { label: 'Relación', reference: 'Génesis 2:21-25', theme: 'La mujer, el reconocimiento y la unión' },
+  ],
   observations: [
     'El jardín está en Edén y allí Dios pone al ser humano para trabajarlo y cuidarlo (Génesis 2:8, 15).',
     'El pasaje describe un río que sale de Edén, riega el jardín y se divide en cuatro brazos: Pisón, Gihón, Tigris y Éufrates (Génesis 2:10-14).',
