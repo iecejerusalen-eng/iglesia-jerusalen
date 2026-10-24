@@ -28,7 +28,7 @@ Un `GET` a `church-assistant` informa solo si el secreto `GEMINI_API_KEY` está 
 
 La función no guarda mensajes ni historial. Para consultas generativas usa `check_rate_limit`: hasta 12 solicitudes por IP cada 15 minutos. La interfaz explica el tratamiento según el estado de configuración. No se incluyen miembros, CRM, peticiones ni otros datos privados en el contexto. Las peticiones de oración se envían desde `/peticiones`, que requiere iniciar sesión y permite elegir si la petición será pública o privada; el chat no es un canal confidencial.
 
-La función `church-assistant` recibió la versión 2 el 24-oct-2026 y se verificó con HTTP 200 desde el origen oficial. La consulta indicó `ai_configured: false`; Gemini no está configurado. El paquete del sitio 1.14.19 está preparado y su publicación en Vercel espera autorización de acceso al equipo.
+La función `church-assistant` recibió la versión 2 el 24-oct-2026 y se verificó con HTTP 200 desde el origen oficial. La consulta indicó `ai_configured: false`; Gemini no está configurado. El sitio 1.14.19 se publicó en Vercel el 24-oct-2026 desde el commit `626be194440eb30982ad15885afb71b6f6d5323b`. La página de inicio devolvió HTTP 200; el widget público se abrió y contestó con el programa `Chicas Sabias`. La página `/podcast` y el asistente coinciden en que no hay episodios publicados actualmente.
 
 ## Activar Gemini en producción
 

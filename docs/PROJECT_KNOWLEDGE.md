@@ -2,9 +2,9 @@
 
 ## 2026-10-24 — Reservas, tienda y comunidad en el asistente
 
-El asistente responde con los espacios activos publicados en `spaces`, leyendo solo los campos que ya muestra `/reservas`; no consulta las reservas de personas ni confirma disponibilidad por fecha. Explica que la solicitud requiere iniciar sesión y queda pendiente de confirmación. También dirige a `/tienda` para el catálogo y a `/comunidad` para testimonios, peticiones y noticias, con una indicación para no publicar datos privados. Reservas y Tienda se añaden a los atajos del chat. Release 1.14.19 en preparación; publicación web pendiente de autorización Vercel.
+El asistente responde con los espacios activos publicados en `spaces`, leyendo solo los campos que ya muestra `/reservas`; no consulta las reservas de personas ni confirma disponibilidad por fecha. Explica que la solicitud requiere iniciar sesión y queda pendiente de confirmación. También dirige a `/tienda` para el catálogo y a `/comunidad` para testimonios, peticiones y noticias, con una indicación para no publicar datos privados. Reservas y Tienda se añaden a los atajos del chat. Release 1.14.19 publicado en Vercel el 2026-10-24; la lista de episodios puede quedar vacía mientras no existan episodios publicados.
 
-La consulta dinámica también lista programas publicados y episodios recientes del podcast con metadatos públicos y enlaces a las fichas. Validación local: ESLint focalizado, TypeScript/Vite/PWA y `git diff --check` correctos. Commit `0aee97e`; publicación en Vercel pendiente de que la cuenta de Iglesia Jerusalén apruebe el enlace de acceso al equipo.
+La consulta dinámica también lista programas publicados y episodios recientes del podcast con metadatos públicos y enlaces a las fichas. Validación local: ESLint focalizado, TypeScript/Vite/PWA y `git diff --check` correctos. La cuenta de Iglesia Jerusalén publicó `626be19` en `main`; Vercel quedó `READY` y la página pública respondió HTTP 200. El chatbot se abrió en producción, listó el programa «Chicas Sabias» y mostró que no hay episodios de podcast publicados, coherente con `/podcast`.
 
 ## 2026-10-24 — Ampliación del asistente público
 

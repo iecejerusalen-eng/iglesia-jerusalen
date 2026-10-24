@@ -2,7 +2,7 @@
 
 ## 24-oct-2026 — Ampliación del asistente público
 
-El asistente añade respuestas y accesos para podcast, alabanzas, programas, Aula Virtual, tienda, comunidad y reservas. Consulta espacios activos públicos y, cuando se solicitan, los catálogos de programas y episodios publicados; muestra metadatos públicos y enlaces a sus fichas. Aclara que la disponibilidad por fecha debe confirmarse y que las solicitudes requieren iniciar sesión. No recupera reservas personales ni procesa pedidos. La portada incorpora accesos directos a Reservas y Tienda; la detección de ubicación distingue preguntas de mapas de frases como «dónde escucho». La función `church-assistant` está en Supabase versión 2 y Gemini sigue sin configurarse. Release local 1.14.19 validado; el sitio espera aprobación de acceso al equipo en Vercel para publicar. Detalles en `docs/church-assistant.md`.
+El asistente añade respuestas y accesos para podcast, alabanzas, programas, Aula Virtual, tienda, comunidad y reservas. Consulta espacios activos públicos y, cuando se solicitan, los catálogos de programas y episodios publicados; muestra metadatos públicos y enlaces a sus fichas. Aclara que la disponibilidad por fecha debe confirmarse y que las solicitudes requieren iniciar sesión. No recupera reservas personales ni procesa pedidos. La portada incorpora accesos directos a Reservas y Tienda; la detección de ubicación distingue preguntas de mapas de frases como «dónde escucho». Release 1.14.19 publicado en Vercel en el commit `626be19`; `church-assistant` está en Supabase v2 y Gemini sigue sin configurarse. Los catálogos consultados pueden estar vacíos si no hay elementos publicados. Detalles en `docs/church-assistant.md`.
 
 ## 22-oct-2026 — Exploración de la bienvenida 3D
 
