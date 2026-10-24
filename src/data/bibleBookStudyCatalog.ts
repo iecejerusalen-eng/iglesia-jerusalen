@@ -38,7 +38,14 @@ export const bibleBookCount = bibleBookCatalog.length;
 export const bibleChapterCount = bibleBookCatalog.reduce((total, book) => total + book.chapters, 0);
 
 export const pentateuchOverview = {
-  introduction: 'Pentateuco es el nombre griego tradicional para los cinco primeros libros de la Biblia; Torá es el nombre hebreo que suele traducirse como «instrucción». En conjunto, sus relatos y enseñanzas presentan los comienzos del mundo y de Israel, el pacto, la salida de Egipto y la vida comunitaria del pueblo.',
+  introduction: 'Pentateuco es el nombre griego tradicional para los cinco primeros libros de la Biblia; Torá es el nombre hebreo que suele traducirse como «instrucción». Leídos en conjunto, forman un gran recorrido: creación y primeras familias, promesa a los patriarcas, liberación de Egipto, pacto en el Sinaí y preparación para vivir en la tierra. Sus relatos y leyes presentan identidad, adoración, justicia, memoria y responsabilidad comunitaria.',
+  readingGuide: [
+    { title: 'Génesis', text: 'Comienzos del mundo y de Israel: creación, familias, promesa y José en Egipto.' },
+    { title: 'Éxodo', text: 'Liberación, pacto y presencia de Dios en medio del pueblo.' },
+    { title: 'Levítico', text: 'Instrucciones sobre adoración, santidad, justicia y vida común.' },
+    { title: 'Números', text: 'El pueblo en el desierto: censos, crisis, aprendizaje y preparación.' },
+    { title: 'Deuteronomio', text: 'Moisés recuerda la alianza y llama a una nueva generación a vivirla.' },
+  ],
   books: [
     { id: 'genesis', focus: 'Comienzos, familias y promesa' },
     { id: 'exodo', focus: 'Liberación, pacto y tabernáculo' },
@@ -59,10 +66,11 @@ export const pentateuchOverview = {
 
 export const genesisBookIntroduction = {
   title: 'Génesis · libro de los comienzos',
-  summary: 'Génesis abre la Biblia con la creación y los primeros relatos de la humanidad. Desde el capítulo 12, el foco se acerca a Abraham y a su familia; la historia avanza por Isaac, Jacob y José, y termina con Israel asentado en Egipto.',
+  summary: 'Génesis abre la Biblia con la creación, el jardín, las primeras generaciones y el origen de los pueblos. Desde el capítulo 12, el relato se concentra en Abraham y en la familia de la promesa; sigue con Isaac, Jacob y José, y termina con Israel en Egipto, preparando la historia del Éxodo. «Génesis» significa origen o comienzo; el nombre hebreo del libro es Bereshit, «En el principio», sus primeras palabras.',
   sections: [
     { title: 'Dos grandes movimientos', text: 'Génesis 1–11 presenta relatos sobre el mundo y la humanidad; Génesis 12–50 sigue la historia de una familia llamada a ser una bendición para otras familias.' },
-    { title: 'Una lectura desde la fe', text: 'El libro presenta a Dios como Creador y protagonista de una historia de promesa, pacto, relaciones familiares, fallas humanas y fidelidad. Sus relatos preparan temas que continúan en Éxodo y el resto de la Biblia.' },
+    { title: 'Temas que recorren el libro', text: 'Creación y vocación humana, tierra y bendición, promesa y pacto, conflicto entre hermanos, hospitalidad, migración, hambre y cuidado providencial. Las historias muestran familias reales del relato con decisiones, conflictos y consecuencias.' },
+    { title: 'Un mundo antiguo', text: 'Génesis dialoga con preguntas sobre el origen, el orden, la vida y las relaciones. Sus escenas transcurren en paisajes que el libro nombra —como Edén, Canaán y Egipto—, pero no siempre ofrecen datos que permitan fijar ubicaciones modernas o fechas exactas.' },
     { title: 'Autoría y transmisión', text: 'La tradición atribuye la Torá a Moisés; el texto de Génesis no nombra directamente a su autor. Esta introducción no fija una fecha de composición ni resuelve las preguntas debatidas sobre la transmisión de sus relatos.' },
   ],
   references: ['Génesis 1:1-2:3', 'Génesis 12:1-9', 'Génesis 15:1-6', 'Génesis 50:20-26'],
@@ -70,6 +78,27 @@ export const genesisBookIntroduction = {
     { title: 'Guía de Génesis · Proyecto Biblia', url: 'https://bibleproject.com/es/guides/libro-de-genesis/' },
     { title: 'Génesis 1–11 · video de resumen', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
   ],
+};
+
+export const genesisChapterTwo = {
+  title: 'El jardín, la tarea y las relaciones',
+  summary: 'Génesis 2:4–25 enfoca la creación desde la vida en el jardín: Dios forma al ser humano, planta un huerto, confía una tarea, presenta los animales y establece la relación entre el hombre y la mujer.',
+  references: ['Génesis 2:4-7', 'Génesis 2:8-17', 'Génesis 2:18-20', 'Génesis 2:21-25'],
+  observations: [
+    'El jardín está en Edén y allí Dios pone al ser humano para trabajarlo y cuidarlo (Génesis 2:8, 15).',
+    'El pasaje describe un río que sale de Edén, riega el jardín y se divide en cuatro brazos: Pisón, Gihón, Tigris y Éufrates (Génesis 2:10-14).',
+    'El relato nombra dos ríos conocidos en la geografía de Mesopotamia, pero la identificación de Pisón, Gihón, Havila y Cus es discutida; el texto no da coordenadas para localizar el jardín.',
+    'La tarea de nombrar animales aparece en Génesis 2:19-20; no es la escena de creación de animales de Génesis 1:20-25.',
+  ],
+  animalSpecies: {
+    title: '¿Cuántas especies animales existen?',
+    estimate: 'Un estudio de 2011 estimó alrededor de 7,77 millones de especies animales en la Tierra.',
+    caveat: 'Es una estimación estadística de especies —no un censo, no una cifra exacta y no el número de animales individuales—. Revisiones posteriores advierten que los métodos y nuevos datos, incluido el análisis molecular, pueden cambiar el panorama.',
+    sourceTitle: 'Mora y colaboradores · PLOS Biology (2011)',
+    sourceUrl: 'https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1001127',
+    reviewTitle: 'Revisión de estimaciones · PLOS Biology (2023)',
+    reviewUrl: 'https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3002388',
+  },
 };
 
 export const genesisChapterOne = {

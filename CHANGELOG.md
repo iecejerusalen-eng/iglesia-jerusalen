@@ -3,6 +3,16 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.17] - 2026-10-24
+
+### Añadido
+- Estudio inicial de Génesis 2, conectado con las pestañas del capítulo y el lector bíblico compartido.
+- Mapa esquemático del Edén y los cuatro ríos, con las identificaciones debatidas señaladas y sin fijar una ubicación moderna.
+- Contexto sobre diversidad de especies con enlaces al estudio de 2011 y su revisión posterior.
+
+### Mejorado
+- Introducción de Génesis y guía de lectura del Pentateuco con un panorama breve de sus cinco libros.
+
 ## [1.14.16] - 2026-10-24
 
 ### Mejorado
