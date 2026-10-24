@@ -3,6 +3,16 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.19] - 2026-10-24
+
+### Mejorado
+- El asistente público guía a las personas hacia podcast, alabanzas, programas, cursos y Aula Virtual mediante respuestas y accesos directos.
+- Las preguntas frecuentes se muestran en una cuadrícula móvil visible; al abrir el chat se conserva el saludo en pantalla y aparecen accesos a Reservas y Tienda.
+- Se afinó la detección de preguntas de ubicación para evitar confundirlas con consultas sobre podcast u otros recursos.
+- Gemini recibe rutas oficiales y descripciones públicas de ministerios depuradas; el modo guiado continúa disponible si la IA no está configurada.
+- El asistente consulta espacios públicos para reservas y orienta sobre el catálogo de la tienda y el muro de la comunidad, sin exponer reservas personales ni prometer disponibilidad.
+- Las consultas sobre programas y episodios recientes muestran elementos publicados con su resumen, duración y acceso a la ficha correspondiente.
+
 ## [1.14.18] - 2026-10-24
 
 ### Mejorado

@@ -1,5 +1,15 @@
 # Conocimiento del Proyecto: Iglesia Jerusalén
 
+## 2026-10-24 — Reservas, tienda y comunidad en el asistente
+
+El asistente responde con los espacios activos publicados en `spaces`, leyendo solo los campos que ya muestra `/reservas`; no consulta las reservas de personas ni confirma disponibilidad por fecha. Explica que la solicitud requiere iniciar sesión y queda pendiente de confirmación. También dirige a `/tienda` para el catálogo y a `/comunidad` para testimonios, peticiones y noticias, con una indicación para no publicar datos privados. Reservas y Tienda se añaden a los atajos del chat. Release 1.14.19 en preparación; publicación web pendiente de autorización Vercel.
+
+La consulta dinámica también lista programas publicados y episodios recientes del podcast con metadatos públicos y enlaces a las fichas. Validación local: ESLint focalizado, TypeScript/Vite/PWA y `git diff --check` correctos. Commit `0aee97e`; publicación en Vercel pendiente de que la cuenta de Iglesia Jerusalén apruebe el enlace de acceso al equipo.
+
+## 2026-10-24 — Ampliación del asistente público
+
+El asistente público ofrece rutas y respuestas directas para podcast, biblioteca de alabanzas, programas y Aula Virtual. La portada del chat presenta accesos en una cuadrícula de dos columnas y mantiene visible el saludo al abrirse. La detección de preguntas de ubicación se acotó para no capturar preguntas como «¿Dónde escucho el podcast?». El contexto generativo recibe rutas oficiales y descripciones públicas de ministerios convertidas a texto plano. La función `church-assistant` está desplegada en Supabase como versión 2; falta autorización de Vercel para publicar el sitio. La clave de Gemini no está configurada y se conserva el modo guiado. Preparación de release 1.14.19.
+
 ## 2026-10-23 — Personajes del Éxodo conectados con el estudio
 
 La Cronología «Éxodo y Canaán» abre desde cada escena las fichas correspondientes de Moisés, Aarón, Miriam, Josué, Caleb y el faraón del Éxodo. Se añadieron perfiles con síntesis y referencias directas a los pasajes, reutilizando el selector de personas y el lector bíblico existente. La ficha del faraón conserva el anonimato del relato, sin asignarle una identidad histórica no indicada por el texto.
