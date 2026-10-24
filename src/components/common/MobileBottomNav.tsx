@@ -29,6 +29,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { PUBLIC_NAVIGATION_LINKS } from '../../config/publicNavigation';
+import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
 
 interface SubMenuItem {
   id: string;
@@ -326,13 +327,13 @@ const MobileBottomNav: React.FC = () => {
 
   const isResourcesActive =
     activeSheet === 'recursos' ||
-    RECURSOS_ITEMS.some(
+    RECURSOS_ITEMS.filter((item) => isPublicPathVisible(item.url)).some(
       (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
     );
 
   const isCommunityActive =
     activeSheet === 'comunidad' ||
-    COMUNIDAD_ITEMS.some(
+    COMUNIDAD_ITEMS.filter((item) => isPublicPathVisible(item.url)).some(
       (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
     );
 
@@ -638,7 +639,7 @@ const MobileBottomNav: React.FC = () => {
 
               {/* Lista Vertical Unidireccional con Tarjetas Limpias */}
               <div className="flex-1 overflow-y-auto overscroll-contain p-3.5 space-y-2 custom-scrollbar">
-                {(activeSheet === 'recursos' ? RECURSOS_ITEMS : COMUNIDAD_ITEMS).map((item) => {
+                {(activeSheet === 'recursos' ? RECURSOS_ITEMS : COMUNIDAD_ITEMS).filter((item) => isPublicPathVisible(item.url)).map((item) => {
                   const Icon = item.icon;
                   const isItemActive =
                     location.pathname === item.url ||

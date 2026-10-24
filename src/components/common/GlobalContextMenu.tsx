@@ -36,7 +36,7 @@ const RouteModal = lazy(() => import('@/components/map/RouteModal').then((module
 const MobileContextDrawer = lazy(() => import('@/components/common/MobileContextDrawer').then((module) => ({ default: module.MobileContextDrawer })));
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { CONTEXT_MENU_GROUPS } from '@/components/common/contextMenuItems';
+import { getVisibleContextMenuGroups } from '@/components/common/contextMenuItems';
 import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
 
 // Icon lookup table for desktop menu
@@ -231,7 +231,7 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
         </ContextMenuTrigger>
 
         <ContextMenuPopup className="w-64">
-          {CONTEXT_MENU_GROUPS.map((group, gi) => (
+          {getVisibleContextMenuGroups().map((group, gi) => (
             <React.Fragment key={gi}>
               {gi > 0 && <ContextMenuSeparator />}
               <ContextMenuGroup>

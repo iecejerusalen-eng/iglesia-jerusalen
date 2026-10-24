@@ -1,3 +1,5 @@
+import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
+
 /**
  * Fuente única de verdad para los ítems del menú contextual.
  * Cualquier cambio aquí se refleja automáticamente en:
@@ -189,3 +191,13 @@ export const CONTEXT_MENU_GROUPS: ContextMenuGroupDef[] = [
     ],
   },
 ];
+
+/** Oculta destinos públicos que aún no están habilitados para el lanzamiento. */
+export function getVisibleContextMenuGroups() {
+  return CONTEXT_MENU_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.type !== 'nav' || isPublicPathVisible(item.path)),
+    }))
+    .filter((group) => group.items.length > 0);
+}

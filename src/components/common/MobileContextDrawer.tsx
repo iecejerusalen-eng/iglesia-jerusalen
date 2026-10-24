@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
 import { toast } from 'sonner';
-import { CONTEXT_MENU_GROUPS } from '@/components/common/contextMenuItems';
+import { getVisibleContextMenuGroups } from '@/components/common/contextMenuItems';
 import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
 
 // ── Icon registry (mobile) ─────────────────────────────────────────────────
@@ -53,13 +53,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 // ── Utility: flat list of nav items for the main grid ─────────────────────
-const NAV_ITEMS = CONTEXT_MENU_GROUPS.flatMap((g) =>
+const NAV_ITEMS = getVisibleContextMenuGroups().flatMap((g) =>
   g.items.filter((i): i is ContextMenuNavItem => i.type === 'nav')
 );
 
 // Toolbar actions (flat): back, forward, reload, copy
 const TOOLBAR_KEYS = ['historyBack', 'historyForward', 'reload', 'copyLink', 'copyTitle', 'scrollTop'];
-const TOOLBAR_ITEMS = CONTEXT_MENU_GROUPS.flatMap((g) =>
+const TOOLBAR_ITEMS = getVisibleContextMenuGroups().flatMap((g) =>
   g.items.filter(
     (i): i is ContextMenuActionItem =>
       i.type === 'action' && TOOLBAR_KEYS.includes(i.actionKey)

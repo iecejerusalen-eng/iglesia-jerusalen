@@ -2,6 +2,7 @@ import { supabase } from '../../../config/supabase';
 import { SITE_NAVIGATION_ITEMS } from '../../../config/siteNavigationIndex';
 import type { CustomSearchLink, SearchIndexItem, SearchAggregatedResults, ParsedBibleReference } from '../types';
 import { slugifySongTitle } from '../../songs/utils/musicEngine';
+import { isPublicPathVisible, PUBLIC_LAUNCH_VISIBILITY } from '../../../config/publicLaunchVisibility';
 
 // Cache TTL: 5 minutes in memory
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -61,7 +62,7 @@ export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIn
   isPreloading = true;
 
   try {
-    const staticItems: SearchIndexItem[] = SITE_NAVIGATION_ITEMS.map(staticToSearchItem);
+    const staticItems: SearchIndexItem[] = SITE_NAVIGATION_ITEMS.filter((item) => isPublicPathVisible(item.path)).map(staticToSearchItem);
     const dynamicItems: SearchIndexItem[] = [];
 
     // Consultas concurrentes a tablas dinámicas principales para pre-indexación rápida
@@ -102,7 +103,7 @@ export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIn
     }
 
     // 2. Cursos del Aula Virtual (LMS)
-    if (coursesRes.status === 'fulfilled' && coursesRes.value.data) {
+    if (PUBLIC_LAUNCH_VISIBILITY.classroom && coursesRes.status === 'fulfilled' && coursesRes.value.data) {
       for (const course of coursesRes.value.data) {
         dynamicItems.push({
           id: `course-${course.id}`,
@@ -213,7 +214,7 @@ export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIn
     return mergedItems;
   } catch (err) {
     console.warn('Error al precargar el índice de búsqueda:', err);
-    return SITE_NAVIGATION_ITEMS.map(staticToSearchItem);
+    return SITE_NAVIGATION_ITEMS.filter((item) => isPublicPathVisible(item.path)).map(staticToSearchItem);
   } finally {
     isPreloading = false;
   }
@@ -223,7 +224,7 @@ export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIn
  * Búsqueda instantánea en el índice local pre-cargado (0 ms de latencia)
  */
 export function searchLocalIndex(query: string, items?: SearchIndexItem[]): SearchIndexItem[] {
-  const index = items || (memoryIndexCache ? memoryIndexCache.items : SITE_NAVIGATION_ITEMS.map(staticToSearchItem));
+  const index = items || (memoryIndexCache ? memoryIndexCache.items : SITE_NAVIGATION_ITEMS.filter((item) => isPublicPathVisible(item.path)).map(staticToSearchItem));
   const cleanQ = normalizeSearchString(query);
   if (!cleanQ) return index;
 
@@ -307,7 +308,7 @@ export async function searchDeepSupabase(rawQuery: string): Promise<Partial<Sear
       };
     });
 
-    const products: SearchIndexItem[] = (productsRes.data ?? []).map((p) => ({
+  const products: SearchIndexItem[] = (PUBLIC_LAUNCH_VISIBILITY.store ? (productsRes.data ?? []) : []).map((p) => ({
       id: `prod-${p.id}`,
       title: p.name,
       subtitle: `$${p.price.toFixed(2)} — ${p.category}`,
@@ -358,7 +359,7 @@ export async function searchDeepSupabase(rawQuery: string): Promise<Partial<Sear
       source: 'changelog',
     }));
 
-    const courses: SearchIndexItem[] = (coursesRes.data ?? []).map((c) => ({
+  const courses: SearchIndexItem[] = (PUBLIC_LAUNCH_VISIBILITY.classroom ? (coursesRes.data ?? []) : []).map((c) => ({
       id: `course-${c.id}`,
       title: c.title,
       subtitle: c.description?.slice(0, 80) || 'Curso de formación',

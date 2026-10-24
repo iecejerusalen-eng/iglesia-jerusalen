@@ -5,6 +5,13 @@ Total output lines: 651
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.23] - 2026-10-24
+
+### Mejorado
+- Se elimina el confeti de los saludos de cumpleaños y del acceso al panel; el onboarding queda oculto temporalmente para rediseñarlo más adelante.
+- Tienda, carrito y Aula Virtual quedan ocultos en producción mientras continúan disponibles para vista previa local y administración.
+- El perfil seleccionado del directorio de miembros se muestra en una capa visible sobre el panel.
+
 ## [1.14.22] - 2026-10-24
 
 ### Mejorado

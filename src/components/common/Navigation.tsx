@@ -10,6 +10,7 @@ import { useMenuStore } from '../../store/useMenuStore';
 import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
 import type { MenuItem } from '../../services/menuService';
 import { useScrollVisibility } from '../../hooks/useScrollVisibility';
+import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
 
 const Navigation = () => {
   const location = useLocation();
@@ -45,13 +46,13 @@ const Navigation = () => {
   const menuSource = items.length > 0 ? items : DEFAULT_MENU_ITEMS;
 
   const topLevelItems = useMemo(() => {
-    const calculated = menuSource.filter(i => !i.parent_id && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    const calculated = menuSource.filter(i => !i.parent_id && i.is_visible && isPublicPathVisible(i.url)).sort((a,b) => a.order_index - b.order_index);
     if (calculated.length > 0) return calculated;
-    return items.length === 0 ? DEFAULT_MENU_ITEMS.filter(i => !i.parent_id && i.is_visible) : [];
+    return items.length === 0 ? DEFAULT_MENU_ITEMS.filter(i => !i.parent_id && i.is_visible && isPublicPathVisible(i.url)) : [];
   }, [menuSource, items]);
 
   const getChildren = (parentId: string) => {
-    return menuSource.filter(i => i.parent_id === parentId && i.is_visible).sort((a,b) => a.order_index - b.order_index);
+    return menuSource.filter(i => i.parent_id === parentId && i.is_visible && isPublicPathVisible(i.url)).sort((a,b) => a.order_index - b.order_index);
   };
 
   const isItemActive = (item: MenuItem) => {

@@ -19,6 +19,7 @@ import { OnboardingPaso } from '../../admin/onboarding/OnboardingPaso';
 import { OnboardingProgreso } from '../../admin/onboarding/OnboardingProgreso';
 import type { OnboardingPasoData } from '../../admin/onboarding/useOnboarding';
 import { useNavigate } from 'react-router-dom';
+import { PUBLIC_LAUNCH_VISIBILITY } from '../../config/publicLaunchVisibility';
 
 const DashboardHome = () => {
   const { user, firstName } = useAuthStore();
@@ -79,7 +80,7 @@ const DashboardHome = () => {
         </div>
       )}
 
-      {!onboarding.isLoading && !onboarding.error && onboarding.pasos.length > 0 && onboarding.porcentaje < 80 && (
+      {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && !onboarding.isLoading && !onboarding.error && onboarding.pasos.length > 0 && onboarding.porcentaje < 80 && (
         <section className="rounded-3xl border border-amber-200/70 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-amber-400/20 dark:bg-slate-900/60 sm:p-5" aria-labelledby="onboarding-dashboard-title">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="text-xs font-black uppercase tracking-[0.15em] text-gold">🚀 Activa tu cuenta</p><h2 id="onboarding-dashboard-title" className="mt-1 text-lg font-black text-slate-900 dark:text-white">{onboarding.completados} de {onboarding.pasos.length} pasos completados</h2></div><span className="text-sm font-black text-primary dark:text-church-gold-bright">{onboarding.porcentaje}%</span>

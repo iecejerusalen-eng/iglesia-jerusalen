@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
-import { useWindowSize } from 'react-use';
-import Confetti from 'react-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Gift, Heart, X } from 'lucide-react';
 
@@ -29,8 +27,6 @@ export default function BirthdayCelebrationModal() {
   const { user, memberId, firstName, lastName } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [verse, setVerse] = useState(VERSES[0]);
-  const { width, height } = useWindowSize();
-  const [isConfettiActive, setIsConfettiActive] = useState(false);
 
   useEffect(() => {
     if (!user || !memberId) return;
@@ -63,14 +59,8 @@ export default function BirthdayCelebrationModal() {
           const randomIndex = Math.floor(Math.random() * VERSES.length);
           setVerse(VERSES[randomIndex]);
           
-          // Trigger birthday modal and confetti
+          // Show the birthday greeting without an attention-grabbing animation.
           setIsOpen(true);
-          setIsConfettiActive(true);
-          
-          // Auto-disable confetti recycling after 12 seconds
-          setTimeout(() => {
-            setIsConfettiActive(false);
-          }, 12000);
         }
       } catch (err) {
         console.error('Error checking birthday celebration:', err);
@@ -82,7 +72,6 @@ export default function BirthdayCelebrationModal() {
 
   const handleDismiss = () => {
     setIsOpen(false);
-    setIsConfettiActive(false);
     if (user) {
       const currentYear = new Date().getFullYear();
       localStorage.setItem(`birthday_celebration_${user.id}_${currentYear}`, 'true');
@@ -102,19 +91,6 @@ export default function BirthdayCelebrationModal() {
           onClick={handleDismiss}
           className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
         />
-
-        {/* Confetti Layer */}
-        {isConfettiActive && (
-          <div className="absolute inset-0 pointer-events-none z-[310]">
-            <Confetti
-              width={width}
-              height={height}
-              numberOfPieces={300}
-              recycle={true}
-              gravity={0.1}
-            />
-          </div>
-        )}
 
         {/* Modal Card Content */}
         <motion.div

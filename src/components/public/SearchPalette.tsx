@@ -12,6 +12,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ADMIN_MODULES, getAdminModulePermission } from '../../config/adminModules';
 import { supabase } from '../../config/supabase';
+import { PUBLIC_LAUNCH_VISIBILITY } from '../../config/publicLaunchVisibility';
 import { AnimeFadeUp, AnimeScaleIn } from '../animations/AnimeWrappers';
 import { 
   preloadSearchIndex, 
@@ -347,7 +348,7 @@ export default function SearchPalette() {
   const showSocials = /redes|social|facebook|youtube|instagram|canal|video|vivo|transmi/i.test(normalizedSearch) || search.length === 0;
   const showPetition = /peti|orar|orac|pedido|ayuda|rezar|necesi/i.test(normalizedSearch) || search.length === 0;
   const showDonation = /dona|ofren|diez|pagar|dinero|dar|apoyar/i.test(normalizedSearch) || search.length === 0;
-  const showStore = /tienda|produ|comprar|venta|libro|biblia|camisa|agenda|precio/i.test(normalizedSearch);
+  const showStore = PUBLIC_LAUNCH_VISIBILITY.store && /tienda|produ|comprar|venta|libro|biblia|camisa|agenda|precio/i.test(normalizedSearch);
 
   return (
     <>

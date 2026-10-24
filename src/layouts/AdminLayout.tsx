@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Globe, LogOut, Menu, Search, Settings, ShieldCheck } from 'lucide-react';
 import Sidebar from '../components/admin/Sidebar';
@@ -15,7 +15,7 @@ import { ADMIN_MODULES, getAdminModulePermission } from '../config/adminModules'
 import { useOnboarding } from '../admin/onboarding/useOnboarding';
 import { OnboardingChecklist } from '../admin/onboarding/OnboardingChecklist';
 import { OnboardingModal } from '../admin/onboarding/OnboardingModal';
-import confetti from 'canvas-confetti';
+import { PUBLIC_LAUNCH_VISIBILITY } from '../config/publicLaunchVisibility';
 
 interface AccentStyle extends CSSProperties {
   '--color-gold'?: string;
@@ -28,13 +28,12 @@ const AdminLayout = () => {
   const { logout, firstName, photoUrl, userRole } = useAuthStore();
   const onboarding = useOnboarding();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const previousPorcentajeRef = useRef<number | null>(null);
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!onboarding.isLoading && onboarding.pasos.length > 0 && !onboarding.config.onboarding_completado && !onboarding.config.onboarding_omitido) {
+    if (PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && !onboarding.isLoading && onboarding.pasos.length > 0 && !onboarding.config.onboarding_completado && !onboarding.config.onboarding_omitido) {
       const snoozedUntil = localStorage.getItem('admin_onboarding_snoozed_until');
       if (snoozedUntil && Date.now() < Number(snoozedUntil)) return undefined;
       const timer = window.setTimeout(() => setShowOnboarding(true), 1200);
@@ -45,22 +44,6 @@ const AdminLayout = () => {
   useEffect(() => {
     if (onboarding.error) console.warn('Onboarding check:', onboarding.error);
   }, [onboarding.error]);
-
-  useEffect(() => {
-    // Only celebrate if user actually progressed from < 100% to 100% in this session,
-    // and has never celebrated it before in localStorage. Never fire repeatedly on page mount.
-    const alreadyCelebrated = localStorage.getItem('admin_onboarding_celebrated') === 'true';
-    if (
-      previousPorcentajeRef.current !== null &&
-      previousPorcentajeRef.current < 100 &&
-      onboarding.porcentaje === 100 &&
-      !alreadyCelebrated
-    ) {
-      localStorage.setItem('admin_onboarding_celebrated', 'true');
-      void confetti({ particleCount: 90, spread: 65, origin: { y: 0.72 } });
-    }
-    previousPorcentajeRef.current = onboarding.porcentaje;
-  }, [onboarding.porcentaje]);
 
   const closeOnboarding = () => {
     setShowOnboarding(false);
@@ -196,14 +179,14 @@ const AdminLayout = () => {
                 {userRole ?? 'Sin rol'}
               </div>
               {/* Onboarding points */}
-              <button
+              {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && <button
                 type="button"
                 onClick={reopenOnboarding}
                 className="hidden items-center gap-1 rounded-xl border border-amber-200/70 bg-amber-50/70 px-3 py-1.5 text-[10px] font-extrabold text-amber-700 hover:bg-amber-100/80 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20 transition-all cursor-pointer xl:flex"
                 title="Ver progreso de onboarding / activación"
               >
                 ⚡ {onboarding.puntos} pts
-              </button>
+              </button>}
               {/* Mobile search */}
               <button
                 type="button"
@@ -298,7 +281,7 @@ const AdminLayout = () => {
       </nav>
 
       <CommandMenu />
-      {!onboarding.isLoading && onboarding.pasos.length > 0 && (
+      {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && !onboarding.isLoading && onboarding.pasos.length > 0 && (
         <OnboardingChecklist
           pasos={onboarding.pasos}
           porcentaje={onboarding.porcentaje}
@@ -312,7 +295,7 @@ const AdminLayout = () => {
           }}
         />
       )}
-      {showOnboarding && onboarding.pasos.length > 0 && <OnboardingModal nombre={firstName || 'equipo'} pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} onStart={(paso) => { setShowOnboarding(false); navigate(paso.accion_ruta); }} onLater={postponeOnboarding} onClose={closeOnboarding} />}
+      {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && showOnboarding && onboarding.pasos.length > 0 && <OnboardingModal nombre={firstName || 'equipo'} pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} onStart={(paso) => { setShowOnboarding(false); navigate(paso.accion_ruta); }} onLater={postponeOnboarding} onClose={closeOnboarding} />}
     </div>
   );
 };

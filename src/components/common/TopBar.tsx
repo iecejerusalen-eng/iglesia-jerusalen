@@ -9,6 +9,7 @@ import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import NotificationTray from './NotificationTray';
 import { uploadMediaFile } from '../../lib/mediaService';
+import { PUBLIC_LAUNCH_VISIBILITY } from '../../config/publicLaunchVisibility';
 
 const TopBar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
@@ -129,7 +130,7 @@ const TopBar = () => {
           <NotificationTray />
 
           {/* Cart Icon Link */}
-          <Link 
+          {PUBLIC_LAUNCH_VISIBILITY.store && <Link
             to="/tienda" 
             className={`relative p-1.5 rounded-full transition-colors cursor-pointer ${
               isTransparent ? 'text-white hover:text-gold' : 'text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-gold'
@@ -142,7 +143,7 @@ const TopBar = () => {
                 {totalItems}
               </span>
             )}
-          </Link>
+          </Link>}
 
           {user ? (
             <div className="relative">

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -364,8 +365,8 @@ export const PurposeDashboard = ({ members, loading, onEdit }: PurposeDashboardP
         <div className="rounded-2xl border border-amber-200/60 bg-amber-50/60 p-4 dark:border-amber-500/15 dark:bg-amber-500/10"><CircleDollarSign className="text-amber-600" /><p className="mt-3 font-bold text-amber-950 dark:text-amber-100">Finanzas separadas del llamado</p><p className="mt-1 text-xs leading-5 text-amber-800/70 dark:text-amber-200/70">Los aportes personales se consultan únicamente en el área financiera privada y nunca influyen en afinidad o liderazgo.</p></div>
       </section>
 
-      {selected && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-sm md:items-center md:p-5" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setSelected(null); }}>
+      {selected && createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-sm md:items-center md:p-5" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setSelected(null); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="purpose-member-title" className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-[2rem] border border-white/20 bg-white p-5 shadow-2xl dark:bg-slate-950 md:rounded-[2rem] md:p-7">
             <div className="flex items-start gap-4">
               {selected.photo_url ? <img src={selected.photo_url} alt="" className="h-16 w-16 rounded-2xl object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-2xl bg-primary text-xl font-black text-white">{selected.first_name[0]}{selected.last_name[0]}</span>}
@@ -386,7 +387,8 @@ export const PurposeDashboard = ({ members, loading, onEdit }: PurposeDashboardP
               <button type="button" onClick={() => { onEdit(selected); setSelected(null); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white">Completar ficha <ArrowRight size={16} /></button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
