@@ -1,10 +1,14 @@
-Warning: truncated output (original token count: 13341)
-Total output lines: 651
 
 # Changelog
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.24] - 2026-10-24
+
+### Mejorado
+- Génesis 2 y 3 comparten una plantilla de estudio con movimientos, observaciones, preguntas, escenas ilustradas y accesos al Atlas, la Enciclopedia y la Cronología.
+- Cada estudio distingue el texto bíblico, las conexiones canónicas y el contexto complementario, con fuentes y alcance editorial visibles.
+
 ## [1.14.23] - 2026-10-24
 
 ### Mejorado

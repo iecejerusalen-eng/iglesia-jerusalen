@@ -26,6 +26,31 @@ export const bibleBookGroups: BibleBookGroup[] = [
 
 export type CatalogBook = BibleBook & { group: BibleBookGroup };
 
+export type BibleChapterStudySource = {
+  title: string;
+  url?: string;
+  references?: string[];
+  relevance: string;
+  kind: 'primary-text' | 'canonical-reference' | 'institutional-guide' | 'institutional-video' | 'peer-reviewed-study' | 'peer-reviewed-review';
+  use: string;
+  consultedAt: string;
+};
+
+export type BibleChapterStudyRecord = {
+  title: string;
+  summary: string;
+  references: string[];
+  structure: Array<{ label: string; reference: string; theme: string }>;
+  observations: string[];
+  scenes: Array<{ title: string; reference: string; image: string; alt: string; summary: string; question: string }>;
+  studyQuestions: string[];
+  relatedReferences: string[];
+  videos: Array<{ title: string; category: string; summary: string; url: string }>;
+  sources: BibleChapterStudySource[];
+  contextNote?: { title: string; body: string };
+  scienceNote?: { title: string; estimate: string; caveat: string };
+};
+
 const groupByBookId = new Map(bibleBookGroups.flatMap((group) => group.bookIds.map((bookId) => [bookId, group] as const)));
 
 export const bibleBookCatalog: CatalogBook[] = BIBLE_BOOKS.map((book) => {
@@ -80,7 +105,7 @@ export const genesisBookIntroduction = {
   ],
 };
 
-export const genesisChapterTwo = {
+export const genesisChapterTwo: BibleChapterStudyRecord = {
   title: 'El jardín, la tarea y las relaciones',
   summary: 'Génesis 2:4–25 enfoca la creación desde la vida en el jardín: Dios forma al ser humano, planta un huerto, confía una tarea, presenta los animales y establece la relación entre el hombre y la mujer.',
   references: ['Génesis 2:4-7', 'Génesis 2:8-17', 'Génesis 2:18-20', 'Génesis 2:21-25'],
@@ -96,18 +121,41 @@ export const genesisChapterTwo = {
     'El relato nombra dos ríos conocidos en la geografía de Mesopotamia, pero la identificación de Pisón, Gihón, Havila y Cus es discutida; el texto no da coordenadas para localizar el jardín.',
     'La tarea de nombrar animales aparece en Génesis 2:19-20; no es la escena de creación de animales de Génesis 1:20-25.',
   ],
-  animalSpecies: {
+  scenes: [
+    { title: 'Un hogar para cuidar', reference: 'Génesis 2:8-17', image: '/images/bible-study/eden-garden-study.webp', alt: 'Ilustración artística de un jardín abundante con árboles, flores y agua corriente, inspirada en Génesis 2.', summary: 'El jardín aparece como un lugar de vida y responsabilidad. Observa el agua, los árboles y la tarea confiada al ser humano.', question: '¿Qué tareas y límites aparecen juntos en el encargo de Génesis 2:15-17?' },
+    { title: 'Nombrar, observar, relacionarse', reference: 'Génesis 2:18-20', image: '/images/bible-study/adam-naming-animals-study.webp', alt: 'Ilustración artística de Adán, vestido con sencillez, observando con calma varios animales en el jardín.', summary: 'El relato muestra al ser humano nombrando a los animales mientras continúa la búsqueda de una compañía correspondiente.', question: '¿Qué aporta el acto de nombrar al desarrollo de esta escena, y qué preguntas deja abiertas?' },
+  ],
+  studyQuestions: [
+    '¿Qué acciones de Dios se repiten en la formación del ser humano y la preparación del jardín?',
+    '¿Cómo cambia la escena entre la búsqueda de una compañía correspondiente y el reconocimiento de la mujer?',
+    '¿Qué topónimos puedes localizar por nombre en el texto y cuáles siguen sin identificación segura?',
+  ],
+  relatedReferences: ['Génesis 1:26-31', 'Salmo 8:3-8', 'Mateo 19:4-6', 'Apocalipsis 22:1-2'],
+  videos: [
+    { title: 'Génesis 1–11 · panorama', category: 'Proyecto Biblia · resumen', summary: 'Sitúa los primeros relatos de Génesis dentro del arco literario del libro.', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
+    { title: 'Árbol de la vida', category: 'Proyecto Biblia · tema bíblico', summary: 'Sigue el motivo del árbol de la vida a través de la historia bíblica, desde Génesis hasta sus conexiones posteriores.', url: 'https://bibleproject.com/es/videos/arbol-de-la-vida/' },
+  ],
+  sources: [
+    { title: 'Texto bíblico: Génesis 2:4-25', references: ['Génesis 2:4-25'], relevance: 'Fuente primaria para el resumen, los cuatro movimientos y las observaciones del capítulo.', kind: 'primary-text', use: 'Síntesis editorial con referencias; no se copia el texto de una traducción.', consultedAt: '2026-10-24' },
+    { title: 'Guía de Génesis · Proyecto Biblia', url: 'https://bibleproject.com/es/guides/libro-de-genesis/', relevance: 'Recurso complementario para el contexto literario de Edén y Génesis 1–11.', kind: 'institutional-guide', use: 'Enlace a la fuente; no se adopta como postura doctrinal institucional.', consultedAt: '2026-10-24' },
+    { title: 'Génesis 1–11 · Proyecto Biblia', url: 'https://bibleproject.com/es/videos/genesis-1-11/', relevance: 'Panorama audiovisual del bloque que contiene los capítulos 1–11.', kind: 'institutional-video', use: 'Enlace al sitio del titular; no se descarga, modifica ni aloja.', consultedAt: '2026-10-24' },
+    { title: 'Árbol de la vida · Proyecto Biblia', url: 'https://bibleproject.com/es/videos/arbol-de-la-vida/', relevance: 'Seguimiento temático posterior del árbol de la vida mencionado en Génesis 2:9.', kind: 'institutional-video', use: 'Enlace al sitio del titular; es una lectura temática complementaria.', consultedAt: '2026-10-24' },
+    { title: 'Mora et al. · PLOS Biology (2011)', url: 'https://doi.org/10.1371/journal.pbio.1001127', relevance: 'Base de la estimación de especies animales incluida en el recuadro científico opcional.', kind: 'peer-reviewed-study', use: 'Se informa que es una proyección estadística, no un censo ni una cifra bíblica; solo se enlaza.', consultedAt: '2026-10-24' },
+    { title: 'Wiens · PLOS Biology (2023)', url: 'https://doi.org/10.1371/journal.pbio.3002388', relevance: 'Revisión que matiza estimaciones anteriores y explica límites y nuevos datos.', kind: 'peer-reviewed-review', use: 'Contexto científico actualizador; no se usa para interpretar el sentido teológico del capítulo.', consultedAt: '2026-10-24' },
+    { title: 'Fernandes et al. · Systematic Biology (2025)', url: 'https://doi.org/10.1093/sysbio/syaf006', relevance: 'Modelo reciente que estima 1,03–2,92 millones de especies animales terrestres; su alcance no incluye una cifra global directamente comparable con la estimación de 2011.', kind: 'peer-reviewed-study', use: 'Se cita para mostrar que estimaciones y alcances metodológicos difieren; no reemplaza la estimación de 2011 ni es una cifra bíblica.', consultedAt: '2026-10-24' },
+  ],
+  contextNote: {
+    title: 'Una lectura cristiana posterior',
+    body: 'El capítulo describe el jardín, la vocación humana y la relación entre hombre y mujer. Las conexiones con la nueva creación y el árbol de la vida se muestran desde otros pasajes bíblicos; no se presentan como palabras explícitas de Génesis 2.',
+  },
+  scienceNote: {
     title: '¿Cuántas especies animales existen?',
-    estimate: 'Un estudio de 2011 estimó alrededor de 7,77 millones de especies animales en la Tierra.',
-    caveat: 'Es una estimación estadística de especies —no un censo, no una cifra exacta y no el número de animales individuales—. Revisiones posteriores advierten que los métodos y nuevos datos, incluido el análisis molecular, pueden cambiar el panorama.',
-    sourceTitle: 'Mora y colaboradores · PLOS Biology (2011)',
-    sourceUrl: 'https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1001127',
-    reviewTitle: 'Revisión de estimaciones · PLOS Biology (2023)',
-    reviewUrl: 'https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3002388',
+    estimate: 'Mora et al. (2011) proyectaron alrededor de 7,77 millones de especies animales; Fernandes et al. (2025) estimaron 1,03–2,92 millones de especies animales terrestres.',
+    caveat: 'Son estimaciones estadísticas con alcance y métodos distintos: la cifra de 2025 se limita a animales terrestres y no debe compararse como si cubriera el mismo conjunto que la proyección de 2011. Ninguna es un censo, una cifra exacta ni el número de animales individuales. Este contexto moderno no procede de Génesis ni explica su sentido.',
   },
 };
 
-export const genesisChapterThree = {
+export const genesisChapterThree: BibleChapterStudyRecord = {
   title: 'Ruptura, consecuencias y esperanza',
   summary: 'Génesis 3 narra el diálogo de la serpiente con la mujer, la desconfianza y desobediencia de la pareja, su encuentro con Dios y la salida del jardín. El relato también conserva una palabra de juicio y una señal de cuidado: Dios los viste antes de que salgan.',
   references: ['Génesis 3:1-7', 'Génesis 3:8-13', 'Génesis 3:14-19', 'Génesis 3:20-24'],
@@ -124,11 +172,31 @@ export const genesisChapterThree = {
     'Génesis 3:15 se ha leído en la tradición cristiana como una promesa de victoria sobre el mal; en el estudio distinguimos esa lectura canónica posterior del sentido inmediato y debatido del versículo.',
     'Dios hace vestiduras para el hombre y la mujer (3:21); después les impide acceder al árbol de la vida (3:22-24). El cierre reúne cuidado, consecuencia y límite.',
   ],
-  relatedReferences: ['Romanos 5:12-19', '1 Corintios 15:21-22', 'Apocalipsis 12:9', 'Apocalipsis 20:2'],
+  scenes: [
+    { title: 'Una pregunta en el jardín', reference: 'Génesis 3:1-13', image: '/images/bible-study/genesis3-dialogue-v01.webp', alt: 'Ilustración artística de la mujer y el hombre junto a un árbol en el jardín mientras una serpiente permanece entre las ramas.', summary: 'Observa cómo se cita el mandato, cómo responde la pareja y qué ocurre después de comer.', question: '¿Qué palabras del diálogo se repiten, se omiten o cambian respecto de Génesis 2:16-17?' },
+    { title: 'Una puerta que se cierra', reference: 'Génesis 3:20-24', image: '/images/bible-study/genesis3-departure-v01.webp', alt: 'Ilustración artística de una pareja vestida que sale de un jardín luminoso hacia un paisaje abierto al amanecer.', summary: 'El cierre reúne el nombre Eva, las vestiduras, la salida y el camino guardado al árbol de la vida.', question: '¿Qué cambia entre la acción de Dios en 3:21 y la protección del camino en 3:22-24?' },
+  ],
+  studyQuestions: [
+    '¿Cómo reformula la serpiente el mandato y cómo responde la mujer?',
+    '¿Qué efectos inmediatos de la decisión aparecen antes de las palabras de juicio?',
+    '¿Qué elementos del final expresan a la vez consecuencia, cuidado y límite?',
+  ],
+  relatedReferences: ['Romanos 5:12-19', 'Romanos 16:20', '1 Corintios 15:21-22', 'Hebreos 2:14-15', 'Apocalipsis 12:9', 'Apocalipsis 20:2'],
   videos: [
     { title: 'Génesis 1–11 · panorama', category: 'Proyecto Biblia · enlace oficial', summary: 'Contextualiza el comienzo del libro y sus primeros relatos.', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
     { title: 'Exilio · tema bíblico', category: 'Proyecto Biblia · enlace oficial', summary: 'Explora cómo la Biblia desarrolla la imagen del exilio desde Edén.', url: 'https://bibleproject.com/es/videos/exilio/' },
   ],
+  sources: [
+    { title: 'Texto bíblico: Génesis 2:16-17; 3:1-24', references: ['Génesis 2:16-17', 'Génesis 3:1-24'], relevance: 'Fuente primaria para los cuatro movimientos, las observaciones, las escenas y el diálogo.', kind: 'primary-text', use: 'Síntesis editorial con referencias; no se copia el texto de una traducción.', consultedAt: '2026-10-24' },
+    { title: 'Conexiones canónicas: Romanos, 1 Corintios, Hebreos y Apocalipsis', references: ['Romanos 5:12-19', 'Romanos 16:20', '1 Corintios 15:21-22', 'Hebreos 2:14-15', 'Apocalipsis 12:9', 'Apocalipsis 20:2'], relevance: 'Pasajes posteriores que releen a Adán, la muerte y la serpiente; Apocalipsis llama «serpiente antigua» al diablo y Satanás.', kind: 'canonical-reference', use: 'Se distinguen explícitamente de las palabras y el contexto inmediato de Génesis 3.', consultedAt: '2026-10-24' },
+    { title: 'Génesis 1–11 · Proyecto Biblia', url: 'https://bibleproject.com/es/videos/genesis-1-11/', relevance: 'Panorama audiovisual complementario del bloque literario.', kind: 'institutional-video', use: 'Enlace al sitio del titular; no se descarga, modifica ni aloja.', consultedAt: '2026-10-24' },
+    { title: 'El exilio · Proyecto Biblia', url: 'https://bibleproject.com/es/videos/exilio/', relevance: 'Presenta el exilio de Israel como imagen temática posterior conectada por el recurso con la salida de Edén.', kind: 'institutional-video', use: 'Interpretación contemporánea identificada como complemento, no fuente primaria ni doctrina denominacional.', consultedAt: '2026-10-24' },
+    { title: 'Condiciones de uso de Proyecto Biblia', url: 'https://bibleproject.com/terms/', relevance: 'Reglas para compartir los videos en servicios propios.', kind: 'institutional-guide', use: 'Solo enlaces oficiales; no se almacenan, editan ni redistribuyen copias.', consultedAt: '2026-10-24' },
+  ],
+  contextNote: {
+    title: 'Génesis 3:15 y las conexiones posteriores',
+    body: 'La tradición cristiana ha leído Génesis 3:15 como una esperanza de victoria sobre el mal. La guía identifica esa recepción canónica y la distingue del sentido inmediato, cuyo alcance se debate. La identificación de la serpiente con el diablo aparece explícita en Apocalipsis 12:9 y 20:2, no como nombre usado por Génesis 3.',
+  },
 };
 
 export const genesisChapterOne = {

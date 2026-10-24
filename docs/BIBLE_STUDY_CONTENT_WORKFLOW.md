@@ -57,6 +57,37 @@ Verificación visual, accesibilidad y build:
 Estado: propuesto / local / verificado / publicado
 ```
 
+### Contrato de datos de capítulo
+
+Los primeros estudios desarrollados en la interfaz usan `BibleChapterStudyRecord` (`src/data/bibleBookStudyCatalog.ts`) y el componente compartido `GenesisChapterStudyTemplate` (`src/components/public/bible/BibleBookCatalog.tsx`). Antes de crear otro componente, añade una ficha de datos con:
+
+- síntesis, referencias completas y movimientos con límites exactos;
+- observaciones separadas de preguntas de conversación;
+- escenas con archivo, texto alternativo, resumen y pregunta propia;
+- conexiones canónicas, recursos de video y nota de interpretación/contexto, cuando aplique;
+- cada fuente con título, URL o referencias bíblicas, afirmación/aporte, tipo, uso permitido y fecha de consulta.
+
+La interfaz no reemplaza esta bitácora. La tabla por afirmación de este documento conserva los límites de la evidencia; la ficha TypeScript hace visible la procedencia junto al estudio y reduce el coste de extender la plantilla. Para volúmenes grandes conviene mover estos registros a archivos de contenido por libro/capítulo conservando este contrato, sin copiar el componente.
+
+## Fuentes añadidas o actualizadas — Génesis 2 y 3
+
+Consulta: 2026-10-24.
+
+| Unidad | Afirmación/aporte | Fuente | Tipo / tratamiento |
+|---|---|---|---|
+| Génesis 2 | Edén, la dirección «al oriente» y los cuatro ríos son descritos por el texto, sin coordenadas modernas para el jardín. | Génesis 2:8-14 en el lector bíblico compartido; complemento: [Guía de Génesis · Proyecto Biblia](https://bibleproject.com/es/guides/libro-de-genesis/). | La Biblia es fuente primaria. La guía externa es complemento literario; no es fuente doctrinal denominacional y no se copia. |
+| Génesis 2 | La estimación de Mora de 7,77 millones es una proyección de 2011, no un censo. | Mora et al., [PLOS Biology](https://doi.org/10.1371/journal.pbio.1001127). | Artículo revisado por pares; se enlaza sin copiar figuras o tablas. |
+| Génesis 2 | Las estimaciones dependen de método y alcance: un modelo de 2025 calculó 1,03–2,92 millones de especies animales terrestres. | Fernandes et al., *Systematic Biology* (2025), [DOI 10.1093/sysbio/syaf006](https://doi.org/10.1093/sysbio/syaf006), ficha en PubMed. | Artículo revisado por pares; el alcance terrestre no se compara como si fuera el total de especies animales de Mora (2011). Se usa para explicar incertidumbre moderna, no para interpretar Génesis. |
+| Génesis 2 | Wiens resume límites y desacuerdos de las estimaciones mundiales de especies. | Wiens, [PLOS Biology (2023)](https://doi.org/10.1371/journal.pbio.3002388). | Perspectiva científica; enlace al editor, sin copiar. |
+| Génesis 2 | El árbol de la vida en la historia bíblica y el bloque de Génesis 1–11. | [Árbol de la vida](https://bibleproject.com/es/videos/arbol-de-la-vida/) y [Génesis 1–11](https://bibleproject.com/es/videos/genesis-1-11/) de Proyecto Biblia. | Recursos evangélicos complementarios no afiliados a una denominación; links oficiales, sin descarga ni re-alojamiento. |
+| Génesis 3 | La secuencia de diálogo, ruptura, consecuencias y salida proviene de Génesis 3:1-24; las conexiones sobre Adán/serpiente vienen de textos canónicos posteriores. | Génesis 2:16-17; 3:1-24; Romanos 5:12-19; 16:20; 1 Corintios 15:21-22; Hebreos 2:14-15; Apocalipsis 12:9; 20:2, en el lector bíblico. | Se mantiene separado el vocabulario explícito de Génesis y la recepción cristiana posterior de Génesis 3:15. |
+| Génesis 3 | El exilio de Israel como imagen posterior del exilio de la humanidad de Edén. | [El exilio · Proyecto Biblia](https://bibleproject.com/es/videos/exilio/). | Lectura temática del titular, no fuente primaria ni consenso denominacional; enlace oficial. |
+| Génesis 2–3 | Criterio de uso de materiales audiovisuales. | [Condiciones de uso de Proyecto Biblia](https://bibleproject.com/terms/). | Permite enlaces o inserciones bajo condiciones; el sitio enlaza recursos oficiales y no los copia, altera ni aloja. |
+
+### Aplicación de plantilla — 2026-10-24
+
+Génesis 2 y 3 comparten ahora `BibleChapterStudyRecord`: resumen y referencias, cuatro movimientos, observaciones, escenas artísticas con texto alternativo/pregunta, conversación, conexiones canónicas, enlaces complementarios, distinciones editoriales y fuentes con tipo/alcance/uso/fecha. Se conectan con Atlas, Enciclopedia y Cronología. Los mapas siguen declarados narrativos donde el pasaje no permite ubicar el jardín; la cronología describe el orden literario, no un año histórico. En Génesis 2, el dato de biodiversidad queda plegado y rotulado como contexto moderno, no como parte del relato.
+
 ## Fuentes enlazadas para Génesis 3
 
 - Biblia: Génesis 2:16-17; 3:1-24; Romanos 5:12-19; 1 Corintios 15:21-22; Romanos 16:20; Hebreos 2:14-15; Apocalipsis 12:9; 20:2. Pasajes consultados mediante el lector compartido; el sitio no republica aquí el texto de una traducción.
