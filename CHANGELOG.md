@@ -1,7 +1,17 @@
+Warning: truncated output (original token count: 12173)
+Total output lines: 588
+
 # Changelog
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+
+## [1.14.15] - 2026-10-24
+
+### Mejorado
+- La pestaña Biblia queda dedicada al lector compartido; el estudio de Génesis 1 vive en una pestaña propia.
+- El Atlas narrativo de Génesis 1 incorpora una ilustración original, seis escenas seleccionables y acceso al pasaje exacto de cada día.
+- La guía de Génesis 1 incluye un enlace adicional a un video oficial de Proyecto Biblia; los medios siguen en su sitio de origen.
 
 ## [1.14.14] - 2026-10-24
 
@@ -325,81 +335,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Seguridad & Corrección (Fixed)
 - **Privacidad en Sección de Liderazgo (`About.tsx`)**:
-  - Eliminado el botón administrativo `Editar liderazgo` (`/admin/pastores`) que permanecía visible para los usuarios no autenticados en la página pública de la iglesia.
-  - Refactorizada la estructura de la cuadrícula de pastores y líderes comunitarios (`GlassCard`) para consistencia visual y accesibilidad.
-
-### Base de Datos & Migraciones (Database)
-- **Despliegue y Sincronización de Migraciones (`Supabase`)**:
-  - **Patrones de Batería (`song_drum_styles`)**: Aplicada la migración `20260925000000_add_song_drum_styles.sql` en producción, habilitando la tabla con RLS y el catálogo inicial de 13 estilos de batería.
-  - **Tolerancia a Fallos en Auditoría (`audit_logs`)**: Aplicada la migración `20260925010000_fix_audit_logs_trigger_and_resource.sql`, fijando el valor predeterminado `'system'` y evitando excepciones bloqueantes en el trigger `process_audit_log()`.
-
----
-
-## [1.4.7] - 2026-10-07
-
-### Mejorado (Changed) & Optimizado (Performance)
-- **Catálogo de Tienda y Resiliencia en Búsqueda (`Store.tsx`, `catalog.ts`)**:
-  - **Migración a React Query (`useQuery`)**: Sustitución de la carga manual imperativa por `@tanstack/react-query` con caché de 30 segundos, estado de recarga (`refetch`, `isFetching`) y reintentos controlados.
-  - **Búsqueda Insensible a Acentos**: Nueva utilidad `normalizeCatalogSearch` con descomposición canónica NFD para emparejar búsquedas en español con o sin tildes de forma uniforme en nombre, descripción, categoría y etiquetas de metadatos.
-  - **Precios y Disponibilidad por Variante**: Integrada función `getCatalogPrice` para calcular el menor precio disponible entre variantes con inventario activo, junto con visualización de ahorro y precio anterior tachado.
-  - **Carga Perezosa y Aislamiento de Errores**: Carga diferida de `ProductQuickView` con `React.lazy()`, `Suspense` y `GlobalErrorBoundary` para proteger el catálogo de fallos imprevistos en el modal.
-  - **Prevención de CLS y Accesibilidad**: Dimensiones explícitas (`720x540`) en `<OptimizedMedia>` para evitar saltos de diseño (CLS), etiquetas ARIA mejoradas y esqueletos de carga de alto contraste.
-
-### Añadido (Added)
-- **Documentación Normativa Cuadrangular (`docs/normativa-cuadrangular/`)**:
-  - Archivo documental formal con el Estatuto y Reglamento Interno de la Iglesia Cuadrangular del Ecuador, conservados íntegros fuera del paquete público con registro de procedencia y hashes de verificación.
-
----
-
-## [1.4.6] - 2026-10-01
-
-### Corregido (Fixed)
-- **Compilación de Serverless Functions en Vercel (`api/tsconfig.json`, `tsconfig.json`)**:
-  - Incorporado `api/tsconfig.json` con soporte explícito para `@types/node` (`types: ["node"]`), resolviendo los errores `TS2591: Cannot find name 'process'` que impedían la compilación de funciones serverless (`send-email.ts`, `suscribir.ts`, `reaccionar.ts`, `dar-de-baja.ts`).
-  - Vinculada la referencia `./api/tsconfig.json` en el `tsconfig.json` raíz del proyecto para integración limpia en monorepo/composite mode.
-
-### Mejorado (Changed) & UI/UX
-- **Footer Glassmorphic Elegante con Micro-Animaciones (`Footer.tsx`)**:
-  - **Estética Refinada**: Contenedor de cristal translúcido de alto contraste (`bg-white/5 dark:bg-slate-950/80 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5`), armónico en tema claro y oscuro, con resplandores sutiles de fondo (índigo y esmeralda).
-  - **Micro-Animaciones Interactivas**:
-    - **Redes Sociales**: Animaciones táctiles y de cursor con física elástica Framer Motion (`whileHover={{ scale: 1.1, y: -2 }}`, `whileTap={{ scale: 0.95 }}`) y colores de marca reactivos.
-    - **Enlaces de Exploración**: Iconos con hover dinámico (`group-hover:scale-110`), fondos reactivos y ligero desplazamiento del texto (`group-hover:translate-x-1`).
-    - **Branding & Identidad**: Hover suave en el imagotipo de Jerusalén (`whileHover={{ scale: 1.02 }}`) manteniendo el versículo bíblico de Hebreos 13:8 con acento lateral.
-    - **Créditos del Desarrollador**: Insignia inferior interactiva con `whileHover={{ scale: 1.05 }}` y corazón palpitante (`animate-pulse`).
-    - **Entrada Suave en Viewport**: Animación de revelado gradual (`initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}`) optimizada para alto rendimiento.
-
----
-
-## [1.4.5] - 2026-09-30
-
-### Corregido (Fixed)
-- **`syncWorker.ts` — Atomicidad de mutaciones de miembros**: Las operaciones de sincronización de tablas relacionadas (`member_emails`, `member_phones`, `member_talents`, `member_service_areas`, `member_spiritual_gifts`) ahora se ejecutan en pasos explícitos (Step 1: upsert, Step 2: relaciones, Step 3: eliminar de cola). El elemento de la cola solo se elimina después de que **todas** las operaciones hayan sido exitosas. Antes, si la conexión se cortaba entre el DELETE y el INSERT de relaciones, los datos quedaban en estado huérfano (emails borrados, sin remplazarlos).
-- **`useAuthStore.ts` — Listeners zombi en logout**: `logout()` ahora llama `subscription.unsubscribe()` y resetea `_authInitialized` antes de ejecutar `supabase.auth.signOut()`. Esto previene que el listener `onAuthStateChange` sea notificado del evento `SIGNED_OUT` durante el cierre de sesión intencional del usuario, eliminando el ciclo redundante de limpieza de estado.
-- **`useAuthStore.ts` — Duplicación de `logout`/`signOut`**: `signOut` ahora es un alias que delega a `logout`, eliminando la duplicación de código. Se centralizó el estado de limpieza en `SESSION_CLEARED_STATE`.
-- **`searchIndexService.ts` — Parser de referencias bíblicas incompleto**: El mapa `BIBLE_BOOKS_MAP` fue extendido de 35 a 66 libros (cobertura completa del canon bíblico). Se añadieron los libros faltantes del Antiguo Testamento (1-2 Crónicas, Esdras, Nehemías, Ester, Job, Cantares, Lamentaciones, Ezequiel, los 12 profetas menores) y Nuevo Testamento (Tito, Filemón, 2-3 Juan, Judas). El algoritmo de matching fue refactorizado para usar búsqueda exacta por clave normalizada (sin tildes) en primer lugar y fallback de prefijo solo cuando el alias tiene ≥ 3 caracteres, eliminando los falsos positivos del `alias.startsWith(rawBook) || rawBook.startsWith(alias)` bidireccional.
-
-## [1.4.4] - 2026-09-28
-
-
-### Mejorado (Changed) & Optimizado (Performance)
-- **Eliminación de Carrera y Duplicación en Autenticación (`authService.ts`)**:
-  - **Deduplicación en Vuelo (*In-Flight Deduplication*)**: Implementado mapa de promesas concurrentes en `fetchOrCreateProfile` para evitar que `getSession()` y el listener `onAuthStateChange('INITIAL_SESSION')` disparen consultas paralelas idénticas a Supabase en el arranque de la app.
-  - **Tolerancia a Fallos en Permisos**: Si la consulta a `role_permissions` o `access_roles` experimenta micro-cortes, el sistema aplica `defaultFallbackPermissions` de forma segura en lugar de forzar un cierre de sesión abrupto.
-- **Optimización de Navegación Pública y Reducción de Consultas (`PublicLayout.tsx`, `Navigation.tsx`, `useMenuStore.ts`, `menuService.ts`)**:
-  - **Eliminación de Desmontaje Forzado**: Retirada la propiedad destructiva `key={location.pathname}` en `<Navigation />` dentro de `PublicLayout.tsx` y en `<motion.nav>` de `Navigation.tsx`. La barra de navegación se mantiene viva entre rutas sin reinicios visuales bruscos ni descarte de listeners.
-  - **Caché Inteligente con TTL**: Incorporado control de frescura de 10 minutos en `useMenuStore` y `menuService`, eliminando el 100% de consultas repetitivas a `public_menu_items` cada vez que el usuario navega entre páginas públicas.
-  - **Invalidación Proactiva**: El catálogo se refresca automáticamente cuando los administradores agregan, editan, reordenan o eliminan enlaces del menú.
-- **Sincronización Offline First No Destructiva (`syncPull.ts`)**:
-  - **Preservación de Mutaciones Locales**: El proceso de pull ahora consulta previamente la cola `sync_queue` para proteger y no sobreescribir modificaciones de miembros, horarios o notas pendientes de sincronización.
-  - **Reemplazo de `.clear()` por Merge Seguro**: Se sustituyó el vaciado destructivo de las tablas IndexedDB por un guardado incremental no bloqueante, protegiendo los datos locales ante fallos de red durante el ciclo de sincronización.
-
----
-
-## [1.4.3] - 2026-09-25
-
-### Corregido (Fixed)
-- **Corrección de Recorte Tipográfico y Elementos Ocultos en Secciones Hero**:
-  - **Recorte de "propósito." (`PremiumBibleHero.tsx`)**: Se incrementó la altura de línea de `leading-[.88]` a `leading-[0.96]` y se añadió `inline-block` con margen y relleno de seguridad (`pb-2.5 pt-1 pr-2`) para evitar que el gradiente con `bg-clip-text` recorte la tilde de la "ó" y los trazos descendentes.
+  - Eli…2173 tokens truncated…-text` recorte la tilde de la "ó" y los trazos descendentes.
   - **Superposición de "Palabra viva" (`PremiumBibleHero.tsx`)**: Se reubicó la insignia flotante "Pasaje actual" de `top-[9%]` a `top-[26%]`, eliminando la colisión que tapaba la etiqueta "Palabra viva" en la tarjeta de estudio bíblico.
   - **Truncamiento de Texto en Tarjeta de Estudio**: Se amplió el ancho del badge inferior de `15rem` a `17.5rem` / `19rem` y se retiró el `truncate`, mostrando completo el mensaje *"Busca, guarda y vuelve a encontrar"*.
   - **Elemento Oculto "Descubre nuestra semana" (`PremiumHeroVisual.tsx` & `BentoGridSection.tsx`)**:

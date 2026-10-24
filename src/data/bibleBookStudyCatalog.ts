@@ -99,6 +99,7 @@ export const genesisChapterOne = {
   videos: [
     { title: 'Génesis 1 · comentario visual', duration: '7 min', url: 'https://bibleproject.com/es/videos/genesis-1/' },
     { title: 'Génesis 1–11 · panorama del relato', duration: '8 min', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
+    { title: 'Génesis, parte 1 · Creación y caos', duration: '5 min 40 s', url: 'https://bibleproject.com/es/videos/genesis-parte-1-creacion-y-caos/' },
     { title: 'Imagen de Dios · tema bíblico', duration: '5 min', url: 'https://bibleproject.com/es/videos/imagen-de-dios/' },
   ],
 };
