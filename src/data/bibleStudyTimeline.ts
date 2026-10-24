@@ -264,6 +264,30 @@ export const bibleOverviewTimeline: BibleOverviewTimelineEntry[] = [
   },
 ];
 
+/** Secuencia literaria de Génesis 2; no establece una datación de calendario ni resuelve su relación cronológica con Génesis 1. */
+export const genesisChapterTwoTimeline: BibleOverviewTimelineEntry[] = [
+  {
+    id: 'genesis-2-human', era: 'El jardín · Génesis 2:4-7', title: 'El ser humano recibe vida',
+    summary: 'Dios forma al ser humano del polvo de la tierra y le da aliento de vida.',
+    references: ['Génesis 2:4-7'], studyPrompt: '¿Qué relación presenta el pasaje entre tierra, aliento y vida?', people: ['creator', 'human'],
+  },
+  {
+    id: 'genesis-2-garden', era: 'El jardín · Génesis 2:8-17', title: 'Un lugar, una tarea y un límite',
+    summary: 'Dios planta el jardín, coloca allí al ser humano y le encomienda trabajarlo y cuidarlo.',
+    references: ['Génesis 2:8-17'], studyPrompt: '¿Qué encargo recibe el ser humano y qué límite forma parte de ese encargo?', people: ['creator', 'human'],
+  },
+  {
+    id: 'genesis-2-animals', era: 'El jardín · Génesis 2:18-20', title: 'Los animales son nombrados',
+    summary: 'El ser humano nombra a los animales; el relato dice que no encuentra entre ellos una compañía correspondiente.',
+    references: ['Génesis 2:18-20'], studyPrompt: '¿Qué aporta esta escena al desarrollo de la búsqueda de una compañía correspondiente?', people: ['human'],
+  },
+  {
+    id: 'genesis-2-woman', era: 'El jardín · Génesis 2:21-25', title: 'La mujer y la unión humana',
+    summary: 'El relato presenta a la mujer y concluye con una reflexión sobre la unión y la vida compartida.',
+    references: ['Génesis 2:21-25'], studyPrompt: '¿Qué palabras del pasaje expresan reconocimiento y parentesco?', people: ['human', 'woman-genesis'],
+  },
+];
+
 /** Exodus-to-Canaan route following the biblical narrative; routes and disputed pins remain illustrative. */
 export const exodusTimeline: BibleOverviewTimelineEntry[] = [
   {
@@ -337,3 +361,4 @@ export const exodusTimeline: BibleOverviewTimelineEntry[] = [
     references: ['Josué 24:1-28'], studyPrompt: '¿Qué hace Josué antes del llamado y qué respuesta da el pueblo?', mapId: 'exodus-canaan', people: ['joshua'],
   },
 ];
+

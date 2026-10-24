@@ -3,6 +3,12 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.18] - 2026-10-24
+
+### Mejorado
+- La Enciclopedia de Génesis 1–2 agrupa personas, lugares y acontecimientos, con contexto desplegable, referencias y preguntas para conversar.
+- La Cronología de Génesis 2 presenta la secuencia literaria del capítulo sin atribuirle fechas de calendario ni confundirla con el cierre de Génesis 1.
+
 ## [1.14.17] - 2026-10-24
 
 ### Añadido
@@ -604,3 +610,4 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 ### Añadido (Added)
 - Módulos administrativos para Muro de Ideas, Boletines Semanales, Presupuestos de Ministerios, Agenda Pastoral Privada y Centro de Novedades (Changelog).
 - Rutas públicas y de administración para el registro y consulta de novedades de la plataforma (`/novedades` y `/admin/changelog`).
+

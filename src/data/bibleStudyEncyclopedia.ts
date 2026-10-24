@@ -237,6 +237,30 @@ const actsPlaceEntries: BibleStudyPlaceEntry[] = [
 /** Personas mencionadas explícitamente en Hechos 27–28; las relaciones siguen el relato bíblico. */
 export const bibleStudyPeopleEntries: BibleStudyPersonEntry[] = [
   {
+    id: 'creator', title: 'Dios, Creador', region: 'Génesis · los comienzos',
+    summary: 'El relato presenta a Dios como quien crea, ordena, bendice y da propósito a la vida.',
+    context: 'Génesis 1 destaca la palabra de Dios y la bondad de lo creado. Génesis 2 enfoca su acción al formar al ser humano, plantar el jardín y establecer relaciones. Esta ficha sigue lo que afirman esos pasajes sin resolver aquí las distintas interpretaciones sobre la relación literaria entre ambos relatos.',
+    references: ['Génesis 1:1-31', 'Génesis 2:4-25'],
+  },
+  {
+    id: 'humanity', title: 'La humanidad: varón y mujer', region: 'Creación · imagen de Dios',
+    summary: 'Génesis 1 presenta a la humanidad creada a imagen de Dios, como varón y mujer, y le confía una responsabilidad dentro de la creación.',
+    context: 'El pasaje los bendice y les encarga fructificar, llenar la tierra y ejercer dominio sobre los seres vivos. La ficha conserva el lenguaje de Génesis 1, que todavía no los nombra como Adán y Eva.',
+    references: ['Génesis 1:26-28'],
+  },
+  {
+    id: 'human', title: 'El ser humano', region: 'Edén · cultivador y cuidador',
+    summary: 'Dios forma al ser humano del polvo, le da aliento de vida y lo coloca en el jardín para trabajarlo y cuidarlo.',
+    context: 'En Génesis 2:19-20 el ser humano nombra a los animales. El capítulo lo describe principalmente con términos que significan hombre/ser humano; el texto no presenta aquí «Adán» como un nombre propio inequívoco. Génesis 3:20 identifica a Eva por nombre.',
+    references: ['Génesis 2:7-8', 'Génesis 2:15-20'],
+  },
+  {
+    id: 'woman-genesis', title: 'La mujer', region: 'Edén · compañera correspondiente',
+    summary: 'En el relato, Dios forma a la mujer y el hombre la reconoce como parte de su propia humanidad.',
+    context: 'Génesis 2:23 registra las palabras del hombre y 2:24 formula la unión de marido y mujer. El nombre Eva aparece más adelante, en Génesis 3:20; por eso esta entrada usa «la mujer» al seguir el capítulo 2.',
+    references: ['Génesis 2:21-25'],
+  },
+  {
     id: 'paul', placeId: 'malta', title: 'Pablo', region: 'Apóstol · viajero bajo custodia',
     summary: 'Prisionero que apela al César y es trasladado por mar hacia Roma. Durante la tormenta anima a quienes viajan con él y comparte el mensaje que recibe.',
     context: 'En Malta sirve a los enfermos y, al llegar a Roma, recibe permiso para vivir bajo custodia y atender a quienes lo visitan. El relato destaca su confianza en Dios y su servicio en medio de circunstancias difíciles.',
@@ -385,6 +409,36 @@ export const bibleStudyPeopleEntries: BibleStudyPersonEntry[] = [
 /** Hitos basados en la secuencia narrativa de Hechos; no se asignan fechas de calendario que el texto no da. */
 export const bibleStudyEventEntries: BibleStudyEventEntry[] = [
   {
+    id: 'creation-order', placeId: 'creation', placeIds: ['creation'], title: 'Dios ordena y llena la creación', region: 'Secuencia del relato', date: 'Orden narrativo · sin fecha de calendario', places: 'Cielos, aguas y tierra',
+    summary: 'La narración organiza la creación en seis días, distingue ámbitos y los llena de vida; culmina con la humanidad a imagen de Dios.',
+    context: 'Génesis 2:1-3 presenta el séptimo día como cierre de la semana narrativa. Esta secuencia describe la forma del relato y no asigna fechas históricas verificables.',
+    references: ['Génesis 1:1-2:3'], people: ['creator', 'humanity'], studyPrompt: '¿Qué patrones se repiten y cómo cambia la escena cuando aparece la humanidad?',
+  },
+  {
+    id: 'human-formed', placeId: 'eden', placeIds: ['eden'], title: 'El ser humano recibe vida', region: 'Secuencia del relato', date: 'Génesis 2:4-7 · sin fecha de calendario', places: 'Edén · la tierra',
+    summary: 'Dios forma al ser humano del polvo de la tierra y le da aliento de vida.',
+    context: 'El texto introduce una escena enfocada en la tierra, la labor y la vida humana. Su orden narrativo no establece por sí solo una fecha de calendario ni resuelve la relación cronológica con Génesis 1.',
+    references: ['Génesis 2:4-7'], people: ['creator', 'human'], studyPrompt: '¿Qué relación establece el pasaje entre la tierra, el aliento y la vida?',
+  },
+  {
+    id: 'garden-commission', placeId: 'garden', placeIds: ['eden', 'garden', 'four-rivers'], title: 'El jardín y la tarea confiada', region: 'Secuencia del relato', date: 'Génesis 2:8-17 · sin fecha de calendario', places: 'Edén · el jardín · los cuatro ríos',
+    summary: 'Dios planta un jardín, coloca allí al ser humano y le encarga trabajarlo y cuidarlo; también le comunica un mandato.',
+    context: 'El pasaje nombra Pisón, Gihón, Tigris y Éufrates, pero no proporciona coordenadas para ubicar el jardín. La identificación de los dos primeros ríos y de las regiones de Havila y Cus es debatida.',
+    references: ['Génesis 2:8-17'], people: ['creator', 'human'], studyPrompt: '¿Qué responsabilidades y límites aparecen en la tarea que recibe el ser humano?',
+  },
+  {
+    id: 'animals-named', placeId: 'garden', placeIds: ['garden'], title: 'Los animales reciben nombre', region: 'Secuencia del relato', date: 'Génesis 2:18-20 · sin fecha de calendario', places: 'El jardín',
+    summary: 'Dios trae los animales al ser humano, que les da nombre; el relato señala que no encuentra entre ellos una compañía correspondiente.',
+    context: 'La escena pertenece a Génesis 2:18-20 y cumple una función distinta de la creación de los animales en Génesis 1:20-25. Las ilustraciones del proyecto son interpretaciones artísticas, no reconstrucciones históricas.',
+    references: ['Génesis 2:18-20'], people: ['creator', 'human'], studyPrompt: '¿Qué muestra esta escena sobre observar, nombrar y buscar una relación correspondiente?',
+  },
+  {
+    id: 'woman-and-union', placeId: 'garden', placeIds: ['garden'], title: 'La mujer y la unión humana', region: 'Secuencia del relato', date: 'Génesis 2:21-25 · sin fecha de calendario', places: 'El jardín',
+    summary: 'Dios forma a la mujer; el hombre la reconoce como «hueso de mis huesos» y el pasaje concluye con una reflexión sobre la unión.',
+    context: 'El capítulo la llama mujer; el nombre Eva se introduce en Génesis 3:20. La ficha no fija una fecha histórica para la escena ni convierte el poema en una cronología de calendario.',
+    references: ['Génesis 2:21-25'], people: ['creator', 'human', 'woman-genesis'], studyPrompt: '¿Qué lenguaje usa el pasaje para expresar parentesco, reconocimiento y unión?',
+  },
+  {
     id: 'departure', placeId: 'caesarea', placeIds: ['caesarea', 'sidon', 'myra'], title: 'De Cesarea hacia Asia Menor', region: 'Primera etapa', date: 'Primera etapa', places: 'Cesarea · Sidón · Mira',
     summary: 'Pablo embarca bajo custodia, la nave se detiene en Sidón y el grupo cambia de embarcación en Mira.',
     context: 'El relato presenta el viaje como un traslado hacia Italia. Julio trata a Pablo con consideración en Sidón, y Aristarco aparece entre quienes acompañan al grupo.',
@@ -467,7 +521,28 @@ export const bibleStudyQuadrangularCoreValues: BibleStudyQuadrangularCoreValue[]
 ];
 
 /** Places from the patriarchs map share its narrative summaries and references instead of duplicating them. */
-const genesisPlaceEntries: BibleStudyPlaceEntry[] = bibleStudyPatriarchLocationEntries.map((location) => ({
+const genesisNarrativePlaceEntries: BibleStudyPlaceEntry[] = [
+  {
+    id: 'genesis-eden', placeId: 'eden', title: 'Edén', region: 'Relato de los comienzos',
+    summary: 'La región donde Génesis sitúa el jardín que Dios planta para el ser humano.',
+    context: 'Génesis menciona un río que sale de Edén y se divide en cuatro brazos. El texto no da coordenadas modernas y las identificaciones de Pisón, Gihón, Havila y Cus son inciertas; este catálogo no coloca un pin de ubicación comprobada.',
+    references: ['Génesis 2:8-14'],
+  },
+  {
+    id: 'genesis-garden', placeId: 'garden', title: 'El jardín', region: 'Dentro del relato de Edén',
+    summary: 'El jardín plantado por Dios, donde el ser humano recibe la tarea de trabajarlo y cuidarlo.',
+    context: 'El jardín y Edén están relacionados en el relato, pero el texto no los presenta como dos coordenadas modernas identificables. La representación visual del proyecto es esquemática.',
+    references: ['Génesis 2:8-17'],
+  },
+  {
+    id: 'genesis-four-rivers', placeId: 'four-rivers', title: 'Los cuatro ríos', region: 'Geografía descrita en Génesis',
+    summary: 'Pisón, Gihón, Tigris y Éufrates son los cuatro brazos nombrados en Génesis 2:10-14.',
+    context: 'El Tigris y el Éufrates son nombres reconocibles en la geografía de Asia occidental. La identificación de Pisón y Gihón, y la relación de Havila y Cus con regiones actuales, siguen debatidas. El pasaje no permite localizar con certeza el jardín del Edén.',
+    references: ['Génesis 2:10-14'],
+  },
+];
+
+const genesisPlaceEntries: BibleStudyPlaceEntry[] = [...genesisNarrativePlaceEntries, ...bibleStudyPatriarchLocationEntries.map((location) => ({
   id: `genesis-${location.id}`,
   placeId: location.id,
   atlasMapId: 'patriarchs',
@@ -478,6 +553,7 @@ const genesisPlaceEntries: BibleStudyPlaceEntry[] = bibleStudyPatriarchLocationE
   context: 'Lee los pasajes relacionados y observa qué parte del relato ubica aquí la narración. La ficha conserva los límites del texto bíblico y la posición del pin es orientativa.',
   references: location.references,
   sceneIds: location.sceneIds,
-}));
+}))];
 
 export const bibleStudyPlaceEntries: BibleStudyPlaceEntry[] = [...actsPlaceEntries, ...genesisPlaceEntries];
+
