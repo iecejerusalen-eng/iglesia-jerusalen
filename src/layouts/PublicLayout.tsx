@@ -8,6 +8,7 @@ import StickyNav from '../components/public/StickyNav';
 import MobileBottomNav from '../components/common/MobileBottomNav';
 import StickyGlobalPlayer from '../components/audio/StickyGlobalPlayer';
 import TodayActivityPeek from '../components/public/TodayActivityPeek';
+import ChurchAssistantWidget from '../components/public/ChurchAssistantWidget';
 
 const ROUTE_METADATA: Array<{ match: string; title: string; description: string }> = [
   { match: '/visita', title: 'Planifica tu visita | Iglesia Jerusalén', description: 'Encuentra horarios, ubicación y todo lo necesario para visitar la Iglesia Jerusalén.' },
@@ -75,6 +76,7 @@ const PublicLayout = () => {
       <MobileBottomNav />
       <StickyGlobalPlayer />
       <TodayActivityPeek />
+      <ChurchAssistantWidget />
     </div>
   );
 };
