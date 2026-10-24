@@ -3,6 +3,14 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.16] - 2026-10-24
+
+### Mejorado
+- El Atlas de Génesis 1 incorpora un mapa geográfico contextual de los relatos patriarcales, separado con claridad de la secuencia narrativa y sin atribuir una ubicación comprobada al Edén.
+- La ruta del mapa contextual abre el Atlas interactivo en el mapa de los patriarcas.
+- El estudio de Génesis 1 presenta cinco videos oficiales de Proyecto Biblia con resumen, tema y duración, enlazados a su sitio de origen.
+- La política de seguridad permite reproducir los videos de Mux ya usados por el sitio.
+
 ## [1.14.15] - 2026-10-24
 
 ### Mejorado

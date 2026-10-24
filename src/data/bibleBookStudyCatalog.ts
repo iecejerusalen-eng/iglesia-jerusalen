@@ -97,9 +97,10 @@ export const genesisChapterOne = {
   relatedPeople: ['Dios, Creador', 'La humanidad: varón y mujer'],
   relatedReferences: ['Salmo 8:3-8', 'Salmo 33:6-9', 'Juan 1:1-3', 'Colosenses 1:15-17', 'Hebreos 11:3'],
   videos: [
-    { title: 'Génesis 1 · comentario visual', duration: '7 min', url: 'https://bibleproject.com/es/videos/genesis-1/' },
-    { title: 'Génesis 1–11 · panorama del relato', duration: '8 min', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
-    { title: 'Génesis, parte 1 · Creación y caos', duration: '5 min 40 s', url: 'https://bibleproject.com/es/videos/genesis-parte-1-creacion-y-caos/' },
-    { title: 'Imagen de Dios · tema bíblico', duration: '5 min', url: 'https://bibleproject.com/es/videos/imagen-de-dios/' },
+    { title: 'Génesis 1 · comentario visual', duration: '7:54', category: 'En el capítulo', summary: 'Observa la creación, la humanidad a imagen de Dios y el propósito del relato.', url: 'https://bibleproject.com/es/videos/genesis-1/' },
+    { title: 'Génesis 1–11 · panorama', duration: '8:10', category: 'Panorama', summary: 'Conecta la creación con las historias que abren el libro.', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
+    { title: 'Creación y caos · Génesis parte 1', duration: '5:40', category: 'Torá', summary: 'Explora el paso de la oscuridad y el caos al orden y la vida.', url: 'https://bibleproject.com/es/videos/genesis-parte-1-creacion-y-caos/' },
+    { title: 'Imagen de Dios', duration: '5:43', category: 'Tema relacionado', summary: 'Profundiza en la vocación de la humanidad y su relación con la creación.', url: 'https://bibleproject.com/es/videos/imagen-de-dios/' },
+    { title: 'El Sabbat', duration: '5:47', category: 'Continuación · Génesis 2:1-3', summary: 'Sigue el motivo del descanso que cierra la semana narrativa.', url: 'https://bibleproject.com/es/videos/sabbat-video/' },
   ],
 };

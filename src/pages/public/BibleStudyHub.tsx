@@ -485,7 +485,7 @@ export default function BibleStudyHub() {
                 </div>
               </details>
 
-              {section === 'books' && <BibleBookCatalog />}
+              {section === 'books' && <BibleBookCatalog onOpenPatriarchsAtlas={() => { setSelectedAtlasMapId('patriarchs'); setSelectedPatriarchLocationId('haran'); setSection('atlas'); }} />}
               {section === 'atlas' && <section aria-label="Atlas bíblico" className="space-y-4">
                 <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-amber-800 dark:text-amber-200">Mapas para recorrer la Biblia</p><h2 className="mt-1 font-serif text-2xl sm:text-3xl">Elige una época o un viaje</h2></div><span className="rounded-full border border-amber-700/15 bg-amber-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-amber-950 dark:border-amber-200/15 dark:bg-amber-200/10 dark:text-amber-100">{bibleStudyAtlasMapEntries.length} mapas</span></div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Seleccionar mapa bíblico">
