@@ -163,7 +163,7 @@ Deno.serve(async (request) => {
   const today = todayInEcuador();
   const [scheduleResult, eventResult, ministryResult] = await Promise.all([
     publicClient.from('schedules').select('day, title, time_range, description').order('order_index', { ascending: true }).limit(20),
-    publicClient.from('events').select('title, description, start_date, start_time, end_time').eq('is_public', true).gte('start_date', today).order('start_date', { ascending: true }).limit(8),
+    publicClient.from('events').select('title, description, start_date, end_date, start_time, end_time, location_name').eq('is_public', true).gte('end_date', today).order('start_date', { ascending: true }).limit(8),
     publicClient.from('ministries').select('name, slug, category, description, schedule').order('name', { ascending: true }).limit(30),
   ]);
 
@@ -181,8 +181,10 @@ Deno.serve(async (request) => {
     evento: cleanPublicText(item.title, 160),
     descripción: cleanPublicText(item.description, 500),
     fecha: item.start_date,
+    fecha_fin: item.end_date,
     hora: item.start_time,
     hora_fin: item.end_time,
+    lugar: cleanPublicText(item.location_name, 160),
   }));
   const ministries = (ministryResult.data ?? []).map((item) => ({
     ministerio: cleanPublicText(item.name, 160),
@@ -196,6 +198,8 @@ Deno.serve(async (request) => {
     'Responde en español, con calidez, en pocas frases y usando exclusivamente los datos incluidos en este mensaje.',
     'Información oficial: dirección Baquerizo Moreno entre Av. Colón y Tulcán, Milagro, Guayas, Ecuador; secretaría +593 98 526 3122; correo iece_jerusalen@hotmail.com; sitio https://www.iecejerusalen.com.',
     'Canales: contacto https://www.iecejerusalen.com/contacto, peticiones de oración https://www.iecejerusalen.com/peticiones, planificar visita https://www.iecejerusalen.com/visita, ministerios https://www.iecejerusalen.com/ministerios, doctrina https://www.iecejerusalen.com/nosotros/doctrina, agenda https://www.iecejerusalen.com/eventos, transmisión https://www.iecejerusalen.com/en-vivo, prédicas https://www.iecejerusalen.com/predicas, podcast https://www.iecejerusalen.com/podcast, alabanzas https://www.iecejerusalen.com/recursos/alabanzas, programas y cursos https://www.iecejerusalen.com/programas, Aula Virtual https://www.iecejerusalen.com/aula-virtual, lectura bíblica https://www.iecejerusalen.com/recursos/biblia, donaciones https://www.iecejerusalen.com/donaciones.',
+    'Misión doctrinal publicada de la Iglesia Jerusalén: anunciar a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto. Ante preguntas doctrinales, comparte este resumen y remite a /nosotros/doctrina para los 22 principios de fe y sus referencias bíblicas; no extrapoles posiciones locales fuera de ese material.',
+    'En las respuestas sobre eventos, incluye la descripción, fecha de inicio y fin, horario y lugar cuando los datos públicos los incluyan. Considera eventos de varios días que se solapen con el período consultado. No deduzcas una dirección exacta a partir del nombre del lugar.',
     'Para buscar canciones, letras o episodios de audio, orienta a la biblioteca de alabanzas o al podcast. Para cursos gratuitos, devocionales, grupos en vivo y lecturas guiadas, orienta a Programas; para el espacio personal de cursos, Aula Virtual.',
     'La página de visita explica que no hay código de vestimenta, el registro previo es opcional y la persona puede indicar si viene con niños o necesita accesibilidad/parqueo. No prometas servicios o condiciones no confirmadas.',
     'Las peticiones requieren iniciar sesión; quien las envía elige si son públicas o privadas. Este chat no es confidencial ni debe recibir peticiones sensibles. Para doctrina específica, consejería pastoral, datos de miembros, emergencias o decisiones personales, deriva a canales oficiales y no afirmes hablar en nombre de un pastor.',

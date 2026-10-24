@@ -6,8 +6,10 @@ export type PublicEventSummary = {
   title: string;
   description: string | null;
   start_date: string;
+  end_date: string;
   start_time: string | null;
   end_time: string | null;
+  location_name: string | null;
   emoji: string | null;
 };
 export type PublicMinistrySummary = {
@@ -68,6 +70,7 @@ export const CHURCH_LINKS = {
   bookings: { label: 'Ver espacios y reservas', href: '/reservas' },
   store: { label: 'Explorar la tienda', href: '/tienda' },
   community: { label: 'Abrir la comunidad', href: '/comunidad' },
+  doctrine: { label: 'Conocer nuestra fe', href: '/nosotros/doctrina' },
 } satisfies Record<string, AssistantLink>;
 
 export function normalizeAssistantText(value: string) {
@@ -135,6 +138,32 @@ export function getKnowledgeNeeds(message: string): KnowledgeNeed[] {
   return [...needs];
 }
 
+type AssistantConversationMessage = { role: 'user' | 'assistant'; text: string };
+
+export function contextualizeFollowUp(message: string, conversation: AssistantConversationMessage[]) {
+  const shortQuery = normalizeAssistantText(message)
+    .replace(/[¿?¡!.,;:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const isDateFollowUp = /^(?:(?:y|para|tambien)\s+)*(?:(?:el|la|este|esta)\s+)?(?:(?:proximo|proxima)\s+)?(?:hoy|manana|domingo|lunes|martes|miercoles|jueves|viernes|sabado|fin de semana|semana)$/.test(shortQuery);
+  if (!isDateFollowUp) return message;
+
+  const lastUserMessage = [...conversation].reverse().find((item) => item.role === 'user');
+  const lastAssistantMessage = [...conversation].reverse().find((item) => item.role === 'assistant');
+  if (!lastUserMessage || !lastAssistantMessage) return message;
+
+  const previousQuestion = normalizeAssistantText(lastUserMessage.text);
+  const previousAnswer = normalizeAssistantText(lastAssistantMessage.text);
+  const askedAboutEvents = /\b(evento|eventos|agenda|actividad|actividades)\b/.test(previousQuestion);
+  const askedAboutSchedules = /\b(horario|horarios|culto|cultos|reunion|reuniones|servicio|servicios|escuela dominical)\b/.test(previousQuestion);
+  const answeredWithEvents = /\b(eventos publicos|eventos publicados|agenda|no encuentro eventos|no veo un evento)\b/.test(previousAnswer);
+  const answeredWithSchedules = /\b(horarios publicados|horario publicado|horarios ahora|horarios para ese dia)\b/.test(previousAnswer);
+
+  if (answeredWithEvents || (askedAboutEvents && !askedAboutSchedules)) return `eventos ${message}`;
+  if (answeredWithSchedules || askedAboutSchedules) return `horarios de culto ${message}`;
+  return message;
+}
+
 function dayFilter(query: string, schedules: Schedule[]) {
   const days = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
   const requestedDay = days.find((day) => new RegExp(`\\b${day}\\b`).test(query));
@@ -147,6 +176,11 @@ function formatEventDate(value: string) {
   return new Intl.DateTimeFormat('es-EC', {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Guayaquil',
   }).format(date);
+}
+
+function formatEventDateRange(start: string, end: string) {
+  const startLabel = formatEventDate(start);
+  return start === end ? startLabel : `${startLabel} al ${formatEventDate(end)}`;
 }
 
 function formatTime(value: string | null) {
@@ -187,7 +221,7 @@ function eventDateRange(query: string, today: string): [string, string] | null {
 }
 
 function eventDateMatches(event: PublicEventSummary, range: [string, string] | null) {
-  return !range || (event.start_date >= range[0] && event.start_date <= range[1]);
+  return !range || (event.start_date <= range[1] && event.end_date >= range[0]);
 }
 
 function ministryMatches(query: string, ministry: PublicMinistrySummary) {
@@ -248,18 +282,25 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
           : /caballero|hombre/.test(query) ? ['caballero', 'hombre']
             : /pareja|matrimonio|familia/.test(query) ? ['pareja', 'matrimonio', 'familia'] : [];
     const relatedEvents = topicTerms.length
-      ? periodEvents.filter((event) => topicTerms.some((term) => normalizeAssistantText(`${event.title} ${event.description ?? ''}`).includes(term)))
+      ? periodEvents.filter((event) => topicTerms.some((term) => normalizeAssistantText(`${event.title} ${event.description ?? ''} ${event.location_name ?? ''}`).includes(term)))
       : periodEvents;
     const selectedEvents = relatedEvents.length ? relatedEvents : periodEvents;
     const lines = selectedEvents.slice(0, 5).map((event) => {
       const time = formatTime(event.start_time);
       const endTime = formatTime(event.end_time);
       const rangeText = time ? ` · ${time}${endTime ? `–${endTime}` : ''}` : '';
-      return `${event.emoji ? `${event.emoji} ` : ''}${event.title} — ${formatEventDate(event.start_date)}${rangeText}.`;
+      const description = plainTextSummary(event.description, 135);
+      const location = plainTextSummary(event.location_name, 80);
+      const details = [description, location ? `Lugar: ${location}` : null].filter(Boolean).join(' · ');
+      return `${event.emoji ? `${event.emoji} ` : ''}${event.title} — ${formatEventDateRange(event.start_date, event.end_date)}${rangeText}${details ? ` · ${details}` : ''}.`;
     });
     const intro = relatedEvents.length || !topicTerms.length ? 'Estos son los eventos públicos publicados para ese período:' : 'No veo un evento publicado con ese tema para ese período; estos son los próximos eventos de la agenda:';
+    const eventLinks = selectedEvents.slice(0, 3).map((event) => ({
+      label: `Ver ${plainTextSummary(event.title, 32)}`,
+      href: `/eventos?event=${encodeURIComponent(event.id)}`,
+    }));
     const links = topicTerms.length ? [CHURCH_LINKS.events, CHURCH_LINKS.ministries] : [CHURCH_LINKS.events];
-    return { text: `${intro}\n${lines.join('\n')}`, links };
+    return { text: `${intro}\n${lines.join('\n')}`, links: [...eventLinks, ...links] };
   }
 
   if (isScheduleQuestion(query)) {
@@ -416,7 +457,12 @@ export function answerFromPublicInfo(message: string, knowledge: ChurchAssistant
   if (/\b(en vivo|transmision|transmiten|streaming|youtube)\b/.test(query)) return { text: 'Puedes abrir la transmisión y comprobar si hay un culto en vivo en este momento.', links: [{ label: 'Ver en vivo', href: '/en-vivo' }] };
   if (/\b(predica|predicas|sermon|sermones|mensaje|mensajes)\b/.test(query)) return { text: 'En la página de prédicas puedes explorar mensajes publicados por la iglesia.', links: [{ label: 'Ver prédicas', href: '/predicas' }] };
   if (/\b(biblia|biblico|biblica|leer la biblia|estudio biblico)\b/.test(query)) return { text: 'Puedes leer pasajes en el lector bíblico o explorar el estudio por libros y capítulos.', links: [{ label: 'Leer la Biblia', href: '/recursos/biblia' }, { label: 'Explorar el estudio bíblico', href: '/programas/estudio-biblico' }] };
-  if (/\b(doctrina|creencias|fe cuadrangular|principios de fe)\b/.test(query)) return { text: 'La página doctrinal presenta las creencias institucionales de la Iglesia Cuadrangular.', links: [{ label: 'Conocer la doctrina', href: '/nosotros/doctrina' }, CHURCH_LINKS.contact] };
+  if (/\b(doctrina|creencias|fe cuadrangular|principios de fe|evangelio cuadrangular|cuatro simbolos|que cree la iglesia|que cree iglesia|que creemos como iglesia|en que creemos|salvador|sanador|bautizador|rey que viene)\b/.test(query)) {
+    return {
+      text: 'La Iglesia Jerusalén anuncia a Jesucristo como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto. La página doctrinal reúne los principios de fe y sus referencias bíblicas.',
+      links: [CHURCH_LINKS.doctrine, { label: 'Conocer la iglesia', href: '/nosotros' }],
+    };
+  }
   if (/\b(quienes somos|que iglesia|denominacion|cuadrangular)\b/.test(query)) return { text: 'Somos la Iglesia Evangélica Cuadrangular Jerusalén y nos reunimos en Milagro, Ecuador. Conoce más sobre nuestra comunidad en la página institucional.', links: [{ label: 'Conocer la iglesia', href: '/nosotros' }, { label: 'Planificar una visita', href: '/visita' }] };
   if (/\b(donacion|donaciones|ofrenda|ofrendas|diezmo|diezmos|aportar|apoyo economico)\b/.test(query)) return { text: 'Puedes consultar los canales de diezmos y ofrendas publicados en la sección de donaciones.', links: [{ label: 'Ver donaciones', href: '/donaciones' }] };
   if (/\b(tienda|catalogo|productos|comprar|compras|pedido|pedidos|carrito)\b/.test(query)) return { text: 'En la tienda puedes consultar el catálogo publicado y revisar el precio, los detalles y la disponibilidad en cada producto. El chat no procesa pedidos ni pagos; usa las opciones que aparecen en la tienda.', links: [CHURCH_LINKS.store, { label: 'Ver carrito', href: '/cart' }, CHURCH_LINKS.contact] };

@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { BookOpen, CalendarDays, ChevronDown, Church, Compass, ExternalLink, GraduationCap, Headphones, Heart, MapPin, MessageCircle, Music, Radio, Send, ShoppingBag, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
-import { answerFromPublicInfo, CHURCH_LINKS, getKnowledgeNeeds, offlineAssistantAnswer } from './churchAssistantKnowledge';
+import { answerFromPublicInfo, CHURCH_LINKS, contextualizeFollowUp, getKnowledgeNeeds, offlineAssistantAnswer } from './churchAssistantKnowledge';
 import type { AssistantLink, PublicEventSummary, PublicMinistrySummary, PublicPodcastEpisodeSummary, PublicProgramSummary, PublicSpaceSummary } from './churchAssistantKnowledge';
 import type { Schedule } from '../../types';
 
@@ -22,9 +22,11 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: 'Pedir oración', icon: Heart, message: 'Quiero compartir una petición de oración.' },
   { label: 'Eventos', icon: CalendarDays, message: '¿Cuáles son los próximos eventos?' },
   { label: 'Ministerios', icon: Church, message: '¿Qué ministerios tiene la iglesia?' },
+  { label: 'Nuestra fe', icon: BookOpen, message: '¿Qué cree la Iglesia Cuadrangular?' },
   { label: 'Reservar espacio', icon: CalendarDays, message: '¿Qué espacios hay para reservar?' },
   { label: 'Tienda', icon: ShoppingBag, message: '¿Qué puedo encontrar en la tienda?' },
 ];
+const INITIAL_QUICK_ACTION_COUNT = 4;
 
 const HELLO = '¡Hola! Puedo orientarte con horarios, eventos, visitas, recursos, reservas y más. ¿Qué necesitas?';
 
@@ -39,6 +41,7 @@ function todayInEcuador() {
 export default function ChurchAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([{ id: 0, role: 'assistant', text: HELLO }]);
+  const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [scheduleRows, setScheduleRows] = useState<Schedule[] | null>();
@@ -76,9 +79,9 @@ export default function ChurchAssistantWidget() {
     eventRequest.current ??= (async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, description, start_date, start_time, end_time, emoji')
+        .select('id, title, description, start_date, end_date, start_time, end_time, location_name, emoji')
         .eq('is_public', true)
-        .gte('start_date', todayInEcuador())
+        .gte('end_date', todayInEcuador())
         .order('start_date', { ascending: true })
         .limit(30);
       return error ? null : (data ?? []) as PublicEventSummary[];
@@ -191,7 +194,8 @@ export default function ChurchAssistantWidget() {
 
     setIsSending(true);
     try {
-      const needs = getKnowledgeNeeds(text);
+      const knowledgeQuestion = contextualizeFollowUp(text, messages);
+      const needs = getKnowledgeNeeds(knowledgeQuestion);
       const [loadedSchedules, loadedEvents, loadedMinistries, loadedSpaces, loadedPrograms, loadedPodcastEpisodes] = await Promise.all([
         needs.includes('schedules') && scheduleRows === undefined ? loadSchedules() : Promise.resolve(scheduleRows),
         needs.includes('events') && eventRows === undefined ? loadEvents() : Promise.resolve(eventRows),
@@ -207,7 +211,7 @@ export default function ChurchAssistantWidget() {
       if (needs.includes('programs') && programRows === undefined) setProgramRows(loadedPrograms ?? null);
       if (needs.includes('podcastEpisodes') && podcastEpisodeRows === undefined) setPodcastEpisodeRows(loadedPodcastEpisodes ?? null);
 
-      const knownAnswer = answerFromPublicInfo(text, {
+      const knownAnswer = answerFromPublicInfo(knowledgeQuestion, {
         schedules: loadedSchedules,
         events: loadedEvents,
         ministries: loadedMinistries,
@@ -284,7 +288,7 @@ export default function ChurchAssistantWidget() {
               </p>
             </div>
             <button type="button" onClick={() => setIsOpen(false)} aria-label="Cerrar asistente" className="flex size-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10"><ChevronDown size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => setMessages([{ id: 0, role: 'assistant', text: HELLO }])} aria-label="Limpiar conversación" className="flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10 dark:hover:text-white"><X size={17} aria-hidden="true" /></button>
+            <button type="button" onClick={() => { setMessages([{ id: 0, role: 'assistant', text: HELLO }]); setShowAllQuickActions(false); }} aria-label="Limpiar conversación" className="flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10 dark:hover:text-white"><X size={17} aria-hidden="true" /></button>
           </header>
 
           <div ref={messageViewportRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-4" aria-live="polite" aria-relevant="additions text">
@@ -298,8 +302,14 @@ export default function ChurchAssistantWidget() {
             ))}
             {messages.length === 1 && <>
               <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/[.035]">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-[.15em] text-slate-400">Preguntas frecuentes</p>
-                <div className="grid grid-cols-2 gap-2">{QUICK_ACTIONS.map(({ label, icon: Icon, message }) => <button key={label} type="button" onClick={() => void sendMessage(message)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-semibold text-slate-600 transition hover:border-church-gold/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Icon size={14} aria-hidden="true" />{label}</button>)}</div>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[.15em] text-slate-400">Preguntas frecuentes</p>
+                  <button type="button" aria-expanded={showAllQuickActions} aria-controls="church-assistant-quick-actions" onClick={() => setShowAllQuickActions((expanded) => !expanded)} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-[10px] font-bold text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-church-gold-light dark:hover:bg-white/5">
+                    {showAllQuickActions ? 'Mostrar menos' : `Ver ${QUICK_ACTIONS.length - INITIAL_QUICK_ACTION_COUNT} más`}
+                    <ChevronDown size={13} className={showAllQuickActions ? 'rotate-180 transition-transform' : 'transition-transform'} aria-hidden="true" />
+                  </button>
+                </div>
+                <div id="church-assistant-quick-actions" className="grid grid-cols-2 gap-2">{(showAllQuickActions ? QUICK_ACTIONS : QUICK_ACTIONS.slice(0, INITIAL_QUICK_ACTION_COUNT)).map(({ label, icon: Icon, message }) => <button key={label} type="button" onClick={() => void sendMessage(message)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-semibold text-slate-600 transition hover:border-church-gold/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Icon size={14} aria-hidden="true" />{label}</button>)}</div>
               </div>
               <nav className="grid grid-cols-2 gap-2 pb-1" aria-label="Accesos rápidos">
                 <Link to="/en-vivo" className={ACTION_LINK_CLASS}><Radio size={13} aria-hidden="true" />En vivo</Link>

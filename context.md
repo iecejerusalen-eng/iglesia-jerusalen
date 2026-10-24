@@ -1,5 +1,21 @@
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 24-oct-2026 — Contexto en repreguntas de agenda
+
+Las repreguntas breves que nombran hoy, mañana, un día o un período cercano heredan si el turno anterior trataba de eventos o de horarios. Así «¿Y el domingo?» continúa la agenda de eventos cuando esa era la conversación, y continúa horarios cuando se consultaban cultos. Se limita a fechas cortas para no cambiar el sentido de una consulta nueva. Incluido en 1.14.21; publicación en curso.
+
+## 24-oct-2026 — Respuestas de agenda con detalles y vínculo directo
+
+El asistente usa inicio/fin del evento para encontrar actividades que se solapan con el período consultado, incluye un resumen breve de descripción y lugar públicos, y enlaza cada resultado al detalle de `/eventos?event=id`. El servidor Gemini recibe también fecha final y lugar publicados y se instruye a no inferir direcciones. Incluido en 1.14.21; publicación en curso.
+
+## 24-oct-2026 — Preguntas rápidas compactas del asistente
+
+La portada del chat muestra cuatro preguntas frecuentes y un control accesible para desplegar seis más; al limpiar la conversación, la lista vuelve a contraerse. Se conserva la disponibilidad de todos los temas con menos altura inicial en móvil. Incluido en 1.14.21; publicación en curso.
+
+## 24-oct-2026 — Respuesta doctrinal del asistente
+
+Ante consultas sobre la doctrina o la fe Cuadrangular, el asistente resume la misión publicada de Jesús como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto; enlaza los principios de fe y la página institucional. La instrucción de Gemini usa el mismo resumen y evita extrapolar posiciones locales. Incluido en 1.14.21; publicación en curso.
+
 ## 24-oct-2026 — Ampliación del asistente público
 
 El asistente añade respuestas y accesos para podcast, alabanzas, programas, Aula Virtual, tienda, comunidad y reservas. Consulta espacios activos públicos y, cuando se solicitan, los catálogos de programas y episodios publicados; muestra metadatos públicos y enlaces a sus fichas. Aclara que la disponibilidad por fecha debe confirmarse y que las solicitudes requieren iniciar sesión. No recupera reservas personales ni procesa pedidos. La portada incorpora accesos directos a Reservas y Tienda; la detección de ubicación distingue preguntas de mapas de frases como «dónde escucho». Release 1.14.19 publicado en Vercel en el commit `626be19`; `church-assistant` está en Supabase v2 y Gemini sigue sin configurarse. Los catálogos consultados pueden estar vacíos si no hay elementos publicados. Detalles en `docs/church-assistant.md`.

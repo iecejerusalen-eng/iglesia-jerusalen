@@ -8,6 +8,8 @@ El botón aparece en las páginas públicas que usan `PublicLayout`. El asistent
 - Próximos eventos de `events` que tengan `is_public = true`.
 - Nombres, categorías, descripciones y horarios publicados de `ministries`.
 - Eventos filtrados por hoy, mañana, esta semana, fin de semana o día de la semana; las preguntas como «¿Qué hay mañana?» y «¿Qué hay el domingo?» consultan la agenda en vez de confundirse con horarios de cultos.
+- La agenda considera eventos que se solapan con el período consultado, incluso si comenzaron antes; resume descripción y lugar publicados y ofrece enlaces directos a los detalles de hasta tres eventos.
+- Las repreguntas breves por día conservan el tema del turno anterior cuando trataba de eventos o horarios, para que «¿Y mañana?» siga consultando esa misma fuente.
 - Escuela Dominical respondida desde el horario publicado y vinculada con el ministerio infantil cuando la pregunta busca opciones para niños.
 - Accesos y respuestas para prédicas, podcast, biblioteca de alabanzas e himnos, Programas y Aula Virtual.
 - Listas los programas publicados y los episodios recientes del podcast cuando la pregunta lo solicita; muestra solo metadatos públicos y enlaza a las fichas oficiales.
@@ -17,6 +19,9 @@ El botón aparece en las páginas públicas que usan `PublicLayout`. El asistent
 - Preguntas de primera visita, niños, accesibilidad, parqueo, vestimenta y registro previo, basadas en `/visita`.
 - Atajos a eventos, ministerios, oración, contacto, prédicas, transmisión, Biblia, doctrina, estudio y donaciones.
 - Atajos a Reservas y Tienda. El saludo inicial invita a preguntar por recursos y solicitudes.
+- La portada muestra cuatro preguntas frecuentes y permite desplegar el resto; el botón informa su estado a tecnologías de asistencia y devuelve la lista compacta al limpiar la conversación.
+- Resumen de la misión doctrinal Cuadrangular: Jesús como Salvador, Bautizador con el Espíritu Santo, Sanador y Rey que viene pronto, enlazado a los principios de fe y sus referencias bíblicas.
+- El mismo resumen y su límite de alcance están incluidos en las instrucciones del servidor Gemini para que las respuestas abiertas usen la doctrina publicada y no extrapolen posiciones locales.
 
 Horarios, eventos, ministerios, programas publicados y episodios publicados del podcast se consultan desde el navegador con el cliente anónimo de Supabase, igual que en sus páginas públicas. Los errores de consulta muestran una alternativa de contacto; no se presentan como listas vacías.
 

@@ -2,6 +2,13 @@
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.21] - 2026-10-24
+
+### Mejorado
+- El asistente responde con el resumen doctrinal publicado de la Iglesia Cuadrangular y enlaza los principios de fe; se añade esta consulta a las preguntas sugeridas y al contexto del servidor Gemini.
+- La portada del chat prioriza cuatro preguntas frecuentes y despliega las demás bajo demanda para reducir el desplazamiento inicial en móvil.
+- Las respuestas de agenda incluyen descripción y lugar publicados, enlazan directamente al evento y consideran actividades de varios días que siguen vigentes.
+- Las repreguntas breves de día conservan el contexto de eventos u horarios; «¿Y mañana?» y «¿Y el domingo?» consultan el tipo de información que se venía hablando.
 ## [1.14.20] - 2026-10-24
 
 ### Añadido
