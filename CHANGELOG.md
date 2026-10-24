@@ -7,7 +7,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Mejorado
 - La pestaña Biblia queda dedicada al lector compartido; el estudio de Génesis 1 vive en una pestaña propia.
-- El Atlas narrativo de Génesis 1 incorpora una ilustración original, seis escenas seleccionables y acceso al pasaje exacto de cada día.
+- El Atlas narrativo de Génesis 1 presenta seis ilustraciones digitales específicas, escenas seleccionables, secuencia accesible y acceso al pasaje exacto de cada día.
 - La guía de Génesis 1 incluye un enlace adicional a un video oficial de Proyecto Biblia; los medios siguen en su sitio de origen.
 
 ## [1.14.14] - 2026-10-24

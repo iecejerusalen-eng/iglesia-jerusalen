@@ -107,10 +107,21 @@
   color: #a16207;
 }
 
+.bible-atlas-scene-image {
+  animation: bible-atlas-scene-arrive 360ms cubic-bezier(.2, .7, .2, 1) both;
+}
+
+@keyframes bible-atlas-scene-arrive {
+  from { opacity: .68; transform: scale(1.015); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bible-story-card,
-  .bible-story-image {
+  .bible-story-image,
+  .bible-atlas-scene-image {
     transition: none;
+    animation: none;
   }
 
   .bible-story-card:hover {

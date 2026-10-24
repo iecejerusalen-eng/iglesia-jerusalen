@@ -255,6 +255,14 @@ export default function BibleBookCatalog() {
 function GenesisNarrativeAtlas({ onReadReference }: { onReadReference: (reference: string) => void }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedScene = genesisChapterOne.structure[selectedIndex];
+  const sceneVisuals = [
+    { src: '/images/bible-study/genesis-scenes/genesis-day-1-scene-v01.jpg', alt: 'Luz que aparece sobre un horizonte oscuro, ilustración interpretativa del primer día de Génesis 1.' },
+    { src: '/images/bible-study/genesis-scenes/genesis-day-2-scene-v01.jpg', alt: 'Cielo abierto sobre las aguas, ilustración interpretativa del segundo día de Génesis 1.' },
+    { src: '/images/bible-study/genesis-scenes/genesis-day-3-scene-v01.jpg', alt: 'Tierra seca, vegetación y árboles entre aguas, ilustración interpretativa del tercer día de Génesis 1.' },
+    { src: '/images/bible-study/genesis-scenes/genesis-day-4-scene-v01.jpg', alt: 'Sol, luna y estrellas sobre el horizonte, ilustración interpretativa del cuarto día de Génesis 1.' },
+    { src: '/images/bible-study/genesis-scenes/genesis-day-5-scene-v01.jpg', alt: 'Aves sobre el mar y vida bajo el agua, ilustración interpretativa del quinto día de Génesis 1.' },
+    { src: '/images/bible-study/genesis-scenes/genesis-day-6-scene-v01.jpg', alt: 'Animales terrestres y dos figuras humanas en un paisaje fértil, ilustración interpretativa del sexto día de Génesis 1.' },
+  ];
   const sceneZones = [
     { title: 'Cielo', description: 'Luz, lumbreras y aves', days: [0, 3, 4] },
     { title: 'Aguas y mares', description: 'Límites y vida acuática', days: [1, 2, 4] },
@@ -264,12 +272,12 @@ function GenesisNarrativeAtlas({ onReadReference }: { onReadReference: (referenc
   return <div className="space-y-5">
     <article className="overflow-hidden rounded-[1.5rem] border border-amber-900/15 bg-[#101d35] text-white shadow-[0_24px_60px_-42px_rgba(16,29,53,.75)]">
       <div className="relative">
-        <img src="/images/bible-study/genesis-creation-story-v01.webp" alt="Ilustración panorámica de la creación: luz sobre el horizonte, cielo, aguas, vegetación, aves, animales y dos figuras humanas a lo lejos." width={1672} height={941} loading="lazy" decoding="async" sizes="(max-width: 1024px) 100vw, 70vw" className="aspect-[16/9] w-full object-cover" />
+        <img key={selectedIndex} src={sceneVisuals[selectedIndex].src} alt={sceneVisuals[selectedIndex].alt} width={720} height={720} loading="lazy" decoding="async" sizes="(max-width: 1024px) 100vw, 70vw" className="bible-atlas-scene-image aspect-[16/9] w-full object-cover" style={{ objectPosition: selectedIndex === 5 ? 'center 68%' : 'center' }} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#081326]/90 via-[#081326]/10 to-transparent" aria-hidden="true" />
         <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-amber-200">Atlas narrativo · no geográfico</p>
-          <h5 className="mt-1 font-serif text-2xl sm:text-3xl">Un mundo ordenado y lleno de vida.</h5>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-white/80 sm:text-sm">Recorre los ámbitos de Génesis 1 y observa cómo avanza el relato. Esta ilustración es una interpretación artística, no una reconstrucción histórica ni un mapa a escala.</p>
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-amber-200">Atlas narrativo · {selectedScene.label} · {selectedScene.reference}</p>
+          <h5 className="mt-1 font-serif text-2xl sm:text-3xl">{selectedScene.theme}.</h5>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-white/80 sm:text-sm">Observa esta escena y sigue el pasaje en el lector bíblico. Es una ilustración digital interpretativa: no representa un mapa geográfico ni una reconstrucción histórica.</p>
         </div>
       </div>
       <div className="grid gap-px bg-white/10 sm:grid-cols-3">
@@ -282,12 +290,13 @@ function GenesisNarrativeAtlas({ onReadReference }: { onReadReference: (referenc
     <section aria-labelledby="genesis-atlas-scenes" className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-white/[.03] sm:p-5">
       <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-amber-800 dark:text-amber-200">La secuencia del relato</p><h5 id="genesis-atlas-scenes" className="mt-1 font-serif text-xl">Explora cada escena</h5></div><span className="text-[10px] text-slate-500 dark:text-slate-400">Orden narrativo · sin fechas de calendario</span></div>
       <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Escenas de Génesis 1">
-        {genesisChapterOne.structure.map((scene, index) => <button key={scene.label} type="button" aria-pressed={selectedIndex === index} onClick={() => setSelectedIndex(index)} className={`min-h-12 rounded-xl border px-2 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${selectedIndex === index ? 'border-amber-500/50 bg-gradient-to-br from-amber-100 to-[#f8e4b2] text-amber-950 shadow-sm dark:from-amber-200/20 dark:to-amber-200/[.06] dark:text-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:border-amber-500/40 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-300'}`}><span className="block">{scene.label}</span><span className="mt-0.5 block text-[9px] font-medium opacity-75">{scene.reference.replace('Génesis ', '')}</span></button>)}
+        {genesisChapterOne.structure.map((scene, index) => <button key={scene.label} type="button" aria-label={`${scene.label}: ${scene.theme}, ${scene.reference}`} aria-pressed={selectedIndex === index} onClick={() => setSelectedIndex(index)} className={`bible-atlas-scene-choice overflow-hidden rounded-xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${selectedIndex === index ? 'border-amber-500 bg-amber-50 shadow-[0_8px_22px_-15px_rgba(157,102,14,.75)] dark:bg-amber-200/10' : 'border-slate-200 bg-white hover:border-amber-500/50 dark:border-white/10 dark:bg-white/[.03]'}`}><img src={sceneVisuals[index].src} alt="" width={720} height={720} loading="lazy" decoding="async" sizes="(max-width: 639px) 30vw, (max-width: 1023px) 16vw, 120px" className="aspect-[4/3] w-full object-cover" style={{ objectPosition: index === 5 ? 'center 68%' : 'center' }} /><span className="block p-2"><span className="block text-[10px] font-bold text-slate-900 dark:text-slate-100">{scene.label}</span><span className="mt-0.5 block text-[9px] leading-4 text-slate-500 dark:text-slate-400">{scene.reference.replace('Génesis ', '')}</span></span></button>)}
       </div>
       <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-800/15 bg-[#fbf6e9] p-4 dark:border-amber-200/10 dark:bg-amber-200/[.04] sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="text-[10px] font-bold uppercase tracking-[.13em] text-amber-900 dark:text-amber-200">{selectedScene.label} · {selectedScene.reference}</p><h6 className="mt-1 font-serif text-lg text-[#15213a] dark:text-[#f7f3e8]">{selectedScene.theme}</h6><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{sceneZones.filter((zone) => zone.days.includes(selectedIndex)).map((zone) => zone.title).join(' · ')}</p></div>
+        <div><p className="text-[10px] font-bold uppercase tracking-[.13em] text-amber-900 dark:text-amber-200">{selectedScene.label} · {selectedScene.reference}</p><h6 className="mt-1 font-serif text-lg text-[#15213a] dark:text-[#f7f3e8]">{selectedScene.theme}</h6><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Ámbitos del relato: {sceneZones.filter((zone) => zone.days.includes(selectedIndex)).map((zone) => zone.title).join(' · ')}</p></div>
         <button type="button" onClick={() => onReadReference(selectedScene.reference)} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[#111d35] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-200 dark:text-slate-950 dark:hover:bg-amber-100"><BookOpen size={15} aria-hidden="true" />Leer esta escena en Biblia<ArrowRight size={14} aria-hidden="true" /></button>
       </div>
+      <p className="mt-3 text-[10px] leading-5 text-slate-500 dark:text-slate-400">Las seis imágenes son ilustraciones digitales creadas para acompañar la lectura; no son fotografías ni evidencia histórica o geográfica.</p>
     </section>
   </div>;
 }
