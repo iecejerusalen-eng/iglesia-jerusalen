@@ -93,7 +93,9 @@ const fetchWithRetry = async (url: string, retries = 3, baseDelay = 1000, timeou
   throw new Error("Unreachable");
 };
 
-export default function Bible() {
+type BibleReaderProps = { embedded?: boolean; onChapterNavigate?: (bookId: string, chapter: number) => void };
+
+function BibleReaderContent({ embedded = false, onChapterNavigate }: BibleReaderProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Route/Query State
@@ -396,6 +398,11 @@ export default function Bible() {
       }
     });
     setSearchParams(newParams);
+    if (embedded && (Object.hasOwn(params, 'libro') || Object.hasOwn(params, 'capitulo'))) {
+      const nextBookId = params.libro === null ? bookId : String(params.libro ?? bookId);
+      const nextChapter = params.capitulo === null ? chapterNum : Number(params.capitulo ?? chapterNum);
+      if (Number.isInteger(nextChapter)) onChapterNavigate?.(nextBookId, nextChapter);
+    }
   };
 
   // Selection/Copy Mechanics
@@ -629,8 +636,8 @@ export default function Bible() {
   };
   const getFontClass = () => fontFamily === 'sans' ? 'font-sans' : 'font-serif';
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${getThemeClasses()}`}>
-      <div id="bible_reader" className={`max-w-6xl mx-auto px-4 py-8 space-y-6 scroll-mt-28 ${focusMode ? 'pt-24' : ''}`}>
+    <div className={`${embedded ? 'w-full' : 'min-h-screen'} transition-colors duration-200 ${getThemeClasses()}`}>
+      <div id="bible_reader" className={`${embedded ? 'mx-auto max-w-6xl px-0 py-2' : 'mx-auto max-w-6xl px-4 py-8'} space-y-6 scroll-mt-28 ${focusMode ? 'pt-24' : ''}`}>
         
         {/* Main Controls Panel - Glassmorphism & Sticky */}
         {!focusMode && (
@@ -1303,4 +1310,12 @@ export default function Bible() {
       )}
     </div>
   );
+}
+
+export function EmbeddedBibleReader(props: Omit<BibleReaderProps, 'embedded'>) {
+  return <BibleReaderContent embedded {...props} />;
+}
+
+export default function Bible() {
+  return <BibleReaderContent />;
 }

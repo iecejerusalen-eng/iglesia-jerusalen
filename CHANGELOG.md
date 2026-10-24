@@ -3,6 +3,17 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.12] - 2026-10-24
+
+### Añadido
+- Catálogo de los 66 libros bíblicos, agrupados en 12 secciones, con búsqueda, contexto de cada sección, introducción a Génesis e índice de capítulos.
+- Génesis 1 como estudio piloto con el lector bíblico compartido y pestañas contextuales de Biblia, Atlas, Enciclopedia y Cronología.
+- Ilustraciones originales del jardín del Edén y de Adán nombrando animales, con referencias, texto alternativo y notas que las identifican como arte interpretativo.
+
+### Mejorado
+- Los capítulos se pueden abrir mediante enlaces directos y mantener su selección al recargar; las herramientas se adaptan a pantallas móviles.
+- «Antes de leer» reúne la introducción del libro y el contexto de su sección.
+
 ## [1.14.11] - 2026-10-24
 
 ### Corregido

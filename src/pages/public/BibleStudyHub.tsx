@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Anchor, ArrowDownRight, ArrowRight, BookOpen, CalendarDays, Compass, Map, MapPin,
+  ArrowDownRight, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, Compass, Map, MapPin,
   Play, ScrollText, Search, Sparkles, UsersRound, Waves,
 } from 'lucide-react';
 import { BibleVerseLink } from '../../components/ui/BibleVerseLink';
@@ -9,8 +9,11 @@ import QuadrangularSymbol from '../../components/public/QuadrangularSymbol';
 import { bibleStudyAtlasMapEntries, bibleStudyEventEntries, bibleStudyMapLocationEntries, bibleStudyPatriarchLocationEntries, bibleStudyPeopleEntries, bibleStudyPlaceEntries, bibleStudyQuadrangularCoreValues, bibleStudyQuadrangularEntries, type BibleStudyAtlasMapEntry, type BibleStudyPlaceEntry } from '../../data/bibleStudyEncyclopedia';
 import { bibleStudySources } from '../../data/bibleStudySources';
 import { bibleOverviewTimeline, exodusTimeline, jesusTimeline, patriarchsTimeline } from '../../data/bibleStudyTimeline';
+import BibleBookCatalog from '../../components/public/bible/BibleBookCatalog';
+import { BIBLE_BOOKS } from '../../config/bibleBooks';
+import { parseBibleReferences } from '../../utils/bibleParser';
 
-type StudySection = 'atlas' | 'encyclopedia' | 'chronology';
+type StudySection = 'books' | 'atlas' | 'encyclopedia' | 'chronology';
 type EncyclopediaKind = 'places' | 'people' | 'events' | 'faith';
 type ChronologyScope = 'overview' | 'acts' | 'patriarchs' | 'jesus' | 'exodus';
 
@@ -35,7 +38,7 @@ function readSavedStudy(): SavedStudy | null {
     const saved: unknown = JSON.parse(window.localStorage.getItem(savedStudyKey) ?? 'null');
     if (typeof saved !== 'object' || saved === null) return null;
     const value = saved as Record<string, unknown>;
-    const validSection = value.section === 'atlas' || value.section === 'encyclopedia' || value.section === 'chronology';
+    const validSection = value.section === 'books' || value.section === 'atlas' || value.section === 'encyclopedia' || value.section === 'chronology';
     const validKind = value.encyclopediaKind === 'places' || value.encyclopediaKind === 'people' || value.encyclopediaKind === 'events' || value.encyclopediaKind === 'faith';
     const validScope = value.chronologyScope === 'overview' || value.chronologyScope === 'acts' || value.chronologyScope === 'patriarchs' || value.chronologyScope === 'jesus' || value.chronologyScope === 'exodus';
     const validEntry = validKind && (value.encyclopediaKind === 'places' ? bibleStudyPlaceEntries : value.encyclopediaKind === 'people' ? bibleStudyPeopleEntries : value.encyclopediaKind === 'events' ? bibleStudyEventEntries : bibleStudyQuadrangularEntries).some((entry) => entry.id === value.encyclopediaEntryId);
@@ -49,6 +52,7 @@ function readSavedStudy(): SavedStudy | null {
 }
 
 function savedStudyTitle(saved: SavedStudy): string {
+  if (saved.section === 'books') return 'Catálogo bíblico';
   if (saved.section === 'atlas') {
     if (saved.atlasMapId === 'paul-journeys') return stops.find((entry) => entry.id === saved.routeStopId)?.name ?? 'Viaje a Roma';
     if (saved.atlasMapId === 'palestine-new-testament') return bibleStudyMapLocationEntries.find((entry) => entry.id === saved.gospelLocationId)?.title ?? 'Palestina';
@@ -83,6 +87,26 @@ const milestones = bibleStudyEventEntries;
 
 function ReferenceLinks({ references, className = '' }: { references: string[]; className?: string }) {
   return <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">{references.map((reference, index) => <span key={reference} className="inline-flex items-center gap-2">{index > 0 && <span aria-hidden="true" className="text-slate-400">·</span>}<BibleVerseLink reference={reference} className={className} /></span>)}</span>;
+}
+
+function previousVerseHref(reference: string) {
+  const parsed = parseBibleReferences(reference).find((item) => item.bookId && item.chapter);
+  const currentVerse = Number(parsed?.verses.match(/\d+/)?.[0]);
+  if (!parsed || !Number.isInteger(currentVerse) || currentVerse <= 1) return null;
+
+  const params = new URLSearchParams({ libro: parsed.bookId, capitulo: parsed.chapter, versiculo: String(currentVerse - 1) });
+  return `/recursos/biblia?${params.toString()}`;
+}
+
+function nextChapterHref(reference: string) {
+  const parsed = parseBibleReferences(reference).find((item) => item.bookId && item.chapter);
+  if (!parsed) return null;
+  const book = BIBLE_BOOKS.find((item) => item.id === parsed.bookId);
+  const chapter = Number(parsed.chapter);
+  if (!book || !Number.isInteger(chapter) || chapter >= book.chapters) return null;
+
+  const params = new URLSearchParams({ libro: parsed.bookId, capitulo: String(chapter + 1) });
+  return `/recursos/biblia?${params.toString()}`;
 }
 
 function PlaceSourceNote({ entry }: { entry: BibleStudyPlaceEntry | undefined }) {
@@ -211,13 +235,8 @@ function PatriarchAtlasMap({ selectedLocationId, onSelectLocation, onOpenScene, 
   </article>;
 }
 
-const sectionOptions: Array<{ id: StudySection; label: string; icon: typeof Map }> = [
-  { id: 'atlas', label: 'Atlas', icon: Map },
-  { id: 'encyclopedia', label: 'Enciclopedia', icon: BookOpen },
-  { id: 'chronology', label: 'Cronología', icon: ScrollText },
-];
-
 const heroBySection: Record<StudySection, { lead: string; accent: string; description: string }> = {
+  books: { lead: 'Abre la Escritura,', accent: 'libro por libro.', description: 'Explora los 66 libros y sus capítulos por secciones. Empieza con la introducción a Génesis, conoce el Pentateuco y conecta cada pasaje con el lector bíblico compartido.' },
   atlas: { lead: 'Explora el mundo bíblico,', accent: 'mapa a mapa.', description: 'Ubica los lugares, sigue las rutas y conecta cada mapa con el relato bíblico, su contexto y el lector compartido.' },
   encyclopedia: { lead: 'Entra en el relato,', accent: 'con más contexto.', description: 'Consulta lugares, personas, acontecimientos y los cuatro énfasis del Evangelio Cuadrangular, unidos a sus pasajes bíblicos.' },
   chronology: { lead: 'Sigue la historia bíblica,', accent: 'paso a paso.', description: 'Recorre el panorama de la Escritura o explora con más detalle un episodio y su lugar en el relato.' },
@@ -289,7 +308,7 @@ function MediterraneanRoute({ selectedStop, onSelect }: { selectedStop: string; 
 }
 
 export default function BibleStudyHub() {
-  const [section, setSection] = useState<StudySection>('atlas');
+  const [section, setSection] = useState<StudySection>('books');
   const [selectedAtlasMapId, setSelectedAtlasMapId] = useState('paul-journeys');
   const [selectedGospelLocationId, setSelectedGospelLocationId] = useState('jerusalem');
   const [selectedPatriarchLocationId, setSelectedPatriarchLocationId] = useState('haran');
@@ -303,9 +322,18 @@ export default function BibleStudyHub() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const pendingMilestoneScrollRef = useRef<string | null>(null);
   const heroContent = heroBySection[section];
-  const wideStudyView = section === 'chronology' || section === 'encyclopedia';
+  const wideStudyView = section === 'books' || section === 'chronology' || section === 'encyclopedia';
   const selectedAtlasMap = bibleStudyAtlasMapEntries.find((map) => map.id === selectedAtlasMapId) ?? bibleStudyAtlasMapEntries[0];
   const stop = useMemo(() => stops.find((item) => item.id === selectedStop) ?? stops[0], [selectedStop]);
+  const atlasReference = selectedAtlasMap.id === 'paul-journeys'
+    ? stop.references[0]
+    : selectedAtlasMap.id === 'palestine-new-testament'
+      ? bibleStudyMapLocationEntries.find((item) => item.id === selectedGospelLocationId)?.references[0] ?? selectedAtlasMap.references[0]
+      : selectedAtlasMap.id === 'patriarchs'
+        ? bibleStudyPatriarchLocationEntries.find((item) => item.id === selectedPatriarchLocationId)?.references[0] ?? selectedAtlasMap.references[0]
+        : selectedAtlasMap.references[0];
+  const previousVerse = previousVerseHref(atlasReference);
+  const nextChapter = nextChapterHref(atlasReference);
   const relatedPeople = stop.people.map((personId) => bibleStudyPeopleEntries.find((person) => person.id === personId)).filter((person) => person !== undefined);
   const relatedEvents = bibleStudyEventEntries.filter((event) => event.placeIds.includes(stop.id));
   const selectedStudyEvent = relatedEvents.find((event) => event.id === selectedMilestoneId) ?? relatedEvents[0] ?? bibleStudyEventEntries[0];
@@ -428,19 +456,17 @@ export default function BibleStudyHub() {
           <Link to="/programas" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-slate-300 dark:hover:text-amber-200">← Volver a programas y estudios</Link>
           <div className="mt-8 grid items-end gap-8 lg:grid-cols-[1fr_auto]">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-100/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.19em] text-amber-900 dark:border-amber-300/20 dark:bg-amber-200/10 dark:text-amber-200"><Sparkles size={13} /> Atlas · Enciclopedia · Cronología</div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-100/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.19em] text-amber-900 dark:border-amber-300/20 dark:bg-amber-200/10 dark:text-amber-200"><Sparkles size={13} /> Lectura bíblica · catálogo por secciones</div>
               <h1 className="mt-5 max-w-4xl font-serif text-4xl leading-[1.04] tracking-tight sm:text-6xl lg:text-7xl">{heroContent.lead}<br /><span className="bg-gradient-to-r from-[#9a6517] via-[#d5a943] to-[#9a6517] bg-clip-text text-transparent dark:from-[#f0d899] dark:via-[#f8e9bd] dark:to-[#c89d42]">{heroContent.accent}</span></h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">{heroContent.description}</p>
             </div>
-            <Link to="/recursos/biblia" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#101d37] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200"><BookOpen size={17} /> Abrir el lector bíblico <ArrowRight size={16} /></Link>
+            {section !== 'books' && <button type="button" onClick={() => setSection('books')} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:border-amber-600/40 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-white/[.04] dark:text-slate-100 dark:hover:text-amber-100"><BookOpen size={17} /> Volver al catálogo <ArrowRight size={16} /></button>}
           </div>
 
           <div className={`mt-10 grid gap-5 ${wideStudyView ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,.85fr)]'}`}>
             <div className="min-w-0">
-              {studyToResume && <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white/60 px-5 py-4 text-xs text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400 sm:flex-row sm:items-center"><p><span className="font-bold text-amber-900 dark:text-amber-100">{hasInteracted ? 'Selección actual:' : 'Tu último estudio:'}</span> {savedStudyTitle(studyToResume)} <span className="text-slate-500 dark:text-slate-400">· {hasInteracted ? 'puedes retomarlo' : 'guardado en este dispositivo'}</span></p><button type="button" onClick={() => resumeSavedStudy(studyToResume)} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#101d37] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200"><BookOpen size={14} aria-hidden="true" /> Retomar <ArrowRight size={13} aria-hidden="true" /></button></div>}
-              <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Herramientas de estudio bíblico">
-                {sectionOptions.map(({ id, label, icon: Icon }) => <button key={id} type="button" role="tab" aria-selected={section === id} onClick={() => setSection(id)} className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${section === id ? 'border-[#13213a] bg-[#13213a] text-white shadow-md dark:border-amber-300 dark:bg-amber-300 dark:text-slate-950' : 'border-slate-300 bg-white/75 text-slate-600 hover:border-amber-500/50 hover:text-amber-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-amber-200'}`}><Icon size={16} />{label}</button>)}
-              </div>
+              {studyToResume && !(studyToResume.section === 'books' && section === 'books') && <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white/60 px-5 py-4 text-xs text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400 sm:flex-row sm:items-center"><p><span className="font-bold text-amber-900 dark:text-amber-100">{hasInteracted ? 'Selección actual:' : 'Tu último estudio:'}</span> {savedStudyTitle(studyToResume)} <span className="text-slate-500 dark:text-slate-400">· {hasInteracted ? 'puedes retomarlo' : 'guardado en este dispositivo'}</span></p><button type="button" onClick={() => resumeSavedStudy(studyToResume)} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#101d37] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200"><BookOpen size={14} aria-hidden="true" /> Retomar <ArrowRight size={13} aria-hidden="true" /></button></div>}
+              {section !== 'books' && <div className="mb-4"><button type="button" onClick={() => setSection('books')} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-300 bg-white/75 px-4 text-sm font-bold text-slate-700 transition hover:border-amber-500/50 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:text-amber-100"><ArrowRight className="rotate-180" size={15} />Volver al catálogo</button></div>}
 
               <details className="mb-5 overflow-hidden rounded-2xl border border-amber-700/15 bg-white/70 dark:border-amber-200/10 dark:bg-white/[.03]">
                 <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm font-bold text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-slate-100 sm:px-5">
@@ -459,6 +485,7 @@ export default function BibleStudyHub() {
                 </div>
               </details>
 
+              {section === 'books' && <BibleBookCatalog />}
               {section === 'atlas' && <section aria-label="Atlas bíblico" className="space-y-4">
                 <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-amber-800 dark:text-amber-200">Mapas para recorrer la Biblia</p><h2 className="mt-1 font-serif text-2xl sm:text-3xl">Elige una época o un viaje</h2></div><span className="rounded-full border border-amber-700/15 bg-amber-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-amber-950 dark:border-amber-200/15 dark:bg-amber-200/10 dark:text-amber-100">{bibleStudyAtlasMapEntries.length} mapas</span></div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Seleccionar mapa bíblico">
@@ -526,7 +553,10 @@ export default function BibleStudyHub() {
               <section className="rounded-[1.7rem] border border-amber-900/10 bg-white/90 p-5 shadow-[0_22px_55px_-42px_rgba(21,31,47,.55)] dark:border-amber-200/10 dark:bg-slate-900/85 sm:p-6">
                 <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.17em] text-amber-800 dark:text-amber-200">Estación seleccionada</p><h2 className="mt-2 font-serif text-3xl">{stop.name}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{stop.region}</p></div><span className="rounded-2xl bg-amber-100 p-3 text-amber-900 dark:bg-amber-200/10 dark:text-amber-200"><MapPin size={20} /></span></div>
                 <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{stop.note}</p>
-                <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-100/80 px-3 py-2.5 text-xs font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300"><Anchor size={14} className="text-amber-700 dark:text-amber-200" />Pasaje relacionado</div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {previousVerse ? <Link to={previousVerse} aria-label={`Leer el versículo anterior a ${atlasReference}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 transition hover:border-amber-500/50 hover:bg-amber-50 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-200 dark:hover:bg-amber-200/10 dark:hover:text-amber-100 sm:gap-2 sm:px-3 sm:text-sm"><ChevronLeft size={15} aria-hidden="true" />Anterior versículo</Link> : <button type="button" disabled className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-400 dark:border-white/10 dark:bg-white/[.02] dark:text-slate-500 sm:gap-2 sm:px-3 sm:text-sm"><ChevronLeft size={15} aria-hidden="true" />Anterior versículo</button>}
+                  {nextChapter ? <Link to={nextChapter} aria-label={`Leer el siguiente capítulo después de ${atlasReference}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 transition hover:border-amber-500/50 hover:bg-amber-50 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-200 dark:hover:bg-amber-200/10 dark:hover:text-amber-100 sm:gap-2 sm:px-3 sm:text-sm">Siguiente capítulo<ChevronRight size={15} aria-hidden="true" /></Link> : <button type="button" disabled className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold text-slate-400 dark:border-white/10 dark:bg-white/[.02] dark:text-slate-500 sm:gap-2 sm:px-3 sm:text-sm">Siguiente capítulo<ChevronRight size={15} aria-hidden="true" /></button>}
+                </div>
                 <div className="mt-3 text-sm"><ReferenceLinks references={stop.references} className="font-bold text-blue-800 dark:text-amber-200" /></div>
                 <div className="mt-5 border-t border-slate-200 pt-4 dark:border-white/10"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.15em] text-slate-500 dark:text-slate-400">Personas vinculadas</p><div className="flex flex-wrap gap-2">{relatedPeople.map((person) => <button key={person.id} type="button" onClick={() => { setEncyclopediaKind('people'); setEncyclopediaEntryId(person.id); setEncyclopediaQuery(''); setSection('encyclopedia'); }} className="inline-flex items-center gap-1.5 rounded-full border border-amber-800/15 bg-amber-50/80 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-amber-600/50 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-amber-200/15 dark:bg-amber-200/5 dark:text-slate-200 dark:hover:text-amber-100"><UsersRound size={12} className="text-amber-700 dark:text-amber-200" />{person.title}</button>)}</div>{relatedEvents.length > 0 && <><p className="mb-2 mt-4 text-[10px] font-bold uppercase tracking-[.15em] text-slate-500 dark:text-slate-400">Acontecimientos cercanos</p><div className="flex flex-wrap gap-2">{relatedEvents.map((event) => <button key={event.id} type="button" onClick={() => { setEncyclopediaKind('events'); setEncyclopediaEntryId(event.id); setEncyclopediaQuery(''); setSelectedMilestoneId(event.id); setSection('encyclopedia'); }} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-amber-600/50 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-200 dark:hover:text-amber-100"><CalendarDays size={12} className="text-amber-700 dark:text-amber-200" />{event.title}</button>)}</div></>}</div>
               </section>
@@ -568,10 +598,10 @@ export default function BibleStudyHub() {
             </aside>
           </div>
 
-          <div className="mt-8 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white/60 px-5 py-4 text-xs text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400 sm:flex-row sm:items-center">
+          {section === 'atlas' && <div className="mt-8 flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white/60 px-5 py-4 text-xs text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400 sm:flex-row sm:items-center">
             <span>{selectedAtlasMap.id === 'paul-journeys' ? 'Estudio basado en Hechos 27–28 · ' : `${selectedAtlasMap.title} · `}Cartografía de ChurchMaps, declarada de dominio público por su fuente.</span>
             {selectedAtlasMap.id === 'paul-journeys' ? <Link to="/recursos/biblia?libro=hechos&capitulo=28" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-blue-800 hover:text-amber-800 dark:text-amber-200">Continuar leyendo Hechos 28 <ArrowRight size={14} /></Link> : <span className="text-slate-600 dark:text-slate-300"><ReferenceLinks references={selectedAtlasMap.references.slice(0, 2)} className="font-bold text-blue-800 dark:text-amber-200" /></span>}
-          </div>
+          </div>}
         </div>
       </section>
     </main>
