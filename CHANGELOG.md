@@ -3,6 +3,15 @@
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.14.10] - 2026-10-23
+
+### Añadido
+- «El Código de las Parábolas», episodio piloto interactivo sobre la moneda perdida, con entrada desde el catálogo de juegos y ruta pública directa.
+
+### Mejorado
+- Descubrimiento de objetos mediante zonas de toque discretas y clicables, adaptadas a teclado, móvil y movimiento reducido.
+- Barrido de escoba con inclinación, rebote y polvo; la moneda aparece con giro y resorte, y la lámpara parpadea suavemente.
+
 ## [1.14.9] - 2026-10-23
 
 ### Añadido

@@ -58,6 +58,7 @@ const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionari
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
 const GuessCharacter = lazyWithRetry(() => import('../pages/public/games/GuessCharacter').then(m => ({ default: m.GuessCharacter })));
+const ParableCode = lazyWithRetry(() => import('../pages/public/games/ParableCode').then(m => ({ default: m.ParableCode })));
 const VolunteerSchedule = lazyWithRetry(() => import('../pages/public/VolunteerSchedule'));
 const MyChurch = lazyWithRetry(() => import('../pages/public/MyChurch'));
 const Bookings = lazyWithRetry(() => import('../pages/public/Bookings'));
@@ -236,6 +237,7 @@ export default function AppRouter() {
           <Route path="/recursos/juegos/ahorcado-biblico" element={<Navigate to="/recursos/juegos/reto-de-letras-biblicas" replace />} />
           <Route path="/recursos/juegos/memorama-biblico" element={<MemoryMatch />} />
           <Route path="/recursos/juegos/descubre-el-personaje" element={<GuessCharacter />} />
+          <Route path="/recursos/juegos/el-codigo-de-las-parabolas" element={<ParableCode />} />
           <Route path="/mi-horario" element={<VolunteerSchedule />} />
           <Route path="/mi-iglesia" element={<MyChurch />} />
           <Route path="/reservas" element={<Bookings />} />

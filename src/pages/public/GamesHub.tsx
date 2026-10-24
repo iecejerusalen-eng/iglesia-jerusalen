@@ -27,6 +27,12 @@ const GAME_META: Record<string, GameMeta> = {
 };
 
 const GAME_ORDER = Object.keys(GAME_META);
+const PILOT_GAME: Game = { id: 'parable-code-pilot', slug: 'el-codigo-de-las-parabolas' };
+GAME_META['el-codigo-de-las-parabolas'] = {
+  title: 'El Código de las Parábolas', activity: 'Escena interactiva · piloto', skill: 'Observación y reflexión',
+  description: 'Explora una escena, encuentra los elementos de la parábola de la moneda perdida y descubre su mensaje en Lucas 15.',
+  route: '/recursos/juegos/el-codigo-de-las-parabolas', cover: '/images/games/parables/lost-coin-room.webp',
+};
 
 export const GamesHub = () => {
   const reduceMotion = useReducedMotion();
@@ -104,6 +110,9 @@ export const GamesHub = () => {
               {games.map((game) => <GameCard key={game.id} game={game} reduceMotion={Boolean(reduceMotion)} />)}
             </motion.div>
           )}
+          {!loading && <motion.div initial={reduceMotion ? false : 'initial'} animate="animate" variants={{ initial: {}, animate: { transition: { staggerChildren: reduceMotion ? 0 : 0.08 } } }} className="mt-5 grid gap-5 md:grid-cols-2">
+            <GameCard game={PILOT_GAME} reduceMotion={Boolean(reduceMotion)} />
+          </motion.div>}
         </section>
       </div>
     </main>
@@ -127,7 +136,7 @@ function GameCard({ game, reduceMotion }: { game: Game; reduceMotion: boolean })
     <div className="p-5 sm:p-6">
       <p className="min-h-12 text-sm leading-6 text-slate-700 dark:text-slate-300">{meta.description}</p>
       <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-bold text-slate-700 dark:bg-white/5 dark:text-slate-300"><Lightbulb size={13} className="text-amber-600 dark:text-amber-300" />{meta.skill}</div>
-      <Link to={meta.route} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-950 px-4 text-xs font-black text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300"><Play size={15} fill="currentColor" /> Ver instrucciones y jugar</Link>
+      <Link to={meta.route} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-950 px-4 text-xs font-black text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300"><Play size={15} fill="currentColor" /> {game.id === PILOT_GAME.id ? 'Probar partida piloto' : 'Ver instrucciones y jugar'}</Link>
     </div>
   </motion.article>;
 }
