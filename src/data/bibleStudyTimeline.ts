@@ -288,6 +288,14 @@ export const genesisChapterTwoTimeline: BibleOverviewTimelineEntry[] = [
   },
 ];
 
+/** Secuencia narrativa de Génesis 3; no propone fechas históricas ni de calendario. */
+export const genesisChapterThreeTimeline: BibleOverviewTimelineEntry[] = [
+  { id: 'genesis-3-dialogue', era: 'El jardín · Génesis 3:1-5', title: 'La palabra de Dios es cuestionada', summary: 'La serpiente conversa con la mujer acerca del mandato recibido y contradice la advertencia de Dios.', references: ['Génesis 2:16-17', 'Génesis 3:1-5'], studyPrompt: '¿Cómo cambia el mandato cuando cada interlocutor lo cita?', people: ['serpent-genesis', 'woman-genesis'] },
+  { id: 'genesis-3-rupture', era: 'El jardín · Génesis 3:6-13', title: 'La pareja come y se esconde', summary: 'El hombre y la mujer comen, se cubren y se esconden; Dios los llama y escucha sus respuestas.', references: ['Génesis 3:6-13'], studyPrompt: '¿Qué efectos inmediatos de la decisión narra el pasaje?', people: ['creator', 'human', 'woman-genesis'] },
+  { id: 'genesis-3-consequences', era: 'Consecuencias · Génesis 3:14-19', title: 'Dios pronuncia consecuencias', summary: 'Dios se dirige a la serpiente, a la mujer y al hombre; la escena describe conflicto, dolor, trabajo y mortalidad.', references: ['Génesis 3:14-19'], studyPrompt: '¿Qué palabras recibe cada personaje y cómo cambia la vida descrita?', people: ['creator', 'human', 'woman-genesis', 'serpent-genesis'] },
+  { id: 'genesis-3-departure', era: 'Cierre · Génesis 3:20-24', title: 'Vestiduras y salida del jardín', summary: 'Dios hace vestiduras para la pareja y guarda el camino al árbol de la vida tras enviarlos fuera del jardín.', references: ['Génesis 3:20-24'], studyPrompt: '¿Cómo conviven en el cierre las consecuencias, el cuidado y el límite?', people: ['creator', 'human', 'woman-genesis'] },
+];
+
 /** Exodus-to-Canaan route following the biblical narrative; routes and disputed pins remain illustrative. */
 export const exodusTimeline: BibleOverviewTimelineEntry[] = [
   {

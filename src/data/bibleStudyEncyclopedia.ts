@@ -239,8 +239,8 @@ export const bibleStudyPeopleEntries: BibleStudyPersonEntry[] = [
   {
     id: 'creator', title: 'Dios, Creador', region: 'Génesis · los comienzos',
     summary: 'El relato presenta a Dios como quien crea, ordena, bendice y da propósito a la vida.',
-    context: 'Génesis 1 destaca la palabra de Dios y la bondad de lo creado. Génesis 2 enfoca su acción al formar al ser humano, plantar el jardín y establecer relaciones. Esta ficha sigue lo que afirman esos pasajes sin resolver aquí las distintas interpretaciones sobre la relación literaria entre ambos relatos.',
-    references: ['Génesis 1:1-31', 'Génesis 2:4-25'],
+    context: 'Génesis 1 destaca la palabra de Dios y la bondad de lo creado. Génesis 2 enfoca su acción al formar al ser humano, plantar el jardín y establecer relaciones. En Génesis 3, Dios pregunta, pronuncia consecuencias, viste a la pareja y guarda el acceso al árbol de la vida. Esta ficha sigue lo que afirman esos pasajes sin resolver aquí las distintas interpretaciones sobre la relación literaria entre ambos relatos.',
+    references: ['Génesis 1:1-31', 'Génesis 2:4-25', 'Génesis 3:8-24'],
   },
   {
     id: 'humanity', title: 'La humanidad: varón y mujer', region: 'Creación · imagen de Dios',
@@ -251,14 +251,20 @@ export const bibleStudyPeopleEntries: BibleStudyPersonEntry[] = [
   {
     id: 'human', title: 'El ser humano', region: 'Edén · cultivador y cuidador',
     summary: 'Dios forma al ser humano del polvo, le da aliento de vida y lo coloca en el jardín para trabajarlo y cuidarlo.',
-    context: 'En Génesis 2:19-20 el ser humano nombra a los animales. El capítulo lo describe principalmente con términos que significan hombre/ser humano; el texto no presenta aquí «Adán» como un nombre propio inequívoco. Génesis 3:20 identifica a Eva por nombre.',
-    references: ['Génesis 2:7-8', 'Génesis 2:15-20'],
+    context: 'En Génesis 2:19-20 el ser humano nombra a los animales. El capítulo lo describe principalmente con términos que significan hombre/ser humano; Génesis 3:20 introduce el nombre Eva y 3:17-19 se dirige al hombre. El relato no convierte la escena en una fecha de calendario.',
+    references: ['Génesis 2:7-8', 'Génesis 2:15-20', 'Génesis 3:8-24'],
   },
   {
     id: 'woman-genesis', title: 'La mujer', region: 'Edén · compañera correspondiente',
-    summary: 'En el relato, Dios forma a la mujer y el hombre la reconoce como parte de su propia humanidad.',
-    context: 'Génesis 2:23 registra las palabras del hombre y 2:24 formula la unión de marido y mujer. El nombre Eva aparece más adelante, en Génesis 3:20; por eso esta entrada usa «la mujer» al seguir el capítulo 2.',
-    references: ['Génesis 2:21-25'],
+    summary: 'Génesis presenta a la mujer en el jardín, registra su conversación con la serpiente y cuenta que el hombre la llama Eva.',
+    context: 'Génesis 2:23 registra las palabras del hombre y 2:24 formula la unión de marido y mujer. Génesis 3 narra su diálogo, decisión y respuesta ante Dios; en 3:20 el hombre la llama Eva. La ficha describe las acciones narradas y no atribuye culpa exclusiva a uno de los dos.',
+    references: ['Génesis 2:21-25', 'Génesis 3:1-13', 'Génesis 3:20-24'],
+  },
+  {
+    id: 'serpent-genesis', title: 'La serpiente', region: 'Edén · interlocutora del relato',
+    summary: 'Génesis 3 presenta a la serpiente como astuta y la muestra conversando con la mujer acerca del mandato de Dios.',
+    context: 'El capítulo la llama serpiente y cuenta lo que dice y hace (3:1-15). Apocalipsis 12:9 y 20:2 vinculan a «la serpiente antigua» con el diablo y Satanás; esta lectura canónica posterior no cambia el vocabulario que emplea Génesis en su escena. Las interpretaciones sobre el trasfondo y la figura de la serpiente deben distinguirse del texto explícito.',
+    references: ['Génesis 3:1-15', 'Apocalipsis 12:9', 'Apocalipsis 20:2'],
   },
   {
     id: 'paul', placeId: 'malta', title: 'Pablo', region: 'Apóstol · viajero bajo custodia',
@@ -439,6 +445,30 @@ export const bibleStudyEventEntries: BibleStudyEventEntry[] = [
     references: ['Génesis 2:21-25'], people: ['creator', 'human', 'woman-genesis'], studyPrompt: '¿Qué lenguaje usa el pasaje para expresar parentesco, reconocimiento y unión?',
   },
   {
+    id: 'serpent-dialogue', placeId: 'garden', placeIds: ['eden', 'garden'], title: 'La serpiente cuestiona el mandato', region: 'Secuencia narrativa', date: 'Génesis 3:1-5 · sin fecha de calendario', places: 'El jardín de Edén',
+    summary: 'La serpiente pregunta a la mujer por el mandato y afirma que comer del fruto no producirá la muerte anunciada.',
+    context: 'Compara Génesis 2:16-17 con 3:1-5: el pasaje permite seguir cómo se cita, pregunta y contradice la palabra recibida. Génesis presenta a la serpiente como astuta, pero no explica aquí su origen.',
+    references: ['Génesis 2:16-17', 'Génesis 3:1-5'], people: ['serpent-genesis', 'woman-genesis'], studyPrompt: '¿Qué cambia entre el mandato original, la pregunta de la serpiente y la respuesta de la mujer?',
+  },
+  {
+    id: 'eating-and-hiding', placeId: 'garden', placeIds: ['garden'], title: 'Comer, cubrirse y esconderse', region: 'Secuencia narrativa', date: 'Génesis 3:6-13 · sin fecha de calendario', places: 'El jardín',
+    summary: 'La mujer y el hombre comen del fruto; después se cubren y se esconden cuando oyen a Dios.',
+    context: 'El texto nombra a ambos participantes (3:6), describe su vergüenza y temor (3:7-10) y registra sus respuestas a las preguntas de Dios (3:11-13). La ficha evita asignar responsabilidad exclusiva más allá de lo que relata el pasaje.',
+    references: ['Génesis 3:6-13'], people: ['creator', 'human', 'woman-genesis', 'serpent-genesis'], studyPrompt: '¿Cómo cambia la relación de la pareja con su cuerpo, entre sí y con Dios después de comer?',
+  },
+  {
+    id: 'judgment-and-promise', placeId: 'garden', placeIds: ['garden'], title: 'Consecuencias y palabra sobre el conflicto', region: 'Secuencia narrativa', date: 'Génesis 3:14-19 · sin fecha de calendario', places: 'La serpiente · el jardín',
+    summary: 'Dios se dirige a la serpiente, a la mujer y al hombre; el pasaje describe conflicto, dolor, trabajo y retorno al polvo.',
+    context: 'Génesis 3:15 es conocido en la tradición cristiana como una primera promesa de victoria sobre el mal. Las traducciones y lecturas de la frase han sido discutidas; distinguimos esa interpretación teológica de lo que la escena dice directamente. El texto no ofrece una fecha histórica para estos anuncios.',
+    references: ['Génesis 3:14-19', 'Romanos 16:20', 'Hebreos 2:14-15'], people: ['creator', 'human', 'woman-genesis', 'serpent-genesis'], studyPrompt: '¿A quién se dirige cada palabra y qué consecuencias describe el texto?',
+  },
+  {
+    id: 'garden-departure', placeId: 'garden', placeIds: ['eden', 'garden'], title: 'Vestiduras y salida del jardín', region: 'Secuencia narrativa', date: 'Génesis 3:20-24 · sin fecha de calendario', places: 'El jardín · al oriente de Edén',
+    summary: 'El hombre llama Eva a su mujer. Dios les hace vestiduras y los envía fuera del jardín; querubines y una espada encendida guardan el camino al árbol de la vida.',
+    context: 'Génesis cierra el episodio con una acción de cuidado (3:21) y con la restricción del acceso al árbol de la vida (3:22-24). «Al oriente» pertenece a la orientación narrativa del texto: no permite ubicar Edén en un mapa moderno.',
+    references: ['Génesis 3:20-24'], people: ['creator', 'human', 'woman-genesis'], studyPrompt: '¿Qué detalles del cierre comunican a la vez consecuencia, protección y separación?',
+  },
+  {
     id: 'departure', placeId: 'caesarea', placeIds: ['caesarea', 'sidon', 'myra'], title: 'De Cesarea hacia Asia Menor', region: 'Primera etapa', date: 'Primera etapa', places: 'Cesarea · Sidón · Mira',
     summary: 'Pablo embarca bajo custodia, la nave se detiene en Sidón y el grupo cambia de embarcación en Mira.',
     context: 'El relato presenta el viaje como un traslado hacia Italia. Julio trata a Pablo con consideración en Sidón, y Aristarco aparece entre quienes acompañan al grupo.',
@@ -526,19 +556,25 @@ const genesisNarrativePlaceEntries: BibleStudyPlaceEntry[] = [
     id: 'genesis-eden', placeId: 'eden', title: 'Edén', region: 'Relato de los comienzos',
     summary: 'La región donde Génesis sitúa el jardín que Dios planta para el ser humano.',
     context: 'Génesis menciona un río que sale de Edén y se divide en cuatro brazos. El texto no da coordenadas modernas y las identificaciones de Pisón, Gihón, Havila y Cus son inciertas; este catálogo no coloca un pin de ubicación comprobada.',
-    references: ['Génesis 2:8-14'],
+    references: ['Génesis 2:8-14', 'Génesis 3:8-24'],
   },
   {
     id: 'genesis-garden', placeId: 'garden', title: 'El jardín', region: 'Dentro del relato de Edén',
     summary: 'El jardín plantado por Dios, donde el ser humano recibe la tarea de trabajarlo y cuidarlo.',
     context: 'El jardín y Edén están relacionados en el relato, pero el texto no los presenta como dos coordenadas modernas identificables. La representación visual del proyecto es esquemática.',
-    references: ['Génesis 2:8-17'],
+    references: ['Génesis 2:8-17', 'Génesis 3:1-24'],
   },
   {
     id: 'genesis-four-rivers', placeId: 'four-rivers', title: 'Los cuatro ríos', region: 'Geografía descrita en Génesis',
     summary: 'Pisón, Gihón, Tigris y Éufrates son los cuatro brazos nombrados en Génesis 2:10-14.',
     context: 'El Tigris y el Éufrates son nombres reconocibles en la geografía de Asia occidental. La identificación de Pisón y Gihón, y la relación de Havila y Cus con regiones actuales, siguen debatidas. El pasaje no permite localizar con certeza el jardín del Edén.',
     references: ['Génesis 2:10-14'],
+  },
+  {
+    id: 'genesis-east-of-garden', placeId: 'eden-east', title: 'Al oriente del jardín', region: 'Orientación dentro del relato',
+    summary: 'Génesis sitúa al oriente del jardín a los querubines y la espada encendida que guarda el camino al árbol de la vida.',
+    context: 'La expresión orienta el cierre del relato, pero no es una coordenada arqueológica ni cartográfica. El lugar de Edén no queda localizado con certeza.',
+    references: ['Génesis 3:24'],
   },
 ];
 

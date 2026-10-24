@@ -2,6 +2,16 @@
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.20] - 2026-10-24
+
+### Añadido
+- Estudio de Génesis 3 con cuatro movimientos, observaciones, lecturas relacionadas, Atlas narrativo, Enciclopedia y Cronología conectados al lector bíblico.
+- Dos ilustraciones originales optimizadas y dos enlaces a videos oficiales de Proyecto Biblia.
+- Guía de procedencia y flujo de investigación reutilizable para ampliar el catálogo por capítulos.
+
+### Mejorado
+- Las fichas de Génesis amplían sus referencias a Edén y la serpiente, separan el texto de interpretaciones canónicas posteriores y no asignan fechas ni coordenadas no sustentadas.
+
 
 ## [1.14.19] - 2026-10-24
 

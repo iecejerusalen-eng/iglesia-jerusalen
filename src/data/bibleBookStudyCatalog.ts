@@ -101,6 +101,30 @@ export const genesisChapterTwo = {
   },
 };
 
+export const genesisChapterThree = {
+  title: 'Ruptura, consecuencias y esperanza',
+  summary: 'Génesis 3 narra el diálogo de la serpiente con la mujer, la desconfianza y desobediencia de la pareja, su encuentro con Dios y la salida del jardín. El relato también conserva una palabra de juicio y una señal de cuidado: Dios los viste antes de que salgan.',
+  references: ['Génesis 3:1-7', 'Génesis 3:8-13', 'Génesis 3:14-19', 'Génesis 3:20-24'],
+  structure: [
+    { label: 'Diálogo', reference: 'Génesis 3:1-5', theme: 'La pregunta y la palabra puesta en duda' },
+    { label: 'Ruptura', reference: 'Génesis 3:6-13', theme: 'Decisión, vergüenza y respuestas' },
+    { label: 'Consecuencias', reference: 'Génesis 3:14-19', theme: 'Juicio sobre la serpiente, la mujer y el hombre' },
+    { label: 'Salida y cuidado', reference: 'Génesis 3:20-24', theme: 'Nombres, vestiduras y acceso guardado' },
+  ],
+  observations: [
+    'La conversación de Génesis 3:1-5 reformula el mandato de Génesis 2:16-17. Compara las palabras de Dios con la pregunta y la respuesta de la mujer antes de sacar conclusiones.',
+    'Después de comer, la pareja reconoce su desnudez, se cubre y se esconde (3:7-10). El relato presenta vergüenza y temor antes de describir las consecuencias.',
+    'En 3:12-13 el hombre y la mujer responden a la pregunta de Dios. Observa cómo cada uno describe su decisión y a quién señala.',
+    'Génesis 3:15 se ha leído en la tradición cristiana como una promesa de victoria sobre el mal; en el estudio distinguimos esa lectura canónica posterior del sentido inmediato y debatido del versículo.',
+    'Dios hace vestiduras para el hombre y la mujer (3:21); después les impide acceder al árbol de la vida (3:22-24). El cierre reúne cuidado, consecuencia y límite.',
+  ],
+  relatedReferences: ['Romanos 5:12-19', '1 Corintios 15:21-22', 'Apocalipsis 12:9', 'Apocalipsis 20:2'],
+  videos: [
+    { title: 'Génesis 1–11 · panorama', category: 'Proyecto Biblia · enlace oficial', summary: 'Contextualiza el comienzo del libro y sus primeros relatos.', url: 'https://bibleproject.com/es/videos/genesis-1-11/' },
+    { title: 'Exilio · tema bíblico', category: 'Proyecto Biblia · enlace oficial', summary: 'Explora cómo la Biblia desarrolla la imagen del exilio desde Edén.', url: 'https://bibleproject.com/es/videos/exilio/' },
+  ],
+};
+
 export const genesisChapterOne = {
   title: 'Dios crea y ordena la vida',
   summary: 'Génesis 1:1–31 presenta a Dios creando mediante su palabra, distinguiendo ámbitos y llenándolos de vida. El relato avanza en una secuencia de seis días y culmina con la humanidad creada a imagen de Dios.',
