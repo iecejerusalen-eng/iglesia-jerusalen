@@ -93,29 +93,29 @@ const Footer = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-7xl mx-auto px-4 md:px-8 pt-12 pb-24 md:pb-12 relative z-10"
+        className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-24 md:pt-12 md:pb-12 relative z-10"
       >
         {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 lg:gap-12 mb-12">
+        <div className="grid grid-cols-1 gap-7 mb-8 md:grid-cols-12 md:gap-8 md:mb-12 lg:gap-12">
           
           {/* Brand & Identity (Col Span 4) */}
-          <div className="md:col-span-4 flex flex-col space-y-6">
+          <div className="md:col-span-4 flex flex-col space-y-4 md:space-y-6">
             <Link to="/" className="inline-block group focus-visible:outline-none rounded-lg max-w-max">
               <motion.div 
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 className="flex items-center gap-4"
               >
-                <img loading="eager" decoding="async" width="3961" height="738" src={logoHorizontal} alt="Iglesia Jerusalén — Posesión de Paz" className="block h-auto w-[18rem] max-w-full shrink-0 rounded-xl bg-[#0b1530] px-3 py-2 shadow-sm ring-1 ring-slate-900/10 transition-transform duration-300 group-hover:scale-[1.02]" />
+                <img loading="eager" decoding="async" width="3961" height="738" src={logoHorizontal} alt="Iglesia Jerusalén — Posesión de Paz" className="block h-auto w-[15rem] max-w-full shrink-0 rounded-xl bg-[#0b1530] px-3 py-2 shadow-sm ring-1 ring-slate-900/10 transition-transform duration-300 group-hover:scale-[1.02] md:w-[18rem]" />
               </motion.div>
             </Link>
             
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm italic border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-4">
+            <p className="max-w-sm border-l-2 border-indigo-200 pl-4 text-[13px] leading-6 text-slate-600 dark:border-indigo-900/50 dark:text-slate-400 md:text-sm md:leading-relaxed italic">
               "Jesucristo es el mismo ayer, hoy y por los siglos."
               <span className="block not-italic font-semibold text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-2">— Hebreos 13:8</span>
             </p>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2 pt-1 md:gap-3 md:pt-2">
               {socialLinks.map((social) => (
                 <motion.a
                   key={social.name}
@@ -124,7 +124,7 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`w-10 h-10 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-all duration-300 shadow-sm ${social.color}`}
+                  className={`flex size-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 ${social.color}`}
                   title={social.name}
                   aria-label={`Seguir a Iglesia Jerusalén en ${social.name}`}
                 >
@@ -135,7 +135,7 @@ const Footer = () => {
           </div>
 
           {/* Explorar Inteligente (Col Span 5) */}
-          <div className="md:col-span-5">
+          <div className="hidden md:col-span-5 md:block">
             <h4 className="font-serif font-bold text-slate-900 dark:text-white mb-6 text-lg tracking-tight">Explorar</h4>
             <div className="grid grid-cols-2 gap-6">
               {exploreCategories.map((category) => (
@@ -167,10 +167,10 @@ const Footer = () => {
           </div>
 
           {/* Contacto & Legal (Col Span 3) */}
-          <div className="md:col-span-3 flex flex-col space-y-8">
+          <div className="md:col-span-3 flex flex-col space-y-6 md:space-y-8">
             <div>
-              <h4 className="font-serif font-bold text-slate-900 dark:text-white mb-6 text-lg tracking-tight">Contacto</h4>
-              <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
+              <h4 className="mb-4 font-serif text-lg font-bold tracking-tight text-slate-900 dark:text-white md:mb-6">Contacto</h4>
+              <div className="space-y-3 text-[13px] text-slate-600 dark:text-slate-400 md:space-y-4 md:text-sm">
                 <div className="flex items-start gap-3 group">
                   <MapPin size={18} className="text-indigo-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-200" />
                   <address className="not-italic leading-relaxed">
@@ -193,7 +193,7 @@ const Footer = () => {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-slate-200/50 dark:border-white/10">
+            <div className="border-t border-slate-200/50 pt-4 dark:border-white/10 md:pt-6">
               <ul className="space-y-3">
                 {legalLinks.map((link) => {
                   const Icon = link.icon;
@@ -218,14 +218,14 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar: Copyright & Developer Note */}
-        <div className="border-t border-slate-200/80 dark:border-white/10 pt-8 mt-4 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left text-xs text-slate-500 dark:text-slate-500">
+        <div className="mt-4 flex flex-col items-center gap-4 border-t border-slate-200/80 pt-6 text-center text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-500 md:mt-4 md:flex-row md:justify-between md:gap-6 md:pt-8 md:text-left md:text-xs">
           <p className="font-medium">
             &copy; {currentYear} Iglesia Jerusalén. Todos los derechos reservados.
           </p>
           <motion.div 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-1.5 font-medium px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10 shadow-sm cursor-default select-none"
+            className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 font-medium shadow-sm cursor-default select-none dark:border-white/10 dark:bg-white/5 md:px-4 md:py-2"
           >
             <span>Desarrollado con</span>
             <Heart size={12} className="text-rose-500 fill-rose-500 animate-pulse mx-0.5" /> 

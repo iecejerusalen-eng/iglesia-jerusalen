@@ -18,6 +18,8 @@ const Navigation = () => {
   const location = useLocation();
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
+  const [mobileNavHidden, setMobileNavHidden] = useState(false);
   const { isScrolled, isHidden: hidden } = useScrollVisibility();
 
   // Dynamic Menu State
@@ -26,6 +28,55 @@ const Navigation = () => {
   useEffect(() => {
     fetchMenu();
   }, [fetchMenu]);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    let previousY = Math.max(window.scrollY, 0);
+    let accumulatedDelta = 0;
+    let direction = 0;
+
+    const updateViewport = () => {
+      setIsMobileViewport(mobileQuery.matches);
+      setMobileNavHidden(false);
+      previousY = Math.max(window.scrollY, 0);
+      accumulatedDelta = 0;
+      direction = 0;
+    };
+
+    const updateMobileVisibility = () => {
+      const currentY = Math.max(window.scrollY, 0);
+      const delta = currentY - previousY;
+      previousY = currentY;
+
+      if (currentY <= 24) {
+        accumulatedDelta = 0;
+        direction = 0;
+        setMobileNavHidden(false);
+        return;
+      }
+
+      if (!mobileQuery.matches || Math.abs(delta) < 1) return;
+      const nextDirection = Math.sign(delta);
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        accumulatedDelta = delta;
+      } else {
+        accumulatedDelta += delta;
+      }
+
+      if (accumulatedDelta >= 10) setMobileNavHidden(true);
+      if (accumulatedDelta <= -10) setMobileNavHidden(false);
+    };
+
+    mobileQuery.addEventListener('change', updateViewport);
+    window.addEventListener('scroll', updateMobileVisibility, { passive: true });
+    updateViewport();
+
+    return () => {
+      mobileQuery.removeEventListener('change', updateViewport);
+      window.removeEventListener('scroll', updateMobileVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -69,7 +120,7 @@ const Navigation = () => {
         visible: { y: 0 },
         hidden: { y: "-100%" }
       }}
-      animate={hidden ? "hidden" : "visible"}
+      animate={(isMobileViewport ? mobileNavHidden : hidden) ? "hidden" : "visible"}
       initial={false}
       transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       style={{ willChange: 'transform' }}

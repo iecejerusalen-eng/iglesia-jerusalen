@@ -1,3 +1,8 @@
+## [1.14.28] - 2026-10-24
+
+### Mejorado
+- En móvil, la barra superior se oculta al desplazarse hacia abajo y vuelve al subir; el botón de ayuda es más compacto y deja espacio libre sobre la navegación inferior.
+- El pie de página se simplifica al ocultar «Explorar» y reducir sus espacios; la sección doctrinal presenta encabezado y tarjetas más compactos.
 ## [1.14.27] - 2026-10-24
 
 ### Seguridad y administración
