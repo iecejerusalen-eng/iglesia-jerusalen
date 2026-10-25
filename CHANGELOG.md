@@ -2,6 +2,7 @@
 
 ### Seguridad y administración
 - El acceso a perfiles, permisos, relaciones del CRM y agenda pública queda restringido según permisos efectivos; la proyección pública omite notas y vínculos privados.
+- Se retiraron políticas heredadas del censo que concedían acceso por rol y se sustituyeron por permisos efectivos de consulta y edición.
 
 ### Mejorado
 - Tienda, Aula Virtual, onboarding y toolbox pueden habilitarse desde Configuración cuando estén listos para publicarse.
