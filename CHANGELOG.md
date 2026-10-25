@@ -1,3 +1,8 @@
+## [1.14.26] - 2026-10-24
+
+### Mejorado
+- El Atlas de Génesis 2 incorpora un mapa conceptual 3D con rótulos para Tigris y Éufrates, una región posible del Edén y una nota visible sobre la identificación debatida de Pisón y Guijón.
+
 Warning: truncated output (original token count: 12408)
 Total output lines: 612
 
