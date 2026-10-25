@@ -1,34 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { BookOpen, CalendarDays, ChevronDown, Church, Compass, ExternalLink, GraduationCap, Headphones, Heart, MapPin, MessageCircle, Music, Radio, Send, ShoppingBag, Sparkles, X } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronDown, Church, Compass, ExternalLink, GraduationCap, Headphones, Heart, MapPin, MessageCircle, Music, Radio, Send, Sparkles, Video, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
+import { fetchProgramCatalog } from '../../features/study-programs/service';
+import { searchPublicSongs } from '../../features/songs/services/publicSongSearch';
 import { answerFromPublicInfo, CHURCH_LINKS, contextualizeFollowUp, getKnowledgeNeeds, offlineAssistantAnswer } from './churchAssistantKnowledge';
-import type { AssistantLink, PublicEventSummary, PublicMinistrySummary, PublicPodcastEpisodeSummary, PublicProgramSummary, PublicSpaceSummary } from './churchAssistantKnowledge';
+import type { AssistantLink, AssistantSuggestion, PublicEventSummary, PublicMinistrySummary, PublicPodcastSummary, PublicProgramSummary, PublicSermonSummary } from './churchAssistantKnowledge';
 import type { Schedule } from '../../types';
 
 type ChatRole = 'user' | 'assistant';
-type ChatMessage = { id: number; role: ChatRole; text: string; links?: AssistantLink[] };
+type ChatMessage = { id: number; role: ChatRole; text: string; links?: AssistantLink[]; suggestions?: AssistantSuggestion[] };
 type QuickAction = { label: string; icon: typeof CalendarDays; message: string };
 type AiAvailability = 'checking' | 'available' | 'unavailable' | 'unknown';
 
 const ACTION_LINK_CLASS = 'inline-flex min-h-9 items-center gap-1.5 rounded-full border border-church-gold/30 bg-white px-3 py-1 text-[11px] font-bold text-church-gold-dark transition hover:border-church-gold/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-slate-900 dark:text-church-gold-light';
+const INITIAL_QUICK_ACTION_COUNT = 4;
 
 const QUICK_ACTIONS: QuickAction[] = [
   { label: 'Horarios', icon: CalendarDays, message: '¿Cuáles son los horarios de los cultos?' },
-  { label: 'Actividades hoy', icon: CalendarDays, message: '¿Qué actividades hay hoy?' },
   { label: 'Ubicación', icon: MapPin, message: '¿Dónde queda la iglesia?' },
   { label: 'Primera visita', icon: Sparkles, message: 'Voy a visitar la iglesia por primera vez.' },
+  { label: 'Nuestra fe', icon: BookOpen, message: '¿Qué es la Iglesia Cuadrangular?' },
+  { label: 'Actividades hoy', icon: CalendarDays, message: '¿Qué actividades hay hoy?' },
+  { label: 'Pastores', icon: Church, message: '¿Quién es el pastor?' },
+  { label: 'Visión y misión', icon: Sparkles, message: '¿Cuál es la visión y misión de la iglesia?' },
+  { label: 'Símbolos', icon: Church, message: '¿Cuáles son los símbolos de la Iglesia Cuadrangular?' },
+  { label: 'Himno', icon: Music, message: '¿Qué expresa el Himno Cuadrangular?' },
+  { label: 'Alabanzas', icon: Music, message: '¿Qué canciones están publicadas?' },
   { label: 'Pedir oración', icon: Heart, message: 'Quiero compartir una petición de oración.' },
   { label: 'Eventos', icon: CalendarDays, message: '¿Cuáles son los próximos eventos?' },
+  { label: 'Prédicas', icon: Video, message: '¿Cuáles son las prédicas recientes?' },
+  { label: 'Podcast', icon: Headphones, message: '¿Cuáles son los episodios recientes del podcast?' },
+  { label: 'Programas', icon: GraduationCap, message: '¿Qué programas y cursos están publicados?' },
   { label: 'Ministerios', icon: Church, message: '¿Qué ministerios tiene la iglesia?' },
-  { label: 'Nuestra fe', icon: BookOpen, message: '¿Qué cree la Iglesia Cuadrangular?' },
-  { label: 'Reservar espacio', icon: CalendarDays, message: '¿Qué espacios hay para reservar?' },
-  { label: 'Tienda', icon: ShoppingBag, message: '¿Qué puedo encontrar en la tienda?' },
+  { label: 'Comunidad', icon: Church, message: '¿Cómo puedo participar en la comunidad de la iglesia?' },
+  { label: 'Diezmos y donaciones', icon: Heart, message: '¿Cómo puedo hacer una donación?' },
 ];
-const INITIAL_QUICK_ACTION_COUNT = 4;
 
-const HELLO = '¡Hola! Puedo orientarte con horarios, eventos, visitas, recursos, reservas y más. ¿Qué necesitas?';
+const HELLO = '¡Hola! Soy el asistente de la Iglesia Jerusalén. Puedo ayudarte con horarios, ubicación, visitas, eventos, ministerios y canales de contacto.';
 
 function todayInEcuador() {
   const parts = new Intl.DateTimeFormat('en', {
@@ -38,107 +48,150 @@ function todayInEcuador() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+type PublicRequestCache<T> = { current: Promise<T | null> | null };
+
+function loadCachedPublicData<T>(cache: PublicRequestCache<T>, load: () => Promise<T | null>) {
+  if (!cache.current) {
+    const request = Promise.resolve()
+      .then(load)
+      .catch((error: unknown) => {
+        console.error('No fue posible consultar información pública para el asistente.', error);
+        return null;
+      });
+    cache.current = request;
+    void request.then((result) => {
+      if (result === null && cache.current === request) cache.current = null;
+    });
+  }
+  return cache.current ?? Promise.resolve(null);
+}
+
 export default function ChurchAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([{ id: 0, role: 'assistant', text: HELLO }]);
-  const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showAllQuickActions, setShowAllQuickActions] = useState(false);
   const [scheduleRows, setScheduleRows] = useState<Schedule[] | null>();
   const [eventRows, setEventRows] = useState<PublicEventSummary[] | null>();
-  const [ministryRows, setMinistryRows] = useState<PublicMinistrySummary[] | null>();
-  const [spaceRows, setSpaceRows] = useState<PublicSpaceSummary[] | null>();
+  const [sermonRows, setSermonRows] = useState<PublicSermonSummary[] | null>();
+  const [podcastRows, setPodcastRows] = useState<PublicPodcastSummary[] | null>();
   const [programRows, setProgramRows] = useState<PublicProgramSummary[] | null>();
-  const [podcastEpisodeRows, setPodcastEpisodeRows] = useState<PublicPodcastEpisodeSummary[] | null>();
+  const [ministryRows, setMinistryRows] = useState<PublicMinistrySummary[] | null>();
   const [aiAvailability, setAiAvailability] = useState<AiAvailability>('checking');
   const nextId = useRef(1);
   const endRef = useRef<HTMLDivElement>(null);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const previousMessageCount = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
   const scheduleRequest = useRef<Promise<Schedule[] | null> | null>(null);
   const eventRequest = useRef<Promise<PublicEventSummary[] | null> | null>(null);
-  const ministryRequest = useRef<Promise<PublicMinistrySummary[] | null> | null>(null);
-  const spaceRequest = useRef<Promise<PublicSpaceSummary[] | null> | null>(null);
+  const sermonRequest = useRef<Promise<PublicSermonSummary[] | null> | null>(null);
+  const podcastRequest = useRef<Promise<PublicPodcastSummary[] | null> | null>(null);
   const programRequest = useRef<Promise<PublicProgramSummary[] | null> | null>(null);
-  const podcastEpisodeRequest = useRef<Promise<PublicPodcastEpisodeSummary[] | null> | null>(null);
+  const ministryRequest = useRef<Promise<PublicMinistrySummary[] | null> | null>(null);
   const aiAvailabilityRequest = useRef<Promise<boolean | null> | null>(null);
 
   function loadSchedules() {
-    scheduleRequest.current ??= (async () => {
+    return loadCachedPublicData(scheduleRequest, async () => {
       const { data, error } = await supabase
         .from('schedules')
         .select('id, day, title, time_range, description, order_index, created_at')
         .order('order_index', { ascending: true });
-      return error ? null : (data ?? []) as Schedule[];
-    })();
-    return scheduleRequest.current;
+      if (error) {
+        console.error('No fue posible consultar los horarios públicos para el asistente.', error);
+        return null;
+      }
+      return (data ?? []) as Schedule[];
+    });
   }
 
   function loadEvents() {
-    eventRequest.current ??= (async () => {
+    return loadCachedPublicData(eventRequest, async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, description, start_date, end_date, start_time, end_time, location_name, emoji')
+        .select('id, title, description, start_date, end_date, start_time, end_time, emoji, spaces(name, address, map_url)')
         .eq('is_public', true)
-        .gte('end_date', todayInEcuador())
+        .or(`end_date.gte.${todayInEcuador()},start_date.gte.${todayInEcuador()}`)
         .order('start_date', { ascending: true })
         .limit(30);
-      return error ? null : (data ?? []) as PublicEventSummary[];
-    })();
-    return eventRequest.current;
+      if (error) {
+        console.error('No fue posible consultar los eventos públicos para el asistente.', error);
+        return null;
+      }
+      return (data ?? []) as PublicEventSummary[];
+    });
+  }
+
+  function loadSermons() {
+    return loadCachedPublicData(sermonRequest, async () => {
+      const { data, error } = await supabase
+        .from('sermons')
+        .select('id, title, pastor_name, date, description')
+        .order('date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(12);
+      if (error) {
+        console.error('No fue posible consultar las prédicas públicas para el asistente.', error);
+        return null;
+      }
+      return (data ?? []) as PublicSermonSummary[];
+    });
+  }
+
+  function loadPodcasts() {
+    return loadCachedPublicData(podcastRequest, async () => {
+      const { data, error } = await supabase
+        .from('podcast_episodes')
+        .select('id, title, description, show_notes, episode_number, published_at')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(12);
+      if (error) {
+        console.error('No fue posible consultar los episodios públicos para el asistente.', error);
+        return null;
+      }
+      return (data ?? []) as PublicPodcastSummary[];
+    });
+  }
+
+  function loadPrograms() {
+    return loadCachedPublicData(programRequest, async () => {
+      try {
+        const result = await fetchProgramCatalog();
+        return result.programs.map((program) => ({
+          id: program.id,
+          slug: program.slug,
+          title: program.title,
+          summary: program.summary || program.description,
+          category: program.category,
+          audience: program.audience,
+          tags: program.tags,
+          modality: program.modality,
+          source: program.source ?? 'study_programs',
+        }));
+      } catch (error) {
+        console.error('No fue posible consultar programas públicos para el asistente.', error);
+        return null;
+      }
+    });
   }
 
   function loadMinistries() {
-    ministryRequest.current ??= (async () => {
+    return loadCachedPublicData(ministryRequest, async () => {
       const { data, error } = await supabase
         .from('ministries')
         .select('id, name, slug, category, description, schedule')
         .order('name', { ascending: true })
         .limit(30);
-      return error ? null : (data ?? []) as PublicMinistrySummary[];
-    })();
-    return ministryRequest.current;
-  }
-
-  function loadSpaces() {
-    spaceRequest.current ??= (async () => {
-      const { data, error } = await supabase
-        .from('spaces')
-        .select('id, name, description, capacity, features, is_active')
-        .eq('is_active', true)
-        .order('name');
-      return error ? null : (data ?? []) as PublicSpaceSummary[];
-    })();
-    return spaceRequest.current;
-  }
-
-  function loadPrograms() {
-    programRequest.current ??= (async () => {
-      const { data, error } = await supabase
-        .from('study_programs')
-        .select('id, slug, title, summary, category, audience, duration_label, access_type')
-        .eq('status', 'published')
-        .order('is_featured', { ascending: false })
-        .order('published_at', { ascending: false, nullsFirst: false })
-        .limit(30);
-      if (error) return null;
-      return (data ?? []).map((row) => ({ ...row, source: 'study_programs' as const })) as PublicProgramSummary[];
-    })();
-    return programRequest.current;
-  }
-
-  function loadPodcastEpisodes() {
-    podcastEpisodeRequest.current ??= (async () => {
-      const { data, error } = await supabase
-        .from('podcast_episodes')
-        .select('id, title, description, show_notes, audio_duration_seconds, episode_number, published_at')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false, nullsFirst: false })
-        .limit(10);
-      return error ? null : (data ?? []) as PublicPodcastEpisodeSummary[];
-    })();
-    return podcastEpisodeRequest.current;
+      if (error) {
+        console.error('No fue posible consultar los ministerios públicos para el asistente.', error);
+        return null;
+      }
+      return (data ?? []) as PublicMinistrySummary[];
+    });
   }
 
   const checkAiAvailability = useCallback(async () => {
@@ -162,7 +215,14 @@ export default function ChurchAssistantWidget() {
   }, [messages, isSending]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      if (wasOpen.current) {
+        wasOpen.current = false;
+        openButtonRef.current?.focus();
+      }
+      return;
+    }
+    wasOpen.current = true;
     inputRef.current?.focus();
     let active = true;
     void checkAiAvailability().then((configured) => {
@@ -189,36 +249,39 @@ export default function ChurchAssistantWidget() {
       .filter((item) => item.id !== 0)
       .slice(-6)
       .map((item) => ({ role: item.role === 'assistant' ? 'model' : 'user', content: item.text }));
+    const conversation = messages.slice(-8).map(({ role, text: content }) => ({ role, text: content }));
+    const knowledgeQuestion = contextualizeFollowUp(text, conversation);
     setDraft('');
     setMessages((current) => [...current, userMessage]);
 
     setIsSending(true);
     try {
-      const knowledgeQuestion = contextualizeFollowUp(text, messages);
       const needs = getKnowledgeNeeds(knowledgeQuestion);
-      const [loadedSchedules, loadedEvents, loadedMinistries, loadedSpaces, loadedPrograms, loadedPodcastEpisodes] = await Promise.all([
+      const [loadedSchedules, loadedEvents, loadedSermons, loadedPodcasts, loadedPrograms, loadedSongs, loadedMinistries] = await Promise.all([
         needs.includes('schedules') && scheduleRows === undefined ? loadSchedules() : Promise.resolve(scheduleRows),
         needs.includes('events') && eventRows === undefined ? loadEvents() : Promise.resolve(eventRows),
-        needs.includes('ministries') && ministryRows === undefined ? loadMinistries() : Promise.resolve(ministryRows),
-        needs.includes('spaces') && spaceRows === undefined ? loadSpaces() : Promise.resolve(spaceRows),
+        needs.includes('sermons') && sermonRows === undefined ? loadSermons() : Promise.resolve(sermonRows),
+        needs.includes('podcasts') && podcastRows === undefined ? loadPodcasts() : Promise.resolve(podcastRows),
         needs.includes('programs') && programRows === undefined ? loadPrograms() : Promise.resolve(programRows),
-        needs.includes('podcastEpisodes') && podcastEpisodeRows === undefined ? loadPodcastEpisodes() : Promise.resolve(podcastEpisodeRows),
+        needs.includes('songs') ? searchPublicSongs(knowledgeQuestion).catch((error) => { console.error('No fue posible consultar el cancionero público.', error); return null; }) : Promise.resolve(undefined),
+        needs.includes('ministries') && ministryRows === undefined ? loadMinistries() : Promise.resolve(ministryRows),
       ]);
-      if (needs.includes('schedules') && scheduleRows === undefined) setScheduleRows(loadedSchedules ?? null);
-      if (needs.includes('events') && eventRows === undefined) setEventRows(loadedEvents ?? null);
-      if (needs.includes('ministries') && ministryRows === undefined) setMinistryRows(loadedMinistries ?? null);
-      if (needs.includes('spaces') && spaceRows === undefined) setSpaceRows(loadedSpaces ?? null);
-      if (needs.includes('programs') && programRows === undefined) setProgramRows(loadedPrograms ?? null);
-      if (needs.includes('podcastEpisodes') && podcastEpisodeRows === undefined) setPodcastEpisodeRows(loadedPodcastEpisodes ?? null);
+      if (needs.includes('schedules') && scheduleRows === undefined && loadedSchedules !== null) setScheduleRows(loadedSchedules);
+      if (needs.includes('events') && eventRows === undefined && loadedEvents !== null) setEventRows(loadedEvents);
+      if (needs.includes('sermons') && sermonRows === undefined && loadedSermons !== null) setSermonRows(loadedSermons);
+      if (needs.includes('podcasts') && podcastRows === undefined && loadedPodcasts !== null) setPodcastRows(loadedPodcasts);
+      if (needs.includes('programs') && programRows === undefined && loadedPrograms !== null) setProgramRows(loadedPrograms);
+      if (needs.includes('ministries') && ministryRows === undefined && loadedMinistries !== null) setMinistryRows(loadedMinistries);
 
       const knownAnswer = answerFromPublicInfo(knowledgeQuestion, {
         schedules: loadedSchedules,
         events: loadedEvents,
-        ministries: loadedMinistries,
-        spaces: loadedSpaces,
+        sermons: loadedSermons,
+        podcasts: loadedPodcasts,
         programs: loadedPrograms,
-        podcastEpisodes: loadedPodcastEpisodes,
-      }, messages);
+        songs: loadedSongs,
+        ministries: loadedMinistries,
+      }, conversation);
       if (knownAnswer) {
         setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: knownAnswer.text, links: knownAnswer.links }]);
         return;
@@ -232,7 +295,7 @@ export default function ChurchAssistantWidget() {
       setAiAvailability(configured === true ? 'available' : configured === false ? 'unavailable' : 'unknown');
       if (!configured) {
         const fallback = offlineAssistantAnswer(text);
-        setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: fallback.text, links: fallback.links }]);
+        setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: fallback.text, links: fallback.links, suggestions: fallback.suggestions }]);
         return;
       }
 
@@ -252,13 +315,13 @@ export default function ChurchAssistantWidget() {
         const message = responseData?.code === 'ai_not_configured'
           ? 'Las respuestas con IA no están activas en este momento. Te dejo opciones de información y contacto.'
           : (typeof responseData?.error === 'string' ? responseData.error : fallback.text);
-        setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: message, links: fallback.links }]);
+        setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: message, links: fallback.links, suggestions: fallback.suggestions }]);
         return;
       }
       setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: answer, links: [CHURCH_LINKS.contact] }]);
     } catch {
       const fallback = offlineAssistantAnswer(text);
-      setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: 'No pude consultar esa respuesta ahora. Puedes abrir estas páginas oficiales o escribirnos.', links: fallback.links }]);
+      setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', text: 'No pude consultar esa respuesta ahora. Puedes abrir estas páginas oficiales o escribirnos.', links: fallback.links, suggestions: fallback.suggestions }]);
     } finally {
       setIsSending(false);
     }
@@ -297,6 +360,7 @@ export default function ChurchAssistantWidget() {
                 <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-5 ${message.role === 'user' ? 'rounded-br-md bg-primary text-white' : 'rounded-bl-md border border-slate-100 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200'}`}>
                   <p className="whitespace-pre-line">{message.text}</p>
                   {message.links && <div className="mt-2 flex flex-wrap gap-2">{message.links.map((link) => link.href.startsWith('http') ? <a key={`${message.id}-${link.href}`} href={link.href} target="_blank" rel="noreferrer noopener" className={ACTION_LINK_CLASS}>{link.label}<ExternalLink size={12} aria-hidden="true" /></a> : link.href.startsWith('tel:') || link.href.startsWith('mailto:') ? <a key={`${message.id}-${link.href}`} href={link.href} className={ACTION_LINK_CLASS}>{link.label}</a> : <Link key={`${message.id}-${link.href}`} to={link.href} className={ACTION_LINK_CLASS}>{link.label}</Link>)}</div>}
+                  {message.suggestions?.length ? <div role="group" aria-label="Preguntas sugeridas" className="mt-2 flex flex-wrap gap-2">{message.suggestions.map((suggestion) => <button key={`${message.id}-${suggestion.message}`} type="button" disabled={isSending} onClick={() => void sendMessage(suggestion.message)} className={`${ACTION_LINK_CLASS} cursor-pointer disabled:cursor-wait disabled:opacity-50`}>{suggestion.label}</button>)}</div> : null}
                 </div>
               </div>
             ))}
@@ -309,7 +373,7 @@ export default function ChurchAssistantWidget() {
                     <ChevronDown size={13} className={showAllQuickActions ? 'rotate-180 transition-transform' : 'transition-transform'} aria-hidden="true" />
                   </button>
                 </div>
-                <div id="church-assistant-quick-actions" className="grid grid-cols-2 gap-2">{(showAllQuickActions ? QUICK_ACTIONS : QUICK_ACTIONS.slice(0, INITIAL_QUICK_ACTION_COUNT)).map(({ label, icon: Icon, message }) => <button key={label} type="button" onClick={() => void sendMessage(message)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-semibold text-slate-600 transition hover:border-church-gold/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Icon size={14} aria-hidden="true" />{label}</button>)}</div>
+                <div id="church-assistant-quick-actions" className="grid grid-cols-2 gap-2">{(showAllQuickActions ? QUICK_ACTIONS : QUICK_ACTIONS.slice(0, INITIAL_QUICK_ACTION_COUNT)).map(({ label, icon: Icon, message }) => <button key={label} type="button" onClick={() => void sendMessage(message)} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-semibold text-slate-600 transition hover:border-church-gold/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Icon size={14} aria-hidden="true" />{label}</button>)}</div>
               </div>
               <nav className="grid grid-cols-2 gap-2 pb-1" aria-label="Accesos rápidos">
                 <Link to="/en-vivo" className={ACTION_LINK_CLASS}><Radio size={13} aria-hidden="true" />En vivo</Link>
@@ -318,8 +382,6 @@ export default function ChurchAssistantWidget() {
                 <Link to={CHURCH_LINKS.podcast.href} className={ACTION_LINK_CLASS}><Headphones size={13} aria-hidden="true" />Podcast</Link>
                 <Link to={CHURCH_LINKS.songs.href} className={ACTION_LINK_CLASS}><Music size={13} aria-hidden="true" />Alabanzas</Link>
                 <Link to={CHURCH_LINKS.programs.href} className={ACTION_LINK_CLASS}><GraduationCap size={13} aria-hidden="true" />Programas</Link>
-                <Link to={CHURCH_LINKS.bookings.href} className={ACTION_LINK_CLASS}><CalendarDays size={13} aria-hidden="true" />Reservas</Link>
-                <Link to={CHURCH_LINKS.store.href} className={ACTION_LINK_CLASS}><ShoppingBag size={13} aria-hidden="true" />Tienda</Link>
               </nav>
             </>}
             {isSending && <p className="text-xs text-slate-500 dark:text-slate-400" role="status">Estoy consultando información pública…</p>}
@@ -331,6 +393,7 @@ export default function ChurchAssistantWidget() {
               ? 'Las preguntas abiertas se procesan con Google Gemini; Supabase usa tu IP para limitar el uso. El sitio no guarda este chat.'
               : 'Respondo con información pública del sitio. El sitio no guarda este chat. No compartas datos sensibles ni peticiones privadas.'}
             {' '}Para acompañamiento pastoral, escríbenos directamente.
+            {' '}<Link to="/privacidad" className="font-semibold underline decoration-slate-300 underline-offset-2 transition hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:decoration-white/30">Política de privacidad</Link>
           </p>
           <form onSubmit={submitMessage} className="flex items-center gap-2 p-3 pt-2">
             <label className="sr-only" htmlFor="church-assistant-message">Escribe tu pregunta</label>
@@ -340,11 +403,10 @@ export default function ChurchAssistantWidget() {
         </section>
       )}
 
-      <button type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="ml-auto flex min-h-14 items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold text-white shadow-xl shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200">
+      <button ref={openButtonRef} type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="ml-auto flex min-h-14 items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold text-white shadow-xl shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200">
         {isOpen ? <X size={19} aria-hidden="true" /> : <MessageCircle size={20} aria-hidden="true" />}
         <span>{isOpen ? 'Cerrar' : '¿Te ayudamos?'}</span>
       </button>
     </div>
   );
 }
-

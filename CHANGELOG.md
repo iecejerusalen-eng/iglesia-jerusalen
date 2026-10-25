@@ -1,3 +1,10 @@
+## [1.14.25] - 2026-10-24
+
+### Mejorado
+- El asistente orienta sobre culto en línea, comunidad, participación, donaciones y diezmos con enlaces a las rutas públicas vigentes; aclara el inicio de sesión cuando una acción lo requiere.
+- Las preguntas institucionales reconocen más variantes sobre ubicación, visión, misión, símbolos, himno y liderazgo, y derivan al contacto cuando no hay información pública suficiente.
+- Las respuestas de agenda consideran actividades vigentes y futuras, mientras que las solicitudes de apoyo emocional ofrecen una respuesta empática y recursos de ayuda verificados en Ecuador.
+- Se amplían las sugerencias iniciales y los accesos rápidos, manteniendo el chat sin historial persistente.
 
 # Changelog
 
