@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 12408)
+Total output lines: 612
+
 ## [1.14.25] - 2026-10-24
 
 ### Mejorado
@@ -5,6 +8,7 @@
 - Las preguntas institucionales reconocen más variantes sobre ubicación, visión, misión, símbolos, himno y liderazgo, y derivan al contacto cuando no hay información pública suficiente.
 - Las respuestas de agenda consideran actividades vigentes y futuras, mientras que las solicitudes de apoyo emocional ofrecen una respuesta empática y recursos de ayuda verificados en Ecuador.
 - Se amplían las sugerencias iniciales y los accesos rápidos, manteniendo el chat sin historial persistente.
+- La biblioteca de alabanzas permite localizar canciones publicadas por título, artista o letra.
 
 # Changelog
 
@@ -365,43 +369,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Añadido
 - Cinco lecturas públicas: Origen Cuadrangular, Nuestra doctrina, Símbolos y bandera, Nuestra historia y Nuestro himno.
-- Referencias bíblicas, fuentes institucionales, índices, preguntas de reflexión y navegación entre lecturas.
-- Emblema y cuatro rostros originales del archivo de Jerusalén, optimizados en WebP; bandera didáctica con su fuente y variante ecuatoriana explicadas.
-
-### Mejorado
-- Nosotros como portada de seis destinos de aprendizaje, conservando presentación, liderazgo y documentos.
-- Distinción entre la visión bíblica y la interpretación de Aimee; cronología internacional corregida y fechas legales nacionales documentadas.
-- Búsqueda global con acceso a cada lectura; pruebas de enlaces, imágenes y fidelidad del himno.
-
----
-
-## [1.4.11] - 2026-10-12
-
-### Corregido
-- Título de la pestaña de Documentos: Helmet recibe una sola cadena para conservar el nombre de la biblioteca y del documento al navegar.
-- Prueba de regresión del título tanto en la biblioteca como en el lector.
-
----
-
-## [1.4.10] - 2026-10-12
-
-### Añadido
-- Himno Cuadrangular completo en Nosotros, cotejado con el Reglamento interno, página 2, con enlace al PDF original.
-- Navegación interna para historia, identidad, himno, principios, liderazgo y documentos.
-
-### Mejorado
-- Documentos institucionales al final del recorrido de Nosotros y metadatos propios de la página.
-- Entradas de historia y pilares respetan la preferencia de movimiento reducido.
-
-### Corregido
-- Vitest utiliza el almacenamiento de jsdom en Node 25+ y excluye herramientas de LOCAL de las pruebas de la aplicación.
-
----
-
-## [1.4.9] - 2026-10-11
-
-### Corregido (Fixed)
-- **Anuncios de inicio**: los eventos no recurrentes se ocultan después de su último d…1341 tokens truncated…l elemento de la cola solo se elimina después de que **todas** las operaciones hayan sido exitosas. Antes, si la conexión se cortaba entre el DELETE y el INSERT de relaciones, los datos quedaban en estado huérfano (emails borrados, sin remplazarlos).
+- Referencias bíblica…408 tokens truncated…l elemento de la cola solo se elimina después de que **todas** las operaciones hayan sido exitosas. Antes, si la conexión se cortaba entre el DELETE y el INSERT de relaciones, los datos quedaban en estado huérfano (emails borrados, sin remplazarlos).
 - **`useAuthStore.ts` — Listeners zombi en logout**: `logout()` ahora llama `subscription.unsubscribe()` y resetea `_authInitialized` antes de ejecutar `supabase.auth.signOut()`. Esto previene que el listener `onAuthStateChange` sea notificado del evento `SIGNED_OUT` durante el cierre de sesión intencional del usuario, eliminando el ciclo redundante de limpieza de estado.
 - **`useAuthStore.ts` — Duplicación de `logout`/`signOut`**: `signOut` ahora es un alias que delega a `logout`, eliminando la duplicación de código. Se centralizó el estado de limpieza en `SESSION_CLEARED_STATE`.
 - **`searchIndexService.ts` — Parser de referencias bíblicas incompleto**: El mapa `BIBLE_BOOKS_MAP` fue extendido de 35 a 66 libros (cobertura completa del canon bíblico). Se añadieron los libros faltantes del Antiguo Testamento (1-2 Crónicas, Esdras, Nehemías, Ester, Job, Cantares, Lamentaciones, Ezequiel, los 12 profetas menores) y Nuevo Testamento (Tito, Filemón, 2-3 Juan, Judas). El algoritmo de matching fue refactorizado para usar búsqueda exacta por clave normalizada (sin tildes) en primer lugar y fallback de prefijo solo cuando el alias tiene ≥ 3 caracteres, eliminando los falsos positivos del `alias.startsWith(rawBook) || rawBook.startsWith(alias)` bidireccional.
