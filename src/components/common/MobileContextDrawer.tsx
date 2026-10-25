@@ -20,13 +20,16 @@ import {
   Sun,
   Moon,
   Search,
+  LayoutDashboard,
+  ChevronRight,
   MessageSquareHeart,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
-import { getVisibleContextMenuGroups } from '@/components/common/contextMenuItems';
+import { CONTEXT_MENU_GROUPS, getVisibleContextMenuGroups } from '@/components/common/contextMenuItems';
 import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
 
 // ── Icon registry (mobile) ─────────────────────────────────────────────────
@@ -53,13 +56,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 // ── Utility: flat list of nav items for the main grid ─────────────────────
-const NAV_ITEMS = getVisibleContextMenuGroups().flatMap((g) =>
-  g.items.filter((i): i is ContextMenuNavItem => i.type === 'nav')
-);
-
 // Toolbar actions (flat): back, forward, reload, copy
 const TOOLBAR_KEYS = ['historyBack', 'historyForward', 'reload', 'copyLink', 'copyTitle', 'scrollTop'];
-const TOOLBAR_ITEMS = getVisibleContextMenuGroups().flatMap((g) =>
+const TOOLBAR_ITEMS = CONTEXT_MENU_GROUPS.flatMap((g) =>
   g.items.filter(
     (i): i is ContextMenuActionItem =>
       i.type === 'action' && TOOLBAR_KEYS.includes(i.actionKey)
@@ -82,7 +81,12 @@ export function MobileContextDrawer({
   const navigate = useNavigate();
   const location = useLocation();
   const { setTheme, getEffectiveTheme } = useThemeStore();
+  const { hasPermission } = usePermissions();
   const isDarkMode = getEffectiveTheme() === 'dark';
+  const contextMenuGroups = getVisibleContextMenuGroups((moduleName) => hasPermission(moduleName, 'view'));
+  const navItems = contextMenuGroups.flatMap((group) => group.items.filter((item): item is ContextMenuNavItem => item.type === 'nav'));
+  const adminItem = navItems.find((item) => item.requiresPermission === 'dashboard');
+  const publicNavItems = navItems.filter((item) => !item.requiresPermission);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -239,13 +243,36 @@ export function MobileContextDrawer({
             {/* Content */}
             <div className="space-y-6 overflow-y-auto overscroll-contain px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">
 
+              {adminItem && (
+                <div>
+                  <h4 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">
+                    Tu espacio
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate(adminItem.path)}
+                    aria-label="Abrir panel de administración"
+                    className="flex min-h-16 w-full items-center gap-3 rounded-2xl border border-blue-800/20 bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-3 text-left text-white shadow-lg shadow-blue-950/15 transition hover:from-blue-800 hover:to-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-[0.99] dark:border-amber-300/25 dark:from-slate-800 dark:to-blue-950"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-300/10 text-amber-200">
+                      <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold">Administración</span>
+                      <span className="mt-0.5 block truncate text-xs text-blue-100/85">Abrir las herramientas de tu cuenta</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-amber-200" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+
               {/* ── Sección 1: Navegación (auto-generada desde CONTEXT_MENU_GROUPS) */}
               <div>
                 <h4 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">
                   Navegación Principal
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {NAV_ITEMS.map((item) => (
+                  {publicNavItems.map((item) => (
                     <button
                       key={item.path}
                       onClick={() => handleNavigate(item.path)}

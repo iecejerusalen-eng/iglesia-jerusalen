@@ -207,7 +207,7 @@ export const CONTEXT_MENU_GROUPS: ContextMenuGroupDef[] = [
   },
 ];
 
-export function getVisibleContextMenuGroups(canViewModule: (moduleName: string) => boolean = () => false, visibility?: Pick<SiteFeatureVisibility, 'store' | 'classroom'>) {
+export function getVisibleContextMenuGroups(canViewModule: (moduleName: string) => boolean, visibility?: Pick<SiteFeatureVisibility, 'store' | 'classroom'>) {
   return CONTEXT_MENU_GROUPS
     .map((group) => ({
       ...group,
