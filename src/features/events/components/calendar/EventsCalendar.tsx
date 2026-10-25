@@ -9,11 +9,12 @@ interface EventsCalendarProps {
   events: DbEvent[];
   onCreateEvent: (date: string, startTime?: string, endTime?: string, endDate?: string) => void;
   onEditEvent: (event: DbEvent) => void;
+  onMoveEvent: (event: DbEvent, date: string) => void;
 }
 
 export type CalendarViewType = 'day' | 'week' | 'month' | 'year' | 'custom';
 
-export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: EventsCalendarProps) {
+export default function EventsCalendar({ events, onCreateEvent, onEditEvent, onMoveEvent }: EventsCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<CalendarViewType>('month');
   const [customDays, setCustomDays] = useState(3);
@@ -102,6 +103,7 @@ export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: E
             events={events} 
             onSelectRange={(start, end) => onCreateEvent(start, undefined, undefined, end)}
             onEditEvent={onEditEvent}
+            onMoveEvent={onMoveEvent}
           />
         )}
         
@@ -113,6 +115,7 @@ export default function EventsCalendar({ events, onCreateEvent, onEditEvent }: E
             events={events}
             onSelectTimeRange={(date, start, _end) => onCreateEvent(date, start, _end)}
             onEditEvent={onEditEvent}
+            onMoveEvent={onMoveEvent}
           />
         )}
       </div>

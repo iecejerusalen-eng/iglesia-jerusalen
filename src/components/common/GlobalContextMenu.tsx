@@ -30,14 +30,17 @@ import {
   Search,
   UsersRound,
   MessageSquareHeart,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useThemeStore } from '@/store/useThemeStore';
+import { usePermissions } from '@/hooks/usePermissions';
 const RouteModal = lazy(() => import('@/components/map/RouteModal').then((module) => ({ default: module.RouteModal })));
 const MobileContextDrawer = lazy(() => import('@/components/common/MobileContextDrawer').then((module) => ({ default: module.MobileContextDrawer })));
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { getVisibleContextMenuGroups } from '@/components/common/contextMenuItems';
 import type { ContextMenuNavItem, ContextMenuActionItem } from '@/components/common/contextMenuItems';
+import { useSiteFeatureVisibilityStore } from '@/store/useSiteFeatureVisibilityStore';
 
 // Icon lookup table for desktop menu
 const DESKTOP_ICONS: Record<string, React.ReactNode> = {
@@ -58,6 +61,7 @@ const DESKTOP_ICONS: Record<string, React.ReactNode> = {
   RotateCw: <RotateCw className="w-4 h-4 mr-2 text-gray-500" />,
   Copy: <Copy className="w-4 h-4 mr-2 text-gray-500" />,
   Search: <Search className="w-4 h-4 mr-2 text-blue-500" />,
+  LayoutDashboard: <LayoutDashboard className="w-4 h-4 mr-2 text-blue-700 dark:text-blue-300" />,
 };
 
 interface GlobalContextMenuProps {
@@ -65,8 +69,10 @@ interface GlobalContextMenuProps {
 }
 
 export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
+  const featureVisibility = useSiteFeatureVisibilityStore((state) => state.visibility);
   const navigate = useNavigate();
   const { setTheme, getEffectiveTheme } = useThemeStore();
+  const { hasPermission } = usePermissions();
   const [isRouteOpen, setIsRouteOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -79,6 +85,7 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
   }, []);
 
   const isDarkMode = getEffectiveTheme() === 'dark';
+  const contextMenuGroups = getVisibleContextMenuGroups((moduleName) => hasPermission(moduleName, 'view'), featureVisibility);
 
   const toggleTheme = () => {
     setTheme(isDarkMode ? 'light' : 'dark');
@@ -230,8 +237,8 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps) {
           {children}
         </ContextMenuTrigger>
 
-        <ContextMenuPopup className="w-64">
-          {getVisibleContextMenuGroups().map((group, gi) => (
+        <ContextMenuPopup className="w-72 max-h-[min(80dvh,36rem)] overflow-y-auto overscroll-contain">
+          {contextMenuGroups.map((group, gi) => (
             <React.Fragment key={gi}>
               {gi > 0 && <ContextMenuSeparator />}
               <ContextMenuGroup>

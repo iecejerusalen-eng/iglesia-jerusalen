@@ -16,20 +16,36 @@ const BirthdayCelebrationModal = lazy(() => import('./components/common/Birthday
 import { supabase } from './config/supabase';
 import { initLocalDatabase } from './config/localDb';
 import { usePluginStore } from './store/usePluginStore';
+import { useSiteFeatureVisibilityStore } from './store/useSiteFeatureVisibilityStore';
+import { useToolboxStore } from './store/useToolboxStore';
 
 const GlobalContextMenu = lazy(() => import('./components/common/GlobalContextMenu'));
 const GlobalToolbox = lazy(() => import('./components/common/GlobalToolbox'));
 const MobileRefreshButton = lazy(() => import('./components/common/MobileRefreshButton'));
 import { I18nProvider } from './i18n/i18nContext';
 const SearchPalette = lazy(() => import('./components/public/SearchPalette'));
-const router=createBrowserRouter([{path:'*',element:<Suspense fallback={null}><GlobalContextMenu><ScrollToTop/><UnsavedNavigationGuard/><SearchPalette/><CRMRegistrationPrompt/><BirthdayCelebrationModal/><AppRouter/><GlobalToolbox/><MobileRefreshButton/></GlobalContextMenu></Suspense>}]);
+function GlobalToolboxGate() {
+  const enabled = useSiteFeatureVisibilityStore((state) => state.visibility.toolbox);
+  useEffect(() => {
+    if (enabled) return;
+    const toolbox = useToolboxStore.getState();
+    toolbox.setPlaying(false);
+    toolbox.setTimerIsRunning(false);
+    toolbox.setActivePanel('hub');
+    toolbox.close();
+  }, [enabled]);
+  return enabled ? <GlobalToolbox /> : null;
+}
+const router=createBrowserRouter([{path:'*',element:<Suspense fallback={null}><GlobalContextMenu><ScrollToTop/><UnsavedNavigationGuard/><SearchPalette/><CRMRegistrationPrompt/><BirthdayCelebrationModal/><AppRouter/><GlobalToolboxGate/><MobileRefreshButton/></GlobalContextMenu></Suspense>}]);
 
 export default function App() {
   const { initializeAuth } = useAuthStore();
+  const loadSiteVisibility = useSiteFeatureVisibilityStore((state) => state.load);
 
   useEffect(() => {
     // 1. Iniciar autenticación
     initializeAuth();
+    void loadSiteVisibility();
 
     // 2. Cargar plugins activos (almacenamiento en caché)
     const deferredStartup = window.setTimeout(() => {
@@ -40,7 +56,7 @@ export default function App() {
     }, 1200);
 
     return () => window.clearTimeout(deferredStartup);
-  }, [initializeAuth]);
+  }, [initializeAuth, loadSiteVisibility]);
 
   useEffect(() => {
     const updateFavicon = async () => {

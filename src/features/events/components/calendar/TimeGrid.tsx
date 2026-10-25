@@ -10,9 +10,10 @@ interface TimeGridProps {
   events: DbEvent[];
   onSelectTimeRange: (date: string, startTime: string, endTime: string) => void;
   onEditEvent: (event: DbEvent) => void;
+  onMoveEvent: (event: DbEvent, date: string) => void;
 }
 
-export default function TimeGrid({ currentDate, viewType, customDays, events, onSelectTimeRange, onEditEvent }: TimeGridProps) {
+export default function TimeGrid({ currentDate, viewType, customDays, events, onSelectTimeRange, onEditEvent, onMoveEvent }: TimeGridProps) {
   const days = generateDaysForView(currentDate, viewType, customDays) as Date[];
   const hours = Array.from({ length: 24 }).map((_, i) => i);
   
@@ -108,7 +109,7 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
             const dayEvents = events.filter(e => e.start_date === dateStr);
 
             return (
-              <div key={dateStr} className="relative">
+              <div key={dateStr} className="relative" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const eventId = e.dataTransfer.getData('text/event-id'); const draggedEvent = events.find((event) => event.id === eventId); if (draggedEvent) onMoveEvent(draggedEvent, dateStr); }}>
                 {hours.map(hour => (
                   <div
                     key={hour}
@@ -148,9 +149,12 @@ export default function TimeGrid({ currentDate, viewType, customDays, events, on
                     <button
                       type="button"
                       key={event.id}
+                      draggable
+                      onDragStart={(e) => { e.dataTransfer.setData('text/event-id', event.id); e.dataTransfer.effectAllowed = 'move'; }}
                       onClick={() => onEditEvent(event)}
-                      aria-label={`Editar ${event.title}`}
-                      className="event-item absolute left-1 right-1 rounded-lg bg-primary/90 backdrop-blur border border-primary text-white p-1.5 shadow-sm overflow-hidden cursor-pointer hover:bg-blue-600 transition-colors z-10"
+                      aria-label={`Editar ${event.title}; arrastra para moverlo de fecha`}
+                      title="Arrastra para cambiar de fecha; haz clic para editar"
+                      className="event-item absolute left-1 right-1 rounded-lg bg-primary/90 backdrop-blur border border-primary text-white p-1.5 shadow-sm overflow-hidden cursor-grab active:cursor-grabbing hover:bg-blue-600 transition-colors z-10"
                       style={{ top: `${top}px`, height: `${height}px` }}
                     >
                       <div className="text-[9px] font-bold opacity-80 leading-tight mb-0.5">

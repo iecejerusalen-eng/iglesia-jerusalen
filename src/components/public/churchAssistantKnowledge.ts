@@ -1,5 +1,5 @@
 import type { Schedule } from '../../types';
-import { PUBLIC_LAUNCH_VISIBILITY } from '../../config/publicLaunchVisibility';
+import { getSiteFeatureVisibility } from '../../store/useSiteFeatureVisibilityStore';
 import { BIBLE_BOOKS } from '../../config/bibleBooks';
 import { BIBLE_BOOK_MAP, parseBibleReferences } from '../../utils/bibleParser';
 import type { PublicSongSearchResult } from '../../features/songs/services/publicSongSearch';
@@ -715,7 +715,7 @@ export function answerFromPublicInfo(
       return { text: 'El estudio bíblico reúne lecturas, mapas, personajes y recorridos para explorar los pasajes. Puedes abrirlo directamente o ver otros programas de formación.', links: [{ label: 'Abrir estudio bíblico', href: '/programas/estudio-biblico' }, CHURCH_LINKS.programs] };
     }
     if (classroom) {
-      return PUBLIC_LAUNCH_VISIBILITY.classroom
+      return getSiteFeatureVisibility().classroom
         ? { text: 'Abre el Aula Virtual para ingresar a tu espacio de formación. Si aún no has iniciado sesión, el sitio te pedirá entrar con tu cuenta.', links: [CHURCH_LINKS.classroom, { label: 'Ingresar', href: '/login' }] }
         : { text: 'Puedes consultar los programas de formación publicados y sus recursos abiertos desde la página de Programas.', links: [CHURCH_LINKS.programs] };
     }
@@ -818,7 +818,7 @@ export function offlineAssistantAnswer(message: string): { text: string; links: 
   if (/alabanza|himno|cancion|letra|himnario|coros|musica|musical|adoracion/.test(query)) suggestions.push(CHURCH_LINKS.songs);
   if (/curso|cursos|programa|aula virtual|formacion/.test(query)) {
     suggestions.push(CHURCH_LINKS.programs);
-    if (PUBLIC_LAUNCH_VISIBILITY.classroom) suggestions.push(CHURCH_LINKS.classroom);
+    if (getSiteFeatureVisibility().classroom) suggestions.push(CHURCH_LINKS.classroom);
   }
   if (/visita|llegar|ubicacion|familia|nino|parqueo|accesibilidad/.test(query)) suggestions.push(CHURCH_LINKS.visit);
   if (/evento|actividad|agenda/.test(query)) suggestions.push(CHURCH_LINKS.events);

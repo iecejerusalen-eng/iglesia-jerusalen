@@ -151,6 +151,30 @@ const EventsManager = () => {
     }
   };
 
+  const handleMoveEvent = async (event: DbEvent, targetDate: string) => {
+    if (targetDate === event.start_date) return;
+    const sourceStart = new Date(`${event.start_date}T00:00:00Z`);
+    const destinationStart = new Date(`${targetDate}T00:00:00Z`);
+    const dayOffset = Math.round((destinationStart.getTime() - sourceStart.getTime()) / 86_400_000);
+    const nextEnd = new Date(`${event.end_date || event.start_date}T00:00:00Z`);
+    nextEnd.setDate(nextEnd.getDate() + dayOffset);
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('events').update({
+        start_date: targetDate,
+        end_date: nextEnd.toISOString().slice(0, 10),
+      }).eq('id', event.id);
+      if (error) throw error;
+      toast.success(`“${event.title}” se movió al ${new Date(`${targetDate}T12:00:00`).toLocaleDateString('es-EC')}.`);
+      await fetchEvents();
+    } catch (err: unknown) {
+      console.error('Error moviendo el evento:', err);
+      toast.error('No se pudo mover el evento. Revisa tus permisos e inténtalo de nuevo.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const visibleEvents = useMemo(() => events.filter((event) => {
     // Permission filter
     if (userRoles.includes('leader') && userProfile?.ministry_id) {
@@ -331,6 +355,7 @@ const EventsManager = () => {
             events={visibleEvents}
             onCreateEvent={handleCalendarCreate}
             onEditEvent={handleOpenEdit}
+            onMoveEvent={(event, date) => void handleMoveEvent(event, date)}
           />
         )}
 

@@ -10,7 +10,7 @@ import { getVisibleContextMenuGroups } from './contextMenuItems';
 
 describe('menú contextual durante el lanzamiento oculto', () => {
   it('retira enlaces de Tienda, carrito y Aula Virtual', () => {
-    const links = getVisibleContextMenuGroups().flatMap((group) => group.items)
+    const links = getVisibleContextMenuGroups(() => true).flatMap((group) => group.items)
       .filter((item) => item.type === 'nav')
       .map((item) => item.path);
 

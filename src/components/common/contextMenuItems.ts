@@ -1,11 +1,11 @@
-import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
-
 /**
  * Fuente única de verdad para los ítems del menú contextual.
  * Cualquier cambio aquí se refleja automáticamente en:
  *  - El ContextMenu de escritorio (clic derecho)
  *  - El Bottom Sheet Drawer de móvil (long-press)
  */
+import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
+import type { SiteFeatureVisibility } from '../../store/useSiteFeatureVisibilityStore';
 
 export interface ContextMenuNavItem {
   type: 'nav';
@@ -15,6 +15,8 @@ export interface ContextMenuNavItem {
   colorClasses: string;
   /** Icon component name (used as a key to look up the icon in the renderers) */
   iconKey: string;
+  /** Admin module permission required before exposing this destination. */
+  requiresPermission?: string;
   shortcut?: string;
 }
 
@@ -117,6 +119,19 @@ export const CONTEXT_MENU_GROUPS: ContextMenuGroupDef[] = [
     ],
   },
   {
+    groupLabel: 'Administración',
+    items: [
+      {
+        type: 'nav',
+        label: 'Abrir panel de administración',
+        path: '/admin',
+        iconKey: 'LayoutDashboard',
+        colorClasses: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200',
+        requiresPermission: 'dashboard',
+      },
+    ],
+  },
+  {
     groupLabel: 'Ruta & Ubicación',
     items: [
       {
@@ -192,12 +207,11 @@ export const CONTEXT_MENU_GROUPS: ContextMenuGroupDef[] = [
   },
 ];
 
-/** Oculta destinos públicos que aún no están habilitados para el lanzamiento. */
-export function getVisibleContextMenuGroups() {
+export function getVisibleContextMenuGroups(canViewModule: (moduleName: string) => boolean = () => false, visibility?: Pick<SiteFeatureVisibility, 'store' | 'classroom'>) {
   return CONTEXT_MENU_GROUPS
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => item.type !== 'nav' || isPublicPathVisible(item.path)),
+      items: group.items.filter((item) => item.type !== 'nav' || (isPublicPathVisible(item.path, visibility) && (!item.requiresPermission || canViewModule(item.requiresPermission)))),
     }))
     .filter((group) => group.items.length > 0);
 }

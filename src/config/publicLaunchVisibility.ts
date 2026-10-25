@@ -1,15 +1,8 @@
-/** Temporarily hide unfinished public products without removing their pages. */
-const publicPreviewEnabled = import.meta.env.MODE !== 'production';
+import { getSiteFeatureVisibility, type SiteFeatureVisibility } from '../store/useSiteFeatureVisibilityStore';
 
-export const PUBLIC_LAUNCH_VISIBILITY = {
-  store: publicPreviewEnabled,
-  classroom: publicPreviewEnabled,
-  adminOnboarding: false,
-} as const;
+type PublicFeatureVisibility = Pick<SiteFeatureVisibility, 'store' | 'classroom'>;
 
-type PublicFeatureVisibility = Pick<typeof PUBLIC_LAUNCH_VISIBILITY, 'store' | 'classroom'>;
-
-export function isPublicPathVisible(path: string, visibility: PublicFeatureVisibility = PUBLIC_LAUNCH_VISIBILITY): boolean {
+export function isPublicPathVisible(path: string, visibility: PublicFeatureVisibility = getSiteFeatureVisibility()): boolean {
   const normalizedPath = path.split(/[?#]/, 1)[0].replace(/\/$/, '') || '/';
 
   if (normalizedPath === '/tienda' || normalizedPath.startsWith('/tienda/') || normalizedPath === '/cart' || normalizedPath.startsWith('/cart/')) {

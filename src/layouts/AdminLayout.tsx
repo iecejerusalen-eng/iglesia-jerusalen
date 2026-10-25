@@ -15,7 +15,7 @@ import { ADMIN_MODULES, getAdminModulePermission } from '../config/adminModules'
 import { useOnboarding } from '../admin/onboarding/useOnboarding';
 import { OnboardingChecklist } from '../admin/onboarding/OnboardingChecklist';
 import { OnboardingModal } from '../admin/onboarding/OnboardingModal';
-import { PUBLIC_LAUNCH_VISIBILITY } from '../config/publicLaunchVisibility';
+import { useSiteFeature } from '../store/useSiteFeatureVisibilityStore';
 
 interface AccentStyle extends CSSProperties {
   '--color-gold'?: string;
@@ -26,20 +26,21 @@ const AdminLayout = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { sidebarViewMode, accentColor } = useThemeStore();
   const { logout, firstName, photoUrl, userRole } = useAuthStore();
-  const onboarding = useOnboarding();
+  const adminOnboardingEnabled = useSiteFeature('adminOnboarding');
+  const onboarding = useOnboarding(adminOnboardingEnabled);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && !onboarding.isLoading && onboarding.pasos.length > 0 && !onboarding.config.onboarding_completado && !onboarding.config.onboarding_omitido) {
+    if (adminOnboardingEnabled && !onboarding.isLoading && onboarding.pasos.length > 0 && !onboarding.config.onboarding_completado && !onboarding.config.onboarding_omitido) {
       const snoozedUntil = localStorage.getItem('admin_onboarding_snoozed_until');
       if (snoozedUntil && Date.now() < Number(snoozedUntil)) return undefined;
       const timer = window.setTimeout(() => setShowOnboarding(true), 1200);
       return () => window.clearTimeout(timer);
     }
-  }, [onboarding.config.onboarding_completado, onboarding.config.onboarding_omitido, onboarding.isLoading, onboarding.pasos.length]);
+  }, [adminOnboardingEnabled, onboarding.config.onboarding_completado, onboarding.config.onboarding_omitido, onboarding.isLoading, onboarding.pasos.length]);
 
   useEffect(() => {
     if (onboarding.error) console.warn('Onboarding check:', onboarding.error);
@@ -179,7 +180,7 @@ const AdminLayout = () => {
                 {userRole ?? 'Sin rol'}
               </div>
               {/* Onboarding points */}
-              {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && <button
+              {adminOnboardingEnabled && <button
                 type="button"
                 onClick={reopenOnboarding}
                 className="hidden items-center gap-1 rounded-xl border border-amber-200/70 bg-amber-50/70 px-3 py-1.5 text-[10px] font-extrabold text-amber-700 hover:bg-amber-100/80 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20 transition-all cursor-pointer xl:flex"
@@ -281,7 +282,7 @@ const AdminLayout = () => {
       </nav>
 
       <CommandMenu />
-      {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && !onboarding.isLoading && onboarding.pasos.length > 0 && (
+      {adminOnboardingEnabled && !onboarding.isLoading && onboarding.pasos.length > 0 && (
         <OnboardingChecklist
           pasos={onboarding.pasos}
           porcentaje={onboarding.porcentaje}
@@ -295,7 +296,7 @@ const AdminLayout = () => {
           }}
         />
       )}
-      {PUBLIC_LAUNCH_VISIBILITY.adminOnboarding && showOnboarding && onboarding.pasos.length > 0 && <OnboardingModal nombre={firstName || 'equipo'} pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} onStart={(paso) => { setShowOnboarding(false); navigate(paso.accion_ruta); }} onLater={postponeOnboarding} onClose={closeOnboarding} />}
+      {adminOnboardingEnabled && showOnboarding && onboarding.pasos.length > 0 && <OnboardingModal nombre={firstName || 'equipo'} pasos={onboarding.pasos} porcentaje={onboarding.porcentaje} onStart={(paso) => { setShowOnboarding(false); navigate(paso.accion_ruta); }} onLater={postponeOnboarding} onClose={closeOnboarding} />}
     </div>
   );
 };

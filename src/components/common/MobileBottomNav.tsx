@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { PUBLIC_NAVIGATION_LINKS } from '../../config/publicNavigation';
 import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
+import { useSiteFeatureVisibilityStore } from '../../store/useSiteFeatureVisibilityStore';
 
 interface SubMenuItem {
   id: string;
@@ -251,6 +252,7 @@ function useScrollDirection(threshold: number = 15) {
 }
 
 const MobileBottomNav: React.FC = () => {
+  const featureVisibility = useSiteFeatureVisibilityStore((state) => state.visibility);
   const location = useLocation();
   const [activeSheet, setActiveSheet] = useState<'recursos' | 'comunidad' | null>(null);
   const [hasTodayEvents, setHasTodayEvents] = useState(false);
@@ -327,13 +329,13 @@ const MobileBottomNav: React.FC = () => {
 
   const isResourcesActive =
     activeSheet === 'recursos' ||
-    RECURSOS_ITEMS.filter((item) => isPublicPathVisible(item.url)).some(
+      RECURSOS_ITEMS.filter((item) => isPublicPathVisible(item.url, featureVisibility)).some(
       (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
     );
 
   const isCommunityActive =
     activeSheet === 'comunidad' ||
-    COMUNIDAD_ITEMS.filter((item) => isPublicPathVisible(item.url)).some(
+      COMUNIDAD_ITEMS.filter((item) => isPublicPathVisible(item.url, featureVisibility)).some(
       (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
     );
 
@@ -639,7 +641,7 @@ const MobileBottomNav: React.FC = () => {
 
               {/* Lista Vertical Unidireccional con Tarjetas Limpias */}
               <div className="flex-1 overflow-y-auto overscroll-contain p-3.5 space-y-2 custom-scrollbar">
-                {(activeSheet === 'recursos' ? RECURSOS_ITEMS : COMUNIDAD_ITEMS).filter((item) => isPublicPathVisible(item.url)).map((item) => {
+                {(activeSheet === 'recursos' ? RECURSOS_ITEMS : COMUNIDAD_ITEMS).filter((item) => isPublicPathVisible(item.url, featureVisibility)).map((item) => {
                   const Icon = item.icon;
                   const isItemActive =
                     location.pathname === item.url ||

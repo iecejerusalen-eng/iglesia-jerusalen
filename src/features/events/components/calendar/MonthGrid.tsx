@@ -8,9 +8,10 @@ interface MonthGridProps {
   events: DbEvent[];
   onSelectRange: (startDate: string, endDate: string) => void;
   onEditEvent: (event: DbEvent) => void;
+  onMoveEvent: (event: DbEvent, date: string) => void;
 }
 
-export default function MonthGrid({ currentDate, events, onSelectRange, onEditEvent }: MonthGridProps) {
+export default function MonthGrid({ currentDate, events, onSelectRange, onEditEvent, onMoveEvent }: MonthGridProps) {
   const days = generateDaysForView(currentDate, 'month') as Date[];
   const [dragStart, setDragStart] = useState<Date | null>(null);
   const [dragCurrent, setDragCurrent] = useState<Date | null>(null);
@@ -84,6 +85,13 @@ export default function MonthGrid({ currentDate, events, onSelectRange, onEditEv
           return (
             <div 
               key={idx}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const eventId = e.dataTransfer.getData('text/event-id');
+                const draggedEvent = events.find((event) => event.id === eventId);
+                if (draggedEvent) onMoveEvent(draggedEvent, formatDateString(date));
+              }}
               onMouseDown={(e) => {
                 // Don't trigger if clicking an event
                 if ((e.target as HTMLElement).closest('.event-item')) return;
@@ -111,9 +119,12 @@ export default function MonthGrid({ currentDate, events, onSelectRange, onEditEv
                   <button
                     type="button"
                     key={event.id}
+                    draggable
+                    onDragStart={(e) => { e.dataTransfer.setData('text/event-id', event.id); e.dataTransfer.effectAllowed = 'move'; }}
                     onClick={() => onEditEvent(event)}
-                    aria-label={`Editar ${event.title}`}
-                    className="event-item block w-full truncate rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1 text-left text-[10px] text-primary transition-all hover:border-indigo-300 hover:shadow-sm dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300"
+                    aria-label={`Editar ${event.title}; arrastra para moverlo de fecha`}
+                    title="Arrastra para cambiar de fecha; haz clic para editar"
+                    className="event-item block w-full cursor-grab truncate rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1 text-left text-[10px] text-primary transition-all hover:border-indigo-300 hover:shadow-sm active:cursor-grabbing dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300"
                   >
                     <span className="font-semibold">{event.start_time ? event.start_time : ''}</span> {event.emoji} {event.title}
                   </button>

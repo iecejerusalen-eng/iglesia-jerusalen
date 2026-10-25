@@ -8,8 +8,10 @@ import {
   Sparkles, Music, Radio, HeartHandshake
 } from 'lucide-react';
 import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
+import { useSiteFeatureVisibilityStore } from '../../store/useSiteFeatureVisibilityStore';
 
 const Footer = () => {
+  const featureVisibility = useSiteFeatureVisibilityStore((state) => state.visibility);
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
@@ -140,7 +142,7 @@ const Footer = () => {
                 <div key={category.title}>
                   <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-500/80 dark:text-indigo-400/80 mb-4">{category.title}</h5>
                   <ul className="space-y-4">
-                    {category.links.filter((link) => isPublicPathVisible(link.path)).map((link) => {
+                    {category.links.filter((link) => isPublicPathVisible(link.path, featureVisibility)).map((link) => {
                       const Icon = link.icon;
                       return (
                         <li key={link.path}>

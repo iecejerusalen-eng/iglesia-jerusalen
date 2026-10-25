@@ -2,7 +2,8 @@ import { supabase } from '../../../config/supabase';
 import { SITE_NAVIGATION_ITEMS } from '../../../config/siteNavigationIndex';
 import type { CustomSearchLink, SearchIndexItem, SearchAggregatedResults, ParsedBibleReference } from '../types';
 import { slugifySongTitle } from '../../songs/utils/musicEngine';
-import { isPublicPathVisible, PUBLIC_LAUNCH_VISIBILITY } from '../../../config/publicLaunchVisibility';
+import { isPublicPathVisible } from '../../../config/publicLaunchVisibility';
+import { getSiteFeatureVisibility } from '../../../store/useSiteFeatureVisibilityStore';
 
 // Cache TTL: 5 minutes in memory
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -50,6 +51,7 @@ function staticToSearchItem(item: (typeof SITE_NAVIGATION_ITEMS)[number]): Searc
  * Pre-carga y mantiene en memoria el índice dinámico y rápido
  */
 export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIndexItem[]> {
+  const featureVisibility = getSiteFeatureVisibility();
   const now = Date.now();
   if (!forceRefresh && memoryIndexCache && (now - memoryIndexCache.timestamp) < CACHE_TTL_MS) {
     return memoryIndexCache.items;
@@ -103,7 +105,7 @@ export async function preloadSearchIndex(forceRefresh = false): Promise<SearchIn
     }
 
     // 2. Cursos del Aula Virtual (LMS)
-    if (PUBLIC_LAUNCH_VISIBILITY.classroom && coursesRes.status === 'fulfilled' && coursesRes.value.data) {
+    if (featureVisibility.classroom && coursesRes.status === 'fulfilled' && coursesRes.value.data) {
       for (const course of coursesRes.value.data) {
         dynamicItems.push({
           id: `course-${course.id}`,
@@ -248,6 +250,7 @@ export function searchLocalIndex(query: string, items?: SearchIndexItem[]): Sear
  * Consulta profunda a Supabase para canciones, eventos, anuncios y productos
  */
 export async function searchDeepSupabase(rawQuery: string): Promise<Partial<SearchAggregatedResults>> {
+  const featureVisibility = getSiteFeatureVisibility();
   const q = escapeIlikeTerm(rawQuery);
   if (!q) {
     return {
@@ -308,7 +311,7 @@ export async function searchDeepSupabase(rawQuery: string): Promise<Partial<Sear
       };
     });
 
-  const products: SearchIndexItem[] = (PUBLIC_LAUNCH_VISIBILITY.store ? (productsRes.data ?? []) : []).map((p) => ({
+  const products: SearchIndexItem[] = (featureVisibility.store ? (productsRes.data ?? []) : []).map((p) => ({
       id: `prod-${p.id}`,
       title: p.name,
       subtitle: `$${p.price.toFixed(2)} — ${p.category}`,
@@ -359,7 +362,7 @@ export async function searchDeepSupabase(rawQuery: string): Promise<Partial<Sear
       source: 'changelog',
     }));
 
-  const courses: SearchIndexItem[] = (PUBLIC_LAUNCH_VISIBILITY.classroom ? (coursesRes.data ?? []) : []).map((c) => ({
+  const courses: SearchIndexItem[] = (featureVisibility.classroom ? (coursesRes.data ?? []) : []).map((c) => ({
       id: `course-${c.id}`,
       title: c.title,
       subtitle: c.description?.slice(0, 80) || 'Curso de formación',

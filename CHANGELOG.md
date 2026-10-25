@@ -19,6 +19,18 @@ Total output lines: 612
 
 Todas las novedades y cambios notables de este proyecto están documentados en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+## [1.14.27] - 2026-10-24
+
+### Seguridad y administración
+- Los perfiles, permisos, relaciones privadas del CRM y eventos quedan sujetos a permisos efectivos y reglas de acceso por usuario o ministerio.
+- La agenda pública expone solo campos aprobados y deja fuera notas y vínculos CRM.
+
+### Mejorado
+- La pestaña «Visibilidad» de Configuración permite activar o esconder Tienda, Aula Virtual, onboarding y toolbox sin modificar código.
+- El calendario permite mover eventos arrastrándolos y conserva su duración y horarios.
+
+### Verificación
+- Build de producción, ESLint focalizado y pruebas de visibilidad y CRM pasan.
 ## [1.14.24] - 2026-10-24
 
 ### Mejorado

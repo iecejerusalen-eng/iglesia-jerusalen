@@ -4,7 +4,7 @@ import { Navigate, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import { PageSkeleton } from '../components/common/Skeletons';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
-import { PUBLIC_LAUNCH_VISIBILITY } from '../config/publicLaunchVisibility';
+import { useSiteFeatureVisibilityStore } from '../store/useSiteFeatureVisibilityStore';
 
 // Los layouts cargan navegación, búsqueda y herramientas globales. Mantenerlos
 // fuera del bundle del router evita descargar el panel administrativo al visitar
@@ -175,6 +175,8 @@ const MyMinistryBudget = lazyWithRetry(() => import('../pages/admin/MinistryBudg
 const MinistryBudgetsAdmin = lazyWithRetry(() => import('../pages/admin/MinistryBudgets').then((module) => ({ default: module.MinistryBudgetsAdmin })));
 
 export default function AppRouter() {
+  const visibility = useSiteFeatureVisibilityStore((state) => state.visibility);
+  const visibilityLoaded = useSiteFeatureVisibilityStore((state) => state.isLoaded);
   return (
     <Suspense fallback={<PageSkeleton />}>
       <Routes>
@@ -184,8 +186,8 @@ export default function AppRouter() {
           <Route path="/" element={<Home />} />
           <Route path="/visita" element={<PlanYourVisit />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/tienda" element={PUBLIC_LAUNCH_VISIBILITY.store ? <Store /> : <Navigate to="/" replace />} />
-          <Route path="/cart" element={PUBLIC_LAUNCH_VISIBILITY.store ? <Cart /> : <Navigate to="/" replace />} />
+          <Route path="/tienda" element={!visibilityLoaded ? <PageSkeleton /> : visibility.store ? <Store /> : <Navigate to="/" replace />} />
+          <Route path="/cart" element={!visibilityLoaded ? <PageSkeleton /> : visibility.store ? <Cart /> : <Navigate to="/" replace />} />
           <Route path="/donaciones" element={<Donations />} />
           <Route path="/nosotros" element={<About />} />
           <Route path="/nosotros/origen-cuadrangular" element={<AboutLearning />} />
@@ -223,7 +225,7 @@ export default function AppRouter() {
           <Route path="/publicaciones" element={<PublicationsHub />} />
           <Route path="/publicaciones/:spaceSlug" element={<EditorialSpacePage />} />
           <Route path="/publicaciones/:spaceSlug/:documentId" element={<EditorialDocumentPage />} />
-          <Route path="/aula-virtual" element={PUBLIC_LAUNCH_VISIBILITY.classroom ? <VirtualClassroomLanding /> : <Navigate to="/" replace />} />
+          <Route path="/aula-virtual" element={!visibilityLoaded ? <PageSkeleton /> : visibility.classroom ? <VirtualClassroomLanding /> : <Navigate to="/" replace />} />
           <Route path="/certificados/:id" element={<CertificateViewer />} />
           <Route path="/mis-aportes" element={<MyContributions />} />
           <Route path="/mis-compras" element={<MyPurchases />} />

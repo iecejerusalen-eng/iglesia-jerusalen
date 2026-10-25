@@ -6,12 +6,13 @@ import { z } from 'zod';
 import { supabase } from '../../config/supabase';
 import { toast } from 'sonner';
 import { useConfirmStore } from '../../store/useConfirmStore';
+import VisibilityTab from './Settings/tabs/VisibilityTab';
 
 import { AnimeFadeUp } from '../../components/animations/AnimeWrappers';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { 
   Phone, Landmark, Share2, Save, Loader2, ExternalLink,
-  Settings, Tags, Plus, Trash2, Edit2, Check, X 
+  Settings, Tags, Plus, Trash2, Edit2, Check, X, Eye
 } from 'lucide-react';
 import type { CatalogRole } from '../../types';
 
@@ -52,7 +53,7 @@ type CatalogCategory = typeof CATEGORIES[number]['id'];
 const SettingsManager = () => {
   const confirm = useConfirmStore((state) => state.confirm);
 
-  const [activeTab, setActiveTab] = useState<'settings' | 'catalogs'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'catalogs' | 'visibility'>('settings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -274,6 +275,18 @@ const SettingsManager = () => {
         >
           <Tags size={14} />
           Parámetros y Catálogos
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('visibility')}
+          className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'visibility'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Eye size={14} />
+          Visibilidad
         </button>
       </div>
 
@@ -586,7 +599,7 @@ const SettingsManager = () => {
             </div>
             </form>
           </AnimeFadeUp>
-        ) : (
+        ) : activeTab === 'catalogs' ? (
           <AnimeFadeUp key="catalogs-tab">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Category selection list (left sidebar) */}
@@ -713,6 +726,8 @@ const SettingsManager = () => {
             </div>
             </div>
           </AnimeFadeUp>
+        ) : (
+          <AnimeFadeUp key="visibility-tab"><VisibilityTab /></AnimeFadeUp>
         )}
       </div>
     </AnimeFadeUp>

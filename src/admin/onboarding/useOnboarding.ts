@@ -11,7 +11,7 @@ export interface OnboardingPasoData {
 
 interface OnboardingConfig { onboarding_completado: boolean; onboarding_omitido: boolean; porcentaje_completado: number; }
 
-export function useOnboarding() {
+export function useOnboarding(enabled = true) {
   const { user, role } = useAuthStore();
   const location = useLocation();
   const [pasos, setPasos] = useState<OnboardingPasoData[]>([]);
@@ -20,6 +20,12 @@ export function useOnboarding() {
   const [error, setError] = useState<Error | null>(null);
 
   const cargar = useCallback(async () => {
+    if (!enabled) {
+      setPasos([]);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
     if (!user?.id || !role) { setPasos([]); setIsLoading(false); return; }
     setIsLoading(true); setError(null);
     const [{ data: stepRows, error: stepsError }, { data: progressRows, error: progressError }, { data: configRow, error: configError }] = await Promise.all([
@@ -34,7 +40,7 @@ export function useOnboarding() {
     setPasos(nextSteps);
     setConfig(configRow ?? { onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
     setIsLoading(false);
-  }, [role, user]);
+  }, [enabled, role, user]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void cargar(); }, 0);
@@ -45,7 +51,7 @@ export function useOnboarding() {
   const completados = useMemo(() => pasos.filter((step) => step.completado).length, [pasos]);
   const puntos = useMemo(() => pasos.filter((step) => step.completado).reduce((total, step) => total + step.puntos, 0), [pasos]);
   const marcarCompletado = useCallback(async (pasoId: string) => {
-    if (!user?.id) return;
+    if (!enabled || !user?.id) return;
     const now = new Date().toISOString();
     const { error: progressError } = await supabase.from('onboarding_progreso').upsert({ usuario_id: user.id, paso_id: pasoId, completado_at: now, omitido: false }, { onConflict: 'usuario_id,paso_id' });
     if (progressError) { setError(progressError); return; }
@@ -54,22 +60,23 @@ export function useOnboarding() {
     if (configError) { setError(configError); return; }
     setPasos((current) => current.map((step) => step.id === pasoId ? { ...step, completado: true, omitido: false } : step));
     setConfig({ onboarding_completado: nextPercentage === 100, onboarding_omitido: false, porcentaje_completado: nextPercentage });
-  }, [pasos, user]);
+  }, [enabled, pasos, user]);
 
   const actualizarConfig = useCallback(async (values: Partial<OnboardingConfig>) => {
-    if (!user?.id) return;
+    if (!enabled || !user?.id) return;
     const next = { ...config, ...values };
     const { error: configError } = await supabase.from('onboarding_configuracion').upsert({ usuario_id: user.id, ...next, ultima_actividad: new Date().toISOString() }, { onConflict: 'usuario_id' });
     if (configError) { setError(configError); return; }
     setConfig(next);
-  }, [config, user]);
+  }, [config, enabled, user]);
 
   useEffect(() => {
+    if (!enabled) return;
     const current = pasos.find((step) => step.accion_ruta === location.pathname);
     if (!current || current.completado) return;
     const timer = window.setTimeout(() => { void marcarCompletado(current.id); }, 0);
     return () => window.clearTimeout(timer);
-  }, [location.pathname, marcarCompletado, pasos]);
+  }, [enabled, location.pathname, marcarCompletado, pasos]);
 
   return { pasos, config, porcentaje, completados, puntos, isLoading, error, recargar: cargar, marcarCompletado, actualizarConfig };
 }
