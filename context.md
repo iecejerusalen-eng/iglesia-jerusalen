@@ -3,6 +3,12 @@ Total output lines: 564
 
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 24-oct-2026 — Acceso Google y administración desde móvil
+
+La barra superior del sitio público ahora aparece en móviles con controles compactos: muestra «Ingresar» cuando no hay sesión y la foto del perfil cuando hay una sesión autenticada. La imagen usa `photo_url` y, si está vacío, los metadatos `avatar_url`/`picture` de Google. El menú mantiene los destinos de cuenta y el acceso «Admin» continúa sujeto a los permisos existentes; la navegación inferior conserva su acceso directo para cuentas autorizadas. En `/login`, «Ingresar con Google» queda destacado antes del formulario de correo, con altura táctil de 48 px y estado de conexión. La barra principal comienza debajo de la barra superior y se alinea al borde superior al desplazarse.
+
+Verificación local: Playwright a 320 y 390 px, botón de Google visible en el primer viewport y sin overflow horizontal; consola del navegador sin errores. ESLint focalizado, TypeScript y build de producción pasan. Sin cambios Supabase de esquema ni publicación hasta completar el despliegue.
+
 ## 24-oct-2026 — Contexto en repreguntas de agenda
 
 Las repreguntas breves que nombran hoy, mañana, un día o un período cercano heredan si el turno anterior trataba de eventos o de horarios. Así «¿Y el domingo?» continúa la agenda de eventos cuando esa era la conversación, y continúa horarios cuando se consultaban cultos. Se limita a fechas cortas para no cambiar el sentido de una consulta nueva. Publicado en 1.14.21 (`94146b9`).

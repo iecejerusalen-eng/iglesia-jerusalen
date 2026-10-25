@@ -68,6 +68,12 @@ const TopBar = () => {
   const isTransparent = isHomeAtTop && document.documentElement.classList.contains('dark');
   const roleLower = role?.toLowerCase();
   const isAuthorized = roleLower === 'admin' || roleLower === 'pastor' || hasPermission('dashboard', 'view');
+  const googleAvatar = typeof user?.user_metadata?.avatar_url === 'string'
+    ? user.user_metadata.avatar_url
+    : typeof user?.user_metadata?.picture === 'string'
+      ? user.user_metadata.picture
+      : null;
+  const profilePhoto = photoUrl || googleAvatar;
 
   return (
     <div className={`h-[46px] transition-all duration-500 ease-in-out ${
@@ -111,7 +117,6 @@ const TopBar = () => {
           </span>
           <Radio size={12} className="hidden sm:block" aria-hidden="true" />
           <span className="hidden sm:inline">En Vivo</span>
-          <span className="sm:hidden">Vivo</span>
         </Link>
 
         {/* Único Botón de Donaciones / Diezmos destacado */}
@@ -151,15 +156,19 @@ const TopBar = () => {
               {/* Botón de Perfil / Hola, [Nombre] */}
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
+                type="button"
+                aria-label={userMenuOpen ? 'Cerrar menú de perfil' : 'Abrir menú de perfil'}
+                aria-expanded={userMenuOpen}
                 className={`flex items-center gap-2 transition-colors duration-500 cursor-pointer py-1 font-semibold text-xs ${
                   isTransparent ? 'text-white hover:text-gold' : 'text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-gold'
                 }`}
               >
-                {photoUrl ? (
+                {profilePhoto ? (
                   <img loading="lazy"
-                    src={photoUrl}
+                    src={profilePhoto}
                     alt="Perfil"
-                    className="w-6 h-6 rounded-full object-cover border border-gray-250"
+                    referrerPolicy="no-referrer"
+                    className="w-8 h-8 sm:w-6 sm:h-6 rounded-full object-cover border border-gray-250 ring-2 ring-white/20"
                   />
                 ) : (
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] uppercase transition-colors duration-500 ${
@@ -171,7 +180,7 @@ const TopBar = () => {
                 <span className="hidden sm:inline">
                   Hola, {firstName || user.user_metadata?.full_name || user.email?.split('@')[0]}
                 </span>
-                <ChevronDown size={12} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={12} className={`hidden sm:block transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Backdrop para cerrar clickeando fuera */}
@@ -196,10 +205,11 @@ const TopBar = () => {
                     <div className={`px-4 py-3 flex flex-col items-center gap-1.5 border-b text-center ${
                       isTransparent ? 'border-white/10' : 'border-gray-150 dark:border-white/10'
                     }`}>
-                      {photoUrl ? (
+                      {profilePhoto ? (
                         <img loading="lazy"
-                          src={photoUrl}
+                          src={profilePhoto}
                           alt="Avatar"
+                          referrerPolicy="no-referrer"
                           className="w-12 h-12 rounded-full object-cover border-2 border-gold/40"
                         />
                       ) : (
@@ -330,8 +340,11 @@ const TopBar = () => {
           ) : (
             <Link 
               to="/login" 
-              className={`transition-colors duration-500 flex items-center gap-1.5 text-xs font-bold mr-2 ${
-                isTransparent ? 'text-white hover:text-gold' : 'text-gray-750 dark:text-gray-200 hover:text-primary dark:hover:text-gold'
+              aria-label="Ingresar con Google o correo"
+              className={`transition-all duration-200 flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+                isTransparent
+                  ? 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-gold'
+                  : 'border-primary/15 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10'
               }`}
             >
               <User size={14} />

@@ -131,8 +131,38 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-900 px-4 py-12">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-900 px-4 py-8 sm:py-12">
+      <div className="bg-white dark:bg-gray-800 p-5 sm:p-8 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-md w-full max-w-md">
+        <h1 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 text-center">
+          Accede a tu cuenta
+        </h1>
+        <p className="mt-2 mb-5 text-center text-sm leading-5 text-gray-500 dark:text-gray-400">
+          Ingresa con Google en un paso. Si tu cuenta tiene permisos, podrás abrir el panel de administración.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full min-h-12 border border-gray-250 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <svg aria-hidden="true" className="h-5 w-5 flex-shrink-0" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.7c3.9-3.6 6-8.8 6-15Z" />
+            <path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.1c-1.8 1.2-4 1.9-6.8 1.9-5.2 0-9.6-3.5-11.2-8.2H5.9v5.2A20 20 0 0 0 24 44Z" />
+            <path fill="#FBBC05" d="M12.8 27.7a12 12 0 0 1 0-7.4v-5.2H5.9a20 20 0 0 0 0 17.8l6.9-5.2Z" />
+            <path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.8-5.8A19.3 19.3 0 0 0 24 4 20 20 0 0 0 5.9 15.1l6.9 5.2c1.6-4.7 6-8.2 11.2-8.2Z" />
+          </svg>
+          {loading ? 'Conectando con Google…' : 'Ingresar con Google'}
+        </button>
+
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-gray-100 dark:border-gray-700" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-white dark:bg-gray-800 px-3 text-gray-400 dark:text-gray-500 font-semibold">O ingresa con tu correo</span>
+          </div>
+        </div>
         
         {/* Auth Toggle Tabs */}
         <div className="flex border-b border-gray-100 dark:border-gray-700 mb-6">
@@ -160,8 +190,8 @@ const Login = () => {
           </button>
         </div>
 
-        <h2 className="text-2xl font-serif font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">
-          {isRegister ? 'Crear Cuenta Nueva' : 'Ingresar al Panel'}
+        <h2 className="text-xl font-serif font-bold text-gray-800 dark:text-gray-100 mb-5 text-center">
+          {isRegister ? 'Crear Cuenta Nueva' : 'Ingresar con correo'}
         </h2>
         
         {errorMsg && (
@@ -241,31 +271,6 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100 dark:border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-gray-800 px-3 text-gray-400 dark:text-gray-500 font-bold">O también</span>
-          </div>
-        </div>
-
-        {/* Google Sign In Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full border border-gray-250 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 shadow-xs hover:shadow-sm"
-        >
-          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.69c-.29 1.5-.1.14-.14 1.51-1.14 2.27-3.48 3.86-6.55 3.86-4.52 0-8.21-3.69-8.21-8.21s3.69-8.21 8.21-8.21c2.19 0 4.18.8 5.73 2.23l2.84-2.84C18.6 2.44 15.52 1 12 1 5.92 1 1 5.92 1 12s4.92 11 11 11c6.3 0 11.23-4.43 11.75-10.73z"
-            />
-          </svg>
-          Iniciar sesión con Google
-        </button>
       </div>
     </div>
   );

@@ -66,7 +66,7 @@ const PublicLayout = () => {
       </a>
       <Preloader />
       <StickyNav />
-      <div className="hidden sm:block">
+      <div className="block">
         <TopBar />
       </div>
       <Navigation />

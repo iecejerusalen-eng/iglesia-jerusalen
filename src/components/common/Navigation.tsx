@@ -124,7 +124,7 @@ const Navigation = () => {
       initial={false}
       transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       style={{ willChange: 'transform' }}
-      className={`fixed left-0 right-0 w-full z-[70] transition-[top] duration-300 ease-out max-sm:top-0 ${
+      className={`fixed left-0 right-0 w-full z-[70] transition-[top] duration-300 ease-out ${
         isScrolled ? 'top-0' : 'top-[46px]'
       } ${isTransparent ? 'bg-transparent border-transparent' : 'glass-nav'}`}
     >

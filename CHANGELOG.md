@@ -1,3 +1,10 @@
+## [1.14.29] - 2026-10-24
+
+### Mejorado
+- El acceso a Google queda destacado al inicio de la pantalla de ingreso y es más fácil de pulsar desde móviles.
+- La barra superior móvil ofrece un botón claro para ingresar y muestra la foto de Google cuando la cuenta tiene una sesión activa.
+- El acceso al panel administrativo se mantiene visible en la navegación móvil para cuentas autorizadas y conserva sus permisos.
+
 ## [1.14.28] - 2026-10-24
 
 ### Mejorado
