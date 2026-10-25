@@ -9,6 +9,10 @@ La barra superior del sitio público ahora aparece en móviles con controles com
 
 Verificación local: Playwright a 320 y 390 px, botón de Google visible en el primer viewport y sin overflow horizontal; consola del navegador sin errores. ESLint focalizado, TypeScript y build de producción pasan. Sin cambios Supabase de esquema ni publicación hasta completar el despliegue.
 
+## 25-oct-2026 — Aviso del aniversario retirado de Inicio
+
+Se quitó de la portada la tarjeta temporal del 65.º aniversario para despejar el menú y la primera pantalla. La página `/aniversario-65` sigue accesible como archivo. Se añadió una comprobación E2E para verificar ambas condiciones en Chromium.
+
 ## 24-oct-2026 — Contexto en repreguntas de agenda
 
 Las repreguntas breves que nombran hoy, mañana, un día o un período cercano heredan si el turno anterior trataba de eventos o de horarios. Así «¿Y el domingo?» continúa la agenda de eventos cuando esa era la conversación, y continúa horarios cuando se consultaban cultos. Se limita a fechas cortas para no cambiar el sentido de una consulta nueva. Publicado en 1.14.21 (`94146b9`).

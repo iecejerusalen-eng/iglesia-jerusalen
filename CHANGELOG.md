@@ -1,3 +1,8 @@
+## [1.14.30] - 2026-10-25
+
+### Eliminado
+- Se retiró de Inicio la tarjeta temporal del 65.º aniversario para dejar despejada la navegación; la página `/aniversario-65` permanece disponible como archivo.
+
 ## [1.14.29] - 2026-10-24
 
 ### Mejorado
