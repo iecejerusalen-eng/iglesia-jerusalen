@@ -15,6 +15,7 @@ const ROUTE_METADATA: Array<{ match: string; title: string; description: string 
   { match: '/predicas', title: 'Prédicas y sermones | Iglesia Jerusalén', description: 'Escucha y mira las prédicas y enseñanzas de la Iglesia Jerusalén.' },
   { match: '/podcast', title: 'Podcast | Iglesia Jerusalén', description: 'Escucha conversaciones, enseñanzas y contenidos de audio de la Iglesia Jerusalén.' },
   { match: '/eventos', title: 'Eventos | Iglesia Jerusalén', description: 'Consulta los próximos eventos y actividades de la Iglesia Jerusalén.' },
+  { match: '/aniversario-65', title: '65.º aniversario | Iglesia Jerusalén', description: 'Celebremos 65 años de Iglesia Jerusalén. Domingo 25 de octubre de 2026 en Milagro.' },
   { match: '/ministerios', title: 'Ministerios | Iglesia Jerusalén', description: 'Conoce los ministerios y espacios de servicio de la Iglesia Jerusalén.' },
   { match: '/donaciones', title: 'Donaciones | Iglesia Jerusalén', description: 'Apoya la misión de la Iglesia Jerusalén con una donación segura.' },
   { match: '/contacto', title: 'Contacto | Iglesia Jerusalén', description: 'Comunícate con la Iglesia Jerusalén y encuentra nuestros canales oficiales.' },

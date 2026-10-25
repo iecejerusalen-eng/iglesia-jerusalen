@@ -3,27 +3,19 @@ import { Maximize2, Minus, Pause, Play, Plus, RotateCcw } from 'lucide-react';
 import './church-welcome-3d.css';
 
 const STORAGE_KEY = 'jerusalen_welcome_3d_seen_v1';
+const MOBILE_VIEWPORT_QUERY = '(max-width: 767px)';
 type Phase = 'intro' | 'entering' | 'companion' | 'hidden';
-
-function wasSeen() {
-  try { return window.localStorage.getItem(STORAGE_KEY) === '1'; }
-  catch { return false; }
-}
 
 function rememberVisit() {
   try { window.localStorage.setItem(STORAGE_KEY, '1'); }
   catch { /* La navegación funciona aunque el almacenamiento esté bloqueado. */ }
 }
 
-function canShowIntro() {
-  return !window.location.hash && !wasSeen() &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 const ChurchStage = lazy(() => import('./ChurchStage3D'));
 
 export function ChurchWelcome3D() {
-  const [phase, setPhase] = useState<Phase>(() => canShowIntro() ? 'intro' : 'hidden');
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia(MOBILE_VIEWPORT_QUERY).matches);
+  const [phase, setPhase] = useState<Phase>('hidden');
   const [unavailable, setUnavailable] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [command, setCommand] = useState<{ id: number; action: 'zoom-in' | 'zoom-out' | 'reset' } | null>(null);
@@ -31,6 +23,18 @@ export function ChurchWelcome3D() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
   const markUnavailable = useCallback(() => setUnavailable(true), []);
+
+  useEffect(() => {
+    const media = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+    const syncViewport = () => {
+      setIsMobileViewport(media.matches);
+      if (media.matches) setPhase('hidden');
+    };
+
+    syncViewport();
+    media.addEventListener('change', syncViewport);
+    return () => media.removeEventListener('change', syncViewport);
+  }, []);
 
   const finish = useCallback(() => {
     rememberVisit();
@@ -94,6 +98,8 @@ export function ChurchWelcome3D() {
 
   const visible = phase !== 'hidden';
   const overlay = phase === 'intro' || phase === 'entering';
+
+  if (isMobileViewport) return null;
 
   return (
     <>

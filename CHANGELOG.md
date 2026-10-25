@@ -3,6 +3,11 @@
 ### Mejorado
 - En móvil, la barra superior se oculta al desplazarse hacia abajo y vuelve al subir; el botón de ayuda es más compacto y deja espacio libre sobre la navegación inferior.
 - El pie de página se simplifica al ocultar «Explorar» y reducir sus espacios; la sección doctrinal presenta encabezado y tarjetas más compactos.
+- Se añade una página de archivo para el 65.º aniversario y un aviso en Inicio que se oculta al terminar el 25 de octubre, hora de Ecuador.
+- Inicio ofrece accesos directos a horarios, dirección y planificación de visita; la bienvenida 3D deja de bloquear la portada.
+
+### Corregido
+- Los eventos sin hora de finalización se agregan a Google Calendar como eventos de día completo, con la hora de inicio visible en los detalles.
 ## [1.14.27] - 2026-10-24
 
 ### Seguridad y administración

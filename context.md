@@ -368,3 +368,10 @@ La guía reutilizable de investigación y registro por fuente está en `docs/BIB
 ## 24-oct-2026 — Respuestas pastorales e institucionales del asistente
 
 La preparación 1.14.22 incorpora respuestas basadas en las páginas públicas para liderazgo pastoral, visión, misión, identidad Cuadrangular, símbolos, himno y ubicación. Se añadió una respuesta empática a expresiones de tristeza y una orientación de seguridad para desesperanza o posible autolesión, con recursos de emergencia y apoyo ecuatorianos. Se mantiene la advertencia de que el chat no es confidencial ni un servicio de emergencia. Evidencia de publicación y verificación: nota de proyecto en Obsidian, 2026-10-24.
+
+
+## 24-oct-2026 — Aniversario 65 y acceso móvil
+
+Se creó `/aniversario-65` con el tema aprobado, domingo 25 de octubre de 2026, preludio 08:45 y culto 09:00, una galería de recursos ya publicados (la representación digital está identificada), mapa y agradecimiento compartible por WhatsApp. Inicio muestra un aviso temporal que vence el 25 de octubre a las 23:59, hora de Ecuador, y accesos directos a horarios, dirección y planificación de visita. La bienvenida 3D deja de bloquear la portada. Google Calendar convierte eventos sin hora final a día completo y añade su hora de inicio en los detalles.
+
+Verificación local: build, ESLint focalizado, 264 pruebas unitarias de 62 suites y 3 pruebas Chromium pasan; Inicio, visita, eventos y aniversario se revisaron a 320, 390, 768 y 1440 px. ESLint general mantiene dos errores preexistentes en `supabase/functions/church-assistant/index.ts`; no bloquean la compilación ni este release. Evento actualizado en Supabase junto con la publicación: 25 de octubre, 09:00, descripción con preludio y tema. «Aire Libre» permanece independiente y sin horario. Fuente y verificación: repositorio Iglesia Jerusalén, 2026-10-24.

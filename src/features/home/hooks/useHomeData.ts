@@ -138,6 +138,7 @@ export const useHomeData = () => {
         .eq('is_public', true)
         .gte('start_date', todayStr)
         .order('start_date', { ascending: true })
+        .order('start_time', { ascending: true, nullsFirst: false })
         .limit(3);
 
       if (error) throw error;

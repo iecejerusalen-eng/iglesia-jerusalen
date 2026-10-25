@@ -14,6 +14,7 @@ const AdminLayout = lazyWithRetry(() => import('../layouts/AdminLayout'));
 
 // --- PUBLIC PAGES ---
 const Home = lazyWithRetry(() => import('../pages/public/Home'));
+const Anniversary65 = lazyWithRetry(() => import('../pages/public/Anniversary65'));
 const PlanYourVisit = lazyWithRetry(() => import('../pages/public/PlanYourVisit'));
 const Login = lazyWithRetry(() => import('../pages/auth/Login'));
 const Agenda = lazyWithRetry(() => import('../pages/admin/Agenda'));
@@ -210,6 +211,7 @@ export default function AppRouter() {
           <Route path="/terminos" element={<Terms />} />
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eventos" element={<Events />} />
+          <Route path="/aniversario-65" element={<Anniversary65 />} />
           <Route path="/anuncios" element={<ChurchAnnouncementsPage />} />
           <Route path="/boletin" element={<Bulletin />} />
           <Route path="/agenda" element={<PublicAgenda />} />

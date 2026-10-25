@@ -3,37 +3,11 @@ import { CalendarPlus, CalendarRange, Clock3, MapPin, Repeat2, UserRound, X } fr
 import type { Event as DbEvent } from '../../../types';
 import { ShowRouteButton } from '@/components/map/ShowRouteButton';
 import { formatEventDateRange, formatEventTime } from '../utils/eventPresentation';
+import { buildGoogleCalendarUrl } from '../utils/googleCalendar';
 
 interface EventDetailsDialogProps {
   event: DbEvent;
   onClose: () => void;
-}
-
-function toGoogleCalendarDate(date: string, time: string | null): string {
-  if (!time) return date.replaceAll('-', '');
-  const normalizedTime = time.replaceAll(':', '').slice(0, 4);
-  return `${date.replaceAll('-', '')}T${normalizedTime}00`;
-}
-
-function buildGoogleCalendarUrl(event: DbEvent): string {
-  const start = toGoogleCalendarDate(event.start_date, event.start_time);
-  const hasSchedule = Boolean(event.start_time);
-  const calendarEndDate = hasSchedule
-    ? event.end_date
-    : (() => {
-        const [year, month, day] = event.end_date.split('-').map(Number);
-        const nextDay = new Date(year, month - 1, day + 1);
-        return `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
-      })();
-  const end = toGoogleCalendarDate(calendarEndDate, event.end_time || event.start_time);
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: event.title,
-    dates: `${start}/${end}`,
-    details: event.description || '',
-    location: event.location_name || '',
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 export default function EventDetailsDialog({ event, onClose }: EventDetailsDialogProps) {

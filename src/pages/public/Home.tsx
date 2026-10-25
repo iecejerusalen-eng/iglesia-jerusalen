@@ -16,6 +16,8 @@ import { CtaBanner } from '../../features/home/components/CtaBanner';
 import { BentoGridSection } from '../../features/home/components/BentoGridSection';
 import { HomeAtmosphere } from '../../features/home/components/HomeAtmosphere';
 import { ChurchWelcome3D } from '../../features/home/components/ChurchWelcome3D';
+import { HomeVisitQuickAccess } from '../../features/home/components/HomeVisitQuickAccess';
+import AnniversaryHomeBanner from '../../features/anniversary/components/AnniversaryHomeBanner';
 import { ImageGallerySection, type GalleryImage } from '../../components/public/ImageGallerySection';
 import { Helmet } from 'react-helmet-async';
 import { DEFAULT_SECTIONS } from '../../features/home/constants';
@@ -54,6 +56,7 @@ const Home = () => {
       </Helmet>
       <div className="relative isolate min-h-screen space-y-20 overflow-hidden bg-slate-50 pb-24 transition-colors dark:bg-slate-950 md:space-y-24">
         <HomeAtmosphere />
+        <AnniversaryHomeBanner />
         {sections.map((section: PageSection) => {
         const { id, section_type, title, subtitle, content_blocks } = section;
 
@@ -63,6 +66,7 @@ const Home = () => {
               return (
                 <div key={id} id={id} className="flex flex-col">
                   <HeroSection sectionData={section} />
+                  <HomeVisitQuickAccess schedules={schedules} loading={loadingSchedules} />
                   <BentoGridSection latestSermon={sermons[0]} nextEvent={events[0]} />
                 </div>
               );
