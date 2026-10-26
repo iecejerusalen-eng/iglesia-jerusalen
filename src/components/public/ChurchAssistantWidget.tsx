@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { BookOpen, CalendarDays, ChevronDown, Church, Compass, ExternalLink, GraduationCap, Headphones, Heart, MapPin, MessageCircle, Music, Radio, Send, Sparkles, Video, X } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronDown, Church, Compass, ExternalLink, GraduationCap, Headphones, Heart, MapPin, MessageCircle, Music, Radio, RotateCcw, Send, Sparkles, Video, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { fetchProgramCatalog } from '../../features/study-programs/service';
@@ -85,7 +85,9 @@ export default function ChurchAssistantWidget() {
   const previousMessageCount = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const openButtonRef = useRef<HTMLButtonElement>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
+  const restoreFocusOnClose = useRef(true);
   const scheduleRequest = useRef<Promise<Schedule[] | null> | null>(null);
   const eventRequest = useRef<Promise<PublicEventSummary[] | null> | null>(null);
   const sermonRequest = useRef<Promise<PublicSermonSummary[] | null> | null>(null);
@@ -218,7 +220,8 @@ export default function ChurchAssistantWidget() {
     if (!isOpen) {
       if (wasOpen.current) {
         wasOpen.current = false;
-        openButtonRef.current?.focus();
+        if (restoreFocusOnClose.current) openButtonRef.current?.focus();
+        restoreFocusOnClose.current = true;
       }
       return;
     }
@@ -231,12 +234,23 @@ export default function ChurchAssistantWidget() {
       if (configured === null) aiAvailabilityRequest.current = null;
     });
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
+      if (event.key === 'Escape') {
+        restoreFocusOnClose.current = true;
+        setIsOpen(false);
+      }
+    };
+    const handleOutsidePress = (event: PointerEvent) => {
+      if (event.target instanceof Node && !widgetRef.current?.contains(event.target)) {
+        restoreFocusOnClose.current = false;
+        setIsOpen(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handleOutsidePress);
     return () => {
       active = false;
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handleOutsidePress);
     };
   }, [isOpen, checkAiAvailability]);
 
@@ -333,7 +347,7 @@ export default function ChurchAssistantWidget() {
   }
 
   return (
-    <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 z-[80] sm:bottom-24 sm:right-6">
+    <div ref={widgetRef} className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 z-[80] sm:bottom-24 sm:right-6">
       {isOpen && (
         <section
           id="church-assistant-panel"
@@ -350,8 +364,8 @@ export default function ChurchAssistantWidget() {
                 {aiAvailability === 'available' ? 'IA configurada' : aiAvailability === 'checking' ? 'Verificando IA…' : 'Información guiada'}
               </p>
             </div>
-            <button type="button" onClick={() => setIsOpen(false)} aria-label="Cerrar asistente" className="flex size-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10"><ChevronDown size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => { setMessages([{ id: 0, role: 'assistant', text: HELLO }]); setShowAllQuickActions(false); }} aria-label="Limpiar conversación" className="flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10 dark:hover:text-white"><X size={17} aria-hidden="true" /></button>
+            <button type="button" onClick={() => { restoreFocusOnClose.current = true; setIsOpen(false); }} aria-label="Cerrar asistente" title="Cerrar asistente" className="flex size-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10"><X size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => { setMessages([{ id: 0, role: 'assistant', text: HELLO }]); setShowAllQuickActions(false); }} aria-label="Limpiar conversación" title="Limpiar conversación" className="flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-white/10 dark:hover:text-white"><RotateCcw size={17} aria-hidden="true" /></button>
           </header>
 
           <div ref={messageViewportRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-4" aria-live="polite" aria-relevant="additions text">

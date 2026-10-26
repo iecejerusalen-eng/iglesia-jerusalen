@@ -21,14 +21,15 @@ test('la página del aniversario muestra información confirmada y se adapta a v
   }
 });
 
-test('el aviso del aniversario se retiró de Inicio y la página de archivo sigue disponible', async ({ page }) => {
+test('el anuncio temporal aparece solo durante el aniversario y la bienvenida 3D no bloquea la portada', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-25T15:00:00.000Z'));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Celebremos juntos nuestra historia de fe' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Celebremos juntos nuestra historia de fe' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Bienvenida a Iglesia Jerusalén' })).toHaveCount(0);
 
-  await page.goto('/aniversario-65');
-  await expect(page.getByRole('heading', { name: /Testigos fieles/ })).toBeVisible();
+  await page.clock.setFixedTime(new Date('2026-10-26T05:00:00.000Z'));
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Celebremos juntos nuestra historia de fe' })).toHaveCount(0);
 });
 
 test('Inicio, visita y eventos no desbordan el ancho en móvil, tablet y escritorio', async ({ page }) => {

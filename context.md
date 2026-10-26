@@ -3,6 +3,12 @@ Total output lines: 564
 
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 25-oct-2026 — Aviso del aniversario hasta medianoche de Ecuador y cierre de controles
+
+La portada vuelve a mostrar el aviso del 65.º aniversario hasta las 23:59 del 25 de octubre en hora de Ecuador (límite técnico: 26-oct 05:00 UTC); luego desaparece y `/aniversario-65` permanece como archivo. La agenda lateral «Hoy» y el asistente público ahora incluyen un cierre visible y se cierran al pulsar fuera o con Escape. En móvil, la agenda lateral no compite con la navegación inferior.
+
+Verificación: cuatro pruebas unitarias de aniversario/controles, ESLint focalizado, build Vite/PWA y tres pruebas E2E de Chromium pasan. Firefox no pudo iniciar en este equipo; Chromium requiere solo las claves públicas de Supabase para probar contenido real. Los cambios todavía requieren publicación y verificación en producción.
+
 ## 24-oct-2026 — Acceso Google y administración desde móvil
 
 La barra superior del sitio público ahora aparece en móviles con controles compactos: muestra «Ingresar» cuando no hay sesión y la foto del perfil cuando hay una sesión autenticada. La imagen usa `photo_url` y, si está vacío, los metadatos `avatar_url`/`picture` de Google. El menú mantiene los destinos de cuenta y el acceso «Admin» continúa sujeto a los permisos existentes; la navegación inferior conserva su acceso directo para cuentas autorizadas. En `/login`, «Ingresar con Google» queda destacado antes del formulario de correo, con altura táctil de 48 px y estado de conexión. La barra principal comienza debajo de la barra superior y se alinea al borde superior al desplazarse.

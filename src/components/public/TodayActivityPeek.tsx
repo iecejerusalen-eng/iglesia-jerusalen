@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, ChevronRight, Clock3, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -30,6 +30,8 @@ function formatTodayLabel(): string {
 
 export default function TodayActivityPeek() {
   const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const { data: events = [], isLoading, isError } = useQuery({
     queryKey: ['publicTodayActivity', getLocalDateKey(new Date())],
     queryFn: getTodayEvents,
@@ -41,11 +43,21 @@ export default function TodayActivityPeek() {
     if (!isOpen) return undefined;
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setIsOpen(false);
     };
 
     document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOnOutsidePress);
+    };
   }, [isOpen]);
 
   const label = useMemo(() => formatTodayLabel(), []);
@@ -53,18 +65,19 @@ export default function TodayActivityPeek() {
   if (isLoading || isError || events.length === 0) return null;
 
   return (
-    <aside className={`fixed left-0 top-1/2 z-[70] -translate-y-1/2 ${isOpen ? 'w-[min(21rem,calc(100vw-1rem))]' : 'w-auto'}`} aria-label="Actividad de hoy">
+    <aside ref={rootRef} className={`fixed left-0 top-1/2 z-[70] hidden -translate-y-1/2 md:block ${isOpen ? 'w-[min(21rem,calc(100vw-1rem))]' : 'w-auto'}`} aria-label="Actividad de hoy">
       <div className="relative flex items-center">
         <button
           type="button"
+          ref={triggerRef}
+          aria-label={isOpen ? 'Cerrar actividad de hoy' : 'Ver actividad de hoy'}
           aria-expanded={isOpen}
           aria-controls="today-activity-panel"
           onClick={() => setIsOpen((open) => !open)}
-          className={`group flex items-center gap-2 rounded-r-2xl border border-l-0 border-church-gold-light/35 bg-slate-950/95 px-3 py-3 text-white shadow-[8px_12px_30px_-12px_rgba(2,6,23,.65)] backdrop-blur-xl transition-[transform,background-color] duration-200 hover:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-church-gold-bright focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950 ${isOpen ? 'absolute left-0 top-5 -translate-x-full' : ''}`}
+          className="group flex items-center gap-2 rounded-r-2xl border border-l-0 border-church-gold-light/35 bg-slate-950/95 px-3 py-3 text-white shadow-[8px_12px_30px_-12px_rgba(2,6,23,.65)] backdrop-blur-xl transition-[transform,background-color] duration-200 hover:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-church-gold-bright focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950"
         >
           {isOpen ? <X size={16} aria-hidden="true" /> : <CalendarDays size={17} className="text-church-gold-bright" aria-hidden="true" />}
           {!isOpen && <span className="text-[10px] font-black uppercase tracking-[0.17em] [writing-mode:vertical-rl]">Hoy</span>}
-          <span className="sr-only">{isOpen ? 'Cerrar actividad de hoy' : 'Ver actividad de hoy'}</span>
         </button>
 
         <section
@@ -80,7 +93,12 @@ export default function TodayActivityPeek() {
                 </p>
                 <h2 className="mt-1 font-serif text-xl font-black capitalize leading-tight text-slate-950 dark:text-white">{label}</h2>
               </div>
-              <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500 dark:bg-white/10 dark:text-slate-300">{events.length}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500 dark:bg-white/10 dark:text-slate-300">{events.length}</span>
+                <button type="button" onClick={() => { setIsOpen(false); triggerRef.current?.focus(); }} aria-label="Cerrar actividad de hoy" className="flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
+                  <X size={17} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="max-h-[min(22rem,60vh)] space-y-2 overflow-y-auto pr-1">
