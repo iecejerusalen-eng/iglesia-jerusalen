@@ -71,7 +71,7 @@
     "jspdf-autotable": "^5.0.8",
     "jszip": "^3.10.1",
     "lucide-react": "^1.17.0",
-    "maplibre-gl": "^4.7.1",
+    "maplibre-gl": "^6.16.0",
     "nanoid": "^5.1.5",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.1.200",

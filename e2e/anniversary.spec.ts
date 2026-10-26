@@ -54,6 +54,21 @@ test('Inicio, visita y eventos no desbordan el ancho en móvil, tablet y escrito
 test('la agenda de hoy sigue accesible en móvil y se cierra desde el panel o al tocar fuera', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-25T15:00:00.000Z'));
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/rest/v1/events**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 'e2e-today-event',
+        title: 'Culto de aniversario',
+        emoji: '⛪',
+        start_date: '2026-10-25',
+        end_date: '2026-10-25',
+        start_time: '09:00',
+        end_time: null,
+      }]),
+    });
+  });
   await page.goto('/');
 
   const trigger = page.getByRole('button', { name: 'Ver actividad de hoy' });

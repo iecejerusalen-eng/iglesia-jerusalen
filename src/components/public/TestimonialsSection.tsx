@@ -50,7 +50,7 @@ export default function TestimonialsSection() {
   }, []);
 
   useEffect(() => {
-    if (isHovered) return;
+    if (isHovered || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const timer = setInterval(() => {
       handleNext();
     }, 6000);
@@ -98,14 +98,18 @@ export default function TestimonialsSection() {
       <div className="relative min-h-[340px] md:min-h-[280px] flex items-center justify-center">
         {/* Navigation Buttons */}
         <button
+          type="button"
           onClick={handlePrev}
-          className="absolute left-0 md:-left-4 z-20 p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
+          aria-label="Ver testimonio anterior"
+          className="absolute left-0 md:-left-4 z-20 flex size-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
         >
           <ChevronLeft size={20} />
         </button>
         <button
+          type="button"
           onClick={handleNext}
-          className="absolute right-0 md:-right-4 z-20 p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
+          aria-label="Ver siguiente testimonio"
+          className="absolute right-0 md:-right-4 z-20 flex size-11 items-center justify-center rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-amber-500 dark:hover:text-amber-400 hover:shadow-lg transition-all cursor-pointer"
         >
           <ChevronRight size={20} />
         </button>
@@ -158,18 +162,21 @@ export default function TestimonialsSection() {
       </div>
 
       {/* Bullet Dot Indicators */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center gap-1 mt-4" role="group" aria-label="Elegir testimonio">
         {TESTIMONIALS.map((_, idx) => (
           <button
             key={idx}
+            type="button"
+            aria-label={`Mostrar testimonio ${idx + 1} de ${TESTIMONIALS.length}`}
+            aria-pressed={currentIndex === idx}
             onClick={() => {
               setDirection(idx > currentIndex ? 1 : -1);
               setCurrentIndex(idx);
             }}
-            className={`h-2 rounded-full transition-all cursor-pointer ${
+            className="flex size-11 items-center justify-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          ><span aria-hidden="true" className={`h-2 rounded-full transition-all ${
               currentIndex === idx ? 'w-6 bg-amber-500' : 'w-2 bg-slate-300 dark:bg-slate-700'
-            }`}
-          />
+            }`} /></button>
         ))}
       </div>
     </section>

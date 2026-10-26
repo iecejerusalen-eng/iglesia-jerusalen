@@ -64,6 +64,7 @@ function cleanPublicText(value: string | null, maxLength: number): string | null
     .replace(/&amp;/gi, '&')
     .replace(/&quot;|&#34;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
+    // eslint-disable-next-line no-control-regex -- Strip non-printing control characters from public input.
     .replace(/[\u0000-\u001f\u007f]/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
@@ -247,7 +248,7 @@ Deno.serve(async (request) => {
     };
     answer = (result.candidates?.[0]?.content?.parts ?? []).map((part) => part.text ?? '').join('').trim();
   } catch {
-    answer = '';
+    // Keep the empty initial value so the common validation below returns a safe response.
   }
 
   if (!answer || answer.length > 2_000) {

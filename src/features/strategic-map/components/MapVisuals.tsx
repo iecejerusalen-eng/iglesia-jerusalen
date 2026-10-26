@@ -251,7 +251,7 @@ export const MapVisuals = ({
         mapStyle={mapStyle}
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
-        preserveDrawingBuffer={true}
+        canvasContextAttributes={{ preserveDrawingBuffer: true }}
         cursor={isMeasuring || isCreatingCell ? 'crosshair' : 'grab'}
       >
         <NavigationControl position="bottom-right" showCompass visualizePitch />

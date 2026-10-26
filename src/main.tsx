@@ -1,5 +1,7 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
+import { setWorkerUrl } from 'maplibre-gl'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import './index.css'
 import App from './App.tsx'
 import FinanceSessionPrivacy from './features/finance/FinanceSessionPrivacy'
@@ -27,6 +29,8 @@ window.addEventListener('vite:preloadError', (event) => {
 });
 
 import { Analytics } from "@vercel/analytics/react";
+
+setWorkerUrl(maplibreWorkerUrl)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

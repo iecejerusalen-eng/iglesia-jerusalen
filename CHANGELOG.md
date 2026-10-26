@@ -1,3 +1,17 @@
+## [1.14.34] - 2026-10-26
+
+### Seguridad
+- Se restringen por defecto los privilegios de tablas, secuencias y funciones nuevas en `public`, incluidos los permisos heredados de `PUBLIC` para funciones.
+- Se actualiza MapLibre para corregir una vulnerabilidad XSS reportada en versiones anteriores y se adapta la configuración del mapa.
+- La auditoría de dependencias queda sin vulnerabilidades conocidas en `npm audit` (producción y árbol completo).
+
+### Mejoras
+- Los controles del carrusel de testimonios cumplen un área táctil mínima de 44 px, incluyen nombres accesibles y respetan movimiento reducido.
+- La prueba de cierre del panel «Hoy» usa un evento aislado para mantener el flujo reproducible sin datos de producción.
+
+### Corregido
+- Se limpian dos incidencias de lint de la función `church-assistant`.
+
 ## [1.14.33] - 2026-10-25
 
 ### Corregido
