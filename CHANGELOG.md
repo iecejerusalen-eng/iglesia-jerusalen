@@ -1,3 +1,15 @@
+## [1.14.38] - 2026-10-25
+
+### Seguridad
+- La eliminación de perfiles queda restringida en la base de datos a administradores activos.
+- Se deshabilitan el autorregistro y la autoedición amplia de fichas CRM; el personal necesita el permiso efectivo de edición de miembros.
+- El editor general puede ajustar solo los permisos operativos del rol Encargado de finanzas; asignaciones y administración de otros roles siguen bajo control del administrador.
+
+### Corregido
+- El CRM guarda en una sola operación el perfil y sus correos, teléfonos, áreas, talentos y dones; los cambios sin conexión se mantienen completos y el sincronizador conserva compatibilidad con operaciones antiguas pendientes.
+- Los teléfonos del CRM respetan los permisos efectivos de miembros y cada persona solo puede administrar los teléfonos de su ficha vinculada.
+- Al mover un evento, las fechas se calculan sin desplazamiento por zona horaria y se conserva su duración.
+
 ## [1.14.35] - 2026-10-25
 
 ### Corregido

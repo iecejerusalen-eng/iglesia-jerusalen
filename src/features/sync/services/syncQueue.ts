@@ -28,7 +28,12 @@ export interface MemberPayload extends BasePayload {
   service_areas?: Record<string, unknown>[];
   talents?: Record<string, unknown>[];
   spiritual_gifts?: Record<string, unknown>[];
+  additional_phones?: { phone: string; phone_country_code?: string }[];
   gender?: string | null;
+  marital_status?: string | null;
+  birth_place?: string | null;
+  has_disability?: boolean;
+  disability_types?: string[] | null;
   education_level?: string | null;
   career_id?: string | null;
   is_studying?: boolean;
@@ -130,7 +135,12 @@ export const enqueueMutation = async (
             service_areas: m.service_areas ? JSON.stringify(m.service_areas) : '[]',
             talents: m.talents ? JSON.stringify(m.talents) : '[]',
             spiritual_gifts: m.spiritual_gifts ? JSON.stringify(m.spiritual_gifts) : '[]',
+            phones: m.additional_phones ? JSON.stringify(m.additional_phones.map((phone) => ({ phone: phone.phone, country_code: phone.phone_country_code || '+593' }))) : '[]',
             gender: m.gender || null,
+            marital_status: m.marital_status || null,
+            birth_place: m.birth_place || null,
+            has_disability: m.has_disability ? 1 : 0,
+            disability_types: m.disability_types ? JSON.stringify(m.disability_types) : '[]',
             education_level: m.education_level || null,
             career_id: m.career_id || null,
             is_studying: m.is_studying ? 1 : 0,
@@ -173,5 +183,6 @@ export const enqueueMutation = async (
     await tx.done;
   } catch (err) {
     console.error('Error queuing mutation locally:', err);
+    throw err;
   }
 };

@@ -46,6 +46,7 @@ import type {
 } from '../../features/access-control/types';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import type { Profile, UserRole } from '../../types';
 import { logAuditEvent } from '../../utils/auditLogger';
 
@@ -65,6 +66,8 @@ interface MinistryOption {
 type ProfileQueryRow = Omit<Profile, 'member'> & {
   member: Profile['member'] | Profile['member'][];
 };
+
+const FINANCE_ROLE_MODULE_IDS = ['finances', 'orders', 'products', 'store_settings', 'dashboard'] as const;
 
 interface CustomRoleDraft {
   id: string | null;
@@ -107,17 +110,23 @@ function PermissionMatrix({
   value,
   onChange,
   disabled = false,
+  moduleIds,
 }: {
   value: PermissionMap;
   onChange: (next: PermissionMap) => void;
   disabled?: boolean;
+  moduleIds?: readonly string[];
 }) {
   const normalized = normalizePermissions(value);
+  const visibleGroups = MODULE_GROUPS.map((group) => ({
+    ...group,
+    modules: PERMISSION_MODULES.filter((module) => module.group === group.key && (!moduleIds || moduleIds.includes(module.id))),
+  })).filter((group) => group.modules.length > 0);
 
   const setGroupLevel = (groupKey: string, level: 'none' | 'view' | 'edit') => {
     if (disabled) return;
     const next = { ...normalized };
-    for (const module of PERMISSION_MODULES.filter((item) => item.group === groupKey)) {
+    for (const module of PERMISSION_MODULES.filter((item) => item.group === groupKey && (!moduleIds || moduleIds.includes(item.id)))) {
       next[module.id] = {
         view: level !== 'none',
         edit: level === 'edit',
@@ -134,8 +143,8 @@ function PermissionMatrix({
         <span className="text-center">Editar</span>
       </div>
       <div className="max-h-[440px] overflow-y-auto">
-        {MODULE_GROUPS.map((group) => {
-          const groupModules = PERMISSION_MODULES.filter((module) => module.group === group.key);
+        {visibleGroups.map((group) => {
+          const groupModules = group.modules;
           return (
             <Fragment key={group.key}>
               <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-y border-slate-200/70 bg-slate-100/95 px-4 py-2.5 backdrop-blur dark:border-white/10 dark:bg-slate-900/95">
@@ -231,6 +240,8 @@ function ModalShell({
 export default function UsersManager() {
   const confirm = useConfirmStore((state) => state.confirm);
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+  const { isAdmin, hasPermission } = usePermissions();
+  const canConfigureFinanceRole = isAdmin || hasPermission('users', 'edit');
   const [activeTab, setActiveTab] = useState<AccessTab>('users');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [members, setMembers] = useState<CrmMemberOption[]>([]);
@@ -519,6 +530,12 @@ export default function UsersManager() {
 
   const saveCustomRole = async () => {
     if (!customRoleDraft) return;
+    const existingRole = customRoles.find((role) => role.id === customRoleDraft.id);
+    const restrictedFinanceEditor = !isAdmin;
+    if (restrictedFinanceEditor && (!hasPermission('users', 'edit') || existingRole?.slug !== 'encargado_finanzas')) {
+      toast.error('Solo un administrador puede crear, eliminar o cambiar otros roles.');
+      return;
+    }
     const name = customRoleDraft.name.trim();
     const slug = customRoleDraft.slug.trim() || slugifyRoleName(name);
     if (name.length < 2 || !slug) {
@@ -536,11 +553,18 @@ export default function UsersManager() {
         is_active: customRoleDraft.is_active,
       };
       if (customRoleDraft.id) {
-        const { data, error } = await supabase.from('access_roles').update(payload).eq('id', customRoleDraft.id).select('*').single();
+        const update = restrictedFinanceEditor
+          ? { permissions: Object.fromEntries(FINANCE_ROLE_MODULE_IDS.map((moduleId) => [moduleId, payload.permissions[moduleId] ?? { view: false, edit: false }])) }
+          : payload;
+        const { data, error } = await supabase.from('access_roles').update(update).eq('id', customRoleDraft.id).select('*').single();
         if (error) throw error;
         setCustomRoles((current) => current.map((role) => role.id === data.id ? { ...data, permissions: normalizePermissions(data.permissions as PermissionMap) } as CustomAccessRole : role));
         await logAuditEvent('UPDATE', 'access_roles', data.id, { action_detail: 'update_custom_role', name });
       } else {
+        if (restrictedFinanceEditor) {
+          toast.error('Solo un administrador puede crear roles personalizados.');
+          return;
+        }
         const { data, error } = await supabase.from('access_roles').insert({ ...payload, created_by: currentUserId }).select('*').single();
         if (error) throw error;
         setCustomRoles((current) => [...current, { ...data, permissions: normalizePermissions(data.permissions as PermissionMap) } as CustomAccessRole].sort((a, b) => a.name.localeCompare(b.name, 'es')));
@@ -608,9 +632,9 @@ export default function UsersManager() {
               <button type="button" onClick={() => void loadData(true)} disabled={refreshing} className={`${softButton} border-white/15 bg-white/10 text-white hover:border-white/30 hover:bg-white/15 hover:text-white`}>
                 <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Actualizar
               </button>
-              <button type="button" onClick={() => { setActiveTab('roles'); openCustomRoleEditor(); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-950/20 transition hover:-translate-y-0.5 hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+              {isAdmin && <button type="button" onClick={() => { setActiveTab('roles'); openCustomRoleEditor(); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-400 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-950/20 transition hover:-translate-y-0.5 hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                 <Plus size={16} /> Nuevo rol
-              </button>
+              </button>}
             </div>
           </div>
           <div className="grid grid-cols-2 divide-x divide-y divide-slate-200/70 sm:grid-cols-4 sm:divide-y-0 dark:divide-white/10">
@@ -639,7 +663,7 @@ export default function UsersManager() {
           {([
             { id: 'users' as const, label: 'Personas y cuentas', icon: Users },
             { id: 'roles' as const, label: 'Roles y permisos', icon: KeyRound },
-          ]).map((tab) => (
+          ]).filter((tab) => tab.id !== 'roles' || canConfigureFinanceRole).map((tab) => (
             <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl px-4 text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeTab === tab.id ? 'bg-slate-950 text-white shadow-lg dark:bg-white dark:text-slate-950' : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'}`}>
               <tab.icon size={16} /> {tab.label}
             </button>
@@ -715,7 +739,7 @@ export default function UsersManager() {
         ) : (
           <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
             <aside className="space-y-4">
-              <div className={`${glassPanel} p-4`}>
+              {isAdmin && <div className={`${glassPanel} p-4`}>
                 <div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Roles del sistema</p><p className="mt-1 text-xs text-slate-500">Base compatible con todo el proyecto</p></div><LockKeyhole size={18} className="text-blue-500" /></div>
                 <div className="mt-4 max-h-[430px] space-y-1 overflow-y-auto pr-1">
                   {SYSTEM_ROLES.map((role) => (
@@ -725,21 +749,21 @@ export default function UsersManager() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </div>}
 
               <div className={`${glassPanel} p-4`}>
-                <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Roles personalizados</p><p className="mt-1 text-xs text-slate-500">Se suman a los roles base</p></div><button type="button" onClick={() => openCustomRoleEditor()} disabled={Boolean(databaseNotice)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white transition hover:-translate-y-0.5 disabled:opacity-40 dark:bg-white dark:text-slate-950" aria-label="Crear rol personalizado"><Plus size={16} /></button></div>
+                <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Roles personalizados</p><p className="mt-1 text-xs text-slate-500">Se suman a los roles base</p></div>{isAdmin && <button type="button" onClick={() => openCustomRoleEditor()} disabled={Boolean(databaseNotice)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white transition hover:-translate-y-0.5 disabled:opacity-40 dark:bg-white dark:text-slate-950" aria-label="Crear rol personalizado"><Plus size={16} /></button>}</div>
                 <div className="mt-4 space-y-2">
-                  {customRoles.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-400 dark:border-white/15">Todavía no hay roles personalizados.</div> : customRoles.map((role) => {
+                  {(isAdmin ? customRoles : customRoles.filter((role) => role.slug === 'encargado_finanzas')).length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-400 dark:border-white/15">No hay un rol financiero disponible para configurar.</div> : (isAdmin ? customRoles : customRoles.filter((role) => role.slug === 'encargado_finanzas')).map((role) => {
                     const counts = countPermissionModules(role.permissions);
                     const assigned = profiles.filter((profile) => profile.custom_role_ids?.includes(role.id)).length;
-                    return <div key={role.id} className="rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-white/10 dark:bg-white/[0.03]"><div className="flex items-start gap-2"><span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: role.color }} /><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate text-xs font-black">{role.name}</p>{!role.is_active && <span className="text-[8px] font-black uppercase text-slate-400">Inactivo</span>}</div><p className="mt-1 text-[10px] text-slate-500">{assigned} cuentas · {counts.edit} módulos editables</p></div><button type="button" onClick={() => openCustomRoleEditor(role)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-500/10 hover:text-blue-600" aria-label={`Editar ${role.name}`}><Pencil size={13} /></button><button type="button" onClick={() => void deleteCustomRole(role)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-600" aria-label={`Eliminar ${role.name}`}><Trash2 size={13} /></button></div></div>;
+                    return <div key={role.id} className="rounded-xl border border-slate-200/80 bg-white/60 p-3 dark:border-white/10 dark:bg-white/[0.03]"><div className="flex items-start gap-2"><span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: role.color }} /><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate text-xs font-black">{role.name}</p>{!role.is_active && <span className="text-[8px] font-black uppercase text-slate-400">Inactivo</span>}</div><p className="mt-1 text-[10px] text-slate-500">{assigned} cuentas · {counts.edit} módulos editables</p></div><button type="button" onClick={() => openCustomRoleEditor(role)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-500/10 hover:text-blue-600" aria-label={`Editar ${role.name}`}><Pencil size={13} /></button>{isAdmin && <button type="button" onClick={() => void deleteCustomRole(role)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-600" aria-label={`Eliminar ${role.name}`}><Trash2 size={13} /></button>}</div></div>;
                   })}
                 </div>
               </div>
             </aside>
 
-            <div className={`${glassPanel} overflow-hidden`}>
+            {isAdmin ? <div className={`${glassPanel} overflow-hidden`}>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/10">
                 <div><div className="flex items-center gap-2"><Shield size={18} className="text-blue-500" /><h2 className="font-serif text-lg font-bold">{getRoleLabel(selectedSystemRole)}</h2></div><p className="mt-1 text-xs text-slate-500">Define el acceso predeterminado de todas las cuentas con este rol.</p></div>
                 <div className="flex items-center gap-2"><span className="rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-black text-slate-500 dark:bg-white/5">{profiles.filter((profile) => (profile.roles?.length ? profile.roles : [profile.role]).includes(selectedSystemRole)).length} cuentas</span><button type="button" disabled={loadingPermissions || selectedSystemRole === 'admin'} onClick={() => void saveSystemPermissions()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"><Save size={15} /> Guardar</button></div>
@@ -748,7 +772,7 @@ export default function UsersManager() {
                 {selectedSystemRole === 'admin' && <div className="mb-4 flex gap-3 rounded-xl border border-amber-300/40 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200"><ShieldCheck size={17} className="shrink-0" /><span>El rol Administrador siempre conserva acceso total. Esta regla evita dejar el panel sin control administrativo.</span></div>}
                 {loadingPermissions ? <div className="flex min-h-64 items-center justify-center"><RefreshCw className="animate-spin text-blue-500" /></div> : <PermissionMatrix value={systemPermissions} onChange={setSystemPermissions} disabled={selectedSystemRole === 'admin'} />}
               </div>
-            </div>
+            </div> : <div className={`${glassPanel} flex min-h-64 flex-col justify-center p-6`}><div className="mx-auto max-w-xl text-center"><KeyRound size={30} className="mx-auto text-amber-500" /><h2 className="mt-3 font-serif text-xl font-bold">Configuración del rol financiero</h2><p className="mt-2 text-sm leading-6 text-slate-500">El editor general puede ajustar los permisos del encargado de finanzas. La administración de cuentas, roles del sistema y otros roles sigue reservada al administrador.</p></div></div>}
           </section>
         )}
       </div>
@@ -768,8 +792,16 @@ export default function UsersManager() {
       )}
 
       {customRoleDraft && (
-        <ModalShell title={customRoleDraft.id ? 'Editar rol personalizado' : 'Crear rol personalizado'} description="Define una responsabilidad reutilizable y asígnala a varias cuentas." icon={KeyRound} onClose={() => setCustomRoleDraft(null)} footer={<><button type="button" onClick={() => setCustomRoleDraft(null)} className={softButton}>Cancelar</button>{customRoleDraft.id && <button type="button" onClick={() => { const role = customRoles.find((item) => item.id === customRoleDraft.id); if (role) { setCustomRoleDraft(null); void deleteCustomRole(role); } }} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-black text-rose-600 hover:bg-rose-500/10"><Trash2 size={15} /> Eliminar</button>}<button type="button" disabled={savingCustomRole} onClick={() => void saveCustomRole()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-black text-white hover:bg-blue-500 disabled:opacity-50"><Save size={15} /> {savingCustomRole ? 'Guardando…' : 'Guardar rol'}</button></>}>
-          <div className="space-y-5"><div className="grid gap-3 sm:grid-cols-[1fr_130px]"><label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nombre<input value={customRoleDraft.name} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, name: event.target.value, slug: current.id ? current.slug : slugifyRoleName(event.target.value) } : current)} maxLength={60} placeholder="Ej. Coordinación de eventos" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white/70 px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-950/60" /></label><label className="text-xs font-bold text-slate-600 dark:text-slate-300">Color<input type="color" value={customRoleDraft.color} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, color: event.target.value } : current)} className="mt-1.5 h-11 w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1.5 dark:border-white/10 dark:bg-slate-950" /></label></div><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Descripción<textarea value={customRoleDraft.description} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, description: event.target.value } : current)} maxLength={240} rows={3} placeholder="Explica cuándo debe asignarse este rol." className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-950/60" /></label><label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200/80 p-3 text-xs font-bold dark:border-white/10"><span><span className="block">Rol activo</span><span className="mt-0.5 block text-[10px] font-normal text-slate-500">Los roles inactivos dejan de otorgar permisos.</span></span><input type="checkbox" checked={customRoleDraft.is_active} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, is_active: event.target.checked } : current)} className="h-5 w-5 accent-blue-600" /></label><PermissionMatrix value={customRoleDraft.permissions} onChange={(permissions) => setCustomRoleDraft((current) => current ? { ...current, permissions } : current)} /></div>
+        <ModalShell title={customRoleDraft.id ? (isAdmin ? 'Editar rol personalizado' : 'Configurar encargado de finanzas') : 'Crear rol personalizado'} description={isAdmin ? 'Define una responsabilidad reutilizable y asígnala a varias cuentas.' : 'Ajusta únicamente los permisos del rol financiero.'} icon={KeyRound} onClose={() => setCustomRoleDraft(null)} footer={<><button type="button" onClick={() => setCustomRoleDraft(null)} className={softButton}>Cancelar</button>{isAdmin && customRoleDraft.id && <button type="button" onClick={() => { const role = customRoles.find((item) => item.id === customRoleDraft.id); if (role) { setCustomRoleDraft(null); void deleteCustomRole(role); } }} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-black text-rose-600 hover:bg-rose-500/10"><Trash2 size={15} /> Eliminar</button>}<button type="button" disabled={savingCustomRole} onClick={() => void saveCustomRole()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-black text-white hover:bg-blue-500 disabled:opacity-50"><Save size={15} /> {savingCustomRole ? 'Guardando…' : 'Guardar rol'}</button></>}>
+          {!isAdmin && <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-100">Solo puedes ajustar los permisos de Finanzas, Pedidos, Productos, Configuración de tienda y el resumen del panel.</div>}
+          <div className="space-y-5">
+            {isAdmin && <>
+              <div className="grid gap-3 sm:grid-cols-[1fr_130px]"><label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nombre<input value={customRoleDraft.name} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, name: event.target.value, slug: current.id ? current.slug : slugifyRoleName(event.target.value) } : current)} maxLength={60} placeholder="Ej. Coordinación de eventos" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white/70 px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-950/60" /></label><label className="text-xs font-bold text-slate-600 dark:text-slate-300">Color<input type="color" value={customRoleDraft.color} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, color: event.target.value } : current)} className="mt-1.5 h-11 w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1.5 dark:border-white/10 dark:bg-slate-950" /></label></div>
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Descripción<textarea value={customRoleDraft.description} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, description: event.target.value } : current)} maxLength={240} rows={3} placeholder="Explica cuándo debe asignarse este rol." className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-950/60" /></label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200/80 p-3 text-xs font-bold dark:border-white/10"><span><span className="block">Rol activo</span><span className="mt-0.5 block text-[10px] font-normal text-slate-500">Los roles inactivos dejan de otorgar permisos.</span></span><input type="checkbox" checked={customRoleDraft.is_active} onChange={(event) => setCustomRoleDraft((current) => current ? { ...current, is_active: event.target.checked } : current)} className="h-5 w-5 accent-blue-600" /></label>
+            </>}
+            <PermissionMatrix value={customRoleDraft.permissions} onChange={(permissions) => setCustomRoleDraft((current) => current ? { ...current, permissions } : current)} moduleIds={isAdmin ? undefined : FINANCE_ROLE_MODULE_IDS} />
+          </div>
         </ModalShell>
       )}
 
