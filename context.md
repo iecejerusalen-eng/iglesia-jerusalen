@@ -3,6 +3,12 @@ Total output lines: 564
 
 # Contexto y reglas de UI — Iglesia Jerusalén
 
+## 25-oct-2026 — Separación del aviso del aniversario y el menú fijo
+
+La tarjeta temporal del aniversario en Inicio ahora tiene espacio superior suficiente para comenzar debajo de la navegación fija; el bloque conserva su diseño y contenido. La prueba E2E mide la posición de la tarjeta y el borde inferior del menú a 390 px.
+
+Verificación: Chromium valida el margen, la fecha y los botones del aviso; revisar también la captura de producción después del despliegue.
+
 ## 25-oct-2026 — Aviso del aniversario hasta medianoche de Ecuador y cierre de controles
 
 La portada vuelve a mostrar el aviso del 65.º aniversario hasta las 23:59 del 25 de octubre en hora de Ecuador (límite técnico: 26-oct 05:00 UTC); luego desaparece y `/aniversario-65` permanece como archivo. La agenda lateral «Hoy» y el asistente público ahora incluyen un cierre visible y se cierran al pulsar fuera o con Escape. «Hoy» permanece visible en móvil; su panel limita ancho y altura para no cubrir la navegación inferior.

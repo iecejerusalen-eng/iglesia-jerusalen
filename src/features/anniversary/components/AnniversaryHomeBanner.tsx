@@ -16,7 +16,7 @@ export default function AnniversaryHomeBanner() {
   if (!isVisible) return null;
 
   return (
-    <section aria-labelledby="anniversary-home-title" className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-8 md:pt-8">
+    <section aria-labelledby="anniversary-home-title" className="mx-auto w-full max-w-7xl px-4 pt-32 sm:px-8">
       <div className="relative isolate overflow-hidden rounded-[1.75rem] border border-amber-300/25 bg-[#0b1d3b] px-5 py-6 text-white shadow-[0_24px_70px_-38px_rgba(15,23,42,.7)] sm:px-8 sm:py-7 lg:flex lg:items-center lg:justify-between lg:gap-10 lg:px-10">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_90%_10%,rgba(199,157,63,.22),transparent_32%),linear-gradient(115deg,transparent_30%,rgba(255,255,255,.035))]" />
         <div className="max-w-3xl">

@@ -1,3 +1,8 @@
+## [1.14.35] - 2026-10-25
+
+### Corregido
+- La tarjeta temporal del aniversario ahora comienza debajo del menú fijo en la portada, también en móvil.
+
 ## [1.14.34] - 2026-10-25
 
 ### Seguridad

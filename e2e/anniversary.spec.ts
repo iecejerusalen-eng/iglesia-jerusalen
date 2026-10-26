@@ -23,9 +23,21 @@ test('la página del aniversario muestra información confirmada y se adapta a v
 
 test('el anuncio temporal aparece solo durante el aniversario y la bienvenida 3D no bloquea la portada', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-25T15:00:00.000Z'));
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Celebremos juntos nuestra historia de fe' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Bienvenida a Iglesia Jerusalén' })).toHaveCount(0);
+  for (const width of [390, 698, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const bannerLayout = await page.evaluate(() => {
+    const card = document.querySelector('[aria-labelledby="anniversary-home-title"] > div');
+    const navigation = [...document.querySelectorAll('nav.fixed')].find((item) => item.querySelector('a[href="/visita"]'));
+    if (!card || !navigation) return null;
+    return { cardTop: card.getBoundingClientRect().top, navigationBottom: navigation.getBoundingClientRect().bottom };
+  });
+    expect(bannerLayout, `no se encontró la navegación a ${width}px`).not.toBeNull();
+    expect(bannerLayout!.cardTop, `la tarjeta queda bajo el menú a ${width}px`).toBeGreaterThanOrEqual(bannerLayout!.navigationBottom);
+  }
 
   await page.clock.setFixedTime(new Date('2026-10-26T05:00:00.000Z'));
   await page.reload();
