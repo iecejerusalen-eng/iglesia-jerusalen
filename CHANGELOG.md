@@ -1,4 +1,4 @@
-## [1.14.34] - 2026-10-26
+## [1.14.34] - 2026-10-25
 
 ### Seguridad
 - Se restringen por defecto los privilegios de tablas, secuencias y funciones nuevas en `public`, incluidos los permisos heredados de `PUBLIC` para funciones.
