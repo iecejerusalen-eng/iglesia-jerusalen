@@ -50,3 +50,20 @@ test('Inicio, visita y eventos no desbordan el ancho en móvil, tablet y escrito
     }
   }
 });
+
+test('la agenda de hoy sigue accesible en móvil y se cierra desde el panel o al tocar fuera', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-25T15:00:00.000Z'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const trigger = page.getByRole('button', { name: 'Ver actividad de hoy' });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(page.getByRole('heading', { name: /octubre/i })).toBeVisible();
+  await page.mouse.click(380, 120);
+  await expect(page.getByRole('heading', { name: /octubre/i })).toHaveCount(0);
+
+  await trigger.click();
+  await page.getByRole('button', { name: 'Cerrar actividad de hoy' }).last().click();
+  await expect(page.getByRole('heading', { name: /octubre/i })).toHaveCount(0);
+});

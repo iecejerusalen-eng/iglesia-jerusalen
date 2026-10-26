@@ -65,7 +65,7 @@ export default function TodayActivityPeek() {
   if (isLoading || isError || events.length === 0) return null;
 
   return (
-    <aside ref={rootRef} className={`fixed left-0 top-1/2 z-[70] hidden -translate-y-1/2 md:block ${isOpen ? 'w-[min(21rem,calc(100vw-1rem))]' : 'w-auto'}`} aria-label="Actividad de hoy">
+    <aside ref={rootRef} className="fixed left-0 top-1/2 z-[70] max-w-[calc(100vw-0.25rem)] -translate-y-1/2" aria-label="Actividad de hoy">
       <div className="relative flex items-center">
         <button
           type="button"
@@ -83,9 +83,9 @@ export default function TodayActivityPeek() {
         <section
           id="today-activity-panel"
           aria-hidden={!isOpen}
-          className={`origin-left overflow-hidden rounded-r-[1.25rem] border border-l-0 border-slate-200/80 bg-white/95 shadow-[12px_18px_40px_-18px_rgba(15,23,42,.55)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-200 dark:border-white/10 dark:bg-slate-900/95 motion-reduce:transition-none ${isOpen ? 'visible translate-x-0 opacity-100' : 'invisible -translate-x-3 opacity-0'}`}
+          className={`max-h-[70dvh] origin-left overflow-y-auto rounded-r-[1.25rem] border border-l-0 border-slate-200/80 bg-white/95 shadow-[12px_18px_40px_-18px_rgba(15,23,42,.55)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-200 dark:border-white/10 dark:bg-slate-900/95 motion-reduce:transition-none ${isOpen ? 'visible translate-x-0 opacity-100' : 'invisible -translate-x-3 opacity-0'}`}
         >
-          <div className="w-[min(21rem,calc(100vw-1rem))] p-4">
+          <div className="w-[min(21rem,calc(100vw-3rem))] p-4">
             <div className="mb-3 flex items-start justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/10">
               <div>
                 <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-church-gold-dark dark:text-church-gold-bright">
