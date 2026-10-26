@@ -484,3 +484,9 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 ### Pruebas
 - Playwright usa un proyecto Supabase ficticio y respuestas de prueba para contenido público; los escenarios de tienda habilitan la función solo dentro de su fixture.
 - La suite E2E predeterminada queda en Chromium, único navegador que inicia correctamente en este Windows.
+
+---
+## [1.14.37] - 2026-10-25
+
+### Seguridad
+- El catálogo, las opciones de compra y el retiro dejan de ser accesibles para visitantes mientras la tienda pública esté oculta; las personas autorizadas conservan la gestión desde el panel.
