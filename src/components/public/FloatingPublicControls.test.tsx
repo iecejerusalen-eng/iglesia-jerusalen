@@ -77,3 +77,4 @@ describe('controles flotantes públicos', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Asistente de la Iglesia Jerusalén' })).not.toBeInTheDocument());
   });
 });
+
