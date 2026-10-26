@@ -9,7 +9,7 @@ export interface SyncQueueItem {
   id: string;
   table_name: string;
   record_id: string;
-  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'DELETE_BY_MEMBER';
   payload: string;
   created_at: string;
 }
@@ -38,6 +38,50 @@ export const processSyncQueue = async (
 
     for (const item of queue) {
       const payload = JSON.parse(item.payload);
+
+      // Older app versions queued member relations as separate mutations. Keep
+      // those pending operations readable after an upgrade.
+      if (item.action === 'DELETE_BY_MEMBER') {
+        const { error } = await supabase.from(item.table_name).delete().eq('member_id', payload.member_id || item.record_id);
+        if (error) throw error;
+        await db.delete('sync_queue', item.id);
+        continue;
+      }
+
+      const legacyRelationColumns: Record<string, string> = {
+        member_service_areas: 'service_area_id',
+        member_talents: 'talent_id',
+        member_spiritual_gifts: 'gift_id',
+      };
+      if (item.action === 'INSERT' && item.table_name in legacyRelationColumns) {
+        const relationColumn = legacyRelationColumns[item.table_name];
+        const { error } = await supabase.from(item.table_name).insert({
+          member_id: payload.member_id,
+          [relationColumn]: payload.role_id,
+        });
+        if (error) throw error;
+        await db.delete('sync_queue', item.id);
+        continue;
+      }
+      if (item.action === 'INSERT' && item.table_name === 'member_phones') {
+        const { error } = await supabase.from('member_phones').insert({
+          member_id: payload.member_id,
+          phone: payload.phone,
+          country_code: payload.country_code || payload.phone_country_code || '+593',
+        });
+        if (error) throw error;
+        await db.delete('sync_queue', item.id);
+        continue;
+      }
+      if (item.action === 'INSERT' && item.table_name === 'member_emails') {
+        const { error } = await supabase.from('member_emails').insert({
+          member_id: payload.member_id,
+          email: payload.email,
+        });
+        if (error) throw error;
+        await db.delete('sync_queue', item.id);
+        continue;
+      }
 
       if (item.action === 'DELETE') {
         if (item.table_name === 'members') {

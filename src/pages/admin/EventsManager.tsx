@@ -22,6 +22,7 @@ import type { Event as DbEvent, Profile } from '../../types';
 
 // Feature Components
 import EventFormModal from '../../features/events/components/EventFormModal';
+import { moveEventDates } from '../../features/events/utils/moveEventDates';
 import EventsTable from '../../features/events/components/EventsTable';
 import EventsGrid from '../../features/events/components/EventsGrid';
 import EventsCalendar from '../../features/events/components/calendar/EventsCalendar';
@@ -153,17 +154,9 @@ const EventsManager = () => {
 
   const handleMoveEvent = async (event: DbEvent, targetDate: string) => {
     if (targetDate === event.start_date) return;
-    const sourceStart = new Date(`${event.start_date}T00:00:00Z`);
-    const destinationStart = new Date(`${targetDate}T00:00:00Z`);
-    const dayOffset = Math.round((destinationStart.getTime() - sourceStart.getTime()) / 86_400_000);
-    const nextEnd = new Date(`${event.end_date || event.start_date}T00:00:00Z`);
-    nextEnd.setDate(nextEnd.getDate() + dayOffset);
     setActionLoading(true);
     try {
-      const { error } = await supabase.from('events').update({
-        start_date: targetDate,
-        end_date: nextEnd.toISOString().slice(0, 10),
-      }).eq('id', event.id);
+      const { error } = await supabase.from('events').update(moveEventDates(event.start_date, event.end_date, targetDate)).eq('id', event.id);
       if (error) throw error;
       toast.success(`“${event.title}” se movió al ${new Date(`${targetDate}T12:00:00`).toLocaleDateString('es-EC')}.`);
       await fetchEvents();
