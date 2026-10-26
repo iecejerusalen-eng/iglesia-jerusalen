@@ -43,6 +43,22 @@ registerRoute(
   })
 )
 
+// Cachea los módulos de carga diferida cuando se visitan, no al instalar la PWA.
+registerRoute(
+  ({ request, url }) => url.origin === self.location.origin
+    && (request.destination === 'script' || request.destination === 'style')
+    && url.pathname.startsWith('/assets/'),
+  new CacheFirst({
+    cacheName: 'app-chunks',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 80,
+        maxAgeSeconds: 60 * 60 * 24 * 30,
+      }),
+    ],
+  }),
+)
+
 // Push Notification Handling
 self.addEventListener('push', (event) => {
   if (!event.data) return
@@ -88,3 +104,4 @@ self.addEventListener('notificationclick', (event) => {
     })
   )
 })
+

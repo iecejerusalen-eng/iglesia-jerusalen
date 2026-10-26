@@ -63,6 +63,12 @@ export default defineConfig({
           '**/assets/*Operations*.js',
           '**/assets/*Production*.js',
           '**/assets/*Strategy*.js',
+          // Módulos grandes y de carga diferida: se descargan cuando el visitante los abre.
+          '**/assets/ChurchStage3D-*.js',
+          '**/assets/BibleStudyHub-*.js',
+          '**/assets/draco_decoder-*.js',
+          '**/assets/draco_decoder-*.wasm',
+          '**/draco/**',
           '**/SongViewer-*.js',
           '**/pdfEngine-*.js',
           '**/CertificatesManager-*.js',
@@ -157,3 +163,4 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000
   }
 })
+

@@ -1,3 +1,8 @@
+## [1.14.33] - 2026-10-25
+
+### Mejorado
+- La PWA deja fuera del precache los módulos 3D y de estudio bíblico, y descarga y guarda estos recursos cuando se abren. El precache baja a 4,6 MiB; los archivos grandes, como el PDF de estatutos, siguen disponibles bajo demanda.
+
 ## [1.14.32] - 2026-10-25
 
 ### Corregido
