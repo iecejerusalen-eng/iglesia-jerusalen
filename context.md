@@ -5,9 +5,9 @@ Total output lines: 564
 
 ## 25-oct-2026 — Aviso del aniversario hasta medianoche de Ecuador y cierre de controles
 
-La portada vuelve a mostrar el aviso del 65.º aniversario hasta las 23:59 del 25 de octubre en hora de Ecuador (límite técnico: 26-oct 05:00 UTC); luego desaparece y `/aniversario-65` permanece como archivo. La agenda lateral «Hoy» y el asistente público ahora incluyen un cierre visible y se cierran al pulsar fuera o con Escape. En móvil, la agenda lateral no compite con la navegación inferior.
+La portada vuelve a mostrar el aviso del 65.º aniversario hasta las 23:59 del 25 de octubre en hora de Ecuador (límite técnico: 26-oct 05:00 UTC); luego desaparece y `/aniversario-65` permanece como archivo. La agenda lateral «Hoy» y el asistente público ahora incluyen un cierre visible y se cierran al pulsar fuera o con Escape. «Hoy» permanece visible en móvil; su panel limita ancho y altura para no cubrir la navegación inferior.
 
-Verificación: cuatro pruebas unitarias de aniversario/controles, ESLint focalizado, build Vite/PWA y tres pruebas E2E de Chromium pasan. Firefox no pudo iniciar en este equipo; Chromium requiere solo las claves públicas de Supabase para probar contenido real. Los cambios todavía requieren publicación y verificación en producción.
+Verificación: cuatro pruebas unitarias de aniversario/controles, ESLint focalizado, build Vite/PWA y cuatro pruebas E2E de Chromium pasan, incluida la apertura/cierre de «Hoy» a 390 px. Firefox no pudo iniciar en este equipo; Chromium requiere solo las claves públicas de Supabase para probar contenido real. El aviso ya se verificó en producción; la disponibilidad móvil está en el siguiente despliegue.
 
 ## 24-oct-2026 — Acceso Google y administración desde móvil
 

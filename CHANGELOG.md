@@ -3,6 +3,7 @@
 ### Corregido
 - El aviso del 65.º aniversario vuelve a mostrarse en Inicio hasta las 23:59 del 25 de octubre, hora de Ecuador; después se oculta y la página especial queda como archivo.
 - La agenda «Hoy» y el asistente de la iglesia se pueden cerrar con su botón, al tocar fuera o con Escape.
+- La agenda «Hoy» permanece accesible en móvil; su panel se ajusta al ancho y alto disponibles sin invadir la navegación inferior.
 
 ## [1.14.30] - 2026-10-25
 
