@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 
 // Isolated visual fixtures. No CRM records, statistics or production settings are changed.
 test.beforeEach(async ({ page }) => {

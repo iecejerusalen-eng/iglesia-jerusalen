@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { createStoreHandler, StoreValidationError } from '../supabase/functions/store-checkout/handler';
@@ -27,7 +27,7 @@ for (const width of [390, 1280]) test('conteo y movimiento de inventario a '+wid
       async signedUrl() { throw new Error('No se usan archivos en esta prueba'); },
     };
     await page.setViewportSize({ width, height: 900 });
-    await page.route('**/*.supabase.co/**', async route => {
+    await page.route('https://e2e-placeholder.supabase.co/**', async route => {
       if (!route.request().url().endsWith('/functions/v1/store-checkout')) { await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); return; }
       const h = route.request().headers();
       const response = await createStoreHandler(backend, h.apikey)(new Request(route.request().url(), { method: 'POST', headers: { ...h, authorization: 'Bearer fixture-verified-session' }, body: route.request().postData() }));

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/test';
 
 test('la página del aniversario muestra información confirmada y se adapta a varios anchos', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

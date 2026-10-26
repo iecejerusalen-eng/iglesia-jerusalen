@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { createStoreHandler, StoreValidationError } from '../supabase/functions/store-checkout/handler';
@@ -30,7 +30,7 @@ for (const width of [390, 1280]) test('seguimiento y biblioteca a '+width+'px', 
       async upload() { throw new Error('Sin carga real'); }, async remove() { throw new Error('Sin archivos reales'); }, async signedUrl() { throw new Error('Sin archivos reales'); },
     };
     await page.setViewportSize({width,height:900});
-    await page.route('**/*.supabase.co/**',async route => {
+    await page.route('https://e2e-placeholder.supabase.co/**',async route => {
       if (route.request().url().includes('/rest/v1/store_catalog')) { const catalog = (await db.query('select * from public.store_catalog')).rows; await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(catalog)}); return; }
       if (!route.request().url().endsWith('/functions/v1/store-checkout')) { await route.fulfill({status:200,contentType:'application/json',body:'{}'}); return; }
       const headers = route.request().headers();

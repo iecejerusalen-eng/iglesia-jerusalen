@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 
 test('Las lecturas tienen canonical propio, preguntas y progreso persistente', async ({ page }) => {
  await page.goto('/nosotros/doctrina');
@@ -27,7 +27,9 @@ test('El himno carga YouTube solo al solicitarlo y conserva la fuente', async ({
 
 test('Los borradores privados no se consultan desde las lecturas públicas', async ({ page }) => {
  const drafts:string[]=[];page.on('request',r=>{if(/about_learning_(drafts|history)/.test(r.url()))drafts.push(r.url());});
- await page.goto('/nosotros/historia');await expect(page.getByRole('heading',{name:'Una historia que conservamos juntos'})).toBeVisible();
+ await page.goto('/nosotros/historia');
+ await page.locator('section.history-sources details > summary').click();
+ await expect(page.getByRole('heading',{name:'Una historia que conservamos juntos'})).toBeVisible();
  await expect(page.getByText('Consultando la edición publicada…')).toHaveCount(0);
  expect(drafts).toEqual([]);
 });

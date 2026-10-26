@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { createStoreHandler } from '../supabase/functions/store-checkout/handler';
@@ -29,7 +29,7 @@ for (const width of [1280, 390]) {
         async signedUrl() { return 'https://example.invalid/synthetic-signed-proof'; },
       };
       await page.setViewportSize({ width, height: 900 });
-      await page.route('**/*.supabase.co/**', async route => {
+      await page.route('https://e2e-placeholder.supabase.co/**', async route => {
         const request = route.request();
         const url = new URL(request.url());
         if (url.pathname.endsWith('/functions/v1/store-checkout')) {
@@ -41,6 +41,8 @@ for (const width of [1280, 390]) {
         } else if (url.pathname.endsWith('/rest/v1/store_checkout_options')) {
           const options = (await db.query('select * from public.store_checkout_options')).rows[0];
           await route.fulfill({ json: { enabled: options.enabled, transfer_fee_percent: Number(options.transfer_fee_percent) } });
+        } else if (url.pathname.endsWith('/rest/v1/site_feature_visibility')) {
+          await route.fulfill({ json: [{ feature_key: 'store', is_enabled: true }] });
         } else {
           await route.fulfill({ json: [] });
         }

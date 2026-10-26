@@ -474,3 +474,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
     - Se ajustó el margen negativo de la sección bento grid de `-mt-12` a `-mt-5` y la separación inferior del hero, eliminando la superposición donde la tarjeta de sermón cubría y ocultaba el texto "Descubre nuestra semana".
 
 ---
+## [1.14.36] - 2026-10-25
+
+### Seguridad
+- Las vistas públicas de la tienda aplican los permisos de quien consulta; el catálogo muestra únicamente productos activos y variantes de productos publicados.
+- Los intentos de acceso a páginas ministeriales y documentos editoriales protegidos se limitan por dirección de origen seudonimizada y recurso. El registro permanece privado.
+- Se desactiva el RPC de verificación estudiantil por identificador, que ya no forma parte de las rutas de la aplicación.
+
+### Pruebas
+- Playwright usa un proyecto Supabase ficticio y respuestas de prueba para contenido público; los escenarios de tienda habilitan la función solo dentro de su fixture.
+- La suite E2E predeterminada queda en Chromium, único navegador que inicia correctamente en este Windows.

@@ -9,6 +9,7 @@ import path from 'path'
 export default defineConfig({
   server: {
     watch: { ignored: ['**/LOCAL/**'] },
+    hmr: process.env.PLAYWRIGHT_E2E === '1' ? false : undefined,
   },
   resolve: {
     alias: {

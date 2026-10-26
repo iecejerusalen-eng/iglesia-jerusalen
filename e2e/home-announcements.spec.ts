@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 
 test('Inicio no deja que anuncios de eventos pasados desplacen comunicados vigentes', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-11T15:00:00Z'));

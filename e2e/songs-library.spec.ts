@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test';
 
 test.describe('Biblioteca de alabanzas', () => {
   test('carga, busca y abre una canción', async ({ page }) => {
