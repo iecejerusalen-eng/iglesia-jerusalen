@@ -1,6 +1,10 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 2026-10-28 — Acceso compacto del asistente público
+
+El disparador de «Te Ayudamos» ocupa 48 px y muestra solo el ícono en reposo. La etiqueta aparece a la derecha al pasar el cursor o enfocarlo con teclado, con transición de 200 ms y respeto por movimiento reducido. En escritorio amplio queda a 24 px del borde inferior; en móvil permanece 88 px más el área segura sobre el borde y desplazado a la derecha del control de recarga. El panel conserva su ancho dentro de la pantalla; las respuestas del asistente no cambian.
+
 ## 2026-10-28 — Chatbot «Te ayudamos» abajo a la izquierda
 
 El widget público del asistente se ancla a la esquina inferior izquierda en móvil y escritorio. Conserva la separación actual respecto de la navegación inferior móvil y mantiene el panel alineado al botón. Publicación prevista en la versión 1.14.39; no cambia el esquema ni las funciones de Supabase.

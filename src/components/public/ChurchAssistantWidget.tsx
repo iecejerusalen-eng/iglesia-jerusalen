@@ -347,13 +347,13 @@ export default function ChurchAssistantWidget() {
   }
 
   return (
-    <div ref={widgetRef} className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] left-3 z-[80] sm:bottom-24 sm:left-6">
+    <div ref={widgetRef} className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-[4.5rem] z-[80] md:left-6 xl:bottom-6">
       {isOpen && (
         <section
           id="church-assistant-panel"
           role="dialog"
           aria-label="Asistente de la Iglesia Jerusalén"
-          className="mb-3 flex h-[min(36rem,calc(100dvh-8.25rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-white/10 dark:bg-slate-950"
+          className="-ml-[3.75rem] mb-3 flex h-[min(36rem,calc(100dvh-11rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 md:ml-0 dark:border-white/10 dark:bg-slate-950"
         >
           <header className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-900/90">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white"><MessageCircle size={19} aria-hidden="true" /></span>
@@ -417,9 +417,11 @@ export default function ChurchAssistantWidget() {
         </section>
       )}
 
-      <button ref={openButtonRef} type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-white shadow-xl shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200 sm:min-h-14 sm:gap-2 sm:px-4 sm:text-sm">
-        {isOpen ? <X size={17} aria-hidden="true" className="sm:size-[19px]" /> : <MessageCircle size={18} aria-hidden="true" className="sm:size-5" />}
-        <span>{isOpen ? 'Cerrar' : '¿Te ayudamos?'}</span>
+      <button ref={openButtonRef} type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="group relative flex size-12 shrink-0 items-center justify-center rounded-full bg-primary p-0 text-white shadow-xl shadow-primary/25 transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary motion-reduce:transition-none dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200">
+        {isOpen ? <X size={19} aria-hidden="true" /> : <MessageCircle size={20} aria-hidden="true" />}
+        <span aria-hidden="true" className="pointer-events-none absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 translate-x-1 whitespace-nowrap rounded-full border border-white/20 bg-primary px-3.5 py-2 text-xs font-bold text-white opacity-0 shadow-lg shadow-primary/20 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none dark:bg-church-gold-light dark:text-slate-950">
+          {isOpen ? 'Cerrar' : 'Te Ayudamos'}
+        </span>
       </button>
     </div>
   );

@@ -1,3 +1,8 @@
+## [1.14.41] - 2026-10-28
+
+### Mejorado
+- El acceso «Te Ayudamos» aparece como un ícono circular en la esquina inferior izquierda. Al pasar el cursor o enfocarlo con teclado, muestra el texto con una transición breve; en móvil queda sobre la navegación inferior.
+
 ## [1.14.40] - 2026-10-28
 
 ### Corregido
