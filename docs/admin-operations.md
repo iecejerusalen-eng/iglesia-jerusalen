@@ -2,6 +2,8 @@
 
 Inicio muestra solo pendientes de módulos autorizados: mensajes, solicitudes propias, recordatorios vencidos, lecturas en revisión y anuncios vencidos (fecha explícita o evento no recurrente terminado, America/Guayaquil).
 
+El onboarding administrativo es complementario y no bloquea la navegación si sus consultas de red fallan. En ese caso se vacían sus pasos, se cierra el estado de carga y el hook conserva el error para diagnóstico y recuperación.
+
 Visitas conservan su solicitud en Comunicaciones. Responsable, etapa, recordatorio y nota se guardan con control de versión e historial inmutable. Los recordatorios son internos; no envían mensajes. Los responsables disponibles tienen permiso de edición de comunicaciones. No existe una sincronización automática con contactos CRM que pueda duplicar solicitudes.
 
 Páginas y lecturas tienen copia automática en `sessionStorage`, aislada por usuario y documento, vigente 24 horas y eliminada al cerrar sesión. Recuperar carga cambios pendientes; nunca publica. Avisos protegen cierre/recarga y navegación interna, incluidos los botones Atrás/Adelante. La comparación muestra diferencias respecto del servidor y permite comparar/recuperar versiones previas de secciones. Guardar una sección actualiza el sitio público; guardar una lectura conserva su borrador privado hasta revisión pastoral. Los conflictos de `updated_at`/revisión impiden sobrescrituras y el reordenado solo cambia posiciones, con validación atómica.

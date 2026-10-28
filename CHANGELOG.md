@@ -1,3 +1,8 @@
+## [1.14.40] - 2026-10-28
+
+### Corregido
+- Los errores de conexión durante la carga del onboarding ya no dejan el indicador activo ni pasos anteriores visibles; se cierra la carga y se conserva un error para permitir la recuperación.
+
 ## [1.14.39] - 2026-10-28
 
 ### Mejorado

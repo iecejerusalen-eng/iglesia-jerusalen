@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
@@ -18,33 +18,55 @@ export function useOnboarding(enabled = true) {
   const [config, setConfig] = useState<OnboardingConfig>({ onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const requestId = useRef(0);
 
   const cargar = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     if (!enabled) {
       setPasos([]);
+      setConfig({ onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
       setIsLoading(false);
       setError(null);
       return;
     }
-    if (!user?.id || !role) { setPasos([]); setIsLoading(false); return; }
-    setIsLoading(true); setError(null);
-    const [{ data: stepRows, error: stepsError }, { data: progressRows, error: progressError }, { data: configRow, error: configError }] = await Promise.all([
-      supabase.from('onboarding_pasos').select('id, rol, orden, titulo, descripcion, accion_label, accion_ruta, icono, es_obligatorio, puntos').eq('rol', role).order('orden'),
-      supabase.from('onboarding_progreso').select('paso_id, completado_at, omitido').eq('usuario_id', user.id),
-      supabase.from('onboarding_configuracion').select('onboarding_completado, onboarding_omitido, porcentaje_completado').eq('usuario_id', user.id).maybeSingle(),
-    ]);
-    const queryError = stepsError || progressError || configError;
-    if (queryError) { setError(queryError); setIsLoading(false); return; }
-    const progress = new Map((progressRows ?? []).map((row) => [row.paso_id, row]));
-    const nextSteps = (stepRows ?? []).map((step) => ({ ...step, completado: Boolean(progress.get(step.id)?.completado_at), omitido: Boolean(progress.get(step.id)?.omitido) })) as OnboardingPasoData[];
-    setPasos(nextSteps);
-    setConfig(configRow ?? { onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
-    setIsLoading(false);
+    if (!user?.id || !role) {
+      setPasos([]);
+      setConfig({ onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setConfig({ onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
+    try {
+      const [{ data: stepRows, error: stepsError }, { data: progressRows, error: progressError }, { data: configRow, error: configError }] = await Promise.all([
+        supabase.from('onboarding_pasos').select('id, rol, orden, titulo, descripcion, accion_label, accion_ruta, icono, es_obligatorio, puntos').eq('rol', role).order('orden'),
+        supabase.from('onboarding_progreso').select('paso_id, completado_at, omitido').eq('usuario_id', user.id),
+        supabase.from('onboarding_configuracion').select('onboarding_completado, onboarding_omitido, porcentaje_completado').eq('usuario_id', user.id).maybeSingle(),
+      ]);
+      if (currentRequest !== requestId.current) return;
+      const queryError = stepsError || progressError || configError;
+      if (queryError) throw queryError;
+      const progress = new Map((progressRows ?? []).map((row) => [row.paso_id, row]));
+      const nextSteps = (stepRows ?? []).map((step) => ({ ...step, completado: Boolean(progress.get(step.id)?.completado_at), omitido: Boolean(progress.get(step.id)?.omitido) })) as OnboardingPasoData[];
+      setPasos(nextSteps);
+      setConfig(configRow ?? { onboarding_completado: false, onboarding_omitido: false, porcentaje_completado: 0 });
+    } catch (caught) {
+      if (currentRequest !== requestId.current) return;
+      setError(caught instanceof Error ? caught : new Error('No se pudo cargar el progreso de inicio.'));
+      setPasos([]);
+    } finally {
+      if (currentRequest === requestId.current) setIsLoading(false);
+    }
   }, [enabled, role, user]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void cargar(); }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      requestId.current += 1;
+    };
   }, [cargar]);
 
   const porcentaje = useMemo(() => pasos.length ? Math.round((pasos.filter((step) => step.completado).length / pasos.length) * 100) : 0, [pasos]);
