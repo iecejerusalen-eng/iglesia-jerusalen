@@ -1,6 +1,9 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 2026-10-28 — Chatbot «Te ayudamos» abajo a la izquierda
+
+El widget público del asistente se ancla a la esquina inferior izquierda en móvil y escritorio. Conserva la separación actual respecto de la navegación inferior móvil y mantiene el panel alineado al botón. Publicación prevista en la versión 1.14.39; no cambia el esquema ni las funciones de Supabase.
 # Contexto y reglas de UI — Iglesia Jerusalén
 
 ## 25-oct-2026 — Separación del aviso del aniversario y el menú fijo

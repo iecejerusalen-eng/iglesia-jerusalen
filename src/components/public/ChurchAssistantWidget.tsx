@@ -347,7 +347,7 @@ export default function ChurchAssistantWidget() {
   }
 
   return (
-    <div ref={widgetRef} className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-3 z-[80] sm:bottom-24 sm:right-6">
+    <div ref={widgetRef} className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] left-3 z-[80] sm:bottom-24 sm:left-6">
       {isOpen && (
         <section
           id="church-assistant-panel"
@@ -417,7 +417,7 @@ export default function ChurchAssistantWidget() {
         </section>
       )}
 
-      <button ref={openButtonRef} type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="ml-auto flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-white shadow-xl shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200 sm:min-h-14 sm:gap-2 sm:px-4 sm:text-sm">
+      <button ref={openButtonRef} type="button" onClick={() => setIsOpen((open) => !open)} aria-expanded={isOpen} aria-controls="church-assistant-panel" aria-label={isOpen ? 'Cerrar chat de la iglesia' : 'Abrir chat de la iglesia'} className="flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-white shadow-xl shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary dark:bg-church-gold-light dark:text-slate-950 dark:hover:bg-amber-200 sm:min-h-14 sm:gap-2 sm:px-4 sm:text-sm">
         {isOpen ? <X size={17} aria-hidden="true" className="sm:size-[19px]" /> : <MessageCircle size={18} aria-hidden="true" className="sm:size-5" />}
         <span>{isOpen ? 'Cerrar' : '¿Te ayudamos?'}</span>
       </button>

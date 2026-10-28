@@ -1,3 +1,7 @@
+## [1.14.39] - 2026-10-28
+
+### Mejorado
+- El botón «¿Te ayudamos?» y su panel quedan en la esquina inferior izquierda, conservando espacio sobre la navegación móvil.
 ## [1.14.38] - 2026-10-25
 
 ### Seguridad
