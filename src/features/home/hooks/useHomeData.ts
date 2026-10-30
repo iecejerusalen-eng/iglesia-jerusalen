@@ -1,59 +1,16 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../config/supabase';
-import { getDb } from '../../../config/localDb';
-import type { Member, Schedule, Sermon, Event as DbEvent } from '../../../types';
+import type { Schedule, Sermon, Event as DbEvent } from '../../../types';
 import type { BirthdayMember, PageSection } from '../types';
 import { DEFAULT_SECTIONS } from '../constants';
 import { fetchPublicBirthdays, toBirthdayInfo } from '../../birthdays/hooks/useBirthdays';
 import { fetchPublicChurchAnnouncements } from '../../announcements/service';
 import type { ChurchAnnouncement } from '../../announcements/types';
-
-type HomeMemberSnapshot = Pick<Member, 'birth_date' | 'baptism_date'> & { deleted_at?: string | null };
+import { ecuadorDateKey } from '../../../utils/dateInEcuador';
 
 export const useHomeData = () => {
-  const statsQuery = useQuery({
-    queryKey: ['homeStats'],
-    queryFn: async () => {
-      const db = await getDb();
-      let allMembers = (await db.getAll('local_members')) as HomeMemberSnapshot[];
-      allMembers = allMembers.filter((member) => !member.deleted_at);
-
-      if (allMembers.length === 0) {
-        const { data, error } = await supabase.from('members').select('id, birth_date, baptism_date').is('deleted_at', null);
-        if (!error && data) allMembers = data as HomeMemberSnapshot[];
-      }
-
-      const { count: cellsCount } = await supabase.from('cells').select('id', { count: 'exact', head: true });
-
-      let baptizedCount = 0;
-      let kidsCount = 0;
-      let youthCount = 0;
-
-      const currentYear = new Date().getFullYear();
-
-      allMembers.forEach((member) => {
-        if (member.baptism_date) baptizedCount++;
-        if (member.birth_date) {
-          const bYear = Number(member.birth_date.split('-')[0]);
-          if (!isNaN(bYear)) {
-            const age = currentYear - bYear;
-            if (age <= 12) kidsCount++;
-            else if (age > 12 && age <= 25) youthCount++;
-          }
-        }
-      });
-
-      return {
-        members: allMembers.length,
-        baptized: baptizedCount,
-        cells: cellsCount ?? 0,
-        kids: kidsCount,
-        youth: youthCount
-      };
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const unpublishedStats = { members: 0, baptized: 0, cells: 0, kids: 0, youth: 0 };
 
   const sectionsQuery = useQuery({
     queryKey: ['homeSections'],
@@ -76,30 +33,13 @@ export const useHomeData = () => {
   const schedulesQuery = useQuery({
     queryKey: ['homeSchedules'],
     queryFn: async () => {
-      let localData: Schedule[] = [];
-      try {
-        const db = await getDb();
-        const allSchedules = (await db.getAll('local_schedules')) as Schedule[];
-        allSchedules.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-        localData = allSchedules;
-      } catch (dbErr) {
-        console.warn('Local database query failed, trying Supabase:', dbErr);
-      }
-
-      if (localData && localData.length > 0) {
-        return localData;
-      }
-
       const { data, error } = await supabase
         .from('schedules')
         .select('id, day, title, time_range, description, order_index, created_at')
         .order('order_index', { ascending: true });
 
       if (error) throw error;
-      if (data && data.length > 0) {
-        return data as Schedule[];
-      }
-      return [];
+      return (data ?? []) as Schedule[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -126,7 +66,7 @@ export const useHomeData = () => {
   const eventsQuery = useQuery({
     queryKey: ['homeEvents'],
     queryFn: async () => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = ecuadorDateKey();
       const { data, error } = await supabase
         .from('events')
         .select(`
@@ -136,7 +76,7 @@ export const useHomeData = () => {
           created_at, ministries(name, slug, theme_color)
         `)
         .eq('is_public', true)
-        .gte('start_date', todayStr)
+        .or(`start_date.gte.${todayStr},and(start_date.lt.${todayStr},end_date.gte.${todayStr})`)
         .order('start_date', { ascending: true })
         .order('start_time', { ascending: true, nullsFirst: false })
         .limit(3);
@@ -178,14 +118,15 @@ export const useHomeData = () => {
   }, [birthdaysQuery.data]);
 
   return {
-    stats: statsQuery.data || { members: 0, baptized: 0, cells: 0, kids: 0, youth: 0 },
-    isStatsLoading: statsQuery.isLoading,
+    stats: unpublishedStats,
+    isStatsLoading: false,
     
     sections: sectionsQuery.data || DEFAULT_SECTIONS,
     isSectionsLoading: sectionsQuery.isLoading,
     
     schedules: schedulesQuery.data || [],
     loadingSchedules: schedulesQuery.isLoading,
+    schedulesError: schedulesQuery.error,
     
     sermons: sermonsQuery.data || [],
     loadingSermons: sermonsQuery.isLoading,

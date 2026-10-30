@@ -14,6 +14,7 @@ import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalé
 import type { Event as DbEvent, Schedule } from '../../types';
 import { formatEventDateRange, formatEventTime } from '../../features/events/utils/eventPresentation';
 import { toast } from 'sonner';
+import { ecuadorDateKey } from '../../utils/dateInEcuador';
 
 type VisitForm = {
   fullName: string;
@@ -50,7 +51,7 @@ const VISIT_STEPS: ReadonlyArray<{ number: string; title: string; description: s
 
 function useVisitData() {
   const schedules = useQuery({
-    queryKey: ['publicVisitSchedules'],
+    queryKey: ['homeSchedules'],
     queryFn: async () => {
       const { data, error } = await supabase.from('schedules').select('id, day, title, time_range, description, order_index, created_at').order('order_index', { ascending: true });
       if (error) throw error;
@@ -61,12 +62,12 @@ function useVisitData() {
   const events = useQuery({
     queryKey: ['publicVisitEvents'],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = ecuadorDateKey();
       const { data, error } = await supabase
         .from('events')
         .select('id, title, description, start_date, end_date, start_time, end_time, is_recurring, recurrence_type, recurrence_days, cover_image_url, emoji, ministry_id, leaders_in_charge, is_public, space_id, created_at, ministries(name, slug, theme_color)')
         .eq('is_public', true)
-        .gte('start_date', today)
+        .or(`start_date.gte.${today},and(start_date.lt.${today},end_date.gte.${today})`)
         .order('start_date', { ascending: true })
         .limit(3);
       if (error) throw error;
@@ -107,25 +108,40 @@ export default function PlanYourVisit() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!form.fullName.trim() || !form.phone.trim()) {
-      toast.error('Completa tu nombre y teléfono para continuar.');
+    if (!form.fullName.trim() || !form.phone.trim() || !form.email.trim()) {
+      toast.error('Completa tu nombre, teléfono y correo para continuar.');
       setFormStep(1);
+      return;
+    }
+    if (form.fullName.trim().length > 80 || form.phone.trim().length > 40 || form.email.trim().length > 160 || form.notes.trim().length > 1500) {
+      toast.error('Revisa los límites: nombre 80, teléfono 40, correo 160 y notas 1500 caracteres.');
       return;
     }
     setSubmitting(true);
     try {
+      const { data: limitData, error: limitError } = await supabase.functions.invoke('rate-limiter', { body: { endpoint: 'visita' } });
+      if (limitError) {
+        console.error('No se pudo verificar el límite del formulario de visita:', limitError);
+        toast.error('No pudimos verificar el envío en este momento. Intenta nuevamente más tarde.');
+        return;
+      }
+      if (!limitData?.success) {
+        toast.error('Has enviado varios avisos recientemente. Intenta nuevamente en 15 minutos.');
+        return;
+      }
       const needsLabel = form.needs.length > 0 ? form.needs.join(', ') : 'Sin necesidad específica';
       const { error } = await supabase.from('contact_messages').insert([{
-        full_name: form.fullName.trim(), email: form.email.trim() || null, phone: form.phone.trim(),
+        name: form.fullName.trim(), email: form.email.trim(),
         subject: 'Planifica tu visita',
-        message: `Fecha prevista: ${form.visitDate || 'Por confirmar'}\nNecesidades: ${needsLabel}\nNotas: ${form.notes.trim() || 'Ninguna'}`,
+        message: `Teléfono / WhatsApp: ${form.phone.trim()}\nFecha prevista: ${form.visitDate || 'Por confirmar'}\nNecesidades: ${needsLabel}\nNotas: ${form.notes.trim() || 'Ninguna'}`,
         status: 'unread',
       }]);
       if (error) throw error;
       setSubmitted(true);
       toast.success('Tu visita quedó registrada. ¡Te esperamos!');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No pudimos registrar tu visita. Intenta nuevamente.');
+      console.error('Error registrando el aviso de visita:', error);
+      toast.error('No pudimos registrar tu visita. Intenta nuevamente más tarde.');
     } finally {
       setSubmitting(false);
     }
@@ -199,8 +215,8 @@ export default function PlanYourVisit() {
               <a href="/eventos" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-800 underline decoration-amber-400 decoration-2 underline-offset-4 dark:text-blue-200">Ver agenda completa <ArrowRight size={15} /></a>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {schedules.isLoading && <p className="text-sm text-slate-500">Cargando horarios…</p>}
-              {!schedules.isLoading && groupedSchedules.length === 0 && <p className="text-sm text-slate-500">Aún no hay horarios publicados. Consulta la agenda para ver próximas actividades.</p>}
+              {schedules.isLoading && <p role="status" className="text-sm text-slate-500">Cargando horarios…</p>}{schedules.isError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">No pudimos cargar los horarios. Intenta nuevamente más tarde o consulta <a className="font-bold underline" href="/agenda">la agenda</a>.</div>}
+              {!schedules.isLoading && !schedules.isError && groupedSchedules.length === 0 && <p className="text-sm text-slate-500">Aún no hay horarios publicados. Consulta la agenda para ver próximas actividades.</p>}
               {groupedSchedules.map(([day, daySchedules]) => (
                 <div key={day} className="rounded-2xl border border-slate-200 bg-[#f7f7f3] p-5 dark:border-white/10 dark:bg-white/5">
                   <p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-600 dark:text-amber-400">{day}</p>
@@ -214,8 +230,8 @@ export default function PlanYourVisit() {
         <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">También puede interesarte</p><h2 className="mt-2 font-serif text-3xl font-black sm:text-4xl">Lo que está pasando</h2></div><a href="/eventos" className="inline-flex items-center gap-2 text-sm font-black text-blue-800 dark:text-blue-200">Ver todos <ArrowRight size={15} /></a></div>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {events.isLoading && <p className="text-sm text-slate-500">Cargando actividades…</p>}
-            {!events.isLoading && (events.data ?? []).length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-white/15">No hay actividades próximas publicadas todavía. Revisa la agenda más adelante.</div>}
+            {events.isLoading && <p role="status" className="text-sm text-slate-500">Cargando actividades…</p>}{events.isError && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200">No pudimos cargar las actividades. Puedes consultar <a className="font-bold underline" href="/eventos">la agenda completa</a>.</div>}
+            {!events.isLoading && !events.isError && (events.data ?? []).length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-white/15">No hay actividades próximas publicadas todavía. Revisa la agenda más adelante.</div>}
             {(events.data ?? []).map((event) => <a key={event.id} href={`/eventos?event=${event.id}`} className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:border-amber-300 hover:shadow-lg dark:border-white/10 dark:bg-slate-900"><span className="text-2xl" aria-hidden="true">{event.emoji || '📅'}</span><h3 className="mt-4 font-serif text-xl font-bold group-hover:text-blue-800 dark:group-hover:text-amber-300">{event.title}</h3><p className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{formatEventDateRange(event.start_date, event.end_date)} · {formatEventTime(event.start_time, event.end_time)}</p></a>)}
           </div>
         </section>
@@ -226,8 +242,8 @@ export default function PlanYourVisit() {
             <div className="rounded-[2rem] bg-white p-5 text-slate-950 shadow-2xl sm:p-8 dark:bg-slate-900 dark:text-white">
               {submitted ? <div className="py-10 text-center"><div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><Check size={32} /></div><h3 className="mt-5 font-serif text-3xl font-black">¡Te esperamos!</h3><p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">Recibimos tu aviso. Si necesitas cambiar algo, puedes escribirnos nuevamente.</p><button type="button" onClick={() => { setSubmitted(false); setForm(INITIAL_FORM); setFormStep(1); }} className="mt-6 text-sm font-bold text-blue-800 underline underline-offset-4 dark:text-blue-200">Registrar otra visita</button></div> : <form onSubmit={handleSubmit} className="space-y-5" aria-label="Planificar visita">
                 <div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-600 dark:text-amber-400">Paso {formStep} de 2</p><h3 className="mt-1 font-serif text-2xl font-black">{formStep === 1 ? 'Cuéntanos de ti' : 'Hagamos tu llegada fácil'}</h3></div><span className="text-xs font-bold text-slate-400">{formStep === 1 ? 'Lo esencial' : 'Opcional'}</span></div>
-                {formStep === 1 ? <><div><label htmlFor="visit-name" className="mb-1.5 block text-xs font-bold">Nombre completo *</label><input id="visit-name" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} autoComplete="name" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="¿Cómo te llamamos?" /></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-phone" className="mb-1.5 block text-xs font-bold">Teléfono / WhatsApp *</label><input id="visit-phone" required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="Tu número" /></div><div><label htmlFor="visit-email" className="mb-1.5 block text-xs font-bold">Correo (opcional)</label><input id="visit-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="tu@correo.com" /></div></div><button type="button" onClick={() => setFormStep(2)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-800 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300">Continuar <ArrowRight size={16} /></button></> : <><div><label className="mb-2 block text-xs font-bold">¿Cómo podemos prepararnos?</label><div className="grid grid-cols-2 gap-2">{NEEDS.map(({ id, label, icon: Icon }) => { const selected = form.needs.includes(id); return <button type="button" key={id} onClick={() => toggleNeed(id)} aria-pressed={selected} className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-amber-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><Icon size={16} /> {label}</button>; })}</div></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-date" className="mb-1.5 block text-xs font-bold">Fecha prevista</label><input id="visit-date" type="date" value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" /></div><div><label htmlFor="visit-notes" className="mb-1.5 block text-xs font-bold">Nota breve</label><input id="visit-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" placeholder="¿Alguna pregunta?" /></div></div><div className="flex gap-3"><button type="button" onClick={() => setFormStep(1)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10">Atrás</button><button type="submit" disabled={submitting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60">{submitting ? 'Enviando…' : 'Avisar que voy'} <Send size={16} /></button></div></>}
-                <p className="text-center text-[11px] leading-5 text-slate-500">Al enviar, tu información llega al equipo de bienvenida de la iglesia.</p>
+                {formStep === 1 ? <><div><label htmlFor="visit-name" className="mb-1.5 block text-xs font-bold">Nombre completo *</label><input id="visit-name" required maxLength={80} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} autoComplete="name" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="¿Cómo te llamamos?" /></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-phone" className="mb-1.5 block text-xs font-bold">Teléfono / WhatsApp *</label><input id="visit-phone" required maxLength={40} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="Tu número" /></div><div><label htmlFor="visit-email" className="mb-1.5 block text-xs font-bold">Correo *</label><input id="visit-email" required maxLength={160} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-white/5" placeholder="tu@correo.com" /></div></div><button type="button" onClick={() => setFormStep(2)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 text-sm font-black text-white transition hover:bg-blue-800 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300">Continuar <ArrowRight size={16} /></button></> : <><div><label className="mb-2 block text-xs font-bold">¿Cómo podemos prepararnos?</label><div className="grid grid-cols-2 gap-2">{NEEDS.map(({ id, label, icon: Icon }) => { const selected = form.needs.includes(id); return <button type="button" key={id} onClick={() => toggleNeed(id)} aria-pressed={selected} className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-amber-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'}`}><Icon size={16} /> {label}</button>; })}</div></div><div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="visit-date" className="mb-1.5 block text-xs font-bold">Fecha prevista</label><input id="visit-date" type="date" value={form.visitDate} onChange={(e) => setForm({ ...form, visitDate: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" /></div><div><label htmlFor="visit-notes" className="mb-1.5 block text-xs font-bold">Nota breve</label><input id="visit-notes" maxLength={1500} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-amber-500 dark:border-white/10 dark:bg-white/5" placeholder="¿Alguna pregunta?" /></div></div><div className="flex gap-3"><button type="button" onClick={() => setFormStep(1)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10">Atrás</button><button type="submit" disabled={submitting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3.5 text-sm font-black text-slate-950 transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60">{submitting ? 'Enviando…' : 'Avisar que voy'} <Send size={16} /></button></div></>}
+                <p className="text-center text-[11px] leading-5 text-slate-500">Al enviar, tu información llega al equipo de bienvenida de la iglesia y se usa para preparar tu visita. Puedes venir sin registrarte. Consulta el <a href="/privacidad" className="font-bold underline">aviso de privacidad</a>.</p>
               </form>}
             </div>
           </div>

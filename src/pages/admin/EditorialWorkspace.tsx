@@ -23,6 +23,9 @@ import BlockEditor from "../../components/admin/BlockEditor";
 import MediaAssetPicker from "../../components/admin/MediaAssetPicker";
 import { supabase } from "../../config/supabase";
 import BlockLessonRenderer from "../../components/public/BlockLessonRenderer";
+import { useRecoveryDraft } from "../../hooks/useRecoveryDraft";
+import { useUnsavedChanges } from "../../hooks/useUnsavedChanges";
+import { useConfirmStore } from "../../store/useConfirmStore";
 import type {
   EditorialCategory,
   EditorialDocument,
@@ -113,6 +116,20 @@ export default function EditorialWorkspace() {
   const [selectedEditor, setSelectedEditor] = useState("");
   const [selectedRole, setSelectedRole] =
     useState<EditorialEditorRole>("author");
+  const [draftBaseline, setDraftBaseline] = useState<DocumentDraft>(emptyDraft);
+  const confirm = useConfirmStore((state) => state.confirm);
+
+  const recoveryValue = draft ? { ...draft, password: "", view_count: 0, views_last_30_days: 0 } : emptyDraft;
+  const recoveryBaseline = { ...draftBaseline, password: "", view_count: 0, views_last_30_days: 0 };
+  const editorDirty = Boolean(draft) && JSON.stringify(recoveryValue) !== JSON.stringify(recoveryBaseline);
+  useUnsavedChanges(editorDirty);
+  const recoveryDraft = useRecoveryDraft(
+    `editorial:${id}:${draft?.id ?? "new"}`,
+    recoveryValue,
+    recoveryBaseline,
+    editorDirty,
+    Boolean(draft),
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,8 +198,7 @@ export default function EditorialWorkspace() {
     [documents],
   );
   const openDocument = (document?: EditorialDocument) => {
-    setDraft(
-      document
+    const nextDraft = document
         ? {
             id: document.id,
             parent_id: document.parent_id ?? "",
@@ -206,9 +222,24 @@ export default function EditorialWorkspace() {
             view_count: 0,
             views_last_30_days: 0,
           }
-        : { ...emptyDraft },
-    );
+        : { ...emptyDraft };
+    setDraftBaseline(nextDraft);
+    setDraft(nextDraft);
     if (document) void loadDocumentAnalytics(document.id);
+  };
+
+  const closeDraft = async () => {
+    if (editorDirty) {
+      const discard = await confirm({
+        title: "Cambios sin guardar",
+        message: "¿Quieres descartar estos cambios? La copia de recuperación de esta pestaña se conservará.",
+        confirmText: "Descartar cambios",
+        cancelText: "Seguir editando",
+        variant: "danger",
+      });
+      if (!discard) return;
+    }
+    setDraft(null);
   };
 
   const loadDocumentAnalytics = async (documentId: string) => {
@@ -335,20 +366,12 @@ export default function EditorialWorkspace() {
       }
     }
     setSaving(false);
+    setDraftBaseline({ ...draft, password: "" });
+    recoveryDraft.clear();
     setDraft(null);
     toast.success("Publicación guardada.");
     await load();
   };
-
-  useEffect(() => {
-    if (!draft) return;
-    const key = `editorial-draft:${id}:${draft.id ?? "new"}`;
-    const timer = window.setTimeout(
-      () => window.localStorage.setItem(key, JSON.stringify(draft)),
-      700,
-    );
-    return () => window.clearTimeout(timer);
-  }, [draft, id]);
 
   const removeDocument = async (document: EditorialDocument) => {
     if (
@@ -859,13 +882,19 @@ export default function EditorialWorkspace() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDraft(null)}
+                  onClick={() => void closeDraft()}
                   className="rounded-xl border border-slate-200 p-2 dark:border-white/10"
                 >
                   <X />
                 </button>
               </div>
             </div>
+            {recoveryDraft.error && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-400/10 dark:text-rose-200">{recoveryDraft.error}</p>}
+            {recoveryDraft.recovery && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-100">
+              <p>Hay una copia de recuperación de esta pestaña guardada {new Intl.DateTimeFormat('es-EC', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(recoveryDraft.recovery.savedAt))}. {recoveryDraft.recovery.baseline !== JSON.stringify(recoveryBaseline) ? 'El documento cambió desde que se creó la copia; revísala antes de recuperarla.' : ''}</p>
+              <div className="mt-2 flex flex-wrap gap-3"><button type="button" className="min-h-11 font-bold underline" onClick={() => { setDraft({ ...recoveryDraft.recovery!.value, password: '' }); recoveryDraft.clear(); }}>Recuperar cambios</button><button type="button" onClick={recoveryDraft.clear} className="min-h-11 underline">Descartar copia</button></div>
+            </div>}
+            <p role="status" className="mt-3 text-xs text-slate-500 dark:text-slate-400">{editorDirty ? recoveryDraft.savedAt ? 'Copia de recuperación guardada en esta pestaña.' : 'Guardando copia de recuperación…' : 'Sin cambios pendientes.'} Las contraseñas no se guardan en la copia.</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="text-xs font-bold lg:col-span-2">
                 Título
@@ -1137,7 +1166,7 @@ export default function EditorialWorkspace() {
             <div className="mt-7 flex justify-end gap-3 border-t border-slate-200 pt-5 dark:border-white/10">
               <button
                 type="button"
-                onClick={() => setDraft(null)}
+                onClick={() => void closeDraft()}
                 className="rounded-xl px-5 py-3 text-sm font-bold"
               >
                 Cancelar

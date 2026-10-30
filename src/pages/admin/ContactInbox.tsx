@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/button';
 import { supabase } from '../../config/supabase';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSearchParams } from 'react-router-dom';
 import FollowupEditor from '../../features/dashboard/components/FollowupEditor';
 import { followupLabels, type Followup } from '../../features/dashboard/followup';
 
@@ -48,14 +49,16 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 const ContactInbox = () => {
+  const [searchParams] = useSearchParams();
   const { hasPermission } = usePermissions();
   const canEdit = hasPermission('chat', 'edit');
   const userId = useAuthStore(state => state.user?.id);
-  const [followupFilter, setFollowupFilter] = useState(() => new URLSearchParams(window.location.search).get('seguimiento') === 'mine' ? 'mine' : 'all');
+  const recordId = searchParams.get('record');
+  const [followupFilter, setFollowupFilter] = useState(() => ['mine', 'due', 'visits'].includes(searchParams.get('seguimiento') ?? '') ? searchParams.get('seguimiento') as 'mine' | 'due' | 'visits' : 'all');
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => searchParams.get('estado') === 'unread' ? 'unread' : 'all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [unreadTotal, setUnreadTotal] = useState(0);
@@ -110,6 +113,21 @@ const ContactInbox = () => {
       setTotal(nextTotal);
       setUnreadTotal(unreadResult.count ?? 0);
 
+      if (recordId) {
+        const currentRecord = nextMessages.find((message) => message.id === recordId);
+        if (currentRecord) {
+          setSelectedMessage(currentRecord);
+        } else {
+          const { data: record, error: recordError } = await supabase
+            .from('contact_messages')
+            .select('id,name,email,subject,message,status,created_at,assigned_to,followup_stage,followup_due_at,followup_notes,followup_revision')
+            .eq('id', recordId)
+            .maybeSingle();
+          if (recordError) throw recordError;
+          if (record) setSelectedMessage(record as ContactMessage);
+        }
+      }
+
       const nextTotalPages = Math.max(1, Math.ceil(nextTotal / PAGE_SIZE));
       if (page > nextTotalPages) setPage(nextTotalPages);
     } catch (caughtError) {
@@ -118,7 +136,7 @@ const ContactInbox = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, followupFilter, userId]);
+  }, [page, search, statusFilter, followupFilter, userId, recordId]);
 
   useEffect(() => {
     const requestTimer = window.setTimeout(() => {

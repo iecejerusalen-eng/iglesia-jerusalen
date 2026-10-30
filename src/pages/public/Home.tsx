@@ -33,6 +33,7 @@ const Home = () => {
     isStatsLoading,
     birthdayMembers,
     loadingSchedules,
+    schedulesError,
     loadingSermons,
     loadingEvents,
     announcements,
@@ -66,7 +67,7 @@ const Home = () => {
               return (
                 <div key={id} id={id} className="flex flex-col">
                   <HeroSection sectionData={section} />
-                  <HomeVisitQuickAccess schedules={schedules} loading={loadingSchedules} />
+                  <HomeVisitQuickAccess schedules={schedules} loading={loadingSchedules} error={schedulesError} />
                   <BentoGridSection latestSermon={sermons[0]} nextEvent={events[0]} />
                 </div>
               );
@@ -74,7 +75,7 @@ const Home = () => {
             if (id === 'home_welcome') {
               return (
                 <div key={id} id={id} className="flex flex-col">
-                  <WelcomeSection sectionData={section} />
+                  <WelcomeSection sectionData={section} schedules={schedules} />
                   <DailyVerseSection />
                 </div>
               );

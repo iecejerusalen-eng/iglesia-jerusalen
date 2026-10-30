@@ -1,3 +1,13 @@
+## [1.14.42] - 2026-10-30
+
+### Mejorado
+- Inicio y Planifica tu visita comparten los horarios publicados y usan la fecha de Ecuador para mostrar actividades que siguen en curso.
+- El formulario de visita guarda el aviso en la bandeja de contacto con los campos existentes, verifica el límite de envíos y confirma solo después de recibir respuesta correcta.
+- El resumen público deja de leer el directorio privado para mostrar cifras sin aprobación.
+- La bandeja del Admin conserva las áreas que sí respondieron, señala las consultas fallidas y abre mensajes en su filtro y registro correspondiente.
+- Comunicaciones y Changelog usan las guardas de permisos del módulo correspondiente; el editor editorial añade recuperación por usuario y confirmación al descartar cambios.
+- Las tablas administrativas incorporan búsqueda, orden accesible y paginación; desaparecen las vistas incompletas y los ajustes decorativos sin función.
+
 ## [1.14.41] - 2026-10-28
 
 ### Mejorado

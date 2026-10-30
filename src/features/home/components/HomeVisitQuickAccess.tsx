@@ -6,10 +6,11 @@ import type { Schedule } from '../../../types';
 interface HomeVisitQuickAccessProps {
   schedules: Schedule[];
   loading: boolean;
+  error?: unknown;
 }
 
-export function HomeVisitQuickAccess({ schedules, loading }: HomeVisitQuickAccessProps) {
-  const sundaySchedule = schedules.find((schedule) => schedule.day.trim().toLocaleLowerCase('es') === 'domingo');
+export function HomeVisitQuickAccess({ schedules, loading, error }: HomeVisitQuickAccessProps) {
+  const nextSchedule = schedules[0];
 
   return (
     <section aria-label="Información para visitar la iglesia" className="mx-auto w-full max-w-7xl px-4 sm:px-8 lg:px-12">
@@ -17,9 +18,9 @@ export function HomeVisitQuickAccess({ schedules, loading }: HomeVisitQuickAcces
         <a href="#schedules" className="group flex min-h-[92px] items-center gap-3 border-b border-slate-200 p-4 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700 dark:border-white/10 dark:hover:bg-white/5 sm:border-b-0 sm:border-r">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-900 dark:bg-amber-300/10 dark:text-amber-200"><Clock3 size={19} aria-hidden="true" /></span>
           <span className="min-w-0">
-            <span className="block text-[10px] font-black uppercase tracking-[.14em] text-slate-500 dark:text-slate-400">Culto dominical</span>
+            <span className="block text-[10px] font-black uppercase tracking-[.14em] text-slate-500 dark:text-slate-400">Horario de reunión</span>
             <span className="mt-1 block truncate text-sm font-bold text-slate-900 dark:text-white">
-              {loading ? 'Ver horarios publicados' : sundaySchedule ? `${sundaySchedule.title} · ${sundaySchedule.time_range}` : 'Consulta nuestros horarios'}
+              {loading ? 'Cargando horarios…' : error ? 'No pudimos cargar los horarios' : nextSchedule ? `${nextSchedule.day} · ${nextSchedule.title} · ${nextSchedule.time_range}` : 'Consulta nuestros horarios'}
             </span>
           </span>
         </a>
