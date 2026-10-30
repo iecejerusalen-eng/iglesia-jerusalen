@@ -1,37 +1,34 @@
-import { useEffect, useRef } from 'react';
-import anime from 'animejs/lib/anime.es.js';
+import { CalendarDays } from 'lucide-react';
+import type { Schedule } from '../../types';
 
-export default function MarqueeText() {
-  const announcements = ['Servicio dominical · 10:00 AM', 'Estudio bíblico · jueves 7:00 PM', 'Reunión de jóvenes · sábados'];
-  const textRef = useRef<HTMLDivElement>(null);
+interface MarqueeTextProps {
+  schedules: Schedule[];
+}
 
-  useEffect(() => {
-    if (!textRef.current) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) return;
-    anime({
-      targets: textRef.current,
-      translateX: ['0%', '-50%'],
-      duration: 42000,
-      easing: 'linear',
-      loop: true
-    });
-  }, []);
+export default function MarqueeText({ schedules }: MarqueeTextProps) {
+  const announcements = schedules
+    .map((schedule) => {
+      const day = schedule.day.trim();
+      const title = schedule.title.trim();
+      const time = schedule.time_range.trim();
+      if (!day || !title || !time) return null;
+      return { id: schedule.id, label: `${day} · ${title} · ${time}` };
+    })
+    .filter((item): item is { id: string; label: string } => item !== null)
+    .slice(0, 6);
+
+  if (announcements.length === 0) return null;
 
   return (
-    <div className="w-full bg-primary overflow-hidden py-3.5 sm:py-4.5 border-y border-white/10 select-none relative z-10 flex">
-      <div ref={textRef} className="flex w-max whitespace-nowrap text-xs font-sans font-black tracking-[.12em] text-white uppercase sm:text-sm">
-        {[0, 1].map((copy) => (
-          <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-9 px-7 sm:gap-14 sm:px-12">
-            {announcements.map((announcement) => (
-              <span key={announcement} className="inline-flex items-center gap-9 sm:gap-14">
-                <span>{announcement}</span>
-                <span aria-hidden="true" className="text-amber-300">✦</span>
-              </span>
-            ))}
-          </div>
+    <section aria-label="Horarios de reuniones" className="border-y border-white/10 bg-primary py-4 text-white">
+      <ul className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-8 gap-y-3 px-5 text-center text-xs font-bold uppercase tracking-[.1em] sm:text-sm">
+        {announcements.map(({ id, label }) => (
+          <li key={id} className="inline-flex items-center gap-2">
+            <CalendarDays size={15} className="text-amber-300" aria-hidden="true" />
+            <span>{label}</span>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

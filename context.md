@@ -1,6 +1,14 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 2026-10-30 — Visita pública y operación editorial/admin
+
+Inicio y Planifica tu visita comparten horarios públicos, muestran eventos que siguen activos en la fecha de Ecuador y distinguen errores de la lista vacía. El formulario de visita usa las columnas vigentes de `contact_messages`, requiere los campos que exige el esquema y aplica el rate limiter existente; el teléfono se conserva dentro del mensaje. El resumen público no consulta el directorio privado para mostrar cifras.
+
+En Admin, Comunicaciones y Changelog coinciden con sus permisos catalogados. La bandeja conserva categorías válidas si otra consulta falla, enlaza mensajes a su filtro y registro, y permite reintentar. El espacio editorial protege borradores con recuperación por usuario/documento sin guardar contraseñas y confirma el descarte. Las tablas tienen búsqueda, orden accesible y paginación, con estados vacíos distintos y sin opciones de vista ficticias.
+
+Validación local en la rama de publicación: lint y build pasaron; ESLint conserva una advertencia informativa sobre React Compiler y `useReactTable`. Sin escrituras de datos de visita ni pruebas con sesión privada. La publicación y el changelog de Supabase quedan pendientes de completar/verificar.
+
 ## 2026-10-28 — Acceso compacto del asistente público
 
 El disparador de «Te Ayudamos» ocupa 48 px y muestra solo el ícono en reposo. La etiqueta aparece a la derecha al pasar el cursor o enfocarlo con teclado, con transición de 200 ms y respeto por movimiento reducido. En escritorio amplio queda a 24 px del borde inferior; en móvil permanece 88 px más el área segura sobre el borde y desplazado a la derecha del control de recarga. El panel conserva su ancho dentro de la pantalla; las respuestas del asistente no cambian.

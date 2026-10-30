@@ -320,7 +320,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute module="map" />}><Route element={<AdminLayout />}><Route path="/admin/mapa-estrategico" element={<StrategicMap />} /></Route></Route>
         <Route element={<ProtectedRoute module="strategy" />}><Route element={<AdminLayout />}><Route path="/admin/estrategia" element={<StrategyCenter />} /></Route></Route>
         <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/notificaciones" element={<NotificationsManager />} /></Route></Route>
-        <Route element={<ProtectedRoute module="notifications" />}><Route element={<AdminLayout />}><Route path="/admin/comunicaciones" element={<CommunicationCenter />} /></Route></Route>
+        <Route element={<ProtectedRoute module="chat" />}><Route element={<AdminLayout />}><Route path="/admin/comunicaciones" element={<CommunicationCenter />} /></Route></Route>
         <Route element={<ProtectedRoute module="sermons" />}><Route element={<AdminLayout />}><Route path="/admin/sermones" element={<SermonsManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="podcast" />}><Route element={<AdminLayout />}><Route path="/admin/podcast" element={<PodcastManager />} /></Route></Route>
         <Route element={<ProtectedRoute module="families" />}><Route element={<AdminLayout />}><Route path="/admin/familias" element={<FamiliesManager />} /></Route></Route>
@@ -356,11 +356,15 @@ export default function AppRouter() {
             <Route path="/admin/discipulado" element={<DiscipleshipManager />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute module="editorial" />}>
+        <Route element={<ProtectedRoute module="settings" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/changelog" element={<ChangelogManager />} />
             <Route path="/admin/changelog/nueva" element={<ChangelogManager />} />
             <Route path="/admin/changelog/:id" element={<ChangelogManager />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute module="editorial" />}>
+          <Route element={<AdminLayout />}>
             <Route path="/admin/publicaciones" element={<EditorialManager />} />
             <Route path="/admin/publicaciones/:id" element={<EditorialWorkspace />} />
             <Route path="/admin/anuncios" element={<ChurchAnnouncementsManager />} />

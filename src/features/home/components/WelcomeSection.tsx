@@ -4,12 +4,14 @@ import MarqueeText from '../../../components/public/MarqueeText';
 import { AnimeFadeUp } from '../../../components/animations/AnimeWrappers';
 import type { PageSection } from '../types';
 import PremiumDoctrineCards from './PremiumDoctrineCards';
+import type { Schedule } from '../../../types';
 
 interface WelcomeSectionProps {
   sectionData: PageSection;
+  schedules: Schedule[];
 }
 
-export const WelcomeSection = ({ sectionData }: WelcomeSectionProps) => {
+export const WelcomeSection = ({ sectionData, schedules }: WelcomeSectionProps) => {
   const { title, subtitle, content_blocks } = sectionData;
   const hasEditorialContent = Array.isArray(content_blocks) && content_blocks.length > 0;
 
@@ -32,7 +34,7 @@ export const WelcomeSection = ({ sectionData }: WelcomeSectionProps) => {
       <ChurchJourneySection />
 
       <div className="mt-16">
-        <MarqueeText />
+        <MarqueeText schedules={schedules} />
       </div>
     </div>
   );
