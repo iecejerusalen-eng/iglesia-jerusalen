@@ -1,3 +1,8 @@
+## [1.14.43] - 2026-11-07
+
+### Mejorado
+- La galería de Inicio permite filtrar momentos y áreas, presenta conteos reales, se adapta como carrusel táctil en móvil y ofrece un visor accesible con movimiento reducido.
+
 ## [1.14.42] - 2026-10-30
 
 ### Mejorado
