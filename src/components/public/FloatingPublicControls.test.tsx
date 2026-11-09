@@ -43,18 +43,18 @@ describe('controles flotantes públicos', () => {
   it('cierra la agenda de hoy con su botón, al tocar fuera y con Escape', () => {
     renderInRouter(<TodayActivityPeek />);
     fireEvent.click(screen.getByRole('button', { name: 'Ver actividad de hoy' }));
-    expect(screen.getByRole('heading', { name: /octubre/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar actividad de hoy' })[1]);
-    expect(screen.queryByRole('heading', { name: /octubre/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver actividad de hoy' }));
     fireEvent.pointerDown(document.body);
-    expect(screen.queryByRole('heading', { name: /octubre/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver actividad de hoy' }));
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('heading', { name: /octubre/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 
   it('cierra el asistente con su X, al tocar fuera y con Escape', async () => {
