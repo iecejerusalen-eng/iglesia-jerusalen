@@ -1,3 +1,8 @@
+## [1.14.44] - 2026-11-08
+
+### Corregido
+- Las pestañas del estudio bíblico ya reciben clics cuando se superponen con el panel flotante «Actividad de hoy» durante el desplazamiento.
+
 ## [1.14.43] - 2026-11-07
 
 ### Mejorado

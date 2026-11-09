@@ -65,7 +65,7 @@ export default function TodayActivityPeek() {
   if (isLoading || isError || events.length === 0) return null;
 
   return (
-    <aside ref={rootRef} className="fixed left-0 top-1/2 z-[70] max-w-[calc(100vw-0.25rem)] -translate-y-1/2" aria-label="Actividad de hoy">
+    <aside ref={rootRef} className="pointer-events-none fixed left-0 top-1/2 z-[70] max-w-[calc(100vw-0.25rem)] -translate-y-1/2" aria-label="Actividad de hoy">
       <div className="relative flex items-center">
         <button
           type="button"
@@ -74,7 +74,7 @@ export default function TodayActivityPeek() {
           aria-expanded={isOpen}
           aria-controls="today-activity-panel"
           onClick={() => setIsOpen((open) => !open)}
-          className="group flex items-center gap-2 rounded-r-2xl border border-l-0 border-church-gold-light/35 bg-slate-950/95 px-3 py-3 text-white shadow-[8px_12px_30px_-12px_rgba(2,6,23,.65)] backdrop-blur-xl transition-[transform,background-color] duration-200 hover:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-church-gold-bright focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950"
+          className="pointer-events-auto group flex items-center gap-2 rounded-r-2xl border border-l-0 border-church-gold-light/35 bg-slate-950/95 px-3 py-3 text-white shadow-[8px_12px_30px_-12px_rgba(2,6,23,.65)] backdrop-blur-xl transition-[transform,background-color] duration-200 hover:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-church-gold-bright focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950"
         >
           {isOpen ? <X size={16} aria-hidden="true" /> : <CalendarDays size={17} className="text-church-gold-bright" aria-hidden="true" />}
           {!isOpen && <span className="text-[10px] font-black uppercase tracking-[0.17em] [writing-mode:vertical-rl]">Hoy</span>}
@@ -83,7 +83,7 @@ export default function TodayActivityPeek() {
         <section
           id="today-activity-panel"
           aria-hidden={!isOpen}
-          className={`max-h-[70dvh] origin-left overflow-y-auto rounded-r-[1.25rem] border border-l-0 border-slate-200/80 bg-white/95 shadow-[12px_18px_40px_-18px_rgba(15,23,42,.55)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-200 dark:border-white/10 dark:bg-slate-900/95 motion-reduce:transition-none ${isOpen ? 'visible translate-x-0 opacity-100' : 'invisible -translate-x-3 opacity-0'}`}
+          className={`max-h-[70dvh] origin-left overflow-y-auto rounded-r-[1.25rem] border border-l-0 border-slate-200/80 bg-white/95 shadow-[12px_18px_40px_-18px_rgba(15,23,42,.55)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-200 dark:border-white/10 dark:bg-slate-900/95 motion-reduce:transition-none ${isOpen ? 'pointer-events-auto visible translate-x-0 opacity-100' : 'pointer-events-none invisible -translate-x-3 opacity-0'}`}
         >
           <div className="w-[min(21rem,calc(100vw-3rem))] p-4">
             <div className="mb-3 flex items-start justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/10">
