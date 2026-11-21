@@ -1,13 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Dialog } from '@base-ui-components/react/dialog';
 import { useSearchStore } from '../../store/useSearchStore';
 import { supabase } from '../../config/supabase';
 import {
   Home,
+  Info,
   BookOpen,
+  Book,
   Search,
   Calendar,
+  CalendarDays,
   Users,
   Video,
   Music,
@@ -28,17 +32,24 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { PUBLIC_NAVIGATION_LINKS } from '../../config/publicNavigation';
-import { isPublicPathVisible } from '../../config/publicLaunchVisibility';
+import { useMenuStore } from '../../store/useMenuStore';
+import { DEFAULT_MENU_ITEMS } from '../../services/menuService';
+import { buildMobileExploreItems, MOBILE_EXPLORE_GROUPS, type MobileExploreGroupId } from './mobileNavigationModel';
 import { useSiteFeatureVisibilityStore } from '../../store/useSiteFeatureVisibilityStore';
 
-interface SubMenuItem {
-  id: string;
-  label: string;
-  description: string;
-  url: string;
-  icon: LucideIcon;
-}
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  Home, Info, Users, Heart, FileText: Newspaper, Calendar, CalendarDays,
+  Megaphone, MessageSquare, Cake, Globe, HandHeart, BookOpen, Book,
+  Video, Radio, Music, GraduationCap, Gamepad2, ShoppingBag, Mail, Sparkles,
+};
+
+const GROUP_ICONS: Record<MobileExploreGroupId, LucideIcon> = {
+  iglesia: Info,
+  comunidad: Users,
+  recursos: BookOpen,
+  agenda: CalendarDays,
+  contacto: Mail,
+};
 
 interface NavBadgeProps {
   dot?: boolean;
@@ -76,139 +87,6 @@ const NavBadge: React.FC<NavBadgeProps> = ({ dot, count }) => {
     </span>
   );
 };
-
-// Destinos organizados por hojas inferiores
-const RECURSOS_ITEMS: SubMenuItem[] = [
-  {
-    id: 'rec-biblia',
-    label: 'La Santa Biblia',
-    description: 'Texto sagrado, capítulos y búsqueda',
-    url: '/recursos/biblia',
-    icon: BookOpen,
-  },
-  {
-    id: 'rec-predicas',
-    label: 'Prédicas y Sermones',
-    description: 'Mensajes dominicales y enseñanzas en video',
-    url: '/predicas',
-    icon: Video,
-  },
-  {
-    id: 'rec-podcast',
-    label: PUBLIC_NAVIGATION_LINKS.podcast.label,
-    description: PUBLIC_NAVIGATION_LINKS.podcast.description,
-    url: PUBLIC_NAVIGATION_LINKS.podcast.url,
-    icon: Radio,
-  },
-  {
-    id: 'rec-alabanzas',
-    label: 'Alabanzas e Himnos',
-    description: 'Letras, acordes y pistas de adoración',
-    url: '/recursos/alabanzas',
-    icon: Music,
-  },
-  {
-    id: 'rec-programas',
-    label: 'Programas de Estudio',
-    description: 'Cursos bíblicos y formación en discipulado',
-    url: '/programas',
-    icon: GraduationCap,
-  },
-  {
-    id: 'rec-juegos',
-    label: 'Juegos Bíblicos',
-    description: 'Biblionario, Memorama, personajes y palabras bíblicas',
-    url: '/recursos/juegos',
-    icon: Gamepad2,
-  },
-  {
-    id: 'rec-aula',
-    label: 'Aula Virtual',
-    description: 'Plataforma académica y certificaciones',
-    url: '/aula-virtual',
-    icon: Sparkles,
-  },
-];
-
-const COMUNIDAD_ITEMS: SubMenuItem[] = [
-  {
-    id: 'com-visita',
-    label: 'Planifica tu Visita',
-    description: 'Información para primeros visitantes y bienvenida',
-    url: '/visita',
-    icon: Sparkles,
-  },
-  {
-    id: 'com-ministerios',
-    label: 'Ministerios',
-    description: 'Conoce y sé parte de nuestros grupos',
-    url: '/ministerios',
-    icon: Heart,
-  },
-  {
-    id: 'com-anuncios',
-    label: 'Anuncios Importantes',
-    description: 'Noticias y boletines de la congregación',
-    url: '/anuncios',
-    icon: Megaphone,
-  },
-  {
-    id: 'com-novedades',
-    label: PUBLIC_NAVIGATION_LINKS.novedades.label,
-    description: PUBLIC_NAVIGATION_LINKS.novedades.description,
-    url: PUBLIC_NAVIGATION_LINKS.novedades.url,
-    icon: Sparkles,
-  },
-  {
-    id: 'com-boletin',
-    label: PUBLIC_NAVIGATION_LINKS.boletin.label,
-    description: PUBLIC_NAVIGATION_LINKS.boletin.description,
-    url: PUBLIC_NAVIGATION_LINKS.boletin.url,
-    icon: Newspaper,
-  },
-  {
-    id: 'com-peticiones',
-    label: 'Peticiones de Oración',
-    description: 'Comparte tus motivos de oración e intercesión',
-    url: '/peticiones',
-    icon: MessageSquare,
-  },
-  {
-    id: 'com-cumpleanos',
-    label: 'Cumpleaños del Mes',
-    description: 'Celebremos juntos a nuestros hermanos',
-    url: '/cumpleanos',
-    icon: Cake,
-  },
-  {
-    id: 'com-misiones',
-    label: 'Misiones y Evangelismo',
-    description: 'Impacto misionero local e internacional',
-    url: '/misiones',
-    icon: Globe,
-  },
-  {
-    id: 'com-servir',
-    label: 'Quiero Servir',
-    description: 'Postulaciones y horarios de voluntarios',
-    url: '/mi-horario',
-    icon: HandHeart,
-  },
-  {
-    id: 'com-tienda',
-    label: 'Tienda Oficial',
-    description: 'Materiales, literatura y donaciones',
-    url: '/tienda',
-    icon: ShoppingBag,
-  },
-  {
-    id: 'com-contacto',
-    label: 'Contacto y Horarios',
-    description: 'Ubicación física, teléfonos y atención',
-    url: '/contacto',
-    icon: Mail,
-  },
-];
 
 function useScrollDirection(threshold: number = 15) {
   const [isVisible, setIsVisible] = useState(true);
@@ -252,50 +130,56 @@ function useScrollDirection(threshold: number = 15) {
 }
 
 const MobileBottomNav: React.FC = () => {
-  const featureVisibility = useSiteFeatureVisibilityStore((state) => state.visibility);
   const location = useLocation();
-  const [activeSheet, setActiveSheet] = useState<'recursos' | 'comunidad' | null>(null);
+  const menuItems = useMenuStore((state) => state.items);
+  const featureVisibility = useSiteFeatureVisibilityStore((state) => state.visibility);
+  const [activeSheet, setActiveSheet] = useState<'explorar' | 'comunidad' | null>(null);
+  const [activeSheetPath, setActiveSheetPath] = useState(location.pathname);
+  const [activeGroup, setActiveGroup] = useState<MobileExploreGroupId | 'todas'>('todas');
+  const [exploreQuery, setExploreQuery] = useState('');
   const [hasTodayEvents, setHasTodayEvents] = useState(false);
   const [hasRecentAnnouncements, setHasRecentAnnouncements] = useState(false);
   const isSearchOpen = useSearchStore((state) => state.isOpen);
   const isScrollVisible = useScrollDirection();
-  const dragControls = useDragControls();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const lastTriggerRef = useRef<HTMLElement | null>(null);
+  const isPanelOpen = activeSheet !== null && activeSheetPath === location.pathname;
+
+  const exploreItems = useMemo(
+    () => buildMobileExploreItems(menuItems.length > 0 ? menuItems : DEFAULT_MENU_ITEMS, featureVisibility),
+    [featureVisibility, menuItems],
+  );
+  const visibleGroups = useMemo(() => {
+    const query = exploreQuery.trim().toLocaleLowerCase('es');
+    return MOBILE_EXPLORE_GROUPS
+      .filter((group) => activeGroup === 'todas' || group.id === activeGroup)
+      .map((group) => ({
+        ...group,
+        items: exploreItems.filter((item) => {
+          if (item.group !== group.id) return false;
+          if (!query) return true;
+          return `${item.label} ${item.url}`.toLocaleLowerCase('es').includes(query);
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [activeGroup, exploreItems, exploreQuery]);
 
   const closeSheet = useCallback(() => {
     setActiveSheet(null);
   }, []);
 
-  const toggleSheet = (sheet: 'recursos' | 'comunidad') => {
+  const toggleSheet = (sheet: 'explorar' | 'comunidad', trigger: HTMLElement) => {
     triggerHaptic(10);
-    setActiveSheet((prev) => (prev === sheet ? null : sheet));
-  };
-
-  // Cierre con tecla Escape y bloqueo de scroll
-  useEffect(() => {
-    if (!activeSheet) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeSheet();
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [activeSheet, closeSheet]);
-
-  // Cerrar hoja al cambiar de ruta
-  const [prevPathname, setPrevPathname] = useState(location.pathname);
-  if (prevPathname !== location.pathname) {
-    setPrevPathname(location.pathname);
-    if (activeSheet) {
+    lastTriggerRef.current = trigger;
+    setExploreQuery('');
+    setActiveGroup(sheet === 'comunidad' ? 'comunidad' : 'todas');
+    if (isPanelOpen && activeSheet === sheet) {
       setActiveSheet(null);
+      return;
     }
-  }
+    setActiveSheetPath(location.pathname);
+    setActiveSheet(sheet);
+  };
 
   // Comprobar eventos y anuncios para badges dinámicos
   useEffect(() => {
@@ -323,21 +207,17 @@ const MobileBottomNav: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // Evaluadores de estado activo para las 5 pestañas
+  // Estado activo de los accesos visibles para la cuenta actual
   const isHomeActive = location.pathname === '/';
   const isEventsActive = location.pathname === '/eventos';
 
-  const isResourcesActive =
-    activeSheet === 'recursos' ||
-      RECURSOS_ITEMS.filter((item) => isPublicPathVisible(item.url, featureVisibility)).some(
-      (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
-    );
+  const isResourcesActive = (isPanelOpen && activeSheet === 'explorar') || exploreItems.some(
+    (item) => item.group === 'recursos' && (location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)),
+  );
 
-  const isCommunityActive =
-    activeSheet === 'comunidad' ||
-      COMUNIDAD_ITEMS.filter((item) => isPublicPathVisible(item.url, featureVisibility)).some(
-      (item) => location.pathname === item.url || (item.url !== '/' && location.pathname.startsWith(item.url))
-    );
+  const isCommunityActive = (isPanelOpen && activeSheet === 'comunidad') || exploreItems.some(
+    (item) => item.group === 'comunidad' && (location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)),
+  );
 
   const handleCtaSearch = () => {
     triggerHaptic(12);
@@ -346,7 +226,8 @@ const MobileBottomNav: React.FC = () => {
   };
 
   // Mantener visible si hay una hoja o el buscador abierto
-  const shouldShowNav = isScrollVisible || activeSheet !== null || isSearchOpen;
+  // Las cuentas autorizadas conservan su acceso directo a Admin mientras navegan.
+  const shouldShowNav = isScrollVisible || isPanelOpen || isSearchOpen;
 
   return (
     <>
@@ -367,7 +248,7 @@ const MobileBottomNav: React.FC = () => {
               closeSheet();
             }}
             aria-label="Ir a Inicio"
-            className="group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+            className={`group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl`}
           >
             <motion.div
               whileTap={{ scale: 0.88 }}
@@ -408,10 +289,11 @@ const MobileBottomNav: React.FC = () => {
           {/* 2. RECURSOS (Bottom Sheet) */}
           <button
             type="button"
-            onClick={() => toggleSheet('recursos')}
-            aria-label="Abrir recursos bíblicos y multimedia"
-            aria-expanded={activeSheet === 'recursos'}
-            className="group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+            onClick={(event) => toggleSheet('explorar', event.currentTarget)}
+            aria-label="Explorar todas las páginas públicas"
+            aria-expanded={activeSheet === 'explorar'}
+            aria-controls="mobile-explore-dialog"
+            className={`group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl`}
           >
             <motion.div
               whileTap={{ scale: 0.88 }}
@@ -444,13 +326,13 @@ const MobileBottomNav: React.FC = () => {
                     : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
-                Recursos
+                Explorar
               </span>
             </motion.div>
           </button>
 
           {/* 3. CTA CENTRAL ELEVADO - BUSCAR */}
-          <div className="relative flex-1 min-w-[56px] h-full flex items-center justify-center">
+          <div className={`relative flex-1 min-w-[56px] h-full flex items-center justify-center`}>
             <motion.button
               type="button"
               onClick={handleCtaSearch}
@@ -483,7 +365,7 @@ const MobileBottomNav: React.FC = () => {
               closeSheet();
             }}
             aria-label="Ir a Eventos y Calendario"
-            className="group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+            className={`group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl`}
           >
             <motion.div
               whileTap={{ scale: 0.88 }}
@@ -522,13 +404,14 @@ const MobileBottomNav: React.FC = () => {
             </motion.div>
           </Link>
 
-          {/* 5. COMUNIDAD (Bottom Sheet) */}
+          {/* 5. COMUNIDAD (abre el mismo explorador enfocado en su sección) */}
           <button
             type="button"
-            onClick={() => toggleSheet('comunidad')}
+            onClick={(event) => toggleSheet('comunidad', event.currentTarget)}
             aria-label="Abrir comunidad, ministerios y peticiones"
             aria-expanded={activeSheet === 'comunidad'}
-            className="group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+            aria-controls="mobile-explore-dialog"
+            className={`group relative flex-1 min-w-[56px] h-full flex flex-col items-center justify-center py-1 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl`}
           >
             <motion.div
               whileTap={{ scale: 0.88 }}
@@ -569,61 +452,32 @@ const MobileBottomNav: React.FC = () => {
         </div>
       </motion.nav>
 
-      {/* HOJAS INFERIORES DESPLEGABLES (BOTTOM SHEETS TÁCTILES CON DRAG-TO-DISMISS) */}
-      <AnimatePresence>
-        {activeSheet && (
-          <>
-            {/* Backdrop oscuro */}
-            <motion.div
-              key="bottom-sheet-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => {
-                triggerHaptic(6);
-                closeSheet();
-              }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm xl:hidden"
-              aria-hidden="true"
-            />
-
-            {/* Panel Bottom Sheet Flotante */}
-            <motion.div
-              key={`bottom-sheet-${activeSheet}`}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              drag="y"
-              dragControls={dragControls}
-              dragConstraints={{ top: 0 }}
-              dragElastic={{ top: 0, bottom: 0.7 }}
-              onDragEnd={(_, info) => {
-                if (info.offset.y > 100 || info.velocity.y > 450) {
-                  triggerHaptic(6);
-                  closeSheet();
-                }
-              }}
-              role="dialog"
-              aria-modal="true"
-              aria-label={activeSheet === 'recursos' ? 'Recursos Bíblicos' : 'Comunidad y Ministerios'}
-              className="fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[min(78dvh,38rem)] flex flex-col rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white/98 dark:bg-slate-900/98 backdrop-blur-2xl shadow-[0_-12px_40px_rgba(0,0,0,0.22)] xl:hidden overflow-hidden"
+      <Dialog.Root
+        open={isPanelOpen}
+        onOpenChange={(open) => {
+          if (!open) closeSheet();
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Backdrop className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm transition-opacity duration-300 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-reduce:transition-none xl:hidden" />
+          <Dialog.Viewport className="fixed inset-0 z-50 xl:hidden">
+            <Dialog.Popup
+              id="mobile-explore-dialog"
+              initialFocus={searchInputRef}
+              finalFocus={lastTriggerRef}
+              className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-white text-slate-900 shadow-2xl transition-[transform,opacity] duration-300 ease-out data-[starting-style]:translate-y-5 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-5 data-[ending-style]:opacity-0 dark:bg-slate-950 dark:text-white motion-reduce:transition-none xl:hidden"
             >
-              {/* Drag Handle & Header */}
-              <div className="pt-3 pb-2 px-5 shrink-0 border-b border-slate-100 dark:border-white/5">
-                <div
-                  className="mx-auto h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700 cursor-grab active:cursor-grabbing mb-3"
-                  title="Deslizar hacia abajo para cerrar"
-                />
-                <div className="flex items-center justify-between">
+              <div className="relative shrink-0 overflow-hidden border-b border-slate-200/80 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 px-5 pb-5 pt-[max(1rem,env(safe-area-inset-top))] text-white dark:border-white/10 sm:px-8">
+                <div className="pointer-events-none absolute -right-12 -top-20 size-64 rounded-full border border-amber-300/15 bg-amber-300/5 blur-2xl" aria-hidden="true" />
+                <div className="relative mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary dark:text-gold block">
-                      {activeSheet === 'recursos' ? 'Explorar Fe & Conocimiento' : 'Vida en la Iglesia'}
-                    </span>
-                    <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">
-                      {activeSheet === 'recursos' ? 'Recursos Bíblicos' : 'Comunidad y Servicio'}
-                    </h3>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-300">Iglesia Jerusalén · Navegación</p>
+                    <Dialog.Title className="mt-2 font-serif text-2xl font-bold leading-tight sm:text-3xl">
+                      {activeSheet === 'comunidad' ? 'Vida en comunidad' : '¿A dónde te gustaría ir?'}
+                    </Dialog.Title>
+                    <Dialog.Description className="mt-1 max-w-xl text-sm text-blue-100/85">
+                      Encuentra páginas, actividades y recursos de la iglesia.
+                    </Dialog.Description>
                   </div>
                   <button
                     type="button"
@@ -631,78 +485,119 @@ const MobileBottomNav: React.FC = () => {
                       triggerHaptic(6);
                       closeSheet();
                     }}
-                    aria-label="Cerrar menú"
-                    className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                    aria-label="Cerrar explorador"
+                    className="grid size-11 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                   >
-                    <X size={18} />
+                    <X size={20} aria-hidden="true" />
                   </button>
+                </div>
+                <div className="relative mx-auto mt-5 w-full max-w-5xl">
+                  <label htmlFor="mobile-explore-search" className="sr-only">Buscar páginas</label>
+                  <div className="flex h-12 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 shadow-inner backdrop-blur-xl focus-within:border-amber-300/70 focus-within:ring-2 focus-within:ring-amber-300/25">
+                    <Search size={19} className="shrink-0 text-blue-100" aria-hidden="true" />
+                    <input
+                      ref={searchInputRef}
+                      id="mobile-explore-search"
+                      type="search"
+                      value={exploreQuery}
+                      onChange={(event) => setExploreQuery(event.target.value)}
+                      placeholder="Buscar una página..."
+                      className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-blue-100/65"
+                    />
+                    {exploreQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setExploreQuery('')}
+                        aria-label="Limpiar búsqueda"
+                        className="rounded-lg p-1 text-blue-100 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                      >
+                        <X size={16} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Lista Vertical Unidireccional con Tarjetas Limpias */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-3.5 space-y-2 custom-scrollbar">
-                {(activeSheet === 'recursos' ? RECURSOS_ITEMS : COMUNIDAD_ITEMS).filter((item) => isPublicPathVisible(item.url, featureVisibility)).map((item) => {
-                  const Icon = item.icon;
-                  const isItemActive =
-                    location.pathname === item.url ||
-                    (item.url !== '/' && location.pathname.startsWith(item.url));
-
-                  return (
-                    <Link
-                      key={item.id}
-                      to={item.url}
-                      onClick={() => {
-                        triggerHaptic(8);
-                        closeSheet();
-                      }}
-                      className={`group flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 active:scale-[0.98] ${
-                        isItemActive
-                          ? 'border-primary/30 bg-primary/5 dark:border-gold/30 dark:bg-gold/10'
-                          : 'border-slate-100 bg-slate-50/70 hover:bg-slate-100 dark:border-white/5 dark:bg-slate-800/50 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                            isItemActive
-                              ? 'bg-primary text-white dark:bg-gold dark:text-slate-950 shadow-sm'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-gold shadow-sm border border-slate-100 dark:border-white/5'
-                          }`}
-                        >
-                          <Icon size={20} strokeWidth={2.2} />
-                        </div>
-                        <div className="min-w-0">
-                          <p
-                            className={`text-sm font-semibold truncate leading-tight ${
-                              isItemActive
-                                ? 'text-primary dark:text-gold'
-                                : 'text-slate-800 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-gold'
-                            }`}
-                          >
-                            {item.label}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      <ChevronRight
-                        size={18}
-                        className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${
-                          isItemActive
-                            ? 'text-primary dark:text-gold'
-                            : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-500'
-                        }`}
-                      />
-                    </Link>
-                  );
-                })}
+              <div className="mx-auto w-full max-w-5xl shrink-0 px-4 pt-4 sm:px-8">
+                <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtrar por sección">
+                  <button
+                    type="button"
+                    aria-pressed={activeGroup === 'todas'}
+                    onClick={() => setActiveGroup('todas')}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-amber-300 ${activeGroup === 'todas' ? 'border-blue-900 bg-blue-900 text-white dark:border-amber-300 dark:bg-amber-300 dark:text-slate-950' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300'}`}
+                  >Todas</button>
+                  {MOBILE_EXPLORE_GROUPS.map((group) => {
+                    const GroupIcon = GROUP_ICONS[group.id];
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        aria-pressed={activeGroup === group.id}
+                        onClick={() => setActiveGroup(group.id)}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-amber-300 ${activeGroup === group.id ? 'border-blue-900 bg-blue-900 text-white dark:border-amber-300 dark:bg-amber-300 dark:text-slate-950' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300'}`}
+                      >
+                        <GroupIcon size={14} aria-hidden="true" />{group.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 sm:px-8">
+                <div className="mx-auto w-full max-w-5xl space-y-7">
+                  {visibleGroups.map((group) => {
+                    const GroupIcon = GROUP_ICONS[group.id];
+                    return (
+                      <section key={group.id} aria-labelledby={`mobile-explore-${group.id}`}>
+                        <div className="mb-3 flex items-center gap-2.5">
+                          <span className="grid size-8 place-items-center rounded-xl bg-blue-50 text-blue-900 dark:bg-blue-900/40 dark:text-amber-200">
+                            <GroupIcon size={17} aria-hidden="true" />
+                          </span>
+                          <h3 id={`mobile-explore-${group.id}`} className="font-serif text-lg font-bold text-slate-900 dark:text-white">{group.label}</h3>
+                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{group.items.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {group.items.map((item) => {
+                            const Icon = NAV_ICON_MAP[item.icon || ''] || GROUP_ICONS[group.id];
+                            const isItemActive = location.pathname === item.url || location.pathname.startsWith(`${item.url}/`);
+                            return (
+                              <Link
+                                key={item.id}
+                                to={item.url}
+                                aria-current={isItemActive ? 'page' : undefined}
+                                onClick={() => {
+                                  triggerHaptic(8);
+                                  closeSheet();
+                                }}
+                                className={`group flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:focus-visible:ring-amber-300 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${isItemActive ? 'border-blue-900/30 bg-blue-50 text-blue-950 dark:border-amber-300/30 dark:bg-amber-300/10 dark:text-amber-100' : 'border-slate-200/80 bg-white text-slate-800 hover:border-blue-300 hover:bg-blue-50/60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-white/20 dark:hover:bg-slate-800'}`}
+                              >
+                                <span className={`grid size-10 shrink-0 place-items-center rounded-xl transition-colors ${isItemActive ? 'bg-blue-900 text-white dark:bg-amber-300 dark:text-slate-950' : 'bg-slate-100 text-blue-900 group-hover:bg-blue-100 dark:bg-slate-800 dark:text-blue-200 dark:group-hover:bg-slate-700'}`}>
+                                  <Icon size={19} strokeWidth={2.1} aria-hidden="true" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-bold">{item.label}</span>
+                                  <span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{item.url}</span>
+                                </span>
+                                <ChevronRight size={17} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 dark:text-slate-500" aria-hidden="true" />
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    );
+                  })}
+                  {visibleGroups.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center dark:border-white/15">
+                      <p className="font-semibold text-slate-800 dark:text-white">No encontramos esa página</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Prueba otra palabra o elige otra sección.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Dialog.Popup>
+          </Dialog.Viewport>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   );
 };
