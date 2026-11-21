@@ -465,10 +465,11 @@ const MobileBottomNav: React.FC = () => {
               id="mobile-explore-dialog"
               initialFocus={searchInputRef}
               finalFocus={lastTriggerRef}
-              className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-white text-slate-900 shadow-2xl transition-[transform,opacity] duration-300 ease-out data-[starting-style]:translate-y-5 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-5 data-[ending-style]:opacity-0 dark:bg-slate-950 dark:text-white motion-reduce:transition-none xl:hidden"
+              className="fixed inset-x-0 bottom-0 mx-auto flex h-[min(76dvh,46rem)] w-full max-w-3xl flex-col overflow-hidden rounded-t-[1.75rem] border border-b-0 border-slate-200 bg-white text-slate-900 shadow-2xl transition-[transform,opacity] duration-300 ease-out data-[starting-style]:translate-y-8 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-8 data-[ending-style]:opacity-0 dark:border-white/10 dark:bg-slate-950 dark:text-white motion-reduce:transition-none sm:bottom-4 sm:rounded-[1.75rem] sm:border-b xl:hidden"
             >
               <div className="relative shrink-0 overflow-hidden border-b border-slate-200/80 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 px-5 pb-5 pt-[max(1rem,env(safe-area-inset-top))] text-white dark:border-white/10 sm:px-8">
                 <div className="pointer-events-none absolute -right-12 -top-20 size-64 rounded-full border border-amber-300/15 bg-amber-300/5 blur-2xl" aria-hidden="true" />
+                <div className="relative mx-auto mb-4 mt-1 h-1.5 w-10 rounded-full bg-white/35 sm:hidden" aria-hidden="true" />
                 <div className="relative mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-300">Iglesia Jerusalén · Navegación</p>
