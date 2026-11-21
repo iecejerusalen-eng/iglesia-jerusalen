@@ -13,6 +13,11 @@ type MemberPointProperties = { cluster: false; memberId: string; member: Strateg
 type MapPoint = Supercluster.ClusterFeature<Record<string, never>> | Supercluster.PointFeature<MemberPointProperties>;
 type LocatedStrategicMapMember = StrategicMapMember & { latitude: number; longitude: number };
 
+// react-map-gl omits this supported MapLibre canvas option from its public prop type.
+const preserveCanvasForSnapshots = {
+  canvasContextAttributes: { preserveDrawingBuffer: true },
+} as unknown as React.ComponentProps<typeof Map>;
+
 interface MapVisualsProps {
   mapRef: React.RefObject<MapRef | null>;
   viewState: MapViewState;
@@ -251,7 +256,7 @@ export const MapVisuals = ({
         mapStyle={mapStyle}
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
-        canvasContextAttributes={{ preserveDrawingBuffer: true }}
+        {...preserveCanvasForSnapshots}
         cursor={isMeasuring || isCreatingCell ? 'crosshair' : 'grab'}
       >
         <NavigationControl position="bottom-right" showCompass visualizePitch />
