@@ -1,3 +1,8 @@
+## [1.14.45] - 2026-11-21
+
+### Mejorado
+- El explorador móvil abre como una hoja inferior compacta, con altura limitada, bordes redondeados y desplazamiento interno para dejar visible la página detrás.
+
 ## [1.14.44] - 2026-11-08
 
 ### Corregido
