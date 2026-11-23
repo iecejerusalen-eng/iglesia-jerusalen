@@ -4,6 +4,20 @@ export type LiveQuizOptionKey = 'a' | 'b' | 'c' | 'd';
 export type LiveQuizScoreMode = 'speed' | 'accuracy';
 export type LiveQuizQuestionType = 'multiple_choice' | 'true_false';
 
+export interface LiveQuizRoomSettings {
+  shuffle_questions: boolean;
+  shuffle_answers: boolean;
+}
+
+export interface LiveQuizReplayConfiguration {
+  lifetimeDays: number;
+  settings: LiveQuizRoomSettings;
+  teamMode: boolean;
+  teamCount: number;
+  scoreMode: LiveQuizScoreMode;
+  reflectionPrompt: string | null;
+}
+
 export interface LiveQuizPresentation {
   subtitle: string;
   cover_image_url: string;
@@ -40,7 +54,12 @@ export interface LiveQuizRoomSummary {
   phase: LiveQuizPhase;
   question_count: number;
   team_mode: boolean;
+  team_count: number;
   score_mode: LiveQuizScoreMode;
+  reflection_prompt: string | null;
+  settings: LiveQuizRoomSettings;
+  source_room_id: string | null;
+  replay_number: number;
   expires_at: string;
   created_at: string;
   player_count: number;

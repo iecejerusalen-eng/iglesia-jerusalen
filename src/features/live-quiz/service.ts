@@ -15,6 +15,8 @@ import type {
   LiveQuizEditorQuestion,
   LiveQuizPresentation,
   LiveQuizQuestionType,
+  LiveQuizReplayConfiguration,
+  LiveQuizRoomSettings,
 } from './types';
 
 type JsonRecord = Record<string, unknown>;
@@ -95,6 +97,17 @@ function scoreModeValue(value: unknown): LiveQuizScoreMode {
   return value === 'accuracy' ? 'accuracy' : 'speed';
 }
 
+function parseSettings(value: unknown): LiveQuizRoomSettings {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { shuffle_questions: false, shuffle_answers: false };
+  }
+  const item = record(value);
+  return {
+    shuffle_questions: item.shuffle_questions === true,
+    shuffle_answers: item.shuffle_answers === true,
+  };
+}
+
 function parsePlayer(value: unknown): LiveQuizPlayer {
   const item = record(value);
   return {
@@ -169,7 +182,12 @@ function parseRoomSummary(value: unknown): LiveQuizRoomSummary {
     phase: phaseValue(item.phase),
     question_count: numberValue(item.question_count),
     team_mode: item.team_mode === true,
+    team_count: numberValue(item.team_count),
     score_mode: scoreModeValue(item.score_mode),
+    reflection_prompt: stringValue(item.reflection_prompt) || null,
+    settings: parseSettings(item.settings),
+    source_room_id: stringValue(item.source_room_id) || null,
+    replay_number: numberValue(item.replay_number),
     expires_at: stringValue(item.expires_at),
     created_at: stringValue(item.created_at),
     player_count: numberValue(item.player_count),
@@ -226,8 +244,9 @@ export async function createLiveQuizRoom(input: {
   teamCount: number;
   scoreMode: LiveQuizScoreMode;
   reflectionPrompt: string | null;
+  settings: LiveQuizRoomSettings;
 }): Promise<{ id: string; pin: string }> {
-  const data = record(await rpc('live_quiz_create_room', {
+  const data = record(await rpc('live_quiz_create_room_with_settings', {
     p_title: input.title,
     p_question_count: input.questionCount,
     p_question_seconds: input.questionSeconds,
@@ -236,8 +255,33 @@ export async function createLiveQuizRoom(input: {
     p_team_count: input.teamCount,
     p_score_mode: input.scoreMode,
     p_reflection_prompt: input.reflectionPrompt,
+    p_settings: input.settings,
   }));
   return { id: stringValue(data.id), pin: stringValue(data.pin) };
+}
+
+export async function replayLiveQuizRoom(
+  roomId: string,
+  configuration: LiveQuizReplayConfiguration,
+): Promise<{ id: string; pin: string; title: string; replayNumber: number }> {
+  const data = record(await rpc('live_quiz_replay_room', {
+    p_room_id: roomId,
+    p_lifetime_days: configuration.lifetimeDays,
+    p_configuration: {
+      shuffle_questions: configuration.settings.shuffle_questions,
+      shuffle_answers: configuration.settings.shuffle_answers,
+      team_mode: configuration.teamMode,
+      team_count: configuration.teamCount,
+      score_mode: configuration.scoreMode,
+      reflection_prompt: configuration.reflectionPrompt,
+    },
+  }));
+  return {
+    id: stringValue(data.id),
+    pin: stringValue(data.pin),
+    title: stringValue(data.title),
+    replayNumber: numberValue(data.replay_number),
+  };
 }
 
 export async function listMyLiveQuizRooms(): Promise<LiveQuizRoomSummary[]> {
