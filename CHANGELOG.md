@@ -1,3 +1,10 @@
+## [1.14.53] - 2026-11-22
+
+### Mejorado
+- Los títulos y descripciones de páginas públicas identifican con mayor precisión a la Iglesia Jerusalén en Milagro, Guayas.
+- Los datos estructurados de la iglesia incluyen sus nombres alternativos, contacto, dirección, coordenadas y perfiles oficiales.
+- Se eliminan descripciones duplicadas para que cada ruta publique metadatos coherentes.
+
 ## [1.14.52] - 2026-11-22
 
 ### Añadido

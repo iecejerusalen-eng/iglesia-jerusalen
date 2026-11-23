@@ -288,10 +288,6 @@ export default function Donations() {
 
   return (
     <div className="relative overflow-hidden bg-[#f6f7fb] px-4 py-8 dark:bg-slate-950 md:px-8 md:py-10">
-      <Helmet>
-        <title>Donaciones y Ofrendas | Iglesia Jerusalén</title>
-        <meta name="description" content="Registra diezmos, ofrendas y donaciones para apoyar la obra de la Iglesia Jerusalén." />
-      </Helmet>
       <div className="pointer-events-none absolute left-[-10rem] top-52 h-96 w-96 rounded-full bg-church-gold/10 blur-3xl" />
       <div className="pointer-events-none absolute right-[-9rem] top-[42rem] h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
 

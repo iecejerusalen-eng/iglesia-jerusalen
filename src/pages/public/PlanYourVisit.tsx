@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -149,13 +148,6 @@ export default function PlanYourVisit() {
 
   return (
     <>
-      <Helmet>
-        <title>Planifica tu visita | Iglesia Jerusalén</title>
-        <meta name="description" content="Descubre qué esperar, consulta horarios y planifica tu primera visita a Iglesia Jerusalén en Milagro." />
-        <meta property="og:title" content="Planifica tu visita | Iglesia Jerusalén" />
-        <meta property="og:description" content="Todo lo que necesitas para sentirte en casa desde el primer día." />
-      </Helmet>
-
       <main className="bg-[#f7f7f3] text-slate-950 dark:bg-slate-950 dark:text-white">
         <section className="relative isolate overflow-hidden bg-[#071633] text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(201,157,63,.24),transparent_34%),linear-gradient(115deg,#071633_10%,#112d55_62%,#183e66)]" />

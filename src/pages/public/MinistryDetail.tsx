@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, User, Calendar, Users, AlertCircle, ChevronRight, FileText, LockKeyhole } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../config/supabase';
@@ -201,8 +202,23 @@ const MinistryDetail = () => {
     );
   }
 
+  const ministryDescription = (ministry.description || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const seoTitle = `${ministry.name} | Iglesia Jerusalén en Milagro`;
+  const seoDescription = (ministryDescription || `Conoce el ministerio ${ministry.name} de Iglesia Jerusalén en Milagro, Guayas.`).slice(0, 155);
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+      </Helmet>
       {/* Botón Volver */}
       <Link 
         to="/ministerios"
