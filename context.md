@@ -1,6 +1,12 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 22-nov-2026 — Gestión y conservación de salas del reto en vivo
+
+La sala no se borra cuando acaba la actividad. «Mis salas» ahora lista actividades activas, terminadas y vencidas; la persona anfitriona puede volver a los resultados, editar preguntas y presentación mientras siga en lobby, extender un PIN activo antes de su vencimiento o eliminar una sala con confirmación. Cada anfitrión mantiene como máximo tres salas activas. Las extensiones se calculan desde el vencimiento actual y nunca pasan de 365 días desde la creación. El borrado requiere el rol vigente y la propiedad de la sala; elimina participantes, respuestas y reflexiones por cascada, y solo retira del bucket las imágenes asociadas que no use otra sala. La sala «Reto bíblico en vivo» que ya existía se deja intacta.
+
+La migración `supabase/migrations/20261123043507_live_quiz_room_management.sql` actualiza el listado y añade RPCs protegidas para extender y eliminar; Supabase confirmó su aplicación como versión `20261123043507`. La interfaz reutiliza el `AlertDialog` Radix que ya tenía el proyecto; no se añaden dependencias. D:\COMPONENTES contenía el patrón de confirmación de shadcn/Base UI, pero la app ya usa Radix; shadcn no tenía registros configurados y el resultado de Magic UI era un diálogo de video, no una confirmación destructiva útil. Fuente: código de `origin/main`, esquema remoto de `live_quiz_rooms` y la captura del anfitrión, 22-nov-2026. La publicación web queda pendiente de esta entrega.
+
 ## 22-nov-2026 — Editor de salas del reto bíblico en vivo
 
 Las salas en espera ahora tienen un editor de anfitrión para portada (título, subtítulo, imagen y colores) y preguntas editables: opción múltiple o verdadero/falso, 1–30 preguntas, hasta cuatro opciones, respuesta correcta, duración de 10–60 s por pregunta, explicación, color y una cita que abre el popup bíblico existente. Se pueden añadir, duplicar, quitar y ordenar preguntas con controles accesibles. La vista previa se actualiza mientras se edita y exige texto alternativo para las imágenes. Las preguntas solo se editan mientras la sala sigue en espera; las funciones de base de datos comprueban rol y propiedad, y ocultan respuesta y cita hasta revelar. El anfitrión puede subir JPG/PNG/WebP de hasta 4 MB a `live-quiz-media`; el bucket es público para lectura de las salas y las cargas requieren el permiso vigente.

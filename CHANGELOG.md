@@ -1,3 +1,9 @@
+## [1.14.54] - 2026-11-22
+
+### Mejorado
+- El panel «Mis salas» conserva y muestra partidas terminadas, permite abrir sus resultados, editar cuestionarios en espera, ampliar la vigencia de PIN activos y eliminar salas manualmente con confirmación.
+- La extensión queda limitada a 365 días desde la creación; el cupo de tres salas cuenta solo las activas.
+
 ## [1.14.53] - 2026-11-22
 
 ### Mejorado
