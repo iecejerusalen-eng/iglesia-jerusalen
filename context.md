@@ -1,6 +1,10 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 22-nov-2026 — La PWA respeta la redirección del estatuto
+
+La navegación anterior del PDF queda excluida del fallback SPA del service worker y llega a la redirección de Vercel hacia Drive, incluso con la PWA activa. Publicado en 1.14.51.
+
 ## 22-nov-2026 — Compatibilidad con la URL anterior del estatuto
 
 La ruta histórica `/documentos/estatutos.pdf` redirige de forma permanente al PDF original en Drive. Se mantienen los enlaces guardados al retirar la copia estática del sitio. Publicado en 1.14.50.

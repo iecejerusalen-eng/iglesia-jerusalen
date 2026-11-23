@@ -1,3 +1,8 @@
+## [1.14.51] - 2026-11-22
+
+### Corregido
+- La PWA deja que la antigua URL del estatuto siga la redirección a Drive en vez de mostrar la página de inicio.
+
 ## [1.14.50] - 2026-11-22
 
 ### Corregido
