@@ -7,11 +7,17 @@ import {
   Gamepad2, LockKeyhole, MessageSquareText, Pencil, Play, RefreshCw, ShieldCheck, Sparkles, Square, Target, Timer, Trophy, Triangle, Users, UsersRound, X,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 import { BibleVerseLink } from '../../components/ui/BibleVerseLink';
 import { LiveQuizEditor } from './LiveQuizEditor';
+import { LiveQuizRoomManagement } from './LiveQuizRoomManagement';
 import {
-  applyLiveQuizHostAction, createLiveQuizRoom, getLiveQuizEditor, getLiveQuizState, joinLiveQuizRoom,
-  listMyLiveQuizRooms, saveLiveQuizEditor, submitLiveQuizAnswer, submitLiveQuizReflection, uploadLiveQuizImage,
+  applyLiveQuizHostAction, createLiveQuizRoom, deleteLiveQuizRoom, extendLiveQuizRoom, getLiveQuizEditor,
+  getLiveQuizState, joinLiveQuizRoom, listMyLiveQuizRooms, saveLiveQuizEditor, submitLiveQuizAnswer,
+  submitLiveQuizReflection, uploadLiveQuizImage,
 } from './service';
 import type { LiveQuizEditorContent, LiveQuizOptionKey, LiveQuizRoomSummary, LiveQuizScoreMode, LiveQuizSession, LiveQuizSnapshot } from './types';
 
@@ -36,6 +42,7 @@ export function LiveQuizRooms() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorContent, setEditorContent] = useState<LiveQuizEditorContent | null>(null);
   const [rooms, setRooms] = useState<LiveQuizRoomSummary[]>([]);
+  const [roomToDelete, setRoomToDelete] = useState<LiveQuizRoomSummary | null>(null);
   const [title, setTitle] = useState('Reto bíblico en vivo');
   const [questionCount, setQuestionCount] = useState(10);
   const [questionSeconds, setQuestionSeconds] = useState(20);
@@ -58,6 +65,7 @@ export function LiveQuizRooms() {
     roleNames.some((item) => !VISITOR_ROLES.has(item))
     || permissions?.games?.edit === true
   ));
+  const activeRoomCount = useMemo(() => rooms.filter((room) => room.status === 'waiting' || room.status === 'in_progress').length, [rooms]);
 
   const syncState = useCallback(async () => {
     if (!session) return;
@@ -81,7 +89,7 @@ export function LiveQuizRooms() {
   }, [canHost]);
 
   const openEditor = async () => {
-    if (!snapshot?.is_host || snapshot.room.status !== 'waiting') return;
+    if (!snapshot?.is_host || snapshot.room.status !== 'waiting' || snapshot.room.phase !== 'lobby') return;
     setBusy(true);
     setErrorMessage(null);
     try {
@@ -95,7 +103,7 @@ export function LiveQuizRooms() {
   };
 
   const saveEditor = async (content: LiveQuizEditorContent) => {
-    if (!snapshot?.is_host || snapshot.room.status !== 'waiting') return;
+    if (!snapshot?.is_host || snapshot.room.status !== 'waiting' || snapshot.room.phase !== 'lobby') return;
     setBusy(true);
     setErrorMessage(null);
     try {
@@ -244,6 +252,60 @@ export function LiveQuizRooms() {
     setNotice(null);
   };
 
+  const editRoom = async (room: LiveQuizRoomSummary) => {
+    if (room.status !== 'waiting' || room.phase !== 'lobby') return;
+    setBusy(true);
+    setErrorMessage(null);
+    try {
+      const [nextSnapshot, content] = await Promise.all([
+        getLiveQuizState(room.pin, null),
+        getLiveQuizEditor(room.id),
+      ]);
+      if (!nextSnapshot.is_host) throw new Error('Solo quien creó la sala puede editarla.');
+      setPin(room.pin);
+      setSearchParams({ pin: room.pin });
+      setSession({ pin: room.pin, roomId: room.id, playerToken: null });
+      setSnapshot(nextSnapshot);
+      setEditorContent(content);
+      setEditorOpen(true);
+    } catch (error) {
+      setErrorMessage(messageFromError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const extendRoom = async (roomId: string, days: number) => {
+    setBusy(true);
+    setErrorMessage(null);
+    try {
+      const expiresAt = await extendLiveQuizRoom(roomId, days);
+      await refreshMyRooms();
+      setNotice(`Vigencia actualizada hasta ${formatDate(expiresAt)}.`);
+    } catch (error) {
+      setErrorMessage(messageFromError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDeleteRoom = async () => {
+    if (!roomToDelete) return;
+    const deletedTitle = roomToDelete.title;
+    setBusy(true);
+    setErrorMessage(null);
+    try {
+      await deleteLiveQuizRoom(roomToDelete.id);
+      setRoomToDelete(null);
+      await refreshMyRooms();
+      setNotice(`La sala «${deletedTitle}» se eliminó.`);
+    } catch (error) {
+      setErrorMessage(messageFromError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const hostAction = async (action: 'start' | 'reveal' | 'next' | 'finish') => {
     if (!snapshot) return;
     setBusy(true);
@@ -323,7 +385,7 @@ export function LiveQuizRooms() {
       <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-[30rem] size-80 rounded-full bg-amber-400/10 blur-3xl" />
       <div className="relative mx-auto max-w-6xl">
         {session && snapshot ? (
-          editorOpen && snapshot.is_host && snapshot.room.status === 'waiting' && editorContent ? (
+          editorOpen && snapshot.is_host && snapshot.room.status === 'waiting' && snapshot.room.phase === 'lobby' && editorContent ? (
             <LiveQuizEditor
               roomId={snapshot.room.id}
               initialContent={editorContent}
@@ -366,6 +428,7 @@ export function LiveQuizRooms() {
               <p className="mt-5 text-[10px] font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">Jueguen y aprendan juntos</p>
               <h1 className="mt-2 font-serif text-4xl font-bold tracking-tight sm:text-6xl">Reto bíblico en vivo</h1>
               <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">Responde desde tu celular, acumula puntos y descubre qué grupo conoce mejor las Escrituras.</p>
+              {canHost && <a href="#my-rooms" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-950/15 bg-white/80 px-4 text-xs font-black text-blue-950 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/40 dark:border-white/15 dark:bg-white/5 dark:text-amber-200 dark:hover:bg-white/10">Administrar mis salas <ArrowRight size={14} /></a>}
             </header>
 
             {notice && <Notice message={notice} onClose={() => setNotice(null)} />}
@@ -413,23 +476,46 @@ export function LiveQuizRooms() {
                     <p className="-mt-2 text-[11px] leading-5 text-blue-100/70">Precisión ayuda a que el tiempo no dé ventaja. En Ritmo, las respuestas correctas suman hasta 1.000 puntos según rapidez.</p>
                     <div><label className="block text-xs font-bold text-blue-100" htmlFor="live-quiz-reflection">Pregunta para conversar al final <span className="font-normal text-blue-100/70">(opcional)</span><textarea id="live-quiz-reflection" value={reflectionPrompt} onChange={(event) => setReflectionPrompt(event.target.value.slice(0, 180))} maxLength={180} rows={2} placeholder="¿Qué enseñanza te llevas del reto?" className="mt-1.5 w-full resize-y rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-blue-100/50 focus:border-amber-300 focus:ring-4 focus:ring-amber-300/15" /></label><p className="mt-1 text-[11px] leading-5 text-blue-100/70">Las respuestas solo las verá quien organiza; evita pedir datos personales.</p></div>
                     <SelectField label="Vigencia máxima del PIN" value={lifetimeDays} onChange={(value) => setLifetimeDays(Number(value))} options={[[1, '1 día'], [7, '7 días'], [30, '30 días'], [90, '90 días'], [180, '180 días'], [365, '365 días · máximo']]} />
-                    <button type="submit" disabled={busy || rooms.length >= ACTIVE_ROOM_LIMIT || title.trim().length < 3} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-black text-blue-950 transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <RefreshCw className="animate-spin motion-reduce:animate-none" size={16} /> : <Sparkles size={16} />} {busy ? 'Creando sala…' : 'Crear sala y obtener PIN'}</button>
-                    <p className="flex items-center justify-between gap-2 text-xs text-blue-100/80"><span className="inline-flex items-center gap-1.5"><Timer size={14} /> Las salas expiran en 1 a 365 días.</span><span>{rooms.length}/{ACTIVE_ROOM_LIMIT} activas</span></p>
+                    <button type="submit" disabled={busy || activeRoomCount >= ACTIVE_ROOM_LIMIT || title.trim().length < 3} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-black text-blue-950 transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <RefreshCw className="animate-spin motion-reduce:animate-none" size={16} /> : <Sparkles size={16} />} {busy ? 'Creando sala…' : 'Crear sala y obtener PIN'}</button>
+                    <p className="flex items-center justify-between gap-2 text-xs text-blue-100/80"><span className="inline-flex items-center gap-1.5"><Timer size={14} /> PIN vigente hasta 365 días desde su creación.</span><span>{activeRoomCount}/{ACTIVE_ROOM_LIMIT} activas</span></p>
+                    {activeRoomCount >= ACTIVE_ROOM_LIMIT && <p role="status" className="rounded-xl border border-amber-200/30 bg-amber-200/10 px-3 py-2 text-xs leading-5 text-amber-100">Alcanzaste el máximo de salas activas. Elimina o deja vencer una sala activa para crear otra; las terminadas quedan guardadas.</p>}
                   </form>
                 )}
               </section>
             </div>
 
-            {canHost && <section className="mt-8 rounded-[1.75rem] border border-slate-200 bg-white/75 p-5 shadow-lg dark:border-white/10 dark:bg-slate-900/60 sm:p-7" aria-labelledby="active-rooms-heading">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Tus partidas</p><h2 id="active-rooms-heading" className="mt-1 font-serif text-2xl font-bold">Salas activas <span className="font-sans text-sm font-bold text-slate-500">{rooms.length}/{ACTIVE_ROOM_LIMIT}</span></h2></div><button type="button" onClick={() => void refreshMyRooms()} className="inline-flex min-h-10 items-center gap-2 self-start rounded-xl border border-slate-200 px-3 text-xs font-bold dark:border-white/10"><RefreshCw size={14} /> Actualizar</button></div>
-              {rooms.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">No tienes salas activas. Las salas cerradas o expiradas liberan un cupo.</p> : <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">{rooms.map((room) => <article key={room.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950/60"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-sm font-black">{room.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{room.player_count} participantes · {room.team_mode ? 'equipos' : 'individual'} · {room.score_mode === 'accuracy' ? 'precisión' : 'ritmo'} · vence {formatDate(room.expires_at)}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">{room.status === 'waiting' ? 'En espera' : 'En juego'}</span></div><div className="mt-4 flex items-center justify-between gap-2"><code className="font-mono text-lg font-black tracking-[.15em] text-blue-950 dark:text-amber-200">{room.pin}</code><button type="button" onClick={() => resumeRoom(room)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-950 px-3 text-xs font-black text-white dark:bg-amber-300 dark:text-blue-950"><Play size={14} fill="currentColor" /> Abrir sala</button></div></article>)}</div>}
-            </section>}
+            {canHost && <LiveQuizRoomManagement
+              rooms={rooms}
+              activeRoomCount={activeRoomCount}
+              activeRoomLimit={ACTIVE_ROOM_LIMIT}
+              busy={busy}
+              onRefresh={() => void refreshMyRooms()}
+              onOpenRoom={resumeRoom}
+              onEditRoom={editRoom}
+              onCopyPin={(roomPin) => void copyValue(roomPin, 'PIN')}
+              onExtendRoom={extendRoom}
+              onDeleteRoom={setRoomToDelete}
+            />}
 
             <p className="mx-auto mt-8 flex max-w-2xl items-start justify-center gap-2 text-center text-xs leading-5 text-slate-500 dark:text-slate-400"><BookOpenCheck size={15} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-300" /> Las preguntas se seleccionan del banco bíblico de Iglesia Jerusalén. Los puntos se calculan al responder y el PIN caduca según la vigencia que eligió quien organiza.</p>
           </>
         )}
       </div>
     </main>
+    <AlertDialog open={roomToDelete !== null} onOpenChange={(open) => { if (!open && !busy) setRoomToDelete(null); }}>
+      <AlertDialogContent position="center" className="select-text">
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar esta sala?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {roomToDelete ? <>Se eliminarán permanentemente «{roomToDelete.title}», el PIN {roomToDelete.pin}, sus participantes, respuestas, reflexiones e imágenes que solo use esta sala. {roomToDelete.status === 'in_progress' ? 'La partida terminará de inmediato para quienes estén jugando. ' : ''}Esta acción no se puede deshacer.</> : 'Esta acción no se puede deshacer.'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Conservar sala</AlertDialogCancel>
+          <AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); void confirmDeleteRoom(); }} className="bg-rose-700 text-white hover:bg-rose-800 focus-visible:ring-rose-400">{busy ? 'Eliminando…' : 'Eliminar definitivamente'}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </>;
 }
 
@@ -570,7 +656,7 @@ function FinalResults({ snapshot, isHost, busy, reflectionResponse, onReflection
     <div className="mx-auto mt-7 max-w-2xl rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/[.03]"><h2 className="flex items-center gap-2 font-serif text-xl font-bold"><Users size={18} /> Clasificación individual</h2><ol className="mt-3 space-y-2">{snapshot.players.map((player, index) => <li key={player.id} className="flex items-center justify-between gap-4 rounded-xl bg-white px-4 py-3 text-sm dark:bg-slate-950/60"><span className="min-w-0 truncate"><strong className="mr-3 text-slate-400">{index + 1}</strong>{player.nickname}{player.team_name && <span className="ml-2 text-xs text-slate-500">· {player.team_name}</span>}</span><strong className="shrink-0 tabular-nums">{player.score.toLocaleString('es-EC')} pts</strong></li>)}</ol></div>
     {isHost && snapshot.question_report && <section className="mx-auto mt-6 max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/[.03]" aria-labelledby="live-quiz-report-heading"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-amber-700 dark:text-amber-300">Resumen de aprendizaje</p><h2 id="live-quiz-report-heading" className="mt-1 font-serif text-xl font-bold">Rendimiento por pregunta</h2></div><button type="button" onClick={onDownloadReport} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold dark:border-white/10"><Download size={15} /> Descargar informe CSV</button></div><ol className="mt-4 space-y-3">{snapshot.question_report.map((item) => { const percent = item.answers ? Math.round(item.correct_answers / item.answers * 100) : 0; return <li key={item.index} className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50"><div className="flex items-start justify-between gap-3"><p className="text-sm font-bold"><span className="mr-2 text-amber-700 dark:text-amber-300">{item.index}.</span>{item.question}</p><strong className="shrink-0 text-sm tabular-nums">{percent}%</strong></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10" role="progressbar" aria-label={`Aciertos en pregunta ${item.index}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><div className="h-full rounded-full bg-emerald-500 motion-reduce:transition-none" style={{ width: `${percent}%` }} /></div><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.correct_answers} de {item.answers} respuestas correctas · {item.average_response_ms ? `${(item.average_response_ms / 1000).toFixed(1)} s de media` : 'sin respuestas'}</p></li>; })}</ol></section>}
     {snapshot.room.reflection_prompt && <section className="mx-auto mt-6 max-w-3xl rounded-3xl border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-300/20 dark:bg-amber-300/[.06]"><div className="flex items-start gap-3"><MessageSquareText size={18} className="mt-1 shrink-0 text-amber-700 dark:text-amber-300" /><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.16em] text-amber-800 dark:text-amber-200">Conversación bíblica</p><h2 className="mt-1 font-serif text-xl font-bold">{snapshot.room.reflection_prompt}</h2>{isHost ? <div className="mt-4 space-y-3">{snapshot.reflections.length ? snapshot.reflections.map((reflection, index) => <article key={`${reflection.nickname}-${index}`} className="rounded-2xl bg-white p-4 dark:bg-slate-950/50"><p className="text-xs font-black text-slate-500">{reflection.nickname}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6">{reflection.response}</p></article>) : <p className="text-sm text-slate-600 dark:text-slate-300">Todavía no hay reflexiones compartidas.</p>}</div> : snapshot.my_reflection ? <p className="mt-3 rounded-xl bg-white px-4 py-3 text-sm text-slate-700 dark:bg-slate-950/50 dark:text-slate-200">Ya compartiste tu respuesta. La persona que organizó puede leerla.</p> : <div className="mt-4"><label className="block text-xs font-bold text-slate-700 dark:text-slate-200" htmlFor="live-quiz-reflection-response">Tu respuesta <span className="font-normal text-slate-500">· hasta 250 caracteres</span><textarea id="live-quiz-reflection-response" maxLength={250} rows={3} value={reflectionResponse} onChange={(event) => onReflectionResponseChange(event.target.value)} placeholder="Comparte una idea que te llevas de las Escrituras…" className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 dark:border-white/10 dark:bg-slate-950" /></label><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Solo quien organiza verá tu respuesta. Evita incluir datos personales o confidencias.</p><button type="button" onClick={() => void onSubmitReflection()} disabled={busy || reflectionResponse.trim().length < 3} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-950 px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-300 dark:text-blue-950"><MessageSquareText size={15} /> {busy ? 'Compartiendo…' : 'Compartir reflexión'}</button></div>}</div></div></section>}
-    <div className="mt-7 flex flex-wrap justify-center gap-3">{isHost && <p className="basis-full text-center text-xs text-slate-500">La sala terminó y ya liberó tu cupo para crear otra.</p>}<button type="button" onClick={onLeave} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-950 px-5 text-sm font-bold text-white dark:bg-amber-300 dark:text-blue-950"><ArrowLeft size={15} /> Volver a salas</button></div>
+    <div className="mt-7 flex flex-wrap justify-center gap-3">{isHost && <p className="basis-full text-center text-xs leading-5 text-slate-500 dark:text-slate-400">La actividad terminó. La sala y sus resultados quedan guardados en «Mis salas» hasta que decidas eliminarlos.</p>}<button type="button" onClick={onLeave} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-950 px-5 text-sm font-bold text-white dark:bg-amber-300 dark:text-blue-950"><ArrowLeft size={15} /> Volver a salas</button></div>
   </div>;
 }
 

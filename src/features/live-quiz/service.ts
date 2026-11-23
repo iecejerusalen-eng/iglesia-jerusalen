@@ -245,6 +245,15 @@ export async function listMyLiveQuizRooms(): Promise<LiveQuizRoomSummary[]> {
   return Array.isArray(data) ? data.map(parseRoomSummary) : [];
 }
 
+export async function extendLiveQuizRoom(roomId: string, days: number): Promise<string> {
+  const data = record(await rpc('live_quiz_extend_room', { p_room_id: roomId, p_days: days }));
+  return stringValue(data.expires_at);
+}
+
+export async function deleteLiveQuizRoom(roomId: string): Promise<void> {
+  await rpc('live_quiz_delete_room', { p_room_id: roomId });
+}
+
 export async function getLiveQuizEditor(roomId: string): Promise<LiveQuizEditorContent> {
   const data = record(await rpc('live_quiz_get_editor', { p_room_id: roomId }));
   const questions = Array.isArray(data.questions) ? data.questions.map(parseEditorQuestion) : [];
