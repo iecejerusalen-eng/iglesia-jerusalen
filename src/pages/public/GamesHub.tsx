@@ -92,6 +92,14 @@ export const GamesHub = () => {
           </div>
         </section>
 
+        <section className="mt-6 flex flex-col gap-5 rounded-[1.75rem] border border-blue-950/10 bg-blue-950 p-5 text-white shadow-[0_20px_65px_-40px_rgba(15,23,42,.65)] sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div className="flex items-start gap-4">
+            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-amber-300"><Gamepad2 size={23} /></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-300">Para grupos y reuniones</p><h2 className="mt-1 font-serif text-2xl font-bold">Reto bíblico en vivo</h2><p className="mt-1 max-w-xl text-sm leading-6 text-blue-100/80">Únete con un PIN, responde desde tu teléfono y compara puntajes con tu grupo.</p></div>
+          </div>
+          <Link to="/recursos/juegos/partida-en-vivo" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 text-xs font-black text-blue-950 transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-reduce:transition-none">Entrar o crear sala <Play size={15} fill="currentColor" /></Link>
+        </section>
+
         <section className="scroll-mt-28 pt-12" aria-labelledby="games-title">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">Escoge una actividad</p><h2 id="games-title" className="mt-1 font-serif text-3xl font-bold text-slate-950 dark:text-white">Biblioteca de juegos</h2></div>
@@ -144,3 +152,4 @@ function GameCard({ game, reduceMotion }: { game: Game; reduceMotion: boolean })
 function GamesSkeleton() {
   return <div className="grid gap-5 md:grid-cols-2" aria-label="Cargando juegos" aria-busy="true" role="status">{[0, 1, 2, 3].map((item) => <div key={item} className="overflow-hidden rounded-[1.75rem] border border-slate-200/70 bg-white/70 dark:border-white/10 dark:bg-white/5"><div className="aspect-[16/9] animate-pulse motion-reduce:animate-none bg-slate-200 dark:bg-slate-800" /><div className="space-y-3 p-6"><div className="h-4 w-2/3 animate-pulse motion-reduce:animate-none rounded bg-slate-200 dark:bg-slate-700" /><div className="h-3 animate-pulse motion-reduce:animate-none rounded bg-slate-100 dark:bg-slate-800" /><div className="h-11 animate-pulse motion-reduce:animate-none rounded-xl bg-slate-200 dark:bg-slate-700" /></div></div>)}</div>;
 }
+
