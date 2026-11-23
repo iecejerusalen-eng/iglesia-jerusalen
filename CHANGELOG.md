@@ -1,3 +1,8 @@
+## [1.14.56] - 2026-11-23
+
+### Mejorado
+- El botón flotante de recarga móvil muestra el atajo Ctrl+Shift+R en una etiqueta compacta y es más pequeño, con foco visible y nombre accesible.
+
 ## [1.14.55] - 2026-11-23
 
 ### Mejorado

@@ -1,6 +1,10 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 23-nov-2026 — Atajo compacto de recarga en móviles
+
+El botón flotante de recarga móvil conserva su acción de limpiar caché y actualizar la aplicación; ahora ocupa 40 × 40 px y muestra la etiqueta `Ctrl+Shift+R` en pequeño. El nombre accesible aclara que se trata del atajo del navegador, y el botón conserva un indicador de foco visible. Sigue oculto en escritorio. Vista previa local verificada en 390×844 y 1440×900.
+
 ## 23-nov-2026 — Repetir y configurar partidas bíblicas
 
 Las salas terminadas o vencidas se reactivan desde «Mis salas» con «Reactivar con ajustes». Cada repetición crea otro PIN y una sala independiente con participantes/resultados separados; no borra ni reinicia la sesión previa. Las repeticiones no tienen límite total, pero siguen aplicando tres salas activas simultáneas y una vigencia de 1–365 días por PIN. Se conservan el cuestionario base y su orden original para repetirlo aunque una sesión mezcle preguntas.
