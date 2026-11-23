@@ -56,6 +56,7 @@ const Birthdays = lazyWithRetry(() => import('../pages/public/Birthdays'));
 const Bible = lazyWithRetry(() => import('../pages/public/Bible'));
 const CertificateVerification = lazyWithRetry(() => import('../pages/lms/CertificateVerification').then(m => ({ default: m.CertificateVerification })));
 const GamesHub = lazyWithRetry(() => import('../pages/public/GamesHub').then(m => ({ default: m.GamesHub })));
+const LiveQuizRooms = lazyWithRetry(() => import('../features/live-quiz/LiveQuizRooms').then(m => ({ default: m.LiveQuizRooms })));
 const Biblionario = lazyWithRetry(() => import('../pages/public/games/Biblionario').then(m => ({ default: m.Biblionario })));
 const Hangman = lazyWithRetry(() => import('../pages/public/games/Hangman').then(m => ({ default: m.Hangman })));
 const MemoryMatch = lazyWithRetry(() => import('../pages/public/games/MemoryMatch').then(m => ({ default: m.MemoryMatch })));
@@ -237,6 +238,7 @@ export default function AppRouter() {
           <Route path="/cumpleanos" element={<Birthdays />} />
           <Route path="/recursos/biblia" element={<Bible />} />
           <Route path="/recursos/juegos" element={<GamesHub />} />
+          <Route path="/recursos/juegos/partida-en-vivo" element={<LiveQuizRooms />} />
           <Route path="/recursos/juegos/quien-quiere-ser-biblionario" element={<Biblionario />} />
           <Route path="/recursos/juegos/reto-de-letras-biblicas" element={<Hangman />} />
           <Route path="/recursos/juegos/ahorcado-biblico" element={<Navigate to="/recursos/juegos/reto-de-letras-biblicas" replace />} />
