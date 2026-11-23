@@ -12,6 +12,11 @@ const documents = [
   { slug: 'estatutos', title: 'Estatuto', pages: 16, description: 'Las bases de nuestra organización, identidad y vida en comunidad.' },
   { slug: 'reglamento-interno', title: 'Reglamento interno', pages: 53, description: 'Los principios y las normas que orientan nuestro servicio y nuestra organización.' },
 ];
+const STATUTE_DRIVE_URL = 'https://drive.google.com/file/d/18OkwlNY_fI5YgsjaHVTQ9uHiTnRWKc-5/view?usp=drivesdk';
+const originalPdfLinkProps = (item: (typeof documents)[number]) => item.slug === 'estatutos'
+  ? { href: STATUTE_DRIVE_URL, target: '_blank' as const, rel: 'noopener noreferrer' as const }
+  : { href: `/documentos/${item.slug}.pdf`, download: true };
+const originalPdfLabel = (item: (typeof documents)[number]) => item.slug === 'estatutos' ? 'Abrir o descargar en Drive' : 'PDF original';
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
 function blocks(text: string) {
   const result: { kind: 'heading' | 'article' | 'paragraph'; text: string }[] = [];
@@ -118,15 +123,15 @@ function GovernanceReader() {
         <p className="governance-eyebrow">Nuestra identidad · Biblioteca institucional</p>
         <h1>{selected?.title ?? 'Nuestra fe. Nuestra comunidad. Nuestro camino.'}</h1>
         <p className="governance-intro">{selected?.description ?? 'Conoce los documentos que acompañan la vida de la Iglesia del Evangelio Cuadrangular del Ecuador.'}</p>
-        {selected && <div className="governance-controls governance-actions"><a href={`/documentos/${selected.slug}.pdf`} download className="governance-primary"><Download size={18} />PDF original</a><button onClick={() => { setSearch(''); setMode('continuous'); requestAnimationFrame(() => requestAnimationFrame(() => window.print())); }} disabled={!data} className="governance-secondary"><Printer size={18} />Guardar página en PDF</button></div>}
+        {selected && <div className="governance-controls governance-actions"><a {...originalPdfLinkProps(selected)} className="governance-primary"><Download size={18} />{originalPdfLabel(selected)}</a><button onClick={() => { setSearch(''); setMode('continuous'); requestAnimationFrame(() => requestAnimationFrame(() => window.print())); }} disabled={!data} className="governance-secondary"><Printer size={18} />Guardar página en PDF</button></div>}
         <div className="governance-meta"><span>Lectura pública</span><span>{selected ? `${selected.pages} páginas de referencia` : 'Dos documentos · Una identidad'}</span></div>
       </div>
       <figure className="governance-hero-image"><img src={facade} alt="Fachada de la Iglesia Jerusalén" fetchPriority="high" /><figcaption>Iglesia Jerusalén · Nuestra casa de fe</figcaption></figure>
     </header>
     <div className="governance-body">
-      {!slug && <section className="governance-library" aria-label="Documentos disponibles">{documents.map((item, index) => <article key={item.slug}><span className="governance-document-number">0{index + 1}</span><BookOpen size={28} /><p className="governance-eyebrow">{item.pages} páginas · Documento institucional</p><h2>{item.title}</h2><p>{item.description}</p><div className="governance-actions"><Link to={`/nosotros/documentos/${item.slug}`} className="governance-primary">Comenzar lectura <ArrowRight size={17} /></Link><a href={`/documentos/${item.slug}.pdf`} download className="governance-download"><Download size={17} />PDF original</a></div></article>)}</section>}
+      {!slug && <section className="governance-library" aria-label="Documentos disponibles">{documents.map((item, index) => <article key={item.slug}><span className="governance-document-number">0{index + 1}</span><BookOpen size={28} /><p className="governance-eyebrow">{item.pages} páginas · Documento institucional</p><h2>{item.title}</h2><p>{item.description}</p><div className="governance-actions"><Link to={`/nosotros/documentos/${item.slug}`} className="governance-primary">Comenzar lectura <ArrowRight size={17} /></Link><a {...originalPdfLinkProps(item)} className="governance-download"><Download size={17} />{originalPdfLabel(item)}</a></div></article>)}</section>}
       {slug && !selected && <p>Documento no encontrado. <Link to="/nosotros/documentos">Ver documentos disponibles</Link></p>}
-      {selected && error && <p role="alert">{error} <a href={`/documentos/${selected.slug}.pdf`}>Abrir PDF original</a></p>}
+      {selected && error && <p role="alert">{error} <a {...originalPdfLinkProps(selected)}>{selected.slug === 'estatutos' ? 'Abrir PDF original en Drive' : 'Abrir PDF original'}</a></p>}
       {selected && !data && !error && <p role="status">Preparando la lectura…</p>}
       {selected && data && <>
         <div className="governance-source-note"><FileText size={22} /><p>{data.scanned ? 'Transcripción automática del escaneo, pendiente de revisión editorial. Puede contener errores de reconocimiento; verifica nombres, cifras y artículos en el original.' : 'Edición web de lectura basada en el documento proporcionado. El PDF original conserva tablas, símbolos y firmas.'}<span>Referencia: {data.sourceFile}</span></p></div>
