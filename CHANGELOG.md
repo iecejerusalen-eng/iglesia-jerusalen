@@ -1,3 +1,8 @@
+## [1.14.49] - 2026-11-22
+
+### Corregido
+- El lector y el índice de documentos abren el PDF original del estatuto desde Google Drive; el reglamento conserva su descarga local.
+
 ## [1.14.48] - 2026-11-22
 
 ### Mejorado
