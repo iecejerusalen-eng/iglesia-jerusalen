@@ -6,7 +6,7 @@ Rutas: `/nosotros/documentos`, `/nosotros/documentos/estatutos`, `/nosotros/docu
 
 El estatuto es un escaneo de 16 páginas: la edición web utiliza texto OCR editable y ofrece imágenes WebP del original para comparación, cargadas bajo demanda. El reglamento tiene 53 páginas; el texto extraído conserva la referencia a la página original, pero no reconstruye tablas, gráficos, firmas ni disposición del PDF. Se indica esta diferencia en pantalla.
 
-Imprimir / guardar página en PDF abre el diálogo del navegador. El botón restaura lectura continua y borra la búsqueda antes de imprimir para conservar el documento completo. La descarga del estatuto, tanto en Nosotros como en el lector y el índice de documentos, abre el archivo original completo en Google Drive; el reglamento conserva su PDF descargable local. Los documentos están excluidos del precache PWA para evitar descargas automáticas de varios MB a cada visitante.
+Imprimir / guardar página en PDF abre el diálogo del navegador. El botón restaura lectura continua y borra la búsqueda antes de imprimir para conservar el documento completo. La descarga del estatuto, tanto en Nosotros como en el lector y el índice de documentos, abre el archivo original completo en Google Drive; el reglamento conserva su PDF descargable local. La URL histórica `/documentos/estatutos.pdf` redirige al mismo archivo en Drive para conservar enlaces guardados. Los documentos están excluidos del precache PWA para evitar descargas automáticas de varios MB a cada visitante.
 
 ## Estatuto de la Iglesia Cuadrangular
 
