@@ -758,4 +758,3 @@ COMMENT ON TABLE public.live_quiz_players IS 'Nickname and private bearer sessio
 COMMENT ON TABLE public.live_quiz_answers IS 'Server-scored answers for live quiz rooms; direct client access is revoked.';
 COMMENT ON TABLE public.live_quiz_reflections IS 'One participant reflection per room; visible only to that participant and the room host through the state RPC.';
 
-

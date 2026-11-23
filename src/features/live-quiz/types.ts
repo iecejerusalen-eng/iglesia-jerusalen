@@ -89,4 +89,3 @@ export interface LiveQuizSession {
   roomId: string;
   playerToken: string | null;
 }
-

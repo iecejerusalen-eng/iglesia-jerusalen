@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 14183)
-Total output lines: 583
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -368,7 +365,64 @@ export function LiveQuizRooms() {
 
             {canHost && <section className="mt-8 rounded-[1.75rem] border border-slate-200 bg-white/75 p-5 shadow-lg dark:border-white/10 dark:bg-slate-900/60 sm:p-7" aria-labelledby="active-rooms-heading">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Tus partidas</p><h2 id="active-rooms-heading" className="mt-1 font-serif text-2xl font-bold">Salas activas <span className="font-sans text-sm font-bold text-slate-500">{rooms.length}/{ACTIVE_ROOM_LIMIT}</span></h2></div><button type="button" onClick={() => void refreshMyRooms()} className="inline-flex min-h-10 items-center gap-2 self-start rounded-xl border border-slate-200 px-3 text-xs font-bold dark:border-white/10"><RefreshCw size={14} /> Actualizar</button></div>
-              {rooms.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">No tienes salas activas. Las salas cerradas o expiradas liberan un cupo.</p> : <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">{rooms.map((room) => <article key={room.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950/60"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate tex…2183 tokens truncated…div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600 transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${Math.max(0, (remainingSeconds / room.question_seconds) * 100)}%` }} /></div>}
+              {rooms.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">No tienes salas activas. Las salas cerradas o expiradas liberan un cupo.</p> : <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">{rooms.map((room) => <article key={room.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950/60"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-sm font-black">{room.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{room.player_count} participantes · {room.team_mode ? 'equipos' : 'individual'} · {room.score_mode === 'accuracy' ? 'precisión' : 'ritmo'} · vence {formatDate(room.expires_at)}</p></div><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">{room.status === 'waiting' ? 'En espera' : 'En juego'}</span></div><div className="mt-4 flex items-center justify-between gap-2"><code className="font-mono text-lg font-black tracking-[.15em] text-blue-950 dark:text-amber-200">{room.pin}</code><button type="button" onClick={() => resumeRoom(room)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-950 px-3 text-xs font-black text-white dark:bg-amber-300 dark:text-blue-950"><Play size={14} fill="currentColor" /> Abrir sala</button></div></article>)}</div>}
+            </section>}
+
+            <p className="mx-auto mt-8 flex max-w-2xl items-start justify-center gap-2 text-center text-xs leading-5 text-slate-500 dark:text-slate-400"><BookOpenCheck size={15} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-300" /> Las preguntas se seleccionan del banco bíblico de Iglesia Jerusalén. Los puntos se calculan al responder y el PIN caduca según la vigencia que eligió quien organiza.</p>
+          </>
+        )}
+      </div>
+    </main>
+  </>;
+}
+
+function GameRoom({
+  snapshot, joinUrl, errorMessage, notice, busy, clock, selectedAnswer, reflectionResponse, onReflectionResponseChange,
+  onLeave, onCloseNotice, onCopy, onAction, onAnswer, onSubmitReflection, onDownloadReport,
+}: {
+  snapshot: LiveQuizSnapshot;
+  joinUrl: string;
+  errorMessage: string | null;
+  notice: string | null;
+  busy: boolean;
+  clock: number;
+  selectedAnswer: LiveQuizOptionKey | null;
+  reflectionResponse: string;
+  onReflectionResponseChange: (value: string) => void;
+  onLeave: () => void;
+  onCloseNotice: () => void;
+  onCopy: (value: string, label: string) => Promise<void>;
+  onAction: (action: 'start' | 'reveal' | 'next' | 'finish') => Promise<void>;
+  onAnswer: (answer: LiveQuizOptionKey) => Promise<void>;
+  onSubmitReflection: () => Promise<void>;
+  onDownloadReport: () => void;
+}) {
+  const { room, players, question, is_host: isHost } = snapshot;
+  const playerIsReady = snapshot.answered_current;
+  const clockTime = clock || (room.question_started_at ? new Date(room.question_started_at).getTime() : 0);
+  const remainingSeconds = room.question_started_at
+    ? Math.max(0, room.question_seconds - Math.floor((clockTime - new Date(room.question_started_at).getTime()) / 1000))
+    : room.question_seconds;
+  const canContinue = room.question_index < room.question_count;
+
+  return <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_28px_100px_-48px_rgba(15,23,42,.6)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/10 sm:px-7">
+      <button type="button" onClick={onLeave} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2 text-xs font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-slate-300 dark:hover:bg-white/5"><ArrowLeft size={15} /> Salir de la vista</button>
+      <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-[.12em] text-slate-600 dark:bg-white/5 dark:text-slate-300">{isHost ? <Crown size={14} className="text-amber-600 dark:text-amber-300" /> : <Users size={14} />} {isHost ? 'Anfitrión' : 'Participante'}</span>
+    </div>
+    {notice && <Notice message={notice} onClose={onCloseNotice} />}
+    {errorMessage && <ErrorNotice message={errorMessage} />}
+
+    {room.status === 'expired' ? <div className="p-8 text-center sm:p-14"><div className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-300/10 dark:text-amber-200"><Clock3 size={24} /></div><h1 className="mt-5 font-serif text-3xl font-bold">Esta sala expiró</h1><p className="mt-2 text-sm text-slate-600 dark:text-slate-300">El PIN {room.pin} ya no admite partidas.</p><button type="button" onClick={onLeave} className="mt-6 min-h-11 rounded-xl bg-blue-950 px-5 text-sm font-bold text-white dark:bg-amber-300 dark:text-blue-950">Volver al inicio</button></div> : room.status === 'finished' ? <FinalResults snapshot={snapshot} isHost={isHost} busy={busy} reflectionResponse={reflectionResponse} onReflectionResponseChange={onReflectionResponseChange} onSubmitReflection={onSubmitReflection} onDownloadReport={onDownloadReport} onLeave={onLeave} /> : (
+      <>
+        <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="min-w-0 p-5 sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">{room.status === 'waiting' ? 'Lobby' : `Pregunta ${Math.min(room.question_index, room.question_count)} de ${room.question_count}`}</p><h1 className="mt-1 break-words font-serif text-3xl font-bold sm:text-4xl">{room.title}</h1></div><div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-center dark:border-white/10 dark:bg-white/5"><span className="block text-[9px] font-black uppercase tracking-[.16em] text-slate-500">PIN</span><button type="button" onClick={() => void onCopy(room.pin, 'PIN')} className="mt-0.5 inline-flex items-center gap-2 font-mono text-xl font-black tracking-[.14em] text-blue-950 dark:text-amber-200">{room.pin}<Copy size={13} /></button></div></div>
+
+              {room.status === 'waiting' ? <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center"><div className="rounded-3xl bg-gradient-to-br from-blue-950 to-blue-900 p-6 text-white sm:p-8"><div className="flex items-center gap-2 text-amber-300"><Users size={17} /><span className="text-xs font-black uppercase tracking-[.15em]">Sala de espera</span></div><p className="mt-3 text-4xl font-black tabular-nums">{players.length}<span className="ml-2 text-base font-bold text-blue-100/70">jugadores</span></p><p className="mt-2 text-sm leading-6 text-blue-100/80">{isHost ? 'Cuando estén listos, inicia la primera pregunta.' : 'Espera aquí. Quien organiza iniciará la partida.'}</p>{isHost && <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={players.length === 0 || busy} onClick={() => void onAction('start')} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-black text-blue-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"><Play size={16} fill="currentColor" /> Iniciar partida</button><button type="button" disabled={busy} onClick={() => void onAction('finish')} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 text-sm font-bold text-white transition hover:bg-white/10 disabled:opacity-50"><X size={15} /> Cerrar sala</button></div>}</div>{isHost && <div className="flex flex-col items-center gap-3 rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-950/50"><QRCodeSVG value={joinUrl} size={112} level="M" marginSize={1} aria-label="Código QR para unirse a la sala" /><button type="button" onClick={() => void onCopy(joinUrl, 'Enlace')} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold dark:border-white/10"><Copy size={14} /> Copiar enlace</button></div>}</div> : (
+              <div className="mt-7">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold dark:bg-white/5"><Timer size={15} className="text-amber-600 dark:text-amber-300" /> {room.phase === 'question' ? `${remainingSeconds} segundos` : room.phase === 'reveal' ? 'Respuesta revelada' : 'Partida en curso'}</div>{isHost && <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{players.filter((player) => player.answered_current).length}/{players.length} respondieron</span>}</div>
+                {room.phase === 'question' && <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10" role="progressbar" aria-label="Tiempo restante" aria-valuemin={0} aria-valuemax={room.question_seconds} aria-valuenow={remainingSeconds}><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600 transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${Math.max(0, (remainingSeconds / room.question_seconds) * 100)}%` }} /></div>}
                 <QuestionPanel
                   question={question}
                   isHost={isHost}
@@ -526,4 +580,3 @@ function messageFromError(error: unknown): string {
   if (message.includes('live_quiz_') || message.includes('Could not find the function')) return 'La sala aún no está disponible en la base de datos. Hay que aplicar la migración de salas en Supabase.';
   return message;
 }
-

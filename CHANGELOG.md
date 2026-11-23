@@ -546,4 +546,3 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Seguridad
 - El catálogo, las opciones de compra y el retiro dejan de ser accesibles para visitantes mientras la tienda pública esté oculta; las personas autorizadas conservan la gestión desde el panel.
-

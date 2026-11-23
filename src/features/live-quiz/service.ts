@@ -223,4 +223,3 @@ export async function applyLiveQuizHostAction(roomId: string, action: 'start' | 
   await rpc('live_quiz_host_action', { p_room_id: roomId, p_action: action });
 }
 
-

@@ -152,4 +152,3 @@ function GameCard({ game, reduceMotion }: { game: Game; reduceMotion: boolean })
 function GamesSkeleton() {
   return <div className="grid gap-5 md:grid-cols-2" aria-label="Cargando juegos" aria-busy="true" role="status">{[0, 1, 2, 3].map((item) => <div key={item} className="overflow-hidden rounded-[1.75rem] border border-slate-200/70 bg-white/70 dark:border-white/10 dark:bg-white/5"><div className="aspect-[16/9] animate-pulse motion-reduce:animate-none bg-slate-200 dark:bg-slate-800" /><div className="space-y-3 p-6"><div className="h-4 w-2/3 animate-pulse motion-reduce:animate-none rounded bg-slate-200 dark:bg-slate-700" /><div className="h-3 animate-pulse motion-reduce:animate-none rounded bg-slate-100 dark:bg-slate-800" /><div className="h-11 animate-pulse motion-reduce:animate-none rounded-xl bg-slate-200 dark:bg-slate-700" /></div></div>)}</div>;
 }
-
