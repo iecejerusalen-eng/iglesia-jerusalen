@@ -1,4 +1,4 @@
-## [1.14.46] - 2026-11-22
+## [1.14.47] - 2026-11-22
 
 ### Añadido
 - Partidas bíblicas en vivo con PIN, salas de hasta un año, equipos equilibrados, modo de precisión, reflexión opcional y reporte descargable. Crear salas requiere un rol distinto de visitante o permiso `games.edit`; cada anfitrión puede mantener hasta tres salas activas.
