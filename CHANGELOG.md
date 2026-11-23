@@ -1,3 +1,8 @@
+## [1.14.50] - 2026-11-22
+
+### Corregido
+- La URL anterior del PDF del estatuto redirige a su original en Google Drive, conservando enlaces guardados sin alojar otra copia del archivo.
+
 ## [1.14.49] - 2026-11-22
 
 ### Corregido
