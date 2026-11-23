@@ -2,6 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
+      "source": "/documentos/estatutos.pdf",
+      "destination": "https://drive.google.com/file/d/18OkwlNY_fI5YgsjaHVTQ9uHiTnRWKc-5/view?usp=drivesdk",
+      "permanent": true
+    },
+    {
       "source": "/donations",
       "destination": "/donaciones",
       "permanent": true
