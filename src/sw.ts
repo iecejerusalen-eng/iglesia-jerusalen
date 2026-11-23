@@ -21,7 +21,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 // SPA routing fallback
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('/index.html'), {
-    denylist: [/^\/api/, /^\/supabase/],
+    denylist: [/^\/api/, /^\/supabase/, /^\/documentos\/estatutos\.pdf$/],
   })
 )
 
