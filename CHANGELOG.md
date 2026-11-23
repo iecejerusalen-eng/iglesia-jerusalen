@@ -1,3 +1,8 @@
+## [1.14.48] - 2026-11-22
+
+### Mejorado
+- El PDF original del estatuto se abre desde Google Drive; la lectura en línea del sitio se mantiene disponible.
+
 ## [1.14.47] - 2026-11-22
 
 ### Añadido

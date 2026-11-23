@@ -1,12 +1,12 @@
 # Documentos institucionales
 
-Fuentes: los dos PDF proporcionados por el usuario. Las descargas en `public/documentos` son copias sin modificar; sus huellas SHA-256 permiten comprobar la integridad. La fecha del nombre del estatuto identifica el archivo proporcionado, sin afirmar una fecha de aprobación distinta a la del documento.
+Fuentes: los dos PDF proporcionados por el usuario. El estatuto original íntegro permanece archivado bajo `docs/normativa-cuadrangular/originales/` y se comparte desde Google Drive; el reglamento conserva su copia estática en `public/documentos`. Las huellas SHA-256 permiten comprobar la integridad. La fecha del nombre del estatuto identifica el archivo proporcionado, sin afirmar una fecha de aprobación distinta a la del documento.
 
 Rutas: `/nosotros/documentos`, `/nosotros/documentos/estatutos`, `/nosotros/documentos/reglamento-interno`.
 
 El estatuto es un escaneo de 16 páginas: la edición web utiliza texto OCR editable y ofrece imágenes WebP del original para comparación, cargadas bajo demanda. El reglamento tiene 53 páginas; el texto extraído conserva la referencia a la página original, pero no reconstruye tablas, gráficos, firmas ni disposición del PDF. Se indica esta diferencia en pantalla.
 
-Imprimir / guardar página en PDF abre el diálogo del navegador. El botón restaura lectura continua y borra la búsqueda antes de imprimir para conservar el documento completo. Las descargas originales incluyen todos los elementos del archivo recibido. Los documentos están excluidos del precache PWA para evitar descargas automáticas de varios MB a cada visitante.
+Imprimir / guardar página en PDF abre el diálogo del navegador. El botón restaura lectura continua y borra la búsqueda antes de imprimir para conservar el documento completo. La descarga del estatuto se ofrece desde Google Drive e incluye el archivo original completo. Los documentos están excluidos del precache PWA para evitar descargas automáticas de varios MB a cada visitante.
 
 ## Estatuto de la Iglesia Cuadrangular
 

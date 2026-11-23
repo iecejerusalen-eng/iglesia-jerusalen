@@ -4,7 +4,7 @@ Archivo de referencia de los documentos normativos de la Iglesia del Evangelio C
 
 ## Criterio de organización
 
-Los PDF originales se conservan en `originales/`, dentro de `docs/`, separados del código fuente (`src/`) y de los recursos públicos (`public/`). Así la aplicación puede consultar la documentación sin convertirla automáticamente en un recurso público del sitio.
+Los PDF originales se conservan en `originales/`, dentro de `docs/`, separados del código fuente (`src/`) y de los recursos públicos (`public/`). Así la aplicación puede consultar la documentación sin convertirla automáticamente en un recurso público del sitio. El estatuto fue publicado de forma expresa en Google Drive; el sitio enlaza ese original y no mantiene una copia estática redundante en `public/`.
 
 Los nombres de los archivos fueron normalizados para facilitar la búsqueda. El contenido de los PDF no fue editado ni convertido.
 
