@@ -1,6 +1,10 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 22-nov-2026 — Estatuto original alojado en Drive
+
+La acción del estatuto abre el PDF original en Google Drive, con permiso público de lector, y permite descargarlo desde la vista de Drive. La lectura en línea del sitio permanece disponible. Se eliminó `public/documentos/estatutos.pdf` para evitar servir otra copia de 22.628.366 bytes; el original íntegro sigue archivado en `docs/normativa-cuadrangular/originales/estatuto-iglesia-cuadrangular-ecuador-2026-04-25.pdf`. El SHA-256 del original se conserva en el índice local y el archivo de Drive tiene el mismo tamaño. Enlace: https://drive.google.com/file/d/18OkwlNY_fI5YgsjaHVTQ9uHiTnRWKc-5/view?usp=drivesdk.
+
 ## 2026-10-30 — Visita pública y operación editorial/admin
 
 Inicio y Planifica tu visita comparten horarios públicos, muestran eventos que siguen activos en la fecha de Ecuador y distinguen errores de la lista vacía. El formulario de visita usa las columnas vigentes de `contact_messages`, requiere los campos que exige el esquema y aplica el rate limiter existente; el teléfono se conserva dentro del mensaje. El resumen público no consulta el directorio privado para mostrar cifras.
