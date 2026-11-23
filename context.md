@@ -1,6 +1,14 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 23-nov-2026 — Repetir y configurar partidas bíblicas
+
+Las salas terminadas o vencidas se reactivan desde «Mis salas» con «Reactivar con ajustes». Cada repetición crea otro PIN y una sala independiente con participantes/resultados separados; no borra ni reinicia la sesión previa. Las repeticiones no tienen límite total, pero siguen aplicando tres salas activas simultáneas y una vigencia de 1–365 días por PIN. Se conservan el cuestionario base y su orden original para repetirlo aunque una sesión mezcle preguntas.
+
+La creación y repetición permiten mezclar preguntas y opciones al comenzar. Al reactivar también se puede cambiar vigencia, modalidad individual/equipos, cantidad de equipos, modo de puntaje y reflexión final. Las migraciones `20261123052645_live_quiz_replay_settings` y `20261123052811_live_quiz_replay_source_content` añaden los ajustes, el parentesco entre sesiones y la conservación del cuestionario base; ambas se aplicaron en Supabase producción. La sala original «Reto bíblico en vivo» continúa terminada y guardada.
+
+Para los controles se conservan React/Tailwind y un switch nativo accesible con teclado; no se añade otra biblioteca. D:\COMPONENTES no devolvió una pieza aplicable; Magic UI encontró un selector de tema, no ajustes de partida; shadcn no tiene registros configurados y HeroUI documenta Switch, pero introducir otro sistema no aporta valor a este control. Verificación local: `npm run build`, ESLint focal y `git diff --check` correctos.
+
 ## 22-nov-2026 — Gestión y conservación de salas del reto en vivo
 
 La sala no se borra cuando acaba la actividad. «Mis salas» ahora lista actividades activas, terminadas y vencidas; la persona anfitriona puede volver a los resultados, editar preguntas y presentación mientras siga en lobby, extender un PIN activo antes de su vencimiento o eliminar una sala con confirmación. Cada anfitrión mantiene como máximo tres salas activas. Las extensiones se calculan desde el vencimiento actual y nunca pasan de 365 días desde la creación. El borrado requiere el rol vigente y la propiedad de la sala; elimina participantes, respuestas y reflexiones por cascada, y solo retira del bucket las imágenes asociadas que no use otra sala. La sala «Reto bíblico en vivo» que ya existía se deja intacta.

@@ -1,3 +1,10 @@
+## [1.14.55] - 2026-11-23
+
+### Mejorado
+- Las salas terminadas o vencidas se pueden reactivar sin límite de repeticiones; cada sesión recibe un PIN y resultados independientes y conserva el historial anterior.
+- La reactivación permite ajustar vigencia, equipos, puntaje y reflexión, además de mezclar preguntas y opciones al iniciar. La creación de salas nuevas también puede aplicar las dos mezclas.
+- Se mantienen el máximo de tres salas activas simultáneas y la vigencia de hasta 365 días por PIN.
+
 ## [1.14.54] - 2026-11-22
 
 ### Mejorado

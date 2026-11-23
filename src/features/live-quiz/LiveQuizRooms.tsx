@@ -17,9 +17,10 @@ import { LiveQuizRoomManagement } from './LiveQuizRoomManagement';
 import {
   applyLiveQuizHostAction, createLiveQuizRoom, deleteLiveQuizRoom, extendLiveQuizRoom, getLiveQuizEditor,
   getLiveQuizState, joinLiveQuizRoom, listMyLiveQuizRooms, saveLiveQuizEditor, submitLiveQuizAnswer,
-  submitLiveQuizReflection, uploadLiveQuizImage,
+  submitLiveQuizReflection, uploadLiveQuizImage, replayLiveQuizRoom,
 } from './service';
-import type { LiveQuizEditorContent, LiveQuizOptionKey, LiveQuizRoomSummary, LiveQuizScoreMode, LiveQuizSession, LiveQuizSnapshot } from './types';
+import type { LiveQuizEditorContent, LiveQuizOptionKey, LiveQuizReplayConfiguration, LiveQuizRoomSummary, LiveQuizScoreMode, LiveQuizSession, LiveQuizSnapshot } from './types';
+import { LiveQuizSettingSwitch } from './LiveQuizSettingSwitch';
 
 const PAGE_PATH = '/recursos/juegos/partida-en-vivo';
 const PLAYER_TOKEN_PREFIX = 'live-quiz-player:';
@@ -50,6 +51,8 @@ export function LiveQuizRooms() {
   const [teamMode, setTeamMode] = useState(false);
   const [teamCount, setTeamCount] = useState(3);
   const [scoreMode, setScoreMode] = useState<LiveQuizScoreMode>('speed');
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
   const [reflectionPrompt, setReflectionPrompt] = useState('');
   const [reflectionResponse, setReflectionResponse] = useState('');
   const [busy, setBusy] = useState(false);
@@ -185,6 +188,7 @@ export function LiveQuizRooms() {
         teamCount,
         scoreMode,
         reflectionPrompt: reflectionPrompt.trim() || null,
+        settings: { shuffle_questions: shuffleQuestions, shuffle_answers: shuffleAnswers },
       });
       setPin(created.pin);
       setSearchParams({ pin: created.pin });
@@ -284,6 +288,28 @@ export function LiveQuizRooms() {
       setNotice(`Vigencia actualizada hasta ${formatDate(expiresAt)}.`);
     } catch (error) {
       setErrorMessage(messageFromError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const replayRoom = async (roomId: string, configuration: LiveQuizReplayConfiguration): Promise<void> => {
+    setBusy(true);
+    setErrorMessage(null);
+    try {
+      const created = await replayLiveQuizRoom(roomId, configuration);
+      setPin(created.pin);
+      setSearchParams({ pin: created.pin });
+      setSession({ pin: created.pin, roomId: created.id, playerToken: null });
+      setSnapshot(null);
+      setEditorOpen(false);
+      setEditorContent(null);
+      await refreshMyRooms();
+      setNotice(`Sala reactivada como «${created.title}» con un PIN nuevo. Los resultados anteriores siguen guardados.`);
+    } catch (error) {
+      const message = messageFromError(error);
+      setErrorMessage(message);
+      throw new Error(message, { cause: error });
     } finally {
       setBusy(false);
     }
@@ -475,6 +501,11 @@ export function LiveQuizRooms() {
                     <label className="block text-xs font-bold text-blue-100" htmlFor="live-quiz-score-mode">Forma de puntuar<select id="live-quiz-score-mode" value={scoreMode} onChange={(event) => setScoreMode(event.target.value === 'accuracy' ? 'accuracy' : 'speed')} className="mt-1.5 min-h-11 w-full rounded-xl border border-white/15 bg-blue-900 px-3 text-sm text-white outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-300/15"><option value="speed" className="bg-blue-950">Ritmo · premia acertar rápido</option><option value="accuracy" className="bg-blue-950">Precisión · todos valen igual</option></select></label>
                     <p className="-mt-2 text-[11px] leading-5 text-blue-100/70">Precisión ayuda a que el tiempo no dé ventaja. En Ritmo, las respuestas correctas suman hasta 1.000 puntos según rapidez.</p>
                     <div><label className="block text-xs font-bold text-blue-100" htmlFor="live-quiz-reflection">Pregunta para conversar al final <span className="font-normal text-blue-100/70">(opcional)</span><textarea id="live-quiz-reflection" value={reflectionPrompt} onChange={(event) => setReflectionPrompt(event.target.value.slice(0, 180))} maxLength={180} rows={2} placeholder="¿Qué enseñanza te llevas del reto?" className="mt-1.5 w-full resize-y rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-blue-100/50 focus:border-amber-300 focus:ring-4 focus:ring-amber-300/15" /></label><p className="mt-1 text-[11px] leading-5 text-blue-100/70">Las respuestas solo las verá quien organiza; evita pedir datos personales.</p></div>
+                    <fieldset className="space-y-2">
+                      <legend className="mb-2 text-xs font-bold text-blue-100">Orden de la partida</legend>
+                      <LiveQuizSettingSwitch id="live-quiz-shuffle-questions" title="Mezclar preguntas" description="Se ordenan al iniciar; la secuencia del cuestionario base se conserva para futuras repeticiones." checked={shuffleQuestions} onChange={setShuffleQuestions} tone="dark" />
+                      <LiveQuizSettingSwitch id="live-quiz-shuffle-answers" title="Mezclar opciones" description="Muestra las respuestas en otro orden, sin cambiar cuál es la correcta." checked={shuffleAnswers} onChange={setShuffleAnswers} tone="dark" />
+                    </fieldset>
                     <SelectField label="Vigencia máxima del PIN" value={lifetimeDays} onChange={(value) => setLifetimeDays(Number(value))} options={[[1, '1 día'], [7, '7 días'], [30, '30 días'], [90, '90 días'], [180, '180 días'], [365, '365 días · máximo']]} />
                     <button type="submit" disabled={busy || activeRoomCount >= ACTIVE_ROOM_LIMIT || title.trim().length < 3} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-black text-blue-950 transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <RefreshCw className="animate-spin motion-reduce:animate-none" size={16} /> : <Sparkles size={16} />} {busy ? 'Creando sala…' : 'Crear sala y obtener PIN'}</button>
                     <p className="flex items-center justify-between gap-2 text-xs text-blue-100/80"><span className="inline-flex items-center gap-1.5"><Timer size={14} /> PIN vigente hasta 365 días desde su creación.</span><span>{activeRoomCount}/{ACTIVE_ROOM_LIMIT} activas</span></p>
@@ -494,6 +525,7 @@ export function LiveQuizRooms() {
               onEditRoom={editRoom}
               onCopyPin={(roomPin) => void copyValue(roomPin, 'PIN')}
               onExtendRoom={extendRoom}
+              onReplayRoom={replayRoom}
               onDeleteRoom={setRoomToDelete}
             />}
 
