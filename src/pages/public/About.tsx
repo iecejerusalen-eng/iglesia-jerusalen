@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, BookOpenText, Download, HeartHandshake, MessageCircle, Users } from 'lucide-react';
 import LearningProgress from '../../features/about/LearningProgress';
 import { learningTopics } from '../../features/about/learningContent';
@@ -146,12 +145,6 @@ const About = () => {
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-indigo-50/50 px-4 py-6 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950/30 sm:px-6 lg:px-8">
-      <Helmet>
-        <title>Nosotros | Iglesia Jerusalén</title>
-        <meta name="description" content="Conoce la historia, los pilares de fe, el Himno Cuadrangular y el liderazgo de Iglesia Jerusalén en Milagro." />
-        <meta property="og:title" content="Nosotros | Iglesia Jerusalén" />
-        <meta property="og:description" content="Nuestra historia, identidad y fe como parte de la familia Cuadrangular." />
-      </Helmet>
       <div className="pointer-events-none absolute -left-36 top-16 h-80 w-80 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
       <div className="pointer-events-none absolute -right-32 top-[38rem] h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl dark:bg-indigo-500/10" />
 

@@ -19,7 +19,6 @@ import { ChurchWelcome3D } from '../../features/home/components/ChurchWelcome3D'
 import { HomeVisitQuickAccess } from '../../features/home/components/HomeVisitQuickAccess';
 import AnniversaryHomeBanner from '../../features/anniversary/components/AnniversaryHomeBanner';
 import { ImageGallerySection, type GalleryImage } from '../../components/public/ImageGallerySection';
-import { Helmet } from 'react-helmet-async';
 import { DEFAULT_SECTIONS } from '../../features/home/constants';
 import type { PageSection } from '../../features/home/types';
 
@@ -48,13 +47,6 @@ const Home = () => {
   return (
     <>
       <ChurchWelcome3D />
-      <Helmet>
-        <title>Iglesia Jerusalén | Inicio</title>
-        <meta name="description" content="Bienvenido a la Iglesia Jerusalén. Únete a nuestra comunidad, descubre nuestros ministerios y acompáñanos en nuestros eventos y servicios." />
-        <meta property="og:title" content="Iglesia Jerusalén" />
-        <meta property="og:description" content="Bienvenido a la Iglesia Jerusalén. Únete a nuestra comunidad, descubre nuestros ministerios y acompáñanos en nuestros eventos y servicios." />
-        <meta property="og:type" content="website" />
-      </Helmet>
       <div className="relative isolate min-h-screen space-y-20 overflow-hidden bg-slate-50 pb-24 transition-colors dark:bg-slate-950 md:space-y-24">
         <HomeAtmosphere />
         <AnniversaryHomeBanner />
