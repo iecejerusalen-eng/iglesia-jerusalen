@@ -1,6 +1,12 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 22-nov-2026 — Editor de salas del reto bíblico en vivo
+
+Las salas en espera ahora tienen un editor de anfitrión para portada (título, subtítulo, imagen y colores) y preguntas editables: opción múltiple o verdadero/falso, 1–30 preguntas, hasta cuatro opciones, respuesta correcta, duración de 10–60 s por pregunta, explicación, color y una cita que abre el popup bíblico existente. Se pueden añadir, duplicar, quitar y ordenar preguntas con controles accesibles. La vista previa se actualiza mientras se edita y exige texto alternativo para las imágenes. Las preguntas solo se editan mientras la sala sigue en espera; las funciones de base de datos comprueban rol y propiedad, y ocultan respuesta y cita hasta revelar. El anfitrión puede subir JPG/PNG/WebP de hasta 4 MB a `live-quiz-media`; el bucket es público para lectura de las salas y las cargas requieren el permiso vigente.
+
+La migración `supabase/migrations/20261123030000_live_quiz_editor.sql` ya está aplicada en Supabase producción. La sala «Reto bíblico en vivo» quedó guardada con diez preguntas mezcladas, citas consultables en el lector, explicaciones e ilustraciones locales ya aprobadas; al cargar el contenido estaba en lobby y sin participantes, por lo que aún no se inició la partida. No se añade otra biblioteca UI: se reutilizan Tailwind, controles HTML, `BibleVerseLink` y los patrones del juego actual. `D:\COMPONENTES` no tenía un editor de preguntas equivalente; shadcn no tiene registros configurados; Magic UI no devolvió un patrón editor/reordenamiento; HeroUI documenta ColorPicker y Modal, pero no aporta suficiente beneficio para introducir otra base de componentes. Fuente de comportamiento público consultada: [Kahoot question types](https://support.kahoot.com/hc/en-us/articles/115002308428-Kahoot-question-types) y [Kahoot slides](https://support.kahoot.com/hc/en-us/articles/29644015543315-How-to-use-Kahoot-slides). Fuente de cargas y políticas: [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control) y [Storage helper functions](https://supabase.com/docs/guides/storage/schema/helper-functions).
+
 ## 22-nov-2026 — La PWA respeta la redirección del estatuto
 
 La navegación anterior del PDF queda excluida del fallback SPA del service worker y llega a la redirección de Vercel hacia Drive, incluso con la PWA activa. Publicado en 1.14.51.

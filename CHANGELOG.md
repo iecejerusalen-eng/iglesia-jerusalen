@@ -1,3 +1,9 @@
+## [1.14.52] - 2026-11-22
+
+### Añadido
+- Editor de salas con portada, imágenes, colores, preguntas de opción múltiple o verdadero/falso, reordenamiento, temporizador, explicación y citas que abren el popup bíblico. Las claves de respuesta solo se muestran al revelar.
+- El reto bíblico en vivo queda preparado con diez preguntas mixtas, ilustraciones y referencias bíblicas interactivas.
+
 ## [1.14.51] - 2026-11-22
 
 ### Corregido

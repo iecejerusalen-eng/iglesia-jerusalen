@@ -2,6 +2,35 @@ export type LiveQuizStatus = 'waiting' | 'in_progress' | 'finished' | 'expired';
 export type LiveQuizPhase = 'lobby' | 'question' | 'reveal' | 'finished';
 export type LiveQuizOptionKey = 'a' | 'b' | 'c' | 'd';
 export type LiveQuizScoreMode = 'speed' | 'accuracy';
+export type LiveQuizQuestionType = 'multiple_choice' | 'true_false';
+
+export interface LiveQuizPresentation {
+  subtitle: string;
+  cover_image_url: string;
+  cover_image_alt: string;
+  background_color: string;
+  accent_color: string;
+}
+
+export interface LiveQuizEditorQuestion {
+  id: string;
+  type: LiveQuizQuestionType;
+  text: string;
+  options: Array<{ key: LiveQuizOptionKey; text: string }>;
+  correct_option: LiveQuizOptionKey;
+  time_seconds: number;
+  explanation: string;
+  bible_reference: string;
+  image_url: string;
+  image_alt: string;
+  color: string;
+}
+
+export interface LiveQuizEditorContent {
+  title: string;
+  presentation: LiveQuizPresentation;
+  questions: LiveQuizEditorQuestion[];
+}
 
 export interface LiveQuizRoomSummary {
   id: string;
@@ -19,9 +48,14 @@ export interface LiveQuizRoomSummary {
 
 export interface LiveQuizQuestion {
   text: string;
+  type: LiveQuizQuestionType;
   options: Array<{ key: LiveQuizOptionKey; text: string }>;
   correct_option: LiveQuizOptionKey | null;
   explanation: string | null;
+  bible_reference: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+  color: string | null;
   index: number;
   count: number;
 }
@@ -71,6 +105,7 @@ export interface LiveQuizSnapshot {
     reflection_prompt: string | null;
     expires_at: string;
     created_at: string;
+    presentation: LiveQuizPresentation;
   };
   is_host: boolean;
   question: LiveQuizQuestion | null;

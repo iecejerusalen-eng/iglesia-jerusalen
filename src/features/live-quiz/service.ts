@@ -11,6 +11,10 @@ import type {
   LiveQuizTeamScore,
   LiveQuizQuestionReport,
   LiveQuizReflection,
+  LiveQuizEditorContent,
+  LiveQuizEditorQuestion,
+  LiveQuizPresentation,
+  LiveQuizQuestionType,
 } from './types';
 
 type JsonRecord = Record<string, unknown>;
@@ -38,6 +42,53 @@ function phaseValue(value: unknown): LiveQuizPhase {
 
 function optionValue(value: unknown): LiveQuizOptionKey | null {
   return value === 'a' || value === 'b' || value === 'c' || value === 'd' ? value : null;
+}
+
+const DEFAULT_PRESENTATION: LiveQuizPresentation = {
+  subtitle: 'Descubramos juntos lo que enseñan las Escrituras',
+  cover_image_url: '',
+  cover_image_alt: '',
+  background_color: '#eef2ff',
+  accent_color: '#1e3a8a',
+};
+
+function questionTypeValue(value: unknown): LiveQuizQuestionType {
+  return value === 'true_false' ? 'true_false' : 'multiple_choice';
+}
+
+function parseEditorQuestion(value: unknown, index: number): LiveQuizEditorQuestion {
+  const item = record(value);
+  const options = Array.isArray(item.options) ? item.options.flatMap((rawOption) => {
+    if (!rawOption || typeof rawOption !== 'object' || Array.isArray(rawOption)) return [];
+    const option = record(rawOption);
+    const key = optionValue(option.key);
+    return key ? [{ key, text: stringValue(option.text) }] : [];
+  }) : [];
+  return {
+    id: stringValue(item.id, `question-${index + 1}`),
+    type: questionTypeValue(item.type),
+    text: stringValue(item.text),
+    options,
+    correct_option: optionValue(item.correct_option) ?? 'a',
+    time_seconds: numberValue(item.time_seconds, 20),
+    explanation: stringValue(item.explanation),
+    bible_reference: stringValue(item.bible_reference),
+    image_url: stringValue(item.image_url),
+    image_alt: stringValue(item.image_alt),
+    color: stringValue(item.color, DEFAULT_PRESENTATION.accent_color),
+  };
+}
+
+function parsePresentation(value: unknown): LiveQuizPresentation {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...DEFAULT_PRESENTATION };
+  const item = record(value);
+  return {
+    subtitle: stringValue(item.subtitle, DEFAULT_PRESENTATION.subtitle),
+    cover_image_url: stringValue(item.cover_image_url),
+    cover_image_alt: stringValue(item.cover_image_alt),
+    background_color: stringValue(item.background_color, DEFAULT_PRESENTATION.background_color),
+    accent_color: stringValue(item.accent_color, DEFAULT_PRESENTATION.accent_color),
+  };
 }
 
 function scoreModeValue(value: unknown): LiveQuizScoreMode {
@@ -95,9 +146,14 @@ function parseQuestion(value: unknown): LiveQuizQuestion | null {
   });
   return {
     text: stringValue(item.text),
+    type: questionTypeValue(item.type),
     options,
     correct_option: optionValue(item.correct_option),
     explanation: stringValue(item.explanation) || null,
+    bible_reference: stringValue(item.bible_reference) || null,
+    image_url: stringValue(item.image_url) || null,
+    image_alt: stringValue(item.image_alt) || null,
+    color: stringValue(item.color) || null,
     index: numberValue(item.index, 1),
     count: numberValue(item.count, options.length),
   };
@@ -138,6 +194,7 @@ function parseSnapshot(value: unknown): LiveQuizSnapshot {
       team_names: Array.isArray(room.team_names) ? room.team_names.filter((name): name is string => typeof name === 'string') : [],
       score_mode: scoreModeValue(room.score_mode),
       reflection_prompt: stringValue(room.reflection_prompt) || null,
+      presentation: parsePresentation(room.presentation),
       expires_at: stringValue(room.expires_at),
       created_at: stringValue(room.created_at),
     },
@@ -186,6 +243,45 @@ export async function createLiveQuizRoom(input: {
 export async function listMyLiveQuizRooms(): Promise<LiveQuizRoomSummary[]> {
   const data = await rpc('live_quiz_list_my_rooms');
   return Array.isArray(data) ? data.map(parseRoomSummary) : [];
+}
+
+export async function getLiveQuizEditor(roomId: string): Promise<LiveQuizEditorContent> {
+  const data = record(await rpc('live_quiz_get_editor', { p_room_id: roomId }));
+  const questions = Array.isArray(data.questions) ? data.questions.map(parseEditorQuestion) : [];
+  return {
+    title: stringValue(data.title, 'Reto bíblico en vivo'),
+    presentation: parsePresentation(data.presentation),
+    questions,
+  };
+}
+
+export async function saveLiveQuizEditor(roomId: string, content: LiveQuizEditorContent): Promise<void> {
+  await rpc('live_quiz_save_editor', {
+    p_room_id: roomId,
+    p_title: content.title,
+    p_editor_content: { presentation: content.presentation, questions: content.questions },
+  });
+}
+
+export async function uploadLiveQuizImage(file: File): Promise<string> {
+  const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  if (!allowedTypes.has(file.type) || file.size > 4 * 1024 * 1024) {
+    throw new Error('Usa una imagen JPG, PNG o WebP de hasta 4 MB.');
+  }
+
+  const { data, error: authError } = await supabase.auth.getUser();
+  if (authError || !data.user) throw new Error('Inicia sesión como anfitrión para subir imágenes.');
+
+  const extension = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
+  const path = `${data.user.id}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from('live-quiz-media').upload(path, file, {
+    cacheControl: '31536000',
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw new Error(error.message);
+
+  return supabase.storage.from('live-quiz-media').getPublicUrl(path).data.publicUrl;
 }
 
 export async function joinLiveQuizRoom(pin: string, nickname: string): Promise<{ id: string; token: string; teamName: string | null }> {
