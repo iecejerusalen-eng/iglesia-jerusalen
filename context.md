@@ -1,6 +1,10 @@
 Warning: truncated output (original token count: 19125)
 Total output lines: 564
 
+## 23-nov-2026 — Fotos reales de Iglesia Jerusalén para Google Imágenes
+
+La imagen social y el `image` de la entidad Church usan la fotografía real de la fachada. `/visita` mantiene una sola URL pública estable para la fachada y añade una foto WebP auténtica del auditorio (1280 × 720, 153 KB), tomada de LOCAL sin retoques. Ambas usan texto alternativo y contexto descriptivos; `primaryImageOfPage` indica la fachada y `sitemap.xml` enumera las imágenes de `/visita` y `/nosotros/historia`. El original con personas de la panorámica congregacional sigue fuera del sitio porque su aprobación de publicación está pendiente. Se conserva el HTML semántico existente; no se añade una biblioteca de galería. Build de producción local correcto.
+
 ## 23-nov-2026 — Atajo compacto de recarga en móviles
 
 El botón flotante de recarga móvil conserva su acción de limpiar caché y actualizar la aplicación; ahora ocupa 40 × 40 px y muestra la etiqueta `Ctrl+Shift+R` en pequeño. El nombre accesible aclara que se trata del atajo del navegador, y el botón conserva un indicador de foco visible. Sigue oculto en escritorio. Vista previa local verificada en 390×844 y 1440×900.

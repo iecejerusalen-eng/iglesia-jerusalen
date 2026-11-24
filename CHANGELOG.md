@@ -1,3 +1,9 @@
+## [1.14.57] - 2026-11-23
+
+### Mejorado
+- La página de visita muestra fotos reales de la fachada y el auditorio con texto alternativo descriptivo.
+- El sitemap de imágenes facilita que Google descubra las fotografías del templo; los metadatos principales usan la fachada real.
+
 ## [1.14.56] - 2026-11-23
 
 ### Mejorado
