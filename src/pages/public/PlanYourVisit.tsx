@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import {
   Accessibility, ArrowRight, Baby, Car, Check,
   ChevronDown, Clock3, ExternalLink, HeartHandshake, MapPin,
@@ -9,7 +10,6 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '../../config/supabase';
 import { CHURCH_LOCATION } from '../../components/map/churchLocation';
-import churchFacadePhoto from '../../assets/Jerusalén/Fachada Iglesia Jerusalén v03.jpg';
 import type { Event as DbEvent, Schedule } from '../../types';
 import { formatEventDateRange, formatEventTime } from '../../features/events/utils/eventPresentation';
 import { toast } from 'sonner';
@@ -27,6 +27,14 @@ type VisitForm = {
 const INITIAL_FORM: VisitForm = {
   fullName: '', phone: '', email: '', visitDate: '', needs: [], notes: '',
 };
+
+const VISIT_PAGE_SCHEMA = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Visita Iglesia Jerusalén en Milagro | Iglesia Cuadrangular',
+  url: 'https://www.iecejerusalen.com/visita',
+  primaryImageOfPage: 'https://www.iecejerusalen.com/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp',
+});
 
 const NEEDS = [
   { id: 'children', label: 'Voy con niños', icon: Baby },
@@ -148,6 +156,9 @@ export default function PlanYourVisit() {
 
   return (
     <>
+      <Helmet>
+        <script type="application/ld+json">{VISIT_PAGE_SCHEMA}</script>
+      </Helmet>
       <main className="bg-[#f7f7f3] text-slate-950 dark:bg-slate-950 dark:text-white">
         <section className="relative isolate overflow-hidden bg-[#071633] text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(201,157,63,.24),transparent_34%),linear-gradient(115deg,#071633_10%,#112d55_62%,#183e66)]" />
@@ -178,7 +189,7 @@ export default function PlanYourVisit() {
             <motion.div initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .6, delay: .08 }} className="relative">
               <div className="absolute -inset-4 rounded-[2.5rem] bg-amber-300/10 blur-2xl" />
               <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-sm">
-                <img src={churchFacadePhoto} alt="Fachada de Iglesia Jerusalén" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover" />
+                <img src="/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp" alt="Fachada de la Iglesia del Evangelio Cuadrangular Jerusalén en Milagro, Guayas" width="1800" height="1200" fetchPriority="high" decoding="async" className="aspect-[3/2] w-full rounded-[1.5rem] object-cover" />
                 <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#071633]/85 p-4 backdrop-blur-xl">
                   <p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-300">Estamos en Milagro</p>
                   <p className="mt-1 text-sm font-semibold text-white">{CHURCH_LOCATION.address}</p>
@@ -196,6 +207,20 @@ export default function PlanYourVisit() {
               <Icon className="ml-auto hidden text-amber-500/70 sm:block" size={22} />
             </div>
           ))}
+        </section>
+
+        <section aria-labelledby="visit-auditorium-title" className="bg-white px-5 py-14 dark:bg-slate-900/40 sm:px-8 sm:py-20">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-14">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.2em] text-amber-600 dark:text-amber-400">Nuestra casa en Milagro</p>
+              <h2 id="visit-auditorium-title" className="mt-3 max-w-lg font-serif text-3xl font-black leading-tight sm:text-4xl">Conoce el auditorio de Iglesia Jerusalén.</h2>
+              <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600 dark:text-slate-300">Este es el espacio donde nos reunimos para adorar, escuchar la Palabra y compartir como comunidad en Milagro, Guayas.</p>
+            </div>
+            <figure className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-950">
+              <img src="/images/cuadrangular/interior-auditorio-iglesia-jerusalen-milagro.webp" alt="Interior del auditorio de Iglesia Jerusalén en Milagro, con filas de asientos frente a la plataforma del templo" width="1280" height="720" loading="lazy" decoding="async" className="aspect-video w-full rounded-[1.25rem] object-cover" />
+              <figcaption className="px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">Auditorio de la Iglesia del Evangelio Cuadrangular Jerusalén, en Milagro.</figcaption>
+            </figure>
+          </div>
         </section>
 
         <section id="horarios" aria-labelledby="visit-schedules-title" className="scroll-mt-24 border-y border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-900/40">

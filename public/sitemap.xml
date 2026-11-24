@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://www.iecejerusalen.com/</loc>
     <changefreq>daily</changefreq>
@@ -9,6 +9,12 @@
     <loc>https://www.iecejerusalen.com/visita</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://www.iecejerusalen.com/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp</image:loc>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.iecejerusalen.com/images/cuadrangular/interior-auditorio-iglesia-jerusalen-milagro.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.iecejerusalen.com/nosotros</loc>
@@ -136,7 +142,14 @@
 <url><loc>https://www.iecejerusalen.com/nosotros/origen-cuadrangular</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 <url><loc>https://www.iecejerusalen.com/nosotros/doctrina</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 <url><loc>https://www.iecejerusalen.com/nosotros/simbolos</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-<url><loc>https://www.iecejerusalen.com/nosotros/historia</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+<url>
+  <loc>https://www.iecejerusalen.com/nosotros/historia</loc>
+  <changefreq>monthly</changefreq>
+  <priority>0.6</priority>
+  <image:image>
+    <image:loc>https://www.iecejerusalen.com/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp</image:loc>
+  </image:image>
+</url>
 <url><loc>https://www.iecejerusalen.com/nosotros/pastores</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 <url><loc>https://www.iecejerusalen.com/nosotros/himno</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>

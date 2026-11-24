@@ -1,5 +1,6 @@
-Warning: truncated output (original token count: 19125)
-Total output lines: 564
+## 24-nov-2026 — Fotos documentales de Iglesia Jerusalén para Google Imágenes
+
+La fachada documentada IJ-REF-001 se publica como WebP de 1800 × 1200, sin retoque, y reemplaza la propuesta de fachada generada por IA en metadatos, Visita e Historia. La página /visita muestra además la foto real del auditorio; sus textos alternativos describen las escenas. Open Graph, datos estructurados y sitemap apuntan a imágenes que aparecen en el sitio. Se conserva HTML semántico y no se añade una biblioteca de galería. El usuario pidió usar fotos locales para Google Imágenes el 24-nov-2026.
 
 ## 23-nov-2026 — Atajo compacto de recarga en móviles
 
