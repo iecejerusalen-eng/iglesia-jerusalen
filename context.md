@@ -1,9 +1,6 @@
-Warning: truncated output (original token count: 19125)
-Total output lines: 564
+## 24-nov-2026 — Fotos documentales de Iglesia Jerusalén para Google Imágenes
 
-## 24-nov-2026 — Fotos reales de Iglesia Jerusalén para Google Imágenes
-
-La imagen social y `image` de la entidad Church usan la fotografía documental de la fachada (`public/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp`, 1800 × 1200), derivada de `LOCAL/04_Trabajos_y_proyectos/Plano_3D_Iglesia_Jerusalen/Proyecto_SketchUp_Integral_2026-10-18/04_Referencias/Imagenes/IJ-REF-001.jpg`. El archivo JPG generado como propuesta IA `fachada-jerusalen-v03.jpg` deja de presentarse como una fotografía real en metadatos, historia, visita y contenido educativo. `/visita` muestra la fachada y añade una foto WebP auténtica del auditorio (1280 × 720, 153 KB), tomada de LOCAL sin retoques. Ambas usan texto alternativo y contexto descriptivos; `primaryImageOfPage` indica la fachada y `sitemap.xml` enumera las imágenes de `/visita` y `/nosotros/historia`. El original con personas de la panorámica congregacional sigue fuera del sitio porque su aprobación de publicación está pendiente. Se conserva el HTML semántico existente; no se añade una biblioteca de galería. Verificación de build local registrada después del cambio.
+La fachada documentada IJ-REF-001 se publica como WebP de 1800 × 1200, sin retoque, y reemplaza la propuesta de fachada generada por IA en metadatos, Visita e Historia. La página /visita muestra además la foto real del auditorio; sus textos alternativos describen las escenas. Open Graph, datos estructurados y sitemap apuntan a imágenes que aparecen en el sitio. Se conserva HTML semántico y no se añade una biblioteca de galería. El usuario pidió usar fotos locales para Google Imágenes el 24-nov-2026.
 
 ## 23-nov-2026 — Atajo compacto de recarga en móviles
 
