@@ -33,7 +33,7 @@ const VISIT_PAGE_SCHEMA = JSON.stringify({
   '@type': 'WebPage',
   name: 'Visita Iglesia Jerusalén en Milagro | Iglesia Cuadrangular',
   url: 'https://www.iecejerusalen.com/visita',
-  primaryImageOfPage: 'https://www.iecejerusalen.com/images/cuadrangular/fachada-jerusalen-v03.jpg',
+  primaryImageOfPage: 'https://www.iecejerusalen.com/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp',
 });
 
 const NEEDS = [
@@ -189,7 +189,7 @@ export default function PlanYourVisit() {
             <motion.div initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .6, delay: .08 }} className="relative">
               <div className="absolute -inset-4 rounded-[2.5rem] bg-amber-300/10 blur-2xl" />
               <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-sm">
-                <img src="/images/cuadrangular/fachada-jerusalen-v03.jpg" srcSet="/images/cuadrangular/jerusalen.webp 1200w, /images/cuadrangular/fachada-jerusalen-v03.jpg 1448w" sizes="(min-width: 1024px) 42vw, 100vw" alt="Fachada de la Iglesia del Evangelio Cuadrangular Jerusalén, con sus ventanales azules, en Milagro, Guayas" width="1448" height="1086" fetchPriority="high" decoding="async" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover" />
+                <img src="/images/cuadrangular/fachada-iglesia-jerusalen-milagro.webp" alt="Fachada de la Iglesia del Evangelio Cuadrangular Jerusalén en Milagro, Guayas" width="1800" height="1200" fetchPriority="high" decoding="async" className="aspect-[3/2] w-full rounded-[1.5rem] object-cover" />
                 <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/20 bg-[#071633]/85 p-4 backdrop-blur-xl">
                   <p className="text-[10px] font-black uppercase tracking-[.18em] text-amber-300">Estamos en Milagro</p>
                   <p className="mt-1 text-sm font-semibold text-white">{CHURCH_LOCATION.address}</p>
